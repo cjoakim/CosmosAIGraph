@@ -1,0 +1,96 @@
+<project name="backup" default="backup" basedir=".">
+
+    <description>
+        Apache Ant script to create a zip file backup of this project.
+        Chris Joakim, Microsoft
+        Use: ant -f backup.xml
+    </description>
+
+    <!-- These are the only properties you should have to change.  -->
+    <property name="_projectRoot"   value="/Users/${user.name}/github/" />
+    <property name="_projectName"   value="CosmosAIGraph" />
+    <property name="_backupRoot"    value="/Users/${user.name}/Backups/projects" />
+
+    <!-- These properties are computed from the above. -->
+    <property name="_projectDir"    value="${_projectRoot}/${_projectName}" />
+    <property name="_backupDir"     value="${_backupRoot}/${_projectName}" />
+
+    <!-- ******************************************************************* -->
+
+    <target name="echoProperties">
+
+        <description>
+            This step simply displays the properties defined above.
+        </description>
+
+        <echo message="Properties used in this script:" />
+        <echo message="projectRoot... ${_projectRoot}" />
+        <echo message="projectName... ${_projectName}" />
+        <echo message="backupRoot.... ${_backupRoot}" />
+        <echo message="projectDir.... ${_projectDir}" />
+        <echo message="backupDir..... ${_backupDir}" />
+
+    </target>
+
+    <!-- ******************************************************************* -->
+
+    <target name="backup" depends="echoProperties" >
+
+        <description>
+            Create the backup zip file.
+        </description>
+
+        <tstamp>
+            <format property="_backupTstamp" pattern="yyyyMMdd-HHmmss" />
+        </tstamp>
+
+        <property name="_zipFilename"
+                  value="${_backupDir}/${_projectName}-${_backupTstamp}.zip" />
+
+        <mkdir dir="${_backupRoot}" />
+        <mkdir dir="${_backupDir}" />
+
+        <delete file="${_zipFilename}" />
+
+        <zip zipfile="${_zipFilename}"
+             basedir="${_projectDir}"
+             excludes="
+                impl1/data/npm/raw_libs/*.json,
+                impl1/data/pypi/raw_libs/*.json,
+                impl1/data/npm/wrangled_libs/*.json,
+                impl1/data/pypi/wrangled_libs/*.json,
+                private/library_data/npm/raw_libs/*.json,
+                private/library_data/npm/wrangled_libs/*.json,
+                private/library_data/pypi/raw_libs/*.json,
+                private/library_data/pypi/wrangled_libs/*.json,
+                **/.DS_Store,
+                **/*.class,
+                **/*.jar,
+                **/*.pyc,
+                **/*.tar,
+                **/*.war,
+                **/*.zip,
+                **/.classpath,
+                **/.git/,
+                **/.mvn/,
+                **/.project,
+                **/.settings/,
+                **/__pycache__/,
+                **/bin/,
+                **/coverage/,
+                **/htmlcov/,
+                **/include/,
+                **/lib/,
+                **/log/,
+                **/man/,
+                **/node_modules/,
+                **/target/,
+                **/tmp/,
+                **/venv/" />
+
+        <echo message="file created: ${_zipFilename}" />
+        <echo message="done." />
+
+    </target>
+
+</project>
