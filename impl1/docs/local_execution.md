@@ -6,6 +6,14 @@ execute this application on their workstation.
 Other users may simply wish to deploy the pre-build Docker containers
 to an Azure Container App as described [here](aca_deployment.md).
 
+## Unzip file libraries-graph.zip
+
+The full-size libraries-graph.nt (triples) file is too large for GitHub.
+Therefore it has been zipped and added to this repo as file 
+impl1/app_graph/rdf/libraries-graph.zip.  Navigate to this directory
+and unzip this file such that file **impl1/app_graph/rdf/libraries-graph.nt**
+exists
+
 ## Modes of Execution
 
 Three different modes of execution are recommended, please use the mode
