@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "django-permissionedforms\n========================\n\n`django-permissionedforms` is an extension to django's forms framework, allowing you to define forms where certain fields are shown or omitted according to the user's permissions.\n\n\ninstallation\n------------\n\nrun: `pip install django-permissionedforms`\n\n\nusage\n-----\n\nto add permission rules to a basic django form, subclass `permissionedforms.permissionedform` in place of `django.forms.form` and add an inner `meta` class:\n\n```python\nfrom permissionedforms import permissionedform\n\nclass personform(permissionedform):\n    first_name = forms.charfield()\n    last_name = forms.charfield()\n\n    class meta:\n        field_permissions = {\n            'last_name': 'myapp.change_last_name'\n        }\n```\n\n`field_permissions` is a dict, mapping field names to permission codenames. for each field listed, that field will only be included in the final form if the user has the specified permission, as defined by the `user.has_perm()` method. see django's documentation on [custom permissions](https://docs.djangoproject.com/en/stable/topics/auth/customizing/#custom-permissions) and [programmatically creating permissions](https://docs.djangoproject.com/en/4.0/topics/auth/default/#programmatically-creating-permissions) for details on how to set permissions up; alternatively, if you want to set a field as only available to superusers, you can use any arbitrary string (such as `'superuser'`) as the codename, since `has_perm` always returns true for them.\n\nthen, when instantiating the form, pass the keyword argument `for_user`:\n\n```python\nform = personform(for_user=request.user)\n```\n\nthis will result in a form where the `last_name` field is only present if the logged-in user has the `change_last_name` permission.\n\nthe keyword argument `for_user` is optional, and if not passed, the form will behave as an ordinary form with all named fields available.\n\nfor a modelform, the procedure is the same, except that you should inherit from `permissionedforms.permissionedmodelform` instead. `field_permissions` is added alongside the existing `meta` options:\n\n```python\nfrom permissionedforms import permissionedmodelform\n\nclass countryform(permissionedmodelform):\n    class meta:\n        model = country\n        fields = ['name', 'description']\n        field_permissions = {\n            'description': 'tests.change_country_description'\n        }\n\nform = countryform(instance=country, for_user=request.user)\n```\n\n\nintegrating with other base form classes\n----------------------------------------\n\nyou may wish to integrate the permission handling from `django-permissionedforms` into some other base form class, such as `clusterform` from the [django-modelcluster](https://github.com/wagtail/django-modelcluster) package. if that base form class is a straightforward subclass of `django.forms.form` or `django.forms.modelform`, then using multiple inheritance to additionally inherit from `permissionedform` or `permissionedmodelform` should work:\n\n```python\nfrom fancyforms import fancyform  # made up for example purposes\nfrom permissionedforms import permissionedform\n\nclass fancypermissionedform(permissionedform, fancyform):\n    pass\n```\n\nhowever, this will fail if the base form class implements its own metaclass. in this case, you will need to define a new metaclass inheriting from both the existing one and `permissionedforms.permissionedformmetaclass`:\n\n```python\nfrom fancyforms import fancyform\nfrom permissionedforms import permissionedform, permissionedformmetaclass\n\n\nfancyformmetaclass = type(fancyform)\n\n\nclass fancypermissionedformmetaclass(permissionedformmetaclass, fancyformmetaclass):\n    pass\n\n\nclass fancypermissionedform(permissionedform, fancyform, metaclass=fancypermissionedformmetaclass):\n    pass\n```\n\nthis could still fail if the base form class incorporates a custom options class to allow it to accept its own `class meta` options. if so, it will be necessary to define a new options class, again using multiple inheritance to subclass both the existing options class and `permissionedforms.permissionedformoptionsmixin`, and then set this as `options_class` on the metaclass. the following recipe will work for `clusterform`:\n\n```python\nfrom modelcluster.forms import clusterform, clusterformmetaclass, clusterformoptions\nfrom permissionedforms import permissionedform, permissionedformmetaclass, permissionedformoptionsmixin\n\n\nclass permissionedclusterformoptions(permissionedformoptionsmixin, clusterformoptions):\n    pass\n\n\nclass permissionedclusterformmetaclass(permissionedformmetaclass, clusterformmetaclass):\n    options_class = permissionedclusterformoptions\n\n\nclass permissionedclusterform(permissionedform, clusterform, metaclass=permissionedclusterformmetaclass):\n    pass\n```\n\n\nacknowledgements\n----------------\n\n`django-permissionedforms` was developed as part of [wagtail](https://wagtail.org/)'s next-generation page editor, sponsored by google.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "django-permissionedforms",
+  "package_url": "https://pypi.org/project/django-permissionedforms/",
+  "project_url": "https://pypi.org/project/django-permissionedforms/",
+  "project_urls": {
+    "Homepage": "https://github.com/wagtail/django-permissionedforms"
+  },
+  "release_url": "https://pypi.org/project/django-permissionedforms/0.1/",
+  "requires_dist": [
+    "Django",
+    "django-modelcluster ; extra == 'testing'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "django extension for creating forms that vary according to user permissions",
+  "version": "0.1",
+  "releases": [],
+  "developers": [
+    "matthew.westcott@torchbox.com",
+    "matthew_westcott"
+  ],
+  "kwds": "permissionedforms permissionedform field_permissions permissionedmodelform permissionedformmetaclass",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_django_permissionedforms",
+  "homepage": "https://github.com/wagtail/django-permissionedforms",
+  "release_count": 1,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_django_modelcluster"
+  ]
+}

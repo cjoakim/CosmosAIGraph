@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "s3path\n======\n\n.. image:: https://badgen.net/pypi/v/s3path\n    :target: https://pypi.org/project/s3path/\n    :alt: latest version\n\n.. image:: https://github.com/liormizr/s3path/actions/workflows/testing.yml/badge.svg?branch=master&event=push\n    :target: https://github.com/liormizr/s3path/actions/workflows/testing.yml\n    :alt: s3path ci\n\ns3path provide a python convenient file-system/path like interface for aws s3 service using boto3 s3 resource as a driver.\n\nlike pathlib, but for s3 buckets\n________________________________\n\naws s3 is among the most popular cloud storage solutions. it's object storage, is built to store and retrieve various amounts of data from anywhere.\n\ncurrently, python developers use boto3 as the default api to connect / put / get / list / delete files from s3.\n\ns3path blends boto3's ease of use and the familiarity of pathlib api.\n\ninstall:\n========\n\nfrom pypi:\n\n.. code:: bash\n\n    $ pip install s3path\n\nfrom conda:\n\n.. code:: bash\n\n    $ conda install -c conda-forge s3path\n\nbasic use:\n==========\n\nthe following example assumes an s3 bucket setup as specified bellow:\n\n.. code:: bash\n\n    $ aws s3 ls s3://pypi-proxy/\n\n    2018-04-24 22:59:59        186 requests/index.html\n    2018-04-24 22:59:57     485015 requests/requests-2.9.1.tar.gz\n    2018-04-24 22:35:01      89112 boto3/boto3-1.4.1.tar.gz\n    2018-04-24 22:35:02        180 boto3/index.html\n    2018-04-24 22:35:19    3308919 botocore/botocore-1.4.93.tar.gz\n    2018-04-24 22:35:36        188 botocore/index.html\n\nimporting the main class:\n\n.. code:: python\n\n   >>> from s3path import s3path\n\nlisting \"subdirectories\" - s3 keys can be split like file-system with a `/` in s3path we:\n\n.. code:: python\n\n   >>> bucket_path = s3path('/pypi-proxy/')\n   >>> [path for path in bucket_path.iterdir() if path.is_dir()]\n   [s3path('/pypi-proxy/requests/'),\n    s3path('/pypi-proxy/boto3/'),\n    s3path('/pypi-proxy/botocore/')]\n\nlisting html source files in this \"directory\" tree:\n\n.. code:: python\n\n   >>> bucket_path = s3path('/pypi-proxy/')\n   >>> list(bucket_path.glob('**/*.html'))\n   [s3path('/pypi-proxy/requests/index.html'),\n    s3path('/pypi-proxy/boto3/index.html'),\n    s3path('/pypi-proxy/botocore/index.html')]\n\nnavigating inside a \"directory\" tree:\n\n.. code:: python\n\n   >>> bucket_path = s3path('/pypi-proxy/')\n   >>> boto3_package_path = bucket_path / 'boto3' / 'boto3-1.4.1.tar.gz'\n   >>> boto3_package_path\n   s3path('/pypi-proxy/boto3/boto3-1.4.1.tar.gz')\n\nquerying path properties:\n\n.. code:: python\n\n   >>> boto3_package_path = s3path('/pypi-proxy/boto3/boto3-1.4.1.tar.gz')\n   >>> boto3_package_path.exists()\n   true\n   >>> boto3_package_path.is_dir()\n   false\n   >>> boto3_package_path.is_file()\n   true\n\nopening a \"file\" (s3 key):\n\n.. code:: python\n\n   >>> botocore_index_path = s3path('/pypi-proxy/botocore/index.html')\n   >>> with botocore_index_path.open() as f:\n   >>>     print(f.read())\n   \"\"\"\n   <!doctype html>\n   <html>\n   <head>\n       <meta charset=\"utf-8\">\n       <title>package index</title>\n   </head>\n   <body>\n       <a href=\"botocore-1.4.93.tar.gz\">botocore-1.4.93.tar.gz</a><br>\n   </body>\n   </html>\n   \"\"\"\n\n\nor simply reading:\n\n.. code:: python\n\n   >>> botocore_index_path = s3path('/pypi-proxy/botocore/index.html')\n   >>> botocore_index_path.read_text()\n   \"\"\"\n   <!doctype html>\n   <html>\n   <head>\n       <meta charset=\"utf-8\">\n       <title>package index</title>\n   </head>\n   <body>\n       <a href=\"botocore-1.4.93.tar.gz\">botocore-1.4.93.tar.gz</a><br>\n   </body>\n   </html>\n   \"\"\"\n\nversioned s3 objects:\n=====================\n\ns3path supports versioned objects for s3 buckets that have versioning enabled. ``versioneds3path`` is a subclass of ``s3path`` that supports all of its features. the main difference is an additional required ``version_id`` keyword parameter in each of its constructor methods.\n\n.. code:: python\n\n   >>> from s3path import versioneds3path\n   >>> bucket, key, version_id = 'my-bucket', 'my-key', 'my-version-id'\n   >>> versioneds3path(f'/{bucket}/{key}', version_id=version_id)\n   versioneds3path('/my-bucket/my-key', version_id='my-version-id')\n   >>> versioneds3path.from_uri(f's3://{bucket}/{key}', version_id=version_id)\n   versioneds3path('/my-bucket/my-key', version_id='my-version-id')\n   >>> versioneds3path.from_bucket_key(bucket=bucket, key=key, version_id=version_id)\n   versioneds3path('/my-bucket/my-key', version_id='my-version-id')\n\nnew in version 0.5.0\n\nrequirements:\n=============\n\n* python >= 3.4\n* boto3\n* smart-open\n\nfurther documentation:\n======================\n\n* `advanced s3path configuration`_ (s3 parameters, s3-compatible storage, etc.)\n* `abstract pathlib interface`_ implemented by s3path\n* `boto3 vs s3path usage examples`_\n\n\n.. _abstract pathlib interface: https://github.com/liormizr/s3path/blob/master/docs/interface.rst\n.. _boto3 vs s3path usage examples: https://github.com/liormizr/s3path/blob/master/docs/comparison.rst\n.. _advanced s3path configuration: https://github.com/liormizr/s3path/blob/master/docs/advance.rst\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2.0",
+  "name": "s3path",
+  "package_url": "https://pypi.org/project/s3path/",
+  "project_url": "https://pypi.org/project/s3path/",
+  "project_urls": {
+    "Homepage": "https://github.com/liormizr/s3path"
+  },
+  "release_url": "https://pypi.org/project/s3path/0.5.1/",
+  "requires_dist": [
+    "boto3 >=1.16.35",
+    "smart-open"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "",
+  "version": "0.5.1",
+  "releases": [],
+  "developers": [
+    "li.mizr@gmail.com",
+    "lior_mizrahi"
+  ],
+  "kwds": "s3path bucket_path s3 from_bucket_key versioneds3path",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_s3path",
+  "homepage": "https://github.com/liormizr/s3path",
+  "release_count": 30,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_smart_open"
+  ]
+}

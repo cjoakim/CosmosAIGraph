@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: security"
+  ],
+  "description": "|build_status| |coverage| |version|\r\n\r\ncti-taxii-client\r\n================\r\n\r\nnote: this is an `oasis tc open repository\r\n<https://www.oasis-open.org/resources/open-repositories/>`_. see the\r\n`governance`_ section for more information.\r\n\r\ncti-taxii-client is a minimal client implementation for the taxii 2.x server.\r\nit supports the following taxii 2.x api services:\r\n\r\n- server discovery\r\n- get api root information\r\n- get status\r\n- get collections\r\n- get a collection\r\n- get objects\r\n- add objects\r\n- get an object\r\n- delete an object (2.1 only)\r\n- get object manifests\r\n- get object versions (2.1 only)\r\n\r\ninstallation\r\n------------\r\n\r\nthe easiest way to install the taxii client is with pip\r\n\r\n.. code-block:: bash\r\n\r\n   $ pip install taxii2-client\r\n\r\nusage\r\n-----\r\n\r\nthe taxii client is intended to be used as a python library.  there are no\r\ncommand line clients at this time.\r\n\r\n``taxii2-client`` provides four classes:\r\n\r\n- ``server``\r\n- ``apiroot``\r\n- ``collection``\r\n- ``status``\r\n\r\neach can be instantiated by passing a `url`, and (optional) `user` and\r\n`password` arguments. the authorization information is stored in the instance,\r\nso it need not be supplied explicitly when requesting services. by default, the\r\nlatest version of the supported spec will be imported. if you need a specific\r\nversion you can perform the following:\r\n\r\n.. code-block:: python\r\n\r\n   from taxii2client.v21 import server\r\n   server = server('https://example.com/taxii2/', user='user_id', password='user_password')\r\n\r\nonce you have instantiated a ``server`` object, you can get all metadata about\r\nits contents via its properties:\r\n\r\n.. code-block:: python\r\n\r\n   print(server.title)\r\n\r\nthis will lazily load and cache the server's information in the instance:\r\n\r\n- ``api_roots``\r\n- ``title``\r\n- ``description``\r\n- ``default`` (i.e. the default api root)\r\n- ``contact``\r\n\r\nyou can follow references to ``apiroot`` objects,\r\n``collection`` objects, and (stix) objects in those collections.\r\n\r\n.. code-block:: python\r\n\r\n   api_root = server.api_roots[0]\r\n   collection = api_root.collections[0]\r\n   collection.add_objects(stix_bundle)\r\n\r\neach ``apiroot`` has attributes corresponding to its meta data\r\n\r\n- ``title``\r\n- ``description``\r\n- ``max_content_length``\r\n- ``collections``\r\n\r\neach ``collection`` has attributes corresponding to its meta data:\r\n\r\n- ``id``\r\n- ``title``\r\n- ``description``\r\n- ``alias`` (2.1 only)\r\n- ``can_write``\r\n- ``can_read``\r\n- ``media_types``\r\n\r\na ``collection`` can also be instantiated directly:\r\n\r\n.. code-block:: python\r\n\r\n    # performing taxii 2.0 requests\r\n    from taxii2client.v20 import collection, as_pages\r\n\r\n    collection = collection('https://example.com/api1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116')\r\n    print(collection.get_object('indicator--252c7c11-daf2-42bd-843b-be65edca9f61'))\r\n\r\n    # for normal (no pagination) requests\r\n    print(collection.get_objects())\r\n    print(collection.get_manifest())\r\n\r\n    # for pagination requests.\r\n    # use *args for other arguments to the call and **kwargs to pass filter information\r\n    for bundle in as_pages(collection.get_objects, per_request=50):\r\n        print(bundle)\r\n\r\n    for manifest_resource in as_pages(collection.get_manifest, per_request=50):\r\n        print(manifest_resource)\r\n\r\n    # ---------------------------------------------------------------- #\r\n    # performing taxii 2.1 requests\r\n    from taxii2client.v21 import collection, as_pages\r\n\r\n    collection = collection('https://example.com/api1/collections/91a7b528-80eb-42ed-a74d-c6fbd5a26116')\r\n    print(collection.get_object('indicator--252c7c11-daf2-42bd-843b-be65edca9f61'))\r\n\r\n    # for normal (no pagination) requests\r\n    print(collection.get_objects())\r\n    print(collection.get_manifest())\r\n\r\n    # for pagination requests.\r\n    # use *args for other arguments to the call and **kwargs to pass filter information\r\n    for envelope in as_pages(collection.get_objects, per_request=50):\r\n        print(envelope)\r\n\r\n    for manifest_resource in as_pages(collection.get_manifest, per_request=50):\r\n        print(manifest_resource)\r\n\r\nin addition to the object-specific properties and methods, all classes have a\r\n``refresh()`` method that reloads the url corresponding to that resource, to\r\nensure properties have the most up-to-date values.\r\n\r\ngovernance\r\n----------\r\n\r\nthis github public repository (\r\n**https://github.com/oasis-open/cti-taxii-client** ) was created at the request\r\nof the `oasis cyber threat intelligence (cti) tc\r\n<https://www.oasis-open.org/committees/cti/>`__ as an `oasis tc open repository\r\n<https://www.oasis-open.org/resources/open-repositories/>`__ to support\r\ndevelopment of open source resources related to technical committee work.\r\n\r\nwhile this tc open repository remains associated with the sponsor tc, its\r\ndevelopment priorities, leadership, intellectual property terms, participation\r\nrules, and other matters of governance are `separate and distinct\r\n<https://github.com/oasis-open/cti-taxii-client/blob/master/contributing.md#governance-distinct-from-oasis-tc-process>`__\r\nfrom the oasis tc process and related policies.\r\n\r\nall contributions made to this tc open repository are subject to open source\r\nlicense terms expressed in the `bsd-3-clause license\r\n<https://www.oasis-open.org/sites/www.oasis-open.org/files/bsd-3-clause.txt>`__.\r\nthat license was selected as the declared `\"applicable license\"\r\n<https://www.oasis-open.org/resources/open-repositories/licenses>`__ when the\r\ntc open repository was created.\r\n\r\nas documented in `\"public participation invited\r\n<https://github.com/oasis-open/cti-taxii-client/blob/master/contributing.md#public-participation-invited>`__\",\r\ncontributions to this oasis tc open repository are invited from all parties,\r\nwhether affiliated with oasis or not. participants must have a github account,\r\nbut no fees or oasis membership obligations are required. participation is\r\nexpected to be consistent with the `oasis tc open repository guidelines and\r\nprocedures\r\n<https://www.oasis-open.org/policies-guidelines/open-repositories>`__, the open\r\nsource `license\r\n<https://github.com/oasis-open/cti-taxii-client/blob/master/license>`__\r\ndesignated for this particular repository, and the requirement for an\r\n`individual contributor license agreement\r\n<https://www.oasis-open.org/resources/open-repositories/cla/individual-cla>`__\r\nthat governs intellectual property.\r\n\r\nmaintainers\r\n-----------\r\n\r\ntc open repository `maintainers\r\n<https://www.oasis-open.org/resources/open-repositories/maintainers-guide>`__\r\nare responsible for oversight of this project's community development\r\nactivities, including evaluation of github `pull requests\r\n<https://github.com/oasis-open/cti-taxii-client/blob/master/contributing.md#fork-and-pull-collaboration-model>`__\r\nand `preserving\r\n<https://www.oasis-open.org/policies-guidelines/open-repositories#repositorymanagement>`__\r\nopen source principles of openness and fairness. maintainers are recognized and\r\ntrusted experts who serve to implement community goals and consensus design\r\npreferences.\r\n\r\ninitially, the associated tc members have designated one or more persons to\r\nserve as maintainer(s); subsequently, participating community members may select\r\nadditional or substitute maintainers, per `consensus agreements\r\n<https://www.oasis-open.org/resources/open-repositories/maintainers-guide#additionalmaintainers>`__.\r\n\r\ncurrent maintainers of this tc open repository\r\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n\r\n-  `chris lenk <mailto:clenk@mitre.org>`__; github id:\r\n   https://github.com/clenk/; www: `mitre\r\n   corporation <https://www.mitre.org/>`__\r\n-  `rich piazza <mailto:rpiazza@mitre.org>`__; github id:\r\n   https://github.com/rpiazza/; www: `mitre\r\n   corporation <https://www.mitre.org/>`__\r\n-  `emmanuelle vargas-gonzalez <mailto:emmanuelle@mitre.org>`__; github id:\r\n   https://github.com/emmanvg/; www: `mitre\r\n   corporation <https://www.mitre.org/>`__\r\n-  `jason keirstead <mailto:jason.keirstead@ca.ibm.com>`__; github id:\r\n   https://github.com/jasonkeirstead; www: `ibm <http://www.ibm.com/>`__\r\n\r\nabout oasis tc open repositories\r\n--------------------------------\r\n\r\n-  `tc open repositories: overview and\r\n   resources <https://www.oasis-open.org/resources/open-repositories/>`__\r\n-  `frequently asked\r\n   questions <https://www.oasis-open.org/resources/open-repositories/faq>`__\r\n-  `open source\r\n   licenses <https://www.oasis-open.org/resources/open-repositories/licenses>`__\r\n-  `contributor license agreements\r\n   (clas) <https://www.oasis-open.org/resources/open-repositories/cla>`__\r\n-  `maintainers' guidelines and\r\n   agreement <https://www.oasis-open.org/resources/open-repositories/maintainers-guide>`__\r\n\r\nfeedback\r\n--------\r\n\r\nquestions or comments about this tc open repository's activities should be composed\r\nas github issues or comments. if use of an issue/comment is not possible or\r\nappropriate, questions may be directed by email to the maintainer(s) `listed\r\nabove <#currentmaintainers>`__. please send general questions about open\r\nrepository participation to oasis staff at repository-admin@oasis-open.org and\r\nany specific cla-related questions to repository-cla@oasis-open.org.\r\n\r\n.. |build_status| image:: https://github.com/oasis-open/cti-taxii-client/workflows/cti-taxii-client%20test%20harness/badge.svg\r\n   :target: https://github.com/oasis-open/cti-taxii-client/actions?query=workflow%3a%22cti-taxii-client+test+harness%22\r\n.. |coverage| image:: https://codecov.io/gh/oasis-open/cti-taxii-client/branch/master/graph/badge.svg\r\n   :target: https://codecov.io/gh/oasis-open/cti-taxii-client\r\n.. |version| image:: https://img.shields.io/pypi/v/taxii2-client.svg?maxage=3600\r\n   :target: https://pypi.python.org/pypi/taxii2-client/\r\n\r\n\r\n",
+  "docs_url": null,
+  "keywords": "taxii taxii2 client json cti cyber threat intelligence",
+  "license": "bsd",
+  "name": "taxii2-client",
+  "package_url": "https://pypi.org/project/taxii2-client/",
+  "project_url": "https://pypi.org/project/taxii2-client/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/oasis-open/cti-taxii-client/issues/",
+    "Documentation": "https://taxii2client.readthedocs.io/",
+    "Homepage": "https://oasis-open.github.io/cti-documentation/",
+    "Source Code": "https://github.com/oasis-open/cti-taxii-client/"
+  },
+  "release_url": "https://pypi.org/project/taxii2-client/2.3.0/",
+  "requires_dist": [
+    "requests",
+    "six",
+    "pytz",
+    "sphinx ; extra == 'docs'",
+    "sphinx-prompt ; extra == 'docs'",
+    "coverage ; extra == 'test'",
+    "pytest ; extra == 'test'",
+    "pytest-cov ; extra == 'test'",
+    "responses ; extra == 'test'",
+    "tox ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "taxii 2 client library",
+  "version": "2.3.0",
+  "releases": [],
+  "developers": [
+    "cti-users@lists.oasis-open.org",
+    "emmanuelle@mitre.org",
+    "emmanuelle_vargas",
+    "oasis_cyber_threat_intelligence_technical_committee"
+  ],
+  "kwds": "taxii2client taxii2 taxii pip api",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_taxii2_client",
+  "homepage": "https://oasis-open.github.io/cti-documentation/",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytz",
+    "pypi_requests",
+    "pypi_responses",
+    "pypi_six",
+    "pypi_sphinx",
+    "pypi_sphinx_prompt",
+    "pypi_tox"
+  ]
+}

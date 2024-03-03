@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "<figure>\n  <img src=\"assets/logo_text.svg\" alt=\"py-aiger logo\" width=300px>\n  <figcaption>\n      pyaiger: a python library for manipulating sequential and\n      combinatorial circuits.\n  </figcaption>\n\n</figure>\n\n\n[![build status](https://cloud.drone.io/api/badges/mvcisback/py-aiger/status.svg)](https://cloud.drone.io/mvcisback/py-aiger)\n[![codecov](https://codecov.io/gh/mvcisback/py-aiger/branch/master/graph/badge.svg)](https://codecov.io/gh/mvcisback/py-aiger)\n[![pypi version](https://badge.fury.io/py/py-aiger.svg)](https://badge.fury.io/py/py-aiger)\n[![license: mit](https://img.shields.io/badge/license-mit-yellow.svg)](https://opensource.org/licenses/mit)\n[![doi](https://zenodo.org/badge/doi/10.5281/zenodo.1405781.svg)](https://doi.org/10.5281/zenodo.1405781)\n\n<!-- markdown-toc start - don't edit this section. run m-x markdown-toc-generate-toc again -->\n**table of contents**\n\n- [about pyaiger](#about-pyaiger)\n- [installation](#installation)\n- [boolean expression dsl](#boolean-expression-dsl)\n- [sequential circuit dsl](#sequential-circuit-dsl)\n    - [sequential composition](#sequential-composition)\n    - [parallel composition](#parallel-composition)\n    - [circuits with latches/feedback/delay](#circuits-with-latchesfeedbackdelay)\n    - [relabeling](#relabeling)\n    - [evaluation](#evaluation)\n    - [useful circuits](#useful-circuits)\n- [extra](#extra)\n- [ecosystem](#ecosystem)\n- [related projects](#related-projects)\n- [citing](#citing)\n\n<!-- markdown-toc end -->\n\n\n# about pyaiger\n\n1. q: how is py-aiger pronounced? a: like \"pie\" + \"grrr\".\n2. q: why python? aren't you worried about performance?! a: no. the goals of this library are ease of use and hackability. \n3. q: no, i'm really concerned about performance! a: this library is not suited to implement logic solvers. for everything else, such as the creation and manipulation of circuits with many thousands of gates in between solver calls, the library is really fast enough.\n4. q: where does the name come from? a: <a href=\"http://fmv.jku.at/aiger/\">aiger</a> is a popular circuit format. the format is used in <a href=\"http://fmv.jku.at/hwmcc17/\">hardware model checking</a>, <a href=\"http://www.syntcomp.org/\">synthesis</a>, and is supported by <a href=\"https://github.com/berkeley-abc/abc\">abc</a>. the name is a combination of aig (standing for <a href=\"https://en.wikipedia.org/wiki/and-inverter_graph\">and-inverter-graph</a>) and the mountain <a href=\"https://en.wikipedia.org/wiki/eiger\">eiger</a>.\n\n# installation\n\nif you just need to use `aiger`, you can just run:\n\n`$ pip install py-aiger`\n\nfor developers, note that this project uses the\n[poetry](https://poetry.eustace.io/) python package/dependency\nmanagement tool. please familarize yourself with it and then\nrun:\n\n`$ poetry install`\n\n# usage\n\n```\nimport aiger\n\nx, y, z, w = aiger.atoms('x', 'y', 'z', 'w')\n\nexpr1 = z.implies(x & y)\nexpr2 = z & w\n\ncirc1 = expr1.with_output('z') \\      # get aig for expr1 with output 'z'.\n             .aig\ncirc2 = circ1 >> circ2                # feed outputs of circ1 into circ2.\n```\n\n# boolean expression dsl\nwhile powerful, when writing combinatorial circuits, the sequential\ncircuit dsl can be somewhat clumsy. for this common usecase, we have\ndeveloped the boolean expression dsl. all circuits generated this way\nhave a single output.\n\n```python\nimport aiger\nx, y, z = aiger.atoms('x', 'y', 'z')\nexpr1 = x & y  # circuit with inputs 'x', 'y' and 1 output computing x and y.\nexpr2 = x | y  # logical or.\nexpr3 = x ^ y  # logical xor.\nexpr4 = x == y  # logical ==, xnor.\nexpr5 = x.implies(y)\nexpr6 = ~x  # logical negation.\nexpr7 = aiger.ite(x, y, z)  # if x then y else z.\n\n# atoms can be constants.\nexpr8 = x & true  # equivalent to just x.\nexpr9 = x & false # equivalent to const false.\n\n# specifying output name of boolean expression.\n# - output is a long uuid otherwise.\nexpr10 = expr5.with_output('x_implies_y')\nassert expr10.output == 'x_implies_y'\n\n# and you can inspect the aig if needed.\ncirc = x.aig\n\n# and of course, you can get a boolexpr from a single output aig.\nexpr10 = aiger.boolexpr(circ)\n```\n\n\n# sequential circuit dsl\n\n```python\nimport aiger\nfrom aiger import utils\n\n# parser for ascii aiger format.\naig1 = aiger.load(path_to_aig1_file.aag)\naig2 = aiger.load(path_to_aig2_file.aag)\n```\n\n## sequential composition\n```python\naig3 = aig1 >> aig2\n```\n\n## parallel composition\n```python\naig4 = aig1 | aig2\n```\n\n## circuits with latches and delayed feedback\nsometimes one requires some outputs to be feed back into the circuits\nas time delayed inputs. this can be accomplished using the `loopback`\nmethod. this method takes in a variable number of dictionaries\nencoding how to wire an input to an output. the wiring dictionaries\nwith the following keys and default values:\n\n| key         | default | meaning                          |\n| ----------- | ------- | -------------------------------- |\n| input       |         | input port                       |\n| output      |         | output port                      |\n| latch       | input   | latch name                       |\n| init        | true    | initial latch value              |\n| keep_output | true    | keep loopbacked output as output |\n\n\n```python\n# connect output y to input x with delay, initialized to true.\n# (default initialization is false.)\naig5 = aig1.loopback({\n  \"input\": \"x\", \"output\": \"y\",\n})\n\naig6 = aig1.loopback({\n  \"input\": \"x\", \"output\": \"y\",\n}, {\n  \"input\": \"z\", \"output\": \"z\", \"latch\": \"z_latch\",\n  \"init\": false, \"keep_outputs\": false\n})\n\n```\n\n## relabeling\n\nthere are two syntaxes for relabeling. the first uses indexing\nsyntax in a nod to [notation often used variable substition in math](https://mathoverflow.net/questions/243084/history-of-the-notation-for-substitution).\n\nthe syntax is the relabel method, which is preferable when one wants\nto be explicit, even for those not familar with `py-aiger`.\n\n```python\n# relabel input 'x' to 'z'.\naig1['i', {'x': 'z'}]\naig1.relabel('input', {'x': 'z'})\n\n# relabel output 'y' to 'w'.\naig1['o', {'y': 'w'}]\naig1.relabel('output', {'y': 'w'})\n\n# relabel latches 'l1' to 'l2'.\naig1['l', {'l1': 'l2'}]\naig1.relabel('latch', {'l1': 'l2'})\n```\n\n## evaluation\n```python\n# combinatoric evaluation.\naig3(inputs={'x':true, 'y':false})\n\n# sequential evaluation.\nsim = aig3.simulate([{'x': 0, 'y': 0}, \n                    {'x': 1, 'y': 2},\n                    {'x': 3, 'y': 4}])\n\n# simulation coroutine\nsim = aig3.simulator()  # coroutine\nnext(sim)  # initialize\nprint(sim.send({'x': 0, 'y': 0}))\nprint(sim.send({'x': 1, 'y': 2}))\nprint(sim.send({'x': 3, 'y': 4}))\n\n\n# unroll\naig4 = aig3.unroll(steps=10, init=true)\n```\n\n## useful circuits\n```python\n# fix input x to be false.\naig4 = aiger.source({'x': false}) >> aig3\n\n# remove output y. \naig4 = aig3 >> aiger.sink(['y'])\n\n# create duplicate w of output y.\naig4 = aig3 >> aiger.tee({'y': ['y', 'w']})\n```\n\n# extra\n```python\naiger.common.eval_order(aig1)  # returns topological ordering of circuit gates.\n\n# convert object into an aig from multiple formats including boolexpr, aig, str, and filepaths.\naiger.to_aig(aig1)\n```\n\n# ecosystem\n\n### stable\n- [py-aiger-bv](https://github.com/mvcisback/py-aiger-bv): extension of pyaiger for manipulating sequential bitvector circuits.\n- [py-aiger-cnf](https://github.com/mvcisback/py-aiger-cnf): boolexpr to object representing cnf. mostly used for interfacing with py-aiger-sat.\n- [py-aiger-past-ltl](https://github.com/mvcisback/py-aiger-past-ltl): converts past linear temporal logic to aiger circuits.\n- [py-aiger-coins](https://github.com/mvcisback/py-aiger-coins): library for creating circuits that encode discrete distributions.\n- [py-aiger-sat](https://github.com/mvcisback/py-aiger-sat): bridge between py-aiger and py-sat.\n- [py-aiger-bdd](https://github.com/mvcisback/py-aiger-bdd): aiger <-> bdd bridge.\n- [py-aiger-gridworld](https://github.com/mvcisback/py-aiger-gridworld): create aiger circuits representing gridworlds.\n- [py-aiger-dfa](https://pypi.org/project/py-aiger-dfa/): convert between finite automata and sequential circuits.\n\n\n### underdevelopment\n\n\n- [py-aiger-spectral](https://github.com/mvcisback/py-aiger-spectral): a tool for performing (fourier) analysis of boolean functions.\n- [py-aiger-abc](https://pypi.org/project/py-aiger-abc/): aiger and abc bridge.\n\n# related projects\n- [pyaig](https://github.com/sterin/pyaig): another python library\n  for working with aiger circuits.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "py-aiger",
+  "package_url": "https://pypi.org/project/py-aiger/",
+  "project_url": "https://pypi.org/project/py-aiger/",
+  "project_urls": {
+    "Homepage": "https://github.com/mvcisback/py-aiger",
+    "Repository": "https://github.com/mvcisback/py-aiger"
+  },
+  "release_url": "https://pypi.org/project/py-aiger/6.2.1/",
+  "requires_dist": [
+    "attrs (>=23,<24)",
+    "bidict (>=0.22.0,<0.23.0)",
+    "funcy (>=1.12,<2.0)",
+    "toposort (>=1.5,<2.0)",
+    "pyrsistent (>=0.19.0,<0.20.0)",
+    "sortedcontainers (>=2.3.0,<3.0.0)"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "a python library for manipulating sequential and-inverter gates.",
+  "version": "6.2.1",
+  "releases": [],
+  "developers": [
+    "marcell.vc@eecs.berkeley.edu",
+    "marcell_vazquez"
+  ],
+  "kwds": "badges py figcaption badge pypi",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_py_aiger",
+  "homepage": "https://github.com/mvcisback/py-aiger",
+  "release_count": 67,
+  "dependency_ids": [
+    "pypi_attrs",
+    "pypi_bidict",
+    "pypi_funcy",
+    "pypi_pyrsistent",
+    "pypi_sortedcontainers",
+    "pypi_toposort"
+  ]
+}

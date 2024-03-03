@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: flask",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "<div align=\"center\">\n    <a href=\"https://luolingchun.github.io/flask-openapi3/\" target=\"_blank\">\n        <img class=\"off-glb\" src=\"https://raw.githubusercontent.com/luolingchun/flask-openapi3/master/docs/images/logo-text.svg\" \n             width=\"60%\" height=\"auto\" alt=\"logo\">\n    </a>\n</div>\n<p align=\"center\">\n    <em>generate rest api and openapi documentation for your flask project.</em>\n</p>\n<p align=\"center\">\n    <a href=\"https://github.com/luolingchun/flask-openapi3/actions/workflows/tests.yml\" target=\"_blank\">\n        <img class=\"off-glb\" src=\"https://img.shields.io/github/actions/workflow/status/luolingchun/flask-openapi3/tests.yml?branch=master\" alt=\"test\">\n    </a>\n    <a href=\"https://pypi.org/project/flask-openapi3/\" target=\"_blank\">\n        <img class=\"off-glb\" src=\"https://img.shields.io/pypi/v/flask-openapi3\" alt=\"pypi\">\n    </a>\n    <a href=\"https://pypistats.org/packages/flask-openapi3\" target=\"_blank\">\n        <img class=\"off-glb\" src=\"https://img.shields.io/pypi/dm/flask-openapi3\" alt=\"pypistats\">\n    </a>\n    <a href=\"https://pypi.org/project/flask-openapi3/\" target=\"_blank\">\n        <img class=\"off-glb\" src=\"https://img.shields.io/pypi/pyversions/flask-openapi3\" alt=\"pypi versions\">\n    </a>\n</p>\n\n**flask openapi3** is a web api framework based on **flask**. it uses **pydantic** to verify data and automatic\ngeneration of interaction documentation: **swagger**, **redoc** and **rapidoc**.\n\nthe key features are:\n\n- **easy to code:** easy to use and easy to learn\n\n- **standard document specification:** based on [openapi specification](https://spec.openapis.org/oas/v3.1.0)\n\n- **interactive openapi documentation:** [swagger](https://github.com/swagger-api/swagger-ui), [redoc](https://github.com/redocly/redoc) and [rapidoc](https://github.com/rapi-doc/rapidoc)\n  \n- **data validation:** fast data verification based on [pydantic](https://github.com/pydantic/pydantic)\n\n- **authorization:** support to reload authorizations in swagger ui\n\n## requirements\n\npython 3.8+\n\nflask-openapi3 is dependent on the following libraries:\n\n- [flask](https://github.com/pallets/flask) for the web app.\n- [pydantic](https://github.com/pydantic/pydantic) for the data validation.\n\n## installation\n\n```bash\npip install -u flask-openapi3\n```\n\nor\n\n```bash\nconda install -c conda-forge flask-openapi3\n```\n\n<details markdown=\"block\">\n<summary>optional dependencies</summary>\n\n- [python-email-validator](https://github.com/joshdata/python-email-validator) supports email verification.\n- [python-dotenv](https://github.com/theskumar/python-dotenv#readme) enables support for [environment variables from dotenv](https://flask.palletsprojects.com/en/latest/cli/#dotenv) when running `flask` commands.\n- [pyyaml](https://github.com/yaml/pyyaml) is used to output the openapi document in yaml format.\n- [asgiref](https://github.com/django/asgiref) allows views to be defined with `async def` and use `await`.\n\nto install these dependencies with flask-openapi3:\n\n```bash\npip install flask-openapi3[yaml]\n# or\npip install flask-openapi3[async]\n# or\npip install flask-openapi3[dotenv]\n# or\npip install flask-openapi3[email]\n# or all\npip install flask-openapi3[yaml,async,dotenv,email]\n# or manually\npip install pyyaml asgiref python-dotenv email-validator\n```\n</details>\n\n## a simple example\n\nhere's a simple example, further go to the [example](https://luolingchun.github.io/flask-openapi3/latest/example/).\n\n```python\nfrom pydantic import basemodel\n\nfrom flask_openapi3 import info, tag\nfrom flask_openapi3 import openapi\n\ninfo = info(title=\"book api\", version=\"1.0.0\")\napp = openapi(__name__, info=info)\n\nbook_tag = tag(name=\"book\", description=\"some book\")\n\n\nclass bookquery(basemodel):\n    age: int\n    author: str\n\n\n@app.get(\"/book\", summary=\"get books\", tags=[book_tag])\ndef get_book(query: bookquery):\n    \"\"\"\n    to get all books\n    \"\"\"\n    return {\n        \"code\": 0,\n        \"message\": \"ok\",\n        \"data\": [\n            {\"bid\": 1, \"age\": query.age, \"author\": query.author},\n            {\"bid\": 2, \"age\": query.age, \"author\": query.author}\n        ]\n    }\n\n\nif __name__ == \"__main__\":\n    app.run(debug=true)\n```\n\n<details>\n<summary>class-based api view example</summary>\n\n```python\nfrom typing import optional\n\nfrom pydantic import basemodel, field\n\nfrom flask_openapi3 import openapi, tag, info, apiview\n\n\ninfo = info(title='book api', version='1.0.0')\napp = openapi(__name__, info=info)\n\napi_view = apiview(url_prefix=\"/api/v1\", view_tags=[tag(name=\"book\")])\n\n\nclass bookpath(basemodel):\n    id: int = field(..., description=\"book id\")\n\n\nclass bookquery(basemodel):\n    age: optional[int] = field(none, description='age')\n\n\nclass bookbody(basemodel):\n    age: optional[int] = field(..., ge=2, le=4, description='age')\n    author: str = field(none, min_length=2, max_length=4, description='author')\n\n\n@api_view.route(\"/book\")\nclass booklistapiview:\n    a = 1\n\n    @api_view.doc(summary=\"get book list\")\n    def get(self, query: bookquery):\n        print(self.a)\n        return query.model_dump_json()\n\n    @api_view.doc(summary=\"create book\")\n    def post(self, body: bookbody):\n        \"\"\"description for a created book\"\"\"\n        return body.model_dump_json()\n\n\n@api_view.route(\"/book/<id>\")\nclass bookapiview:\n    @api_view.doc(summary=\"get book\")\n    def get(self, path: bookpath):\n        print(path)\n        return \"get\"\n\n    @api_view.doc(summary=\"update book\")\n    def put(self, path: bookpath):\n        print(path)\n        return \"put\"\n\n    @api_view.doc(summary=\"delete book\", deprecated=true)\n    def delete(self, path: bookpath):\n        print(path)\n        return \"delete\"\n\n\napp.register_api_view(api_view)\n\nif __name__ == \"__main__\":\n    app.run(debug=true)\n```\n</details>\n\n## api document\n\nrun the [simple example](https://github.com/luolingchun/flask-openapi3/blob/master/examples/simple_demo.py), and go to http://127.0.0.1:5000/openapi.\n\nyou will see the documentation: [swagger](https://github.com/swagger-api/swagger-ui), [redoc](https://github.com/redocly/redoc) and [rapidoc](https://github.com/rapi-doc/rapidoc).\n\n![openapi](https://raw.githubusercontent.com/luolingchun/flask-openapi3/master/docs/images/openapi.png)\n![openapi-swagger](https://raw.githubusercontent.com/luolingchun/flask-openapi3/master/docs/images/openapi-swagger.png)\n![openapi-redoc](https://raw.githubusercontent.com/luolingchun/flask-openapi3/master/docs/images/openapi-redoc.png)\n![openapi-rapidoc](https://raw.githubusercontent.com/luolingchun/flask-openapi3/master/docs/images/openapi-rapidoc.png)\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "flask-openapi3",
+  "package_url": "https://pypi.org/project/flask-openapi3/",
+  "project_url": "https://pypi.org/project/flask-openapi3/",
+  "project_urls": {
+    "Documentation": "https://luolingchun.github.io/flask-openapi3",
+    "Homepage": "https://github.com/luolingchun/flask-openapi3"
+  },
+  "release_url": "https://pypi.org/project/flask-openapi3/3.0.1/",
+  "requires_dist": [
+    "flask>=2.0",
+    "pydantic>=2.4",
+    "asgiref>=3.2; extra == 'async'",
+    "python-dotenv; extra == 'dotenv'",
+    "email-validator; extra == 'email'",
+    "pyyaml; extra == 'yaml'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "generate rest api and openapi documentation for your flask project.",
+  "version": "3.0.1",
+  "releases": [],
+  "developers": [
+    "luolingchun@outlook.com"
+  ],
+  "kwds": "flask_openapi3 flask openapi3 openapi openapis",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flask_openapi3",
+  "homepage": "",
+  "release_count": 42,
+  "dependency_ids": [
+    "pypi_asgiref",
+    "pypi_email_validator",
+    "pypi_flask",
+    "pypi_pydantic",
+    "pypi_python_dotenv",
+    "pypi_pyyaml"
+  ]
+}

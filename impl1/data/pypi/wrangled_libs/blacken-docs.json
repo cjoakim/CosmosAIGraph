@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "============\nblacken-docs\n============\n\n.. image:: https://img.shields.io/github/actions/workflow/status/adamchainz/blacken-docs/main.yml?branch=main&style=for-the-badge\n   :target: https://github.com/adamchainz/blacken-docs/actions?workflow=ci\n\n.. image:: https://img.shields.io/badge/coverage-100%25-success?style=for-the-badge\n  :target: https://github.com/adamchainz/blacken-docs/actions?workflow=ci\n\n.. image:: https://img.shields.io/pypi/v/blacken-docs.svg?style=for-the-badge\n   :target: https://pypi.org/project/blacken-docs/\n\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge\n   :target: https://github.com/psf/black\n\n.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logocolor=white&style=for-the-badge\n   :target: https://github.com/pre-commit/pre-commit\n   :alt: pre-commit\n\nrun `black <https://pypi.org/project/black/>`__ on python code blocks in documentation files.\n\ninstallation\n============\n\nuse **pip**:\n\n.. code-block:: sh\n\n    python -m pip install blacken-docs\n\npython 3.8 to 3.12 supported.\n\nblack 22.1.0+ supported.\n\npre-commit hook\n---------------\n\nyou can also install blacken-docs as a `pre-commit <https://pre-commit.com/>`__ hook.\nadd the following to the ``repos`` section of your ``.pre-commit-config.yaml`` file (`docs <https://pre-commit.com/#plugins>`__):\n\n.. code-block:: yaml\n\n    -   repo: https://github.com/adamchainz/blacken-docs\n        rev: \"\"  # replace with latest tag on github\n        hooks:\n        -   id: blacken-docs\n            additional_dependencies:\n            - black==22.12.0\n\nthen, reformat your entire project:\n\n.. code-block:: sh\n\n    pre-commit run blacken-docs --all-files\n\nsince black is a moving target, it\u2019s best to pin it in ``additional_dependencies``.\nupgrade as appropriate.\n\nusage\n=====\n\nblacken-docs is a command line tool that rewrites documentation files in place.\nit supports markdown, restructuredtext, and latex files.\nadditionally, you can run it on python files to reformat markdown and restructuredtext within docstrings.\n\nrun ``blacken-docs`` with the filenames to rewrite:\n\n.. code-block:: sh\n\n    blacken-docs readme.rst\n\nif any file is modified, ``blacken-docs`` exits nonzero.\n\n``blacken-docs`` does not have any ability to recurse through directories.\nuse the pre-commit integration, globbing, or another technique for applying to many files.\nfor example, |with git ls-files pipe xargs|_:\n\n.. |with git ls-files pipe xargs| replace:: with ``git ls-files | xargs``\n.. _with git ls-files pipe xargs: https://adamj.eu/tech/2022/03/09/how-to-run-a-command-on-many-files-in-your-git-repository/\n\n.. code-block:: sh\n\n    git ls-files -z -- '*.md' | xargs -0 blacken-docs\n\n\u2026or powershell\u2019s |foreach-object|__:\n\n.. |foreach-object| replace:: ``foreach-object``\n__ https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/foreach-object\n\n.. code-block:: powershell\n\n    git ls-files -- '*.md' | %{blacken-docs $_}\n\nblacken-docs currently passes the following options through to black:\n\n* |-l / --line-length|__\n\n  .. |-l / --line-length| replace:: ``-l`` / ``--line-length``\n  __ https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#l-line-length\n\n* |--preview|__\n\n  .. |--preview| replace:: ``--preview``\n  __ https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#preview\n\n* |-s / --skip-string-normalization|__\n\n  .. |-s / --skip-string-normalization| replace:: ``-s`` / ``--skip-string-normalization``\n  __ https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#s-skip-string-normalization\n\n* |-t / --target-version|__\n\n  .. |-t / --target-version| replace:: ``-t`` / ``--target-version``\n  __ https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#t-target-version\n\nit also has the below extra options:\n\n* ``-e`` / ``--skip-errors`` - don\u2019t exit non-zero for errors from black (normally syntax errors).\n* ``--rst-literal-blocks`` - also format literal blocks in restructuredtext files (more below).\n\nhistory\n=======\n\nblacken-docs was created by `anthony sottile <https://github.com/asottile/>`__ in 2018.\nat the end of 2022, adam johnson took over maintenance.\n\nsupported code block formats\n============================\n\nblacken-docs formats code blocks matching the following patterns.\n\nmarkdown\n--------\n\nin \u201cpython\u201d blocks:\n\n.. code-block:: markdown\n\n    ```python\n    def hello():\n        print(\"hello world\")\n    ```\n\nand \u201cpycon\u201d blocks:\n\n.. code-block:: markdown\n\n    ```pycon\n\n    >>> def hello():\n    ...     print(\"hello world\")\n    ...\n\n    ```\n\nwithin python files, docstrings that contain markdown code blocks may be reformatted:\n\n.. code-block:: python\n\n    def f():\n        \"\"\"docstring here\n\n        ```python\n        print(\"hello world\")\n        ```\n        \"\"\"\n\nrestructuredtext\n----------------\n\nin \u201cpython\u201d blocks:\n\n.. code-block:: rst\n\n    .. code-block:: python\n\n        def hello():\n            print(\"hello world\")\n\nin \u201cpycon\u201d blocks:\n\n.. code-block:: rst\n\n    .. code-block:: pycon\n\n        >>> def hello():\n        ...     print(\"hello world\")\n        ...\n\nuse ``--rst-literal-blocks`` to also format `literal blocks <https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#literal-blocks>`__:\n\n.. code-block:: rst\n\n    an example::\n\n        def hello():\n            print(\"hello world\")\n\nliteral blocks are marked with ``::`` and can be any monospaced text by default.\nhowever sphinx interprets them as python code `by default <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html#rst-literal-blocks>`__.\nif your project uses sphinx and such a configuration, add ``--rst-literal-blocks`` to also format such blocks.\n\nwithin python files, docstrings that contain restructuredtext code blocks may be reformatted:\n\n.. code-block:: python\n\n    def f():\n        \"\"\"docstring here\n\n        .. code-block:: python\n\n            print(\"hello world\")\n        \"\"\"\n\nlatex\n-----\n\nin minted \u201cpython\u201d blocks:\n\n.. code-block:: latex\n\n    \\begin{minted}{python}\n    def hello():\n        print(\"hello world\")\n    \\end{minted}\n\nin minted \u201cpycon\u201d blocks:\n\n.. code-block:: latex\n\n    \\begin{minted}{pycon}\n    >>> def hello():\n    ...     print(\"hello world\")\n    ...\n    \\end{minted}\n\nin pythontex blocks:\n\n.. code-block:: latex\n\n    \\begin{pycode}\n    def hello():\n        print(\"hello world\")\n    \\end{pycode}\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "blacken-docs",
+  "package_url": "https://pypi.org/project/blacken-docs/",
+  "project_url": "https://pypi.org/project/blacken-docs/",
+  "project_urls": {
+    "Changelog": "https://github.com/adamchainz/blacken-docs/blob/main/CHANGELOG.rst",
+    "Homepage": "https://github.com/asottile/blacken-docs"
+  },
+  "release_url": "https://pypi.org/project/blacken-docs/1.16.0/",
+  "requires_dist": [
+    "black >=22.1.0"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "run black on python code blocks in documentation files.",
+  "version": "1.16.0",
+  "releases": [],
+  "developers": [
+    "adam_johnson",
+    "anthony_sottile",
+    "asottile@umich.edu",
+    "me@adamj.eu"
+  ],
+  "kwds": "badge blacken shields logocolor black",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_blacken_docs",
+  "homepage": "https://github.com/asottile/blacken-docs",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_black"
+  ]
+}

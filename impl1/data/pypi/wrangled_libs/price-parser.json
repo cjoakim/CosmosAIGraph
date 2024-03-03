@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "============\nprice-parser\n============\n\n.. image:: https://img.shields.io/pypi/v/price-parser.svg\n   :target: https://pypi.python.org/pypi/price-parser\n   :alt: pypi version\n\n.. image:: https://img.shields.io/pypi/pyversions/price-parser.svg\n   :target: https://pypi.python.org/pypi/price-parser\n   :alt: supported python versions\n\n.. image:: https://travis-ci.org/scrapinghub/price-parser.svg?branch=master\n   :target: https://travis-ci.org/scrapinghub/price-parser\n   :alt: build status\n\n.. image:: https://codecov.io/github/scrapinghub/price-parser/coverage.svg?branch=master\n   :target: https://codecov.io/gh/scrapinghub/price-parser\n   :alt: coverage report\n\n\n``price-parser`` is a small library for extracting price and currency from\nraw text strings.\n\nfeatures:\n\n* robust price amount and currency symbol extraction\n* zero-effort handling of thousand and decimal separators\n\nthe main use case is parsing prices extracted from web pages.\nfor example, you can write a css/xpath selector which targets an element\nwith a price, and then use this library for cleaning it up,\ninstead of writing custom site-specific regex or python code.\n\nlicense is bsd 3-clause.\n\ninstallation\n============\n\n::\n\n    pip install price-parser\n\nprice-parser requires python 3.6+.\n\nusage\n=====\n\nbasic usage\n-----------\n\n>>> from price_parser import price\n>>> price = price.fromstring(\"22,90 \u20ac\")\n>>> price\nprice(amount=decimal('22.90'), currency='\u20ac')\n>>> price.amount       # numeric price amount\ndecimal('22.90')\n>>> price.currency     # currency symbol, as appears in the string\n'\u20ac'\n>>> price.amount_text  # price amount, as appears in the string\n'22,90'\n>>> price.amount_float # price amount as float, not decimal\n22.9\n\nif you prefer, ``price.fromstring`` has an alias ``price_parser.parse_price``,\nthey do the same:\n\n>>> from price_parser import parse_price\n>>> parse_price(\"22,90 \u20ac\")\nprice(amount=decimal('22.90'), currency='\u20ac')\n\nthe library has extensive tests (900+ real-world examples of price strings).\nsome of the supported cases are described below.\n\nsupported cases\n---------------\n\nunclean price strings with various currencies are supported;\nthousand separators and decimal separators are handled:\n\n>>> price.fromstring(\"price: $119.00\")\nprice(amount=decimal('119.00'), currency='$')\n\n>>> price.fromstring(\"15 130 \u0440\")\nprice(amount=decimal('15130'), currency='\u0440')\n\n>>> price.fromstring(\"151,200 \u062a\u0648\u0645\u0627\u0646\")\nprice(amount=decimal('151200'), currency='\u062a\u0648\u0645\u0627\u0646')\n\n>>> price.fromstring(\"rp 1.550.000\")\nprice(amount=decimal('1550000'), currency='rp')\n\n>>> price.fromstring(\"b\u011b\u017en\u00e1 cena 75 990,00 k\u010d\")\nprice(amount=decimal('75990.00'), currency='k\u010d')\n\n\neuro sign is used as a decimal separator in a wild:\n\n>>> price.fromstring(\"1,235\u20ac 99\")\nprice(amount=decimal('1235.99'), currency='\u20ac')\n\n>>> price.fromstring(\"99 \u20ac 95 \u20ac\")\nprice(amount=decimal('99'), currency='\u20ac')\n\n>>> price.fromstring(\"35\u20ac 999\")\nprice(amount=decimal('35'), currency='\u20ac')\n\n\nsome special cases are handled:\n\n>>> price.fromstring(\"free\")\nprice(amount=decimal('0'), currency=none)\n\n\nwhen price or currency can't be extracted, corresponding\nattribute values are set to none:\n\n>>> price.fromstring(\"\")\nprice(amount=none, currency=none)\n\n>>> price.fromstring(\"foo\")\nprice(amount=none, currency=none)\n\n>>> price.fromstring(\"50% off\")\nprice(amount=none, currency=none)\n\n>>> price.fromstring(\"50\")\nprice(amount=decimal('50'), currency=none)\n\n>>> price.fromstring(\"r$\")\nprice(amount=none, currency='r$')\n\n\ncurrency hints\n--------------\n\n``currency_hint`` argument allows to pass a text string which may (or may not)\ncontain currency information. this feature is most useful for automated price\nextraction.\n\n>>> price.fromstring(\"34.99\", currency_hint=\"\u0440\u0443\u0431. (\u0448\u0442)\")\nprice(amount=decimal('34.99'), currency='\u0440\u0443\u0431.')\n\nnote that currency mentioned in the main price string may be\n**preferred** over currency specified in ``currency_hint`` argument;\nit depends on currency symbols found there. if you know the correct currency,\nyou can set it directly:\n\n>>> price = price.fromstring(\"1 000\")\n>>> price.currency = 'eur'\n>>> price\nprice(amount=decimal('1000'), currency='eur')\n\n\ndecimal separator\n-----------------\n\nif you know which symbol is used as a decimal separator in the input string,\npass that symbol in the ``decimal_separator`` argument to prevent price-parser\nfrom guessing the wrong decimal separator symbol.\n\n>>> price.fromstring(\"price: $140.600\", decimal_separator=\".\")\nprice(amount=decimal('140.600'), currency='$')\n\n>>> price.fromstring(\"price: $140.600\", decimal_separator=\",\")\nprice(amount=decimal('140600'), currency='$')\n\n\ncontributing\n============\n\n* source code: https://github.com/scrapinghub/price-parser\n* issue tracker: https://github.com/scrapinghub/price-parser/issues\n\nuse tox_ to run tests with different python versions::\n\n    tox\n\nthe command above also runs type checks; we use mypy.\n\n.. _tox: https://tox.readthedocs.io\n\n\n\nchanges\n=======\n\n0.3.4 (2020-11-25)\n------------------\n\n* improved parsing of prices without digits before a decimal point ('.75'),\n  https://github.com/scrapinghub/price-parser/pull/42\n* fix parsing of price with non-breaking spaces\n  https://github.com/scrapinghub/price-parser/pull/43\n\n0.3.3 (2020-02-05)\n------------------\n\n* fixed installation issue on some windows machines.\n\n0.3.2 (2020-01-28)\n------------------\n\n* improved korean and japanese currency detection.\n* declare python 3.8 support.\n\n0.3.1 (2019-10-21)\n------------------\n\n* redundant $ signs are no longer returned as a part of currency, e.g.\n  for ``sgd$ 100`` currency would be ``sgd``, not ``sgd$``.\n\n0.3.0 (2019-10-19)\n------------------\n\n* new ``price.fromstring`` argument ``decimal_separator`` allows to override\n  decimal separator for the cases where it is known\n  (i.e. disable decimal separator detection);\n* ntd and rbm unofficial currency names are added;\n* quantifiers in regular expressions are made non-greedy, which provides\n  a small speedup;\n* test improvements.\n\n0.2.4 (2019-07-03)\n------------------\n\n* declare price-parser as providing type annotations (pep-561). this enables\n  better type checking for projects using price-parser.\n* improved test coverage\n\n0.2.3 (2019-06-18)\n------------------\n\n* follow-up for 0.2.2 release: improved parsing of prices with 4+ digits\n  after a decimal separator.\n\n0.2.2 (2019-06-18)\n------------------\n\n* fixed parsing of prices with 4+ digits after a decimal separator.\n\n0.2.1 (2019-04-19)\n------------------\n\n* 23 additional currency symbols are added;\n* ``a$`` alias for australian dollar is added.\n\n0.2 (2019-04-12)\n----------------\n\nadded support for currencies replaced by euro.\n\n0.1.1 (2019-04-12)\n------------------\n\nminor packaging fixes.\n\n0.1 (2019-04-12)\n----------------\n\ninitial release.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "price-parser",
+  "package_url": "https://pypi.org/project/price-parser/",
+  "project_url": "https://pypi.org/project/price-parser/",
+  "project_urls": {
+    "Homepage": "https://github.com/scrapinghub/price-parser"
+  },
+  "release_url": "https://pypi.org/project/price-parser/0.3.4/",
+  "requires_dist": [
+    "attrs (>=17.3.0)"
+  ],
+  "requires_python": "",
+  "summary": "extract price and currency from a raw string",
+  "version": "0.3.4",
+  "releases": [],
+  "developers": [
+    "kmike84@gmail.com",
+    "mikhail_korobov"
+  ],
+  "kwds": "price_parser parse_price pypi prices pyversions",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_price_parser",
+  "homepage": "https://github.com/scrapinghub/price-parser",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_attrs"
+  ]
+}

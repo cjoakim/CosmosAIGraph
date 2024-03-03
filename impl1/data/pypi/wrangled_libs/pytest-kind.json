@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: pytest",
+    "license :: osi approved :: gnu general public license v3 or later (gplv3+)",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: testing"
+  ],
+  "description": "# pytest-kind\n\n[![build status](https://travis-ci.com/hjacobs/pytest-kind.svg?branch=master)](https://travis-ci.com/hjacobs/pytest-kind)\n[![pypi](https://img.shields.io/pypi/v/pytest-kind)](https://pypi.org/project/pytest-kind/)\n![pypi - python version](https://img.shields.io/pypi/pyversions/pytest-kind)\n![license](https://img.shields.io/github/license/hjacobs/pytest-kind)\n![calver](https://img.shields.io/badge/calver-yy.mm.micro-22bfda.svg)\n\ntest your python kubernetes app/operator end-to-end with [kind](https://kind.sigs.k8s.io/) and [pytest](https://pytest.org).\n\n`pytest-kind` is a plugin for pytest which provides the `kind_cluster` fixture.\nthe fixture will install kind 0.17.0, create a kubernetes 1.25 cluster, and provide convenience functionality such as port forwarding.\n\n\n## usage\n\ninstall `pytest-kind` via pip or via [poetry](https://poetry.eustace.io/), e.g.:\n\n```\npoetry add --dev pytest-kind\n```\n\nwrite your pytest functions and use the provided `kind_cluster` fixture, e.g.:\n\n```python\ndef test_kubernetes_version(kind_cluster):\n    assert kind_cluster.api.version == ('1', '25')\n```\n\nto load your custom docker image and apply deployment manifests:\n\n```python\nimport requests\nfrom pykube import pod\n\ndef test_myapp(kind_cluster):\n    kind_cluster.load_docker_image(\"myapp\")\n    kind_cluster.kubectl(\"apply\", \"-f\", \"deployment.yaml\")\n    kind_cluster.kubectl(\"rollout\", \"status\", \"deployment/myapp\")\n\n    # using pykube to query pods\n    for pod in pod.objects(kind_cluster.api).filter(selector=\"app=myapp\"):\n        assert \"sucessfully started\" in pod.logs()\n\n    with kind_cluster.port_forward(\"service/myapp\", 80) as port:\n        r = requests.get(f\"http://localhost:{port}/hello/world\")\n        r.raise_for_status()\n        assert r.text == \"hello world!\"\n```\n\nsee the `examples` directory for sample projects and also check out [kube-web-view](https://codeberg.org/hjacobs/kube-web-view) which uses pytest-kind for its e2e tests.\n\n\n## kindcluster object\n\nthe `kind_cluster` fixture is an instance of the kindcluster class with the following methods:\n\n* `load_docker_image(docker_image)`: load the specified docker image into the kind cluster\n* `kubectl(*args)`: run the `kubectl` binary against the cluster with the specified arguments. returns the process output as string.\n* `port_forward(service_or_pod_name, remote_port, *args)`: run \"kubectl port-forward\" for the given service/pod and return the (random) local port. to be used as context manager (\"with\" statement). pass the namespace as additional args to kubectl via \"-n\", \"mynamespace\".\n\nkindcluster has the following attributes:\n\n* `name`: the kind cluster name\n* `kubeconfig_path`: the path to the kubeconfig file to access the cluster\n* `kind_path`: path to the `kind` binary\n* `kubectl_path`: path to the `kubectl` binary\n* `api`: [pykube](https://pykube.readthedocs.io/) httpclient instance to access the cluster from python\n\nyou can also use kindcluster directly without pytest:\n\n```python\nfrom pytest_kind import kindcluster\n\ncluster = kindcluster(\"myclustername\")\ncluster.create()\ncluster.kubectl(\"apply\", \"-f\", \"..\")\n# ...\ncluster.delete()\n```\n\n\n## pytest options\n\nthe kind cluster name can be set via the `--cluster-name` cli option.\n\nthe kind cluster is deleted after each pytest session, you can keep the cluster by passing `--keep-cluster` to pytest.\n\nnote that you can use the `pytest_addopts` environment variable to pass these options to pytest. this also works if you call pytest from a makefile:\n\n```bash\n# for test debugging: don't delete the kind cluster\npytest_addopts=--keep-cluster make test\n```\n\n\n## notes\n\n* the `kind_cluster` fixture is session-scoped, i.e. the same cluster will be used across all test modules/functions.\n* the `kind` and `kubectl` binaries will be downloaded once to the local directory `./.pytest-kind/{cluster-name}/`. you can use them to interact with the cluster (e.g. when `--keep-cluster` is used).\n* some cluster pods might not be ready immediately (e.g. kind's coredns take a moment), add wait/poll functionality as required to make your tests predictable.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "gpl-3.0+",
+  "name": "pytest-kind",
+  "package_url": "https://pypi.org/project/pytest-kind/",
+  "project_url": "https://pypi.org/project/pytest-kind/",
+  "project_urls": {
+    "Homepage": "https://codeberg.org/hjacobs/pytest-kind",
+    "Repository": "https://codeberg.org/hjacobs/pytest-kind"
+  },
+  "release_url": "https://pypi.org/project/pytest-kind/22.11.1/",
+  "requires_dist": [
+    "pykube-ng (>=0.30)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "kubernetes test support with kind for pytest",
+  "version": "22.11.1",
+  "releases": [],
+  "developers": [
+    "henning@jacobs1.de",
+    "henning_jacobs"
+  ],
+  "kwds": "pytest_kind pytest pytest_addopts test_kubernetes_version kind_path",
+  "license_kwds": "gpl-3.0+",
+  "libtype": "pypi",
+  "id": "pypi_pytest_kind",
+  "homepage": "https://codeberg.org/hjacobs/pytest-kind",
+  "release_count": 23,
+  "dependency_ids": [
+    "pypi_pykube_ng"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "classifiers": [
+    "development status :: 2 - pre-alpha",
+    "license :: osi approved :: gnu general public license v2 (gplv2)",
+    "programming language :: cython",
+    "programming language :: javascript",
+    "programming language :: python :: 3",
+    "topic :: software development :: interpreters"
+  ],
+  "description": "introduction\n############\n\npyduktape is a python wrapper around `duktape <http://duktape.org/>`_,\nan embeddable javascript interpreter.\n\non top of the interpreter wrapper, pyduktape offers easy integration\nbetween the python and the javascript environments. you can pass\npython objects to javascript, call methods on them and access their\nattributes.  similarly, you can pass javascript objects to python.\n\nobjects are never copied or serialized. instead, they are passed\nbetween the two environments using proxy objects. proxy objects\ndelegate the execution to the original object environment.\n\nthreading\n#########\n\nit is possible to invoke javascript code from multiple threads. each\nthread will need to use its own embedded interpreter. javascript\nobjects returned to the python environment will only be usable on the\nsame thread that created them. the runtime always checks this\ncondition automatically, and raises a ``duktapethreaderror`` if it's\nviolated.\n\ngetting started\n###############\n\ninstallation\n------------\n\nto install from pypi::\n\n    $ pip install pyduktape2\n\nto install the latest version from github::\n\n    $ pip install git+https://github.com/phith0n/pyduktape2\n\nrunning javascript code\n-----------------------\n\nto run javascript code, you need to create an execution context and\nuse the method ``eval_js``::\n\n    import pyduktape2\n\n    context = pyduktape2.duktapecontext()\n    context.eval_js(\"print(duktape.version);\")\n\neach execution context starts its own interpreter. each context is\nindependent, and tied to the python thread that created it. memory is\nautomatically managed.\n\nto evaluate external javascript files, use ``eval_js_file``::\n\n    // helloworld.js\n    print('hello, world!');\n\n    # in the python interpreter\n    import pyduktape2\n\n    context = pyduktape2.duktapecontext()\n    context.eval_js_file('helloworld.js')\n\npyduktape supports javascript modules::\n\n    // js/helloworld.js\n    exports.sayhello = function () {\n        print('hello, world!');\n    };\n\n    // js/main.js\n    var helloworld = require('js/helloworld');\n    helloworld.sayhello();\n\n    # in the python interpreter\n    import pyduktape2\n\n    context = pyduktape2.duktapecontext()\n    context.eval_js_file('js/main')\n\nthe ``.js`` extension is automatically added if missing.  relative\npaths are relative to the current working directory, but you can\nchange the base path using ``set_base_path``::\n\n    # js/helloworld.js\n    print('hello, world!');\n\n    # in the python interpreter\n    import pyduktape2\n\n    context = pyduktape2.duktapecontext()\n    context.set_base_path('js')\n    context.eval_js_file('helloworld')\n\npython and javascript integration\n---------------------------------\n\nyou can use ``set_globals`` to set javascript global variables::\n\n    import pyduktape2\n\n    def say_hello(to):\n        print 'hello, {}!'.format(to)\n\n    context = pyduktape2.duktapecontext()\n    context.set_globals(sayhello=say_hello, world='world')\n    context.eval_js(\"sayhello(world);\")\n\nyou can use ``get_global`` to access javascript global variables::\n\n    import pyduktape2\n\n    context = pyduktape2.duktapecontext()\n    context.eval_js(\"var helloworld = 'hello, world!';\")\n    print context.get_global('helloworld')\n\n``eval_js`` returns the value of the last expression::\n\n    import pyduktape2\n\n    context = pyduktape2.duktapecontext()\n    hello_world = context.eval_js(\"var helloworld = 'hello, world!'; helloworld\")\n    print hello_world\n\nyou can seamlessly use python objects and functions within javascript\ncode.  there are some limitations, though: any python callable can\nonly be used as a function, and other attributes cannot be\naccessed. primitive types (int, float, string, none) are converted to\nequivalent javascript primitives.  the following code shows how to\ninteract with a python object from javascript::\n\n    import pyduktape2\n\n    class hello(object):\n        def __init__(self, what):\n            self.what = what\n\n        def say(self):\n            print('hello, {}!'.format(self.what))\n\n    context = pyduktape2.duktapecontext()\n    context.set_globals(hello=hello)\n    context.eval_js(\"var helloworld = hello('world'); helloworld.say();\")\n\nin the same way, you can use javascript objects in python.  you can\nuse the special method `new` to instantiate an object::\n\n    import pyduktape2\n\n    context = pyduktape2.duktapecontext()\n    hello = context.eval_js(\"\"\"\n    function hello(what) {\n        this.what = what;\n    }\n\n    hello.prototype.say = function () {\n        print('hello, ' + this.what + '!');\n    };\n\n    hello\n    \"\"\")\n\n    hello_world = hello.new('world')\n    hello_world.say()\n\nyou can use python lists and dicts from javascript, and viceversa::\n\n    import pyduktape2\n\n    context = pyduktape2.duktapecontext()\n    res = context.eval_js('[1, 2, 3]')\n\n    for item in res:\n        print(item)\n\n    context.set_globals(lst=[4, 5, 6])\n    context.eval_js('for (var i = 0; i < lst.length; i++) { print(lst[i]); }')\n\n    res = context.eval_js('var x = {a: 1, b: 2}; x')\n    for key, val in res.items():\n        print(key, '=', val)\n    res.c = 3\n    context.eval_js('print(x.c);')\n\n    context.set_globals(x=dict(a=1, b=2))\n    context.eval_js(\"\"\"\n    var items = x.items();\n    for (var i = 0; i < items.length; i++) {\n        print(items[i][0] + ' = ' + items[i][1]);\n    }\n    \"\"\")\n    context.set_globals(x=dict(a=1, b=2))\n    context.eval_js('for (var k in x) { print(k + ' = ' + x[k]); }')\n",
+  "docs_url": null,
+  "keywords": "javascript duktape embed",
+  "license": "gpl",
+  "name": "pyduktape2",
+  "package_url": "https://pypi.org/project/pyduktape2/",
+  "project_url": "https://pypi.org/project/pyduktape2/",
+  "project_urls": {
+    "Homepage": "https://github.com/phith0n/pyduktape2"
+  },
+  "release_url": "https://pypi.org/project/pyduktape2/0.4.6/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python integration for the duktape javascript interpreter",
+  "version": "0.4.6",
+  "releases": [],
+  "developers": [
+    "stefano_dissegna"
+  ],
+  "kwds": "duktapethreaderror duktape duktapecontext pyduktape interpreter",
+  "license_kwds": "gpl",
+  "libtype": "pypi",
+  "id": "pypi_pyduktape2",
+  "homepage": "https://github.com/phith0n/pyduktape2",
+  "release_count": 11,
+  "dependency_ids": []
+}

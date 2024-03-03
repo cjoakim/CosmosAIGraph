@@ -1,0 +1,44 @@
+{
+  "classifiers": [],
+  "description": "[![ci](https://github.com/pygfx/wgpu-py/workflows/ci/badge.svg)](https://github.com/pygfx/wgpu-py/actions)\n[![documentation status](https://readthedocs.org/projects/wgpu-py/badge/?version=stable)](https://wgpu-py.readthedocs.io)\n[![pypi version](https://badge.fury.io/py/wgpu.svg)](https://badge.fury.io/py/wgpu)\n\n# wgpu-py\n\na python implementation of webgpu - the next generation gpu api.\n\n<img width=300 src='https://raw.githubusercontent.com/pygfx/wgpu-py/main/examples/screenshots/cube.png' />\n<img width=300 src='https://raw.githubusercontent.com/pygfx/wgpu-py/main/examples/screenshots/triangle_auto.png' />\n\n\n## introduction\n\nin short, this is a python lib wrapping\n[wgpu-native](https://github.com/gfx-rs/wgpu) and exposing it with a pythonic\napi similar to the [webgpu spec](https://gpuweb.github.io/gpuweb/).\n\nthe opengl api is old and showing it's cracks. new api's like vulkan, metal and\ndx12 provide a modern way to control the gpu, but these api's are too low-level\nfor general use. the webgpu api follows the same concepts, but with a simpler\n(higher level) spelling. the python `wgpu` library brings the webgpu api to\npython.\n\nto get an idea of what this api looks like have a look at\n[triangle.py](https://github.com/pygfx/wgpu-py/blob/main/examples/triangle.py)\nand the other [examples](https://github.com/pygfx/wgpu-py/blob/main/examples/).\n\n\n## status\n\n> **note**\n>\n> the wgpu-api has not settled yet, use with care!\n\n* coverage of the webgpu spec is complete enough to build e.g.\n  [pygfx](https://github.com/pygfx/pygfx).\n* test coverage of the api is close to 100%.\n* support for windows, linux, and macos (intel and m1).\n* until webgpu settles as a standard, its specification may change, and with\n  that our api will probably too. check the [changelog](changelog.md) when you\n  upgrade!\n\n\n## installation\n\n\n```\npip install wgpu glfw\n```\n\nlinux users should make sure that **pip >= 20.3**. that should do the\ntrick on most systems. see [getting started](https://wgpu-py.readthedocs.io/en/stable/start.html)\nfor details.\n\n\n## usage\n\nalso see the [online documentation](https://wgpu-py.readthedocs.io) and the [examples](https://github.com/pygfx/wgpu-py/tree/main/examples).\n\nthe full api is accessable via the main namespace:\n```py\nimport wgpu\n```\n\nto render to the screen you can use a variety of gui toolkits:\n\n```py\n# the auto backend selects either the glfw, qt or jupyter backend\nfrom wgpu.gui.auto import wgpucanvas, run, call_later\n\n# visualizations can be embedded as a widget in a qt application.\n# import pyside6, pyqt6, pyside2 or pyqt5 before running the line below.\n# the code will detect and use the library that is imported.\nfrom wgpu.gui.qt import wgpucanvas\n\n# visualizations can be embedded as a widget in a wx application.\nfrom wgpu.gui.wx import wgpucanvas\n```\n\nsome functions in the original `wgpu-native` api are async. in the python api,\nthe default functions are all sync (blocking), making things easy for general use.\nasync versions of these functions are available, so wgpu can also work\nwell with asyncio or trio.\n\n\n## license\n\nthis code is distributed under the 2-clause bsd license.\n\n\n## developers\n\n* clone the repo.\n* install devtools using `pip install -r dev-requirements.txt` (you can replace\n  `pip` with `pipenv` to install to a virtualenv).\n* install wgpu-py in editable mode by running `pip install -e .`, this will also\n  install runtime dependencies as needed.\n* run `python download-wgpu-native.py` to download the upstream wgpu-native\n  binaries.\n  * or alternatively point the `wgpu_lib_path` environment variable to a custom\n    build.\n* use `black .` to apply autoformatting.\n* use `flake8 .` to check for flake errors.\n* use `pytest .` to run the tests.\n* use `pip wheel --no-deps .` to build a wheel.\n\n\n### updating to a later version of webgpu or wgpu-native\n\nto update to upstream changes, we use a combination of automatic code\ngeneration and manual updating. see [the codegen utility](codegen/readme.md)\nfor more information.\n\n\n## testing\n\nthe test suite is divided into multiple parts:\n\n* `pytest -v tests` runs the core unit tests.\n* `pytest -v examples` tests the examples.\n* `pytest -v wgpu/__pyinstaller` tests if wgpu is properly supported by\n  pyinstaller.\n* `pytest -v codegen` lints the generated binding code.\n\nthere are two types of tests for examples included:\n\n### type 1: checking if examples can run\n\nwhen running the test suite, pytest will run every example in a subprocess, to\nsee if it can run and exit cleanly. you can opt out of this mechanism by\nincluding the comment `# run_example = false` in the module.\n\n### type 2: checking if examples output an image\n\nyou can also (independently) opt-in to output testing for examples, by including\nthe comment `# test_example = true` in the module. output testing means the test\nsuite will attempt to import the `canvas` instance global from your example, and\ncall it to see if an image is produced.\n\nto support this type of testing, ensure the following requirements are met:\n\n* the `wgpucanvas` class is imported from the `wgpu.gui.auto` module.\n* the `canvas` instance is exposed as a global in the module.\n* a rendering callback has been registered with `canvas.request_draw(fn)`.\n\nreference screenshots are stored in the `examples/screenshots` folder, the test\nsuite will compare the rendered image with the reference.\n\nnote: this step will be skipped when not running on ci. since images will have\nsubtle differences depending on the system on which they are rendered, that\nwould make the tests unreliable.\n\nfor every test that fails on screenshot verification, diffs will be generated\nfor the rgb and alpha channels and made available in the\n`examples/screenshots/diffs` folder. on ci, the `examples/screenshots` folder\nwill be published as a build artifact so you can download and inspect the\ndifferences.\n\nif you want to update the reference screenshot for a given example, you can grab\nthose from the build artifacts as well and commit them to your branch.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd 2-clause",
+  "name": "wgpu",
+  "package_url": "https://pypi.org/project/wgpu/",
+  "project_url": "https://pypi.org/project/wgpu/",
+  "project_urls": {
+    "Homepage": "https://github.com/pygfx/wgpu-py"
+  },
+  "release_url": "https://pypi.org/project/wgpu/0.13.2/",
+  "requires_dist": [
+    "cffi >=1.15.0",
+    "rubicon-objc >=0.4.1 ; sys_platform == \"darwin\"",
+    "sphinx >7.2 ; extra == 'docs'",
+    "sphinx-rtd-theme ; extra == 'docs'",
+    "glfw >=1.9 ; extra == 'glfw'",
+    "jupyter-rfb >=0.4.2 ; extra == 'jupyter'"
+  ],
+  "requires_python": ">=3.8.0",
+  "summary": "next generation gpu api for python",
+  "version": "0.13.2",
+  "releases": [],
+  "developers": [
+    "almar.klein@gmail.com",
+    "almar_klein"
+  ],
+  "kwds": "wgpu webgpu wgpu_lib_path wgpucanvas gpu",
+  "license_kwds": "bsd 2-clause",
+  "libtype": "pypi",
+  "id": "pypi_wgpu",
+  "homepage": "https://github.com/pygfx/wgpu-py",
+  "release_count": 45,
+  "dependency_ids": [
+    "pypi_cffi",
+    "pypi_glfw",
+    "pypi_jupyter_rfb",
+    "pypi_rubicon_objc",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme"
+  ]
+}

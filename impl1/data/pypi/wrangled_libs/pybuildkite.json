@@ -1,0 +1,34 @@
+{
+  "classifiers": [],
+  "description": "# pybuildkite\n\n[![build status](https://badge.buildkite.com/89bf10df4492f2f2d61ca707078828824fec3b08cb85192e6d.svg)](https://buildkite.com/pybuildkite/pybuildkite)\n[![coverage status](https://coveralls.io/repos/github/pyasi/pybuildkite/badge.svg?branch=master)](https://coveralls.io/github/pyasi/pybuildkite?branch=master)\n[![pypi most recent version](https://badge.fury.io/py/pybuildkite.svg)](https://pypi.org/project/pybuildkite/)\n[![pypi downloads](https://img.shields.io/pypi/dm/pybuildkite.svg)](https://pypi.org/project/pybuildkite/)\n\na [python](https://www.python.org/) library and client for the [buildkite api](https://buildkite.com/docs/api).\n\n## usage\n\nto get the package, execute:\n\n```\npip install pybuildkite\n```\n\nthen set up an instance of the buildkite object, set you access token, and make any available requests.\n\n```python\nfrom pybuildkite.buildkite import buildkite, buildstate\n\nbuildkite = buildkite()\nbuildkite.set_access_token('your_api_access_token_here')\n\n# get all info about particular org\norg = buildkite.organizations().get_org('my-org')\n\n# get all running and scheduled builds for a particular pipeline\nbuilds = buildkite.builds().list_all_for_pipeline('my-org', 'my-pipeline', states=[buildstate.running, buildstate.scheduled])\n\n# create a build\nbuildkite.builds().create_build('my-org', 'my-pipeline', 'commitsha', 'master', \nclean_checkout=true, message=\"my first build!\")\n```\n\n## pagination\n\nbuildkite offers pagination for endpoints that return a lot of data. by default this wrapper return `100` objects. however, any request that may contain more than that offers a pagination option.\n\nwhen `with_pagination=true`, we return a response object with properties that may have `next_page`, `last_page`, `previous_page`, or `first_page` depending on what page you're on.\n\n```python\nbuilds_response = buildkite.builds().list_all(page=1, with_pagination=true)\n\n# keep looping until next_page is not populated\nwhile builds_response.next_page:\n    builds_response = buildkite.builds().list_all(page=builds_response.next_page, with_pagination=true)\n```\n\n## artifacts\n\nartifacts can be downloaded as binary data. the following example loads the artifact into memory as\n[python bytes](https://docs.python.org/3/library/stdtypes.html#binary-sequence-types-bytes-bytearray-memoryview)\nand then writes them to disc:\n\n```python\nartifacts = buildkite.artifacts()\nartifact = artifacts.download_artifact(\"org_slug\", \"pipe_slug\", \"build_no\", 123, \"artifact\")\nwith open('artifact.bin', 'b') as f:\n  f.write(artifact)\n```\n\nlarge artifacts should be streamed as chunks of bytes to limit the memory consumption:\n```python\nstream = artifacts.download_artifact(\"org_slug\", \"pipe_slug\", \"build_no\", 123, \"artifact\", as_stream=true)\nwith open('artifact.bin', 'b') as f:\n  for chunk in stream:\n    f.write(chunk)\n```\n\na unicode text artifact can be turned into a string easily:\n```python\ntext = str(artifact)\n```\n\n## license\n\nthis library is distributed under the bsd-style license found in the license file.\n\n\n",
+  "docs_url": null,
+  "keywords": "buildkite,continuous integration,api,ci,wrapper,python",
+  "license": "",
+  "name": "pybuildkite",
+  "package_url": "https://pypi.org/project/pybuildkite/",
+  "project_url": "https://pypi.org/project/pybuildkite/",
+  "project_urls": {
+    "Download": "https://github.com/pyasi/pybuildkite/archive/master.zip",
+    "Homepage": "https://github.com/pyasi/pybuildkite"
+  },
+  "release_url": "https://pypi.org/project/pybuildkite/1.2.3/",
+  "requires_dist": [
+    "requests"
+  ],
+  "requires_python": "",
+  "summary": "python wrapper for the buildkite api",
+  "version": "1.2.3",
+  "releases": [],
+  "developers": [
+    "peter_yasi"
+  ],
+  "kwds": "pybuildkite buildkite pypi pyasi py",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pybuildkite",
+  "homepage": "https://github.com/pyasi/pybuildkite",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

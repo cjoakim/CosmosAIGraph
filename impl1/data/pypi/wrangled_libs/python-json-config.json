@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "\n[![build status](https://travis-ci.com/janehmueller/python-json-config.svg?token=tgkcty4ztzfgnfjpegex&branch=master)](https://travis-ci.com/janehmueller/python-json-config)\n![license](https://img.shields.io/pypi/l/python-json-config.svg)\n[![version](https://img.shields.io/pypi/v/python-json-config.svg)](https://pypi.python.org/pypi/python-json-config/)\n\n# overview\nthis library allows to load json configs and access the values like members (i.e., `config.server.port`\ninstead of `config['server']['port']`), validate the data types of fields and transform the values of fields.\n\n# installing\n```\npip install python-json-config\n```\n# usage\n```\nfrom python_json_config import configbuilder\n\n# create config parser\nbuilder = configbuilder()\n\n# parse config\nconfig = builder.parse_config('path/to/config.json')\n\n# access elements\nhost = config.server.host\nport = config.server.port\nmyfield = config.myfield\n```\n\n## validate field types\n```\nbuilder.validate_field_type('server.ip', str)\nbuilder.validate_field_type('server.port', int)\nbuilder.validate_field_type('jwt.access_token_expires', str)\n```\n\n## validate field values\n```\nfrom python_json_config.validators import is_unreserved_port, is_ipv4_address, is_timedelta\n\n# use provided methods\nbuilder.validate_field_value('server.ip', is_ipv4_address)\nbuilder.validate_field_value('server.port', is_unreserved_port)\nbuilder.validate_field_value('jwt.access_token_expires', is_timedelta)\n\n# use custom validation function\nbuilder.validate_field_value('server.ip', lambda ip: ip != '0.0.0.0')\n\n# return custom error messages in your lambda\nbuilder.validate_field_value('server.ip', lambda ip: (ip != '0.0.0.0', 'ip is unroutable.'))\n\n# chain validation functions\nbuilder.validate_field_value('server.ip', [lambda ip: ip != 'localhost', lambda ip: ip != '127.0.0.1'])\n```\n\n## transform field values\n```\nfrom python_json_config.transformers import to_timedelta\n\n# use provided methods\nbuilder.transform_field_value('jwt.access_token_expires', to_timedelta)\n\n\nfrom datetime import datetime\n\n# parse a timedelta (e.g., jun 1 2005) into a datetime object\nbuilder.transform_field_value('important_date', lambda date: datetime.strptime(date, '%b %d %y'))\n```\n\n## define field access settings\n```\n# required means an error is thrown if a non-existing field is accessed \nbuilder.set_field_access_required()\n# return none for the following fields instead of throwing an error\nbuilder.add_optional_field('server.host')\nbuilder.add_optional_fields(['cache.ttl', 'server.path'])\n\n# optional means none is returned if a non-existing field is accessed \nbuilder.set_field_access_optional()\n# throw an error for the following fields instead of returning none\nbuilder.add_required_field('server.user')\nbuilder.add_required_fields(['cache.backend', 'server.password'])\n```\n\n## access config values\n```\nport = config.server.port\nassert port > 1023\n\nip = config.server.ip\nassert ip not in ['0.0.0.0', 'localhost', '127.0.0.1']\n\nimportant_date = config.important_date\nassert isinstance(important_date, datetime)\n\njwt_access_token_expires = config.jwt.access_token_expires\nassert isinstance(jwt_access_token_expires, timedelta)\n```\n\n## change config values\n```\nconfig = configbuilder().parse_config({\"server.port\": 1024})\n\nconfig.add(\"server.host\", \"localhost\")\nassert config.server.host == \"localhost\"\n\nconfig.add(\"cache\", \"redis\")\nassert config.cache == \"redis\"\n\nconfig.update(\"server.port\", 1025)\nassert config.server.port == 1025\n\nconfig.update(\"server.user\", \"user\", upsert=true)\nassert config.server.user == \"user\"\n```\n\n## overwrite fields with environment variables\nfirst, set environment variables (e.g., via bash):\n```\n$ myproject_server_host=\"localhost\"\n$ myproject_cache=\"redis\"\n$ mypythonprojects_user=\"user\"\n```\nescape underscores in names of variables with another underscore:\n```\n$ mypythonprojects_log__file=\"project.log\"\n```\nthen just tell the builder, which prefixes should be merged:\n```\nbuilder = configbuilder()\n# you can also just pass a single prefix (builder.merge_with_env_variables(\"myproject\")\nbuilder.merge_with_env_variables([\"myproject\", \"mypythonprojects\"])\nconfig = builder.parse_config({\"server.host\": \"0.0.0.0\"})\n\nassert config.server.host == \"localhost\"\nassert config.cache == \"redis\"\nassert config.user == \"user\"\nassert config.log_file == \"project.log\"\n```\nalternatively you can also do the merging after creating the config object:\n```\nbuilder = configbuilder()\nconfig = builder.parse_config({\"server.host\": \"0.0.0.0\"})\nconfig.merge_with_env_variables([\"myproject\", \"mypythonprojects\"])\n\nassert config.server.host == \"localhost\"\nassert config.cache == \"redis\"\nassert config.user == \"user\"\n```\n\n## serialization\nthe config can be serialized to a dictionary, json or binary (via pickle or msgpack).\n```\nbuilder = configbuilder()\nconfig = builder.parse_config({\"server.host\": \"0.0.0.0\"})\n\nimport pickle\npickle_config = pickle.loads(pickle.dumps(config))\n\ndict_config = builder.parse_config(config.to_dict())\n\nimport json\njson_config = builder.parse_config(config.to_json())\n\nimport msgpack\nmsgpack_config = config.from_msgpack(config.to_msgpack())\n```\n\n**important note:** serializing via json or msgpack will stringify any non-serializable value (e.g., datetime objects).\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "python-json-config",
+  "package_url": "https://pypi.org/project/python-json-config/",
+  "project_url": "https://pypi.org/project/python-json-config/",
+  "project_urls": {
+    "Homepage": "https://github.com/janehmueller/python-config"
+  },
+  "release_url": "https://pypi.org/project/python-json-config/1.2.3/",
+  "requires_dist": [
+    "jsonschema",
+    "msgpack"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "this library allows to load json configs and access the values like members (i.e., via dots), validate config field types and values and transform config fields.",
+  "version": "1.2.3",
+  "releases": [],
+  "developers": [
+    "jan@ehmueller.de",
+    "jan_ehmueller"
+  ],
+  "kwds": "python_json_config json_config dict_config to_json pypi",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python_json_config",
+  "homepage": "https://github.com/janehmueller/python-config",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_jsonschema",
+    "pypi_msgpack"
+  ]
+}

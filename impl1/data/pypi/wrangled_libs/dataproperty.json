@@ -1,0 +1,62 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": ".. contents:: **dataproperty**\n   :backlinks: top\n   :local:\n\n\nsummary\n=======\na python library for extract property from data.\n\n\n.. image:: https://badge.fury.io/py/dataproperty.svg\n    :target: https://badge.fury.io/py/dataproperty\n    :alt: pypi package version\n\n.. image:: https://anaconda.org/conda-forge/dataproperty/badges/version.svg\n    :target: https://anaconda.org/conda-forge/dataproperty\n    :alt: conda-forge package version\n\n.. image:: https://img.shields.io/pypi/pyversions/dataproperty.svg\n   :target: https://pypi.org/project/dataproperty\n    :alt: supported python versions\n\n.. image:: https://img.shields.io/pypi/implementation/dataproperty.svg\n    :target: https://pypi.org/project/dataproperty\n    :alt: supported python implementations\n\n.. image:: https://github.com/thombashi/dataproperty/actions/workflows/ci.yml/badge.svg\n    :target: https://github.com/thombashi/dataproperty/actions/workflows/ci.yml\n    :alt: ci status of linux/macos/windows\n\n.. image:: https://coveralls.io/repos/github/thombashi/dataproperty/badge.svg?branch=master\n    :target: https://coveralls.io/github/thombashi/dataproperty?branch=master\n    :alt: test coverage\n\n.. image:: https://github.com/thombashi/dataproperty/actions/workflows/github-code-scanning/codeql/badge.svg\n    :target: https://github.com/thombashi/dataproperty/actions/workflows/github-code-scanning/codeql\n    :alt: codeql\n\n\ninstallation\n============\n\ninstallation: pip\n------------------------------\n::\n\n    pip install dataproperty\n\ninstallation: conda\n------------------------------\n::\n\n    conda install -c conda-forge dataproperty\n\ninstallation: apt\n------------------------------\n::\n\n    sudo add-apt-repository ppa:thombashi/ppa\n    sudo apt update\n    sudo apt install python3-dataproperty\n\n\nusage\n=====\n\nextract property of data\n------------------------\n\ne.g. extract a ``float`` value property\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.. code:: python\n\n    >>> from dataproperty import dataproperty\n    >>> dataproperty(-1.1)\n    data=-1.1, type=real_number, align=right, ascii_width=4, int_digits=1, decimal_places=1, extra_len=1\n\ne.g. extract a ``int`` value property\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.. code:: python\n\n    >>> from dataproperty import dataproperty\n    >>> dataproperty(123456789)\n    data=123456789, type=integer, align=right, ascii_width=9, int_digits=9, decimal_places=0, extra_len=0\n\ne.g. extract a ``str`` (ascii) value property\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.. code:: python\n\n    >>> from dataproperty import dataproperty\n    >>> dataproperty(\"sample string\")\n    data=sample string, type=string, align=left, length=13, ascii_width=13, extra_len=0\n\ne.g. extract a ``str`` (multi-byte) value property\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.. code:: python\n\n    >>> from dataproperty import dataproperty\n    >>> str(dataproperty(\"\u543e\u8f29\u306f\u732b\u3067\u3042\u308b\"))\n    data=\u543e\u8f29\u306f\u732b\u3067\u3042\u308b, type=string, align=left, length=7, ascii_width=14, extra_len=0\n\ne.g. extract a time (``datetime``) value property\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.. code:: python\n\n    >>> import datetime\n    >>> from dataproperty import dataproperty\n    >>> dataproperty(datetime.datetime(2017, 1, 1, 0, 0, 0))\n    data=2017-01-01 00:00:00, type=datetime, align=left, ascii_width=19, extra_len=0\n\ne.g. extract a ``bool`` value property\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.. code:: python\n\n    >>> from dataproperty import dataproperty\n    >>> dataproperty(true)\n    data=true, type=bool, align=left, ascii_width=4, extra_len=0\n\n\nextract data property for each element from a matrix\n----------------------------------------------------\n``datapropertyextractor.to_dp_matrix`` method returns a matrix of ``dataproperty`` instances from a data matrix.\nan example data set and the result are as follows:\n\n:sample code:\n    .. code:: python\n\n        import datetime\n        from dataproperty import datapropertyextractor\n\n        dp_extractor = datapropertyextractor()\n        dt = datetime.datetime(2017, 1, 1, 0, 0, 0)\n        inf = float(\"inf\")\n        nan = float(\"nan\")\n\n        dp_matrix = dp_extractor.to_dp_matrix([\n            [1, 1.1, \"aa\", 1, 1, true, inf, nan, dt],\n            [2, 2.2, \"bbb\", 2.2, 2.2, false, \"inf\", \"nan\", dt],\n            [3, 3.33, \"cccc\", -3, \"ccc\", \"true\", inf, \"nan\", \"2017-01-01t01:23:45+0900\"],\n        ])\n\n        for row, dp_list in enumerate(dp_matrix):\n            for col, dp in enumerate(dp_list):\n                print(\"row={:d}, col={:d}, {}\".format(row, col, str(dp)))\n\n:output:\n    ::\n\n        row=0, col=0, data=1, type=integer, align=right, ascii_width=1, int_digits=1, decimal_places=0, extra_len=0\n        row=0, col=1, data=1.1, type=real_number, align=right, ascii_width=3, int_digits=1, decimal_places=1, extra_len=0\n        row=0, col=2, data=aa, type=string, align=left, ascii_width=2, length=2, extra_len=0\n        row=0, col=3, data=1, type=integer, align=right, ascii_width=1, int_digits=1, decimal_places=0, extra_len=0\n        row=0, col=4, data=1, type=integer, align=right, ascii_width=1, int_digits=1, decimal_places=0, extra_len=0\n        row=0, col=5, data=true, type=bool, align=left, ascii_width=4, extra_len=0\n        row=0, col=6, data=infinity, type=infinity, align=left, ascii_width=8, extra_len=0\n        row=0, col=7, data=nan, type=nan, align=left, ascii_width=3, extra_len=0\n        row=0, col=8, data=2017-01-01 00:00:00, type=datetime, align=left, ascii_width=19, extra_len=0\n        row=1, col=0, data=2, type=integer, align=right, ascii_width=1, int_digits=1, decimal_places=0, extra_len=0\n        row=1, col=1, data=2.2, type=real_number, align=right, ascii_width=3, int_digits=1, decimal_places=1, extra_len=0\n        row=1, col=2, data=bbb, type=string, align=left, ascii_width=3, length=3, extra_len=0\n        row=1, col=3, data=2.2, type=real_number, align=right, ascii_width=3, int_digits=1, decimal_places=1, extra_len=0\n        row=1, col=4, data=2.2, type=real_number, align=right, ascii_width=3, int_digits=1, decimal_places=1, extra_len=0\n        row=1, col=5, data=false, type=bool, align=left, ascii_width=5, extra_len=0\n        row=1, col=6, data=infinity, type=infinity, align=left, ascii_width=8, extra_len=0\n        row=1, col=7, data=nan, type=nan, align=left, ascii_width=3, extra_len=0\n        row=1, col=8, data=2017-01-01 00:00:00, type=datetime, align=left, ascii_width=19, extra_len=0\n        row=2, col=0, data=3, type=integer, align=right, ascii_width=1, int_digits=1, decimal_places=0, extra_len=0\n        row=2, col=1, data=3.33, type=real_number, align=right, ascii_width=4, int_digits=1, decimal_places=2, extra_len=0\n        row=2, col=2, data=cccc, type=string, align=left, ascii_width=4, length=4, extra_len=0\n        row=2, col=3, data=-3, type=integer, align=right, ascii_width=2, int_digits=1, decimal_places=0, extra_len=1\n        row=2, col=4, data=ccc, type=string, align=left, ascii_width=3, length=3, extra_len=0\n        row=2, col=5, data=true, type=bool, align=left, ascii_width=4, extra_len=0\n        row=2, col=6, data=infinity, type=infinity, align=left, ascii_width=8, extra_len=0\n        row=2, col=7, data=nan, type=nan, align=left, ascii_width=3, extra_len=0\n        row=2, col=8, data=2017-01-01t01:23:45+0900, type=string, align=left, ascii_width=24, length=24, extra_len=0\n\n\nfull example source code can be found at *examples/py/to_dp_matrix.py*\n\n\nextract properties for each column from a matrix\n------------------------------------------------------\n``datapropertyextractor.to_column_dp_list`` method returns a list of ``dataproperty`` instances from a data matrix. the list represents the properties for each column.\nan example data set and the result are as follows:\n\nexample data set and result are as follows:\n\n:sample code:\n    .. code:: python\n\n        import datetime\n        from dataproperty import datapropertyextractor\n\n        dp_extractor = datapropertyextractor()\n        dt = datetime.datetime(2017, 1, 1, 0, 0, 0)\n        inf = float(\"inf\")\n        nan = float(\"nan\")\n\n        data_matrix = [\n            [1, 1.1,  \"aa\",   1,   1,     true,   inf,   nan,   dt],\n            [2, 2.2,  \"bbb\",  2.2, 2.2,   false,  \"inf\", \"nan\", dt],\n            [3, 3.33, \"cccc\", -3,  \"ccc\", \"true\", inf,   \"nan\", \"2017-01-01t01:23:45+0900\"],\n        ]\n\n        dp_extractor.headers = [\"int\", \"float\", \"str\", \"num\", \"mix\", \"bool\", \"inf\", \"nan\", \"time\"]\n        col_dp_list = dp_extractor.to_column_dp_list(dp_extractor.to_dp_matrix(dp_matrix))\n\n        for col_idx, col_dp in enumerate(col_dp_list):\n            print(str(col_dp))\n\n:output:\n    ::\n\n        column=0, type=integer, align=right, ascii_width=3, bit_len=2, int_digits=1, decimal_places=0\n        column=1, type=real_number, align=right, ascii_width=5, int_digits=1, decimal_places=(min=1, max=2)\n        column=2, type=string, align=left, ascii_width=4\n        column=3, type=real_number, align=right, ascii_width=4, int_digits=1, decimal_places=(min=0, max=1), extra_len=(min=0, max=1)\n        column=4, type=string, align=left, ascii_width=3, int_digits=1, decimal_places=(min=0, max=1)\n        column=5, type=bool, align=left, ascii_width=5\n        column=6, type=infinity, align=left, ascii_width=8\n        column=7, type=nan, align=left, ascii_width=3\n        column=8, type=string, align=left, ascii_width=24\n\n\nfull example source code can be found at *examples/py/to_column_dp_list.py*\n\n\ndependencies\n============\n- python 3.7+\n- `python package dependencies (automatically installed) <https://github.com/thombashi/dataproperty/network/dependencies>`__\n\noptional dependencies\n---------------------\n- `loguru <https://github.com/delgan/loguru>`__\n    - used for logging if the package installed\n",
+  "docs_url": null,
+  "keywords": "data,library,property",
+  "license": "mit license",
+  "name": "dataproperty",
+  "package_url": "https://pypi.org/project/DataProperty/",
+  "project_url": "https://pypi.org/project/DataProperty/",
+  "project_urls": {
+    "Homepage": "https://github.com/thombashi/DataProperty",
+    "Source": "https://github.com/thombashi/DataProperty",
+    "Tracker": "https://github.com/thombashi/DataProperty/issues"
+  },
+  "release_url": "https://pypi.org/project/DataProperty/1.0.1/",
+  "requires_dist": [
+    "mbstrdecoder (<2,>=1.0.0)",
+    "typepy[datetime] (<2,>=1.2.0)",
+    "loguru (<1,>=0.4.1) ; extra == 'logging'",
+    "pytest (>=6.0.1) ; extra == 'test'",
+    "pytest-md-report (>=0.3) ; extra == 'test'",
+    "tcolorpy (>=0.1.2) ; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "python library for extract property from data.",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "tsuyoshi.hombashi@gmail.com",
+    "tsuyoshi_hombashi"
+  ],
+  "kwds": "dp_extractor datapropertyextractor dataproperty python3 fury",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_dataproperty",
+  "homepage": "https://github.com/thombashi/dataproperty",
+  "release_count": 145,
+  "dependency_ids": [
+    "pypi_loguru",
+    "pypi_mbstrdecoder",
+    "pypi_pytest",
+    "pypi_pytest_md_report",
+    "pypi_tcolorpy",
+    "pypi_typepy"
+  ]
+}

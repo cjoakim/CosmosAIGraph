@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.6",
+    "topic :: internet :: log analysis",
+    "topic :: software development :: libraries",
+    "topic :: system :: logging"
+  ],
+  "description": "===============\ncmreshandler.py\n===============\n\n|  |license| |versions| |status| |downloads|\n|  |ci_status| |codecov| |gitter|\n\n\npython elasticsearch log handler\n********************************\n\nthis library provides an elasticsearch logging appender compatible with the\npython standard `logging <https://docs.python.org/2/library/logging.html>`_ library.\n\nthe code source is in github at `https://github.com/cmanaha/python-elasticsearch-logger\n<https://github.com/cmanaha/python-elasticsearch-logger>`_\n\n\ninstallation\n============\ninstall using pip::\n\n    pip install cmreshandler\n\nrequirements python 2\n=====================\nthis library requires the following dependencies\n - elasticsearch\n - requests\n - enum\n\n\nrequirements python 3\n=====================\nthis library requires the following dependencies\n - elasticsearch\n - requests\n\nadditional requirements for kerberos support\n============================================\nadditionally, the package support optionally kerberos authentication by adding the following dependecy\n - requests-kerberos\n\nadditional requirements for aws iam user authentication (request signing)\n=========================================================================\nadditionally, the package support optionally aws iam user authentication by adding the following dependecy\n - requests-aws4auth\n\nusing the handler in  your program\n==================================\nto initialise and create the handler, just add the handler to your logger as follow ::\n\n    from cmreslogging.handlers import cmreshandler\n    handler = cmreshandler(hosts=[{'host': 'localhost', 'port': 9200}],\n                               auth_type=cmreshandler.authtype.no_auth,\n                               es_index_name=\"my_python_index\")\n    log = logging.getlogger(\"pythontest\")\n    log.setlevel(logging.info)\n    log.addhandler(handler)\n\nyou can add fields upon initialisation, providing more data of the execution context ::\n\n    from cmreslogging.handlers import cmreshandler\n    handler = cmreshandler(hosts=[{'host': 'localhost', 'port': 9200}],\n                               auth_type=cmreshandler.authtype.no_auth,\n                               es_index_name=\"my_python_index\",\n                               es_additional_fields={'app': 'myappname', 'environment': 'dev'})\n    log = logging.getlogger(\"pythontest\")\n    log.setlevel(logging.info)\n    log.addhandler(handler)\n\nthis additional fields will be applied to all logging fields and recorded in elasticsearch\n\nto log, use the regular commands from the logging library ::\n\n    log.info(\"this is an info statement that will be logged into elasticsearch\")\n\nyour code can also dump additional extra fields on a per log basis that can be used to instrument\noperations. for example, when reading information from a database you could do something like::\n\n    start_time = time.time()\n    database_operation()\n    db_delta = time.time() - start_time\n    log.debug(\"db operation took %.3f seconds\" % db_delta, extra={'db_execution_time': db_delta})\n\nthe code above executes the db operation, measures the time it took and logs an entry that contains\nin the message the time the operation took as string and for convenience, it creates another field\ncalled db_execution_time with a float that can be used to plot the time this operations are taking using\nkibana on top of elasticsearch\n\ninitialisation parameters\n=========================\nthe constructors takes the following parameters:\n - hosts:  the list of hosts that elasticsearch clients will connect, multiple hosts are allowed, for example ::\n\n    [{'host':'host1','port':9200}, {'host':'host2','port':9200}]\n\n\n - auth_type: the authentication currently support cmreshandler.authtype = no_auth, basic_auth, kerberos_auth\n - auth_details: when cmreshandler.authtype.basic_auth is used this argument must contain a tuple of string with the user and password that will be used to authenticate against the elasticsearch servers, for example ('user','password')\n - aws_access_key: when ``cmreshandler.authtype.aws_signed_auth`` is used this argument must contain the aws key id of the  the aws iam user\n - aws_secret_key: when ``cmreshandler.authtype.aws_signed_auth`` is used this argument must contain the aws secret key of the  the aws iam user\n - aws_region: when ``cmreshandler.authtype.aws_signed_auth`` is used this argument must contain the aws region of the  the aws elasticsearch servers, for example ``'us-east'``\n - use_ssl: a boolean that defines if the communications should use ssl encrypted communication\n - verify_ssl: a boolean that defines if the ssl certificates are validated or not\n - buffer_size: an int, once this size is reached on the internal buffer results are flushed into es\n - flush_frequency_in_sec: a float representing how often and when the buffer will be flushed\n - es_index_name: a string with the prefix of the elasticsearch index that will be created. note a date with\n   yyyy.mm.dd, ``python_logger`` used by default\n - index_name_frequency: the frequency to use as part of the index naming. currently supports\n   cmreshandler.indexnamefrequency.daily, cmreshandler.indexnamefrequency.weekly,\n   cmreshandler.indexnamefrequency.monthly, cmreshandler.indexnamefrequency.yearly by default the daily rotation\n   is used\n - es_doc_type: a string with the name of the document type that will be used ``python_log`` used by default\n - es_additional_fields: a dictionary with all the additional fields that you would like to add to the logs\n\ndjango integration\n==================\nit is also very easy to integrate the handler to `django <https://www.djangoproject.com/>`_ and what is even\nbetter, at debug level django logs information such as how long it takes for db connections to return so\nthey can be plotted on kibana, or the sql statements that django executed. ::\n\n    from cmreslogging.handlers import cmreshandler\n    logging = {\n        'version': 1,\n        'disable_existing_loggers': false,\n        'handlers': {\n            'file': {\n                'level': 'debug',\n                'class': 'logging.handlers.rotatingfilehandler',\n                'filename': './debug.log',\n                'maxbytes': 102400,\n                'backupcount': 5,\n            },\n            'elasticsearch': {\n                'level': 'debug',\n                'class': 'cmreslogging.handlers.cmreshandler',\n                'hosts': [{'host': 'localhost', 'port': 9200}],\n                'es_index_name': 'my_python_app',\n                'es_additional_fields': {'app': 'test', 'environment': 'dev'},\n                'auth_type': cmreshandler.authtype.no_auth,\n                'use_ssl': false,\n            },\n        },\n        'loggers': {\n            'django': {\n                'handlers': ['file','elasticsearch'],\n                'level': 'debug',\n                'propagate': true,\n            },\n        },\n    }\n\nthere is more information about how django logging works in the\n`django documentation <https://docs.djangoproject.com/en/1.9/topics/logging//>`_\n\n\nbuilding the sources & testing\n------------------------------\nto create the package follow the standard python setup.py to compile.\nto test, just execute the python tests within the test folder\n\nwhy using an appender rather than logstash or beats\n---------------------------------------------------\nin some cases is quite useful to provide all the information available within the logrecords as it contains\nthings such as exception information, the method, file, log line where the log was generated. all this can be\nalso done from logstash configuration, but it still requires to provide quite a lot of context to\n\ncontributing back\n-----------------\nfeel free to use this as is or even better, feel free to fork and send your pull requests over.\n\n\n.. |downloads| image:: https://img.shields.io/pypi/dd/cmreshandler.svg\n    :target: https://pypi.python.org/pypi/cmreshandler\n    :alt: daily pypi downloads\n.. |versions| image:: https://img.shields.io/pypi/pyversions/cmreshandler.svg\n    :target: https://pypi.python.org/pypi/cmreshandler\n    :alt: python versions supported\n.. |status| image:: https://img.shields.io/pypi/status/cmreshandler.svg\n    :target: https://pypi.python.org/pypi/cmreshandler\n    :alt: package stability\n.. |license| image:: https://img.shields.io/pypi/l/cmreshandler.svg\n    :target: https://pypi.python.org/pypi/cmreshandler\n    :alt: license\n.. |ci_status| image:: https://travis-ci.org/cmanaha/python-elasticsearch-logger.svg?branch=master\n    :target: https://travis-ci.org/cmanaha/python-elasticsearch-logger\n    :alt: continuous integration status\n.. |codecov| image:: https://codecov.io/github/cmanaha/python-elasticsearch-logger/coverage.svg?branch=master\n    :target: http://codecov.io/github/cmanaha/python-elasticsearch-logger?branch=master\n    :alt: coverage!\n.. |gitter| image:: https://badges.gitter.im/join%20chat.svg\n    :target: https://gitter.im/cmanaha/python-elasticsearch-logger?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge\n    :alt: gitter\n\n\n",
+  "docs_url": null,
+  "keywords": "logging elasticsearch handler log django instrumentation",
+  "license": "apache2",
+  "name": "cmreshandler",
+  "package_url": "https://pypi.org/project/CMRESHandler/",
+  "project_url": "https://pypi.org/project/CMRESHandler/",
+  "project_urls": {
+    "Homepage": "https://github.com/cmanaha/python-elasticsearch-logger"
+  },
+  "release_url": "https://pypi.org/project/CMRESHandler/1.0.0/",
+  "requires_dist": [
+    "elasticsearch",
+    "enum",
+    "requests",
+    "check-manifest; extra == 'dev'",
+    "pylint; extra == 'dev'",
+    "six; extra == 'dev'",
+    "coverage; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "elasticsearch log handler for the logging library",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "c.manaha@gmail.com",
+    "carlos_manzanedo_rueda"
+  ],
+  "kwds": "python_logger python_log elasticsearch logging my_python_index",
+  "license_kwds": "apache2",
+  "libtype": "pypi",
+  "id": "pypi_cmreshandler",
+  "homepage": "https://github.com/cmanaha/python-elasticsearch-logger",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_check_manifest",
+    "pypi_coverage",
+    "pypi_elasticsearch",
+    "pypi_enum",
+    "pypi_pylint",
+    "pypi_requests",
+    "pypi_six"
+  ]
+}

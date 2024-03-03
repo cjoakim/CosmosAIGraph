@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation",
+    "topic :: system :: filesystems"
+  ],
+  "description": "\ngcsfs\n=====\n\na python filesystem abstraction of google cloud storage (gcs) implemented as a `pyfilesystem2 <https://github.com/pyfilesystem/pyfilesystem2>`__ extension.\n\n\n.. image:: https://img.shields.io/pypi/v/fs-gcsfs.svg\n    :target: https://pypi.org/project/fs-gcsfs/\n\n.. image:: https://img.shields.io/pypi/pyversions/fs-gcsfs.svg\n    :target: https://pypi.org/project/fs-gcsfs/\n\n.. image:: https://travis-ci.org/othoz/gcsfs.svg?branch=master\n    :target: https://travis-ci.org/othoz/gcsfs\n\n.. image:: https://readthedocs.org/projects/fs-gcsfs/badge/?version=latest\n    :target: https://fs-gcsfs.readthedocs.io/en/latest/?badge=latest\n\n\nwith gcsfs, you can interact with `google cloud storage <https://cloud.google.com/storage/>`__ as if it was a regular filesystem.\n\napart from the nicer interface, this will highly decouple your code from the underlying storage mechanism: exchanging the storage backend with an\n`in-memory filesystem <https://pyfilesystem2.readthedocs.io/en/latest/reference/memoryfs.html>`__ for testing or any other\nfilesystem like `s3fs <https://github.com/pyfilesystem/s3fs>`__ becomes as easy as replacing ``gs://bucket_name`` with ``mem://`` or ``s3://bucket_name``.\n\nfor a full reference on all the pyfilesystem possibilities, take a look at the\n`pyfilesystem docs <https://pyfilesystem2.readthedocs.io/en/latest/index.html>`__!\n\n\ndocumentation\n-------------\n\n-  `gcsfs documentation <http://fs-gcsfs.readthedocs.io/en/latest/>`__\n-  `pyfilesystem wiki <https://www.pyfilesystem.org>`__\n-  `pyfilesystem reference <https://docs.pyfilesystem.org/en/latest/reference/base.html>`__\n\n\ninstalling\n----------\n\ninstall the latest gcsfs version by running::\n\n    $ pip install fs-gcsfs\n\nor in case you are using conda::\n\n    $ conda install -c conda-forge fs-gcsfs\n\n\nexamples\n--------\n\ninstantiating a filesystem on google cloud storage (for a full reference visit the\n`documentation <http://fs-gcsfs.readthedocs.io/en/latest/index.html#reference>`__):\n\n.. code-block:: python\n\n    from fs_gcsfs import gcsfs\n    gcsfs = gcsfs(bucket_name=\"mybucket\")\n\n\nalternatively you can use a `fs url <https://pyfilesystem2.readthedocs.io/en/latest/openers.html>`__ to open up a filesystem:\n\n.. code-block:: python\n\n    from fs import open_fs\n    gcsfs = open_fs(\"gs://mybucket/root_path?project=test&api_endpoint=http%3a//localhost%3a8888&strict=false\")\n\n\nsupported query parameters are:\n\n- `project` (str): google cloud project to use\n- `api_endpoint` (str): url-encoded endpoint that will be passed to the gcs client's `client_options <https://googleapis.dev/python/google-api-core/latest/client_options.html#google.api_core.client_options.clientoptions>`__\n- `strict` (\"true\" or \"false\"): whether gcsfs will be opened in strict mode\n\n\nyou can use gcsfs like your local filesystem:\n\n.. code-block:: python\n\n    >>> from fs_gcsfs import gcsfs\n    >>> gcsfs = gcsfs(bucket_name=\"mybucket\")\n    >>> gcsfs.tree()\n    \u251c\u2500\u2500 foo\n    \u2502   \u251c\u2500\u2500 bar\n    \u2502   \u2502   \u251c\u2500\u2500 file1.txt\n    \u2502   \u2502   \u2514\u2500\u2500 file2.csv\n    \u2502   \u2514\u2500\u2500 baz\n    \u2502       \u2514\u2500\u2500 file3.txt\n    \u2514\u2500\u2500 file4.json\n    >>> gcsfs.listdir(\"foo\")\n    [\"bar\", \"baz\"]\n    >>> gcsfs.isdir(\"foo/bar\")\n    true\n\n\nuploading a file is as easy as:\n\n.. code-block:: python\n\n    from fs_gcsfs import gcsfs\n    gcsfs = gcsfs(bucket_name=\"mybucket\")\n    with open(\"local/path/image.jpg\", \"rb\") as local_file:\n        with gcsfs.open(\"path/on/bucket/image.jpg\", \"wb\") as gcs_file:\n            gcs_file.write(local_file.read())\n\n\nyou can even sync an entire bucket on your local filesystem by using pyfilesystem's utility methods:\n\n.. code-block:: python\n\n    from fs_gcsfs import gcsfs\n    from fs.osfs import osfs\n    from fs.copy import copy_fs\n\n    gcsfs = gcsfs(bucket_name=\"mybucket\")\n    local_fs = osfs(\"local/path\")\n\n    copy_fs(gcsfs, local_fs)\n\n\nfor exploring all the possibilities of gcsfs and other filesystems implementing the pyfilesystem interface, we recommend visiting the official\n`pyfilesystem docs <https://pyfilesystem2.readthedocs.io/en/latest/index.html>`__!\n\n\ndevelopment\n-----------\n\nto develop on this project make sure you have `pipenv <https://pipenv.readthedocs.io/en/latest/>`__ installed\nand run the following from the root directory of the project::\n\n    $ pipenv install --dev --three\n\nthis will create a virtualenv with all packages and dev-packages installed.\n\n\ntests\n-----\nall ci tests run against an actual gcs bucket provided by `othoz <http://othoz.com/>`__.\n\nin order to run the tests against your own bucket,\nmake sure to set up a `service account <https://cloud.google.com/iam/docs/service-accounts>`__ with all necessary permissions:\n\n- storage.objects.get\n- storage.objects.list\n- storage.objects.create\n- storage.objects.update\n- storage.objects.delete\n\nall five permissions listed above are e.g. included in the `predefined cloud storage iam role <https://cloud.google.com/storage/docs/access-control/iam-roles>`__ ``roles/storage.objectadmin``.\n\nexpose your bucket name as an environment variable ``$test_bucket`` and run the tests via::\n\n    $ pipenv run pytest\n\nnote that the tests mostly wait for i/o, therefore it makes sense to highly parallelize them with `xdist <https://github.com/pytest-dev/pytest-xdist>`__, e.g. by running the tests with::\n\n    $ pipenv run pytest -n 10\n\n\ncredits\n-------\n\ncredits go to `s3fs <https://github.com/pyfilesystem/s3fs>`__ which was the main source of inspiration and shares a lot of code with gcsfs.\n",
+  "docs_url": null,
+  "keywords": "pyfilesystem,filesystem,google,gcs,google cloud storage",
+  "license": "mit",
+  "name": "fs-gcsfs",
+  "package_url": "https://pypi.org/project/fs-gcsfs/",
+  "project_url": "https://pypi.org/project/fs-gcsfs/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/Othoz/gcsfs/issues",
+    "Documentation": "http://fs-gcsfs.readthedocs.io/en/latest/",
+    "Homepage": "https://github.com/Othoz/gcsfs"
+  },
+  "release_url": "https://pypi.org/project/fs-gcsfs/1.5.1/",
+  "requires_dist": [],
+  "requires_python": ">=3.5",
+  "summary": "a pyfilesystem interface to google cloud storage",
+  "version": "1.5.1",
+  "releases": [],
+  "developers": [
+    "othoz_gmbh",
+    "wiesner@othoz.com"
+  ],
+  "kwds": "gcsfs fs_gcsfs gcs_file pyfilesystem pyfilesystem2",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_fs_gcsfs",
+  "homepage": "https://github.com/othoz/gcsfs",
+  "release_count": 25,
+  "dependency_ids": []
+}

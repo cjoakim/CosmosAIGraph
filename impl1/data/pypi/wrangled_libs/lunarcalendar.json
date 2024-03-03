@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries",
+    "topic :: utilities"
+  ],
+  "description": "lunarcalendar: a lunar-solar converter\n======================================\n\n.. image::\n  https://img.shields.io/pypi/v/lunarcalendar.svg\n  :target: https://pypi.python.org/pypi/lunarcalendar\n  :alt: last stable version (pypi)\n\n.. image::\n  https://travis-ci.org/wolfhong/lunarcalendar.svg\n  :target: https://travis-ci.org/wolfhong/lunarcalendar\n  :alt: build status\n\n\noverview\n--------\n\n`chinese version(\u4e2d\u6587\u7248) <https://github.com/wolfhong/lunarcalendar/blob/develop/readme_zh.rst>`_ is provided.\n\nlunarcalendar is a lunar-solar converter, containing a number of lunar and solar festivals in china.\n\nkorean, japanese or vietnamese lunar calendar is the same as chinese calendar, but has different festivals.\nkorean, japanese and vietnamese festivals can be easily included, with their languages.\n\nlunarcalendar supports a time range of 1900 to 2100, which may be enough for a long time.\nbut if you have needs for a wider time range, you can use ``generate.html`` to extend it.\n\nlunarcalendar is inspired by `lunar-solar-calendar-converter <https://github.com/isee15/lunar-solar-calendar-converter>`_.\n\n\nfeatures\n--------\n\n* accurate raw data, synchronize with microsolf's ``chineselunisolarcalendar`` class\n* easy to extend festivals and languages, supported both ``zh_hans`` and ``zh_hant``\n* included lunar festivals, such as: midautumn festival, chinese new year eve, dragonboat festivals\n* included solar festivals without fixed dates, such as: mother's day, easter\n* added legality check of the lunar and solar date\n* supported 24 solar terms(\u7acb\u6625/\u6625\u5206/\u6e05\u660e/\u51ac\u81f3\u7b49)\n\n\ninstall\n-------\n\nlunarcalendar can be installed from the pypi with ``easy_install``::\n\n   $ easy_install lunarcalendar\n\nor pip::\n\n   $ pip install lunarcalendar\n\nif you encounter an error like ``command 'gcc' failed with exit status 1 while installing ephem``, maybe you should install ``python-devel`` first.\nfor centos::\n\n   $ yum install python-devel\n\nfor ubuntu::\n\n   $ apt-get install python-dev\n\n\nconsole commands\n----------------\n\na console command called ``lunar-find`` can be used to find the date of the festival, using it's chinese name.\ndefault to this year. supporting alias of the festival.\n\n.. code-block:: console\n\n    $ lunar-find \u91cd\u9633\n    \u91cd\u9633\u8282 on 2018: 2018-10-17\n\n    $ lunar-find \u91cd\u967d\u7bc0\n    \u91cd\u9633\u8282 on 2018: 2018-10-17\n\n    $ lunar-find \u767b\u9ad8\u8282 2019\n    \u91cd\u9633\u8282 on 2019: 2019-10-07\n\nyou can also print all included festivals or 24 solar terms by date asc with:\n\n.. code-block:: console\n\n    $ lunar-find all 2019\n    $ lunar-find festival 2012\n    $ lunar-find \u8282\u65e5 2012\n    $ lunar-find solarterm\n    $ lunar-find \u8282\u6c14\n\n\nquickstart\n----------\n\nsolar to lunar:\n\n.. code-block:: python\n\n    import datetime\n    from lunarcalendar import converter, solar, lunar, datenotexist\n\n    solar = solar(2018, 1, 1)\n    print(solar)\n    lunar = converter.solar2lunar(solar)\n    print(lunar)\n    solar = converter.lunar2solar(lunar)\n    print(solar)\n    print(solar.to_date(), type(solar.to_date()))\n\nlunar to solar:\n\n.. code-block:: python\n\n    lunar = lunar(2018, 2, 30, isleap=false)\n    print(lunar)\n    solar = converter.lunar2solar(lunar)\n    print(solar)\n    lunar = converter.solar2lunar(solar)\n    print(lunar)\n    print(lunar.to_date(), type(lunar.to_date()))\n    print(lunar.from_date(datetime.date(2018, 4, 15)))\n\nlegality check for solar and lunar date. 2018-2-15(leap month) does not exist, but 2012-4-4(leap month) exists:\n\n.. code-block:: python\n\n    lunar(2012, 4, 4, isleap=true)  # date(2012, 5, 24)\n    try:\n        lunar = lunar(2018, 2, 15, isleap=true)\n    except datenotexist:\n        print(traceback.format_exc())\n\nprint all the festivals included, with chinese and english. other languages are welcome to extend(fork & pull request).\n\n.. code-block:: python\n\n    from lunarcalendar.festival import festivals\n\n    # print festivals, using english or chinese\n    print(\"----- print all festivals on 2018 in chinese: -----\")\n    for fest in festivals:\n        print(fest.get_lang('zh'), fest(2018))\n\n    print(\"----- print all festivals on 2017 in english: -----\")\n    for fest in festivals:\n        print(fest.get_lang('en'), fest(2017))\n\noutput:\n\n.. code-block:: shell\n\n    ......\n    \u6bcd\u4eb2\u8282 2018-05-13\n    \u7236\u4eb2\u8282 2018-06-17\n    \u4e2d\u79cb\u8282 2018-09-24\n    \u611f\u6069\u8282 2018-11-22\n    \u91cd\u9633\u8282 2018-10-17\n    \u6625\u8282 2018-02-16\n    \u4e2d\u5143\u8282 2018-08-25\n    \u4e03\u5915\u8282 2018-08-17\n    \u814a\u516b\u8282 2019-01-13\n    \u6e05\u660e\u8282 2018-04-05\n    \u9664\u5915 2019-02-04\n    \u5bd2\u8863\u8282 2018-11-08\n    \u5143\u5bb5\u8282 2018-03-02\n    \u9f99\u62ac\u5934 2018-03-18\n    \u7aef\u5348\u8282 2018-06-18\n    ......\n\n\ncontribution\n------------\n\nincluding festival standards:\n\n* common festivals in the the country, such as: christmas, halloween, etc.\n* lunar festivals.\n* solar festivals without fixed dates, such as: mother's day, easter, etc.\n\nsupporting chinese and english only now. if you want to add korean, japanese or vietnamese supports, modify ``lunarcalendar/festival.py`` to add festivals and languages.\n\nsome unusual festivals may not be included, `welcome to extend <https://github.com/wolfhong/lunarcalendar/issues>`_.\n\n\n\nabout\n-----\n\n* `homepage <http://github.com/wolfhong/lunarcalendar>`_\n* `pypi <https://pypi.python.org/pypi/lunarcalendar>`_\n* `issue tracker <https://github.com/wolfhong/lunarcalendar/issues?status=new&status=open>`_\n\n\n",
+  "docs_url": null,
+  "keywords": "lunar calendar,festival,chinese festivals,24 solar terms,solar calendar,lunar solar converter,lunisolar calendar",
+  "license": "mit",
+  "name": "lunarcalendar",
+  "package_url": "https://pypi.org/project/LunarCalendar/",
+  "project_url": "https://pypi.org/project/LunarCalendar/",
+  "project_urls": {
+    "Homepage": "https://github.com/wolfhong/LunarCalendar"
+  },
+  "release_url": "https://pypi.org/project/LunarCalendar/0.0.9/",
+  "requires_dist": [
+    "python-dateutil (>=2.6.1)",
+    "ephem (>=3.7.5.3)",
+    "pytz"
+  ],
+  "requires_python": ">=2.7, <4",
+  "summary": "a lunar calendar converter, including a number of lunar and solar holidays, mainly from china.",
+  "version": "0.0.9",
+  "releases": [],
+  "developers": [
+    "hongxucai1991@gmail.com",
+    "wolfhong"
+  ],
+  "kwds": "lunarcalendar chineselunisolarcalendar lunar lunar2solar solar2lunar",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_lunarcalendar",
+  "homepage": "https://github.com/wolfhong/lunarcalendar",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_ephem",
+    "pypi_python_dateutil",
+    "pypi_pytz"
+  ]
+}

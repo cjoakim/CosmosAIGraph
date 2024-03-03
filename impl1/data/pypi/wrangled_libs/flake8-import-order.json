@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: flake8",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu lesser general public license v3 (lgplv3)",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: quality assurance"
+  ],
+  "description": "flake8-import-order\n===================\n\n|build status|\n\na `flake8 <http://flake8.readthedocs.org/en/latest/>`__ and `pylama\n<https://github.com/klen/pylama>`__ plugin that checks the ordering of\nyour imports. it does not check anything else about the\nimports. merely that they are grouped and ordered correctly.\n\nin general stdlib comes first, then 3rd party, then local packages,\nand that each group is individually alphabetized, however this depends\non the style used. flake8-import-order supports a number of `styles\n<#styles>`_ and is extensible allowing for `custom styles\n<#extending-styles>`_.\n\nthis plugin was originally developed to match the style preferences of\nthe `cryptography <https://github.com/pyca/cryptography>`__ project,\nwith this style remaining the default.\n\nwarnings\n--------\n\nthis package adds 4 new flake8 warnings\n\n-  ``i100``: your import statements are in the wrong order.\n-  ``i101``: the names in your from import are in the wrong order.\n-  ``i201``: missing newline between import groups.\n-  ``i202``: additional newline in a group of imports.\n\nstyles\n------\n\nthe following styles are directly supported,\n\n* ``cryptography`` - see an `example <https://github.com/pycqa/flake8-import-order/blob/master/tests/test_cases/complete_cryptography.py>`__\n* ``google`` - style described in `google style guidelines <https://google.github.io/styleguide/pyguide.html?showone=imports_formatting#imports_formatting>`__, see an `example <https://github.com/pycqa/flake8-import-order/blob/master/tests/test_cases/complete_google.py>`__\n* ``smarkets`` - style as ``google`` only with `import` statements before `from x import ...` statements, see an `example <https://github.com/pycqa/flake8-import-order/blob/master/tests/test_cases/complete_smarkets.py>`__\n* ``appnexus`` - style as ``google`` only with `import` statements for packages local to your company or organisation coming after `import` statements for third-party packages, see an `example <https://github.com/pycqa/flake8-import-order/blob/master/tests/test_cases/complete_appnexus.py>`__\n* ``edited`` - see an `example <https://github.com/pycqa/flake8-import-order/blob/master/tests/test_cases/complete_edited.py>`__\n* ``pycharm`` - style as ``smarkets`` only with case sensitive sorting imported names\n* ``pep8`` - style that only enforces groups without enforcing the order within the groups\n\nyou can also `add your own style <#extending-styles>`_ by extending ``style``\nclass.\n\nconfiguration\n-------------\n\nyou will want to set the ``application-import-names`` option to a\ncomma separated list of names that should be considered local to your\napplication. these will be used to help categorise your import\nstatements into the correct groups. note that relative imports are\nalways considered local.\n\nyou will want to set the ``application-package-names`` option to a\ncomma separated list of names that should be considered local to your\ncompany or organisation, but which are obtained using some sort of\npackage manager like pip, apt, or yum.  typically, code representing\nthe values listed in this option is located in a different repository\nthan the code being developed.  this option is only accepted in the\nsupported ``appnexus`` or ``edited`` styles or in any style that\naccepts application package names.\n\nthe ``application-import-names`` and ``application-package-names`` can\ncontain namespaced packages or even exact nested module names. (this\nis possible with 0.16 onwards).\n\n``import-order-style`` controls what style the plugin follows\n(``cryptography`` is the default).\n\nlimitations\n-----------\n\ncurrently these checks are limited to module scope imports only.\nconditional imports in module scope will also be ignored.\n\nclassification of an imported module is achieved by checking the\nmodule against a stdlib list and then if there is no match against the\n``application-import-names`` list and ``application-package-names`` if\nthe style accepts application-package names. only if none of these\nlists contain the imported module will it be classified as third\nparty.\n\nthese checks only consider an import against its previous import,\nrather than considering all the imports together. this means that\n``i100`` errors are only raised for the latter of adjacent imports out\nof order. for example,\n\n.. code-block:: python\n\n    import x.b\n    import x  # i100\n    import x.a\n\nonly ``import x`` raises an ``i100`` error, yet ``import x.a`` is also\nout of order compared with the ``import x.b``.\n\nimported modules are classified as stdlib if the module is in a\nvendored list of stdlib modules. this list is based on the latest\nrelease of python and hence the results can be misleading. this list\nis also the same for all python versions because otherwise it would\nbe impossible to write programs that work under both python 2 and 3\n*and* pass the import order check.\n\nthe ``i202`` check will consider any blank line between imports to\ncount, even if the line is not contextually related to the\nimports. for example,\n\n.. code-block:: python\n\n    import logging\n    try:\n        from logging import nullhandler\n    except importerror:\n        class nullhandler(logging.handler):\n            \"\"\"shim for version of python < 2.7.\"\"\"\n\n            def emit(self, record):\n                pass\n    import sys  # i202 due to the blank line before the 'def emit'\n\nwill trigger a ``i202`` error despite the blank line not being\ncontextually related.\n\nextending styles\n----------------\n\nyou can add your own style by extending ``flake8_import_order.styles.style``\nclass. here's an example:\n\n.. code-block:: python\n\n    from flake8_import_order.styles import cryptography\n\n\n    class reversedcryptography(cryptography):\n        # note that cryptography is a subclass of style.\n\n        @staticmethod\n        def sorted_names(names):\n            return reversed(cryptography.sorted_names(names))\n\nby default there are five import groupings or sections; future,\nstdlib, third party, application, and relative imports. a style can\nchoose to accept another grouping, application-package, by setting the\n``style`` class variable ``accepts_application_package_names`` to\ntrue, e.g.\n\n.. code-block:: python\n\n    class packagenamecryptography(cryptography):\n        accepts_application_package_names = true\n\nto make flake8-import-order able to discover your extended style, you need to\nregister it as ``flake8_import_order.styles`` using setuptools' `entry points\n<https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points>`__\nmechanism:\n\n.. code-block:: python\n\n    # setup.py of your style package\n    setup(\n        name='flake8-import-order-reversed-cryptography',\n        ...,\n        entry_points={\n            'flake8_import_order.styles': [\n                'reversed = reversedcryptography:reversedcryptography',\n                # 'reversed' is a style name.  you can pass it to\n                # --import-order-style option\n                # 'reversedcryptography:reversedcryptography' is an import path\n                # of your extended style class.\n            ]\n        }\n    )\n\n.. |build status| image:: https://travis-ci.org/pycqa/flake8-import-order.svg?branch=master\n   :target: https://travis-ci.org/pycqa/flake8-import-order\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "lgplv3",
+  "name": "flake8-import-order",
+  "package_url": "https://pypi.org/project/flake8-import-order/",
+  "project_url": "https://pypi.org/project/flake8-import-order/",
+  "project_urls": {
+    "Homepage": "https://github.com/PyCQA/flake8-import-order"
+  },
+  "release_url": "https://pypi.org/project/flake8-import-order/0.18.2/",
+  "requires_dist": [
+    "pycodestyle",
+    "setuptools",
+    "enum34 ; python_version <= \"2.7\""
+  ],
+  "requires_python": "",
+  "summary": "flake8 and pylama plugin that checks the ordering of import statements.",
+  "version": "0.18.2",
+  "releases": [],
+  "developers": [
+    "alex_stapleton",
+    "alexs@prol.etari.at",
+    "phil_jones",
+    "philip.graham.jones+flake8-import@gmail.com"
+  ],
+  "kwds": "flake8_import_order flake8 imports_formatting imports packages",
+  "license_kwds": "lgplv3",
+  "libtype": "pypi",
+  "id": "pypi_flake8_import_order",
+  "homepage": "https://github.com/pycqa/flake8-import-order",
+  "release_count": 35,
+  "dependency_ids": [
+    "pypi_enum34",
+    "pypi_pycodestyle",
+    "pypi_setuptools"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: django",
+    "framework :: django :: 2.2",
+    "framework :: django :: 3.1",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "framework :: django :: 4.1",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: quality assurance",
+    "topic :: system :: logging",
+    "topic :: system :: monitoring",
+    "topic :: utilities"
+  ],
+  "description": "===================\ndjango-health-check\n===================\n\n|version| |pyversion| |djversion| |coverage| |license|\n\nthis project checks for various conditions and provides reports when anomalous\nbehavior is detected.\n\nthe following health checks are bundled with this project:\n\n- cache\n- database\n- storage\n- disk and memory utilization (via ``psutil``)\n- aws s3 storage\n- celery task queue\n- celery ping\n- rabbitmq\n- migrations\n\nwriting your own custom health checks is also very quick and easy.\n\nwe also like contributions, so don't be afraid to make a pull request.\n\nuse cases\n---------\n\nthe primary intended use case is to monitor conditions via http(s), with\nresponses available in html and json formats. when you get back a response that\nincludes one or more problems, you can then decide the appropriate course of\naction, which could include generating notifications and/or automating the\nreplacement of a failing node with a new one. if you are monitoring health in a\nhigh-availability environment with a load balancer that returns responses from\nmultiple nodes, please note that certain checks (e.g., disk and memory usage)\nwill return responses specific to the node selected by the load balancer.\n\nsupported versions\n------------------\n\nwe officially only support the latest version of python as well as the\nlatest version of django and the latest django lts version.\n\ninstallation\n------------\n\nfirst install the ``django-health-check`` package:\n\n.. code::\n\n    pip install django-health-check\n\nadd the health checker to a url you want to use:\n\n.. code:: python\n\n    urlpatterns = [\n        # ...\n        url(r'^ht/', include('health_check.urls')),\n    ]\n\nadd the ``health_check`` applications to your ``installed_apps``:\n\n.. code:: python\n\n    installed_apps = [\n        # ...\n        'health_check',                             # required\n        'health_check.db',                          # stock django health checkers\n        'health_check.cache',\n        'health_check.storage',\n        'health_check.contrib.migrations',\n        'health_check.contrib.celery',              # requires celery\n        'health_check.contrib.celery_ping',         # requires celery\n        'health_check.contrib.psutil',              # disk and memory utilization; requires psutil\n        'health_check.contrib.s3boto3_storage',     # requires boto3 and s3botostorage backend\n        'health_check.contrib.rabbitmq',            # requires rabbitmq broker\n        'health_check.contrib.redis',               # requires redis broker\n    ]\n\nnote : if using ``boto 2.x.x`` use ``health_check.contrib.s3boto_storage``\n\n(optional) if using the ``psutil`` app, you can configure disk and memory\nthreshold settings; otherwise below defaults are assumed. if you want to disable\none of these checks, set its value to ``none``.\n\n.. code:: python\n\n    health_check = {\n        'disk_usage_max': 90,  # percent\n        'memory_min': 100,    # in mb\n    }\n\nif using the db check, run migrations:\n\n.. code::\n\n    django-admin migrate\n\nto use the rabbitmq healthcheck, please make sure that there is a variable named ``broker_url``\non django.conf.settings with the required format to connect to your rabbit server. for example:\n\n.. code::\n\n    broker_url = amqp://myuser:mypassword@localhost:5672/myvhost\n\nto use the redis healthcheck, please make sure that there is a variable named ``redis_url``\non django.conf.settings with the required format to connect to your redis server. for example:\n\n.. code::\n\n    redis_url = redis://localhost:6370\n\nsetting up monitoring\n---------------------\n\nyou can use tools like pingdom_ or other uptime robots to monitor service status.\nthe ``/ht/`` endpoint will respond a http 200 if all checks passed\nand a http 500 if any of the tests failed.\n\n.. code::\n\n    $ curl -v -x get -h http://www.example.com/ht/\n\n    > get /ht/ http/1.1\n    > host: www.example.com\n    > accept: */*\n    >\n    < http/1.1 200 ok\n    < content-type: text/html; charset=utf-8\n\n    <!-- this is an excerpt -->\n    <div class=\"container\">\n        <h1>system status</h1>\n        <table>\n            <tr>\n                <td class=\"status_1\"></td>\n                <td>cachebackend</td>\n                <td>working</td>\n            </tr>\n            <tr>\n                <td class=\"status_1\"></td>\n                <td>databasebackend</td>\n                <td>working</td>\n            </tr>\n            <tr>\n                <td class=\"status_1\"></td>\n                <td>s3botostoragehealthcheck</td>\n                <td>working</td>\n            </tr>\n        </table>\n    </div>\n\ngetting machine readable json reports\n-------------------------------------\n\nif you want machine readable status reports you can request the ``/ht/``\nendpoint with the ``accept`` http header set to ``application/json``\nor pass ``format=json`` as a query parameter.\n\nthe backend will return a json response:\n\n.. code::\n\n    $ curl -v -x get -h \"accept: application/json\" http://www.example.com/ht/\n\n    > get /ht/ http/1.1\n    > host: www.example.com\n    > accept: application/json\n    >\n    < http/1.1 200 ok\n    < content-type: application/json\n\n    {\n        \"cachebackend\": \"working\",\n        \"databasebackend\": \"working\",\n        \"s3botostoragehealthcheck\": \"working\"\n    }\n\n    $ curl -v -x get http://www.example.com/ht/?format=json\n\n    > get /ht/?format=json http/1.1\n    > host: www.example.com\n    >\n    < http/1.1 200 ok\n    < content-type: application/json\n\n    {\n        \"cachebackend\": \"working\",\n        \"databasebackend\": \"working\",\n        \"s3botostoragehealthcheck\": \"working\"\n    }\n\nwriting a custom health check\n-----------------------------\n\nwriting a health check is quick and easy:\n\n.. code:: python\n\n    from health_check.backends import basehealthcheckbackend\n\n    class myhealthcheckbackend(basehealthcheckbackend):\n        #: the status endpoints will respond with a 200 status code\n        #: even if the check errors.\n        critical_service = false\n\n        def check_status(self):\n            # the test code goes here.\n            # you can use `self.add_error` or\n            # raise a `healthcheckexception`,\n            # similar to django's form validation.\n            pass\n\n        def identifier(self):\n            return self.__class__.__name__  # display name on the endpoint.\n\nafter writing a custom checker, register it in your app configuration:\n\n.. code:: python\n\n    from django.apps import appconfig\n\n    from health_check.plugins import plugin_dir\n\n    class myappconfig(appconfig):\n        name = 'my_app'\n\n        def ready(self):\n            from .backends import myhealthcheckbackend\n            plugin_dir.register(myhealthcheckbackend)\n\nmake sure the application you write the checker into is registered in your ``installed_apps``.\n\ncustomizing output\n------------------\n\nyou can customize html or json rendering by inheriting from ``mainview`` in ``health_check.views``\nand customizing the ``template_name``, ``get``, ``render_to_response`` and ``render_to_response_json`` properties:\n\n.. code:: python\n\n    # views.py\n    from health_check.views import mainview\n\n    class healthcheckcustomview(mainview):\n        template_name = 'myapp/health_check_dashboard.html'  # customize the used templates\n\n        def get(self, request, *args, **kwargs):\n            plugins = []\n            status = 200 # needs to be filled status you need\n            # ...\n            if 'application/json' in request.meta.get('http_accept', ''):\n                return self.render_to_response_json(plugins, status)\n            return self.render_to_response(plugins, status)\n\n        def render_to_response(self, plugins, status):       # customize html output\n            return httpresponse('cool' if status == 200 else 'sweaty', status=status)\n\n        def render_to_response_json(self, plugins, status):  # customize json output\n            return jsonresponse(\n                {str(p.identifier()): 'cool' if status == 200 else 'sweaty' for p in plugins},\n                status=status\n            )\n\n    # urls.py\n    import views\n\n    urlpatterns = [\n        # ...\n        url(r'^ht/$', views.healthcheckcustomview.as_view(), name='health_check_custom'),\n    ]\n\ndjango command\n--------------\n\nyou can run the django command `health_check` to perform your health checks via the command line,\nor periodically with a cron, as follow:\n\n.. code::\n\n    django-admin health_check\n\nthis should yield the following output:\n\n.. code::\n\n    databasehealthcheck      ... working\n    customhealthcheck        ... unavailable: something went wrong!\n\nsimilar to the http version, a critical error will cause the command to quit with the exit code `1`.\n\n\nother resources\n---------------\n\n- django-watchman_ is a package that does some of the same things in a slightly different way.\n- see this weblog_ about configuring django and health checking with aws elastic load balancer.\n\n.. |version| image:: https://img.shields.io/pypi/v/django-health-check.svg\n   :target: https://pypi.python.org/pypi/django-health-check/\n.. |pyversion| image:: https://img.shields.io/pypi/pyversions/django-health-check.svg\n   :target: https://pypi.python.org/pypi/django-health-check/\n.. |djversion| image:: https://img.shields.io/pypi/djversions/django-health-check.svg\n   :target: https://pypi.python.org/pypi/django-health-check/\n.. |coverage| image:: https://codecov.io/gh/kristianoellegaard/django-health-check/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/kristianoellegaard/django-health-check\n.. |license| image:: https://img.shields.io/badge/license-mit-blue.svg\n   :target: license\n\n.. _pingdom: https://www.pingdom.com/\n.. _django-watchman: https://github.com/mwarkentin/django-watchman\n.. _weblog: https://www.vincit.fi/en/blog/deploying-django-to-elastic-beanstalk-with-https-redirects-and-functional-health-checks/\n",
+  "docs_url": null,
+  "keywords": "django,postgresql",
+  "license": "mit license",
+  "name": "django-health-check",
+  "package_url": "https://pypi.org/project/django-health-check/",
+  "project_url": "https://pypi.org/project/django-health-check/",
+  "project_urls": {
+    "Homepage": "https://github.com/KristianOellegaard/django-health-check"
+  },
+  "release_url": "https://pypi.org/project/django-health-check/3.17.0/",
+  "requires_dist": [
+    "django (>=2.2)",
+    "sphinx ; extra == 'docs'",
+    "pytest ; extra == 'test'",
+    "pytest-cov ; extra == 'test'",
+    "pytest-django ; extra == 'test'",
+    "celery ; extra == 'test'",
+    "redis ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "run checks on services like databases, queue servers, celery processes, etc.",
+  "version": "3.17.0",
+  "releases": [],
+  "developers": [
+    "kristian@oellegaard.com",
+    "kristian_ollegaard"
+  ],
+  "kwds": "health_check health_check_dashboard health_check_custom healthcheck check_status",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_django_health_check",
+  "homepage": "https://github.com/kristianoellegaard/django-health-check",
+  "release_count": 71,
+  "dependency_ids": [
+    "pypi_celery",
+    "pypi_django",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_django",
+    "pypi_redis",
+    "pypi_sphinx"
+  ]
+}

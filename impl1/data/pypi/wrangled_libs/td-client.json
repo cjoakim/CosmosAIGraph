@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: internet"
+  ],
+  "description": "\ntreasure data api library for python\n====================================\n\n\n.. image:: https://github.com/treasure-data/td-client-python/workflows/python%20testing/badge.svg\n   :target: https://github.com/treasure-data/td-client-python/actions\n   :alt: build status on github actions\n\n\n.. image:: https://ci.appveyor.com/api/projects/status/eol91l1ag50xee9m/branch/master?svg=true\n   :target: https://ci.appveyor.com/project/treasure-data/td-client-python/branch/master\n   :alt: build status\n\n\n.. image:: https://coveralls.io/repos/treasure-data/td-client-python/badge.svg\n   :target: https://coveralls.io/r/treasure-data/td-client-python\n   :alt: coverage status\n\n\n.. image:: https://badge.fury.io/py/td-client.svg\n   :target: http://badge.fury.io/py/td-client\n   :alt: pypi version\n\n\ntreasure data api library for python\n\nrequirements\n------------\n\n``td-client`` supports the following versions of python.\n\n\n* python 3.5+\n* pypy\n\ninstall\n-------\n\nyou can install the releases from `pypi <https://pypi.python.org/>`_.\n\n.. code-block:: sh\n\n   $ pip install td-client\n\nit'd be better to install `certifi <https://pypi.python.org/pypi/certifi>`_ to enable ssl certificate verification.\n\n.. code-block:: sh\n\n   $ pip install certifi\n\nexamples\n--------\n\nplease see also the examples at `treasure data documentation <http://docs.treasuredata.com/articles/rest-api-python-client>`_.\n\nthe td-client documentation is hosted at https://tdclient.readthedocs.io/,\nor you can go directly to the\n`api documentation <https://tdclient.readthedocs.io/en/latest/api/index.html>`_.\n\nfor information on the parameters that may be used when reading particular\ntypes of data, see `file import parameters`_.\n\n.. _`file import parameters`:\n   https://tdclient.readthedocs.io/en/latest/api/file_import_paremeters.html\n\nlisting jobs\n^^^^^^^^^^^^\n\ntreasure data api key will be read from environment variable ``td_api_key``\\ , if none is given via ``apikey=`` argument passed to ``tdclient.client``.\n\ntreasure data api endpoint ``https://api.treasuredata.com`` is used by default. you can override this with environment variable ``td_api_server``\\ , which in turn can be overridden via ``endpoint=`` argument passed to ``tdclient.client``. list of available treasure data sites and corresponding api endpoints can be found `here <https://support.treasuredata.com/hc/en-us/articles/360001474288-sites-and-endpoints>`_.\n\n.. code-block:: python\n\n   import tdclient\n\n   with tdclient.client() as td:\n       for job in td.jobs():\n           print(job.job_id)\n\nrunning jobs\n^^^^^^^^^^^^\n\nrunning jobs on treasure data.\n\n.. code-block:: python\n\n   import tdclient\n\n   with tdclient.client() as td:\n       job = td.query(\"sample_datasets\", \"select count(1) from www_access\", type=\"hive\")\n       job.wait()\n       for row in job.result():\n           print(repr(row))\n\nrunning jobs via dbapi2\n^^^^^^^^^^^^^^^^^^^^^^^\n\ntd-client-python implements `pep 0249 <https://www.python.org/dev/peps/pep-0249/>`_ python database api v2.0.\nyou can use td-client-python with external libraries which supports database api such like `pandas <http://pandas.pydata.org/>`_.\n\n.. code-block:: python\n\n   import pandas\n   import tdclient\n\n   def on_waiting(cursor):\n       print(cursor.job_status())\n\n   with tdclient.connect(db=\"sample_datasets\", type=\"presto\", wait_callback=on_waiting) as td:\n       data = pandas.read_sql(\"select symbol, count(1) as c from nasdaq group by symbol\", td)\n       print(repr(data))\n\nwe offer another package for pandas named `pytd <https://github.com/treasure-data/pytd>`_ with some advanced features.\nyou may prefer it if you need to do complicated things, such like exporting result data to treasure data, printing job's\nprogress during long execution, etc.\n\nimporting data\n^^^^^^^^^^^^^^\n\nimporting data into treasure data in streaming manner, as similar as `fluentd <http://www.fluentd.org/>`_ is doing.\n\n.. code-block:: python\n\n   import sys\n   import tdclient\n\n   with tdclient.client() as td:\n       for file_name in sys.argv[:1]:\n           td.import_file(\"mydb\", \"mytbl\", \"csv\", file_name)\n\n\n.. warning::\n   importing data in streaming manner requires certain amount of time to be ready to query since schema update will be\n   executed with delay.\n\nbulk import\n^^^^^^^^^^^\n\nimporting data into treasure data in batch manner.\n\n.. code-block:: python\n\n   import sys\n   import tdclient\n   import uuid\n   import warnings\n\n   if len(sys.argv) <= 1:\n       sys.exit(0)\n\n   with tdclient.client() as td:\n       session_name = \"session-{}\".format(uuid.uuid1())\n       bulk_import = td.create_bulk_import(session_name, \"mydb\", \"mytbl\")\n       try:\n           for file_name in sys.argv[1:]:\n               part_name = \"part-{}\".format(file_name)\n               bulk_import.upload_file(part_name, \"json\", file_name)\n           bulk_import.freeze()\n       except:\n           bulk_import.delete()\n           raise\n       bulk_import.perform(wait=true)\n       if 0 < bulk_import.error_records:\n           warnings.warn(\"detected {} error records.\".format(bulk_import.error_records))\n       if 0 < bulk_import.valid_records:\n           print(\"imported {} records.\".format(bulk_import.valid_records))\n       else:\n           raise(runtimeerror(\"no records have been imported: {}\".format(bulk_import.name)))\n       bulk_import.commit(wait=true)\n       bulk_import.delete()\n\n\nif you want to import data as `msgpack <https://msgpack.org/>`_ format, you can write as follows:\n\n.. code-block:: python\n\n   import io\n   import time\n   import uuid\n   import warnings\n\n   import tdclient\n\n   t1 = int(time.time())\n   l1 = [{\"a\": 1, \"b\": 2, \"time\": t1}, {\"a\": 3, \"b\": 9, \"time\": t1}]\n\n   with tdclient.client() as td:\n       session_name = \"session-{}\".format(uuid.uuid1())\n       bulk_import = td.create_bulk_import(session_name, \"mydb\", \"mytbl\")\n       try:\n           _bytes = tdclient.util.create_msgpack(l1)\n           bulk_import.upload_file(\"part\", \"msgpack\", io.bytesio(_bytes))\n           bulk_import.freeze()\n       except:\n           bulk_import.delete()\n           raise\n       bulk_import.perform(wait=true)\n       # same as the above example\n\n\nchanging how csv and tsv columns are read\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthe ``td-client`` package will generally make sensible choices on how to read\nthe columns in csv and tsv data, but sometimes the user needs to override the\ndefault mechanism. this can be done using the optional `file import\nparameters`_ ``dtypes`` and ``converters``.\n\nfor instance, consider csv data that starts with the following records::\n\n  time,col1,col2,col3\n  1575454204,a,0001,a;b;c\n  1575454204,b,0002,d;e;f\n\nif that data is read using the defaults, it will produce values that look\nlike:\n\n.. code:: python\n\n  1575454204, \"a\", 1, \"a;b;c\"\n  1575454204, \"b\", 2, \"d;e;f\"\n\nthat is, an integer, a string, an integer and another string.\n\nif the user wants to keep the leading zeroes in ``col2``, then they can\nspecify the column datatype as string. for instance, using\n``bulk_import.upload_file`` to read data from ``input_data``:\n\n.. code:: python\n\n    bulk_import.upload_file(\n        \"part\", \"msgpack\", input_data,\n        dtypes={\"col2\": \"str\"},\n    )\n\nwhich would produce:\n\n.. code:: python\n\n  1575454204, \"a\", \"0001\", \"a;b;c\"\n  1575454204, \"b\", \"0002\", \"d;e;f\"\n\nif they also wanted to treat ``col3`` as a sequence of strings, separated by\nsemicolons, then they could specify a function to process ``col3``:\n\n.. code:: python\n\n    bulk_import.upload_file(\n        \"part\", \"msgpack\", input_data,\n        dtypes={\"col2\": \"str\"},\n        converters={\"col3\", lambda x: x.split(\";\")},\n    )\n\nwhich would produce:\n\n.. code:: python\n\n  1575454204, \"a\", \"0001\", [\"a\", \"b\", \"c\"]\n  1575454204, \"b\", \"0002\", [\"d\", \"e\", \"f\"]\n\ndevelopment\n-----------\n\nrunning tests\n^^^^^^^^^^^^^\n\nrun tests.\n\n.. code-block:: sh\n\n   $ python setup.py test\n\nrunning tests (tox)\n^^^^^^^^^^^^^^^^^^^\n\nyou can run tests against all supported python versions. i'd recommend you to install `pyenv <https://github.com/yyuu/pyenv>`_ to manage pythons.\n\n.. code-block:: sh\n\n   $ pyenv shell system\n   $ for version in $(cat .python-version); do [ -d \"$(pyenv root)/versions/${version}\" ] || pyenv install \"${version}\"; done\n   $ pyenv shell --unset\n\ninstall `tox <https://pypi.python.org/pypi/tox>`_.\n\n.. code-block:: sh\n\n   $ pip install tox\n\nthen, run ``tox``.\n\n.. code-block:: sh\n\n   $ tox\n\nrelease\n^^^^^^^\n\nrelease to pypi. ensure you installed twine.\n\n.. code-block:: sh\n\n   $ python setup.py bdist_wheel sdist\n   $ twine upload dist/*\n\nlicense\n-------\n\napache software license, version 2.0\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache software license",
+  "name": "td-client",
+  "package_url": "https://pypi.org/project/td-client/",
+  "project_url": "https://pypi.org/project/td-client/",
+  "project_urls": {
+    "Homepage": "http://treasuredata.com/"
+  },
+  "release_url": "https://pypi.org/project/td-client/1.2.1/",
+  "requires_dist": [
+    "msgpack (>=0.6.2)",
+    "python-dateutil",
+    "urllib3",
+    "black (==19.3b0) ; extra == 'dev'",
+    "isort ; extra == 'dev'",
+    "flake8 ; extra == 'dev'",
+    "sphinx ; extra == 'docs'",
+    "sphinx-rtd-theme ; extra == 'docs'"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "treasure data api library for python",
+  "version": "1.2.1",
+  "releases": [],
+  "developers": [
+    "support@treasure-data.com",
+    "treasure_data"
+  ],
+  "kwds": "treasuredata td_api_key treasure apikey td_api_server",
+  "license_kwds": "apache software license",
+  "libtype": "pypi",
+  "id": "pypi_td_client",
+  "homepage": "http://treasuredata.com/",
+  "release_count": 67,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_flake8",
+    "pypi_isort",
+    "pypi_msgpack",
+    "pypi_python_dateutil",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_urllib3"
+  ]
+}

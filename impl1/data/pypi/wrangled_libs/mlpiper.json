@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "operating system :: macos",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3"
+  ],
+  "description": "# readme\n\nthe datarobot `mlpiper` module is designed to process and execute complex pipelines, that\nconsist of one or more components chained together such that output of a\nprevious component becomes the input to the next component. each pipeline\nhas a particular purpose, such as to train a model or generate predictions.\n\na single pipeline may include components from different languages, such as python, r and java.\n\n## installation\n\n```pip install mlpiper[sagemaker][pyspark][wizard][mlops]```\n\n*note:* the extra installation options are as follows:\n - `sagemaker`: provides support for *sagemaker* pipelines, which\n               requires proper aws credentials\n - `pyspark`:  provides support for *pyspark* pipelines\n - `wizard`:   provides wizard capability to create a component\n               metadata file from a command line\n\n## quickstart\n\n#### steps\n\n- create a pipeline. open any text editor and copy the following pipeline description:\n\n        {\n            \"name\": \"simple mcenter runner test\",\n            \"enginetype\": \"generic\",\n            \"pipe\": [\n                {\n                    \"name\": \"source string\",\n                    \"id\": 1,\n                    \"type\": \"string-source\",\n                    \"parents\": [],\n                    \"arguments\": {\n                        \"value\": \"hello world: testing string source and sink\"\n                    }\n                },\n                {\n                    \"name\": \"sink string\",\n                    \"id\": 2,\n                    \"type\": \"string-sink\",\n                    \"parents\": [{\"parent\": 1, \"output\": 0}],\n                    \"arguments\": {\n                        \"expected-value\": \"hello world: testing string source and sink\"\n                    }\n                }\n            ]\n        }\n\n- clone `mlpiper` repo [https://github.com/mlpiper/mlpiper/](https://github.com/mlpiper/mlpiper/)\n- components `string-source` and `string-sink` can be found in the repo path [https://github.com/mlpiper/mlpiper/tree/master/reflex-algos/components/python](https://github.com/mlpiper/mlpiper/tree/master/reflex-algos/components/python)\n- once the `mlpiper` python package is installed, the `mlpiper` command line tool is available and can be used to execute the above pipeline and the components described in it. run the example above with:\n\n      mlpiper run -f ~/<pipeline description file> -r <path to mlpiper repo>/reflex-algos/components/python\n\n## how to construct a component\n\n#### steps\n\n- create a directory, the name of which corresponds to the component's name (e.g., source_string)\n\n- create a `component.json` file (json format) inside this directory and make sure to fill in all of the following fields:\n\n        {\n            \"enginetype\": \"generic\",\n            \"language\": \"python\",\n            \"userstandalone\": false,\n            \"name\": \"<component name (e.g., string_source)>\",\n            \"label\": \"<a lable that is displayed in the ui>\",\n            \"version\": \"<component's version (e.g., 1.0.0)>\",\n            \"group\": \"<one of the valid groups (e.g., \"connectors\")>,\n            \"program\": \"<the python component main script (e.g., string_source.py)>\",\n            \"componentclass\": \"<the component class name (e.g., stringsource)\n            \"usemlstats\": <true|false - (whether the components uses mlstats)>,\n            \"inputinfo\": [\n                {\n                 \"description\": \"<description>\",\n                 \"label\": \"<lable name>\",\n                 \"defaultcomponent\": \"\",\n                 \"type\": \"<a type used to verify matching connected legs>,\n                 \"group\": \"<data|model|prediction|statistics|other>\"\n                },\n                {...}\n            ],\n            \"outputinfo\": [\n                <same as inputinfo above>\n            ],\n            \"arguments\": [\n                {\n                    \"key\": \"<unique argument key name>\",\n                    \"type\": \"int|long|float|str|bool\",\n                    \"label\": \"<a label that is displayed in the ui>\",\n                    \"description\": \"<description>\",\n                    \"optional\": <true|false>\n                }\n            ]\n        }\n\n- create the main component script, which contains the component's class name.\n  this class should inherit from a 'component' base class, which is taken from\n  `mlpiper.components.component`. the class must implement the `materialize`\n  function, with this prototype: `def _materialize(self, parent_data_objs, user_data)`.\n  here is a complete self contained example:\n\n        from mlpiper.components import connectablecomponent\n\n\n        class stringsource(connectablecomponent):\n            def __init__(self, engine):\n                super(self.__class__, self).__init__(engine)\n\n            def _materialize(self, parent_data_objs, user_data):\n                self._logger.info(\"inside string source component\")\n                str_value = self._params.get('value', \"default-string-value\")\n\n                return [str_value]\n\n\n  notes:\n    - a component can use `self._logger` object to print logs.\n    - a component may access to pipeline parameters via `self._params` dictionary.\n    - the `_materialize` function should return a list of objects or none otherwise.\n      this returned value will be used as an input for the next component\n      in the pipeline chain.\n\n- place the component's main program (\\*.py) inside a directory along with its json\n  description file and any other desired files.\n\n\n## how to construct a pipeline\n\n#### steps\n\n- open any text editor and copy the following pipeline description:\n\n        {\n            \"name\": \"simple mcenter runner test\",\n            \"enginetype\": \"generic\",\n            \"pipe\": [\n                {\n                    \"name\": \"source string\",\n                    \"id\": 1,\n                    \"type\": \"string-source\",\n                    \"parents\": [],\n                    \"arguments\": {\n                        \"value\": \"hello world: testing string source and sink\"\n                    }\n                },\n                {\n                    \"name\": \"sink string\",\n                    \"id\": 2,\n                    \"type\": \"string-sink\",\n                    \"parents\": [{\"parent\": 1, \"output\": 0}],\n                    \"arguments\": {\n                        \"expected-value\": \"hello world: testing string source and sink\"\n                    }\n                }\n            ]\n        }\n\n  notes:\n    - it is assumed that you've already constructed two components whose names\n      are: `string-source` and `string-sink`\n    - the output of the `string-source` component (the value returned from\n      `_materialize` function) is supposed to become the input of the `string-sink`\n      component (an input to the `_materialize` function)\n\n- save it with any desired name\n\n\n## how to test\n\nonce the `mlpiper` python package is installed, `mlpiper` command line tool is available\nand can be used to execute the above pipeline and the components described in it.\n\nthere are three main commands that can be used as follows:\n\n  - **deploy** - deploys a pipeline along with provided components into a given\n                 directory. once deployed, it can be executed directly from\n                 the given directory.\n\n  - **run** - deploys and then executes the pipeline.\n\n  - **run-deployment** - executes an already-deployed pipeline.\n\n\n#### examples:\n\n  - prepare a deployment. the resulting directory will be copied to a docker container and run\n    there:\n\n        mlpiper deploy -f p1.json -r ~/dev/components -d /tmp/pp\n\n  - deploy & run in-place:\n\n        mlpiper run -f p1.json -r ~/dev/components\n\n  - deploy & run. useful for development and debugging:\n\n        mlpiper run -f p1.json -r ~/dev/components -d /tmp/pp\n\n  - run a deployment. usually non-interactive and called by another script:\n\n        mlpiper run-deployment --deployment-dir /tmp/pp\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "mlpiper",
+  "package_url": "https://pypi.org/project/mlpiper/",
+  "project_url": "https://pypi.org/project/mlpiper/",
+  "project_urls": {
+    "Homepage": "https://github.com/datarobot/mlpiper"
+  },
+  "release_url": "https://pypi.org/project/mlpiper/2.6.0/",
+  "requires_dist": [
+    "flask",
+    "flask-cors",
+    "future",
+    "psutil",
+    "py4j (~=0.10.9.0)",
+    "termcolor",
+    "pyspark ; extra == 'pyspark'",
+    "pytz ; extra == 'sagemaker'",
+    "sagemaker ; extra == 'sagemaker'",
+    "numpy (==1.14.6) ; (python_version < \"3.4\") and extra == 'sagemaker'",
+    "scipy (==1.1.0) ; (python_version < \"3.4\") and extra == 'sagemaker'",
+    "uwsgi ; extra == 'uwsgi'",
+    "pypsi ; (python_version >= \"3.4\") and extra == 'wizard'"
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+  "summary": "an engine for running component based ml pipelines",
+  "version": "2.6.0",
+  "releases": [],
+  "developers": [
+    "datarobot",
+    "info@datarobot.com"
+  ],
+  "kwds": "pipeline pipelines pip mlpiper pyspark",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_mlpiper",
+  "homepage": "https://github.com/datarobot/mlpiper",
+  "release_count": 28,
+  "dependency_ids": [
+    "pypi_flask",
+    "pypi_flask_cors",
+    "pypi_future",
+    "pypi_numpy",
+    "pypi_psutil",
+    "pypi_py4j",
+    "pypi_pypsi",
+    "pypi_pyspark",
+    "pypi_pytz",
+    "pypi_sagemaker",
+    "pypi_scipy",
+    "pypi_termcolor",
+    "pypi_uwsgi"
+  ]
+}

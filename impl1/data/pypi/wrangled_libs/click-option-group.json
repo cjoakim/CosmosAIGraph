@@ -1,0 +1,68 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries"
+  ],
+  "description": "# click-option-group\n\n[![pypi version](https://img.shields.io/pypi/v/click-option-group.svg)](https://pypi.python.org/pypi/click-option-group)\n[![build status](https://travis-ci.org/click-contrib/click-option-group.svg?branch=master)](https://travis-ci.org/click-contrib/click-option-group)\n[![coverage status](https://coveralls.io/repos/github/click-contrib/click-option-group/badge.svg?branch=master)](https://coveralls.io/github/click-contrib/click-option-group?branch=master)\n![supported python versions](https://img.shields.io/pypi/pyversions/click-option-group.svg)\n[![license](https://img.shields.io/badge/license-bsd%203--clause-blue.svg)](https://opensource.org/licenses/bsd-3-clause)\n\n\n**click-option-group** is a click-extension package that adds option groups \nmissing in [click](https://github.com/pallets/click/).\n\n## aim and motivation\n\nclick is a package for creating powerful and beautiful command line interfaces (cli) in python, \nbut it has no the functionality for creating option groups.\n\noption groups are convenient mechanism for logical structuring cli, also it allows you to set \nthe specific behavior and set the relationship among grouped options (mutually exclusive options for example). \nmoreover, [argparse](https://docs.python.org/3/library/argparse.html) stdlib package contains this \nfunctionality out of the box.\n\nat the same time, many click users need this functionality.\nyou can read interesting discussions about it in the following issues:\n\n* [issue 257](https://github.com/pallets/click/issues/257)\n* [issue 373](https://github.com/pallets/click/issues/373)\n* [issue 509](https://github.com/pallets/click/issues/509)\n* [issue 1137](https://github.com/pallets/click/issues/1137)\n\nthe aim of this package is to provide group options with extensible functionality \nusing canonical and clean api (click-like api as far as possible).\n\n## quickstart\n\n### installing \n\ninstall and update using pip:\n\n```bash\npip install -u click-option-group\n```\n\n### a simple example\n\nhere is a simple example how to use option groups in your click-based cli.\njust use `optgroup` for declaring option groups by decorating \nyour command function in click-like api style.\n\n```python\n# app.py\n\nimport click\nfrom click_option_group import optgroup, requiredmutuallyexclusiveoptiongroup\n\n@click.command()\n@optgroup.group('server configuration', \n                help='the configuration of some server connection')\n@optgroup.option('-h', '--host', default='localhost', help='server host name')\n@optgroup.option('-p', '--port', type=int, default=8888, help='server port')\n@optgroup.option('-n', '--attempts', type=int, default=3, help='the number of connection attempts')\n@optgroup.option('-t', '--timeout', type=int, default=30, help='the server response timeout')\n@optgroup.group('input data sources', cls=requiredmutuallyexclusiveoptiongroup, \n                help='the sources of the input data')\n@optgroup.option('--tsv-file', type=click.file(), help='csv/tsv input data file')\n@optgroup.option('--json-file', type=click.file(), help='json input data file')\n@click.option('--debug/--no-debug', default=false, help='debug flag')\ndef cli(**params):\n    print(params)\n\nif __name__ == '__main__':\n    cli()\n```\n\n```bash\n$ python app.py --help\nusage: app.py [options]\n\noptions:\n  server configuration:           the configuration of some server connection\n    -h, --host text               server host name\n    -p, --port integer            server port\n    -n, --attempts integer        the number of connection attempts\n    -t, --timeout integer         the server response timeout\n  input data sources: [mutually_exclusive, required]\n                                  the sources of the input data\n    --tsv-file filename           csv/tsv input data file\n    --json-file filename          json input data file\n  --debug / --no-debug            debug flag\n  --help                          show this message and exit.\n```\n\n## documentation\n\nhttps://click-option-group.readthedocs.io\n\n# changelog\n\n## v0.5.6 (09.06.2023)\n\n* add `optgroup.help_option` decorator to add help option to the group (pr [#50](https://github.com/click-contrib/click-option-group/pull/50))\n* use github actions instead of travis ci for ci\n* delete tox runner\n* add python 3.11 to the setup classifiers\n\n## v0.5.5 (12.10.2022)\n\n* add `tests/` directory to tarball\n* add `tests_cov` extra dependencies for testing with coverage\n\n## v0.5.4 (12.10.2022)\n\n* move frame gathering into error code path (pr [#34](https://github.com/click-contrib/click-option-group/pull/34))\n* fix typos (pr [#37](https://github.com/click-contrib/click-option-group/pull/37))\n* pep 561 support (pr [#42](https://github.com/click-contrib/click-option-group/pull/42))\n* update docs dependencies and travis ci python version matrix (pr [#43](https://github.com/click-contrib/click-option-group/pull/43))\n\n## v0.5.3 (14.05.2021)\n\n* update click dependency version to `<9` (issue [#33](https://github.com/click-contrib/click-option-group/issues/33))\n\n## v0.5.2 (28.11.2020)\n\n* do not use default option group name. an empty group name will not be displayed\n* slightly edited error messages\n* all arguments except `name` in `optgroup` decorator must be keyword-only\n\n## v0.5.1 (14.06.2020)\n\n* fix incompatibility with autocomplete: out of the box click completion and click-repl (issue [#14](https://github.com/click-contrib/click-option-group/issues/14))\n\n## v0.5.0 (10.06.2020)\n\n* add `alloptiongroup` class: all options from the group must be set or none must be set (pr [#13](https://github.com/click-contrib/click-option-group/pull/13))\n* fix type hints\n* update docs\n\n## v0.4.0 (18.05.2020)\n\n* support multi-layer wrapped functions (pr [#10](https://github.com/click-contrib/click-option-group/pull/10))\n* fix flake8 issues\n\n## v0.3.1\n\n* add `hidden=true` to `_grouptitlefakeoption` as a temporary workaroud for issue [#4](https://github.com/click-contrib/click-option-group/issues/4)\n\n## v0.3.0\n* add support for hidden options inside groups (pr [#2](https://github.com/click-contrib/click-option-group/pull/2))\n\n## v0.2.3\n* transfer the repo to click-contrib organisation\n\n## v0.2.2\n* add true lineno in warning when declaring empty option group\n* update readme\n\n## v0.2.1\n* use runtimewarning and stacklevel 2 when declaring empty option group\n* update readme\n\n## v0.2.0\n* implement `requiredmutuallyexclusiveoptiongroup` class instead of `required` argument for `mutuallyexclusiveoptiongroup`\n* add tests with 100% coverage\n* update readme\n\n## v0.1.0\n* first public release\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-3-clause",
+  "name": "click-option-group",
+  "package_url": "https://pypi.org/project/click-option-group/",
+  "project_url": "https://pypi.org/project/click-option-group/",
+  "project_urls": {
+    "Code": "https://github.com/click-contrib/click-option-group",
+    "Documentation": "https://click-option-group.readthedocs.io",
+    "Homepage": "https://github.com/click-contrib/click-option-group",
+    "Issue tracker": "https://github.com/click-contrib/click-option-group/issues"
+  },
+  "release_url": "https://pypi.org/project/click-option-group/0.5.6/",
+  "requires_dist": [
+    "Click (<9,>=7.0)",
+    "sphinx ; extra == 'docs'",
+    "Pallets-Sphinx-Themes ; extra == 'docs'",
+    "m2r2 ; extra == 'docs'",
+    "pytest ; extra == 'tests'",
+    "pytest ; extra == 'tests_cov'",
+    "pytest-cov ; extra == 'tests_cov'",
+    "coverage ; extra == 'tests_cov'",
+    "coveralls ; extra == 'tests_cov'"
+  ],
+  "requires_python": ">=3.6,<4",
+  "summary": "option groups missing in click",
+  "version": "0.5.6",
+  "releases": [],
+  "developers": [
+    "esp.home@gmail.com",
+    "eugene_prilepin"
+  ],
+  "kwds": "click_option_group pyversions click help_option _grouptitlefakeoption",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_click_option_group",
+  "homepage": "https://github.com/click-contrib/click-option-group",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_coverage",
+    "pypi_coveralls",
+    "pypi_m2r2",
+    "pypi_pallets_sphinx_themes",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_sphinx"
+  ]
+}

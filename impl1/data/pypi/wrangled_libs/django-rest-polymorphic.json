@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "framework :: django",
+    "framework :: django :: 2.2",
+    "framework :: django :: 3.0",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "\n.. image:: https://travis-ci.org/apirobot/django-rest-polymorphic.svg?branch=master\n    :target: https://travis-ci.org/apirobot/django-rest-polymorphic\n\n.. image:: https://codecov.io/gh/apirobot/django-rest-polymorphic/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/apirobot/django-rest-polymorphic\n\n.. image:: https://badge.fury.io/py/django-rest-polymorphic.svg\n    :target: https://badge.fury.io/py/django-rest-polymorphic\n\n\n=======================\ndjango rest polymorphic\n=======================\n\npolymorphic serializers for django rest framework.\n\n\noverview\n--------\n\n``django-rest-polymorphic`` allows you to easily define serializers for your inherited models that you have created using ``django-polymorphic`` library.\n\n\ninstallation\n------------\n\ninstall using ``pip``:\n\n.. code-block:: bash\n\n    $ pip install django-rest-polymorphic\n\n\nusage\n-----\n\ndefine your polymorphic models:\n\n.. code-block:: python\n\n    # models.py\n    from django.db import models\n    from polymorphic.models import polymorphicmodel\n\n\n    class project(polymorphicmodel):\n        topic = models.charfield(max_length=30)\n\n\n    class artproject(project):\n        artist = models.charfield(max_length=30)\n\n\n    class researchproject(project):\n        supervisor = models.charfield(max_length=30)\n\ndefine serializers for each polymorphic model the way you did it when you used ``django-rest-framework``:\n\n.. code-block:: python\n\n    # serializers.py\n    from rest_framework import serializers\n    from .models import project, artproject, researchproject\n\n\n    class projectserializer(serializers.modelserializer):\n        class meta:\n            model = project\n            fields = ('topic', )\n\n\n    class artprojectserializer(serializers.hyperlinkedmodelserializer):\n        class meta:\n            model = artproject\n            fields = ('topic', 'artist', 'url')\n            extra_kwargs = {\n                'url': {'view_name': 'project-detail', 'lookup_field': 'pk'},\n            }\n\n\n    class researchprojectserializer(serializers.modelserializer):\n        class meta:\n            model = researchproject\n            fields = ('topic', 'supervisor')\n\nnote that if you extend ``hyperlinkedmodelserializer`` instead of ``modelserializer`` you need to define ``extra_kwargs`` to direct the url to the appropriate view for your polymorphic serializer.\n\nthen you have to create a polymorphic serializer that serves as a mapper between models and serializers which you have defined above:\n\n.. code-block:: python\n\n    # serializers.py\n    from rest_polymorphic.serializers import polymorphicserializer\n\n\n    class projectpolymorphicserializer(polymorphicserializer):\n        model_serializer_mapping = {\n            project: projectserializer,\n            artproject: artprojectserializer,\n            researchproject: researchprojectserializer\n        }\n\ncreate viewset with serializer_class equals to your polymorphic serializer:\n\n.. code-block:: python\n\n    # views.py\n    from rest_framework import viewsets\n    from .models import project\n    from .serializers import projectpolymorphicserializer\n\n\n    class projectviewset(viewsets.modelviewset):\n        queryset = project.objects.all()\n        serializer_class = projectpolymorphicserializer\n\ntest it:\n\n.. code-block:: bash\n\n    $ http get \"http://localhost:8000/projects/\"\n\n.. code-block:: http\n\n    http/1.0 200 ok\n    content-length: 227\n    content-type: application/json\n\n    [\n        {\n            \"resourcetype\": \"project\",\n            \"topic\": \"john's gathering\"\n        },\n        {\n            \"artist\": \"t. turner\",\n            \"resourcetype\": \"artproject\",\n            \"topic\": \"sculpting with tim\",\n            \"url\": \"http://localhost:8000/projects/2/\"\n        },\n        {\n            \"resourcetype\": \"researchproject\",\n            \"supervisor\": \"dr. winter\",\n            \"topic\": \"swallow aerodynamics\"\n        }\n    ]\n\n.. code-block:: bash\n\n    $ http post \"http://localhost:8000/projects/\" resourcetype=\"artproject\" topic=\"guernica\" artist=\"picasso\"\n\n.. code-block:: http\n\n    http/1.0 201 created\n    content-length: 67\n    content-type: application/json\n\n    {\n        \"artist\": \"picasso\",\n        \"resourcetype\": \"artproject\",\n        \"topic\": \"guernica\",\n        \"url\": \"http://localhost:8000/projects/4/\"\n    }\n\n\ncustomize resource type\n-----------------------\n\nas you can see from the example above, in order to specify the type of your polymorphic model, you need to send a request with resource type field. the value of resource type should be the name of the model.\n\nif you want to change the resource type field name from ``resourcetype`` to something else, you should override ``resource_type_field_name`` attribute:\n\n.. code-block:: python\n\n    class projectpolymorphicserializer(polymorphicserializer):\n        resource_type_field_name = 'projecttype'\n        ...\n\nif you want to change the behavior of resource type, you should override ``to_resource_type`` method:\n\n.. code-block:: python\n\n    class projectpolymorphicserializer(polymorphicserializer):\n        ...\n\n        def to_resource_type(self, model_or_instance):\n            return model_or_instance._meta.object_name.lower()\n\nnow, the request for creating new object will look like this:\n\n.. code-block:: bash\n\n    $ http post \"http://localhost:8000/projects/\" projecttype=\"artproject\" topic=\"guernica\" artist=\"picasso\"\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "django-rest-polymorphic",
+  "package_url": "https://pypi.org/project/django-rest-polymorphic/",
+  "project_url": "https://pypi.org/project/django-rest-polymorphic/",
+  "project_urls": {
+    "Homepage": "https://github.com/denisorehovsky/django-rest-polymorphic"
+  },
+  "release_url": "https://pypi.org/project/django-rest-polymorphic/0.1.10/",
+  "requires_dist": [
+    "django",
+    "djangorestframework",
+    "django-polymorphic",
+    "six"
+  ],
+  "requires_python": "",
+  "summary": "polymorphic serializers for django rest framework.",
+  "version": "0.1.10",
+  "releases": [],
+  "developers": [
+    "denis.orehovsky@gmail.com",
+    "denis_orehovsky"
+  ],
+  "kwds": "rest_polymorphic rest_framework polymorphicserializer polymorphic polymorphicmodel",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_django_rest_polymorphic",
+  "homepage": "https://github.com/denisorehovsky/django-rest-polymorphic",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_django_polymorphic",
+    "pypi_djangorestframework",
+    "pypi_six"
+  ]
+}

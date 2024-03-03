@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: macos :: macos x",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "pyotp - the python one-time password library\n============================================\n\npyotp is a python library for generating and verifying one-time passwords. it can be used to implement two-factor (2fa)\nor multi-factor (mfa) authentication methods in web applications and in other systems that require users to log in.\n\nopen mfa standards are defined in `rfc 4226 <https://tools.ietf.org/html/rfc4226>`_ (hotp: an hmac-based one-time\npassword algorithm) and in `rfc 6238 <https://tools.ietf.org/html/rfc6238>`_ (totp: time-based one-time password\nalgorithm). pyotp implements server-side support for both of these standards. client-side support can be enabled by\nsending authentication codes to users over sms or email (hotp) or, for totp, by instructing users to use `google\nauthenticator <https://en.wikipedia.org/wiki/google_authenticator>`_, `authy <https://www.authy.com/>`_, or another\ncompatible app. users can set up auth tokens in their apps easily by using their phone camera to scan `otpauth://\n<https://github.com/google/google-authenticator/wiki/key-uri-format>`_ qr codes provided by pyotp.\n\nimplementers should read and follow the `hotp security requirements <https://tools.ietf.org/html/rfc4226#section-7>`_\nand `totp security considerations <https://tools.ietf.org/html/rfc6238#section-5>`_ sections of the relevant rfcs. at\nminimum, application implementers should follow this checklist:\n\n- ensure transport confidentiality by using https\n- ensure hotp/totp secret confidentiality by storing secrets in a controlled access database\n- deny replay attacks by rejecting one-time passwords that have been used by the client (this requires storing the most\n  recently authenticated timestamp, otp, or hash of the otp in your database, and rejecting the otp when a match is\n  seen)\n- throttle (rate limit) brute-force attacks against your application's login functionality (see rfc 4226, section 7.3)\n- when implementing a \"greenfield\" application, consider supporting\n  `fido u2f <https://en.wikipedia.org/wiki/universal_2nd_factor>`_/`webauthn <https://www.w3.org/tr/webauthn/>`_ in\n  addition to hotp/totp. u2f uses asymmetric cryptography to avoid using a shared secret design, which strengthens your\n  mfa solution against server-side attacks. hardware u2f also sequesters the client secret in a dedicated single-purpose\n  device, which strengthens your clients against client-side attacks. and by automating scoping of credentials to\n  relying party ids (application origin/domain names), u2f adds protection against phishing attacks. one implementation\n  of fido u2f/webauthn is pyotp's sister project, `pywarp <https://github.com/pyauth/pywarp>`_.\n\nwe also recommend that implementers read the\n`owasp authentication cheat sheet\n<https://github.com/owasp/cheatsheetseries/blob/master/cheatsheets/authentication_cheat_sheet.md>`_ and\n`nist sp 800-63-3: digital authentication guideline <https://pages.nist.gov/800-63-3/>`_ for a high level overview of\nauthentication best practices.\n\nquick overview of using one time passwords on your phone\n--------------------------------------------------------\n\n* otps involve a shared secret, stored both on the phone and the server\n* otps can be generated on a phone without internet connectivity\n* otps should always be used as a second factor of authentication (if your phone is lost, you account is still secured\n  with a password)\n* google authenticator and other otp client apps allow you to store multiple otp secrets and provision those using a qr\n  code\n\ninstallation\n------------\n::\n\n    pip install pyotp\n\nusage\n-----\n\ntime-based otps\n~~~~~~~~~~~~~~~\n::\n\n    import pyotp\n    import time\n\n    totp = pyotp.totp('base32secret3232')\n    totp.now() # => '492039'\n\n    # otp verified for current time\n    totp.verify('492039') # => true\n    time.sleep(30)\n    totp.verify('492039') # => false\n\ncounter-based otps\n~~~~~~~~~~~~~~~~~~\n::\n\n    import pyotp\n    \n    hotp = pyotp.hotp('base32secret3232')\n    hotp.at(0) # => '260182'\n    hotp.at(1) # => '055283'\n    hotp.at(1401) # => '316439'\n\n    # otp verified with a counter\n    hotp.verify('316439', 1401) # => true\n    hotp.verify('316439', 1402) # => false\n\ngenerating a secret key\n~~~~~~~~~~~~~~~~~~~~~~~\na helper function is provided to generate a 32-character base32 secret, compatible with google authenticator and other\notp apps::\n\n    pyotp.random_base32()\n\nsome applications want the secret key to be formatted as a hex-encoded string::\n\n    pyotp.random_hex()  # returns a 40-character hex-encoded secret\n\ngoogle authenticator compatible\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\npyotp works with the google authenticator iphone and android app, as well as other otp apps like authy. pyotp includes\nthe ability to generate provisioning uris for use with the qr code scanner built into these mfa client apps::\n\n    pyotp.totp.totp('jbswy3dpehpk3pxp').provisioning_uri(name='alice@google.com', issuer_name='secure app')\n\n    >>> 'otpauth://totp/secure%20app:alice%40google.com?secret=jbswy3dpehpk3pxp&issuer=secure%20app'\n\n    pyotp.hotp.hotp('jbswy3dpehpk3pxp').provisioning_uri(name=\"alice@google.com\", issuer_name=\"secure app\", initial_count=0)\n\n    >>> 'otpauth://hotp/secure%20app:alice%40google.com?secret=jbswy3dpehpk3pxp&issuer=secure%20app&counter=0'\n\nthis url can then be rendered as a qr code (for example, using https://github.com/soldair/node-qrcode) which can then be\nscanned and added to the users list of otp credentials.\n\nparsing these urls is also supported::\n\n    pyotp.parse_uri('otpauth://totp/secure%20app:alice%40google.com?secret=jbswy3dpehpk3pxp&issuer=secure%20app')\n\n    >>> <pyotp.totp.totp object at 0xffffffff>\n\n    pyotp.parse_uri('otpauth://hotp/secure%20app:alice%40google.com?secret=jbswy3dpehpk3pxp&issuer=secure%20app&counter=0'\n\n    >>> <pyotp.totp.hotp object at 0xffffffff>\n\nworking example\n~~~~~~~~~~~~~~~\n\nscan the following barcode with your phone's otp app (e.g. google authenticator):\n\n.. image:: https://chart.apis.google.com/chart?cht=qr&chs=250x250&chl=otpauth%3a%2f%2ftotp%2falice%40google.com%3fsecret%3djbswy3dpehpk3pxp\n\nnow run the following and compare the output::\n\n    import pyotp\n    totp = pyotp.totp(\"jbswy3dpehpk3pxp\")\n    print(\"current otp:\", totp.now())\n\nthird-party contributions\n~~~~~~~~~~~~~~~~~~~~~~~~~\nthe following third-party contributions are not described by a standard, not officially supported, and provided for\nreference only:\n\n* ``pyotp.contrib.steam()``: an implementation of steam totp. uses the same api as `pyotp.totp()`.\n\nlinks\n~~~~~\n\n* `project home page (github) <https://github.com/pyauth/pyotp>`_\n* `documentation <https://pyauth.github.io/pyotp/>`_\n* `package distribution (pypi) <https://pypi.python.org/pypi/pyotp>`_\n* `change log <https://github.com/pyauth/pyotp/blob/master/changes.rst>`_\n* `rfc 4226: hotp: an hmac-based one-time password <https://tools.ietf.org/html/rfc4226>`_\n* `rfc 6238: totp: time-based one-time password algorithm <https://tools.ietf.org/html/rfc6238>`_\n* `rotp <https://github.com/mdp/rotp>`_ - original ruby otp library by `mark percival <https://github.com/mdp>`_\n* `otphp <https://github.com/lelag/otphp>`_ - php port of rotp by `le lag <https://github.com/lelag>`_\n* `owasp authentication cheat sheet <https://github.com/owasp/cheatsheetseries/blob/master/cheatsheets/authentication_cheat_sheet.md>`_\n* `nist sp 800-63-3: digital authentication guideline <https://pages.nist.gov/800-63-3/>`_\n\nfor new applications:\n\n* `webauthn <https://www.w3.org/tr/webauthn/>`_\n* `pywarp <https://github.com/pyauth/pywarp>`_\n\nversioning\n~~~~~~~~~~\nthis package follows the `semantic versioning 2.0.0 <http://semver.org/>`_ standard. to control changes, it is\nrecommended that application developers pin the package version and manage it using `pip-tools\n<https://github.com/jazzband/pip-tools>`_ or similar. for library developers, pinning the major version is\nrecommended.\n\n.. image:: https://github.com/pyauth/pyotp/workflows/python%20package/badge.svg\n        :target: https://github.com/pyauth/pyotp/actions\n.. image:: https://img.shields.io/codecov/c/github/pyauth/pyotp/master.svg\n        :target: https://codecov.io/github/pyauth/pyotp?branch=master\n.. image:: https://img.shields.io/pypi/v/pyotp.svg\n        :target: https://pypi.python.org/pypi/pyotp\n.. image:: https://img.shields.io/pypi/l/pyotp.svg\n        :target: https://pypi.python.org/pypi/pyotp\n.. image:: https://readthedocs.org/projects/pyotp/badge/?version=latest\n        :target: https://pyotp.readthedocs.io/\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "pyotp",
+  "package_url": "https://pypi.org/project/pyotp/",
+  "project_url": "https://pypi.org/project/pyotp/",
+  "project_urls": {
+    "Change Log": "https://github.com/pyauth/pyotp/blob/master/Changes.rst",
+    "Documentation": "https://pyauth.github.io/pyotp",
+    "Homepage": "https://github.com/pyotp/pyotp",
+    "Issue Tracker": "https://github.com/pyauth/pyotp/issues",
+    "Source Code": "https://github.com/pyauth/pyotp"
+  },
+  "release_url": "https://pypi.org/project/pyotp/2.9.0/",
+  "requires_dist": [
+    "coverage ; extra == 'test'",
+    "wheel ; extra == 'test'",
+    "ruff ; extra == 'test'",
+    "mypy ; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "python one time password library",
+  "version": "2.9.0",
+  "releases": [],
+  "developers": [
+    "kislyuk@gmail.com",
+    "pyotp_contributors"
+  ],
+  "kwds": "pyotp authentication auth authenticator google_authenticator",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_pyotp",
+  "homepage": "https://github.com/pyotp/pyotp",
+  "release_count": 24,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_mypy",
+    "pypi_ruff",
+    "pypi_wheel"
+  ]
+}

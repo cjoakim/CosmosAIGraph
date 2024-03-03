@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "partd\n=====\n\n|build status| |version status|\n\nkey-value byte store with appendable values\n\n    partd stores key-value pairs.\n    values are raw bytes.\n    we append on old values.\n\npartd excels at shuffling operations.\n\noperations\n----------\n\npartd has two main operations, ``append`` and ``get``.\n\n\nexample\n-------\n\n1.  create a partd backed by a directory::\n\n        >>> import partd\n        >>> p = partd.file('/path/to/new/dataset/')\n\n2.  append key-byte pairs to dataset::\n\n        >>> p.append({'x': b'hello ', 'y': b'123'})\n        >>> p.append({'x': b'world!', 'y': b'456'})\n\n3.  get bytes associated to keys::\n\n        >>> p.get('x')         # one key\n        b'hello world!'\n\n        >>> p.get(['y', 'x'])  # list of keys\n        [b'123456', b'hello world!']\n\n4.  destroy partd dataset::\n\n        >>> p.drop()\n\nthat's it.\n\n\nimplementations\n---------------\n\nwe can back a partd by an in-memory dictionary::\n\n    >>> p = dict()\n\nfor larger amounts of data or to share data between processes we back a partd\nby a directory of files.  this uses file-based locks for consistency.::\n\n    >>> p = file('/path/to/dataset/')\n\nhowever this can fail for many small writes.  in these cases you may wish to buffer one partd with another, keeping a fixed maximum of data in the buffering partd.  this writes the larger elements of the first partd to the second partd when space runs low::\n\n    >>> p = buffer(dict(), file(), available_memory=2e9)  # 2gb memory buffer\n\nyou might also want to have many distributed process write to a single partd\nconsistently.  this can be done with a server\n\n*   server process::\n\n        >>> p = buffer(dict(), file(), available_memory=2e9)  # 2gb memory buffer\n        >>> s = server(p, address='ipc://server')\n\n*   worker processes::\n\n        >>> p = client('ipc://server')  # client machine talks to remote server\n\n\nencodings and compression\n-------------------------\n\nonce we can robustly and efficiently append bytes to a partd we consider\ncompression and encodings.  this is generally available with the ``encode``\npartd, which accepts three functions, one to apply on bytes as they are\nwritten, one to apply to bytes as they are read, and one to join bytestreams.\ncommon configurations already exist for common data and compression formats.\n\nwe may wish to compress and decompress data transparently as we interact with a\npartd.  objects like ``bz2``, ``blosc``, ``zlib`` and ``snappy`` exist and take\nanother partd as an argument.::\n\n    >>> p = file(...)\n    >>> p = zlib(p)\n\nthese work exactly as before, the (de)compression happens automatically.\n\ncommon data formats like python lists, numpy arrays, and pandas\ndataframes are also supported out of the box.::\n\n    >>> p = file(...)\n    >>> p = numpy(p)\n    >>> p.append({'x': np.array([...])})\n\nthis lets us forget about bytes and think instead in our normal data types.\n\ncomposition\n-----------\n\nin principle we want to compose all of these choices together\n\n1.  write policy:  ``dict``, ``file``, ``buffer``, ``client``\n2.  encoding:  ``pickle``, ``numpy``, ``pandas``, ...\n3.  compression:  ``blosc``, ``snappy``, ...\n\npartd objects compose by nesting.  here we make a partd that writes pickle\nencoded bz2 compressed bytes directly to disk::\n\n    >>> p = pickle(bz2(file('foo')))\n\nwe could construct more complex systems that include compression,\nserialization, buffering, and remote access.::\n\n    >>> server = server(buffer(dict(), file(), available_memory=2e0))\n\n    >>> client = pickle(snappy(client(server.address)))\n    >>> client.append({'x': [1, 2, 3]})\n\n.. |build status| image:: https://github.com/dask/partd/workflows/ci/badge.svg\n   :target: https://github.com/dask/partd/actions?query=workflow%3aci\n.. |version status| image:: https://img.shields.io/pypi/v/partd.svg\n   :target: https://pypi.python.org/pypi/partd/\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "partd",
+  "package_url": "https://pypi.org/project/partd/",
+  "project_url": "https://pypi.org/project/partd/",
+  "project_urls": {
+    "Homepage": "http://github.com/dask/partd/"
+  },
+  "release_url": "https://pypi.org/project/partd/1.4.1/",
+  "requires_dist": [
+    "locket",
+    "toolz",
+    "numpy (>=1.9.0) ; extra == 'complete'",
+    "pandas (>=0.19.0) ; extra == 'complete'",
+    "pyzmq ; extra == 'complete'",
+    "blosc ; extra == 'complete'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "appendable key-value storage",
+  "version": "1.4.1",
+  "releases": [],
+  "developers": [
+    "matthew_rocklin",
+    "mrocklin@gmail.com"
+  ],
+  "kwds": "dataset append partd appendable shuffling",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_partd",
+  "homepage": "http://github.com/dask/partd/",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_blosc",
+    "pypi_locket",
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_pyzmq",
+    "pypi_toolz"
+  ]
+}

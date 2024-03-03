@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: unix",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "tzlocal\n=======\n\napi change!\n-----------\n\nwith version 3.0 of tzlocal, tzlocal no longer returned `pytz` objects, but\n`zoneinfo` objects, which has a different api. since 4.0, it now restored\npartial compatibility for `pytz` users through paul ganssle's\n`pytz_deprecation_shim`.\n\ntzlocal 4.0 also adds an official function `get_localzone_name()` to get only\nthe timezone name, instead of a timezone object. on unix, it can raise an\nerror if you don't have a timezone name configured, where `get_localzone()`\nwill succeed, so only use that if you need the timezone name.\n\n4.0 also adds way more information on what is going wrong in your\nconfiguration when the configuration files are unclear or contradictory.\n\nversion 5.0 removes the `pytz_deprecation_shim`, and now only returns\n`zoneinfo` objects, like verion 3.0 did. if you need `pytz` objects, you have\nto stay on version 4.0. if there are bugs in version 4.0, i will release\nupdates, but there will be no further functional changes on the 4.x branch.\n\n\ninfo\n----\n\nthis python module returns the `iana time zone name\n<https://www.iana.org/time-zones>`_ for your local time zone or a ``tzinfo``\nobject with the local timezone information, under unix and windows.\n\nit requires python 3.8 or later, and will use the ``backports.tzinfo``\npackage, for python 3.8.\n\nthis module attempts to fix a glaring hole in the ``pytz`` and ``zoneinfo``\nmodules, that there is no way to get the local timezone information, unless\nyou know the zoneinfo name, and under several linux distros that's hard or\nimpossible to figure out.\n\nwith ``tzlocal`` you only need to call ``get_localzone()`` and you will get a\n``tzinfo`` object with the local time zone info. on some unices you will\nstill not get to know what the timezone name is, but you don't need that when\nyou have the tzinfo file. however, if the timezone name is readily available\nit will be used.\n\nwhat it's not for\n-----------------\n\nit's not for converting the current time between utc and your local time. there are\nother, simpler ways of doing this. this is ig you need to know things like the name\nof the time zone, or if you need to be able to convert between your time zone and\nanother time zone for times that are in the future or in the past.\n\nfor current time conversions to and from utc, look in the python ``time`` module.\n\n\nsupported systems\n-----------------\n\nthese are the systems that are in theory supported:\n\n * windows 2000 and later\n\n * any unix-like system with a ``/etc/localtime`` or ``/usr/local/etc/localtime``\n\nif you have one of the above systems and it does not work, it's a bug.\nplease report it.\n\nplease note that if you are getting a time zone called ``local``, this is not\na bug, it's actually the main feature of ``tzlocal``, that even if your\nsystem does not have a configuration file with the zoneinfo name of your time\nzone, it will still work.\n\nyou can also use ``tzlocal`` to get the name of your local timezone, but only\nif your system is configured to make that possible. ``tzlocal`` looks for the\ntimezone name in ``/etc/timezone``, ``/var/db/zoneinfo``,\n``/etc/sysconfig/clock`` and ``/etc/conf.d/clock``. if your\n``/etc/localtime`` is a symlink it can also extract the name from that\nsymlink.\n\nif you need the name of your local time zone, then please make sure your\nsystem is properly configured to allow that.\n\nif your unix system doesn't have a timezone configured, tzlocal will default\nto utc.\n\nnotes on docker\n---------------\n\nit turns out that docker images frequently have broken timezone setups.\nthis usually resuts in a warning that the configuration is wrong, or that\nthe timezone offset doesn't match the found timezone.\n\nthe easiest way to fix that is to set a tz variable in your docker setup\nto whatever timezone you want, which is usually the timezone your host\ncomputer has.\n\nusage\n-----\n\nload the local timezone:\n\n    >>> from tzlocal import get_localzone\n    >>> tz = get_localzone()\n    >>> tz\n    zoneinfo.zoneinfo(key='europe/warsaw')\n\ncreate a local datetime:\n\n    >>> from datetime import datetime\n    >>> dt = datetime(2015, 4, 10, 7, 22, tzinfo=tz)\n    >>> dt\n    datetime.datetime(2015, 4, 10, 7, 22, tzinfo=zoneinfo.zoneinfo(key='europe/warsaw'))\n\nlookup another timezone with ``zoneinfo`` (``backports.zoneinfo`` on python 3.8 or earlier):\n\n    >>> from zoneinfo import zoneinfo\n    >>> eastern = zoneinfo('us/eastern')\n\nconvert the datetime:\n\n    >>> dt.astimezone(eastern)\n    datetime.datetime(2015, 4, 10, 1, 22, tzinfo=zoneinfo.zoneinfo(key='us/eastern'))\n\nif you just want the name of the local timezone, use `get_localzone_name()`:\n\n    >>> from tzlocal import get_localzone_name\n    >>> get_localzone_name()\n    \"europe/warsaw\"\n\nplease note that under unix, `get_localzone_name()` may fail if there is no zone\nconfigured, where `get_localzone()` would generally succeed.\n\ntroubleshooting\n---------------\n\nif you don't get the result you expect, try running it with debugging turned on.\nstart a python interpreter that has tzlocal installed, and run the following code::\n\n    import logging\n    logging.basicconfig(level=\"debug\")\n    import tzlocal\n    tzlocal.get_localzone()\n\nthe output should look something like this, and this will tell you what\nconfigurations were found::\n\n    debug:root:/etc/timezone found, contents:\n     europe/warsaw\n\n    debug:root:/etc/localtime found\n    debug:root:2 found:\n     {'/etc/timezone': 'europe/warsaw', '/etc/localtime is a symlink to': 'europe/warsaw'}\n    zoneinfo.zoneinfo(key='europe/warsaw')\n\n\ndevelopment\n-----------\n\nfor ease of development, there is a makefile that will help you with basic tasks,\nlike creating a development environment with all the necessary tools (although\nyou need a supported python version installed first)::\n\n    $ make devenv\n\nto run tests::\n\n    $ make test\n\ncheck the syntax::\n\n    $ make check\n\n\nmaintainer\n----------\n\n* lennart regebro, regebro@gmail.com\n\ncontributors\n------------\n\n* marc van olmen\n* benjamen meyer\n* manuel ebert\n* xiaokun zhu\n* cameris\n* edward betts\n* mck kim\n* cris ewing\n* ayala shachar\n* lev maximov\n* jakub wilk\n* john quarles\n* preston landers\n* victor torres\n* jean jordaan\n* zackary welch\n* micka\u00ebl schoentgen\n* gabriel corona\n* alex gr\u00f6nholm\n* julin s\n* miroslav \u0161ediv\u00fd\n* revanssz\n* sam treweek\n* peter di pasquale\n* rongrong\n\n(sorry if i forgot someone)\n\nlicense\n-------\n\n* mit https://opensource.org/licenses/mit\n",
+  "docs_url": null,
+  "keywords": "timezone",
+  "license": "mit",
+  "name": "tzlocal",
+  "package_url": "https://pypi.org/project/tzlocal/",
+  "project_url": "https://pypi.org/project/tzlocal/",
+  "project_urls": {
+    "Changelog": "https://github.com/regebro/tzlocal/blob/master/CHANGES.txt",
+    "Issue tracker": "https://github.com/regebro/tzlocal/issues",
+    "Source code": "https://github.com/regebro/tzlocal"
+  },
+  "release_url": "https://pypi.org/project/tzlocal/5.2/",
+  "requires_dist": [
+    "tzdata ; platform_system == \"Windows\"",
+    "backports.zoneinfo ; python_version < \"3.9\"",
+    "pytest (>=4.3) ; extra == 'devenv'",
+    "pytest-mock (>=3.3) ; extra == 'devenv'",
+    "pytest-cov ; extra == 'devenv'",
+    "check-manifest ; extra == 'devenv'",
+    "zest.releaser ; extra == 'devenv'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "tzinfo object for the local timezone",
+  "version": "5.2",
+  "releases": [],
+  "developers": [
+    "regebro@gmail.com"
+  ],
+  "kwds": "get_localzone pytz_deprecation_shim get_localzone_name tzlocal timezone",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_tzlocal",
+  "homepage": "",
+  "release_count": 46,
+  "dependency_ids": [
+    "pypi_backports.zoneinfo",
+    "pypi_check_manifest",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_mock",
+    "pypi_tzdata",
+    "pypi_zest.releaser"
+  ]
+}

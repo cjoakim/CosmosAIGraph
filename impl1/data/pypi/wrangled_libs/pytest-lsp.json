@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "framework :: pytest",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# pytest-lsp: end-to-end testing of language servers with pytest\n\n`pytest-lsp` is a pytest plugin for writing end-to-end tests for language servers.\n\nit works by running the language server in a subprocess and communicating with it over stdio, just like a real language client.\nthis also means `pytest-lsp` can be used to test language servers written in any language - not just python.\n\n`pytest-lsp` relies on the [`pygls`](https://github.com/openlawlibrary/pygls) library for its language server protocol implementation.\n\nsee the [documentation](https://lsp-devtools.readthedocs.io/en/latest/) for details on getting started.\n\n```python\nimport sys\n\nimport pytest_lsp\nfrom lsprotocol.types import (\n    completionparams,\n    initializeparams,\n    position,\n    textdocumentidentifier,\n)\nfrom pytest_lsp import (\n    clientserverconfig,\n    languageclient,\n    client_capabilities,\n)\n\n\n@pytest_lsp.fixture(\n    config=clientserverconfig(\n        server_command=[sys.executable, \"-m\", \"esbonio\"],\n    ),\n)\nasync def client(lsp_client: languageclient):\n    # setup\n    response = await lsp_client.initialize_session(\n        initializeparams(\n            capabilities=client_capabilities(\"visual-studio-code\"),\n            root_uri=\"file:///path/to/test/project/root/\",\n        )\n    )\n\n    yield\n\n    # teardown\n    await lsp_client.shutdown_session()\n\n\nasync def test_completion(client: languageclient):\n    result = await client.text_document_completion_async(\n        params=completionparams(\n            position=position(line=5, character=23),\n            text_document=textdocumentidentifier(\n                uri=\"file:///path/to/test/project/root/test_file.rst\"\n            ),\n        )\n    )\n\n    assert len(result.items) > 0\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pytest-lsp",
+  "package_url": "https://pypi.org/project/pytest-lsp/",
+  "project_url": "https://pypi.org/project/pytest-lsp/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/swyddfa/lsp-devtools/issues",
+    "Documentation": "https://swyddfa.github.io/lsp-devtools/",
+    "Source Code": "https://github.com/swyddfa/lsp-devtools"
+  },
+  "release_url": "https://pypi.org/project/pytest-lsp/0.4.0/",
+  "requires_dist": [
+    "importlib-resources; python_version < '3.9'",
+    "packaging",
+    "pygls>=1.1.0",
+    "pytest",
+    "pytest-asyncio"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "a pytest plugin for end-to-end testing of language servers",
+  "version": "0.4.0",
+  "releases": [],
+  "developers": [
+    "alcarneyme@gmail.com"
+  ],
+  "kwds": "pytest_lsp pytest lsp_client lsp pygls",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_lsp",
+  "homepage": "",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_importlib_resources",
+    "pypi_packaging",
+    "pypi_pygls",
+    "pypi_pytest",
+    "pypi_pytest_asyncio"
+  ]
+}

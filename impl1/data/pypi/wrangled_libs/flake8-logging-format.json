@@ -1,0 +1,32 @@
+{
+  "classifiers": [
+    "framework :: flake8"
+  ],
+  "description": "# flake8-logging-format\n\nflake8 extension to validate (lack of) logging format strings\n\n\n## what's this?\n\npython [logging](https://docs.python.org/3/library/logging.html#logging.logger.debug) supports a special `extra` keyword\nfor passing a dictionary of user-defined attributes to include in a logging event. one way to ensure consistency and\nrigor in logging is to **always** use `extra` to pass non-constant data and, therefore, to **never** use format strings,\nconcatenation, or other similar techniques to construct a log string.\n\nin other words, do this:\n\n```python\nlogger.info(\n    \"hello {world}\",\n    extra=dict(\n        world=\"earth\"\n    )\n)\n```\n\ninstead of:\n\n```python\nlogger.info(\n    \"hello {world}\".format(world=earth)\n)\n```\n\n## extra whitelist\n\nas a further level of rigor, we can enforce that `extra` dictionaries only use keys from a well-known whitelist.\n\nusage:\n\n```bash\nflake8 --enable-extra-whitelist\n```\n\nthe built-in `whitelist` supports plugins using `entry_points` with a key of `\"logging.extra.whitelist\"`. each\nregistered entry point must be a callable that returns an iterable of string.\n\nin some cases you may want to log sensitive data only in debugging scenarios.  this is supported in 2 ways:\n1. we do not check the logging.extra.whitelist for lines logged at the `debug` level\n2. you may also prefix a keyword with 'debug\\_' and log it at another level.  you can safely assume these will be\n   filtered out of shipped logs.\n\n## violations detected\n\n -  `g001` logging statements should not use `string.format()` for their first argument\n -  `g002` logging statements should not use `%` formatting for their first argument\n -  `g003` logging statements should not use `+` concatenation for their first argument\n -  `g004` logging statements should not use `f\"...\"` for their first argument (only in python 3.6+)\n -  `g010` logging statements should not use `warn` (use `warning` instead)\n -  `g100` logging statements should not use `extra` arguments unless whitelisted\n -  `g101` logging statement should not use `extra` arguments that clash with logrecord fields\n -  `g200` logging statements should not include the exception in logged string (use `exception` or `exc_info=true`)\n -  `g201` logging statements should not use `error(..., exc_info=true)` (use `exception(...)` instead)\n -  `g202` logging statements should not use redundant `exc_info=true` in `exception`\n\nthese violations are disabled by default. to enable them for your project, specify the code(s) in your `setup.cfg`:\n\n```ini\n[flake8]\nenable-extensions=g\n```\n\n## motivation\n\nour motivation has to do with balancing the needs of our team and those of our customers.\non the one hand, developers and front-line support should be able to look at application logs. on the other hand, our customers don't want their data shared with anyone, including internal employees.\n\nthe implementation approaches this in two ways:\n\n1. by trying to prevent the use of string concatenation in logs (vs explicit variable passing in the standard logging `extra` dictionary)\n\n2. by providing an (optional) mechanism for whitelisting which field names may appear in the `extra` dictionary\n\nnaturally, this _does not_ prevent developers from doing something like:\n\n```python\nextra=dict(\n    user_id=user.name,\n)\n```\n\nbut then avoiding a case like this falls back to other processes around pull-requests, code review and internal policy.\n\n\n",
+  "docs_url": null,
+  "keywords": "microcosm",
+  "license": "apache license 2.0",
+  "name": "flake8-logging-format",
+  "package_url": "https://pypi.org/project/flake8-logging-format/",
+  "project_url": "https://pypi.org/project/flake8-logging-format/",
+  "project_urls": {
+    "Homepage": "https://github.com/globality-corp/flake8-logging-format"
+  },
+  "release_url": "https://pypi.org/project/flake8-logging-format/0.9.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "",
+  "version": "0.9.0",
+  "releases": [],
+  "developers": [
+    "engineering@globality.com",
+    "globality_engineering"
+  ],
+  "kwds": "logging logs logger log flake8",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_flake8_logging_format",
+  "homepage": "https://github.com/globality-corp/flake8-logging-format",
+  "release_count": 10,
+  "dependency_ids": []
+}

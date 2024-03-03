@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "# coredis\n\n[![docs](https://readthedocs.org/projects/coredis/badge/?version=stable)](https://coredis.readthedocs.org)\n[![codecov](https://codecov.io/gh/alisaifee/coredis/branch/master/graph/badge.svg)](https://codecov.io/gh/alisaifee/coredis)\n[![latest version in pypi](https://img.shields.io/pypi/v/coredis.svg)](https://pypi.python.org/pypi/coredis/)\n[![ci](https://github.com/alisaifee/coredis/workflows/ci/badge.svg?branch=master)](https://github.com/alisaifee/coredis/actions?query=branch%3amaster+workflow%3aci)\n[![supported python versions](https://img.shields.io/pypi/pyversions/coredis.svg)](https://pypi.python.org/pypi/coredis/)\n\n______________________________________________________________________\n\ncoredis is an async redis client with support for redis server, cluster & sentinel.\n\n- the client api uses the specifications in the [redis command documentation](https://redis.io/commands/) to define the api by using the following conventions:\n\n  - arguments retain naming from redis as much as possible\n  - only optional variadic arguments are mapped to variadic positional or keyword arguments.\n    when the variable length arguments are not optional (which is almost always the case) the expected argument\n    is an iterable of type [parameters](https://coredis.readthedocs.io/en/latest/api/typing.html#coredis.typing.parameters) or `mapping`.\n  - pure tokens used as flags are mapped to boolean arguments\n  - `one of` arguments accepting pure tokens are collapsed and accept a [puretoken](https://coredis.readthedocs.io/en/latest/api/utilities.html#coredis.tokens.puretoken)\n\n- responses are mapped between resp and python types as closely as possible.\n\n- for higher level concepts such as pipelines, lua scripts, pubsub & streams\n  abstractions are provided to encapsulate recommended patterns.\n  see the [handbook](https://coredis.readthedocs.io/en/latest/handbook/index.html)\n  and the [api documentation](https://coredis.readthedocs.io/en/latest/api/index.html)\n  for more details.\n\n> **warning**\n> the command api does not mirror the official python [redis client](https://github.com/redis/redis-py). for details about the high level differences refer to [divergence from aredis & redis-py](https://coredis.readthedocs.io/en/latest/history.html#divergence-from-aredis-redis-py)\n\n______________________________________________________________________\n\n<!-- toc depthfrom:2 depthto:6 withlinks:1 updateonsave:1 orderedlist:0 -->\n\n- [installation](#installation)\n- [feature summary](#feature-summary)\n  - [deployment topologies](#deployment-topologies)\n  - [application patterns](#application-patterns)\n  - [server side scripting](#server-side-scripting)\n  - [redis modules](#redis-modules)\n  - [miscellaneous](#miscellaneous)\n- [quick start](#quick-start)\n  - [single node or cluster client](#single-node-or-cluster-client)\n  - [sentinel](#sentinel)\n- [compatibility](#compatibility)\n  - [supported python versions](#supported-python-versions)\n  - [redis-like backends](#redis-like-backends)\n- [references](#references)\n\n<!-- /toc -->\n\n## installation\n\nto install coredis:\n\n```bash\n$ pip install coredis\n```\n\n## feature summary\n\n### deployment topologies\n\n- [redis cluster](https://coredis.readthedocs.org/en/latest/handbook/cluster.html#redis-cluster)\n- [sentinel](https://coredis.readthedocs.org/en/latest/api/clients.html#sentinel)\n\n### application patterns\n\n- [connection pooling](https://coredis.readthedocs.org/en/latest/handbook/connections.html#connection-pools)\n- [pubsub](https://coredis.readthedocs.org/en/latest/handbook/pubsub.html)\n- [sharded pubsub](https://coredis.readthedocs.org/en/latest/handbook/pubsub.html#sharded-pub-sub) \\[`>= redis 7.0`\\]\n- [stream consumers](https://coredis.readthedocs.org/en/latest/handbook/streams.html)\n- [pipelining](https://coredis.readthedocs.org/en/latest/handbook/pipelines.html)\n- [client side caching](https://coredis.readthedocs.org/en/latest/handbook/caching.html)\n\n### server side scripting\n\n- [lua scripting](https://coredis.readthedocs.org/en/latest/handbook/scripting.html#lua_scripting)\n- [redis libraries and functions](https://coredis.readthedocs.org/en/latest/handbook/scripting.html#library-functions) \\[`>= redis 7.0`\\]\n\n### redis modules\n\n- [redisjson](https://coredis.readthedocs.org/en/latest/handbook/modules.html#redisjson)\n- [redisearch](https://coredis.readthedocs.org/en/latest/handbook/modules.html#redisearch)\n- [redisgraph](https://coredis.readthedocs.org/en/latest/handbook/modules.html#redisgraph)\n- [redisbloom](https://coredis.readthedocs.org/en/latest/handbook/modules.html#redisbloom)\n- [redistimeseries](https://coredis.readthedocs.org/en/latest/handbook/modules.html#redistimeseries)\n\n### miscellaneous\n\n- public api annotated with type annotations\n- optional [runtime type validation](https://coredis.readthedocs.org/en/latest/handbook/typing.html#runtime-type-checking) (via [beartype](https://github.com/beartype/beartype))\n\n## quick start\n\n### single node or cluster client\n\n```python\nimport asyncio\nfrom coredis import redis, rediscluster\n\nasync def example():\n    client = redis(host='127.0.0.1', port=6379, db=0)\n    # or with redis cluster\n    # client = rediscluster(startup_nodes=[{\"host\": \"127.0.01\", \"port\": 7001}])\n    await client.flushdb()\n    await client.set('foo', 1)\n    assert await client.exists(['foo']) == 1\n    assert await client.incr('foo') == 2\n    assert await client.incrby('foo', increment=100) == 102\n    assert int(await client.get('foo')) == 102\n\n    assert await client.expire('foo', 1)\n    await asyncio.sleep(0.1)\n    assert await client.ttl('foo') == 1\n    assert await client.pttl('foo') < 1000\n    await asyncio.sleep(1)\n    assert not await client.exists(['foo'])\n\nasyncio.run(example())\n```\n\n### sentinel\n\n```python\nimport asyncio\nfrom coredis.sentinel import sentinel\n\nasync def example():\n    sentinel = sentinel(sentinels=[(\"localhost\", 26379)])\n    primary = sentinel.primary_for(\"myservice\")\n    replica = sentinel.replica_for(\"myservice\")\n\n    assert await primary.set(\"fubar\", 1)\n    assert int(await replica.get(\"fubar\")) == 1\n\nasyncio.run(example())\n```\n\nto see a full list of supported redis commands refer to the [command\ncompatibility](https://coredis.readthedocs.io/en/latest/compatibility.html)\ndocumentation\n\ndetails about supported redis modules and their commands can be found\n[here](https://coredis.readthedocs.io/en/latest/handbook/modules.html)\n\n## compatibility\n\ncoredis is tested against redis versions `6.2.x`, `7.0.x` & `7.2.x`.\nthe test matrix status can be reviewed\n[here](https://github.com/alisaifee/coredis/actions/workflows/main.yml)\n\ncoredis is additionally tested against:\n\n- ` uvloop >= 0.15.0`\n\n### supported python versions\n\n- 3.8\n- 3.9\n- 3.10\n- 3.11\n- pypy 3.8\n- pypy 3.9\n\n### redis-like backends\n\n**coredis** is known to work with the following databases that have redis protocol compatibility:\n\n- [keydb](https://docs.keydb.dev/)\n- [dragonfly](https://dragonflydb.io/)\n\n## references\n\n- [documentation (stable)](http://coredis.readthedocs.org/en/stable)\n- [documentation (latest)](http://coredis.readthedocs.org/en/latest)\n- [changelog](http://coredis.readthedocs.org/en/stable/release_notes.html)\n- [project history](http://coredis.readthedocs.org/en/stable/history.html)\n",
+  "docs_url": null,
+  "keywords": "redis,key-value store,asyncio",
+  "license": "mit",
+  "name": "coredis",
+  "package_url": "https://pypi.org/project/coredis/",
+  "project_url": "https://pypi.org/project/coredis/",
+  "project_urls": {
+    "Changes": "https://github.com/alisaifee/coredis/releases",
+    "Documentation": "https://coredis.readthedocs.org",
+    "Homepage": "https://github.com/alisaifee/coredis",
+    "Source": "https://github.com/alisaifee/coredis"
+  },
+  "release_url": "https://pypi.org/project/coredis/4.16.0/",
+  "requires_dist": [
+    "async-timeout (<5,>4)",
+    "deprecated (>=1.2)",
+    "typing-extensions (>=4.3)",
+    "packaging (<24,>=21)",
+    "pympler (<2,>1)",
+    "wrapt (<2,>=1.1.0)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "python async client for redis key-value store",
+  "version": "4.16.0",
+  "releases": [],
+  "developers": [
+    "ali",
+    "ali@indydevs.org"
+  ],
+  "kwds": "redisgraph coredis badge redis redisjson",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_coredis",
+  "homepage": "https://github.com/alisaifee/coredis",
+  "release_count": 108,
+  "dependency_ids": [
+    "pypi_async_timeout",
+    "pypi_deprecated",
+    "pypi_packaging",
+    "pypi_pympler",
+    "pypi_typing_extensions",
+    "pypi_wrapt"
+  ]
+}

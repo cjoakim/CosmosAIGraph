@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries",
+    "topic :: software development :: quality assurance",
+    "topic :: software development :: testing",
+    "topic :: utilities",
+    "typing :: typed"
+  ],
+  "description": "# pytest-unordered: test collection content, ignoring order\n\n[![build status](https://github.com/utapyngo/pytest-unordered/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/utapyngo/pytest-unordered/actions/workflows/test.yml?query=branch%3amaster)\n[![coverage status](https://codecov.io/gh/utapyngo/pytest-unordered/branch/master/graph/badge.svg)](https://codecov.io/gh/utapyngo/pytest-unordered)\n![language](https://img.shields.io/github/languages/top/utapyngo/pytest-unordered)\n[![python compatibility](https://img.shields.io/pypi/pyversions/pytest-unordered)](https://pypi.python.org/pypi/pytest-unordered)\n[![pypi](https://img.shields.io/pypi/v/pytest-unordered?color=rgb%2852%2c%20208%2c%2088%29)](https://pypi.org/project/pytest-unordered/)\n\n\n`pytest_unordered` allows you to write simple (pytest) assertions\nto test whether collections have the same content, regardless of order.\nfor example:\n\n    assert [1, 20, 300] == unordered([20, 300, 1])\n\n\nit is especially useful when testing apis that return some complex data structures \nin an arbitrary order, e.g.:\n\n    assert response.json() == {\n        \"people\": unordered(\n            # here we test that the collection type is list\n            [\n                {\n                    \"name\": \"alice\",\n                    \"age\": 20,\n                    \"children\": unordered(\n                        # here the collection type is not important\n                        {\"name\": \"bob\", \"age\": 2}, \n                        {\"name\": \"carol\", \"age\": 3},\n                    ),\n                },\n                {\n                    \"name\": \"dave\",\n                    \"age\": 30,\n                    \"children\": unordered(\n                        {\"name\": \"eve\", \"age\": 5}, \n                        {\"name\": \"frank\", \"age\": 6},\n                    ),\n                },\n            ]\n        ),\n    }\n\n\n\n## installation\n\n    pip install pytest-unordered\n\n\n## usage\n\n### basics\n\nin most cases you just need the `unordered()` helper function:\n\n    from pytest_unordered import unordered\n\ncompare list or tuples by wrapping your expected value with `unordered()`:\n\n    assert [1, 20, 300] == unordered([20, 300, 1])  # pass\n    assert (1, 20, 300) == unordered((20, 300, 1))  # pass\n\nexcessive/missing items will be reported by pytest:\n\n    assert [1, 20, 300] == unordered([20, 300, 1, 300])\n\n      e         extra items in the right sequence:\n      e         300\n\nby default, the container type has to match too:\n\n    assert (1, 20, 300) == unordered([20, 300, 1])\n\n      e         type mismatch:\n      e         <class 'tuple'> != <class 'list'>\n\n\n\n### nesting\n\na seasoned developer will notice that the simple use cases above\ncan also be addressed with appropriate usage\nof builtins like `set()`, `sorted()`, `isinstance()`, `repr()`, etc,\nbut these solutions scale badly (in terms of boilerplate code)\nwith the complexity of your data structures.\nfor example: naively implementing order ignoring comparison\nwith `set()` or `sorted()` does not work with lists of dictionaries\nbecause dictionaries are not hashable or sortable.\n`unordered()` supports this out of the box however:\n\n    assert [{\"bb\": 20}, {\"a\": 1}] == unordered([{\"a\": 1}, {\"bb\": 20}])  # pass\n\n\nthe true value of `unordered()` lies in the fact that you\ncan apply it inside large nested data structures to skip order checking\nonly in desired places with surgical precision\nand without a lot of boilerplate code.\nfor example:\n\n    expected = unordered([\n        {\"customer\": \"alice\", \"orders\": unordered([123, 456])},\n        {\"customer\": \"bob\", \"orders\": [789, 1000]},\n    ])\n\n    actual = [\n        {\"customer\": \"bob\", \"orders\": [789, 1000]},\n        {\"customer\": \"alice\", \"orders\": [456, 123]},\n    ]\n\n    assert actual == expected\n\nin this example we wrapped the outer customer list and the order list of alice\nwith `unordered()`, but didn't wrap bob's order list.\nwith the `actual` value of above (where customer order is different\nand alice's orders are reversed), the assertion will pass.\nbut if the orders of bob would be swapped in `actual`, the assertion\nwill fail and pytest will report:\n\n    e         differing items:\n    e         {'orders': [1000, 789]} != {'orders': [789, 1000]}\n\n\n\n### container type checking\n\nas noted, the container types should be (by default) equal to pass the\nassertion. if you don't want this type check, call `unordered()`\nin a variable argument fashion (instead of passing\na container as single argument):\n\n    assert [1, 20, 300] == unordered(20, 300, 1)  # pass\n    assert (1, 20, 300) == unordered(20, 300, 1)  # pass\n\nthis pattern also allows comparing with iterators, generators and alike:\n\n    assert iter([1, 20, 300]) == unordered(20, 300, 1)  # pass\n    assert unordered(i for i in range(3)) == [2, 1, 0]  # pass\n\nif you want to enforce type checking when passing a single generator expression,\npass `check_type=true`:\n\n    assert unordered((i for i in range(3)), check_type=true) == [2, 1, 0]  # fail\n    assert unordered((i for i in range(3)), check_type=true) == (i for i in range(2, -1, -1))  # pass\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pytest-unordered",
+  "package_url": "https://pypi.org/project/pytest-unordered/",
+  "project_url": "https://pypi.org/project/pytest-unordered/",
+  "project_urls": {
+    "Homepage": "https://github.com/utapyngo/pytest-unordered"
+  },
+  "release_url": "https://pypi.org/project/pytest-unordered/0.5.2/",
+  "requires_dist": [
+    "pytest (>=6.0.0)"
+  ],
+  "requires_python": "",
+  "summary": "test equality of unordered collections in pytest",
+  "version": "0.5.2",
+  "releases": [],
+  "developers": [
+    "ivan_zaikin",
+    "ut@pyngo.tom.ru"
+  ],
+  "kwds": "pytest_unordered pytest unordered pyversions pypi",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_unordered",
+  "homepage": "https://github.com/utapyngo/pytest-unordered",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_pytest"
+  ]
+}

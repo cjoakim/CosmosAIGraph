@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# label studio converter\n\n[website](https://labelstud.io/) \u2022 [docs](https://labelstud.io/guide) \u2022 [twitter](https://twitter.com/heartexlabs) \u2022 [join slack community <img src=\"https://app.heartex.ai/docs/images/slack-mini.png\" width=\"18px\"/>](https://slack.labelstud.io)\n\n## table of contents\n\n- [introduction](#introduction)\n- [examples](#examples)\n    - [json](#json)\n    - [csv](#csv)\n    - [conll 2003](#conll-2003)\n    - [coco](#coco)\n    - [pascal voc xml](#pascal-voc-xml)\n- [contributing](#contributing)\n- [license](#license)\n\n## introduction\n\nlabel studio format converter helps you to encode labels into the format of your favorite machine learning library.\n\n## examples\n\n#### json\n**running from the command line:**\n\n```bash\npip install -u label-studio-converter\npython label-studio-converter export -i exported_tasks.json -c examples/sentiment_analysis/config.xml -o output_dir -f csv\n```\n\n**running from python:**\n```python\nfrom label_studio_converter import converter\n\nc = converter('examples/sentiment_analysis/config.xml')\nc.convert_to_json('examples/sentiment_analysis/completions/', 'tmp/output.json')\n```\n\ngetting output file: `tmp/output.json`\n```json\n[\n  {\n    \"reviewtext\": \"good case, excellent value.\",\n    \"sentiment\": \"positive\"\n  },\n  {\n    \"reviewtext\": \"what a waste of money and time!\",\n    \"sentiment\": \"negative\"\n  },\n  {\n    \"reviewtext\": \"the goose neck needs a little coaxing\",\n    \"sentiment\": \"neutral\"\n  }\n]\n```\n\nuse cases: any tasks\n\n\n#### csv\nrunning from the command line:\n```bash\npython label_studio_converter/cli.py --input examples/sentiment_analysis/completions/ --config examples/sentiment_analysis/config.xml --output output_dir --format csv --csv-separator $'\\t'\n```\n\nrunning from python:\n```python\nfrom label_studio_converter import converter\n\nc = converter('examples/sentiment_analysis/config.xml')\nc.convert_to_csv('examples/sentiment_analysis/completions/', 'output_dir', sep='\\t', header=true)\n```\n\ngetting output file `tmp/output.tsv`:\n```tsv\nreviewtext\tsentiment\ngood case, excellent value.\tpositive\nwhat a waste of money and time!\tnegative\nthe goose neck needs a little coaxing\tneutral\n```\n\nuse cases: any tasks\n\n#### conll 2003\n\nrunning from the command line:\n```bash\npython label_studio_converter/cli.py --input examples/named_entity/completions/ --config examples/named_entity/config.xml --output tmp/output.conll --format conll2003\n```\n\nrunning from python:\n```python\nfrom label_studio_converter import converter\n\nc = converter('examples/named_entity/config.xml')\nc.convert_to_conll2003('examples/named_entity/completions/', 'tmp/output.conll')\n```\n\ngetting output file `tmp/output.conll`\n```text\n-docstart- -x- o\nshowers -x- _ o\ncontinued -x- _ o\nthroughout -x- _ o\nthe -x- _ o\nweek -x- _ o\nin -x- _ o\nthe -x- _ o\nbahia -x- _ b-location\ncocoa -x- _ o\nzone, -x- _ o\n...\n```\n\nuse cases: text tagging\n\n\n#### coco\nrunning from the command line:\n```bash\npython label_studio_converter/cli.py --input examples/image_bbox/completions/ --config examples/image_bbox/config.xml --output tmp/output.json --format coco --image-dir tmp/images\n```\n\nrunning from python:\n```python\nfrom label_studio_converter import converter\n\nc = converter('examples/image_bbox/config.xml')\nc.convert_to_coco('examples/image_bbox/completions/', 'tmp/output.conll', output_image_dir='tmp/images')\n```\n\noutput images could be found in `tmp/images`\n\ngetting output file `tmp/output.json`\n```json\n{\n  \"images\": [\n    {\n      \"width\": 800,\n      \"height\": 501,\n      \"id\": 0,\n      \"file_name\": \"tmp/images/62a623a0d3cef27a51d3689865e7b08a\"\n    }\n  ],\n  \"categories\": [\n    {\n      \"id\": 0,\n      \"name\": \"planet\"\n    },\n    {\n      \"id\": 1,\n      \"name\": \"moonwalker\"\n    }\n  ],\n  \"annotations\": [\n    {\n      \"id\": 0,\n      \"image_id\": 0,\n      \"category_id\": 0,\n      \"segmentation\": [],\n      \"bbox\": [\n        299,\n        6,\n        377,\n        260\n      ],\n      \"ignore\": 0,\n      \"iscrowd\": 0,\n      \"area\": 98020\n    },\n    {\n      \"id\": 1,\n      \"image_id\": 0,\n      \"category_id\": 1,\n      \"segmentation\": [],\n      \"bbox\": [\n        288,\n        300,\n        132,\n        90\n      ],\n      \"ignore\": 0,\n      \"iscrowd\": 0,\n      \"area\": 11880\n    }\n  ],\n  \"info\": {\n    \"year\": 2019,\n    \"version\": \"1.0\",\n    \"contributor\": \"label studio\"\n  }\n}\n```\n\nuse cases: image object detection\n\n#### pascal voc xml\nrunning from the command line:\n```bash\npython label_studio_converter/cli.py --input examples/image_bbox/completions/ --config examples/image_bbox/config.xml --output tmp/voc-annotations --format voc --image-dir tmp/images\n```\n\nrunning from python:\n```python\nfrom label_studio_converter import converter\n\nc = converter('examples/image_bbox/config.xml')\nc.convert_to_voc('examples/image_bbox/completions/', 'tmp/output.conll', output_image_dir='tmp/images')\n```\n\noutput images can be found in `tmp/images`\n\ncorresponding annotations could be found in `tmp/voc-annotations/*.xml`:\n```xml\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<annotation>\n<folder>tmp/images</folder>\n<filename>62a623a0d3cef27a51d3689865e7b08a</filename>\n<source>\n<database>mydatabase</database>\n<annotation>coco2017</annotation>\n<image>flickr</image>\n<flickrid>null</flickrid>\n</source>\n<owner>\n<flickrid>null</flickrid>\n<name>label studio</name>\n</owner>\n<size>\n<width>800</width>\n<height>501</height>\n<depth>3</depth>\n</size>\n<segmented>0</segmented>\n<object>\n<name>planet</name>\n<pose>unspecified</pose>\n<truncated>0</truncated>\n<difficult>0</difficult>\n<bndbox>\n<xmin>299</xmin>\n<ymin>6</ymin>\n<xmax>676</xmax>\n<ymax>266</ymax>\n</bndbox>\n</object>\n<object>\n<name>moonwalker</name>\n<pose>unspecified</pose>\n<truncated>0</truncated>\n<difficult>0</difficult>\n<bndbox>\n<xmin>288</xmin>\n<ymin>300</ymin>\n<xmax>420</xmax>\n<ymax>390</ymax>\n</bndbox>\n</object>\n</annotation>\n```\n\nuse cases: image object detection\n\n### yolo to label studio converter \n\nusage:\n\n```\nlabel-studio-converter import yolo -i /yolo/root/directory -o ls-tasks.json\n```\n\nhelp:\n\n```\nlabel-studio-converter import yolo -h\n\nusage: label-studio-converter import yolo [-h] -i input [-o output]\n                                          [--to-name to_name]\n                                          [--from-name from_name]\n                                          [--out-type out_type]\n                                          [--image-root-url image_root_url]\n                                          [--image-ext image_ext]\n\noptional arguments:\n  -h, --help            show this help message and exit\n  -i input, --input input\n                        directory with yolo where images, labels, notes.json\n                        are located\n  -o output, --output output\n                        output file with label studio json tasks\n  --to-name to_name     object name from label studio labeling config\n  --from-name from_name\n                        control tag name from label studio labeling config\n  --out-type out_type   annotation type - \"annotations\" or \"predictions\"\n  --image-root-url image_root_url\n                        root url path where images will be hosted, e.g.:\n                        http://example.com/images or s3://my-bucket\n  --image-ext image_ext\n                        image extension to search: .jpg, .png\n```\n\nyolo export folder example:\n\n```\nyolo-folder\n  images\n   - 1.jpg\n   - 2.jpg\n   - ...\n  labels\n   - 1.txt\n   - 2.txt\n\n  classes.txt\n```\n\nclasses.txt example\n\n```\nairplane\ncar\n```\n\n## contributing\n\nwe would love to get your help for creating converters to other models. please feel free to create pull requests.\n\n- [contributing guideline](https://github.com/heartexlabs/label-studio/blob/develop/contributing.md)\n- [code of conduct](https://github.com/heartexlabs/label-studio/blob/develop/code_of_conduct.md)\n\n## license\n\nthis software is licensed under the [apache 2.0 license](/license) \u00a9 [heartex](https://www.heartex.com/). 2020\n\n<img src=\"https://github.com/heartexlabs/label-studio/blob/master/images/opossum_looking.png?raw=true\" title=\"hey everyone!\" height=\"140\" width=\"140\" />\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "label-studio-converter",
+  "package_url": "https://pypi.org/project/label-studio-converter/",
+  "project_url": "https://pypi.org/project/label-studio-converter/",
+  "project_urls": {
+    "Homepage": "https://github.com/heartexlabs/label-studio-converter"
+  },
+  "release_url": "https://pypi.org/project/label-studio-converter/0.0.57/",
+  "requires_dist": [
+    "pandas >=0.24.0",
+    "requests <3,>=2.22.0",
+    "Pillow >=10.0.1",
+    "nltk ==3.6.7",
+    "label-studio-tools >=0.0.3",
+    "ujson",
+    "ijson ~=3.2.0.post0"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "format converter add-on for label studio",
+  "version": "0.0.57",
+  "releases": [],
+  "developers": [
+    "heartex",
+    "hello@heartex.ai"
+  ],
+  "kwds": "heartexlabs label_studio_converter convert_to_coco labels labeling",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_label_studio_converter",
+  "homepage": "https://github.com/heartexlabs/label-studio-converter",
+  "release_count": 95,
+  "dependency_ids": [
+    "pypi_ijson",
+    "pypi_label_studio_tools",
+    "pypi_nltk",
+    "pypi_pandas",
+    "pypi_pillow",
+    "pypi_requests",
+    "pypi_ujson"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "# overview\n\noften there is a need to temporarily save a file to 'disk' for the consumption of external tools. or maybe you can pipe some input info to an external tool\nbut has no way of forcing such external tool to pipe its output straight to your software: **it wants to write a file to disk**.\ndisk operations are slow and if repeated too often can shorten the lifespan of underlying media.\n\non linux, most distributions offer a /tmp directory but it is usually on physical media. however, modern distributions often offer at east two\nplaces where one can safely create temporary files in ram: /dev/run/<uid>, /run/shm and /dev/shm\n\n/dev/run/<uid> is ideal for your temporary files. it is writable and readable only by your user.\n/dev/shm is usually world-readable and world-writable (just like /tmp), it is often used for ipc (inter process communication) and can serve well as a temporary ram-based tempdir.\n\nthis module is very simple and tries not to reinvent the wheel. it will check /tmp to see if it in a ramdisk or not. and it will also check\nif you have other options where to place your temporary files/dirs on a memory-based file system like tmpfs or ramfs.\n\nonce you know the suitable path on a memory-based file system where you can have your files, you are well served by python's builtin modules and external packages like pathlib\nor pyfilesystem2 to move on to do your things.\n\n**to know more, i recommend the following links:**\nhttps://unix.stackexchange.com/questions/162900/what-is-this-folder-run-user-1000\nhttps://superuser.com/questions/45342/when-should-i-use-dev-shm-and-when-should-i-use-tmp\n\n\n# api\nthis module searches for paths hosted on filesystems of type belonging to mem_based_fs=['tmpfs', 'ramfs']\npaths in suitable_paths=['/tmp', '/run/user/{uid}', '/run/shm', '/dev/shm'] are searched and the first path found that exists and is stored on a filesystem whose type belongs to mem_based_fs will be used as the tempdir.\nif no suitable path is found, then if fallback = true, we will fallback to default tempdir (as determined by tempfile stdlib). if fallback is a path, then we will default to it.\nif fallback is false, a runtimeerror exception is raised.\n\nthe memorytempfile constructor has arguments that let you change how the algorithm works.\nyou can change the order of paths (with 'preferred_paths'), add new paths to the search (with 'preferred_paths' and/or with 'additional_paths') and you can exclude certain paths from suitable_paths (with removed_paths). all paths containing the string {uid} will have it replaced by the user id.\nyou can change the filesystem types you accept (with filesystem_types) and specify whether or not to fallback to a vanilla tempdir as a last resort.\n\nthen, all methods available from tempfile stdlib are available through memorytempfile.\n\n# the constructor:\n\n**here is the list of accepted parameters:**\n- preferred_paths: list = none\n- remove_paths: list or bool = none\n- additional_paths: list = none\n- filesystem_types: list = none\n- fallback: str or bool = none\n\nthe path list that will be searched from first to last item will be constructed using the algorith:\n\n    paths = preferred_paths + (suitable_paths - remove_paths) + additional_paths\n\nif remove_paths is boolean 'true', suitable_paths will be eliminated, this is a way for you to take complete control of the path list\nthat will be used without relying on this package's hardcoded constants.\n\nthe only other hardcoded constant mem_based_fs=['tmpfs', 'ramfs'] will not be used at all if you pass your own 'filesystem_types' argument.\nby the way, if you wish to add other file system types, you must match what linux uses in /proc/self/mountinfo (at the 9th column).\n\n# requirements\n\n- python 3\n- works only on linux\n- compatible with chroot and/or namespaces, needs access to /proc/self/mountinfo\n\n# usage\n\n## example 1:\n\n    from memory_tempfile import memorytempfile\n    \n    tempfile = memorytempfile()\n    \n    with tempfile.temporaryfile() as tf:\n        # as usual...\n        \n## example 2:\n\n    # we now do not want to use /dev/shm or /run/shm and no ramfs paths\n    # if /run/user/{uid} is available, we prefer it to /tmp\n    # and we want to try /var/run as a last resort\n    # if all fails, fallback to platform's tmp dir\n    \n    from memory_tempfile import memorytempfile\n    import memory_tempfile\n\n    # by the way, all paths with string {uid} will have it replaced with the user id\n    tempfile = memorytempfile(preferred_paths=['/run/user/{uid}'], remove_paths=['/dev/shm', '/run/shm'],\n                              additional_paths=['/var/run'], filesystem_types=['tmpfs'], fallback=true)\n    \n    if tempfile.found_mem_tempdir():\n        print('we could use any of the followig paths: {}'.format(tempfile.get_usable_mem_tempdir_paths()))\n        print('and we are using now: {}'.format(tempfile.gettempdir()))\n    \n    with tempfile.namedtemporaryfile() as ntf:\n        # use it as usual...\n        pass\n",
+  "docs_url": null,
+  "keywords": "tempfile in ram,tempfile in memory,file in memory,tempfs,ramdisk,/dev/shm,/run/user",
+  "license": "mit",
+  "name": "memory-tempfile",
+  "package_url": "https://pypi.org/project/memory-tempfile/",
+  "project_url": "https://pypi.org/project/memory-tempfile/",
+  "project_urls": {
+    "Homepage": "https://github.com/mbello/memory-tempfile",
+    "Repository": "https://github.com/mbello/memory-tempfile"
+  },
+  "release_url": "https://pypi.org/project/memory-tempfile/2.2.3/",
+  "requires_dist": [],
+  "requires_python": ">=3.6,<4.0",
+  "summary": "helper functions to identify and use paths on the os (linux-only for now) where ram-based tempfiles can be created.",
+  "version": "2.2.3",
+  "releases": [],
+  "developers": [
+    "mbello",
+    "mbello@users.noreply.github.com"
+  ],
+  "kwds": "memory_tempfile temporaryfile tempfile tempfiles tmpfs",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_memory_tempfile",
+  "homepage": "https://github.com/mbello/memory-tempfile",
+  "release_count": 6,
+  "dependency_ids": []
+}

@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3"
+  ],
+  "description": "[![build status](http://github.com/cvxgrp/diffcp/workflows/build/badge.svg?event=push)](https://github.com/cvxgrp/diffcp/actions/workflows/build.yml)\n\n# diffcp\n\n`diffcp` is a python package for computing the derivative of a convex cone program, with respect to its problem data. the derivative is implemented as an abstract linear map, with methods for its forward application and its adjoint. \n\nthe implementation is based on the calculations in our paper [differentiating through a cone program](http://web.stanford.edu/~boyd/papers/diff_cone_prog.html).\n\n### installation\n`diffcp` is available on pypi, as a source distribution. install it with\n\n```bash\npip install diffcp\n```\n\nyou will need a c++11-capable compiler to build `diffcp`.\n\n`diffcp` requires:\n* [numpy](https://github.com/numpy/numpy) >= 1.15\n* [scipy](https://github.com/scipy/scipy) >= 1.10\n* [scs](https://github.com/bodono/scs-python) >= 2.0.2\n* [pybind11](https://github.com/pybind/pybind11/tree/stable) >= 2.4\n* [threadpoolctl](https://github.com/joblib/threadpoolctl) >= 1.1\n* [ecos](https://github.com/embotech/ecos-python) >= 2.0.10\n* python >= 3.7\n\n`diffcp` uses eigen; eigen operations can be automatically vectorized by compilers. to enable vectorization, install with\n\n```bash\nmarch_native=1 pip install diffcp\n```\n\nopenmp can be enabled by passing extra arguments to your compiler. for example, on linux, you can tell gcc to activate the openmp extension by specifying the flag \"-fopenmp\":\n\n```bash\nopenmp_flag=\"-fopenmp\" pip install diffcp\n```\n\nto enable both vectorization and openmp (on linux), use\n\n```bash\nmarch_native=1 openmp_flag=\"-fopenmp\" pip install diffcp\n```\n\n### cone programs\n`diffcp` differentiates through a primal-dual cone program pair. the primal problem must be expressed as \n\n```\nminimize        c'x\nsubject to      ax + s = b\n                s in k\n```\nwhere  `x` and `s` are variables, `a`, `b` and `c` are the user-supplied problem data, and `k` is a user-defined convex cone. the corresponding dual problem is\n\n```\nminimize        b'y\nsubject to      a'y + c == 0\n                y in k^*\n```\n\nwith dual variable `y`.\n\n### usage\n\n`diffcp` exposes the function\n\n```python\nsolve_and_derivative(a, b, c, cone_dict, warm_start=none, solver=none, **kwargs).\n```\n\nthis function returns a primal-dual solution `x`, `y`, and `s`, along with\nfunctions for evaluating the derivative and its adjoint (transpose).\nthese functions respectively compute right and left multiplication of the derivative\nof the solution map at `a`, `b`, and `c` by a vector.\nthe `solver` argument determines which solver to use; the available solvers\nare `solver=\"scs\"` and `solver=\"ecos\"`.\nif no solver is specified, `diffcp` will choose the solver itself.\nin the case that the problem is not solved, i.e. the solver fails for some reason, we will raise\na `solvererror` exception.\n\n#### arguments\nthe arguments `a`, `b`, and `c` correspond to the problem data of a cone program.\n* `a` must be a [scipy sparse csc matrix](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html).\n* `b` and `c` must be numpy arrays.\n* `cone_dict` is a dictionary that defines the convex cone `k`.\n* `warm_start` is an optional tuple `(x, y, s)` at which to warm-start. (note: this is only available for the scs solver).\n* `**kwargs` are keyword arguments to forward to the solver (e.g., `verbose=false`).\n\nthese inputs must conform to the [scs convention](https://github.com/bodono/scs-python) for problem data. the keys in `cone_dict` correspond to the cones, with\n* `diffcp.zero` for the zero cone,\n* `diffcp.pos` for the positive orthant,\n* `diffcp.soc` for a product of soc cones,\n* `diffcp.psd` for a product of psd cones, and\n* `diffcp.exp` for a product of exponential cones.\n\nthe values in `cone_dict` denote the sizes of each cone; the values of `diffcp.soc`, `diffcp.psd`, and `diffcp.exp` should be lists. the order of the rows of `a` must match the ordering of the cones given above. for more details, consult the [scs documentation](https://github.com/cvxgrp/scs/blob/master/readme.md).\n\n#### return value\nthe function `solve_and_derivative` returns a tuple\n\n```python\n(x, y, s, derivative, adjoint_derivative)\n```\n\n* `x`, `y`, and `s` are a primal-dual solution.\n\n* `derivative` is a function that applies the derivative at `(a, b, c)` to perturbations `da`, `db`, `dc`. it has the signature \n```derivative(da, db, dc) -> dx, dy, ds```, where `da` is a scipy sparse csc matrix with the same sparsity pattern as `a`, and `db` and `dc` are numpy arrays. `dx`, `dy`, and `ds` are numpy arrays, approximating the change in the primal-dual solution due to the perturbation.\n\n* `adjoint_derivative` is a function that applies the adjoint of the derivative to perturbations `dx`, `dy`, `ds`. it has the signature \n```adjoint_derivative(dx, dy, ds) -> da, db, dc```, where `dx`, `dy`, and `ds` are numpy arrays.\n\n#### example\n```python\nimport numpy as np\nfrom scipy import sparse\n\nimport diffcp\n\ncone_dict = {\n    diffcp.zero: 3,\n    diffcp.pos: 3,\n    diffcp.soc: [5]\n}\n\nm = 3 + 3 + 5\nn = 5\n\na, b, c = diffcp.utils.random_cone_prog(m, n, cone_dict)\nx, y, s, d, dt = diffcp.solve_and_derivative(a, b, c, cone_dict)\n\n# evaluate the derivative\nnonzeros = a.nonzero()\ndata = 1e-4 * np.random.randn(a.size)\nda = sparse.csc_matrix((data, nonzeros), shape=a.shape)\ndb = 1e-4 * np.random.randn(m)\ndc = 1e-4 * np.random.randn(n)\ndx, dy, ds = d(da, db, dc)\n\n# evaluate the adjoint of the derivative\ndx = c\ndy = np.zeros(m)\nds = np.zeros(m)\nda, db, dc = dt(dx, dy, ds)\n```\n\nfor more examples, including the sdp example described in the paper, see the [`examples`](examples/) directory.\n\n### citing\nif you wish to cite `diffcp`, please use the following bibtex:\n\n```\n@article{diffcp2019,\n    author       = {agrawal, a. and barratt, s. and boyd, s. and busseti, e. and moursi, w.},\n    title        = {differentiating through a cone program},\n    journal      = {journal of applied and numerical optimization},\n    year         = {2019},\n    volume       = {1},\n    number       = {2},\n    pages        = {107--115},\n}\n\n@misc{diffcp,\n    author       = {agrawal, a. and barratt, s. and boyd, s. and busseti, e. and moursi, w.},\n    title        = {{diffcp}: differentiating through a cone program, version 1.0},\n    howpublished = {\\url{https://github.com/cvxgrp/diffcp}},\n    year         = 2019\n}\n```\n\nthe following thesis concurrently derived the mathematics behind differentiating cone programs.\n```\n@phdthesis{amos2019differentiable,\n  author       = {brandon amos},\n  title        = {{differentiable optimization-based modeling for machine learning}},\n  school       = {carnegie mellon university},\n  year         = 2019,\n  month        = may,\n}\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license, version 2.0",
+  "name": "diffcp",
+  "package_url": "https://pypi.org/project/diffcp/",
+  "project_url": "https://pypi.org/project/diffcp/",
+  "project_urls": {
+    "Homepage": "http://github.com/cvxgrp/diffcp/"
+  },
+  "release_url": "https://pypi.org/project/diffcp/1.0.23/",
+  "requires_dist": [
+    "numpy (>=1.15)",
+    "scs (>=2.0.2)",
+    "scipy (>=1.1.0)",
+    "pybind11 (>=2.4)",
+    "threadpoolctl (>=1.1)",
+    "ecos (>=2.0.10)"
+  ],
+  "requires_python": "",
+  "summary": "",
+  "version": "1.0.23",
+  "releases": [],
+  "developers": [
+    "akshay_agrawal"
+  ],
+  "kwds": "diff_cone_prog diffcp diffcp2019 cone_dict cvxgrp",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_diffcp",
+  "homepage": "http://github.com/cvxgrp/diffcp/",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_ecos",
+    "pypi_numpy",
+    "pypi_pybind11",
+    "pypi_scipy",
+    "pypi_scs",
+    "pypi_threadpoolctl"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "================================\npurl - a simple python url class\n================================\n\na simple, immutable url class with a clean api for interrogation and\nmanipulation.  supports pythons 2.7, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8 and pypy.\n\nalso supports template urls as per `rfc 6570`_\n\ncontents:\n\n.. contents:: :local:\n    :depth: 1\n\n.. image:: https://secure.travis-ci.org/codeinthehole/purl.png\n    :target: https://travis-ci.org/codeinthehole/purl\n\n.. image:: https://img.shields.io/pypi/v/purl.svg\n    :target: https://crate.io/packages/purl/\n\n.. _`rfc 6570`: http://tools.ietf.org/html/rfc6570\n\ndocs\n----\n\nhttp://purl.readthedocs.org/en/latest/\n\ninstall\n-------\n\nfrom pypi (stable)::\n\n    $ pip install purl\n\nfrom github (unstable)::\n\n    $ pip install git+git://github.com/codeinthehole/purl.git#egg=purl\n\nuse\n---\n\nconstruct:\n\n.. code:: python\n\n    >>> from purl import url\n\n    # string constructor\n    >>> from_str = url('https://www.google.com/search?q=testing')\n\n    # keyword constructor\n    >>> from_kwargs = url(scheme='https', host='www.google.com', path='/search', query='q=testing')\n\n    # combine\n    >>> from_combo = url('https://www.google.com').path('search').query_param('q', 'testing')\n\nurl objects are immutable - all mutator methods return a new instance.\n\ninterrogate:\n\n.. code:: python\n\n    >>> u = url('https://www.google.com/search?q=testing')\n    >>> u.scheme()\n    'https'\n    >>> u.host()\n    'www.google.com'\n    >>> u.domain()\n    'www.google.com'\n    >>> u.username()\n    >>> u.password()\n    >>> u.netloc()\n    'www.google.com'\n    >>> u.port()\n    >>> u.path()\n    '/search'\n    >>> u.query()\n    'q=testing'\n    >>> u.fragment()\n    ''\n    >>> u.path_segment(0)\n    'search'\n    >>> u.path_segments()\n    ('search',)\n    >>> u.query_param('q')\n    'testing'\n    >>> u.query_param('q', as_list=true)\n    ['testing']\n    >>> u.query_param('lang', default='gb')\n    'gb'\n    >>> u.query_params()\n    {'q': ['testing']}\n    >>> u.has_query_param('q')\n    true\n    >>> u.has_query_params(('q', 'r'))\n    false\n    >>> u.subdomains()\n    ['www', 'google', 'com']\n    >>> u.subdomain(0)\n    'www'\n\nnote that each accessor method is overloaded to be a mutator method too, similar\nto the jquery api.  eg:\n\n.. code:: python\n\n    >>> u = url.from_string('https://github.com/codeinthehole')\n\n    # access\n    >>> u.path_segment(0)\n    'codeinthehole'\n\n    # mutate (creates a new instance)\n    >>> new_url = u.path_segment(0, 'tangentlabs')\n    >>> new_url is u\n    false\n    >>> new_url.path_segment(0)\n    'tangentlabs'\n\nhence, you can build a url up in steps:\n\n.. code:: python\n\n    >>> u = url().scheme('http').domain('www.example.com').path('/some/path').query_param('q', 'search term')\n    >>> u.as_string()\n    'http://www.example.com/some/path?q=search+term'\n\nalong with the above overloaded methods, there is also a ``add_path_segment``\nmethod for adding a segment at the end of the current path:\n\n.. code:: python\n\n    >>> new_url = u.add_path_segment('here')\n    >>> new_url.as_string()\n    'http://www.example.com/some/path/here?q=search+term'\n\ncouple of other things:\n\n* since the url class is immutable it can be used as a key in a dictionary\n* it can be pickled and restored\n* it supports equality operations\n* it supports equality operations\n\nurl templates can be used either via a ``template`` class:\n\n.. code:: python\n\n    >>> from purl import template\n    >>> tpl = template(\"http://example.com{/list*}\")\n    >>> url = tpl.expand({'list': ['red', 'green', 'blue']})\n    >>> url.as_string()\n    'http://example.com/red/green/blue'\n\nor the ``expand`` function:\n\n.. code:: python\n\n    >>> from purl import expand\n    >>> expand(u\"{/list*}\", {'list': ['red', 'green', 'blue']})\n    '/red/green/blue'\n\na wide variety of expansions are possible - refer to the rfc_ for more details.\n\n.. _rfc: http://tools.ietf.org/html/rfc6570\n\nchangelog\n---------\n\nv1.6 - 2021-05-15\n~~~~~~~~~~~~~~~~~\n\n* use `pytest` insteed of `nose`.\n* fix warning around regex string.\n\nv1.5 - 2019-03-10\n~~~~~~~~~~~~~~~~~\n\n* allow `@` in passwords.\n\nv1.4 - 2018-03-11\n~~~~~~~~~~~~~~~~~\n\n* allow usernames and passwords to be removed from urls.\n\nv1.3.1\n~~~~~~\n\n* ensure paths always have a leading slash.\n\nv1.3\n~~~~\n\n* allow absolute urls to be converted into relative.\n\nv1.2\n~~~~\n\n* support password-less urls.\n* allow slashes to be passed as path segments.\n\nv1.1\n~~~~\n\n* support setting username and password via mutator methods\n\nv1.0.3\n~~~~~~\n\n* handle some unicode compatibility edge-cases\n\nv1.0.2\n~~~~~~\n\n* fix template expansion bug with no matching variables being passed in. this\n  ensures ``purl.template`` works correctly with the urls returned from the\n  github api.\n\nv1.0.1\n~~~~~~\n\n* fix bug with special characters in paths not being escaped.\n\nv1.0\n~~~~\n\n* slight tidy up. document support for pypy and python 3.4.\n\nv0.8\n~~~~\n\n* support for rfc 6570 uri templates\n\nv0.7\n~~~~\n\n* all internal strings are unicode.\n* support for unicode chars in path, fragment, query, auth added.\n\nv0.6\n~~~~\n\n* added ``append_query_param`` method\n* added ``remove_query_param`` method\n\nv0.5\n~~~~\n\n* added support for python 3.2/3.3 (thanks @pmcnr and @mitchellrj)\n\nv0.4.1\n~~~~~~\n\n* added api docs\n* added to readthedocs.org\n\nv0.4\n~~~~\n\n* modified constructor to accept full url string as first arg\n* added ``add_path_segment`` method\n\nv0.3.2\n~~~~~~\n\n* fixed bug port number in string when using from_string constructor\n\nv0.3.1\n~~~~~~\n\n* fixed bug with passing lists to query param setter methods\n\nv0.3\n~~~~\n\n* added support for comparison and equality\n* added support for pickling\n* added ``__slots__`` so instances can be used as keys within dictionaries\n\ncontribute\n----------\n\nclone, create a virtualenv then install purl and the packages required for\ntesting::\n\n    $ git clone git@github.com:codeinthehole/purl.git\n    $ cd purl\n    $ mkvirtualenv purl  # requires virtualenvwrapper\n    (purl) $ make\n\nensure tests pass using::\n\n    (purl) $ pytest\n\nor::\n\n    $ tox\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "purl",
+  "package_url": "https://pypi.org/project/purl/",
+  "project_url": "https://pypi.org/project/purl/",
+  "project_urls": {
+    "Homepage": "https://github.com/codeinthehole/purl"
+  },
+  "release_url": "https://pypi.org/project/purl/1.6/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "an immutable url class for easy url-building and manipulation",
+  "version": "1.6",
+  "releases": [],
+  "developers": [
+    "david.winterbottom@gmail.com",
+    "david_winterbottom"
+  ],
+  "kwds": "urls pytest pypy uri pythons",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_purl",
+  "homepage": "https://github.com/codeinthehole/purl",
+  "release_count": 25,
+  "dependency_ids": []
+}

@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: security :: cryptography"
+  ],
+  "description": "# introduction\n\nthis is the in-development version of `clvm_tools` for clvm, which implements, a lisp-like language for encumbering and releasing funds with smart-contract capabilities.\n\n\n# set up\n\nset up your virtual environments\n\n    $ python3 -m venv venv\n    $ . ./venv/bin/activate (windows: venv\\scripts\\activate.bat)\n    $ pip install -e .\n\nif you run into any issues, be sure to check out [this section of the wiki](https://github.com/chia-network/chia-blockchain/wiki/help-with-clvm_tools)\n\noptionally, run unit tests for a sanity check.\n\n    $ pip install pytest\n    $ py.test tests\n\n\n# quick examples\n\nthe language has two components: the higher level language and the compiled lower level language which runs on the clvm.\nto compile the higher level language into the lower level language use:\n\n    $ run '(mod argument (+ argument 3))'\n    (+ 1 (q . 3))\n\nto execute this code:\n\n    $ brun '(+ 1 (q . 3))' '2'\n    5\n\n\n# the compiler\n\n\n## basic example\n\nthe high level language is a superset of [clvm](https://github.com/chia-network/clvm), adding several operators. the main supported operator is `mod` which lets you define a set of macros and functions, and an entry point that calls them. here's an example.\n\n    (mod (index)\n         (defun factorial (value) (if (= value 1) 1 (* value (factorial (- value 1)))))\n         (factorial index)\n         )\n\nyou can copy this to a file `fact.clvm`, then compile it with `run fact.clvm` and you'll see output like\n\n`(a (q 2 2 (c 2 (c 5 ()))) (c (q 2 (i (= 5 (q . 1)) (q 1 . 1) (q 18 5 (a 2 (c 2 (c (- 5 (q . 1)) ()))))) 1) 1))`\n\nyou can then run this code with `brun`, passing in a parameter. or pipe it using this `bash` quoting trick:\n\n    $ brun \"`run fact.clvm`\" \"(5)\"\n    120\n\nthis affirms that 5! = 120.\n\n\n### auto-quoting of literals\n\nnote that the `1` is not quoted. the compiler recognizes and auto-quotes constant values.\n\n    $ run 15\n    15\n    $ brun 15\n    fail: not a list 15\n\n## known operators\n\nbesides `mod` and `defun`, the compiler has a few more built-in operators:\n\n### @\n\ninstead of evaluating `1` to return the arguments, you should use `@` in the higher level language.\nthis is easier for humans to read, and calling `(f @)` will be compiled to 2, etc.\n\n```\n    $ run '@' '(\"example\" 200)'\n    (\"example\" 200)\n    \n    $ run '(mod args (f (r @)))'\n    5\n```\n\nyou generally won't need to use `@`; it's better to use `mod` and named arguments.\n\n\n### (if)\n\n`(if a b c)`\nthis operator is similar to lone condition in clvm `i`, except it actually does a lazy evaluation of either b or c (depending upon a). this allows you to put expensive or failing (like `x`) operator within branches, knowing they won't be executed unless required.\n\nthis is implemented as a macro, and expands out to `((c (i a (q b) (q c)) (a)))`.\n\n\n### (qq) and (unquote)\n\n`(qq expr)` for expanding templates. this is generally for creating your own operators that end up being inline functions.\n\neverything in `expr` is quoted literally, unless it's wrapped by a unary `unquote` operator, in which case, it's evaluated. so\n\n`(qq (+ 5 (a)))` would expand to `(+ 5 (a))`\n\nbut `(qq (+ 5 (unquote (+ 9 10))))` would expand to `(+ 5 19)` because `(+ 9 10)` is `19`.\n\nand `(qq (+ 5 (unquote (+ 1 (a)))))` expands to something that depends on what `(a)` is in the context it's evaluated. (it'd better be a number so 1 can be added to it!)\n\nif you have a template expression and you want to substitute values into it, this is what you use.\n\n\n## macros\n\nyou can also define macros within a module, which act as inline functions. when a previously defined macro operator is encountered, it \"rewrites\" the existing statement using the macro, passing along the arguments as literals (ie. they are not evaluated).\n\n\n### a simple example\n\n    (mod (value1 value2)\n         (defmacro sum (a b) (qq (+ (unquote a) (unquote b))))\n         (sum value1 value2)\n         )\n\nwhen `run`, this produces the following output:\n\n`(+ 2 5)`\n\ncompare to the function version:\n\n    (mod (value1 value2)\n         (defun sum (a b) (+ a b))\n         (sum value1 value2)\n         )\n\nwhich produces\n\n`(a (q 2 2 (c 2 (c 5 (c 11 ())))) (c (q 16 5 11) 1))`\n\nthere's a lot more going on here, setting up an environment where sum would be allowed to call itself recursively.\n\n### inline functions\n\nif you want to write a function that is always inlined, use `defun-inline`.\n\n\n    (mod (value1 value2)\n         (defun-inline sum (a b) (+ a b))\n         (sum value1 value2)\n         )\n\nthis produces the much more compact output `(+ 2 5)`.\n\ninline functions *must not* be recursive.\n\n\n### a more complex example\n\nhere's an example, demonstrating how `if` is defined.\n\n    (mod (value1 value2)\n         (defmacro my_if (a b c)\n           (qq ((c\n    \t    (i (unquote a)\n    \t       (function (unquote b))\n    \t       (function (unquote c)))\n    \t    (a)))))\n         (my_if (= (+ value1 value2) 10) \"the sum is 10\" \"the sum is not 10\")\n         )\n\nthis produces\n\n`((c (i (= (+ 2 5) (q 10)) (q (q \"the sum is 10\")) (q (q \"the sum is not 10\"))) 1))`\n\nwhich is not much code, for how much source there is. this also demonstrates the general notion that macros (and inline functions) cause much less code bloat than functions. the main disadvantages is that macros are not recursive (since they run at compile time) and they're messier to write.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "https://opensource.org/licenses/apache-2.0",
+  "name": "clvm-tools",
+  "package_url": "https://pypi.org/project/clvm-tools/",
+  "project_url": "https://pypi.org/project/clvm-tools/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/Chia-Network/clvm_tools",
+    "Homepage": "https://github.com/Chia-Network",
+    "Source": "https://github.com/Chia-Network/clvm_tools"
+  },
+  "release_url": "https://pypi.org/project/clvm-tools/0.4.7/",
+  "requires_dist": [
+    "clvm >=0.9.2",
+    "clvm-tools-rs >=0.1.37",
+    "pytest ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "clvm compiler.",
+  "version": "0.4.7",
+  "releases": [],
+  "developers": [
+    "chia_network",
+    "kiss@chia.net"
+  ],
+  "kwds": "clvm_tools clvm pip chia python3",
+  "license_kwds": "https://opensource.org/licenses/apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_clvm_tools",
+  "homepage": "https://github.com/chia-network",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_clvm",
+    "pypi_clvm_tools_rs",
+    "pypi_pytest"
+  ]
+}

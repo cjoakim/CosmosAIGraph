@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 1 - planning",
+    "license :: osi approved :: gnu lesser general public license v3 or later (lgplv3+)",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "roff io\n==========\n\na (lazy) parser and writer for the roxar open file format (roff) (binary and ascii).\n\n\nusage\n-----\n\nroff files contains values stored in tag keys that are grouped by tags. these\ncan be read by:\n\n```\nimport roffio\n\ncontents = roffio.read(\"my/file.roff\")\nvalue = contents[\"tagname\"][\"keyname\"]\n```\n\nsimilarly, files are written through a dictionary of tags and tagkeys:\n\n```\nimport roffio\n\ncontents = {\n \"tagname\": {\n    \"keyname\": 1.0\n  }\n}\n\nroffio.write(\"my/file.roff\", contents)\n```\n\nadditionally, the contents of a file can be read lazily, avoiding unneccessary\ndisk operations and memory useage:\n\n\n```\nimport roffio\n\nresult = none\nwith roffio.lazyread(\"my/file.roff\") as contents:\n    for tagname, tagkeys in contents:\n        for keyname, value in tagkeys:\n            if tagname = \"mytag\" and keyname = \"mykey\":\n                result = value\n                break\n        if result is not none:\n           break\n\n```\n\n### same name tags and tag-keys\n\nthe simple read/write functions works best for tags and tagkeys with unique\nnames, however, if the file has multiple tags with the same name, a list will\nbe returned:\n\n\n```\nimport roffio\n\ncontents = [\n (\"tagname\", (\"keyname\", 1.0)),\n (\"tagname\", (\"keyname\", 2.0)),\n]\n\nroffio.write(\"my/file.roff\", contents)\n\nvalues = roffio.read(\"my/file.roff\")\n```\n\nthen `values[\"tagname\"]` will be the list `[{\"keyname\": 1.0}, {\"keyname\": 2.0}]`.\n\n\n## building\n\n    pip install .\n\n## testing\n\n    pytest\n\nthe roff ascii format\n---------------------\n\nthe roff ascii format is a file format that consists of a list of tags.  each\ntag contains tag keys.\n\na simple valid example looks like this:\n\n```\nroff-asc\ntag tagname\nint keyname 1\nendtag\neof\n```\n\na ascii roff file starts with the header token `\"roff-asc\"` and ends with the\n`\"eof\"` token. between the header token and the eof token, is a list of tags,\neach delimited by the tokens `\"tag\"` and `\"endtag\"`, imidiately after the tag\ntoken is the name of the tag.\n\ncomments can be added between `#` characters.\n\n\n### tag keys\n\neach tag contains a list of tag keys defining a key name and value. there\nare single value tag keys and array tag keys.\n\n#### single value tag keys\n\nsingle value keys consists of three tokens:\n```\ntype name value\n```\n\nwhere type is one of\n\n* char\n* bool\n* byte\n* int\n* float\n* double\n\ne.g.\n\n```\nroff-asc\n#comment#\ntag exampletag\nint x 80\nfloat y 3.0\nbool flag 0\nbyte mask 4\nchar str_name \"a string\"\nendtag\neof\n```\n\n\n#### array tag keys\n\narray tag keys contain the following tokens: array, name, type, length and\nvalue, where type is a single value tag key type. the value is not\nzero-terminated but the size is given by the number of bytes in the type times\nthe length of the array, ie.  `array int arr_name 1 255` (an array of one int\nvalue, the length of the array being 1 and the one int value being `255`). similary,\nchar arrays contain any number of strings:\n\n```\narray char char_array 3\n   \"hello\"\n   \"hello again\"\n   \"hello world\"\n```\n\n\nthe roff binary format\n----------------------\n\nthe binary format is very similar to the ascii format. the header is changed to\n`roff-bin` to indicate binary format. each token is delimited by the zero character\ninstead of whitespace. int, float, byte, bool, and double are fixed-size byte-encoded\nvalues. string values are zero terminated instead of surrounded by quotes.\n\ncomments can also be added to binary files but are terminated by zero character\nin addition to delimited by `'#'`.\n\na simple valid example looks like this:\n\n```\nb\"roff-bin\\0tag\\0tagname\\0int\\0varname\\0\\x00\\x00\\x00\\x01endtag\\0eof\\0\"\n```\n\nchar tag keys no longer have quotes but are simply zero character delimited:\n\n`char\\0str_name\\0some_string\\0`.\n\ntag keys of type int, float, double, bool and byte are all fixed size tag keys,\nmeaning they consist of three consecutive tokens: type, name, and value. the\nname is any zero delimited string of bytes giving the name of the tag keys and\nvalue is a fixed length of bytes. for byte, bool and char it is 1 byte, for\nfloat and int it is 4 bytes and for double it is 8 bytes. i.e `int\\0x\\0\\x00\\x00\\x00\\x01`\n\nif the type of an array is char then the size denotes the number of zero\nterminated strings in the array:\n`array char str_arr \\x00\\x00\\x00\\x02\\0hello world\\0hello again\\0`.\n\n\n### endianess and filedata tag\n\nthere is no fixed endianess defined for the roff format. instead, a filedata\ntag is added as the first tag in the file. in addition to metadata about\ncreation date and filetype, the `byteswaptest` record key is added which\nshould be set to `1` in whatever endianess the file is intended to be read in.\n\n```\ntag filedata\n int byteswaptest 1\n char filetype \"grid\"\n char creationdate \"01/03/1999 10:00:48\"\nendtag\n```\n\n### version tag\n\nanother tag keeps track of the file format version, currently 2.0:\n\n```\ntag version\n int major 2\n int minor 0\nendtag\n```\n\n### end of file tag\n\nits a common convention to have the last tag in a roff file be\nan empty tag with name eof:\n\n```\ntag eof\nendtag\n```\n\n### mapping of python types to roff types\n\nreading and writing maps roff types to python types, usually as expected.\nfor more control use numpy dtypes, ie. numpy.array(dtype=\"float32\") will\nbe written as a tag key as with roff type \"array float\". reading always\nresults in numpy arrays and dtypes for performance reasons, that is,\nexcept for bytes.\n\n#### special case of bytes:\n\nwriting of python `bytes` results in roff keys with types of either `array bytes`\nor `byte` depending on length. if the length is `1` then you get a non-array\ntag key:\n\n```python\nroffio.write(\"my/file.roff\", { \"t\": { \"key\": b'\\x00' }})\n```\n\nresults in a roff file containing\n\n```\ntag t\nbytes key 0\nendtag\n```\n\nwhile\n\n```python\nroffio.write(\"my/file.roff\", { \"t\": { \"key\": b'\\x00\\x01' }})\n```\n\nresults in a roff file containing\n\n```\ntag t\narray bytes key 2 0 1\nendtag\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "lgpl-3.0",
+  "name": "roffio",
+  "package_url": "https://pypi.org/project/RoffIO/",
+  "project_url": "https://pypi.org/project/RoffIO/",
+  "project_urls": {
+    "Homepage": "https://github.com/equinor/roffio"
+  },
+  "release_url": "https://pypi.org/project/RoffIO/1.0.1/",
+  "requires_dist": [
+    "numpy <2",
+    "dataclasses >=0.6 ; python_version < \"3.7\""
+  ],
+  "requires_python": "",
+  "summary": "a (lazy) parser and writer for the roxar open file format (roff).",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "equinor",
+    "fg_sib-scout@equinor.com"
+  ],
+  "kwds": "roffio roff roxar python files",
+  "license_kwds": "lgpl-3.0",
+  "libtype": "pypi",
+  "id": "pypi_roffio",
+  "homepage": "https://github.com/equinor/roffio",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_dataclasses",
+    "pypi_numpy"
+  ]
+}

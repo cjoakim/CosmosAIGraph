@@ -1,0 +1,68 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "environment :: openstack",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "introduction\n============\n\nhacking is a set of flake8 plugins that test and enforce the\n`openstack styleguide <https://docs.openstack.org/hacking/latest/user/hacking.html#styleguide>`_\n\nhacking pins its dependencies, as a new release of some dependency can break\nhacking based gating jobs. this is because new versions of dependencies can\nintroduce new rules, or make existing rules stricter.\n\ninstallation\n============\n\nhacking is available from pypi, so just run::\n\n  pip install hacking\n\nthis will install specific versions of ``flake8`` with the ``hacking``,\n``pep8``, ``mccabe`` and ``pyflakes`` plugins.\n\norigin\n======\n\nhacking started its life out as a text file in nova's first commit. it was\ninitially based on the `google python style guide`_, and over time more\nopenstack specific rules were added. hacking serves several purposes:\n\n1. agree on a common style guide so reviews don't get bogged down on style\n   nit picks. (example: docstring guidelines)\n2. make code written by many different authors easier to read by making the\n   style more uniform. (example: unix vs windows newlines)\n3. call out dangerous patterns and avoid them. (example: shadowing built-in\n   or reserved words)\n\ninitially the hacking style guide was enforced manually by reviewers, but this\nwas a big waste of time so hacking, the tool, was born to automate\nthe process and remove the extra burden from human reviewers.\n\n.. _`google python style guide`: https://google.github.io/styleguide/pyguide.html\n\nversioning\n==========\n\nhacking uses the ``major.minor.maintenance`` release notation, where maintenance\nreleases cannot contain new checks.  this way projects can gate on hacking\nby pinning on the ``major.minor`` number while accepting maintenance updates\nwithout being concerned that a new version will break the gate with a new\ncheck.\n\nfor example a project can depend on ``hacking>=0.10.0,<0.11.0``, and can know\nthat ``0.10.1`` will not fail in places where ``0.10.0`` passed.\n\n\nadding additional checks\n========================\n\neach check is a pep8 plugin so read\n\n- https://github.com/jcrocholl/pep8/blob/master/docs/developer.rst#contribute\n\nthe focus of new or changed rules should be to do one of the following\n\n- substantially increase the reviewability of the code (eg: h301, h303)\n  as they make it easy to understand where symbols come from)\n- catch a common programming error that may arise in the future (h201)\n- prevent a situation that would 100% of the time be -1ed by\n  developers (h903)\n\nbut, as always, remember that these are guidelines. treat them as\nsuch. there are always times for exceptions. all new rules should\nsupport noqa.\n\nif a check needs to be staged in, or it does not apply to every project or its\nbranch, it can be added as off by default.\n\nrequirements\n------------\n- the check must already have community support. we do not want to dictate\n  style, only enforce it.\n- the canonical source of the openstack style guidelines is\n  `styleguide <https://docs.openstack.org/hacking/latest/user/hacking.html#styleguide>`_,\n  and hacking just enforces\n  them; so when adding a new check, it must be in ``hacking.rst``\n- false negatives are ok, but false positives are not\n- cannot be project specific, project specific checks should be `local checks`_\n- include extensive tests\n- registered as entry_points in ``setup.cfg``\n- error code must be in the relevant ``hxxx`` group\n- the check should not attempt to import modules from the code being checked.\n  importing random modules, has caused all kinds of trouble for us in the past.\n\n\nenabling off-by-default checks\n==============================\n\nsome of the available checks are disabled by default. these checks are:\n\n- [h106] don't put vim configuration in source files.\n- [h203] use assertis(not)none to check for none.\n- [h204] use assert(not)equal to check for equality.\n- [h205] use assert(greater|less)(equal) for comparison.\n- [h210] require 'autospec', 'spec', or 'spec_set' in\n  mock.patch/mock.patch.object calls\n- [h904] delay string interpolations at logging calls.\n\nto enable these checks, edit the ``flake8`` section of the ``tox.ini`` file.\nfor example to enable h106 and h203:\n\n.. code-block:: ini\n\n  [flake8]\n  enable-extensions = h106,h203\n\nlocal checks\n============\n\nhacking supports having local changes in a source tree. they need to\nbe registered individually in tox.ini:\n\nadd to tox.ini a new section `flake8:local-plugins` and list each plugin with\nits entry-point. additionally, you can add the path to the files\ncontaining the plugins so that the repository does not need to be\ninstalled with the `paths` directive.\n\n.. code-block:: ini\n\n   [flake8:local-plugins]\n   extension =\n     n307 = checks:import_no_db_in_virt\n     n325 = checks:checkforstrunicodeexc\n   paths =\n     ./nova/hacking\n\nthe plugins, in the example above they live in\n`nova/hacking/checks.py`, need to annotate all functions with `@core.flake8ext`\n\n.. code-block:: python\n\n   from hacking import core\n   ...\n   @core.flake8ext\n   def import_no_db_in_virt(logical_line, filename):\n       ...\n\n   class checkforstrunicodeexc(baseastchecker):\n      name = \"check_for_str_unicode_exc\"\n      version = \"1.0\"\n      ...\n\nfurther details are part of the `flake8 documentation\n<https://flake8.pycqa.org/en/latest/plugin-development/index.html>`_.\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "hacking",
+  "package_url": "https://pypi.org/project/hacking/",
+  "project_url": "https://pypi.org/project/hacking/",
+  "project_urls": {
+    "Bug Tracker": "https://bugs.launchpad.net/hacking",
+    "CI": "https://zuul.opendev.org/t/openstack/builds?project=openstack%2Fhacking",
+    "Homepage": "https://docs.openstack.org/hacking/latest/",
+    "Reviews": "https://review.opendev.org/q/p:openstack/hacking+status:open",
+    "Source Code": "https://opendev.org/openstack/hacking"
+  },
+  "release_url": "https://pypi.org/project/hacking/6.1.0/",
+  "requires_dist": [
+    "flake8 (~=6.1.0)",
+    "flake8-docstrings (==1.7.0) ; extra == 'pep257'",
+    "coverage (!=4.4,>=4.0) ; extra == 'test'",
+    "ddt (>=1.2.1) ; extra == 'test'",
+    "eventlet (!=0.18.3,!=0.20.1,>=0.18.2) ; extra == 'test'",
+    "fixtures (>=3.0.0) ; extra == 'test'",
+    "python-subunit (>=1.0.0) ; extra == 'test'",
+    "stestr (>=2.0.0) ; extra == 'test'",
+    "testscenarios (>=0.4) ; extra == 'test'",
+    "testtools (>=2.2.0) ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "openstack hacking guideline enforcement",
+  "version": "6.1.0",
+  "releases": [],
+  "developers": [
+    "openstack",
+    "openstack-discuss@lists.openstack.org"
+  ],
+  "kwds": "openstack flake8ext flake8 hacking pip",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_hacking",
+  "homepage": "https://docs.openstack.org/hacking/latest/",
+  "release_count": 41,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_ddt",
+    "pypi_eventlet",
+    "pypi_fixtures",
+    "pypi_flake8",
+    "pypi_flake8_docstrings",
+    "pypi_python_subunit",
+    "pypi_stestr",
+    "pypi_testscenarios",
+    "pypi_testtools"
+  ]
+}

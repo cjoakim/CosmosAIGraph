@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3"
+  ],
+  "description": "*************************************\ntemporary file hierarchies for pytest\n*************************************\n\n.. image:: https://img.shields.io/pypi/v/pytest_tmp_files.svg\n   :alt: last release\n   :target: https://pypi.python.org/pypi/pytest_tmp_files\n\n.. image:: https://img.shields.io/pypi/pyversions/pytest_tmp_files.svg\n   :alt: python version\n   :target: https://pypi.python.org/pypi/pytest_tmp_files\n\n.. image:: https://img.shields.io/readthedocs/pytest_tmp_files.svg\n   :alt: documentation\n   :target: https://pytest-tmp-files.readthedocs.io/\n\n.. image:: https://img.shields.io/github/actions/workflow/status/kalekundert/pytest_tmp_files/test.yml?branch=master\n   :alt: test status\n   :target: https://github.com/kalekundert/pytest_tmp_files/actions\n\n.. image:: https://img.shields.io/codecov/c/gh/kalekundert/pytest_tmp_files.svg\n   :alt: test coverage\n   :target: https://app.codecov.io/gh/kalekundert/pytest_tmp_files\n\n.. image:: https://img.shields.io/github/last-commit/kalekundert/pytest_tmp_files?logo=github\n   :alt: last commit\n   :target: https://github.com/kalekundert/pytest_tmp_files\n\n``pytest_tmp_files`` is a pytest plugin that provides a fixture for creating \ntemporary file hierarchies.  this fixture is called ``tmp_files``, and you can \nthink of it as an extension of the built-in ``tmp_path`` fixture.  in addition \nto creating a unique temporary directory for each test, ``tmp_files`` also \nfills in that directory with any files needed for that test.\n\nthe files to create are specified by a dictionary provided to fixture via \n`indirect parametrization`_.  for example, here's a test for a function that \nsearches for files whose contents match a given regular expression:\n\n.. code-block:: python\n\n  import pytest, re\n  from pathlib import path\n\n  def find_text(top, pattern):\n      hits = set()\n\n      for path in path(top).glob('**/*'):\n          if path.is_file() and re.search(pattern, path.read_text()):\n              hits.add(path)\n\n      return hits\n\n  @pytest.mark.parametrize(\n      'tmp_files, pattern, expected', [\n          ({'a': 'x'}, 'x', {'a'}),\n          ({'a': 'x'}, 'y', set()),\n          ({'a/b': 'x'}, 'x', {'a/b'}),\n          ({'a/b': 'x'}, 'y', set()),\n          ({'a/b': 'x', 'c': 'y'}, 'x', {'a/b'}),\n          ({'a/b': 'x', 'c': 'y'}, 'y', {'c'}),\n          ({'a/b': 'x', 'c': 'y'}, '[xy]', {'a/b', 'c'}),\n      ],\n      indirect=['tmp_files'],\n  )\n  def test_find_text(tmp_files, pattern, expected):\n      expected = {\n              tmp_files / p\n              for p in expected\n      }\n      assert find_text(tmp_files, pattern) == expected\n\nthe first parameter in each set (the dictionary) specifies the files to create.  \nthe keys are file paths and the values are file contents, so ``{'a/b': 'x'}`` \nspecifies a subdirectory ``a`` containing a text file ``b`` with the contents \n``x``.  although not shown here, it's also possible to create different kinds \nof files (e.g. binary files, symlinks, hard links, named fifos) and to specify \nfile metadata (e.g. permissions, modification times).\n\nif this plugin sounds useful to you, you may also be interested in `parametrize \nfrom file`_.  these two packages work really well together, because \n``tmp_files`` lends itself to long, multi-line parameters and *parametrize from \nfile* makes such parameters easier to manage.\n\n.. _`indirect parametrization`: https://docs.pytest.org/en/latest/example/parametrize.html#indirect-parametrization\n.. _documentation: https://pytest-tmp-files.readthedocs.io/\n.. _`parametrize from file`: https://parametrize-from-file.readthedocs.io/\n\ncheck out the documentation_ for more information.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pytest-tmp-files",
+  "package_url": "https://pypi.org/project/pytest-tmp-files/",
+  "project_url": "https://pypi.org/project/pytest-tmp-files/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/kalekundert/pytest_tmp_files/issues",
+    "Continuous Integration": "https://github.com/kalekundert/pytest_tmp_files/actions",
+    "Documentation": "https://pytest-tmp-files.readthedocs.io/en/latest/",
+    "Test Coverage": "https://coveralls.io/github/kalekundert/pytest_tmp_files",
+    "Version Control": "https://github.com/kalekundert/pytest_tmp_files"
+  },
+  "release_url": "https://pypi.org/project/pytest-tmp-files/0.0.2/",
+  "requires_dist": [
+    "pytest",
+    "python-dateutil",
+    "sphinx ; extra == \"doc\"",
+    "sphinx_rtd_theme ; extra == \"doc\"",
+    "autoclasstoc ; extra == \"doc\"",
+    "pytest ; extra == \"test\"",
+    "openpyxl ; extra == \"test\""
+  ],
+  "requires_python": "~=3.7",
+  "summary": "utilities to create temporary file hierarchies in pytest.",
+  "version": "0.0.2",
+  "releases": [],
+  "developers": [
+    "kale@thekunderts.net"
+  ],
+  "kwds": "pytest_tmp_files pytest tmp_files tmp_path tmp",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pytest_tmp_files",
+  "homepage": "",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_autoclasstoc",
+    "pypi_openpyxl",
+    "pypi_pytest",
+    "pypi_python_dateutil",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme"
+  ]
+}

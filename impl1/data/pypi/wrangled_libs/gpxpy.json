@@ -1,0 +1,35 @@
+{
+  "classifiers": [
+    "programming language :: python",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "[![build status](https://travis-ci.org/tkrajina/gpxpy.svg?branch=master)](https://travis-ci.org/tkrajina/gpxpy)\n[![coverage status](https://coveralls.io/repos/github/tkrajina/gpxpy/badge.svg?branch=master)](https://coveralls.io/github/tkrajina/gpxpy?branch=master)\n\n# gpxpy -- gpx file parser\n\nthis is a simple python library for parsing and manipulating gpx files. gpx is an xml based format for gps tracks.\n\nyou can see it in action on [my online gps track editor and organizer](http://www.trackprofiler.com).\n\nthere is also a golang port of gpxpy: [gpxgo](http://github.com/tkrajina/gpxgo).\n\nsee also [srtm.py](https://github.com/tkrajina/srtm.py) if your track lacks elevation data.\n\n## usage\n\n```python\nimport gpxpy\nimport gpxpy.gpx\n\n# parsing an existing file:\n# -------------------------\n\ngpx_file = open('test_files/cerknicko-jezero.gpx', 'r')\n\ngpx = gpxpy.parse(gpx_file)\n\nfor track in gpx.tracks:\n    for segment in track.segments:\n        for point in segment.points:\n            print(f'point at ({point.latitude},{point.longitude}) -> {point.elevation}')\n\nfor waypoint in gpx.waypoints:\n    print(f'waypoint {waypoint.name} -> ({waypoint.latitude},{waypoint.longitude})')\n\nfor route in gpx.routes:\n    print('route:')\n    for point in route.points:\n        print(f'point at ({point.latitude},{point.longitude}) -> {point.elevtion}')\n\n# there are many more utility methods and functions:\n# you can manipulate/add/remove tracks, segments, points, waypoints and routes and\n# get the gpx xml file from the resulting object:\n\nprint('gpx:', gpx.to_xml())\n\n# creating a new file:\n# --------------------\n\ngpx = gpxpy.gpx.gpx()\n\n# create first track in our gpx:\ngpx_track = gpxpy.gpx.gpxtrack()\ngpx.tracks.append(gpx_track)\n\n# create first segment in our gpx track:\ngpx_segment = gpxpy.gpx.gpxtracksegment()\ngpx_track.segments.append(gpx_segment)\n\n# create points:\ngpx_segment.points.append(gpxpy.gpx.gpxtrackpoint(2.1234, 5.1234, elevation=1234))\ngpx_segment.points.append(gpxpy.gpx.gpxtrackpoint(2.1235, 5.1235, elevation=1235))\ngpx_segment.points.append(gpxpy.gpx.gpxtrackpoint(2.1236, 5.1236, elevation=1236))\n\n# you can add routes and waypoints, too...\n\nprint('created gpx:', gpx.to_xml())\n```\n\n## gpx version\n\ngpx.py can parse and generate gpx 1.0 and 1.1 files. the generated file will always be a valid xml document, but it may not be (strictly speaking) a valid gpx document. for example, if you set gpx.email to \"my.email at mail.com\" the generated gpx tag won't confirm to the regex pattern. and the file won't be valid. most applications will ignore such errors, but... be aware of this!\n\nbe aware that the gpxpy object model *is not 100% equivalent* with the underlying gpx xml file schema. that's because the library object model works with both gpx 1.0 and 1.1.\n\nfor example, gpx 1.0 specified a `speed` attribute for every track point, but that was removed in gpx 1.1. if you parse gpx 1.0 and serialize back with `gpx.to_xml()` everything will work fine. but if you have a gpx 1.1 object, changes in the `speed` attribute will be lost after `gpx.to_xml()`. if you want to force using 1.0, you can `gpx.to_xml(version=\"1.0\")`. another possibility is to use `extensions` to save the speed in gpx 1.1.\n\n## gpx extensions\n\ngpx.py preserves gpx extensions. they are stored as [elementtree](https://docs.python.org/2/library/xml.etree.elementtree.html#module-xml.etree.elementtree) dom objects. extensions are part of gpx 1.1, and will be ignored when serializing a gpx object in a gpx 1.0 file.\n\n## xml parsing\n\nif lxml is available, then it will be used for xml parsing, otherwise minidom is used. lxml is 2-3 times faster so, if you can choose -- use it.\n\nthe gpx version is automatically determined when parsing by reading the version attribute in the gpx node. if this attribute is not present then the version is assumed to be 1.0. a specific version can be forced by setting the `version` parameter in the parse function. possible values for the 'version' parameter are `1.0`, `1.1` and `none`.\n\n## gpx max speed\n\ngpxpy is a gpx parser and by using it you have access to all the data from the original gpx file. the additional methods to calculate stats have some additional heuristics to remove common gps errors. for example, to calculate `max_speed` it removes the top `5%` of speeds and points with nonstandard distance (those are usually gps errors).\n\n\"raw\" max speed can be calculated with:\n\n    moving_data = gpx.get_moving_data(raw=true)\n\n## pull requests\n\nbranches:\n\n* `master` contains the code of the latest release\n* `dev` branch is where code for the next release should go.\n\nsend your pull request against `dev`, not `master`!\n\nbefore sending a pull request -- check that all tests are ok.  run all the static typing checks and unit tests with:\n\n    $ make mypy-and-tests\n\nrun a single test with:\n\n    $ python3 -m unittest test.gpxtests.test_haversine_and_nonhaversine\n\ngpxpy runs only with python 3.6+. the code must have type hints and must pass all the mypy checks.\n\n## gpx tools\n\nadditional command-line tools for gpx files can be downloaded here <https://github.com/tkrajina/gpx-cmd-tools> or installed with:\n\n```\npip install gpx-cmd-tools\n```\n\n## license\n\ngpx.py is licensed under the [apache license, version 2.0](http://www.apache.org/licenses/license-2.0)\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license, version 2.0",
+  "name": "gpxpy",
+  "package_url": "https://pypi.org/project/gpxpy/",
+  "project_url": "https://pypi.org/project/gpxpy/",
+  "project_urls": {
+    "Homepage": "https://github.com/tkrajina/gpxpy"
+  },
+  "release_url": "https://pypi.org/project/gpxpy/1.6.2/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "gpx file parser and gps track manipulation library",
+  "version": "1.6.2",
+  "releases": [],
+  "developers": [
+    "tkrajina@gmail.com",
+    "tomo_krajina"
+  ],
+  "kwds": "gpx_track gpx_file gpxpy gpx_segment gpxtrack",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_gpxpy",
+  "homepage": "https://github.com/tkrajina/gpxpy",
+  "release_count": 37,
+  "dependency_ids": []
+}

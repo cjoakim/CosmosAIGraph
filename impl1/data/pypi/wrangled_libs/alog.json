@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development",
+    "topic :: system :: logging"
+  ],
+  "description": "alog\n====\n\n.. image:: https://travis-ci.com/keitheis/alog.svg?branch=master\n  :target: https://travis-ci.com/keitheis/alog\n\n.. image:: https://codecov.io/gh/keitheis/alog/branch/master/graph/badge.svg\n  :target: https://codecov.io/gh/keitheis/alog\n\n.. image:: http://img.shields.io/pypi/v/alog.svg?style=flat\n   :target: https://pypi.org/pypi/alog\n\nyour goto python logging without panic on context swtich.\n\n**warning:** no more ``logger = logging.getlogger(__name__)`` in your every file.\n\n.. code-block:: python\n\n  >>> import alog\n  >>> alog.info(\"hi.\")\n  2016-12-18 20:44:30 info  <stdin> hi.\n  >>> def test():\n  ...     alog.info(\"test 1\")\n  ...     alog.error(\"test 2\")\n  ...\n  >>> test()\n  2016-12-18 20:45:19 info  <stdin:2> test 1\n  2016-12-18 20:45:19 error <stdin:3> test 2\n  >>> alog.set_level(\"error\")\n  >>> test()\n  2016-12-18 20:45:41 error <stdin:3> test 2\n\nif you're new to logging, see `why should you use logging instead of print`_.\n\ninstallation\n------------\n\n.. code-block::\n\n  pip install alog\n\nfeatures \n--------\n\n- instant logging with expected defaults.\n\n  you can do logging instantly by reading a small piece of readme.\n  alog comes with useful defaults:\n\n  - a default logger.\n  - logging level: ``logging.info``\n  - logging format::\n\n    \"%(asctime)s %(levelname)-5.5s [parent_module.current_module:%(lineno)s]%(message)s\",\n    \"%y-%m-%d %h:%m:%s\"\n\n- no more **__name__** whenever you start to do logging in a module.\n\n  alog builds the default module names on the fly. \n\n- compatible with default python ``logging`` module.\n\n  alog is built upon default python logging module. you can configure it by\n  the same way of default python logging module when it's needed.\n\n\ncomparing ``alog`` with python default ``logging`` module\n---------------------------------------------------------\n\ncomparing ``alog`` :\n\n.. code-block:: python\n\n    in [1]: import alog\n\n    in [2]: alog.info(\"hello alog!\")\n    2016-11-23 12:20:34 info  <ipython> hello alog!\n\nwith ``logging`` module:\n\n.. code-block:: python\n\n    in [1]: import logging\n\n    in [2]: logging.basicconfig(\n       ...:     level=logging.info,\n       ...:     format=\"%(asctime)s %(levelname)-5.5s \"\n       ...:            \"[%(name)s:%(lineno)s] %(message)s\")\n\n    in [3]: # in every file you want to do log, otherwise %(names)s won't work.\n    in [4]: logger = logging.getlogger(__name__)\n\n    in [5]: logger.info(\"hello log!\")\n    2016-11-23 12:16:30 info  [__main__:1] hello log!\n\n\ntips\n----\n\n.. code-block:: python\n\n    import alog\n\n    a_complex_json_dict = {...}  # or a_complex_dict\n    alog.info(alog.pformat(a_complex_dict))\n\n    restaurant = restaurant(...)\n    alog.info(alog.pdir(restaurant))\n    # or just skip attributes starts with \"__\":\n    alog.info(alog.pdir(restaurant, str_not_startswith=\"__\"))\n    # instead of\n    alog.info([attr for attr in dir(restaurant) if attr.startswith(\"_\")])\n\n    # play threads?\n    alog.turn_logging_thread_name(on=true)\n    # processes?\n    alog.turn_logging_process_id(on=true)\n    # no datetime wanted?\n    alog.turn_logging_datetime(on=false)\n\nwhy should you use logging instead of print\n-------------------------------------------\n\nthe main goal of logging is to figure out what was going on and to get the\ninsight. ``print``, by default, does simply pure string output. no timestamp,\nno module hint, and no level control, comparing to a pretty logging record.\n\nlets start with ``aproject/models/user.py`` :\n\n.. code-block:: python\n\n  class user:\n      def __init__(self, user_id, username):\n          ...\n          print(username)\n          ...\n\nwhat you got output of ``print`` :\n\n.. code-block:: python\n\n  >>> admin = user(1, \"admin\")\n  \"admin\"\n\n\nnow use ``alog`` :\n\n.. code-block:: python\n\n  import alog\n\n  class user:\n      def __init__(self, user_id, username):\n          ...\n          alog.info(username)\n          ...\n\nwhat you got output of ``alog.info`` :\n\n.. code-block:: python\n\n  >>> admin = user(1, \"admin\")\n  2016-11-23 11:32:58 info  [models.user:6] admin\n\nin the output of hundreds of lines, it helps (a lot).\n\nwhat if you have used ``print`` a log? that's as easy:\n\n.. code-block:: python\n\n  import alog\n\n  print = alog.info\n\n  ... # a lot of print code no needed to change\n\n1.2.0 (2021-08-09)\n==================\n\n - support python 3.9\n - remove python 3.4 and 3.5 support.\n\n1.1.0 (2020-02-10)\n==================\n\n - support python 3.8\n - fix broken ``set_format`` function when formatter argument is given.\n\n1.0.0 (2019-04-03)\n==================\n\n - renamed:\n\n   - ``turn_logging_datetime(on=true)``\n   - ``turn_logging_thread_name(on=false)``\n   - ``turn_logging_process_id(on=false)``\n\n - support most same apis between alog and alogger.\n - add ``alog.pdir()`` for handy replacing ``[attr for attr in dir(obj)\n   if not attr.startswith(\"_\")]``.\n\n0.9.13 (2017-06-18)\n===================\n\n - fix not able to ``turn_log_datetime(on=false)``.\n\n0.9.12 (2017-06-16)\n===================\n\n - support not showing_log_datetime by ``turn_log_datetime(on=false)``.\n\n0.9.11 (2017-04-07)\n===================\n\n - add ``alog.getlogger()`` for handy replacing ``logging.getlogger``.\n\n0.9.10 (2017-03-27)\n===================\n\n - default logging format asctime to \"%y-%m-%d %h:%m:%s\" instead of\n   \"%y-%m-%d,%h:%m:%s.%f\".\n - update package info and usage (setup.py, readme, ...).\n\n0.9.9 (2016-08-28)\n==================\n\n - update to turn_thread_name and turn_process_id.\n\n0.9.8 (2016-08-27)\n==================\n\n - support showing_thread_name and showing_process_id.\n - support global reset.\n\n0.9.7 (2016-08-17)\n==================\n\n - better paths log for none default root name.\n\n0.9.6 (2016-08-16)\n==================\n\n - first public release.\n\n\n",
+  "docs_url": null,
+  "keywords": "simple basic application logging print",
+  "license": "apache 2.0",
+  "name": "alog",
+  "package_url": "https://pypi.org/project/alog/",
+  "project_url": "https://pypi.org/project/alog/",
+  "project_urls": {
+    "Homepage": "https://github.com/keitheis/alog"
+  },
+  "release_url": "https://pypi.org/project/alog/1.2.0/",
+  "requires_dist": [
+    "Sphinx (>=1.3.1) ; extra == 'docs'",
+    "pytest-cov ; extra == 'testing'"
+  ],
+  "requires_python": "",
+  "summary": "your goto python logging without panic on context swtich",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "keith_yang",
+    "yang@keitheis.org"
+  ],
+  "kwds": "logging getlogger log turn_logging_process_id logger",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_alog",
+  "homepage": "https://github.com/keitheis/alog",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_pytest_cov",
+    "pypi_sphinx"
+  ]
+}

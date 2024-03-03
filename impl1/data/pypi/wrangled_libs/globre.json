@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu general public license v3 or later (gplv3+)",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python"
+  ],
+  "description": "==========================\nglob-like pattern matching\n==========================\n\nconverts a glob-matching pattern to a regular expression, using apache\ncocoon style rules (with some extensions).\n\ntl;dr\n=====\n\ninstall:\n\n.. code:: bash\n\n  $ pip install globre\n\nuse:\n\n.. code:: python\n\n  import globre\n\n  names = [\n    '/path/to/file.txt',\n    '/path/to/config.ini',\n    '/path/to/subdir/base.ini',\n  ]\n\n  txt_names = [name for name in names if globre.match('/path/to/*.txt', name)]\n  assert txt_names == ['/path/to/file.txt']\n\n  ini_names = [name for name in names if globre.match('/path/to/*.ini', name)]\n  assert ini_names == ['/path/to/config.ini']\n\n  all_ini_names = [name for name in names if globre.match('/path/to/**.ini', name)]\n  assert all_ini_names == ['/path/to/config.ini', '/path/to/subdir/base.ini']\n\n\ndetails\n=======\n\nthis package basically allows using unix shell-like filename globbing\nto be used to match a string in a python program. the glob matching\nallows most characters to match themselves, with the following\nsequences having special meanings:\n\n=========  ====================================================================\nsequence   meaning\n=========  ====================================================================\n``?``      matches any single character except the slash\n           ('/') character.\n``*``      matches zero or more characters *excluding* the slash\n           ('/') character, e.g. ``/etc/*.conf`` which will *not*\n           match \"/etc/foo/bar.conf\".\n``**``     matches zero or more characters *including* the slash\n           ('/') character, e.g. ``/lib/**.so`` which *will*\n           match \"/lib/foo/bar.so\".\n``\\``      escape character used to precede any of the other special\n           characters (in order to match them literally), e.g.\n           ``foo\\?`` will match \"foo\" followed by a literal question mark.\n``[...]``  matches any character in the specified regex-style character range,\n           e.g. ``foo[0-9a-f].conf``.\n``{...}``  inlines a regex expression, e.g. ``foo-{\\\\d{2,4\\}}.txt`` which\n           will match \"foo-bar.txt\" but not \"foo-012.txt\".\n=========  ====================================================================\n\nthe `globre` package exports the following functions:\n\n* ``globre.match(pattern, string, sep=none, flags=0)``:\n\n  tests whether or not the glob `pattern` matches the `string`. if it\n  does, a `re.matchobject` is returned, otherwise ``none``. the `string`\n  must be matched in its entirety. see `globre.compile` for details on\n  the `sep` and `flags` parameters. example:\n\n  .. code:: python\n\n    globre.match('/etc/**.conf', '/etc/rsyslog.conf')\n    # => truthy\n\n* ``globre.search(pattern, string, sep=none, flags=0)``:\n\n  similar to `globre.match`, but the pattern does not need to match\n  the entire string. example:\n\n  .. code:: python\n\n    globre.search('lib/**.so', '/var/lib/python/readline.so.6.2')\n    # => truthy\n\n* ``globre.compile(pattern, sep=none, flags=0, split_prefix=false)``:\n\n  compiles the specified `pattern` into a matching object that has the\n  same api as the regular expression object returned by `re.compile`.\n\n  the `sep` parameter specifies the hierarchical path component\n  separator to use. by default, it uses the unix-style forward-slash\n  separator (``\"/\"``), but can be overriden to be a sequence of\n  alternative valid hierarchical path component separator characters.\n  note that although `sep` *could* be set to both forward- and back-\n  slashes (i.e. ``\"/\\\\\"``) to, theoretically, support either unix- and\n  windows-style path components, this has the significant flaw that\n  then *both* characters can be used within the same path as\n  separators.\n\n  the `flags` bit mask can contain all the standard `re` flags, in\n  addition to the ``globre.exact`` flag. if exact is set, then the\n  returned regex will include the equivalent of a leading '^' and\n  trailing '$', meaning that the regex must match the entire string,\n  from beginning to end.\n\n  if `split_prefix` is truthy, the return value becomes a tuple with\n  the first element set to any initial non-wildcarded string found in\n  the pattern. the second element remains the regex object as before.\n  for example, the pattern ``foo/**.ini`` would result in a tuple\n  equivalent to ``('foo/', re.compile('foo/.*\\\\.ini'))``.\n\n  example:\n\n  .. code:: python\n\n    prefix, expr = globre.compile('/path/to**.ini', split_prefix=true)\n    # prefix => '/path/to'\n\n    names = [\n      '/path/to/file.txt',\n      '/path/to/config.ini',\n      '/path/to/subdir/otherfile.txt',\n      '/path/to/subdir/base.ini',\n    ]\n\n    for name in names:\n      if not expr.match(name):\n        # ignore the two \".txt\" files\n        continue\n      # and do something with:\n      #   - /path/to/config.ini\n      #   - /path/to/subdir/base.ini\n\n\nwhat about the ``glob`` module\n==============================\n\nthis package is different from the standard python `glob` module in\nthe following critical ways:\n\n* the `glob` module operates on the actual filesystem; `globre` can be\n  used to match both files on the filesystem as well as any other\n  sources of strings to match.\n\n* the `glob` module does not provide the ``**`` \"descending\" matcher.\n\n* the `glob` module does not provide the ``{...}`` regular expression\n  inlining feature.\n\n* the `glob` module does not provide an alternate hierarchy separator\n  beyond ``/`` or ``\\\\``.",
+  "docs_url": null,
+  "keywords": "python glob pattern matching regular expression",
+  "license": "gplv3+",
+  "name": "globre",
+  "package_url": "https://pypi.org/project/globre/",
+  "project_url": "https://pypi.org/project/globre/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "http://github.com/metagriffin/globre"
+  },
+  "release_url": "https://pypi.org/project/globre/0.1.5/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "a glob matching library, providing an interface similar to the \"re\" module.",
+  "version": "0.1.5",
+  "releases": [],
+  "developers": [
+    "metagriffin",
+    "mg.pypi@uberdev.org"
+  ],
+  "kwds": "globbing txt_names glob regex globre",
+  "license_kwds": "gplv3+",
+  "libtype": "pypi",
+  "id": "pypi_globre",
+  "homepage": "http://github.com/metagriffin/globre",
+  "release_count": 7,
+  "dependency_ids": []
+}

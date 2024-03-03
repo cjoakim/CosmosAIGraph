@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "topic :: scientific/engineering :: bio-informatics"
+  ],
+  "description": "# json-flattener\n\npython library for denormalizing/flattening lists of complex objects to tables/data frames, with roundtripping\n\n## notebook example\n\n[example.ipynb](https://github.com/cmungall/json-flattener/blob/main/example.ipynb)\n\n## description\n\ngiven yaml/json/json-lines such as:\n\n```yaml\n- id: s001\n  name: lord of the rings\n  genres:\n    - fantasy\n  creator:\n    name: jrr tolkein\n    from_country: england\n  books:\n    - id: s001.1\n      name: fellowship of the ring\n      price: 5.99\n      summary: hobbits\n    - id: s001.2\n      name: the two towers\n      price: 5.99\n      summary: more hobbits\n    - id: s001.3\n      name: return of the king\n      price: 6.99\n      summary: yet more hobbits\n- id: s002\n  name: the culture series\n  genres:\n    - scifi\n  creator:\n    name: ian m banks\n    from_country: scotland\n  books:\n    - id: s002.1\n      name: consider phlebas\n      price: 5.99\n    - id: s002.2\n      name: player of games\n      price: 5.99\n```\n\ndenormalize using `jfl` command:\n\n```bash\njfl flatten -c creator=flat -c books=multivalued -i examples/books1.yaml -o examples/books1-flattened.tsv\n```\n\n\n\n|id|name|genres|creator_name|creator_from_country|books_name|books_summary|books_price|books_id|creator_genres\n|---|---|---|---|---|---|---|---|---|---|\n|s001|lord of the rings|[fantasy]|jrr tolkein|england|[fellowship of the ring\\|the two towers\\|return of the king]|[hobbits\\|more hobbits\\|yet more hobbits]|[5.99\\|5.99\\|6.99]|[s001.1\\|s001.2\\|s001.3]|\n|s002|the culture series|[scifi]|ian m banks|scotland|[consider phlebas\\|player of games]||[5.99\\|5.99]|[s002.1\\|s002.2]|\n\n\nconvert back to json/yaml:\n\n```bash\njfl unflatten -c creator=flat -c books=multivalued -i examples/books1.tsv -o examples/books1.yaml\n```\n\n\n\nthis library also allows complex fields to be directly serialized as json or yaml (the default is to append `_json` to the key). for example:\n\n```bash\njfl flatten -c creator=json -c books=json -i examples/books1.yaml -o examples/books1-jsonified.tsv\n```\n\n|id|name|genres|creator_json|books_json|\n|---|---|---|---|---|\n|s001|lord of the rings|[fantasy]|{\\\"name\\\": \\\"jrr tolkein\\\", \\\"from_country\\\": \\\"england\\\"}|[{\\\"id\\\": \\\"s001.1\\\", \\\"name\\\": \\\"fellowship of the ring\\\", \\\"summary\\\": \\\"hobbits\\\", \\\"price\\\": 5.99}, {\\\"id\\\": \\\"s001.2\\\", \\\"name\\\": \\\"the two towers\\\", \\\"summary\\\": \\\"more hobbits\\\", \\\"price\\\": 5.99}, {\\\"id\\\": \\\"s001.3\\\", \\\"name\\\": \\\"return of the king\\\", \\\"summary\\\": \\\"yet more hobbits\\\", \\\"price\\\": 6.99}]|\n|s002|the culture series|[scifi]|{\\\"name\\\": \\\"ian m banks\\\", \\\"from_country\\\": \\\"scotland\\\"}|[{\\\"id\\\": \\\"s002.1\\\", \\\"name\\\": \\\"consider phlebas\\\", \\\"price\\\": 5.99}, {\\\"id\\\": \\\"s002.2\\\", \\\"name\\\": \\\"player of games\\\", \\\"price\\\": 5.99}]|\n|s003|book of the new sun|[scifi, fantasy]|{\\\"name\\\": \\\"gene wolfe\\\", \\\"genres\\\": [\\\"scifi\\\", \\\"fantasy\\\"], \\\"from_country\\\": \\\"usa\\\"}|[{\\\"id\\\": \\\"s003.1\\\", \\\"name\\\": \\\"shadow of the torturer\\\"}, {\\\"id\\\": \\\"s003.2\\\", \\\"name\\\": \\\"claw of the conciliator\\\", \\\"price\\\": 6.99}]|\n|s004|example with single book||{\\\"name\\\": \\\"ms writer\\\", \\\"genres\\\": [\\\"romance\\\"], \\\"from_country\\\": \\\"usa\\\"}|[{\\\"id\\\": \\\"s004.1\\\", \\\"name\\\": \\\"blah\\\"}]|\n|s005|example with no books||{\\\"name\\\": \\\"mr unproductive\\\", \\\"genres\\\": [\\\"romance\\\", \\\"scifi\\\", \\\"fantasy\\\"], \\\"from_country\\\": \\\"usa\\\"}||\n\n\nsee\n\n<iframe src=\"https://docs.google.com/presentation/d/e/2pacx-1vrym06peu9bkrzbxjazumlajw5s4vbj5f0t0te4hj_x9ex_easlsuzuawuxyihwboc6ctprtxrtgwqd/embed?start=false&loop=false&delayms=60000\" frameborder=\"0\" width=\"960\" height=\"569\" allowfullscreen=\"true\" mozallowfullscreen=\"true\" webkitallowfullscreen=\"true\"></iframe>\n\nthe primary use case is to go from a rich *normalized* data model (as python objects, json, or yaml) to a flatter representation that is amenable to processing with:\n\n * solr/lucene\n * pandas/r dataframes\n * excel/google sheets\n * unix cut/grep/cat/etc\n * simple denormalized sql database representations\n\nthe target denormalized format is a list of rows / a data matrix, where each cell is either an atom or a list of atoms.\n\n## method\n\n * each top level key becomes a column\n * if the key value is a dict/object, then flatten\n     * by default a '_' is used to separate the parent key from the inner key\n     * e.g. the composition of `creator` and `from_country` becomes `creator_from_country`\n     * currently one level of flattening is supported\n * if the key value is a list of atomic entities, then leave as is\n * if the key value is a list of dicts/objects, then flatten each key of this inner dict into a list\n     * e.g. if `books` is a list of book objects, and `name` is a key on book, then `books_name` is a list of names of each book\n     * order is significant - the first element of `books_name` is matched to the first element of `books_price`, etc\n * allow any key to be serialized as yaml/json/pickle if configured\n\n## command line usage (todo)\n\n## usage from python\n\ndocumentation coming soon: see test folder for now\n\n\n## use within linkml\n\n\n\n## comparison\n\n### pandas json_normalize\n\n\n - https://pandas.pydata.org/pandas-docs/version/0.25.0/reference/api/pandas.io.json.json_normalize.html\n\n### java json-flattener\n\n https://github.com/wnameless/json-flattener\n\n### python\n\n### csvjson\n\nhttps://csvjson.com/json2csv\n\n\n\n",
+  "docs_url": null,
+  "keywords": "linkml data-science denormalization yaml json data-frames",
+  "license": "bsd",
+  "name": "json-flattener",
+  "package_url": "https://pypi.org/project/json-flattener/",
+  "project_url": "https://pypi.org/project/json-flattener/",
+  "project_urls": {
+    "Homepage": "https://github.com/cmungall/json-flattener"
+  },
+  "release_url": "https://pypi.org/project/json-flattener/0.1.9/",
+  "requires_dist": [
+    "click",
+    "pyyaml"
+  ],
+  "requires_python": ">=3.7.0",
+  "summary": "python library for denormalizing nested dicts or json objects to tables and back",
+  "version": "0.1.9",
+  "releases": [],
+  "developers": [
+    "chris_mungall",
+    "cjmungall@lbl.gov"
+  ],
+  "kwds": "books_json yaml json_normalize jsonified csvjson",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_json_flattener",
+  "homepage": "https://github.com/cmungall/json-flattener",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_pyyaml"
+  ]
+}

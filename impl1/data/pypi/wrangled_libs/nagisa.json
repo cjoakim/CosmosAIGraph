@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "natural language :: japanese",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: unix",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: text processing :: linguistic"
+  ],
+  "description": "<p align=\"center\"><img width=\"50%\" src=\"/nagisa/data/nagisa_logo.png\" /></p>\n\n---\n\n[![python package](https://github.com/taishi-i/nagisa/actions/workflows/python-package.yml/badge.svg)](https://github.com/taishi-i/nagisa/actions/workflows/python-package.yml)\n[![build status](https://app.travis-ci.com/taishi-i/nagisa.svg?branch=master)](https://app.travis-ci.com/taishi-i/nagisa)\n[![build status](https://ci.appveyor.com/api/projects/status/6k35hmxl1juf1hqf?svg=true)](https://ci.appveyor.com/project/taishi-i/nagisa)\n[![coverage status](https://coveralls.io/repos/github/taishi-i/nagisa/badge.svg?branch=master)](https://coveralls.io/github/taishi-i/nagisa?branch=master)\n[![documentation status](https://readthedocs.org/projects/nagisa/badge/?version=latest)](https://nagisa.readthedocs.io/en/latest/?badge=latest)\n[![pypi](https://img.shields.io/pypi/v/nagisa.svg)](https://pypi.python.org/pypi/nagisa)\n[![downloads](https://pepy.tech/badge/nagisa)](https://pepy.tech/project/nagisa)\n\n\nnagisa is a python module for japanese word segmentation/pos-tagging.\nit is designed to be a simple and easy-to-use tool.\n\nthis tool has the following features.\n-  based on recurrent neural networks.\n-  the word segmentation model uses character- and word-level features [[\u6c60\u7530+]](http://www.anlp.jp/proceedings/annual_meeting/2017/pdf_dir/b6-2.pdf).\n-  the pos-tagging model uses tag dictionary information [[inoue+]](http://www.aclweb.org/anthology/k17-1042).\n\nfor more details refer to the following links.\n-  a bert model for nagisa is available [here](https://github.com/taishi-i/nagisa_bert).\n-  the presentation slide at pycon jp (2019) is available [here](https://speakerdeck.com/taishii/pycon-jp-2019).\n-  the presentation slide at pycon jp (2022) is available [here](https://speakerdeck.com/taishii/pycon-jp-2022).\n-  the article in japanese is available [here](https://qiita.com/taishi-i/items/5b9275a606b392f7f58e).\n-  the documentation is available [here](https://nagisa.readthedocs.io/en/latest/?badge=latest).\n\n\ninstallation\n=============\n\npython 3.6+ (3.6, 3.7, 3.8, 3.9, 3.10) on linux or macos is required.\nthis tool uses [dynet](https://github.com/clab/dynet) (the dynamic neural network toolkit) to calcucate neural networks.\nyou can install nagisa by using the following command.\n```bash\npip install nagisa\n```\nfor windows users, please run it with python 3.6, 3.7 or 3.8 (64bit).\n\nbasic usage\n=============\n\nsample of word segmentation and pos-tagging for japanese.\n\n```python\nimport nagisa\n\ntext = 'python\u3067\u7c21\u5358\u306b\u4f7f\u3048\u308b\u30c4\u30fc\u30eb\u3067\u3059'\nwords = nagisa.tagging(text)\nprint(words)\n#=> python/\u540d\u8a5e \u3067/\u52a9\u8a5e \u7c21\u5358/\u5f62\u72b6\u8a5e \u306b/\u52a9\u52d5\u8a5e \u4f7f\u3048\u308b/\u52d5\u8a5e \u30c4\u30fc\u30eb/\u540d\u8a5e \u3067\u3059/\u52a9\u52d5\u8a5e\n\n# get a list of words\nprint(words.words)\n#=> ['python', '\u3067', '\u7c21\u5358', '\u306b', '\u4f7f\u3048\u308b', '\u30c4\u30fc\u30eb', '\u3067\u3059']\n\n# get a list of pos-tags\nprint(words.postags)\n#=> ['\u540d\u8a5e', '\u52a9\u8a5e', '\u5f62\u72b6\u8a5e', '\u52a9\u52d5\u8a5e', '\u52d5\u8a5e', '\u540d\u8a5e', '\u52a9\u52d5\u8a5e']\n```\n\npost-processing functions\n=====\n\nfilter and extarct words by the specific pos tags.\n```python\n# filter the words of the specific pos tags.\nwords = nagisa.filter(text, filter_postags=['\u52a9\u8a5e', '\u52a9\u52d5\u8a5e'])\nprint(words)\n#=> python/\u540d\u8a5e \u7c21\u5358/\u5f62\u72b6\u8a5e \u4f7f\u3048\u308b/\u52d5\u8a5e \u30c4\u30fc\u30eb/\u540d\u8a5e\n\n# extarct only nouns.\nwords = nagisa.extract(text, extract_postags=['\u540d\u8a5e'])\nprint(words)\n#=> python/\u540d\u8a5e \u30c4\u30fc\u30eb/\u540d\u8a5e\n\n# this is a list of available pos-tags in nagisa.\nprint(nagisa.tagger.postags)\n#=> ['\u88dc\u52a9\u8a18\u53f7', '\u540d\u8a5e', ... , 'url']\n```\n\nadd the user dictionary in easy way.\n```python\n# default\ntext = \"3\u6708\u306b\u898b\u305f\u300c3\u6708\u306e\u30e9\u30a4\u30aa\u30f3\u300d\"\nprint(nagisa.tagging(text))\n#=> 3/\u540d\u8a5e \u6708/\u540d\u8a5e \u306b/\u52a9\u8a5e \u898b/\u52d5\u8a5e \u305f/\u52a9\u52d5\u8a5e \u300c/\u88dc\u52a9\u8a18\u53f7 3/\u540d\u8a5e \u6708/\u540d\u8a5e \u306e/\u52a9\u8a5e \u30e9\u30a4\u30aa\u30f3/\u540d\u8a5e \u300d/\u88dc\u52a9\u8a18\u53f7\n\n# if a word (\"3\u6708\u306e\u30e9\u30a4\u30aa\u30f3\") is included in the single_word_list, it is recognized as a single word.\nnew_tagger = nagisa.tagger(single_word_list=['3\u6708\u306e\u30e9\u30a4\u30aa\u30f3'])\nprint(new_tagger.tagging(text))\n#=> 3/\u540d\u8a5e \u6708/\u540d\u8a5e \u306b/\u52a9\u8a5e \u898b/\u52d5\u8a5e \u305f/\u52a9\u52d5\u8a5e \u300c/\u88dc\u52a9\u8a18\u53f7 3\u6708\u306e\u30e9\u30a4\u30aa\u30f3/\u540d\u8a5e \u300d/\u88dc\u52a9\u8a18\u53f7\n```\n\n\ntrain a model\n======\n\nnagisa (v0.2.0+) provides a simple train method\nfor a joint word segmentation and sequence labeling (e.g, pos-tagging, ner) model.\n\nthe format of the train/dev/test files is tsv.\neach line is `word`  and `tag` and one line is represented by `word` \\t(tab) `tag`.\nnote that you put eos between sentences.\nrefer to [sample datasets](/nagisa/data/sample_datasets) and [tutorial (train a model for universal dependencies)](https://nagisa.readthedocs.io/en/latest/tutorial.html).\n\n\n```\n$ cat sample.train\n\u552f\u4e00\tnoun\n\u306e\tadp\n\u8da3\u5473\tnou\n\u306f\tadp\n\u6599\u7406\tnoun\neos\n\u3068\u3066\u3082\tadv\n\u304a\u3044\u3057\u304b\u3063\tadj\n\u305f\taux\n\u3067\u3059\taux\n\u3002\tpunct\neos\n\u30c9\u30eb\tnoun\n\u306f\tadp\n\u4e3b\u8981\tadj\n\u901a\u8ca8\tnoun\neos\n```\n\n```python\n# after finish training, save the three model files (*.vocabs, *.params, *.hp).\nnagisa.fit(train_file=\"sample.train\", dev_file=\"sample.dev\", test_file=\"sample.test\", model_name=\"sample\")\n\n# build the tagger by loading the trained model files.\nsample_tagger = nagisa.tagger(vocabs='sample.vocabs', params='sample.params', hp='sample.hp')\n\ntext = \"\u798f\u5ca1\u30fb\u535a\u591a\u306e\u89b3\u5149\u60c5\u5831\"\nwords = sample_tagger.tagging(text)\nprint(words)\n#> \u798f\u5ca1/propn \u30fb/sym \u535a\u591a/propn \u306e/adp \u89b3\u5149/noun \u60c5\u5831/noun\n```\n\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "nagisa",
+  "package_url": "https://pypi.org/project/nagisa/",
+  "project_url": "https://pypi.org/project/nagisa/",
+  "project_urls": {
+    "Download": "https://github.com/taishi-i/nagisa/archive/0.2.9.tar.gz",
+    "Homepage": "https://github.com/taishi-i/nagisa"
+  },
+  "release_url": "https://pypi.org/project/nagisa/0.2.9/",
+  "requires_dist": [
+    "six",
+    "numpy",
+    "DyNet"
+  ],
+  "requires_python": "",
+  "summary": "a japanese tokenizer based on recurrent neural networks",
+  "version": "0.2.9",
+  "releases": [],
+  "developers": [
+    "taishi.ikeda.0323@gmail.com",
+    "taishi_ikeda"
+  ],
+  "kwds": "nagisa_logo nagisa nagisa_bert badge taishii",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_nagisa",
+  "homepage": "https://github.com/taishi-i/nagisa",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_dynet",
+    "pypi_numpy",
+    "pypi_six"
+  ]
+}

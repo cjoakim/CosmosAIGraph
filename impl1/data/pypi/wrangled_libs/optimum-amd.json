@@ -1,0 +1,62 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: artificial intelligence"
+  ],
+  "description": "# optimum-amd\n\n\ud83e\udd17 optimum-amd is an extension to hugging face libraries enabling performance optimizations for [rocm for amd gpus](https://rocm.docs.amd.com/en/latest/release/gpu_os_support.html) and [ryzen ai for amd](https://ryzenai.docs.amd.com/en/latest/index.html) npu accelerator.\n\n## install\n\noptimum-amd library can be installed through pip:\n\n```bash\npip install --upgrade-strategy eager optimum[amd]\n```\n\ninstallation is possible from source as well:\n\n```bash\ngit clone https://github.com/huggingface/optimum-amd.git\ncd optimum-amd\npip install -e .\n```\n\n## rocm support for amd gpus\n\nhugging face libraries natively support amd gpus through [pytorch for rocm](https://pytorch.org/get-started/locally/) with zero code change.\n\n\ud83e\udd17 transformers natively supports [flash attention 2](https://huggingface.co/docs/transformers/perf_infer_gpu_one#flashattention-2), [gptq quantization](https://huggingface.co/docs/transformers/main_classes/quantization#autogptq-integration) with rocm. [\ud83e\udd17 text generation inference](https://huggingface.co/docs/text-generation-inference/quicktour) library for llm deployment has native rocm support, with flash attention 2, [paged attention](https://huggingface.co/docs/text-generation-inference/conceptual/paged_attention), fused positional encoding & layer norm kernels support.\n\n[find out more about these integrations in the documentation](https://huggingface.co/docs/optimum/main/en/amd/amdgpu/overview)!\n\nin the future, optimum-amd may host more rocm-specific optimizations.\n\n### how to use it: text generation inference\n\n[text generation inference](https://github.com/huggingface/text-generation-inference) library for llm deployment supports amd instinct mi210/mi250 gpus. deployment can be done as follow:\n\n1. install [rocm5.7](https://rocm.docs.amd.com/en/latest/deploy/linux/index.html) to the host machine\n2. example llm server setup: launch a falcon-7b model server on the rocm-enabled docker.\n```bash\nmodel=tiiuae/falcon-7b-instruct\nvolume=$pwd/data # share a volume with the docker container to avoid downloading weights every run\n\ndocker run --cap-add=sys_ptrace --security-opt seccomp=unconfined --device=/dev/kfd --device=/dev/dri --group-add video --ipc=host --shm-size 1g -p 8080:80 -v $volume:/data ghcr.io/huggingface/text-generation-inference:1.2-rocm --model-id $model\n```\n3. client setup: open another shell and run:\n```bash\ncurl 127.0.0.1:8080/generate \\\n    -x post \\\n    -d '{\"inputs\":\"what is deep learning?\",\"parameters\":{\"max_new_tokens\":20}}' \\\n    -h 'content-type: application/json'\n```\n\n### how to use it: onnx runtime with rocm\n\noptimum onnx runtime integration [supports rocm for amd gpus](https://huggingface.co/docs/optimum/onnxruntime/usage_guides/amdgpu). usage is as follow:\n\n1. install [rocm 5.7](https://rocm.docs.amd.com/en/latest/deploy/linux/index.html) on the host machine.\n2. use the example [dockerfile](https://github.com/huggingface/optimum-amd/blob/main/docker/onnx-runtime-amd-gpu/dockerfile) or install `onnxruntime-rocm` package locally from source. pip wheels are not available at the time.\n3. run a bert text classification onnx model by using `rocmexecutionprovider`:\n\n```python\nfrom optimum.onnxruntime import ortmodelforsequenceclassification\nfrom optimum.pipelines import pipeline\nfrom transformers import autotokenizer\n\nort_model = ortmodelforsequenceclassification.from_pretrained(\n    \"distilbert-base-uncased-finetuned-sst-2-english\",\n    export=true,\n    provider=\"rocmexecutionprovider\",\n)\ntokenizer = autotokenizer.from_pretrained(\"distilbert-base-uncased-finetuned-sst-2-english\")\npipe = pipeline(task=\"text-classification\", model=ort_model, tokenizer=tokenizer, device=\"cuda:0\")\nresult = pipe(\"both the music and visual were astounding, not to mention the actors performance.\")\nprint(result)\n# [{'label': 'positive', 'score': 0.9997727274894714}]\n```\n\n## ryzen ai\n\namd's [ryzen\u2122 ai](https://www.amd.com/en/products/ryzen-ai) family of laptop processors provide users with an integrated neural processing unit (npu) which offloads the host cpu and gpu from ai processing tasks. ryzen\u2122 ai software consists of the vitis\u2122 ai execution provider (ep) for onnx runtime combined with quantization tools and a pre-optimized model zoo. all of this is made possible based on ryzen\u2122 ai technology built on amd xdna\u2122 architecture, purpose-built to run ai workloads efficiently and locally, offering a host of benefits for the developer innovating the next groundbreaking ai app.\n\noptimum-amd provides easy interface for loading and inference of hugging face models on ryzen ai accelerator.\n\n### ryzen ai environment setup\na ryzen ai environment needs to be enabled to use this library. please refer to ryzen ai's [installation](https://ryzenai.docs.amd.com/en/latest/inst.html) and [runtime setup](https://ryzenai.docs.amd.com/en/latest/runtime_setup.html).\n\n### how to use it?\n\n* quantize the onnx model with optimum or using the ryzenai quantization tools\n\nfor more information on quantization refer to [model quantization](https://ryzenai.docs.amd.com/en/latest/modelport.html) guide.\n\n* load model with ryzen ai class\n\nto load a model and run inference with ryzenai, you can just replace your `automodelforxxx` class with the corresponding `ryzenaimodelforxxx` class. \n\n```diff\nimport requests\nfrom pil import image\n\n- from transformers import automodelforimageclassification\n+ from optimum.amd.ryzenai import ryzenaimodelforimageclassification\nfrom transformers import autofeatureextractor, pipeline\n\nurl = \"http://images.cocodataset.org/val2017/000000039769.jpg\"\nimage = image.open(requests.get(url, stream=true).raw)\n\nmodel_id = <path of the model>\n- model = automodelforimageclassification.from_pretrained(model_id)\n+ model = ryzenaimodelforimageclassification.from_pretrained(model_id, vaip_config=<path to config file>)\nfeature_extractor = autofeatureextractor.from_pretrained(model_id)\ncls_pipe = pipeline(\"image-classification\", model=model, feature_extractor=feature_extractor)\noutputs = cls_pipe(image)\n```\n\nif you find any issue while using those, please open an issue or a pull request.\n",
+  "docs_url": null,
+  "keywords": "transformers,amd,ryzen,ipu,quantization,on-device,instinct",
+  "license": "mit",
+  "name": "optimum-amd",
+  "package_url": "https://pypi.org/project/optimum-amd/",
+  "project_url": "https://pypi.org/project/optimum-amd/",
+  "project_urls": {
+    "Homepage": "https://github.com/huggingface/optimum-amd"
+  },
+  "release_url": "https://pypi.org/project/optimum-amd/0.1.0/",
+  "requires_dist": [
+    "optimum",
+    "transformers",
+    "onnx",
+    "onnxruntime <1.16.0",
+    "onnxruntime-extensions",
+    "black ~=23.1 ; extra == 'quality'",
+    "ruff <=0.0.259,>=0.0.241 ; extra == 'quality'",
+    "pytest ; extra == 'tests'",
+    "parameterized ; extra == 'tests'"
+  ],
+  "requires_python": "",
+  "summary": "optimum library is an extension of the hugging face transformers library, providing a framework to integrate third-party libraries from hardware partners and interface with their specific functionality.",
+  "version": "0.1.0",
+  "releases": [],
+  "developers": [
+    "hardware@huggingface.co",
+    "huggingface_inc"
+  ],
+  "kwds": "amdgpu amd ryzen ryzenai gpu_os_support",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_optimum_amd",
+  "homepage": "https://github.com/huggingface/optimum-amd",
+  "release_count": 1,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_onnx",
+    "pypi_onnxruntime",
+    "pypi_onnxruntime_extensions",
+    "pypi_optimum",
+    "pypi_parameterized",
+    "pypi_pytest",
+    "pypi_ruff",
+    "pypi_transformers"
+  ]
+}

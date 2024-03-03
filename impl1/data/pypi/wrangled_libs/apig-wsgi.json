@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "=========\napig-wsgi\n=========\n\n.. image:: https://img.shields.io/github/actions/workflow/status/adamchainz/apig-wsgi/main.yml?branch=main&style=for-the-badge\n   :target: https://github.com/adamchainz/apig-wsgi/actions?workflow=ci\n\n.. image:: https://img.shields.io/badge/coverage-100%25-success?style=for-the-badge\n   :target: https://github.com/adamchainz/apig-wsgi/actions?workflow=ci\n\n.. image:: https://img.shields.io/pypi/v/apig-wsgi.svg?style=for-the-badge\n   :target: https://pypi.org/project/apig-wsgi/\n\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge\n   :target: https://github.com/psf/black\n\n.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logocolor=white&style=for-the-badge\n   :target: https://github.com/pre-commit/pre-commit\n   :alt: pre-commit\n\nwrap a `wsgi <https://peps.python.org/pep-3333/>`__ application in an aws lambda handler function for running on api gateway or an alb.\n\na quick example:\n\n.. code-block:: python\n\n    from apig_wsgi import make_lambda_handler\n    from myapp.wsgi import app\n\n    # configure this as your entry point in aws lambda\n    lambda_handler = make_lambda_handler(app)\n\n\ninstallation\n============\n\nuse **pip**:\n\n.. code-block:: sh\n\n    python -m pip install apig-wsgi\n\npython 3.8 to 3.12 supported.\n\n----\n\n**working on a django project?**\nimprove your skills with `one of my books <https://adamj.eu/books/>`__.\n\n----\n\nusage\n=====\n\nuse apig-wsgi in your aws lambda function that you attach to one of:\n\n* a `lambda function url <https://docs.aws.amazon.com/lambda/latest/dg/lambda-urls.html>`__\n* an `api gateway \u201chttp api\u201d <https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html>`__\n* an `api gateway \u201crest api\u201d <https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html>`__\n* an `alb <https://docs.aws.amazon.com/lambda/latest/dg/services-alb.html>`__\n\n\nboth \u201cformat version 1\u201d and \u201cformat version 2\u201d are supported\n(`documentation <https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html>`__).\napig-wsgi will automatically detect the version in use.\nat time of writing, \u201cformat version 2\u201d is used for lambda function url\u2019s and api gateway http api\u2019s.\n\n``make_lambda_handler(app, binary_support=none, non_binary_content_type_prefixes=none)``\n----------------------------------------------------------------------------------------\n\n``app`` should be a wsgi app, for example from django's ``wsgi.py`` or flask's\n``flask()`` object.\n\n``binary_support`` configures whether responses containing binary are\nsupported. the default, ``none``, means to automatically detect this from the\nformat version of the event - on it defaults to ``true`` for format version 2,\nand ``false`` for format version 1. depending on how you're deploying your\nlambda function, you may need extra configuration before you can enable binary\nresponses:\n\n* alb\u2019s support binary responses by default.\n* api gateway http api\u2019s support binary responses by default (and default to\n  event format version 2).\n* api gateway rest api\u2019s (the \u201cold\u201d style) require you to add ``'*/*'`` in the\n  \u201cbinary media types\u201d configuration. you will need to configure this through\n  api gateway directly, cloudformation, sam, or whatever tool your project is\n  using. whilst this supports a list of binary media types, using ``'*/*'`` is\n  the best way to configure it, since it is used to match the request 'accept'\n  header as well, which wsgi applications often ignore. you may need to delete\n  and recreate your stages for this value to be copied over.\n\nnote that binary responses aren't sent if your response has a 'content-type'\nstarting 'text/', 'application/json' or 'application/vnd.api+json' - this\nis to support sending larger text responses, since the base64 encoding would\notherwise inflate the content length. to avoid base64 encoding other content\ntypes, you can set ``non_binary_content_type_prefixes`` to a list or tuple of\ncontent type prefixes of your choice (which replaces the default list).\n\nif the event from api gateway contains the ``requestcontext`` key, for example\non format version 2 or from custom request authorizers, this will be available\nin the wsgi environ at the key ``apig_wsgi.request_context``.\n\nif you want to inspect the full event from api gateway, it's available in the\nwsgi environ at the key ``apig_wsgi.full_event``.\n\nif you need the\n`lambda context object <https://docs.aws.amazon.com/lambda/latest/dg/python-context.html>`__,\nit's available in the wsgi environ at the key ``apig_wsgi.context``.\n\nif you\u2019re using \u201cformat version 1\u201d, multiple values for request and response\nheaders and query parameters are supported. they are enabled automatically on\napi gateway but need `explict activation on\nalb\u2019s <https://docs.aws.amazon.com/elasticloadbalancing/latest/application/lambda-functions.html#multi-value-headers>`__.\nif you need to determine from within your application if multiple header values\nare enabled, you can can check the ``apgi_wsgi.multi_value_headers`` key in the\nwsgi environ, which is ``true`` if they are enabled and ``false`` otherwise.\n\nexample\n=======\n\nan example django project with ansible deployment is provided in the ``example/`` directory in the repository.\nsee the ``readme.rst`` there for guidance.\n",
+  "docs_url": null,
+  "keywords": "aws,lambda,api gateway,apig",
+  "license": "mit",
+  "name": "apig-wsgi",
+  "package_url": "https://pypi.org/project/apig-wsgi/",
+  "project_url": "https://pypi.org/project/apig-wsgi/",
+  "project_urls": {
+    "Changelog": "https://github.com/adamchainz/apig-wsgi/blob/main/CHANGELOG.rst",
+    "Homepage": "https://github.com/adamchainz/apig-wsgi",
+    "Mastodon": "https://fosstodon.org/@adamchainz",
+    "Twitter": "https://twitter.com/adamchainz"
+  },
+  "release_url": "https://pypi.org/project/apig-wsgi/2.18.0/",
+  "requires_dist": [
+    "typing-extensions ; python_version < \"3.8\""
+  ],
+  "requires_python": ">=3.8",
+  "summary": "wrap a wsgi application in an aws lambda handler function for running on api gateway or an alb.",
+  "version": "2.18.0",
+  "releases": [],
+  "developers": [
+    "adam_johnson",
+    "me@adamj.eu"
+  ],
+  "kwds": "apig_wsgi wsgi badge apgi_wsgi flask",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_apig_wsgi",
+  "homepage": "https://github.com/adamchainz/apig-wsgi",
+  "release_count": 32,
+  "dependency_ids": [
+    "pypi_typing_extensions"
+  ]
+}

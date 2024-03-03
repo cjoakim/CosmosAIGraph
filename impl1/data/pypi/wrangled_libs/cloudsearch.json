@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "# project name here\n> summary description here.\n\n\nthis file will become your readme and also the index of your documentation.\n\n## install\n\n`pip install your_project_name`\n\n## usage\n\nvery simple usage, \ninit the search object then call sortedsearch()\n\n\n```\nfrom cloudsearch.cloudsearch import search\nsearchendpoint = 'https://search-villa-cloudsearch-2-4izacsoytzqf6kztcyjhssy2ti.ap-southeast-1.cloudsearch.amazonaws.com'\nsearcher = search(searchterm = 'banana', key=user, pw= pw , endpoint=searchendpoint)\nresult = searcher.search(size=1000)\nprint(f'found {len(list(result))} results, the first item is \\n{next(iter(result))}')\n```\n\n    found 464 results, the first item is \n    {'pr_country_en': 'thailand', 'pr_abb': 'banana', 'pr_engname': 'banana', 'pr_name': 'banana', 'pr_online_name_en': 'banana', 'pr_keyword_en': 'banana,bananas,cavendish banana,cavendish,,fresh fruit', 'pr_online_name_th': 'banana', 'cprcode': '0226238', 'villa_category_l2_en': 'fresh produce', 'content_en': '0226238 banana banana,bananas,cavendish banana,cavendish,,fresh fruit', 'pr_name_th': 'banana', 'iprcode': '0226238', 'oprcode': '0226238', 'villa_category_l3_en': 'fruits & vegetable local', 'hema_name_en': 'banana', 'pr_keyword_th': '\u0e01\u0e25\u0e49\u0e27\u0e22,\u0e01\u0e25\u0e49\u0e27\u0e22\u0e2b\u0e2d\u0e21,\u0e01\u0e25\u0e49\u0e27\u0e22\u0e44\u0e02\u0e48,\u0e01\u0e25\u0e49\u0e27\u0e22\u0e2d\u0e2d\u0e23\u0e4c\u0e41\u0e01\u0e19\u0e34\u0e01,\u0e01\u0e25\u0e49\u0e27\u0e2d\u0e2d\u0e23\u0e4c\u0e41\u0e01\u0e19\u0e34\u0e04,fresh fruit', 'hema_name_th': 'banana', 'pr_name_en': 'banana', 'pr_code': '0226238', 'villa_category_l4_en': 'local fruit', 'content_th': 'banana \u0e01\u0e25\u0e49\u0e27\u0e22,\u0e01\u0e25\u0e49\u0e27\u0e22\u0e2b\u0e2d\u0e21,\u0e01\u0e25\u0e49\u0e27\u0e22\u0e44\u0e02\u0e48,\u0e01\u0e25\u0e49\u0e27\u0e22\u0e2d\u0e2d\u0e23\u0e4c\u0e41\u0e01\u0e19\u0e34\u0e01,\u0e01\u0e25\u0e49\u0e27\u0e2d\u0e2d\u0e23\u0e4c\u0e41\u0e01\u0e19\u0e34\u0e04,fresh fruit', 'pr_active': 'y', 'villa_category_l1_en': 'fresh'}\n\n\n## for a more complex requirement\nyou can extend the class, please have a look at sortedsearch example\n\n```\n_ = searcher.sortedsearch()\n```\n\n    raw search result is     villa_category_l1_en villa_category_l2_en      villa_category_l3_en  \\\n    0                  fresh        fresh produce  fruits & vegetable local   \n    1                    nan                  nan                       nan   \n    2                  fresh        fresh produce                    bakery   \n    3                  fresh        fresh produce                    bakery   \n    4                  fresh        fresh produce                    bakery   \n    ..                   ...                  ...                       ...   \n    459                fresh        seafood fresh                crustacean   \n    460                fresh        seafood fresh                crustacean   \n    461                fresh        seafood fresh             local seafood   \n    462                fresh               frozen                   seafood   \n    463                fresh        seafood fresh             local seafood   \n\n        villa_category_l4_en  \n    0            local fruit  \n    1                    nan  \n    2          cake category  \n    3          cake category  \n    4         pasty category  \n    ..                   ...  \n    459                local  \n    460                local  \n    461                  nan  \n    462                  nan  \n    463                  nan  \n\n    [464 rows x 4 columns]\n\n\n```\nimport json\nboostdict = {\n    \"fields\":[\"online_category_l1_en\"]\n}\nqueryoptions = json.dumps(boostdict)\nsearcher2 = search(searchterm = 'dairy', key=user, pw= pw , endpoint=searchendpoint)\nresult = searcher2.sortedsearch(queryoptions = queryoptions, size=10)\n```\n\n    raw search result is   villa_category_l1_en villa_category_l2_en villa_category_l3_en  \\\n    0                fresh                dairy     chilled beverage   \n    1                fresh                dairy                 milk   \n    2                fresh                dairy               cheese   \n    3                fresh                dairy     chilled beverage   \n    4                fresh                dairy                 milk   \n    5                  nan                  nan                  nan   \n    6                  nan                  nan                  nan   \n    7                fresh                dairy               cheese   \n    8                fresh                dairy               yogurt   \n    9                fresh                dairy               yogurt   \n\n      villa_category_l4_en  \n    0                  nan  \n    1                  nan  \n    2       cheddar cheese  \n    3                  nan  \n    4                  nan  \n    5                  nan  \n    6                  nan  \n    7                  nan  \n    8               yogurt  \n    9        yogurtgranola  \n\n\n```\nfilterquery = \"(or \" + \" \".join(['online_category_l1_en' + f\":'{cat}'\" for cat in ['dairy']]) + \")\"\nsearcher3 = search(searchterm = 'dairy', key=user, pw= pw , endpoint=searchendpoint)\nresult = searcher3.sortedsearch(filterquery = filterquery, size=10)\n```\n\n    raw search result is   villa_category_l1_en villa_category_l2_en villa_category_l3_en  \\\n    0                  nan                  nan                  nan   \n    1                fresh                dairy                 milk   \n    2                fresh                dairy                cream   \n    3                fresh                dairy                cream   \n    4                fresh                dairy               yogurt   \n    5                fresh                dairy               yogurt   \n    6                fresh                dairy               yogurt   \n    7                fresh                dairy               yogurt   \n    8                fresh                dairy               yogurt   \n    9                fresh                dairy               yogurt   \n\n       villa_category_l4_en  \n    0                   nan  \n    1                   nan  \n    2                   nan  \n    3                   nan  \n    4                   nan  \n    5                   nan  \n    6                   nan  \n    7                   nan  \n    8                   nan  \n    9                   nan  \n\n\n```\nresult[9]['online_category_l1_en']\n```\n\n\n\n\n    'dairy'\n\n\n\n\n",
+  "docs_url": null,
+  "keywords": "cloudsearch sdk",
+  "license": "apache software license 2.0",
+  "name": "cloudsearch",
+  "package_url": "https://pypi.org/project/cloudsearch/",
+  "project_url": "https://pypi.org/project/cloudsearch/",
+  "project_urls": {
+    "Homepage": "https://github.com/thanakijwanavit/cloudsearch/tree/master/"
+  },
+  "release_url": "https://pypi.org/project/cloudsearch/0.0.12/",
+  "requires_dist": [
+    "boto3",
+    "pandas"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "cloudsearch sdk for aws cloudsearch",
+  "version": "0.0.12",
+  "releases": [],
+  "developers": [
+    "nic_wanavit",
+    "nwanavit@hatari.cc"
+  ],
+  "kwds": "sortedsearch cloudsearch searcher3 searcher2 searcher",
+  "license_kwds": "apache software license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_cloudsearch",
+  "homepage": "https://github.com/thanakijwanavit/cloudsearch/tree/master/",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_pandas"
+  ]
+}

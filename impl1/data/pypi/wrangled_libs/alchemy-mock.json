@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 2 - pre-alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6"
+  ],
+  "description": "===============\nsqlalchemy mock\n===============\n\n.. image:: https://badge.fury.io/py/alchemy-mock.png\n    :target: http://badge.fury.io/py/alchemy-mock\n\n.. image:: https://travis-ci.org/miki725/alchemy-mock.png?branch=master\n    :target: https://travis-ci.org/miki725/alchemy-mock\n\n.. image:: https://coveralls.io/repos/miki725/alchemy-mock/badge.png?branch=master\n    :target: https://coveralls.io/r/miki725/alchemy-mock?branch=master\n\nsqlalchemy mock helpers.\n\n* free software: mit license\n* github: https://github.com/miki725/alchemy-mock\n\ninstalling\n----------\n\nyou can install ``alchemy-mock`` using pip::\n\n    $ pip install alchemy-mock\n\nwhy?\n----\n\nsqlalchemy is awesome. unittests are great.\naccessing db during tests - not so much.\nthis library provides easy way to mock sqlalchemy's session\nin unittests while preserving ability to do sane asserts.\nnormally sqlalchemy's expressions cannot be easily compared\nas comparison on binary expression produces yet another binary expression::\n\n    >>> type((model.foo == 5) == (model.bar == 5))\n    <class 'sqlalchemy.sql.elements.binaryexpression'>\n\nbut they can be compared with this library::\n\n    >>> expressionmatcher(model.foo == 5) == (model.bar == 5)\n    false\n\nusing\n-----\n\n``expressionmatcher`` can be directly used::\n\n    >>> from alchemy_mock.comparison import expressionmatcher\n    >>> expressionmatcher(model.foo == 5) == (model.foo == 5)\n    true\n\nalternatively ``alchemymagicmock`` can be used to mock out sqlalchemy session::\n\n    >>> from alchemy_mock.mocking import alchemymagicmock\n    >>> session = alchemymagicmock()\n    >>> session.query(model).filter(model.foo == 5).all()\n\n    >>> session.query.return_value.filter.assert_called_once_with(model.foo == 5)\n\nin real world though session can be interacted with multiple times to query some data.\nin those cases ``unifiedalchemymagicmock`` can be used which combines various calls for easier assertions::\n\n    >>> from alchemy_mock.mocking import unifiedalchemymagicmock\n    >>> session = unifiedalchemymagicmock()\n\n    >>> m = session.query(model)\n    >>> q = m.filter(model.foo == 5)\n    >>> if condition:\n    ...     q = q.filter(model.bar > 10).all()\n    >>> data1 = q.all()\n    >>> data2 = m.filter(model.note == 'hello world').all()\n\n    >>> session.filter.assert_has_calls([\n    ...     mock.call(model.foo == 5, model.bar > 10),\n    ...     mock.call(model.note == 'hello world'),\n    ... ])\n\nalso real-data can be stubbed by criteria::\n\n    >>> from alchemy_mock.mocking import unifiedalchemymagicmock\n    >>> session = unifiedalchemymagicmock(data=[\n    ...     (\n    ...         [mock.call.query(model),\n    ...          mock.call.filter(model.foo == 5, model.bar > 10)],\n    ...         [model(foo=5, bar=11)]\n    ...     ),\n    ...     (\n    ...         [mock.call.query(model),\n    ...          mock.call.filter(model.note == 'hello world')],\n    ...         [model(note='hello world')]\n    ...     ),\n    ...     (\n    ...         [mock.call.query(anothermodel),\n    ...          mock.call.filter(model.foo == 5, model.bar > 10)],\n    ...         [anothermodel(foo=5, bar=17)]\n    ...     ),\n    ... ])\n    >>> session.query(model).filter(model.foo == 5).filter(model.bar > 10).all()\n    [model(foo=5, bar=11)]\n    >>> session.query(model).filter(model.note == 'hello world').all()\n    [model(note='hello world')]\n    >>> session.query(anothermodel).filter(model.foo == 5).filter(model.bar > 10).all()\n    [anothermodel(foo=5, bar=17)]\n    >>> session.query(anothermodel).filter(model.note == 'hello world').all()\n    []\n\nfinally ``unifiedalchemymagicmock`` can partially fake session mutations\nsuch as ``session.add(instance)``. for example::\n\n    >>> session = unifiedalchemymagicmock()\n    >>> session.add(model(pk=1, foo='bar'))\n    >>> session.add(model(pk=2, foo='baz'))\n    >>> session.query(model).all()\n    [model(foo='bar'), model(foo='baz')]\n    >>> session.query(model).get(1)\n    model(foo='bar')\n    >>> session.query(model).get(2)\n    model(foo='baz')\n\nnote that its partially correct since if added models are filtered on,\nsession is unable to actually apply any filters so it returns everything::\n\n   >>> session.query(model).filter(model.foo == 'bar').all()\n   [model(foo='bar'), model(foo='baz')]\n\n\n\n\nhistory\n-------\n\n0.4.3 (2019-11-05)\n~~~~~~~~~~~~~~~~~~\n\n* unifying ``distinct``.\n\n0.4.2 (2019-09-25)\n~~~~~~~~~~~~~~~~~~\n\n* adding support ``label()`` in ``expressionmatcher``. for example ``column.label('foo')``.\n\n0.4.1 (2019-06-26)\n~~~~~~~~~~~~~~~~~~\n\n* adding support for ``one_or_none()``. thanks @davidroeca\n\n0.4.0 (2019-06-06)\n~~~~~~~~~~~~~~~~~~\n\n* adding basic mutation capability with ``add`` and ``add_all``.\n\n0.3.5 (2019-04-13)\n~~~~~~~~~~~~~~~~~~\n\n* fixing compatibility with latest ``mock``.\n\n0.3.4 (2018-10-03)\n~~~~~~~~~~~~~~~~~~\n\n* unifying ``limit``.\n\n0.3.3 (2018-09-17)\n~~~~~~~~~~~~~~~~~~\n\n* unifying ``options`` and ``group_by``.\n\n0.3.2 (2018-06-27)\n~~~~~~~~~~~~~~~~~~\n\n* added support for ``count()`` and ``get()`` between boundaries.\n\n0.3.1 (2018-03-28)\n~~~~~~~~~~~~~~~~~~\n\n* added support for ``func`` calls in ``expressionmatcher``. for example ``func.lower(column)``.\n\n0.3.0 (2018-01-24)\n~~~~~~~~~~~~~~~~~~\n\n* added support for ``.one()`` and ``.first()`` methods when stubbing data.\n* fixed bug which incorrectly unified methods after iterating on mock.\n\n0.2.0 (2018-01-13)\n~~~~~~~~~~~~~~~~~~\n\n* added ability to stub real-data by filtering criteria.\n  see `#2 <https://github.com/miki725/alchemy-mock/pull/2>`_.\n\n0.1.1 (2018-01-12)\n~~~~~~~~~~~~~~~~~~\n\n* fixed alembic typo in readme. oops.\n\n0.1.0 (2018-01-12)\n~~~~~~~~~~~~~~~~~~\n\n* first release on pypi.\n\n\ncredits\n-------\n\ndevelopment lead\n~~~~~~~~~~~~~~~~\n\n* miroslav shubernetskiy  - https://github.com/miki725\n\ncontributors\n~~~~~~~~~~~~\n\n* serkan hoscai - https://github.com/shosca\n\n\nlicense\n-------\n\nthe mit license (mit)\n\ncopyright (c) 2018, miroslav shubernetskiy\n\n::\n\n    permission is hereby granted, free of charge, to any person obtaining a copy\n    of this software and associated documentation files (the \"software\"), to deal\n    in the software without restriction, including without limitation the rights\n    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n    copies of the software, and to permit persons to whom the software is\n    furnished to do so, subject to the following conditions:\n\n    the above copyright notice and this permission notice shall be included in\n    all copies or substantial portions of the software.\n\n    the software is provided \"as is\", without warranty of any kind, express or\n    implied, including but not limited to the warranties of merchantability,\n    fitness for a particular purpose and noninfringement. in no event shall the\n    authors or copyright holders be liable for any claim, damages or other\n    liability, whether in an action of contract, tort or otherwise, arising from,\n    out of or in connection with the software or the use or other dealings in\n    the software.\n\n\n",
+  "docs_url": null,
+  "keywords": "sqlalchemy mock testing",
+  "license": "mit",
+  "name": "alchemy-mock",
+  "package_url": "https://pypi.org/project/alchemy-mock/",
+  "project_url": "https://pypi.org/project/alchemy-mock/",
+  "project_urls": {
+    "Homepage": "https://github.com/miki725/alchemy-mock"
+  },
+  "release_url": "https://pypi.org/project/alchemy-mock/0.4.3/",
+  "requires_dist": [
+    "six",
+    "sqlalchemy",
+    "setuptools"
+  ],
+  "requires_python": "",
+  "summary": "sqlalchemy mock helpers.",
+  "version": "0.4.3",
+  "releases": [],
+  "developers": [
+    "miroslav_shubernetskiy"
+  ],
+  "kwds": "alchemy_mock sqlalchemy alchemy alchemymagicmock unifiedalchemymagicmock",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_alchemy_mock",
+  "homepage": "https://github.com/miki725/alchemy-mock",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_setuptools",
+    "pypi_six",
+    "pypi_sqlalchemy"
+  ]
+}

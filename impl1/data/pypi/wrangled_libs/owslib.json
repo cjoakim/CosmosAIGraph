@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: scientific/engineering :: gis"
+  ],
+  "description": "# owslib\n\n[![build](https://github.com/geopython/owslib/workflows/main.yml/badge.svg)](https://github.com/geopython/owslib/actions)\n[![license](https://img.shields.io/github/license/geopython/owslib.svg)](https://github.com/geopython/owslib/blob/master/license)\n[![chat](https://badges.gitter.im/geopython/owslib.svg)](https://app.gitter.im/#/room/#geopython_owslib:gitter.im)\n\n## overview\n\nowslib is a python package for client programming with open geospatial\nconsortium (ogc) web service (hence ows) interface standards, and their\nrelated content models.\n\nfull documentation is available at https://owslib.readthedocs.io\n\nowslib provides a common api for accessing service metadata and wrappers for\nnumerous ogc web service interfaces.\n\n## installation\n\nthe easiest way to install pywis-pubsub is via the python [pip](https://pip.pypa.io)\nutility:\n\n```bash\npip3 install owslib\n```\n\n## requirements\n\n- python 3\n- [virtualenv](https://virtualenv.pypa.io)\n\n### dependencies\n\ndependencies are listed in [requirements.txt](requirements.txt). dependencies\nare automatically installed during owslib installation.\n\n### installing owslib\n\n```bash\n# setup virtualenv\npython3 -m venv owslib\ncd owslib\nsource bin/activate\n\n# clone codebase and install\ngit clone https://github.com/geopython/owslib.git\ncd owslib\npython3 setup.py install\n```\n\n## running\n\nfind out what a wms has to offer. service metadata:\n\n```python\n\n>>> from owslib.wms import webmapservice\n>>> wms = webmapservice('http://wms.jpl.nasa.gov/wms.cgi', version='1.1.1')\n>>> wms.identification.type\n'ogc:wms'\n>>> wms.identification.version\n'1.1.1'\n>>> wms.identification.title\n'jpl global imagery service'\n>>> wms.identification.abstract\n'wms server maintained by jpl, worldwide satellite imagery.'\n\navailable layers::\n\n    >>> list(wms.contents)\n    ['us_landsat_wgs84', 'modis', 'global_mosaic_base', 'huemapped_srtm',\n    'srtm_mag', 'daily_terra', 'us_ned', 'us_elevation', 'global_mosaic',\n    'daily_terra_ndvi', 'daily_aqua_ndvi', 'daily_aqua_721', 'daily_planet',\n    'bmng', 'srtmplus', 'us_colordem', none, 'daily_aqua', 'worldwind_dem',\n    'daily_terra_721']\n\ndetails of a layer::\n\n    >>> wms['global_mosaic'].title\n    'wms global mosaic, pan sharpened'\n    >>> wms['global_mosaic'].boundingboxwgs84\n    (-180.0, -60.0, 180.0, 84.0)\n    >>> wms['global_mosaic'].crsoptions\n    ['epsg:4326', 'auto:42003']\n    >>> wms['global_mosaic'].styles\n    {'pseudo_bright': {'title': 'pseudo-color image (uses ir and visual bands,\n    542 mapping), gamma 1.5'}, 'pseudo': {'title': '(default) pseudo-color\n    image, pan sharpened (uses ir and visual bands, 542 mapping), gamma 1.5'},\n    'visual': {'title': 'real-color image, pan sharpened (uses the visual\n    bands, 321 mapping), gamma 1.5'}, 'pseudo_low': {'title': 'pseudo-color\n    image, pan sharpened (uses ir and visual bands, 542 mapping)'},\n    'visual_low': {'title': 'real-color image, pan sharpened (uses the visual\n    bands, 321 mapping)'}, 'visual_bright': {'title': 'real-color image (uses\n    the visual bands, 321 mapping), gamma 1.5'}}\n\navailable methods, their urls, and available formats::\n\n    >>> [op.name for op in wms.operations]\n    ['gettileservice', 'getcapabilities', 'getmap']\n    >>> wms.getoperationbyname('getmap').methods\n    {'get': {'url': 'http://wms.jpl.nasa.gov/wms.cgi?'}}\n    >>> wms.getoperationbyname('getmap').formatoptions\n    ['image/jpeg', 'image/png', 'image/geotiff', 'image/tiff']\n\nthat's everything needed to make a request for imagery::\n\n    >>> img = wms.getmap(   layers=['global_mosaic'],\n    ...                     styles=['visual_bright'],\n    ...                     srs='epsg:4326',\n    ...                     bbox=(-112, 36, -106, 41),\n    ...                     size=(300, 250),\n    ...                     format='image/jpeg',\n    ...                     transparent=true\n    ...                     )\n    >>> out = open('jpl_mosaic_visb.jpg', 'wb')\n    >>> out.write(img.read())\n    >>> out.close()\n```\n\na very similar api exists for webfeatureservice. see\ntests/wfs_mapserverwfscapabilities.txt for details.\n\nthere is also support for web coverage service (wcs), catalogue\nservice for the web (csw), web processing service (wps), and web\nmap tile service (wmts). some of those are beta quality.\n\n\nlogging\n-------\nowslib logs messages to the 'owslib' named python logger. you may\nconfigure your application to use the log messages like so:\n\n```python\n    >>> import logging\n    >>> owslib_log = logging.getlogger('owslib')\n    >>> # add formatting and handlers as needed, for example to log to the console\n    >>> ch = logging.streamhandler()\n    >>> ch.setlevel(logging.debug)\n    >>> ch.setformatter(logging.formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))\n    >>> # add the handler to the logger\n    >>> owslib_log.addhandler(ch)\n    >>> owslib_log.setlevel(logging.debug)\n```\n\nreleasing\n---------\n\n```bash\n  # update version\n  vi owslib/__init__.py\n  git commit -m 'update release version' owslib/__init__.py\n  # push changes\n  git push origin master\n  git tag -a x.y.z -m 'tagging owslib release x.y.z'\n  # push tag\n  git push --tags\n  # update on pypi (must be a maintainer)\n  rm -fr build dist *.egg-info\n  python setup.py sdist bdist_wheel --universal\n  twine upload dist/*\n```\n\nsupport\n-------\n\n- https://lists.osgeo.org/mailman/listinfo/owslib-users\n- https://lists.osgeo.org/mailman/listinfo/owslib-devel\n\n",
+  "docs_url": null,
+  "keywords": "gis ogc ogcapi ows opensearch iso 19115 fgdc dif ows wfs wms sos csw wps wcs capabilities metadata wmts",
+  "license": "bsd",
+  "name": "owslib",
+  "package_url": "https://pypi.org/project/OWSLib/",
+  "project_url": "https://pypi.org/project/OWSLib/",
+  "project_urls": {
+    "Homepage": "https://owslib.readthedocs.io"
+  },
+  "release_url": "https://pypi.org/project/OWSLib/0.29.3/",
+  "requires_dist": [
+    "lxml",
+    "python-dateutil (>=1.5)",
+    "pytz",
+    "pyyaml",
+    "requests (>=1.0)",
+    "dataclasses ; python_version < \"3.7\""
+  ],
+  "requires_python": ">=3.6",
+  "summary": "ogc web service utility library",
+  "version": "0.29.3",
+  "releases": [],
+  "developers": [
+    "sean.gillies@gmail.com",
+    "sean_gillies",
+    "tom_kralidis",
+    "tomkralidis@gmail.com"
+  ],
+  "kwds": "geopython_owslib geopython wfs owslib python",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_owslib",
+  "homepage": "https://owslib.readthedocs.io",
+  "release_count": 65,
+  "dependency_ids": [
+    "pypi_dataclasses",
+    "pypi_lxml",
+    "pypi_python_dateutil",
+    "pypi_pytz",
+    "pypi_pyyaml",
+    "pypi_requests"
+  ]
+}

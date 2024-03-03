@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: cython",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.2",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "topic :: scientific/engineering :: bio-informatics"
+  ],
+  "description": "a vcfv4.0 and 4.1 parser for python.\n\nonline version of pyvcf documentation is available at http://pyvcf.rtfd.org/\n\nthe intent of this module is to mimic the ``csv`` module in the python stdlib,\nas opposed to more flexible serialization formats like json or yaml.  ``vcf``\nwill attempt to parse the content of each record based on the data types\nspecified in the meta-information lines --  specifically the ##info and\n##format lines.  if these lines are missing or incomplete, it will check\nagainst the reserved types mentioned in the spec.  failing that, it will just\nreturn strings.\n\nthere main interface is the class: ``reader``.  it takes a file-like\nobject and acts as a reader::\n\n    >>> import vcf\n    >>> vcf_reader = vcf.reader(open('vcf/test/example-4.0.vcf', 'r'))\n    >>> for record in vcf_reader:\n    ...     print record\n    record(chrom=20, pos=14370, ref=g, alt=[a])\n    record(chrom=20, pos=17330, ref=t, alt=[a])\n    record(chrom=20, pos=1110696, ref=a, alt=[g, t])\n    record(chrom=20, pos=1230237, ref=t, alt=[none])\n    record(chrom=20, pos=1234567, ref=gtct, alt=[g, gtact])\n\n\nthis produces a great deal of information, but it is conveniently accessed.\nthe attributes of a record are the 8 fixed fields from the vcf spec::\n\n    * ``record.chrom``\n    * ``record.pos``\n    * ``record.id``\n    * ``record.ref``\n    * ``record.alt``\n    * ``record.qual``\n    * ``record.filter``\n    * ``record.info``\n\nplus attributes to handle genotype information:\n\n    * ``record.format``\n    * ``record.samples``\n    * ``record.genotype``\n\n``samples`` and ``genotype``, not being the title of any column, are left lowercase.  the format\nof the fixed fields is from the spec.  comma-separated lists in the vcf are\nconverted to lists.  in particular, one-entry vcf lists are converted to\none-entry python lists (see, e.g., ``record.alt``).  semicolon-delimited lists\nof key=value pairs are converted to python dictionaries, with flags being given\na ``true`` value. integers and floats are handled exactly as you'd expect::\n\n    >>> vcf_reader = vcf.reader(open('vcf/test/example-4.0.vcf', 'r'))\n    >>> record = next(vcf_reader)\n    >>> print record.pos\n    14370\n    >>> print record.alt\n    [a]\n    >>> print record.info['af']\n    [0.5]\n\nthere are a number of convenience methods and properties for each ``record`` allowing you to\nexamine properties of interest::\n\n    >>> print record.num_called, record.call_rate, record.num_unknown\n    3 1.0 0\n    >>> print record.num_hom_ref, record.num_het, record.num_hom_alt\n    1 1 1\n    >>> print record.nucl_diversity, record.aaf, record.heterozygosity\n    0.6 [0.5] 0.5\n    >>> print record.get_hets()\n    [call(sample=na00002, calldata(gt=1|0, gq=48, dp=8, hq=[51, 51]))]\n    >>> print record.is_snp, record.is_indel, record.is_transition, record.is_deletion\n    true false true false\n    >>> print record.var_type, record.var_subtype\n    snp ts\n    >>> print record.is_monomorphic\n    false\n\n``record.format`` will be a string specifying the format of the genotype\nfields.  in case the format column does not exist, ``record.format`` is\n``none``.  finally, ``record.samples`` is a list of dictionaries containing the\nparsed sample column and ``record.genotype`` is a way of looking up genotypes\nby sample name::\n\n    >>> record = next(vcf_reader)\n    >>> for sample in record.samples:\n    ...     print sample['gt']\n    0|0\n    0|1\n    0/0\n    >>> print record.genotype('na00001')['gt']\n    0|0\n\nthe genotypes are represented by ``call`` objects, which have three attributes: the\ncorresponding record ``site``, the sample name in ``sample`` and a dictionary of\ncall data in ``data``::\n\n     >>> call = record.genotype('na00001')\n     >>> print call.site\n     record(chrom=20, pos=17330, ref=t, alt=[a])\n     >>> print call.sample\n     na00001\n     >>> print call.data\n     calldata(gt=0|0, gq=49, dp=3, hq=[58, 50])\n\nplease note that as of release 0.4.0, attributes known to have single values (such as\n``dp`` and ``gq`` above) are returned as values.  other attributes are returned\nas lists (such as ``hq`` above).\n\nthere are also a number of methods::\n\n    >>> print call.called, call.gt_type, call.gt_bases, call.phased\n    true 0 t|t true\n\nmetadata regarding the vcf file itself can be investigated through the\nfollowing attributes:\n\n    * ``reader.metadata``\n    * ``reader.infos``\n    * ``reader.filters``\n    * ``reader.formats``\n    * ``reader.samples``\n\nfor example::\n\n    >>> vcf_reader.metadata['filedate']\n    '20090805'\n    >>> vcf_reader.samples\n    ['na00001', 'na00002', 'na00003']\n    >>> vcf_reader.filters\n    ordereddict([('q10', filter(id='q10', desc='quality below 10')), ('s50', filter(id='s50', desc='less than 50% of samples have data'))])\n    >>> vcf_reader.infos['aa'].desc\n    'ancestral allele'\n\nalt records are actually classes, so that you can interrogate them::\n\n    >>> reader = vcf.reader(open('vcf/test/example-4.1-bnd.vcf'))\n    >>> _ = next(reader); row = next(reader)\n    >>> print row\n    record(chrom=1, pos=2, ref=t, alt=[t[2:3[])\n    >>> bnd = row.alt[0]\n    >>> print bnd.withinmainassembly, bnd.orientation, bnd.remoteorientation, bnd.connectingsequence\n    true false true t\n\nthe reader supports retrieval of records within designated regions for files\nwith tabix indexes via the fetch method. this requires the pysam module as a\ndependency. pass in a chromosome, and, optionally, start and end coordinates,\nfor the regions of interest::\n\n    >>> vcf_reader = vcf.reader(filename='vcf/test/tb.vcf.gz')\n    >>> # fetch all records on chromosome 20 from base 1110696 through 1230237\n    >>> for record in vcf_reader.fetch('20', 1110695, 1230237):  # doctest: +skip\n    ...     print record\n    record(chrom=20, pos=1110696, ref=a, alt=[g, t])\n    record(chrom=20, pos=1230237, ref=t, alt=[none])\n\nnote that the start and end coordinates are in the zero-based, half-open\ncoordinate system, similar to ``_record.start`` and ``_record.end``. the very\nfirst base of a chromosome is index 0, and the the region includes bases up\nto, but not including the base at the end coordinate. for example::\n\n    >>> # fetch all records on chromosome 4 from base 11 through 20\n    >>> vcf_reader.fetch('4', 10, 20)   # doctest: +skip\n\nwould include all records overlapping a 10 base pair region from the 11th base\nof through the 20th base (which is at index 19) of chromosome 4. it would not\ninclude the 21st base (at index 20). (see\nhttp://genomewiki.ucsc.edu/index.php/coordinate_transforms for more\ninformation on the zero-based, half-open coordinate system.)\n\nthe ``writer`` class provides a way of writing a vcf file.  currently, you must specify a\ntemplate ``reader`` which provides the metadata::\n\n    >>> vcf_reader = vcf.reader(filename='vcf/test/tb.vcf.gz')\n    >>> vcf_writer = vcf.writer(open('/dev/null', 'w'), vcf_reader)\n    >>> for record in vcf_reader:\n    ...     vcf_writer.write_record(record)\n\nan extensible script is available to filter vcf files in vcf_filter.py.  vcf filters\ndeclared by other packages will be available for use in this script.  please\nsee :doc:`filters` for full description.\n",
+  "docs_url": null,
+  "keywords": "bioinformatics",
+  "license": "unknown",
+  "name": "pyvcf",
+  "package_url": "https://pypi.org/project/PyVCF/",
+  "project_url": "https://pypi.org/project/PyVCF/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "https://github.com/jamescasbon/PyVCF"
+  },
+  "release_url": "https://pypi.org/project/PyVCF/0.6.8/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "variant call format (vcf) parser for python",
+  "version": "0.6.8",
+  "releases": [],
+  "developers": [
+    "casbon@gmail.com",
+    "james_casbon_and"
+  ],
+  "kwds": "vcf_reader vcf_writer pyvcf vcf_filter vcfv4",
+  "license_kwds": "unknown",
+  "libtype": "pypi",
+  "id": "pypi_pyvcf",
+  "homepage": "https://github.com/jamescasbon/pyvcf",
+  "release_count": 22,
+  "dependency_ids": []
+}

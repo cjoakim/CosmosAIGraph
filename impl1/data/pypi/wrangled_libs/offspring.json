@@ -1,0 +1,30 @@
+{
+  "classifiers": [],
+  "description": "offspring\n=========\n\n.. image:: https://img.shields.io/travis/borgstrom/offspring.svg\n           :target: https://travis-ci.org/borgstrom/offspring\n\n.. image:: https://img.shields.io/codecov/c/github/borgstrom/offspring.svg\n           :target: https://codecov.io/github/borgstrom/offspring\n\n.. image:: https://img.shields.io/pypi/v/offspring.svg\n           :target: https://pypi.python.org/pypi/offspring\n           :alt: latest pypi version\n\n\nthis is a collection of objects and patterns for working with processes in python using the multiprocessing library.\n\nthe main idea is that you express your unit of work as a simple method on an object and then when that object is\ninstantiated the work will be run in a subprocess.\n\n\nuse cases\n---------\n\noffspring was built to address the following use cases for running code in a subprocess.\n\n\nrun something once\n~~~~~~~~~~~~~~~~~~\n\n.. code-block:: python\n\n    from offspring import subprocess\n\n\n    class mytask(subprocess):\n        def init(self, arg1):\n            # this is run in the parent process and is used to prepare your object.\n            # it receives whatever arguments were supplied to the constructor.\n            self.arg1 = arg1\n\n        def run(self):\n            # this will be run in the child process and completes your work.\n            # ...\n\n\n    mytask('this is arg1').wait()\n\n\nrun in a loop\n~~~~~~~~~~~~~\n\n.. code-block:: python\n\n    from offspring import subprocessloop\n\n\n    class mytask(subprocessloop):\n        def init(self, arg1):\n            # this is the same as init for subprocess.\n            self.arg1 = arg1\n\n        def begin(self):\n            # called before the start of the loop in your child process.\n            # ...\n\n        def loop(self):\n            # called each loop iteration in your your child process.\n            # it can return a sleep duration until the next loop, or false to stop the loop.\n            # ...\n\n        def end(self):\n            # called after the end of the loop, before termination in your child process.\n            # ...\n\n\n    mytask('this is arg1').wait()\n\n\nimplementation details\n----------------------\n\n``.init(*args, **kwargs)``\n~~~~~~~~~~~~~~~~~~~~~~~~~~\n\ncalled when an instance of your class is created.  it receives the same arguments as the ``__init__`` method, so you are\nencouraged to explicitly define the arguments you expect.\n\n\n``.start()``\n~~~~~~~~~~~~\n\ncreates the subprocess.  this is automatically called unless you set ``explicit_start`` to ``true``.\n\n\n``.wait()``\n~~~~~~~~~~~\n\nif you need to wait for your child process you can call ``.wait`` on your ``subprocess`` object.  this is just a\nshortcut to ``.join`` on the ``multiprocessing.process`` object.\n\n\n``.shutdown()``\n~~~~~~~~~~~~~~~\n\nthis will send a ``term`` signal to the child process, unless ``terminate_on_shutdown`` is ``false``, and then calls\n``.wait()`` to join the child process.  it is automatically called whenever the parent process exits via the ``atexit``\nmodule.\n\n\n``.process``\n~~~~~~~~~~~~\n\neach ``subprocess`` object has a ``.process`` attribute that is the ``multiprocessing.process`` object.\n\n\n``wait_for_child``\n~~~~~~~~~~~~~~~~~~\n\ndefaults to ``false``.\n\nif set to ``true`` on your ``subprocess`` class then a ``pipe`` will be used to block the parent process until the child\nhas started.  this is useful when you want to ensure that your ``subprocess`` object is started and ``.run`` is called\neven if the parent process exits quickly.\n\n.. code-block:: python\n\n    class mytask(subprocess):\n        wait_for_child = true\n\n        def run(self):\n            print(\"this will always print\")\n\n    mytask()\n\nthe ``subprocessloop`` class does this to ensure that your object has ``begin`` & ``end`` called (``loop`` may not be\ncalled as a term signal received during startup will prevent the loop from every actually completing other than\n``begin`` & ``end``).\n\n\n``terminate_on_shutdown``\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\ndefaults to ``true``.\n\nif set to ``false`` then when ``.shutdown`` is called on a ``subprocess`` object the child process **will not** be\nterminated before being joined.  this means that the parent will block until the child completes the ``.run`` function.\n\n.. code-block:: python\n\n    import time\n\n    class mytask(subprocess):\n        terminate_on_shutdown = false\n\n        def run(self):\n            time.sleep(2)\n\n    mytask()\n\n\n``explicit_start``\n~~~~~~~~~~~~~~~~~~\n\ndefaults to ``false``.\n\nif set to ``true`` then when you instantiate an object you must explicitly call ``.start()`` before the child process\nwill be spawned.\n\n.. code-block:: python\n\n    class mytask(subprocess):\n        explicit_start = true\n\n        def run(self):\n            print(\"running!\")\n\n\n    task = mytask()\n    # do some other work\n    task.start()\n    # running! is now printed\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2",
+  "name": "offspring",
+  "package_url": "https://pypi.org/project/offspring/",
+  "project_url": "https://pypi.org/project/offspring/",
+  "project_urls": {
+    "Homepage": "https://github.com/borgstrom/offspring"
+  },
+  "release_url": "https://pypi.org/project/offspring/0.1.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "objects and patterns for working with processes in python using the multiprocessing library",
+  "version": "0.1.1",
+  "releases": [],
+  "developers": [
+    "evan.borgstrom@gmail.com",
+    "evan_borgstrom"
+  ],
+  "kwds": "subprocess multiprocessing subprocessloop processes offspring",
+  "license_kwds": "apache 2",
+  "libtype": "pypi",
+  "id": "pypi_offspring",
+  "homepage": "https://github.com/borgstrom/offspring",
+  "release_count": 4,
+  "dependency_ids": []
+}

@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6"
+  ],
+  "description": "==============\naiocontextvars\n==============\n\n.. image:: https://img.shields.io/pypi/v/aiocontextvars.svg\n        :target: https://pypi.python.org/pypi/aiocontextvars\n\n.. image:: https://img.shields.io/travis/fantix/aiocontextvars.svg\n        :target: https://travis-ci.org/fantix/aiocontextvars\n\n**important:** this package will be deprecated after\n`contextvars asyncio backport`_ is fixed. before then, this library\nexperimentally provides the missing asyncio support for the\n``contextvars`` backport library. please read more in python 3.7 `contextvars\ndocumentation <https://docs.python.org/3/library/contextvars.html>`_.\n\n\ncompatibility\n-------------\n\nin python 3.7 this package *is* 100% ``contextvars``.\n\nin python 3.5 and 3.6, this package added asyncio support to the pep-567\nbackport package also named ``contextvars``, in a very different way than\npython 3.7 ``contextvars`` implementation:\n\n1. ``call_soon()`` and family methods.\n\npython 3.7 added keyword argument ``context`` to ``call_soon()`` and its family\nmethods. by default those methods will copy (inherit) the current context and\nrun the given method in that context. but ``aiocontextvars`` won't touch the\nloop, so in order to achieve the same effect, you'll need to::\n\n    loop.call_soon(copy_context().run, my_meth)\n\n2. task local.\n\npython 3.7 used above keyword argument ``context`` in ``task`` to make sure\nthat each step of a coroutine is ran in the same context inherited at the time\nits driving task was created. meanwhile, ``aiocontextvars`` uses\n``task.current_task()`` to achieve similar effect: it hacks asyncio and\nattaches a copied context to the task on its creation, and replaces thread\nlocal with current task instance to share the context. this behaves identically\nto python 3.7 in most times. what you need to do is to import\n``aiocontextvars`` before creating loops.\n\n3. custom tasks and loops.\n\nbecause above hack is done by replacing ``asyncio.get_event_loop`` and\n``loop.create_task``, therefore tasks and loops created by custom/private api\nwon't behave correctly as expected, e.g. ``uvloop.new_event_loop()`` or\n``asyncio.task()``. also, event loops created before importing\n``aiocontextvars`` are not patched either. so over all, you should import\n``aiocontextvars`` at the beginning before creating event loops, and always use\n``asyncio.*`` to operate loops/policies, and public asyncio api to create\ntasks.\n\n\ncredits\n-------\n\nfantix king is the author and maintainer of this library. this library is open\nsource software under bsd license.\n\n.. _contextvars asyncio backport: https://github.com/magicstack/contextvars/issues/2\n\n\n=======\nhistory\n=======\n\n0.2.1 (2018-10-24)\n------------------\n\n* changed to single module layout.\n* updated readme.\n\n0.2.0 (2018-09-09)\n------------------\n\n**this is a breaking change.** most implementation is replaced with\n``contextvars``. in python 3.5 and 3.6, ``aiocontextvars`` depends on\n``contextvars`` the pep-567 backport in pypi, and patches it to partially\nsupport asyncio; in python 3.7 ``aiocontextvars`` is only a delegate to the\nbuilt-in ``contextvars`` library.\n\n* modified ``contextvar.set()`` to return a token.\n* added ``contextvar.reset(token)``.\n* removed ``contextvar.delete()``.\n* removed ``enable_inherit()`` and ``disable_inherit()``, inherit is always enabled.\n* added ``copy_context()`` and ``context.run()``.\n* removed ``context.current()`` and ``context.inherited``.\n* fixed issue that ``set_event_loop(none)`` fails (contributed by j.j. jackson in #10 #11)\n\n0.1.2 (2018-04-04)\n------------------\n\n* supported python 3.5.\n\n0.1.1 (2017-12-03)\n------------------\n\n* fixed setup.py\n\n0.1.0 (2017-12-03)\n------------------\n\n* first release on pypi.\n\n\n",
+  "docs_url": null,
+  "keywords": "aiocontextvars",
+  "license": "bsd license",
+  "name": "aiocontextvars",
+  "package_url": "https://pypi.org/project/aiocontextvars/",
+  "project_url": "https://pypi.org/project/aiocontextvars/",
+  "project_urls": {
+    "Homepage": "https://github.com/fantix/aiocontextvars"
+  },
+  "release_url": "https://pypi.org/project/aiocontextvars/0.2.2/",
+  "requires_dist": [
+    "contextvars (==2.4) ; python_version < \"3.7\""
+  ],
+  "requires_python": ">=3.5",
+  "summary": "asyncio support for pep-567 contextvars backport.",
+  "version": "0.2.2",
+  "releases": [],
+  "developers": [
+    "fantix.king@gmail.com",
+    "fantix_king"
+  ],
+  "kwds": "asyncio _contextvars aiocontextvars contextvars contextvar",
+  "license_kwds": "bsd license",
+  "libtype": "pypi",
+  "id": "pypi_aiocontextvars",
+  "homepage": "https://github.com/fantix/aiocontextvars",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_contextvars"
+  ]
+}

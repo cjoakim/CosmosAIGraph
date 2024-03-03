@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: isc license (iscl)",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# isoduration: operations with iso 8601 durations.\n\n[![pypi package](https://img.shields.io/pypi/v/isoduration?style=flat-square)](https://pypi.org/project/isoduration/)\n\n## what is this.\n\niso 8601 is most commonly known as a way to exchange datetimes in textual format. a\nlesser known aspect of the standard is the representation of durations. they have a\nshape similar to this:\n\n```\np3y6m4dt12h30m5s\n```\n\nthis string represents a duration of 3 years, 6 months, 4 days, 12 hours, 30 minutes,\nand 5 seconds.\n\nthe state of the art of iso 8601 duration handling in python is more or less limited to\nwhat's offered by [`isodate`](https://pypi.org/project/isodate/). what we are trying to\nachieve here is to address the shortcomings of `isodate` (as described in their own\n[_limitations_](https://github.com/gweis/isodate/#limitations) section), and a few of\nour own annoyances with their interface, such as the lack of uniformity in their\nhandling of types, and the use of regular expressions for parsing.\n\n## how to use it.\n\nthis package revolves around the [`duration`](src/isoduration/types.py) type.\n\ngiven a iso duration string we can produce such a type by using the `parse_duration()`\nfunction:\n\n```py\n>>> from isoduration import parse_duration\n>>> duration = parse_duration(\"p3y6m4dt12h30m5s\")\n>>> duration.date\ndateduration(years=decimal('3'), months=decimal('6'), days=decimal('4'), weeks=decimal('0'))\n>>> duration.time\ntimeduration(hours=decimal('12'), minutes=decimal('30'), seconds=decimal('5'))\n```\n\nthe `date` and `time` portions of the parsed duration are just regular\n[dataclasses](https://docs.python.org/3/library/dataclasses.html), so their members can\nbe accessed in a non-surprising way.\n\nbesides just parsing them, a number of additional operations are available:\n\n- durations can be compared and negated:\n  ```py\n  >>> parse_duration(\"p3y4d\") == parse_duration(\"p3y4dt0h\")\n  true\n  >>> -parse_duration(\"p3y4d\")\n  duration(dateduration(years=decimal('-3'), months=decimal('0'), days=decimal('-4'), weeks=decimal('0')), timeduration(hours=decimal('0'), minutes=decimal('0'), seconds=decimal('0')))\n  ```\n- durations can be added to, or subtracted from, python datetimes:\n  ```py\n  >>> from datetime import datetime\n  >>> datetime(2020, 3, 15) + parse_duration(\"p2y\")\n  datetime.datetime(2022, 3, 15, 0, 0)\n  >>> datetime(2020, 3, 15) - parse_duration(\"p33y1m4d\")\n  datetime.datetime(1987, 2, 11, 0, 0)\n  ```\n- durations are hashable, so they can be used as dictionary keys or as part of sets.\n- durations can be formatted back to a iso 8601-compliant duration string:\n  ```py\n  >>> from isoduration import parse_duration, format_duration\n  >>> format_duration(parse_duration(\"p11yt2h\"))\n  'p11yt2h'\n  >>> str(parse_duration(\"p11yt2h\"))\n  'p11yt2h'\n  ```\n\n## how to improve it.\n\nthese steps, in this order, should land you in a development environment:\n\n```sh\ngit clone git@github.com:bolsote/isoduration.git\ncd isoduration/\npython -m venv ve\n. ve/bin/activate\npip install -u pip\npip install -e .\npip install -r requirements/dev.txt\n```\n\nadapt to your own likings and/or needs.\n\ntesting is driven by [tox](https://tox.readthedocs.io). the output of `tox -l` and a\ncareful read of [tox.ini](tox.ini) should get you there.\n\n## faqs.\n\n### how come `p1y != p365d`?\nsome years have 366 days. if it's not always the same, then it's not the same.\n\n### why do you create your own types, instead of somewhat shoehorning a `timedelta`?\n`timedelta` cannot represent certain durations, such as those involving years or months.\nsince it cannot represent all possible durations without dangerous arithmetic, then it\nmust not be the right type.\n\n### why don't you use regular expressions to parse duration strings?\n[regular expressions should only be used to parse regular languages.](https://stackoverflow.com/a/1732454)\n\n### why is parsing the inverse of formatting, but the converse is not true?\nbecause this wonderful representation is not unique.\n\n### why do you support `<insert here a weird case>`?\nprobably because the standard made me to.\n\n### why do you not support `<insert here a weird case>`?\nprobably because the standard doesn't allow me to.\n\n### why is it not possible to subtract a datetime from a duration?\ni'm confused.\n\n### why should i use this over some other thing?\nyou shouldn't do what people on the internet tell you to do.\n\n### why are iso standards so strange?\nyes.\n\n## references.\n\n- [xml schema part 2: datatypes, appendix d](https://www.w3.org/tr/xmlschema-2/#isoformats):\n  this excitingly named document contains more details about iso 8601 than any human\n  should be allowed to understand.\n- [`isodate`](https://pypi.org/project/isodate/): the original implementation of iso\n  durations in python. worth a look. but ours is cooler.\n\n\n",
+  "docs_url": null,
+  "keywords": "datetime,date,time,duration,duration-parsing,duration-string,iso8601,iso8601-duration",
+  "license": "",
+  "name": "isoduration",
+  "package_url": "https://pypi.org/project/isoduration/",
+  "project_url": "https://pypi.org/project/isoduration/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/bolsote/isoduration/issues",
+    "Changelog": "https://github.com/bolsote/isoduration/blob/master/CHANGELOG",
+    "Homepage": "https://github.com/bolsote/isoduration",
+    "Repository": "https://github.com/bolsote/isoduration"
+  },
+  "release_url": "https://pypi.org/project/isoduration/20.11.0/",
+  "requires_dist": [
+    "arrow (>=0.15.0)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "operations with iso 8601 durations",
+  "version": "20.11.0",
+  "releases": [],
+  "developers": [
+    "victorm@marshland.es"
+  ],
+  "kwds": "format_duration isodate parse_duration durations duration",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_isoduration",
+  "homepage": "https://github.com/bolsote/isoduration",
+  "release_count": 1,
+  "dependency_ids": [
+    "pypi_arrow"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "classifiers": [],
+  "description": "[![pypi version](https://badge.fury.io/py/fastkde.svg)](https://badge.fury.io/py/fastkde)\n![github workflow status (with event)](https://img.shields.io/github/actions/workflow/status/lbl-eesa/fastkde/test.yml?event=push&label=tests)\n<a target=\"_blank\" href=\"https://colab.research.google.com/github/lbl-eesa/fastkde/blob/main/examples/readme_test.ipynb\"> <img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"open in colab\"/> </a>\n\n# fastkde\n\n## software overview\n\nfastkde calculates a kernel density estimate of arbitrarily dimensioned\ndata; it does so rapidly and robustly using recently developed kde\ntechniques. it does so with statistical skill that is as good as\nstate-of-the-science 'r' kde packages, and it does so 10,000 times\nfaster for bivariate data (even better improvements for higher\ndimensionality).\n\n**please cite the following papers when using this method:**\n\n* o\u2019brien, t. a., kashinath, k., cavanaugh, n. r., collins, w. d. & o\u2019brien, j. p. *a fast and objective multidimensional kernel density estimation method: fastkde.* comput. stat. data anal. 101, 148\u2013160 (2016). [http://dx.doi.org/10.1016/j.csda.2016.02.014](http://dx.doi.org/10.1016/j.csda.2016.02.014)\n* o\u2019brien, t. a., collins, w. d., rauscher, s. a. & ringler, t. d. *reducing the computational cost of the ecf using a nufft: a fast and objective probability density estimation method.* comput. stat. data anal. 79, 222\u2013234 (2014). [http://dx.doi.org/10.1016/j.csda.2014.06.002](http://dx.doi.org/10.1016/j.csda.2014.06.002)\n\n### example usage:\n\n**for a standard pdf**\n\n```python\n\"\"\" demonstrate the first readme example. \"\"\"\nimport numpy as np\nimport fastkde\nimport matplotlib.pyplot as plt\n\n#generate two random variables dataset (representing 100,000 pairs of datapoints)\nn = int(1e5)\nx = 50*np.random.normal(size=n) + 0.1\ny = 0.01*np.random.normal(size=n) - 300\n\n#do the self-consistent density estimate\npdf = fastkde.pdf(x, y, var_names = ['x', 'y'])\n\npdf.plot();\n```\n\n\n**for a conditional pdf**\n\nthe following code generates samples from a non-trivial joint\ndistribution\n\n```python\n#***************************\n# generate random samples\n#***************************\n# stochastically sample from the function underlyingfunction() (a sigmoid):\n# sample the absicissa values from a gamma distribution\n# relate the ordinate values to the sample absicissa values and add\n# noise from a normal distribution\n\n#set the number of samples\nnumsamples = int(1e6)\n\n#define a sigmoid function\ndef underlyingfunction(x,x0=305,y0=200,yrange=4):\n        return (yrange/2)*np.tanh(x-x0) + y0\n\nxp1,xp2,xmid = 5,2,305  #set gamma distribution parameters\nyp1,yp2 = 0,12          #set normal distribution parameters (mean and std)\n\n#generate random samples of x from the gamma distribution\nx = -(np.random.gamma(xp1,xp2,int(numsamples))-xp1*xp2) + xmid\n#generate random samples of y from x and add normally distributed noise\ny = underlyingfunction(x) + np.random.normal(loc=yp1,scale=yp2,size=numsamples)\n```\n\nnow that we have the x,y samples, the following code calculates the\nconditional\n\n```python\n#***************************\n# calculate the conditional\n#***************************\ncpdf = fastkde.conditional(y, x, var_names = ['y', 'x'])\n```\n\nthe following plot shows the results:\n\n```python\n#***************************\n# plot the conditional\n#***************************\nfig,axs = plt.subplots(1,2,figsize=(10,5), sharex=true, sharey=true)\n\n#plot a scatter plot of the incoming data\naxs[0].plot(x,y,'k.',alpha=0.1)\naxs[0].set_title('original (x,y) data')\naxs[0].set_xlabel('x')\naxs[0].set_ylabel('y')\n\n#draw a contour plot of the conditional\ncpdf.plot(ax = axs[1], add_colorbar = false)\n#overplot the original underlying relationship\naxs[1].plot(cpdf.x,underlyingfunction(cpdf.x),linewidth=3,linestyle='--',alpha=0.5)\naxs[1].set_title('p(y|x)')\n\nplt.savefig('conditional_demo.png')\nplt.show()\n```\n\n![image of conditional distribution demonstration](conditional_demo.png)\n\n**kernel density estimate for specific points**\n\nto see the kde values at specified points (not necessarily those that were used to generate the kde):\n\n```python\n\"\"\" demonstrate using the pdf_at_points function. \"\"\"\"\"\nimport fastkde\ntrain_x = 50*np.random.normal(size=100) + 0.1\ntrain_y = 0.01*np.random.normal(size=100) - 300\n\ntest_x = 50*np.random.normal(size=100) + 0.1\ntest_y = 0.01*np.random.normal(size=100) - 300\n\ntest_points = list(zip(test_x, test_y))\ntest_point_pdf_values = fastkde.pdf_at_points(train_x, train_y, list_of_points = test_points)\n```\n\nnote that this method can be significantly slower than calls to `fastkde.pdf()` since it does not benefit from using a fast fourier transform during the final stage in which the pdf estimate is transformed from spectral space into data space, whereas `fastkde.pdf()` does.\n\nhow do i get set up?\n--------------------\n\n`python -m pip install fastkde`\n\ncopyright information\n---------------------\n\nsee [license.txt](license.txt)\n",
+  "docs_url": null,
+  "keywords": "statistics,probability,kde,kernel density estimation",
+  "license": "",
+  "name": "fastkde",
+  "package_url": "https://pypi.org/project/fastkde/",
+  "project_url": "https://pypi.org/project/fastkde/",
+  "project_urls": {
+    "Download": "https://github.com/LBL-EESA/fastkde/archive/v2.0.0.tar.gz",
+    "Homepage": "https://github.com/LBL-EESA/fastkde"
+  },
+  "release_url": "https://pypi.org/project/fastkde/2.0.0/",
+  "requires_dist": [
+    "numpy",
+    "scipy",
+    "xarray",
+    "pytest ; extra == 'all'",
+    "pytest ; extra == 'dev'",
+    "pytest ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "tools for fast and robust univariate and multivariate kernel density estimation",
+  "version": "2.0.0",
+  "releases": [],
+  "developers": [
+    "obrienta@iu.edu",
+    "travis_a"
+  ],
+  "kwds": "fastkde ipynb kernel density kde",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_fastkde",
+  "homepage": "https://github.com/lbl-eesa/fastkde",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_scipy",
+    "pypi_xarray"
+  ]
+}

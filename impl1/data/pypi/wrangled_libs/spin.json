@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# \ud83d\udcab scientific python incantations (`spin`)\n\n## a developer tool for scientific python libraries\n\ndevelopers need to memorize a whole bunch of magic command-line incantations.\nand these incantations change from time to time!\ntypically, their lives are made simpler by a makefile, but makefiles can be convoluted, are not written in python, and are hard to extend.\nthe rationale behind `spin` is therefore to provide a simple interface for common development tasks.\nit comes with a few common build commands out the box, but can easily be customized per project.\n\nas a curiosity: the impetus behind developing the tool was the mass migration of scientific python libraries (scipy, scikit-image, and numpy, etc.) to meson, after distutils was deprecated.\nwhen many of the build and installation commands changed, it made sense to abstract away the nuisance of having to re-learn them.\n\n## installation\n\n```\npip install spin\n```\n\n## configuration\n\nsettings are stored in `.spin.toml`, `spin.toml`, or your project's `pyproject.toml`.\nas an example, see the `[tool.spin]` section of [an example `pyproject.toml`](https://github.com/scientific-python/spin/blob/main/example_pkg/pyproject.toml).\n\nthe `[project]` section should contain `name`.\nthe `[tool.spin]` section should contain:\n\n```\npackage = \"pkg_importname\"  # name of your package\ncommands = [\n  \"spin.cmds.meson.build\",\n  \"spin.cmds.meson.test\"\n]\n```\n\nsee [the command selection](#built-in-commands) below.\n\n### command sections\n\nonce you have several commands, it may be useful to organize them into sections.\nin `pyproject.toml`, instead of specifying the commands as a list, use the following structure:\n\n```toml\n[tool.spin.commands]\n\"build\" = [\n  \"spin.cmds.meson.build\",\n  \"spin.cmds.meson.test\"\n]\n\"environments\" = [\n  \"spin.cmds.meson.ipython\",\n  \"spin.cmds.meson.run\"\n]\n```\n\nthese commands will then be rendered as:\n\n```\nbuild:\n  build  \ud83d\udd27 build package with meson/ninja and install\n  test   \ud83d\udd27 run tests\n\nenvironments:\n  ipython  \ud83d\udcbb launch ipython shell with pythonpath set\n  run      \ud83c\udfc1 run a shell command with pythonpath set\n```\n\n## running\n\n```\nspin\n```\n\nor\n\n```\npython -m spin\n```\n\n## built-in commands\n\n### [meson](https://meson-python.readthedocs.io)\n\navailable as `spin.cmds.meson.*`.\n\n```\n  build    \ud83d\udd27 build package with meson/ninja and install to `build-install`\n  ipython  \ud83d\udcbb launch ipython shell with pythonpath set\n  python   \ud83d\udc0d launch python shell with pythonpath set\n  shell    \ud83d\udcbb launch shell with pythonpath set\n  test     \ud83d\udd27 run pytest\n  run      \ud83c\udfc1 run a shell command with pythonpath set\n  docs     \ud83d\udcd6 build sphinx documentation\n  gdb      \ud83d\udc7e execute a python snippet with gdb\n  lldb     \ud83d\udc7e execute a python snippet with lldb\n  install  \ud83d\udcbd build and install package using pip.\n```\n\n### [build](https://pypa-build.readthedocs.io/en/stable/) (pep 517 builder)\n\navailable as `spin.cmds.build.*`:\n\n```\n  sdist    \ud83d\udce6 build a source distribution in `dist/`\n```\n\n### [pip](https://pip.pypa.io) (package installer for python)\n\n`pip` allows for editable installs, another common\ndevelopment workflow.\n\nnote that, for now, the meson commands above do not work with an\neditable install of the package. we're [working on changing that](https://github.com/scientific-python/spin/pull/141).\n\navailable as `spin.cmds.pip.*`:\n\n```\n  install  \ud83d\udcbd build and install package using pip.\n```\n\n## \ud83e\uddea custom commands\n\n`spin` can invoke custom commands. these commands define their own arguments, and have access to the `pyproject.toml` file for further configuration.\n\nsee, e.g., the [example custom command](https://github.com/scientific-python/spin/blob/main/example_pkg/.spin/cmds.py).\n\nadd custom commands to the `commands` variable in the `[tool.spin]` section of `pyproject.toml` as follows:\n\n```\ncommands = [..., '.spin/cmds.py:example']\n```\n\nhere, the command is stored in `.spin/cmds.py`, and the function\nis named `example`.\n\n### configuration\n\ncustom commands can access the `pyproject.toml` as follows:\n\n```python\nfrom spin import util\n\n\n@click.command()\ndef example():\n    \"\"\"command that accesses `pyproject.toml` configuration\"\"\"\n    config = util.get_config()\n    print(config[\"tool.spin\"])\n```\n\n### advanced: adding arguments to built-in commands\n\ninstead of rewriting a command from scratch, a project may want to add a flag to a built-in `spin` command, or perhaps do some pre- or post-processing.\nfor this, we have to use an internal click concept called a [context](https://click.palletsprojects.com/en/8.1.x/complex/#contexts).\nfortunately, we don't need to know anything about contexts other than that they allow us to execute commands within commands.\n\nwe proceed by duplicating the function header of the existing command, and adding our own flag:\n\n```python\nfrom spin.cmds import meson\n\n# take this from the built-in implementation, in `spin.cmds.meson.build`:\n\n\n@click.command()\n@click.argument(\"meson_args\", nargs=-1)\n@click.option(\"-j\", \"--jobs\", help=\"number of parallel tasks to launch\", type=int)\n@click.option(\"--clean\", is_flag=true, help=\"clean build directory before build\")\n@click.option(\n    \"-v\", \"--verbose\", is_flag=true, help=\"print all build output, even installation\"\n)\n\n# this is our new option\n@click.option(\"--custom-arg/--no-custom-arg\")\n\n# this tells spin that we will need a context, which we\n# can use to invoke the built-in command\n@click.pass_context\n\n# this is the original function signature, plus our new flag\ndef build(ctx, meson_args, jobs=none, clean=false, verbose=false, custom_arg=false):\n    \"\"\"docstring goes here. you may want to copy and customize the original.\"\"\"\n\n    # do something with the new option\n    print(\"the value of custom arg is:\", custom_arg)\n\n    # the spin `build` command doesn't know anything about `custom_arg`,\n    # so don't send it on.\n    del ctx.params[\"custom_arg\"]\n\n    # call the built-in `build` command, passing along\n    # all arguments and options.\n    ctx.forward(meson.build)\n\n    # also see:\n    # - https://click.palletsprojects.com/en/8.1.x/api/#click.context.forward\n    # - https://click.palletsprojects.com/en/8.1.x/api/#click.context.invoke\n```\n\n### advanced: override meson cli\n\nsome packages use a vendored version of meson. the path to a custom\nmeson cli can be set in `pyproject.toml`:\n\n```\n[tool.spin.meson]\ncli = 'path/to/custom/meson'\n```\n\n## faq\n\n- running `spin`, the emojis in the command list don't show up.\n\nyour terminal font may not include emoji characters. e.g., if you use\nnoto on arch linux the emojis are installed separately:\n\n```sh\nsudo pacman -s noto-fonts-emoji\nfc-cache -f -v\n```\n\n## for contributors\n\n`spin` development happens on github at [scientific-python/spin](https://github.com/scientific-python/spin).\n`spin` tests are invoked using:\n\n```\nnox -s tests\n```\n\n## history\n\nthe `dev.py` tool was [proposed for scipy](https://github.com/scipy/scipy/issues/15489) by ralf gommers and [implemented](https://github.com/scipy/scipy/pull/15959) by sayantika banik, eduardo naufel schettino, and ralf gommers (also see [sayantika's blog post](https://labs.quansight.org/blog/the-evolution-of-the-scipy-developer-cli)).\ninspired by that implementation, `spin` (this package) is a minimal rewrite by st\u00e9fan van der walt, that aims to be easily extendable so that it can be used across ecosystem libraries.\nwe thank danila bredikhin and luca marconato who kindly donated the `spin` name on pypi.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd 3-clause license  copyright (c) 2021--2022, scientific python project all rights reserved.  redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:  1. redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.  2. redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.  3. neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.  this software is provided by the copyright holders and contributors \"as is\" and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. in no event shall the copyright holder or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage. ",
+  "name": "spin",
+  "package_url": "https://pypi.org/project/spin/",
+  "project_url": "https://pypi.org/project/spin/",
+  "project_urls": {
+    "homepage": "https://github.com/scientific-python/spin"
+  },
+  "release_url": "https://pypi.org/project/spin/0.8/",
+  "requires_dist": [
+    "click",
+    "colorama ; platform_system == \"Windows\"",
+    "tomli ; python_version < \"3.11\"",
+    "changelist ==0.4 ; extra == 'dev'",
+    "pre-commit ==3.5.0 ; extra == 'lint'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "developer tool for scientific python libraries",
+  "version": "0.8",
+  "releases": [],
+  "developers": [
+    "spin@discuss.scientific-python.org"
+  ],
+  "kwds": "python makefiles pythonpath scipy pip",
+  "license_kwds": "copyright liability bsd liable redistributions",
+  "libtype": "pypi",
+  "id": "pypi_spin",
+  "homepage": "",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_changelist",
+    "pypi_click",
+    "pypi_colorama",
+    "pypi_pre_commit",
+    "pypi_tomli"
+  ]
+}

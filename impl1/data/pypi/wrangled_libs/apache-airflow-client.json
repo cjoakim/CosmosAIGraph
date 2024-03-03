@@ -1,0 +1,41 @@
+{
+  "classifiers": [],
+  "description": "<!--\n licensed to the apache software foundation (asf) under one\n or more contributor license agreements.  see the notice file\n distributed with this work for additional information\n regarding copyright ownership.  the asf licenses this file\n to you under the apache license, version 2.0 (the\n \"license\"); you may not use this file except in compliance\n with the license.  you may obtain a copy of the license at\n\n   http://www.apache.org/licenses/license-2.0\n\n unless required by applicable law or agreed to in writing,\n software distributed under the license is distributed on an\n \"as is\" basis, without warranties or conditions of any\n kind, either express or implied.  see the license for the\n specific language governing permissions and limitations\n under the license.\n -->\n\n# apache airflow python client\n\n## requirements.\n\npython >= 3.7\n\n## installation & usage\n\n### pip install\n\nyou can install directly using pip:\n\n```sh\npip install apache-airflow-client\n````\n\n### setuptools\n\nor install via [setuptools](http://pypi.python.org/pypi/setuptools).\n\n```shell\ngit clone git@github.com:apache/airflow-client-python.git\ncd airflow-client-python\npython setup.py install --user\n```\n(or `sudo python setup.py install` to install the package for all users)\n\nthen import the package:\n```python\nimport airflow_client.client\n```\n\n## changelog\n\nsee [changelog.md](https://github.com/apache/airflow-client-python/blob/main/changelog.md) for keeping\ntrack on what has changed in the client.\n\n\n## getting started\n\nplease follow the [installation procedure](#installation--usage) and then run the following\nexample python script:\n\n```python\nimport uuid\n\nimport airflow_client.client\ntry:\n    # if you have rich installed, you will have nice colored output of the api responses\n    from rich import print\nexcept importerror:\n    print(\"output will not be colored. please install rich to get colored output: `pip install rich`\")\n    pass\nfrom airflow_client.client.api import config_api, dag_api, dag_run_api\nfrom airflow_client.client.model.dag_run import dagrun\n\n# the client must use the authentication and authorization parameters\n# in accordance with the api server security policy.\n# examples for each auth method are provided below, use the example that\n# satisfies your auth use case.\n#\n# in case of the basic authentication below, make sure that airflow is\n# configured also with the basic_auth as backend additionally to regular session backend needed\n# by the ui. in the `[api]` section of your `airflow.cfg` set:\n#\n# auth_backend = airflow.api.auth.backend.session,airflow.api.auth.backend.basic_auth\n#\n# make sure that your user/name are configured properly - using the user/password that has admin\n# privileges in airflow\n\n# configure http basic authorization: basic\nconfiguration = airflow_client.client.configuration(\n    host=\"http://localhost:8080/api/v1\",\n    username='admin',\n    password='admin'\n)\n\n# make sure in the [core] section, the  `load_examples` config is set to true in your airflow.cfg\n# or airflow__core__load_examples environment variable set to true\ndag_id = \"example_bash_operator\"\n\n# enter a context with an instance of the api client\nwith airflow_client.client.apiclient(configuration) as api_client:\n\n    errors = false\n\n    print('[blue]getting dag list')\n    dag_api_instance = dag_api.dagapi(api_client)\n    try:\n        api_response = dag_api_instance.get_dags()\n        print(api_response)\n    except airflow_client.client.openapiexception as e:\n        print(\"[red]exception when calling dagapi->get_dags: %s\\n\" % e)\n        errors = true\n    else:\n        print('[green]getting dag list successful')\n\n\n    print('[blue]getting tasks for a dag')\n    try:\n        api_response = dag_api_instance.get_tasks(dag_id)\n        print(api_response)\n    except airflow_client.client.exceptions.openapiexception as e:\n        print(\"[red]exception when calling dagapi->get_tasks: %s\\n\" % e)\n        errors = true\n    else:\n        print('[green]getting tasks successful')\n\n\n    print('[blue]triggering a dag run')\n    dag_run_api_instance = dag_run_api.dagrunapi(api_client)\n    try:\n        # create a dagrun object (no dag_id should be specified because it is read-only property of dagrun)\n        # dag_run id is generated randomly to allow multiple executions of the script\n        dag_run = dagrun(\n            dag_run_id='some_test_run_' + uuid.uuid4().hex,\n        )\n        api_response = dag_run_api_instance.post_dag_run(dag_id, dag_run)\n        print(api_response)\n    except airflow_client.client.exceptions.openapiexception as e:\n        print(\"[red]exception when calling dagrunapi->post_dag_run: %s\\n\" % e)\n        errors = true\n    else:\n        print('[green]posting dag run successful')\n\n    # get current configuration. note, this is disabled by default with most installation.\n    # you need to set `expose_config = true` in airflow configuration in order to retrieve configuration.\n    conf_api_instance = config_api.configapi(api_client)\n    try:\n        api_response = conf_api_instance.get_config()\n        print(api_response)\n    except airflow_client.client.openapiexception as e:\n        print(\"[red]exception when calling configapi->get_config: %s\\n\" % e)\n        errors = true\n    else:\n        print('[green]config retrieved successfully')\n\n    if errors:\n        print ('\\n[red]there were errors while running the script - see above for details')\n    else:\n        print ('\\n[green]everything went well')\n```\n\nsee [readme](https://github.com/apache/airflow-client-python/blob/main/airflow_client/readme.md#documentation-for-api-endpoints) \nfor full client api documentation.\n\n",
+  "docs_url": null,
+  "keywords": "openapi,openapi-generator,apache airflow api (stable)",
+  "license": "apache license 2.0",
+  "name": "apache-airflow-client",
+  "package_url": "https://pypi.org/project/apache-airflow-client/",
+  "project_url": "https://pypi.org/project/apache-airflow-client/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/apache/airflow-client-python/issues",
+    "Changelog": "https://github.com/apache/airflow-client-python/blob/main/CHANGELOG.md",
+    "Documentation": "https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html",
+    "Download": "https://archive.apache.org/dist/airflow/clients/python/2.8.0",
+    "Homepage": "https://airflow.apache.org/",
+    "Source Code": "https://github.com/apache/airflow-client-python"
+  },
+  "release_url": "https://pypi.org/project/apache-airflow-client/2.8.0/",
+  "requires_dist": [
+    "urllib3 (>=1.25.3)",
+    "python-dateutil"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "apache airflow api (stable)",
+  "version": "2.8.0",
+  "releases": [],
+  "developers": [
+    "apache_software_foundation",
+    "dev@airflow.apache.org"
+  ],
+  "kwds": "airflow_client pip airflow__core__load_examples openapi airflow",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_apache_airflow_client",
+  "homepage": "https://airflow.apache.org/",
+  "release_count": 29,
+  "dependency_ids": [
+    "pypi_python_dateutil",
+    "pypi_urllib3"
+  ]
+}

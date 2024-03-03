@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: flask",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: libraries",
+    "topic :: software development :: testing",
+    "topic :: utilities"
+  ],
+  "description": "flask-injector\n==============\n\n.. image:: https://codecov.io/gh/alecthomas/flask_injector/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/alecthomas/flask_injector\n\n.. image:: https://github.com/alecthomas/flask_injector/workflows/ci/badge.svg\n   :target: https://github.com/alecthomas/flask_injector?query=workflow%3aci+branch%3amaster\n\n\nadds `injector <https://github.com/alecthomas/injector>`_ support to flask,\nthis way there's no need to use global flask objects, which makes testing simpler.\n\ninjector is a dependency-injection framework for python, inspired by guice. you\ncan `find injector on pypi <https://pypi.org/project/injector/>`_ and `injector\ndocumentation on read the docs <https://injector.readthedocs.io/en/latest/>`_.\n\n`flask-injector` is compatible with cpython 3.7+.\nas of version 0.15.0 it requires injector version 0.20.0 or greater and flask\n2.2.0 or greater.\n\ngithub project page: https://github.com/alecthomas/flask_injector\n\npypi package page: https://pypi.org/project/flask-injector/\n\nchangelog: https://github.com/alecthomas/flask_injector/blob/master/changelog.rst\n\nfeatures\n--------\n\nflask-injector lets you inject dependencies into:\n\n* views (functions and class-based)\n* `before_request` handlers\n* `after_request` handlers\n* `teardown_request` handlers\n* template context processors\n* error handlers\n* jinja environment globals (functions in `app.jinja_env.globals`)\n* flask-restful resource constructors\n* flask-restplus resource constructors\n* flask-restx resource constructors\n\nflask-injector supports defining types using function annotations (python 3),\nsee below.\n\ndocumentation\n-------------\n\nas flask-injector uses injector under the hood you should find the\n`injector documentation <https://injector.readthedocs.io/en/latest/>`_,\nincluding the `injector api reference <https://injector.readthedocs.io/en/latest/api.html>`_,\nhelpful. the `injector readme <https://github.com/alecthomas/injector/blob/master/readme.md>`_\nprovides a tutorial-level introduction to using injector.\n\nthe flask-injector public api consists of the following:\n\n* `flaskinjector` class with the constructor taking the following parameters:\n\n  * `app`, an instance of`flask.flask` [mandatory] \u2013\u00a0the flask application to be used\n  * `modules`, an iterable of\n    `injector modules <https://injector.readthedocs.io/en/latest/api.html#injector.binder.install>`_ [optional]\n    \u2013 the injector modules to be used.\n  * `injector`, an instance of\n    `injector.injector <https://injector.readthedocs.io/en/latest/api.html#injector.injector>`_ [optional]\n    \u2013 an instance of injector to be used if, for some reason, it's not desirable\n    for `flaskinjector` to create a new one. you're likely to not need to use this.\n  * `request_scope_class`, an `injector.scope <https://injector.readthedocs.io/en/latest/api.html#injector.scope>`_\n    subclass [optional] \u2013 the scope to be used instead of `requestscope`. you're likely to need to use this\n    except for testing.\n* `requestscope` class \u2013 an `injector.scope <https://injector.readthedocs.io/en/latest/api.html#injector.scope>`_\n  subclass to be used for storing and reusing request-scoped dependencies\n* `request` object \u2013 to be used as a class decorator or in explicit\n  `bind() <https://injector.readthedocs.io/en/latest/api.html#injector.binder.bind>`_ calls in\n  injector modules.\n  \ncreating an instance of `flaskinjector` performs side-effectful configuration of the flask\napplication passed to it. the following bindings are applied (if you want to modify them you\nneed to do it in one of the modules passed to the `flaskinjector` constructor):\n\n* `flask.flask` is bound to the flask application in the (scope: singleton)\n* `flask.config` is bound to the configuration of the flask application\n* `flask.request` is bound to the current flask request object, equivalent to the thread-local\n  `flask.request` object (scope: request)\n \nexample application using flask-injector\n----------------------------------------\n\n.. code:: python\n\n    import sqlite3\n    from flask import flask, config\n    from flask.views import view\n    from flask_injector import flaskinjector\n    from injector import inject\n\n    app = flask(__name__)\n\n    # configure your application by attaching views, handlers, context processors etc.:\n\n    @app.route(\"/bar\")\n    def bar():\n        return render(\"bar.html\")\n\n\n    # route with injection\n    @app.route(\"/foo\")\n    def foo(db: sqlite3.connection):\n        users = db.execute('select * from users').all()\n        return render(\"foo.html\")\n\n\n    # class-based view with injected constructor\n    class waz(view):\n        @inject\n        def __init__(self, db: sqlite3.connection):\n            self.db = db\n\n        def dispatch_request(self, key):\n            users = self.db.execute('select * from users where name=?', (key,)).all()\n            return 'waz'\n\n    app.add_url_rule('/waz/<key>', view_func=waz.as_view('waz'))\n\n\n    # in the injector world, all dependency configuration and initialization is\n    # performed in modules (https://injector.readthedocs.io/en/latest/terminology.html#module).\n    # the same is true with flask-injector. you can see some examples of configuring\n    # flask extensions through modules below.\n\n    # accordingly, the next step is to create modules for any objects we want made\n    # available to the application. note that in this example we also use the\n    # injector to gain access to the `flask.config`:\n\n    def configure(binder):\n        binder.bind(\n            sqlite3.connection,\n            to=sqlite3.connection(':memory:'),\n            scope=request,\n        )\n    \n    # initialize flask-injector. this needs to be run *after* you attached all\n    # views, handlers, context processors and template globals.\n\n    flaskinjector(app=app, modules=[configure])\n\n    # all that remains is to run the application\n\n    app.run()\n\nsee `example.py` for a more complete example, including `flask-sqlalchemy` and\n`flask-cache` integration.\n\nsupporting flask extensions\n---------------------------\n\ntypically, flask extensions are initialized at the global scope using a\npattern similar to the following.\n\n.. code:: python\n\n    app = flask(__name__)\n    ext = extclass(app)\n\n    @app.route(...)\n    def view():\n        # use ext object here...\n\nas we don't have these globals with flask-injector we have to configure the\nextension the injector way - through modules. modules can either be subclasses\nof `injector.module` or a callable taking an `injector.binder` instance.\n\n.. code:: python\n\n    from injector import module\n\n    class mymodule(module):\n        @provider\n        @singleton\n        def provide_ext(self, app: flask) -> extclass:\n            return extclass(app)\n\n    def main():\n        app = flask(__name__)\n        app.config.update(\n            ext_config_var='some_value',\n        )\n\n        # attach your views etc. here\n\n        flaskinjector(app=app, modules=[mymodule])\n\n        app.run()\n\n*make sure to bind extension objects as singletons.*\n\n\n",
+  "docs_url": null,
+  "keywords": "dependency injection,flask",
+  "license": "bsd",
+  "name": "flask-injector",
+  "package_url": "https://pypi.org/project/Flask-Injector/",
+  "project_url": "https://pypi.org/project/Flask-Injector/",
+  "project_urls": {
+    "Homepage": "https://github.com/alecthomas/flask_injector"
+  },
+  "release_url": "https://pypi.org/project/Flask-Injector/0.15.0/",
+  "requires_dist": [
+    "Flask (>=2.2.0)",
+    "injector (>=0.20.0)",
+    "typing ; python_version < \"3.5\""
+  ],
+  "requires_python": "",
+  "summary": "adds injector, a dependency injection framework, support to flask.",
+  "version": "0.15.0",
+  "releases": [],
+  "developers": [
+    "alec@swapoff.org",
+    "alec_thomas"
+  ],
+  "kwds": "flask_injector flaskinjector flask injector inject",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_flask_injector",
+  "homepage": "https://github.com/alecthomas/flask_injector",
+  "release_count": 28,
+  "dependency_ids": [
+    "pypi_flask",
+    "pypi_injector",
+    "pypi_typing"
+  ]
+}

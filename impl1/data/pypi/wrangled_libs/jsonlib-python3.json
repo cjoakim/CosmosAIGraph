@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu general public license (gpl)",
+    "operating system :: os independent",
+    "programming language :: c",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": ":author: john millikin\r\n:copyright: this document has been placed in the public domain.\r\n\r\noverview\r\n========\r\n\r\n`json <http://json.org/>`_ is a lightweight data-interchange format. it\r\nis often used for exchanging data between a web server and user agent.\r\n\r\nthis module aims to produce a library for serializing and deserializing\r\njson that conforms strictly to rfc 4627.\r\n\r\n.. contents::\r\n\r\nusage\r\n=====\r\n\r\njsonlib has two functions of interest, ``read`` and ``write``. it also\r\ndefines some exception: ``readerror``, ``writeerror``, and\r\n``unknownserializererror``.\r\n\r\nfor compatibility with the standard library, ``read`` is aliased to\r\n``loads`` and ``write`` is aliased to ``dumps``. they do not have the\r\nsame set of advanced parameters, but may be used interchangeably for\r\nsimple invocations.\r\n\r\ndeserialization\r\n---------------\r\n\r\nto deserialize a json expression, call the ``jsonlib.read`` function with\r\nan instance of ``str`` or ``bytes``. ::\r\n\r\n\t>>> import jsonlib\r\n\t>>> jsonlib.read (b'[\"hello world!\"]')\r\n\t['hello world!']\r\n\r\nfloating-point values\r\n~~~~~~~~~~~~~~~~~~~~~\r\n\r\nby default, ``jsonlib`` will parse values such as \"1.1\" into an instance of\r\n``decimal.decimal``. to use the built-in value type ``float`` instead, set\r\nthe ``use_float`` parameter to ``true``. ``float`` values are much faster to\r\nconstruct, so this flag may substantially increase parser performance.\r\n\r\nplease note that using ``float`` will cause a loss of precision when\r\nparsing some values. ::\r\n\r\n\t>>> jsonlib.read ('[3.14159265358979323846]', use_float = true)\r\n\t[3.141592653589793]\r\n\r\nserialization\r\n-------------\r\n\r\nserialization has more options, but they are set to reasonable defaults.\r\nthe simplest use is to call ``jsonlib.write`` with a python value. ::\r\n\r\n\t>>> import jsonlib\r\n\t>>> jsonlib.write (['hello world!'])\r\n\tb'[\"hello world!\"]'\r\n\r\npretty-printing\r\n~~~~~~~~~~~~~~~\r\n\r\nto \"pretty-print\" the output, pass a value for the ``indent`` parameter. ::\r\n\r\n\t>>> print (jsonlib.write (['hello world!'], indent = '    ').decode ('utf8'))\r\n\t[\r\n\t    \"hello world!\"\r\n\t]\r\n\t>>> \r\n\t\r\nmapping key sorting\r\n~~~~~~~~~~~~~~~~~~~\r\n\r\nby default, mapping keys are serialized in whatever order they are\r\nstored by python. to force a consistent ordering (for example, in doctests)\r\nuse the ``sort_keys`` parameter. ::\r\n\r\n\t>>> jsonlib.write ({'e': 'hello', 'm': 'world!'})\r\n\tb'{\"m\":\"world!\",\"e\":\"hello\"}'\r\n\t>>> jsonlib.write ({'e': 'hello', 'm': 'world!'}, sort_keys = true)\r\n\tb'{\"e\":\"hello\",\"m\":\"world!\"}'\r\n\r\nencoding and unicode\r\n~~~~~~~~~~~~~~~~~~~~\r\n\r\nby default, the output is encoded in utf-8. if you require a different\r\nencoding, pass the name of a python codec as the ``encoding`` parameter. ::\r\n\r\n\t>>> jsonlib.write (['hello world!'], encoding = 'utf-16-be')\r\n\tb'\\x00[\\x00\"\\x00h\\x00e\\x00l\\x00l\\x00o\\x00 \\x00w\\x00o\\x00r\\x00l\\x00d\\x00!\\x00\"\\x00]'\r\n\r\nto retrieve an unencoded ``unicode`` instance, pass ``none`` for the\r\nencoding. ::\r\n\r\n\t>>> jsonlib.write (['hello world!'], encoding = none)\r\n\t'[\"hello world!\"]'\r\n\r\nby default, non-ascii codepoints are forbidden in the output. to include\r\nhigher codepoints in the output, set ``ascii_only`` to ``false``. ::\r\n\r\n\t>>> jsonlib.write (['hello \\u266a'], encoding = none)\r\n\t'[\"hello \\\\u266a\"]'\r\n\t>>> jsonlib.write (['hello \\u266a'], encoding = none, ascii_only = false)\r\n\t'[\"hello \\u266a\"]'\r\n\r\nmapping key coercion\r\n~~~~~~~~~~~~~~~~~~~~\r\n\r\nbecause json objects must have string keys, an exception will be raised when\r\nnon-string keys are encountered in a mapping. it can be useful to coerce\r\nmapping keys to strings, so the ``coerce_keys`` parameter is available. ::\r\n\r\n\t>>> jsonlib.write ({true: 1})\r\n\ttraceback (most recent call last):\r\n\tjsonlib.writeerror: only strings may be used as object keys.\r\n\t>>> jsonlib.write ({true: 1}, coerce_keys = true)\r\n\tb'{\"true\":1}'\r\n\r\nserializing other types\r\n~~~~~~~~~~~~~~~~~~~~~~~\r\n\r\nif the object implements the iterator or mapping protocol, it will be\r\nhandled automatically. if the object is intended for use as a basic value,\r\nit should subclass one of the supported basic values.\r\n\r\nstring-like objects that do not inherit from ``unicode`` or\r\n``userstring.userstring`` will likely be serialized as a list. this will\r\nnot be changed. if iterating them returns an instance of the same type, the\r\nserializer might crash. this (hopefully) will be changed.\r\n\r\nto serialize a type not known to jsonlib, use the ``on_unknown`` parameter\r\nto ``write``::\r\n\r\n\t>>> from datetime import date\r\n\t>>> def unknown_handler (value, unknown):\r\n\t...     if isinstance (value, date):\r\n\t...         return str (value)\r\n\t...     unknown (value)\r\n\t>>> jsonlib.write ([date (2000, 1, 1)], on_unknown = unknown_handler)\r\n\tb'[\"2000-01-01\"]'\r\n\r\nstreaming serializer\r\n~~~~~~~~~~~~~~~~~~~~\r\n\r\nwhen serializing large objects, the use of an in-memory buffer may cause\r\ntoo much memory to be used. for these situations, use the ``dump`` function\r\nto write objects to a file-like object::\r\n\r\n\t>>> import sys\r\n\t>>> jsonlib.dump ([\"written to stdout\"], sys.stdout, encoding = none)\r\n\t[\"written to stdout\"]\r\n\t>>> with open (\"/dev/null\", \"wb\") as out:\r\n\t...     jsonlib.dump ([\"written to a file\"], out)\r\n\t>>> \r\n\r\nexceptions\r\n-----------\r\n\r\nreaderror\r\n~~~~~~~~~\r\n\r\nraised by ``read`` if an error was encountered parsing the expression. will\r\ncontain the line, column, and character position of the error.\r\n\r\nnote that this will report the *character*, not the *byte*, of the character\r\nthat caused the error.\r\n\r\nwriteerror\r\n~~~~~~~~~~\r\n\r\nraised by ``write`` or ``dump`` if an error was encountered serializing\r\nthe passed value.\r\n\r\nunknownserializererror\r\n~~~~~~~~~~~~~~~~~~~~~~\r\n\r\na subclass of ``writeerror`` that is raised when a value cannot be\r\nserialized. see the ``on_unknown`` parameter to ``write``.\r\n\r\nchange log\r\n==========\r\n\r\n1.6.1\r\n-----\r\n* fixed error in `write()` which could cause output truncation.\r\n\r\n1.6\r\n---\r\n* faster parsing\r\n\r\n1.5\r\n---\r\n* faster streaming serialization.\r\n\r\n1.4\r\n---\r\n* ported to python 3.\r\n* ``coerce_keys`` no longer attempts to determine the \"json\" format for\r\n  a coerced value -- it will simply call ``str()``.\r\n* serializing byte strings is no longer supported -- please use ``str``\r\n  objects instead.",
+  "docs_url": null,
+  "keywords": "json",
+  "license": "gpl",
+  "name": "jsonlib-python3",
+  "package_url": "https://pypi.org/project/jsonlib-python3/",
+  "project_url": "https://pypi.org/project/jsonlib-python3/",
+  "project_urls": {
+    "Download": "http://pypi.python.org/pypi/jsonlib-python3/1.6.1",
+    "Homepage": "https://launchpad.net/jsonlib"
+  },
+  "release_url": "https://pypi.org/project/jsonlib-python3/1.6.1/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "json serializer/deserializer for python",
+  "version": "1.6.1",
+  "releases": [],
+  "developers": [
+    "jmillikin@gmail.com",
+    "john_millikin"
+  ],
+  "kwds": "jsonlib json deserializing deserialization deserializer",
+  "license_kwds": "gpl",
+  "libtype": "pypi",
+  "id": "pypi_jsonlib_python3",
+  "homepage": "https://launchpad.net/jsonlib",
+  "release_count": 4,
+  "dependency_ids": []
+}

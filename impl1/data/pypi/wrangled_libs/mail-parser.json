@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.0",
+    "programming language :: python :: 3.1",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "[![pypi version](https://badge.fury.io/py/mail-parser.svg)](https://badge.fury.io/py/mail-parser)\n[![build status](https://travis-ci.org/spamscope/mail-parser.svg?branch=develop)](https://travis-ci.org/spamscope/mail-parser)\n[![coverage status](https://coveralls.io/repos/github/spamscope/mail-parser/badge.svg?branch=develop)](https://coveralls.io/github/spamscope/mail-parser?branch=develop)\n[![bch compliance](https://bettercodehub.com/edge/badge/spamscope/mail-parser?branch=develop)](https://bettercodehub.com/)\n[![](https://images.microbadger.com/badges/image/fmantuano/spamscope-mail-parser.svg)](https://microbadger.com/images/fmantuano/spamscope-mail-parser \"get your own image badge on microbadger.com\")\n\n![spamscope](https://raw.githubusercontent.com/spamscope/spamscope/develop/docs/logo/spamscope.png)\n\n# mail-parser\n\nmail-parser is not only a wrapper for [email](https://docs.python.org/2/library/email.message.html) python standard library.\nit give you an easy way to pass from raw mail to python object that you can use in your code.\nit's the key module of [spamscope](https://github.com/spamscope/spamscope).\n\nmail-parser can parse outlook email format (.msg). to use this feature, you need to install `libemail-outlook-message-perl` package. for debian based systems:\n\n```\n$ apt-get install libemail-outlook-message-perl\n```\n\nfor more details:\n\n```\n$ apt-cache show libemail-outlook-message-perl\n```\n\nmail-parser supports python 3.\n\n\n# apache 2 open source license\nmail-parser can be downloaded, used, and modified free of charge. it is available under the apache 2 license.\n\nif you want support the project:\n\n\n[![donate](https://www.paypal.com/en_us/i/btn/btn_donatecc_lg.gif \"donate\")](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=vepxyp745kjf2)\n\n![bitcoin donate](https://i.stack.imgur.com/mnq6v.png)\n\n![](https://github.com/spamscope/mail-parser/raw/develop/docs/bitcoin-qrcode.png)\n\n\n# mail-parser on web\n - [splunk app](https://splunkbase.splunk.com/app/4129/)\n - [freebsd port](https://www.freshports.org/mail/py-mail-parser/)\n - [arch user repository](https://aur.archlinux.org/packages/mailparser/)\n\n\n# description\n\nmail-parser takes as input a raw email and generates a parsed object. the properties of this object are the same name of\n[rfc headers](https://www.iana.org/assignments/message-headers/message-headers.xhtml):\n\n  - bcc\n  - cc\n  - date\n  - delivered_to\n  - from\\_ (not `from` because is a keyword of python)\n  - message_id\n  - received\n  - reply_to\n  - subject\n  - to\n\nthere are other properties to get:\n  - body\n  - body html\n  - body plain\n  - headers\n  - attachments\n  - sender ip address\n  - to domains\n  - timezone\n\nthe `attachments` property is a list of objects. every object has the following keys:\n  - binary: it's true if the attachment is a binary\n  - charset\n  - content_transfer_encoding\n  - content-disposition\n  - content-id\n  - filename\n  - mail_content_type\n  - payload: attachment payload in base64\n\nto get custom headers you should replace \"-\" with \"\\_\".\nexample for header `x-msmail-priority`:\n\n```\n$ mail.x_msmail_priority\n```\n\nthe `received` header is parsed and splitted in hop. the fields supported are:\n - by\n - date\n - date_utc\n - delay (between two hop)\n - envelope_from\n - envelope_sender\n - for\n - from\n - hop\n - with\n\n\nmail-parser can detect defect in mail:\n  - [defects](https://docs.python.org/2/library/email.message.html#email.message.message.defects): mail with some not compliance rfc part\n\nall properties have a json and raw property that you can get with:\n - name_json\n - name_raw\n\nexample:\n\n```\n$ mail.to (python object)\n$ mail.to_json (json)\n$ mail.to_raw (raw header)\n```\n\nthe command line tool use the json format.\n\n## defects\nthese defects can be used to evade the antispam filter. an example are the mails with a malformed boundary that can hide a not legitimate epilogue (often malware).\nthis library can take these epilogues.\n\n\n# authors\n\n## main author\n**fedele mantuano**: [linkedin](https://www.linkedin.com/in/fmantuano/)\n\n\n# installation\n\nclone repository\n\n```\ngit clone https://github.com/spamscope/mail-parser.git\n```\n\nand install mail-parser with `setup.py`:\n\n```\n$ cd mail-parser\n\n$ python setup.py install\n```\n\nor use `pip`:\n\n```\n$ pip install mail-parser\n```\n\n# usage in a project\n\nimport `mailparser` module:\n\n```\nimport mailparser\n\nmail = mailparser.parse_from_bytes(byte_mail)\nmail = mailparser.parse_from_file(f)\nmail = mailparser.parse_from_file_msg(outlook_mail)\nmail = mailparser.parse_from_file_obj(fp)\nmail = mailparser.parse_from_string(raw_mail)\n```\n\nthen you can get all parts\n\n```\nmail.attachments: list of all attachments\nmail.body\nmail.date: datetime object in utc\nmail.defects: defect rfc not compliance\nmail.defects_categories: only defects categories\nmail.delivered_to\nmail.from_\nmail.get_server_ipaddress(trust=\"my_server_mail_trust\")\nmail.headers\nmail.mail: tokenized mail in a object\nmail.message: email.message.message object\nmail.message_as_string: message as string\nmail.message_id\nmail.received\nmail.subject\nmail.text_plain: only text plain mail parts in a list\nmail.text_html: only text html mail parts in a list\nmail.text_not_managed: all not managed text (check the warning logs to find content subtype)\nmail.to\nmail.to_domains\nmail.timezone: returns the timezone, offset from utc\nmail.mail_partial: returns only the mains parts of emails\n```\n\nit's possible to write the attachments on disk with the method:\n\n```\nmail.write_attachments(base_path)\n```\n\n# usage from command-line\n\nif you installed mailparser with `pip` or `setup.py` you can use it with command-line.\n\nthese are all swithes:\n\n```\nusage: mailparser [-h] (-f file | -s string | -k)\n                   [-l {critical,error,warning,info,debug,notset}] [-j] [-b]\n                   [-a] [-r] [-t] [-dt] [-m] [-u] [-c] [-d] [-o]\n                   [-i trust mail server string] [-p] [-z] [-v]\n\nwrapper for email python standard library\n\noptional arguments:\n  -h, --help            show this help message and exit\n  -f file, --file file  raw email file (default: none)\n  -s string, --string string\n                        raw email string (default: none)\n  -k, --stdin           enable parsing from stdin (default: false)\n  -l {critical,error,warning,info,debug,notset}, --log-level {critical,error,warning,info,debug,notset}\n                        set log level (default: warning)\n  -j, --json            show the json of parsed mail (default: false)\n  -b, --body            print the body of mail (default: false)\n  -a, --attachments     print the attachments of mail (default: false)\n  -r, --headers         print the headers of mail (default: false)\n  -t, --to              print the to of mail (default: false)\n  -dt, --delivered-to   print the delivered-to of mail (default: false)\n  -m, --from            print the from of mail (default: false)\n  -u, --subject         print the subject of mail (default: false)\n  -c, --receiveds       print all receiveds of mail (default: false)\n  -d, --defects         print the defects of mail (default: false)\n  -o, --outlook         analyze outlook msg (default: false)\n  -i trust mail server string, --senderip trust mail server string\n                        extract a reliable sender ip address heuristically\n                        (default: none)\n  -p, --mail-hash       print mail fingerprints without headers (default:\n                        false)\n  -z, --attachments-hash\n                        print attachments with fingerprints (default: false)\n  -sa, --store-attachments\n                        store attachments on disk (default: false)\n  -ap attachments_path, --attachments-path attachments_path\n                        path where store attachments (default: /tmp)\n  -v, --version         show program's version number and exit\n\nit takes as input a raw mail and generates a parsed object.\n```\n\nexample:\n\n```shell\n$ mailparser -f example_mail -j\n```\n\nthis example will show you the tokenized mail in a json pretty format.\n\nfrom [raw mail](https://gist.github.com/fedelemantuano/5dd702004c25a46b2bd60de21e67458e) to\n[parsed mail](https://gist.github.com/fedelemantuano/e958aa2813c898db9d2d09469db8e6f6).\n\n\n# exceptions\n\nexceptions hierarchy of mail-parser:\n\n```\nmailparsererror: base mailparser exception\n|\n\\\u2500\u2500 mailparseroutlookerror: raised with outlook integration errors\n|\n\\\u2500\u2500 mailparserenvironmenterror: raised when the environment is not correct\n|\n\\\u2500\u2500 mailparseroserror: raised when there is an os error\n|\n\\\u2500\u2500 mailparserreceivedparsingerror: raised when a received header cannot be parsed\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "mail,email,parser,wrapper",
+  "license": "apache license, version 2.0",
+  "name": "mail-parser",
+  "package_url": "https://pypi.org/project/mail-parser/",
+  "project_url": "https://pypi.org/project/mail-parser/",
+  "project_urls": {
+    "Homepage": "https://github.com/SpamScope/mail-parser"
+  },
+  "release_url": "https://pypi.org/project/mail-parser/3.15.0/",
+  "requires_dist": [
+    "simplejson (>=3.17.0)",
+    "six (>=1.14.0)",
+    "ipaddress (>=1.0.23) ; python_version < \"3.3\""
+  ],
+  "requires_python": "",
+  "summary": "wrapper for email standard library",
+  "version": "3.15.0",
+  "releases": [],
+  "developers": [
+    "fedele_mantuano",
+    "mantuano.fedele@gmail.com"
+  ],
+  "kwds": "mailparseroserror example_mail mailparser raw_mail mail",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_mail_parser",
+  "homepage": "https://github.com/spamscope/mail-parser",
+  "release_count": 57,
+  "dependency_ids": [
+    "pypi_ipaddress",
+    "pypi_simplejson",
+    "pypi_six"
+  ]
+}

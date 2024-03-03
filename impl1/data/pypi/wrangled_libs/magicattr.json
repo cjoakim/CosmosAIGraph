@@ -1,0 +1,30 @@
+{
+  "classifiers": [],
+  "description": "# magicattr\n\n[![status](https://github.com/frmdstryr/magicattr/actions/workflows/ci.yml/badge.svg)](https://github.com/frmdstryr/magicattr/actions)\n[![codecov](https://codecov.io/gh/frmdstryr/magicattr/branch/master/graph/badge.svg)](https://codecov.io/gh/frmdstryr/magicattr)\n\n\na getattr and setattr that works on nested objects, lists,\ndictionaries, and any combination thereof without resorting to eval.\n\nit differs from getattr and setattr in that it retains the failure cause\ninstead of always raising an attributeerror.\n\n\n\n### example\n\nsay we have a person class as follows:\n\n```python\n\n\nclass person:\n    settings = {\n        'autosave': true,\n        'style': {\n            'height': 30,\n            'width': 200\n        },\n        'themes': ['light', 'dark']\n    }\n    def __init__(self, name, age, friends):\n        self.name = name\n        self.age = age\n        self.friends = friends\n\n\nbob = person(name=\"bob\", age=31, friends=[])\njill = person(name=\"jill\", age=29, friends=[bob])\njack = person(name=\"jack\", age=28, friends=[bob, jill])\n\n```\n\nwith magicattr we can do this\n\n```python\n\n# nothing new\nassert magicattr.get(bob, 'age') == 31\n\n# lists\nassert magicattr.get(jill, 'friends[0].name') == 'bob'\nassert magicattr.get(jack, 'friends[-1].age') == 29\n\n# dict lookups\nassert magicattr.get(jack, 'settings[\"style\"][\"width\"]') == 200\n\n# combination of lookups\nassert magicattr.get(jack, 'settings[\"themes\"][-2]') == 'light'\nassert magicattr.get(jack, 'friends[-1].settings[\"themes\"][1]') == 'dark'\n\n# setattr\nmagicattr.set(bob, 'settings[\"style\"][\"width\"]', 400)\nassert magicattr.get(bob, 'settings[\"style\"][\"width\"]') == 400\n\n# nested objects\nmagicattr.set(bob, 'friends', [jack, jill])\nassert magicattr.get(jack, 'friends[0].friends[0]') == jack\n\nmagicattr.set(jill, 'friends[0].age', 32)\nassert bob.age == 32\n```\n\nyou can also delete like this too.\n\n```python\n\n# deletion\nmagicattr.delete(jill, 'friends[0]')\nassert len(jill.friends) == 0\n\nmagicattr.delete(jill, 'age')\nassert not hasattr(jill, 'age')\n\nmagicattr.delete(bob, 'friends[0].age')\nassert not hasattr(jack, 'age')\n\n```\n\nwhat if someone tries to mess with you?\n\n```python\n\n# unsupported\nwith pytest.raises(notimplementederror) as e:\n    magicattr.get(bob, 'friends[0+1]')\n\nwith pytest.raises(syntaxerror) as e:\n    magicattr.get(bob, 'friends[')\n\nwith pytest.raises(valueerror) as e:\n    magicattr.get(bob, 'friends = [1,1]')\n\n# nice try, function calls are not allowed\nwith pytest.raises(valueerror):\n    magicattr.get(bob, 'friends.pop(0)')\n\n```\n\ndid i miss anything? let me know!\n\n\n\n#### what it can't do?\n\nslicing, expressions, function calls, append/pop from lists, eval stuff, etc...\n\n#### how does it work?\n\nparses the attr string into an ast node and manually evaluates it.\n\n\n### installing\n\n`pip install magicattr`\n\n\n### license\n\nmit\n\nhope it helps, cheers!\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "magicattr",
+  "package_url": "https://pypi.org/project/magicattr/",
+  "project_url": "https://pypi.org/project/magicattr/",
+  "project_urls": {
+    "Homepage": "https://github.com/frmdstryr/magicattr"
+  },
+  "release_url": "https://pypi.org/project/magicattr/0.1.6/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "a getattr and setattr that works on nested objects, lists, dicts, and any combination thereof without resorting to eval",
+  "version": "0.1.6",
+  "releases": [],
+  "developers": [
+    "frmdstryr",
+    "frmdstryr@gmail.com"
+  ],
+  "kwds": "attributeerror magicattr getattr setattr badge",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_magicattr",
+  "homepage": "https://github.com/frmdstryr/magicattr",
+  "release_count": 7,
+  "dependency_ids": []
+}

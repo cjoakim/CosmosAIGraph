@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: networking"
+  ],
+  "description": "pyasn\n=====\n\n[![pypi version](https://badge.fury.io/py/pyasn.svg)](https://badge.fury.io/py/pyasn)\n\n\n**pyasn** is a python extension module that enables very fast ip address to autonomous system number lookups.\ncurrent state and historical lookups can be done, based on the mrt/rib bgp archive used as input.\n\n*pyasn* is different from other asn lookup tools in that it provides **offline** and **historical** lookups.\nit provides utility scripts for users to build their own lookup databases based on any mrt/rib archive.\nthis makes *pyasn* much faster than online dig/whois/json lookups.\n\nthe module is written in c and python, and cross-compiles on linux and windows. underneath, it uses a radix tree\ndata structure for storage of ip addresses. in the current version, it borrows code from *py-radix* to support\nboth ipv4 and ipv6 network prefixes. compared to the previous version, it provides\nsupport for python 2 and 3; adds new functionality, performance improvements, and unit-tests.\n\n*pyasn* has been developed by [hadi asghari](https://hadiasghari.com) and\n[arman noroozian](https://anoroozian.nl/) during their phd research on cybersecurity measurements. the package is used widely and bugs are fixed quickly.  please report any bugs via github [issues](https://github.com/hadiasghari/pyasn/issues).\n\n\ninstallation\n============\ninstallation is a breeze via pip: ::\n\n    pip3 install pyasn\n\nor with the standard python: ::\n\n    python3 setup.py build\n    python3 setup.py install --record log\n\nyou will need to have pip, setuptools and build essentials installed if you build the package manually. on\nubuntu/debian you can get them using the following command: ::\n\n    sudo apt install python3-pip python3-dev python3-setuptools build-essential\n\nbuilding the c module on windows, using either pip or from source, requires microsoft visual c++ to be installed.\npyasn has been tested using visual c++ express 2010, available freely from microsoft's website, on both the\nofficial python 3.4 release and miniconda3. other versions of python, visual studio, and cygwin could also work\nwith minor modifications.\n\n\n\nusage\n=====\na simple example that demonstrates most of the features: ::\n\n    import pyasn\n\n    # initialize module and load ip to asn database\n    # the sample database can be downloaded or built - see below\n    asndb = pyasn.pyasn('ipasn_20140513.dat')\n\n    asndb.lookup('8.8.8.8')\n    # should return: (15169, '8.8.8.0/24'), the origin as, and the bgp prefix it matches\n\n    asndb.get_as_prefixes(1128)\n    # returns ['130.161.0.0/16', '131.180.0.0/16', '145.94.0.0/16'], tu-delft prefixes\n\n\nipasn data files\n================\nipasn data files are a long list of prefixes used to lookup as number for ips. an excerpt from such a file looks\nlike this: ::\n\n    ; ip-asn32-dat file\n    ; original file : <path to a rib file>\n    ; converted on  : tue may 13 22:03:05 2014\n    ; cidrs         : 512490\n    ;\n    1.0.0.0/24\t15169\n    1.0.128.0/17\t9737\n    1.0.128.0/18\t9737\n    1.0.128.0/19\t9737\n    1.0.129.0/24\t23969\n    ...\n\nipasn data files can be created by downloading mrt/rib bgp archives from routeviews (or similar sources),\nand parsing them using provided scripts that tail the bgp as-path. this can be done simply as follows: ::\n\n    pyasn_util_download.py --latest  # or --latestv46 \n    pyasn_util_convert.py --single <downloaded rib file> <ipasn_db_file_name>\n\n\n**note:** these scripts are by default installed to ``/usr/local/bin`` and can be executed directly. if you installed\nthe package to a user directory (using `--user`), these scripts might not be on the path. in such a case invoke them from \nthe directory in which they have been copied (e.g. ``~/.local/bin``).\n\n**new in v1.6:** to save disk space, you can gzip ipasn data files. the load time will be slighlty longer.\n\n\nperformance tip\n===============\ninitial loading of a ipasn data file is the most heavy operation of the package. for fast lookups using multiple\nipasn data files, for instance for historical lookups on multiple dates, we recommend caching of loaded data files\nfor better performance.\n\n\nuninstalling pyasn\n==================\nyou can remove *pyasn* as follows: ::\n\n    pip3 uninstall pyasn\n\n\nif this command generates an error, update your `pip` package to the latest version first.\n\n\n\npackage structure\n=================\nthe main portions of the directory tree are as follows: ::\n\n    .\n    \u251c\u2500\u2500 pyasn/__init__.py       # python code of the main pyasn module\n    \u251c\u2500\u2500 pyasn/pyasn_radix.c     # c extension code (python radix module with bulk load)\n    \u251c\u2500\u2500 pyasn/_radix/*          # c extension code (based on original radix code from mrtd)\n    \u251c\u2500\u2500 pyasn/mrtx.py           # python module used to convert mrt files to pyasn db files\n    \u251c\u2500\u2500 pyasn-utils/*.py        # scripts to download & convert bgp mrt dumps to ipasn databases\n    \u251c\u2500\u2500 data/                   # test resources and some sample dbs to use\n    \u251c\u2500\u2500 tests/                  # tests\n    \u2514\u2500\u2500 setup.py                # standard setup.py for installation/testing/etc.\n\n\n\ntesting pyasn sources\n=====================\na number of unit tests are provided in the ``tests/`` directory when downlading from source. the tests can be run using the `pytest` command (`pytest-3` in ubuntu).  \n\nthis release has been tested under python version 2.6, 2.7, and 3.3 to 3.11. we appreciate contributions towards\ntesting and extending *pyasn*!\n\n\nlicense & acknowledgments\n=========================\n*pyasn* is licensed under the mit license.\n\nit extends code from py-radix (michael j. schultz and damien miller),  and improves upon it in several ways, for\ninstance in lowering memory usage and adding bulk prefix/origin load. the underlying radix tree implementation is\ntaken (and modified) from mrtd. these are all subject to their respective licenses.  please see the license file\nfor details.\n\nthanks to dr. chris lee (of shadowserver) for proposing the use of radix trees.\n\na handful of github developers have contributed features and bug fixes to the latest releases.\nmany thanks to all of them.\n",
+  "docs_url": null,
+  "keywords": "ip asn autonomous system bgp whois prefix radix python routing networking",
+  "license": "mit",
+  "name": "pyasn",
+  "package_url": "https://pypi.org/project/pyasn/",
+  "project_url": "https://pypi.org/project/pyasn/",
+  "project_urls": {
+    "Homepage": "https://github.com/hadiasghari/pyasn"
+  },
+  "release_url": "https://pypi.org/project/pyasn/1.6.2/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "offline ip address to autonomous system number lookup module.",
+  "version": "1.6.2",
+  "releases": [],
+  "developers": [
+    "hadi_asghari",
+    "hd.asghari@gmail.com"
+  ],
+  "kwds": "pyasn_radix python3 python bgp addresses",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pyasn",
+  "homepage": "https://github.com/hadiasghari/pyasn",
+  "release_count": 7,
+  "dependency_ids": []
+}

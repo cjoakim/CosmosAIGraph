@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon elastic file system construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\n[amazon elastic file system](https://docs.aws.amazon.com/efs/latest/ug/whatisefs.html) (amazon efs) provides a simple, scalable,\nfully managed elastic nfs file system for use with aws cloud services and on-premises resources.\namazon efs provides file storage in the aws cloud. with amazon efs, you can create a file system,\nmount the file system on an amazon ec2 instance, and then read and write data to and from your file system.\n\nthis module is part of the [aws cloud development kit](https://github.com/aws/aws-cdk) project.\n\n## file systems\n\namazon efs provides elastic, shared file storage that is posix-compliant. the file system you create\nsupports concurrent read and write access from multiple amazon ec2 instances and is accessible from\nall of the availability zones in the aws region where it is created. learn more about [efs file systems](https://docs.aws.amazon.com/efs/latest/ug/creating-using.html)\n\n### create an amazon efs file system\n\na virtual private cloud (vpc) is required to create an amazon efs file system.\nthe following example creates a file system that is encrypted at rest, running in `general purpose`\nperformance mode, and `bursting` throughput mode and does not transition files to the infrequent\naccess (ia) storage class.\n\n```python\nfile_system = efs.filesystem(self, \"myefsfilesystem\",\n    vpc=ec2.vpc(self, \"vpc\"),\n    lifecycle_policy=efs.lifecyclepolicy.after_14_days,  # files are not transitioned to infrequent access (ia) storage by default\n    performance_mode=efs.performancemode.general_purpose,  # default\n    out_of_infrequent_access_policy=efs.outofinfrequentaccesspolicy.after_1_access\n)\n```\n\n\u26a0\ufe0f an amazon efs file system's performance mode can't be changed after the file system has been created.\nupdating this property will replace the file system.\n\nany file system that has been created outside the stack can be imported into your cdk app.\n\nuse the `fromfilesystemattributes()` api to import an existing file system.\nhere is an example of giving a role write permissions on a file system.\n\n```python\nimport aws_cdk.aws_iam as iam\n\n\nimported_file_system = efs.filesystem.from_file_system_attributes(self, \"existingfs\",\n    file_system_id=\"fs-12345678\",  # you can also use filesystemarn instead of filesystemid.\n    security_group=ec2.securitygroup.from_security_group_id(self, \"sg\", \"sg-123456789\",\n        allow_all_outbound=false\n    )\n)\n```\n\n### permissions\n\nif you need to grant file system permissions to another resource, you can use the `.grant()` api.\nas an example, the following code gives `elasticfilesystem:clientwrite` permissions to an iam role.\n\n```python\nrole = iam.role(self, \"role\",\n    assumed_by=iam.anyprincipal()\n)\n\nfile_system.grant(role, \"elasticfilesystem:clientwrite\")\n```\n\n### access point\n\nan access point is an application-specific view into an efs file system that applies an operating\nsystem user and group, and a file system path, to any file system request made through the access\npoint. the operating system user and group override any identity information provided by the nfs\nclient. the file system path is exposed as the access point's root directory. applications using\nthe access point can only access data in its own directory and below. to learn more, see [mounting a file system using efs access points](https://docs.aws.amazon.com/efs/latest/ug/efs-access-points.html).\n\nuse the `addaccesspoint` api to create an access point from a filesystem.\n\n```python\nfile_system.add_access_point(\"accesspoint\")\n```\n\nby default, when you create an access point, the root(`/`) directory is exposed to the client\nconnecting to the access point. you can specify a custom path with the `path` property.\n\nif `path` does not exist, it will be created with the settings defined in the `creationinfo`.\nsee [creating access points](https://docs.aws.amazon.com/efs/latest/ug/create-access-point.html) for more details.\n\nany access point that has been created outside the stack can be imported into your cdk app.\n\nuse the `fromaccesspointattributes()` api to import an existing access point.\n\n```python\nefs.accesspoint.from_access_point_attributes(self, \"ap\",\n    access_point_id=\"fsap-1293c4d9832fo0912\",\n    file_system=efs.filesystem.from_file_system_attributes(self, \"efs\",\n        file_system_id=\"fs-099d3e2f\",\n        security_group=ec2.securitygroup.from_security_group_id(self, \"sg\", \"sg-51530134\")\n    )\n)\n```\n\n\u26a0\ufe0f notice: when importing an access point using `fromaccesspointattributes()`, you must make sure\nthe mount targets are deployed and their lifecycle state is `available`. otherwise, you may encounter\nthe following error when deploying:\n\n> efs file system <arn of efs> referenced by access point <arn of access point of efs> has\n> mount targets created in all availability zones the function will execute in, but not all\n> are in the available life cycle state yet. please wait for them to become available and\n> try the request again.\n\n### connecting\n\nto control who can access the efs, use the `.connections` attribute. efs has\na fixed default port, so you don't need to specify the port:\n\n```python\nfile_system.connections.allow_default_port_from(instance)\n```\n\nlearn more about [managing file system network accessibility](https://docs.aws.amazon.com/efs/latest/ug/manage-fs-access.html)\n\n### mounting the file system using user data\n\nafter you create a file system, you can create mount targets. then you can mount the file system on\nec2 instances, containers, and lambda functions in your virtual private cloud (vpc).\n\nthe following example automatically mounts a file system during instance launch.\n\n```python\nfile_system.connections.allow_default_port_from(instance)\n\ninstance.user_data.add_commands(\"yum check-update -y\", \"yum upgrade -y\", \"yum install -y amazon-efs-utils\", \"yum install -y nfs-utils\", \"file_system_id_1=\" + file_system.file_system_id, \"efs_mount_point_1=/mnt/efs/fs1\", \"mkdir -p \\\"${efs_mount_point_1}\\\"\", \"test -f \\\"/sbin/mount.efs\\\" && echo \\\"${file_system_id_1}:/ ${efs_mount_point_1} efs defaults,_netdev\\\" >> /etc/fstab || \" + \"echo \\\"${file_system_id_1}.efs.\" + stack.of(self).region + \".amazonaws.com:/ ${efs_mount_point_1} nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport,_netdev 0 0\\\" >> /etc/fstab\", \"mount -a -t efs,nfs4 defaults\")\n```\n\nlearn more about [mounting efs file systems](https://docs.aws.amazon.com/efs/latest/ug/mounting-fs.html)\n\n### deleting\n\nsince file systems are stateful resources, by default the file system will not be deleted when your\nstack is deleted.\n\nyou can configure the file system to be destroyed on stack deletion by setting a `removalpolicy`\n\n```python\nfile_system = efs.filesystem(self, \"efsfilesystem\",\n    vpc=ec2.vpc(self, \"vpc\"),\n    removal_policy=removalpolicy.destroy\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-efs",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-efs/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-efs/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-efs/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-ec2 (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.cloud-assembly-schema (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "aws-cdk.cx-api (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::efs",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk elasticfilesystem efsfilesystem aws efs",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_efs",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_ec2",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.cloud_assembly_schema",
+    "pypi_aws_cdk.core",
+    "pypi_aws_cdk.cx_api",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "topic :: software development :: testing"
+  ],
+  "description": "httmock\n=======\n\na mocking library for `requests` for python 2.7 and 3.4+.\n\ninstallation\n------------\n\n    pip install httmock\n\nor, if you are a gentoo user:\n\n    emerge dev-python/httmock\n\nusage\n-----\nyou can use it to mock third-party apis and test libraries that use `requests` internally, conditionally using mocked replies with the `urlmatch` decorator:\n\n```python\nfrom httmock import urlmatch, httmock\nimport requests\n\n@urlmatch(netloc=r'(.*\\.)?google\\.com$')\ndef google_mock(url, request):\n    return 'feeling lucky, punk?'\n\nwith httmock(google_mock):\n    r = requests.get('http://google.com/')\nprint r.content  # 'feeling lucky, punk?'\n```\n\nthe `all_requests` decorator doesn't conditionally block real requests. if you return a dictionary, it will map to the `requests.response` object returned:\n\n```python\nfrom httmock import all_requests, httmock\nimport requests\n\n@all_requests\ndef response_content(url, request):\n\treturn {'status_code': 200,\n\t        'content': 'oh hai'}\n\nwith httmock(response_content):\n\tr = requests.get('https://foo_bar')\n\nprint r.status_code\nprint r.content\n```\n\nif you pass in `set-cookie` headers, `requests.response.cookies` will contain the values. you can also use `response` method directly instead of returning a dict:\n\n```python\nfrom httmock import all_requests, response, httmock\nimport requests\n\n@all_requests\ndef response_content(url, request):\n\theaders = {'content-type': 'application/json',\n\t           'set-cookie': 'foo=bar;'}\n\tcontent = {'message': 'api rate limit exceeded'}\n\treturn response(403, content, headers, none, 5, request)\n\nwith httmock(response_content):\n\tr = requests.get('https://api.github.com/users/whatever')\n\nprint r.json().get('message')\nprint r.cookies['foo']\n```\n\n",
+  "docs_url": null,
+  "keywords": "requests,testing,mock",
+  "license": "apache-2.0",
+  "name": "httmock",
+  "package_url": "https://pypi.org/project/httmock/",
+  "project_url": "https://pypi.org/project/httmock/",
+  "project_urls": {
+    "Homepage": "https://github.com/patrys/httmock"
+  },
+  "release_url": "https://pypi.org/project/httmock/1.4.0/",
+  "requires_dist": [
+    "requests (>=1.0.0)"
+  ],
+  "requires_python": "",
+  "summary": "a mocking library for requests.",
+  "version": "1.4.0",
+  "releases": [],
+  "developers": [
+    "patryk_zawadzki",
+    "patrys@room-303.com"
+  ],
+  "kwds": "google_mock mocking mock mocked all_requests",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_httmock",
+  "homepage": "https://github.com/patrys/httmock",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: information technology",
+    "license :: other/proprietary license",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: sql",
+    "topic :: database",
+    "topic :: scientific/engineering :: information analysis",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: application frameworks",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "sqlalchemy dialect for exasol db\n================================\n\n\n.. image:: https://github.com/exasol/sqlalchemy-exasol/actions/workflows/ci-cd.yml/badge.svg?branch=master&event=push\n    :target: https://github.com/exasol/sqlalchemy-exasol/actions/workflows/ci-cd.yml\n     :alt: ci status\n\n.. image:: https://img.shields.io/pypi/v/sqlalchemy_exasol\n     :target: https://pypi.org/project/sqlalchemy-exasol/\n     :alt: pypi version\n\n.. image:: https://img.shields.io/pypi/pyversions/sqlalchemy-exasol\n    :target: https://pypi.org/project/sqlalchemy-exasol\n    :alt: pypi - python version\n\n.. image:: https://img.shields.io/badge/exasol-7.1.9%20%7c%207.0.18-green\n    :target: https://www.exasol.com/\n    :alt: exasol - supported version(s)\n\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg\n    :target: https://github.com/psf/black\n    :alt: formatter - black\n\n.. image:: https://img.shields.io/badge/imports-isort-ef8336.svg\n    :target: https://pycqa.github.io/isort/\n    :alt: formatter - isort\n\n.. image:: https://img.shields.io/badge/pylint-6.4-yellowgreen\n    :target: https://github.com/pycqa/pylint\n    :alt: pylint\n\n.. image:: https://img.shields.io/pypi/l/sqlalchemy-exasol\n     :target: https://opensource.org/licenses/bsd-2-clause\n     :alt: license\n\n.. image:: https://img.shields.io/github/last-commit/exasol/sqlalchemy-exasol\n     :target: https://pypi.org/project/sqlalchemy-exasol/\n     :alt: last commit\n\n.. image:: https://img.shields.io/pypi/dm/sqlalchemy-exasol\n    :target: https://pypi.org/project/sqlalchemy-exasol\n    :alt: pypi - downloads\n\n\nhow to get started\n------------------\n\ncurrently, sqlalchemy-exasol supports multiple dialects. the core difference\nbeing if the dialect is :code:`odbc` or :code:`websocket` based.\n\ngenerally, we advise to use the websocket based dialect, because odbc\nbased dialects require a good understanding of (unix)odbc and the setup is\nsignificant more complicated.\n\n\nturbodbc support\n````````````````\n\n.. warning::\n\n    maintenance of this feature is on hold. also it is very likely that turbodbc support will be dropped in future versions.\n\n- you can use turbodbc with sqlalchemy_exasol if you use a python version >= 3.8.\n- multi row update is not supported, see\n  `test/test_update.py <test/test_update.py>`_ for an example\n\n\nmeet the system requirements\n````````````````````````````\n- python\n- an exasol db (e.g. `docker-db <test_docker_image_>`_ or a `cloud instance <test_drive_>`_)\n\nodbc-based dialects additionally require the following to be available and set up:\n\n- the packages unixodbc and unixodbc-dev >= 2.2.14\n- the exasol `odbc driver <odbc_driver_>`_\n- the odbc.ini and odbcinst.ini configurations files setup\n\n\nsetup your python project and install sqlalchemy-exasol\n```````````````````````````````````````````````````````\n\n.. code-block:: shell\n\n    $ pip install sqlalchemy-exasol\n\nfor turbodbc support:\n\n.. code-block:: shell\n\n    $ pip install sqlalchemy-exasol[turbodbc]\n\ntalk to the exasol db using sqlalchemy\n``````````````````````````````````````\n\n**websocket based dialect:**\n\nfor more details regarding the websocket support checkout the section: \"what is websocket support?\"\n\n.. code-block:: python\n\n\tfrom sqlalchemy import create_engine\n\turl = \"exa+websocket://a_user:a_password@192.168.1.2..8:1234/my_schema?connectionlcall=en_us.utf-8\"\n\te = create_engine(url)\n\tr = e.execute(\"select 42 from dual\").fetchall()\n\n\n**pyodbc (odbc based dialect):**\n\n.. code-block:: python\n\n\tfrom sqlalchemy import create_engine\n\turl = \"exa+pyodbc://a_user:a_password@192.168.1.2..8:1234/my_schema?connectionlcall=en_us.utf-8&driver=exaodbc\"\n\te = create_engine(url)\n\tr = e.execute(\"select 42 from dual\").fetchall()\n\n**turbodbc (odbc based dialect):**\n\n.. code-block:: python\n\n\tfrom sqlalchemy import create_engine\n\turl = \"exa+turbodbc://a_user:a_password@192.168.1.2..8:1234/my_schema?connectionlcall=en_us.utf-8&driver=exaodbc\"\n\te = create_engine(url)\n\tr = e.execute(\"select 42 from dual\").fetchall()\n\n\nthe dialect supports two types of connection urls creating an engine. a dsn (data source name) mode and a host mode:\n\n.. list-table::\n\n    * - type\n      - example\n    * - dsn url\n      - 'exa+pyodbc://user:pwd@exa_test'\n    * - host url\n      - 'exa+pyodbc://user:pwd@192.168.14.227..228:1234/my_schema?parameter'\n\nfeatures\n++++++++\n\n- select, insert, update, delete statements\n\nnotes\n+++++\n\n- schema name and parameters are optional for the host url\n- at least on linux/unix systems it has proven valuable to pass 'connectionlcall=en_us.utf-8' as a url parameter. this will make sure that the client process (python) and the exasol driver (utf-8 internal) know how to interpret code pages correctly.\n- always use all lower-case identifiers for schema, table and column names. sqlalchemy treats all lower-case identifiers as case-insensitive, the dialect takes care of transforming the identifier into a case-insensitive representation of the specific database (in case of exasol this is upper-case as for oracle)\n- as of exasol client driver version 4.1.2 you can pass the flag 'inttypesinresultsifpossible=y' in the connection string (or configure it in your dsn). this will convert decimal data types to integer-like data types. creating integers is a factor three faster in python than creating decimals.\n\n.. _developer guide: https://github.com/exasol/sqlalchemy-exasol/blob/master/doc/developer_guide/developer_guide.rst\n.. _odbc_driver: https://docs.exasol.com/db/latest/connect_exasol/drivers/odbc/odbc_linux.htm\n.. _test_drive: https://www.exasol.com/test-it-now/cloud/\n.. _test_docker_image: https://github.com/exasol/docker-db\n\ndevelopment & testing\n`````````````````````\nsee `developer guide`_\n\nwhat is websocket support?\n``````````````````````````\nin the context of sqla and exasol, websocket support means that an sqla dialect\nsupporting the `exasol websocket protocol <https://github.com/exasol/websocket-api>`_\nis provided.\n\nusing the websocket based protocol instead over odbc will provide various advantages:\n\n* less system dependencies\n* easier to use than odbc based driver(s)\n* lock free metadata calls etc.\n\nfor further details `why a websockets api  <https://github.com/exasol/websocket-api#why-a-websockets-api>`_.\n\nexample usage(s)\n++++++++++++++++++\n\n.. code-block:: python\n\n    from sqla import create_engine\n\n    engine = create_engine(\"exa+websocket://sys:exasol@127.0.0.1:8888\")\n    with engine.connect() as con:\n        ...\n\n.. code-block:: python\n\n    from sqla import create_engine\n\n    # attention:\n    # in terms of security it is never a good idea to turn of certificate validation!!\n    # in rare cases it may be handy for non-security related reasons.\n    # that said, if you are not a 100% sure about your scenario, stick with the\n    # secure defaults.\n    # in most cases, having a valid certificate and/or configuring the truststore(s)\n    # appropriately is the best/correct solution.\n    engine = create_engine(\"exa+websocket://sys:exasol@127.0.0.1:8888?sslcertificate=ssl_verify_none\")\n    with engine.connect() as con:\n        ...\n\nsupported connection parameters\n+++++++++++++++++++++++++++++++\n.. list-table::\n\n   * - parameter\n     - values\n     - comment\n   * - encryption\n     - y, yes, n, no\n     - y or yes enable encryption (tls) default, n or no disable encryption\n   * - sslcertificate\n     - ssl_verify_none\n     - disable certificate validation\n\n\nknown issues\n++++++++++++\n* insert\n    - insert multiple empty rows via prepared statements does not work in all cases\n",
+  "docs_url": null,
+  "keywords": "exasol,sql,sqlalchemy,data science,database",
+  "license": "bsd",
+  "name": "sqlalchemy_exasol",
+  "package_url": "https://pypi.org/project/sqlalchemy_exasol/",
+  "project_url": "https://pypi.org/project/sqlalchemy_exasol/",
+  "project_urls": {
+    "Changelog": "https://exasol.github.io/sqlalchemy-exasol/changelog.html",
+    "Documentation": "https://exasol.github.io/sqlalchemy-exasol/",
+    "Homepage": "https://www.exasol.com/",
+    "Issues": "https://github.com/exasol/sqlalchemy-exasol/issues",
+    "Source": "https://github.com/exasol/sqlalchemy-exasol"
+  },
+  "release_url": "https://pypi.org/project/sqlalchemy_exasol/4.6.3/",
+  "requires_dist": [
+    "pyodbc (>=4.0.34,<6)",
+    "packaging (>=21.3)",
+    "pyexasol (>=0.25.1,<0.26.0)",
+    "sqlalchemy (>=1.4,<2)",
+    "turbodbc (==4.5.4) ; extra == \"turbodbc\""
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "exasol dialect for sqlalchemy",
+  "version": "4.6.3",
+  "releases": [],
+  "developers": [
+    "exasol_ag",
+    "opensource@exasol.com"
+  ],
+  "kwds": "sqlalchemy_exasol sqlalchemy connect_exasol my_schema sqla",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_sqlalchemy_exasol",
+  "homepage": "",
+  "release_count": 48,
+  "dependency_ids": [
+    "pypi_packaging",
+    "pypi_pyexasol",
+    "pypi_pyodbc",
+    "pypi_sqlalchemy",
+    "pypi_turbodbc"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "intended audience :: developers",
+    "natural language :: english",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# sceptre shell command resolver\n\nthis resolver can be used to execute any shell command.\n\n## why?\n\nthis resolver is handy, because it allows you to dynamically resolve parameters at runtime.\nthe beautiful thing about it is that it's infintely extensible! you can use it to connect\nany command line tool to sceptre.\n\nuse it in conjunction with the typical unix tools (cat, cut, grep etc...) or third party\nones (vault, op, etc...)\n\nuse the `!rcmd` tag to activate the resolver. you can also use pipe commands, and generic\nbash (maybe powershell too but i haven't tried it).\n\nthe yaml tag `!cmd` is already used by sceptre hooks, unfortunately it wasn't possible to use\nthe same yaml tag for this custom resolver, so the tag `!rcmd` was used instead.\n\n## installation\n\n```\n# to install directly from pypi\npip install sceptre-cmd-resolver\n\n# to install from this git repo\npip install git+https://github.com/sceptre/sceptre-resolver-cmd.git\n```\n\n## usage / examples\n\nuse the `!rcmd` tag to activate the resolver. you can also use pipe commands, and generic\nbash (perhaps even powershell but i haven't tested it).\n\n```yaml\n# resolve the contents of a file with cat\nparameters:\n  databasepassword: !rcmd cat .env/dev/password\n```\n\n```yaml\n# resolve data from a json file with cat + jq\nparameters:\n  databasepassword: !rcmd cat .env/data | jq -r '.passwords.dev'\n```\n\n```yaml\n# resolve a secret in vault using the vault cli (you must be logged in!)\nparameters:\n  databasepassword: !rcmd vault kv get -field=password myapp/database/dev\n```\n\n```yaml\nparameters:\n  # resolve the ec2 ami image id to the latest official version of ubuntu 20.04 at deploy time\n  ec2imageidubuntu: !rcmd >-\n    aws ssm get-parameters\n      --region eu-west-2\n      --names /aws/service/canonical/ubuntu/server/20.04/stable/current/amd64/hvm/ebs-gp2/ami-id\n      --query 'parameters[0].[value]' --output text\n\n  # resolve the ec2 ami image id to the latest official version windows server 2019 at deploy time\n  ec2imageidwindows: !rcmd >-\n    aws ssm get-parameters\n      --region eu-west-2\n      --names /aws/service/ami-windows-latest/windows_server-2019-english-full-base\n      | jq -r '.parameters[0].value' | jq -r '.image_id'\n```\n\n```yaml\n# add a human readable comment with the deployment date\nparameters:\n  deploynote: !rcmd echo \"deployed by `whoami` on `date` :-)\"\n```\n\n```yaml\n# execute the command with the same aws profile provided to sceptre\nparameters:\n  canonicaluserid: !rcmd\n    command: \"aws s3api list-buckets --query owner.id --output text\"\n```\n\n```yaml\n# override the command execution with a specific aws profile, region, and/or sceptre_role\nparameters:\n  canonicaluserid: !rcmd\n    command: \"aws s3api list-buckets --query owner.id --output text\"\n    profile: \"my-profile\"\n    region: \"us-west-2\"\n    sceptre_role: \"arn:aws:iam::123456:role/my-role-to-override-the-stack-role\"\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "sceptre,sceptre-resolver",
+  "license": "apache2",
+  "name": "sceptre-cmd-resolver",
+  "package_url": "https://pypi.org/project/sceptre-cmd-resolver/",
+  "project_url": "https://pypi.org/project/sceptre-cmd-resolver/",
+  "project_urls": {
+    "Homepage": "https://github.com/Sceptre/sceptre-resolver-cmd"
+  },
+  "release_url": "https://pypi.org/project/sceptre-cmd-resolver/2.0.0/",
+  "requires_dist": [
+    "sceptre (>=4.0.1)",
+    "pytest (>=3.2) ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "sceptre resolver to execute generic shell commands",
+  "version": "2.0.0",
+  "releases": [],
+  "developers": [
+    "luke_plausin",
+    "sceptre@cloudreach.com"
+  ],
+  "kwds": "powershell resolver commands pip sceptre_role",
+  "license_kwds": "apache2",
+  "libtype": "pypi",
+  "id": "pypi_sceptre_cmd_resolver",
+  "homepage": "https://github.com/sceptre/sceptre-resolver-cmd",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_pytest",
+    "pypi_sceptre"
+  ]
+}

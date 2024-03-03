@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# ftfy: fixes text for you\n\n[![pypi package](https://badge.fury.io/py/ftfy.svg)](https://badge.fury.io/py/ftfy)\n[![docs](https://readthedocs.org/projects/ftfy/badge/?version=latest)](https://ftfy.readthedocs.org/en/latest/)\n\n```python\n\n>>> from ftfy import fix_encoding\n>>> print(fix_encoding(\"(\u00e0\u00b8\u2021'\u00e2\u0153\u00a3')\u00e0\u00b8\u2021\"))\n(\u0e07'\u2323')\u0e07\n\n```\n\nthe full documentation of ftfy is available at [ftfy.readthedocs.org](https://ftfy.readthedocs.org). the documentation covers a lot more than this readme, so here are\nsome links into it:\n\n- [fixing problems and getting explanations](https://ftfy.readthedocs.io/en/latest/explain.html)\n- [configuring ftfy](https://ftfy.readthedocs.io/en/latest/config.html)\n- [encodings ftfy can handle](https://ftfy.readthedocs.io/en/latest/encodings.html)\n- [\u201cfixer\u201d functions](https://ftfy.readthedocs.io/en/latest/fixes.html)\n- [is ftfy an encoding detector?](https://ftfy.readthedocs.io/en/latest/detect.html)\n- [heuristics for detecting mojibake](https://ftfy.readthedocs.io/en/latest/heuristic.html)\n- [support for \u201cbad\u201d encodings](https://ftfy.readthedocs.io/en/latest/bad_encodings.html)\n- [command-line usage](https://ftfy.readthedocs.io/en/latest/cli.html)\n- [citing ftfy](https://ftfy.readthedocs.io/en/latest/cite.html)\n\n## testimonials\n\n- \u201cmy life is livable again!\u201d\n  \u2014 [@planarrowspace](https://twitter.com/planarrowspace)\n- \u201ca handy piece of magic\u201d\n  \u2014 [@simonw](https://twitter.com/simonw)\n- \u201csaved me a large amount of frustrating dev work\u201d\n  \u2014 [@iancal](https://twitter.com/iancal)\n- \u201cftfy did the right thing right away, with no faffing about. excellent work, solving a very tricky real-world (whole-world!) problem.\u201d\n  \u2014 brennan young\n- \u201ci have no idea when i\u2019m gonna need this, but i\u2019m definitely bookmarking it.\u201d\n  \u2014 [/u/ocrow](https://reddit.com/u/ocrow)\n- \u201c9.2/10\u201d\n  \u2014 [pylint](https://bitbucket.org/logilab/pylint/)\n\n## what it does\n\nhere are some examples (found in the real world) of what ftfy can do:\n\nftfy can fix mojibake (encoding mix-ups), by detecting patterns of characters that were clearly meant to be utf-8 but were decoded as something else:\n\n    >>> import ftfy\n    >>> ftfy.fix_text('\u00e2\u0153\u201d no problems')\n    '\u2714 no problems'\n\ndoes this sound impossible? it's really not. utf-8 is a well-designed encoding that makes it obvious when it's being misused, and a string of mojibake usually contains all the information we need to recover the original string.\n\nftfy can fix multiple layers of mojibake simultaneously:\n\n    >>> ftfy.fix_text('the mona lisa doesn\u00e3\u0192\u00e2\u00a2\u00e3\u00a2\u00e2\u20ac\u0161\u00e2\u00ac\u00e3\u00a2\u00e2\u20ac\u017e\u00e2\u00a2t have eyebrows.')\n    \"the mona lisa doesn't have eyebrows.\"\n\nit can fix mojibake that has had \"curly quotes\" applied on top of it, which cannot be consistently decoded until the quotes are uncurled:\n\n    >>> ftfy.fix_text(\"l\u2019humanit\u00e3\u00a9\")\n    \"l'humanit\u00e9\"\n\nftfy can fix mojibake that would have included the character u+a0 (non-breaking space), but the u+a0 was turned into an ascii space and then combined with another following space:\n\n    >>> ftfy.fix_text('\u00e3\\xa0 perturber la r\u00e3\u00a9flexion')\n    '\u00e0 perturber la r\u00e9flexion'\n    >>> ftfy.fix_text('\u00e3 perturber la r\u00e3\u00a9flexion')\n    '\u00e0 perturber la r\u00e9flexion'\n\nftfy can also decode html entities that appear outside of html, even in cases where the entity has been incorrectly capitalized:\n\n    >>> # by the html 5 standard, only 'p&eacute;rez' is acceptable\n    >>> ftfy.fix_text('p&eacute;rez')\n    'p\u00e9rez'\n  \nthese fixes are not applied in all cases, because ftfy has a strongly-held goal of avoiding false positives -- it should never change correctly-decoded text to something else.\n\nthe following text could be encoded in windows-1252 and decoded in utf-8, and it would decode as 'marqu\u028c'. however, the original text is already sensible, so it is unchanged.\n\n    >>> ftfy.fix_text('il y marqu\u00e9\u2026')\n    'il y marqu\u00e9\u2026'\n\n## installing\n\nftfy is a python 3 package that can be installed using `pip`:\n\n    pip install ftfy\n\n(or use `pip3 install ftfy` on systems where python 2 and 3 are both globally\ninstalled and `pip` refers to python 2.)\n\n### local development\n\nftfy is developed using `poetry`. its `setup.py` is vestigial and is not the\nrecommended way to install it.\n\n[install poetry](https://python-poetry.org/docs/master/#installing-with-the-official-installer), check out this repository, and run `poetry install` to install ftfy for local development, such as experimenting with the heuristic or running tests.\n\n## who maintains ftfy?\n\ni'm robyn speer, also known as elia robyn lake. you can find me\n[on github](https://github.com/rspeer) or [cohost](https://cohost.org/arborelia).\n\n## citing ftfy\n\nftfy has been used as a crucial data processing step in major nlp research.\n\nit's important to give credit appropriately to everyone whose work you build on\nin research. this includes software, not just high-status contributions such as\nmathematical models. all i ask when you use ftfy for research is that you cite\nit.\n\nftfy has a citable record [on zenodo](https://zenodo.org/record/2591652).\na citation of ftfy may look like this:\n\n    robyn speer. (2019). ftfy (version 5.5). zenodo.\n    http://doi.org/10.5281/zenodo.2591652\n\nin bibtex format, the citation is::\n\n    @misc{speer-2019-ftfy,\n      author       = {robyn speer},\n      title        = {ftfy},\n      note         = {version 5.5},\n      year         = 2019,\n      howpublished = {zenodo},\n      doi          = {10.5281/zenodo.2591652},\n      url          = {https://doi.org/10.5281/zenodo.2591652}\n    }\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "ftfy",
+  "package_url": "https://pypi.org/project/ftfy/",
+  "project_url": "https://pypi.org/project/ftfy/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/ftfy/6.1.3/",
+  "requires_dist": [
+    "wcwidth (>=0.2.12,<0.3.0)"
+  ],
+  "requires_python": ">=3.8,<4",
+  "summary": "fixes mojibake and other problems with unicode, after the fact",
+  "version": "6.1.3",
+  "releases": [],
+  "developers": [
+    "robyn_speer",
+    "rspeer@arborelia.net"
+  ],
+  "kwds": "fix_encoding fix_text bad_encodings encoding unicode",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_ftfy",
+  "homepage": "",
+  "release_count": 49,
+  "dependency_ids": [
+    "pypi_wcwidth"
+  ]
+}

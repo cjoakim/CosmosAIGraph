@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: debuggers"
+  ],
+  "description": "# pysnooper - never use print for debugging again #\r\n\r\n**pysnooper** is a poor man's debugger. if you've used bash, it's like `set -x` for python, except it's fancier.\r\n\r\nyour story: you're trying to figure out why your python code isn't doing what you think it should be doing. you'd love to use a full-fledged debugger with breakpoints and watches, but you can't be bothered to set one up right now.\r\n\r\nyou want to know which lines are running and which aren't, and what the values of the local variables are.\r\n\r\nmost people would use `print` lines, in strategic locations, some of them showing the values of variables.\r\n\r\n**pysnooper** lets you do the same, except instead of carefully crafting the right `print` lines, you just add one decorator line to the function you're interested in. you'll get a play-by-play log of your function, including which lines ran and   when, and exactly when local variables were changed.\r\n\r\nwhat makes **pysnooper** stand out from all other code intelligence tools? you can use it in your shitty, sprawling enterprise codebase without having to do any setup. just slap the decorator on, as shown below, and redirect the output to a dedicated log file by specifying its path as the first argument.\r\n\r\n# example #\r\n\r\nwe're writing a function that converts a number to binary, by returning a list of bits. let's snoop on it by adding the `@pysnooper.snoop()` decorator:\r\n\r\n```python\r\nimport pysnooper\r\n\r\n@pysnooper.snoop()\r\ndef number_to_bits(number):\r\n    if number:\r\n        bits = []\r\n        while number:\r\n            number, remainder = divmod(number, 2)\r\n            bits.insert(0, remainder)\r\n        return bits\r\n    else:\r\n        return [0]\r\n\r\nnumber_to_bits(6)\r\n```\r\nthe output to stderr is:\r\n\r\n![](https://i.imgur.com/trf3vvj.jpg)\r\n\r\nor if you don't want to trace an entire function, you can wrap the relevant part in a `with` block:\r\n\r\n```python\r\nimport pysnooper\r\nimport random\r\n\r\ndef foo():\r\n    lst = []\r\n    for i in range(10):\r\n        lst.append(random.randrange(1, 1000))\r\n\r\n    with pysnooper.snoop():\r\n        lower = min(lst)\r\n        upper = max(lst)\r\n        mid = (lower + upper) / 2\r\n        print(lower, mid, upper)\r\n\r\nfoo()\r\n```\r\n\r\nwhich outputs something like:\r\n\r\n```\r\nnew var:....... i = 9\r\nnew var:....... lst = [681, 267, 74, 832, 284, 678, ...]\r\n09:37:35.881721 line        10         lower = min(lst)\r\nnew var:....... lower = 74\r\n09:37:35.882137 line        11         upper = max(lst)\r\nnew var:....... upper = 832\r\n09:37:35.882304 line        12         mid = (lower + upper) / 2\r\n74 453.0 832\r\nnew var:....... mid = 453.0\r\n09:37:35.882486 line        13         print(lower, mid, upper)\r\nelapsed time: 00:00:00.000344\r\n```\r\n\r\n# features #\r\n\r\nif stderr is not easily accessible for you, you can redirect the output to a file:\r\n\r\n```python\r\n@pysnooper.snoop('/my/log/file.log')\r\n```\r\n\r\nyou can also pass a stream or a callable instead, and they'll be used.\r\n\r\nsee values of some expressions that aren't local variables:\r\n\r\n```python\r\n@pysnooper.snoop(watch=('foo.bar', 'self.x[\"whatever\"]'))\r\n```\r\n\r\nshow snoop lines for functions that your function calls:\r\n\r\n```python\r\n@pysnooper.snoop(depth=2)\r\n```\r\n\r\n**see [advanced usage](https://github.com/cool-rr/pysnooper/blob/master/advanced_usage.md) for more options.** <------\r\n\r\n\r\n# installation with pip #\r\n\r\nthe best way to install **pysnooper** is with pip:\r\n\r\n```console\r\n$ pip install pysnooper\r\n```\r\n\r\n# other installation options #\r\n\r\nconda with conda-forge channel:\r\n\r\n```console\r\n$ conda install -c conda-forge pysnooper\r\n```\r\n\r\narch linux:\r\n\r\n```console\r\n$ yay -s python-pysnooper\r\n```\r\n\r\nfedora linux:\r\n\r\n```console\r\n$ dnf install python3-pysnooper\r\n```\r\n\r\n# license #\r\n\r\ncopyright (c) 2019 ram rachum and collaborators, released under the mit license.\r\n\r\n\r\n# media coverage #\r\n\r\n[hacker news thread](https://news.ycombinator.com/item?id=19717786)\r\nand [/r/python reddit thread](https://www.reddit.com/r/python/comments/bg0ida/pysnooper_never_use_print_for_debugging_again/) (22 april 2019)\r\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pysnooper",
+  "package_url": "https://pypi.org/project/PySnooper/",
+  "project_url": "https://pypi.org/project/PySnooper/",
+  "project_urls": {
+    "Homepage": "https://github.com/cool-RR/PySnooper"
+  },
+  "release_url": "https://pypi.org/project/PySnooper/1.2.0/",
+  "requires_dist": [
+    "pytest ; extra == 'tests'"
+  ],
+  "requires_python": "",
+  "summary": "a poor man's debugger for python.",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "ram@rachum.com",
+    "ram_rachum"
+  ],
+  "kwds": "pysnooper_never_use_print_for_debugging_again pysnooper python python3 debugging",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pysnooper",
+  "homepage": "https://github.com/cool-rr/pysnooper",
+  "release_count": 59,
+  "dependency_ids": [
+    "pypi_pytest"
+  ]
+}

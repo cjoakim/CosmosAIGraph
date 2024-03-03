@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: flask",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: os independent",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": ".. |ci| image:: https://github.com/alisaifee/flask-limiter/workflows/ci/badge.svg?branch=master\n   :target: https://github.com/alisaifee/flask-limiter/actions?query=branch%3amaster+workflow%3aci\n.. |codecov| image:: https://codecov.io/gh/alisaifee/flask-limiter/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/alisaifee/flask-limiter\n.. |pypi| image:: https://img.shields.io/pypi/v/flask-limiter.svg?style=flat-square\n   :target: https://pypi.python.org/pypi/flask-limiter\n.. |license| image:: https://img.shields.io/pypi/l/flask-limiter.svg?style=flat-square\n   :target: https://pypi.python.org/pypi/flask-limiter\n.. |docs| image:: https://readthedocs.org/projects/flask-limiter/badge/?version=latest\n   :target: https://flask-limiter.readthedocs.org/en/latest\n\n*************\nflask-limiter\n*************\n\n\n|docs| |ci| |codecov| |pypi| |license|\n\n**flask-limiter** adds rate limiting to `flask <https://flask.palletsprojects.com>`_ applications.\n\n----\n\nsponsored by `zuplo <https://zuplo.link/3nux0co>`_ a fully-managed api gateway for developers.\nadd `dynamic rate-limiting <https://zuplo.link/flask-dynamic-rate-limit>`_ authentication and more to any api in minutes.\nlearn more at `zuplo.com <https://zuplo.link/3nux0co>`_\n\n----\n\n\nyou can configure rate limits at different levels such as:\n\n- application wide global limits per user\n- default limits per route\n- by `blueprints <https://flask-limiter.readthedocs.io/en/latest/recipes.html#rate-limiting-all-routes-in-a-blueprint>`_\n- by `class-based views <https://flask-limiter.readthedocs.io/en/latest/recipes.html#using-flask-pluggable-views>`_\n- by `individual routes <https://flask-limiter.readthedocs.io/en/latest/index.html#decorators-to-declare-rate-limits>`_\n\n**flask-limiter** can be `configured <https://flask-limiter.readthedocs.io/en/latest/configuration.html>`_ to fit your application in many ways, including:\n\n- persistance to various commonly used `storage backends <https://flask-limiter.readthedocs.io/en/latest/#configuring-a-storage-backend>`_\n  (such as redis, memcached & mongodb)\n  via `limits <https://limits.readthedocs.io/en/stable/storage.html>`__\n- any rate limiting strategy supported by `limits <https://limits.readthedocs.io/en/stable/strategies.html>`__\n\nfollow the quickstart below to get started or `read the documentation <http://flask-limiter.readthedocs.org/en/latest>`_ for more details.\n\n\nquickstart\n===========\n\ninstall\n-------\n.. code-block:: bash\n\n    pip install flask-limiter\n\nadd the rate limiter to your flask app\n---------------------------------------\n.. code-block:: python\n\n   # app.py\n\n   from flask import flask\n   from flask_limiter import limiter\n   from flask_limiter.util import get_remote_address\n\n   app = flask(__name__)\n   limiter = limiter(\n       get_remote_address,\n       app=app,\n       default_limits=[\"2 per minute\", \"1 per second\"],\n       storage_uri=\"memory://\",\n       # redis\n       # storage_uri=\"redis://localhost:6379\",\n       # redis cluster\n       # storage_uri=\"redis+cluster://localhost:7000,localhost:7001,localhost:70002\",\n       # memcached\n       # storage_uri=\"memcached://localhost:11211\",\n       # memcached cluster\n       # storage_uri=\"memcached://localhost:11211,localhost:11212,localhost:11213\",\n       # mongodb\n       # storage_uri=\"mongodb://localhost:27017\",\n       strategy=\"fixed-window\", # or \"moving-window\"\n   )\n\n   @app.route(\"/slow\")\n   @limiter.limit(\"1 per day\")\n   def slow():\n       return \"24\"\n\n   @app.route(\"/fast\")\n   def fast():\n       return \"42\"\n\n   @app.route(\"/ping\")\n   @limiter.exempt\n   def ping():\n       return 'pong'\n\ninspect the limits using the command line interface\n---------------------------------------------------\n.. code-block:: bash\n\n   $ flask_app=app:app flask limiter limits\n\n   app\n   \u251c\u2500\u2500 fast: /fast\n   \u2502   \u251c\u2500\u2500 2 per 1 minute\n   \u2502   \u2514\u2500\u2500 1 per 1 second\n   \u251c\u2500\u2500 ping: /ping\n   \u2502   \u2514\u2500\u2500 exempt\n   \u2514\u2500\u2500 slow: /slow\n       \u2514\u2500\u2500 1 per 1 day\n\nrun the app\n-----------\n.. code-block:: bash\n\n   $ flask_app=app:app flask run\n\n\ntest it out\n-----------\nthe ``fast`` endpoint respects the default rate limit while the\n``slow`` endpoint uses the decorated one. ``ping`` has no rate limit associated\nwith it.\n\n.. code-block:: bash\n\n   $ curl localhost:5000/fast\n   42\n   $ curl localhost:5000/fast\n   42\n   $ curl localhost:5000/fast\n   <!doctype html public \"-//w3c//dtd html 3.2 final//en\">\n   <title>429 too many requests</title>\n   <h1>too many requests</h1>\n   <p>2 per 1 minute</p>\n   $ curl localhost:5000/slow\n   24\n   $ curl localhost:5000/slow\n   <!doctype html public \"-//w3c//dtd html 3.2 final//en\">\n   <title>429 too many requests</title>\n   <h1>too many requests</h1>\n   <p>1 per 1 day</p>\n   $ curl localhost:5000/ping\n   pong\n   $ curl localhost:5000/ping\n   pong\n   $ curl localhost:5000/ping\n   pong\n   $ curl localhost:5000/ping\n   pong\n\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "flask-limiter",
+  "package_url": "https://pypi.org/project/Flask-Limiter/",
+  "project_url": "https://pypi.org/project/Flask-Limiter/",
+  "project_urls": {
+    "Homepage": "https://flask-limiter.readthedocs.org",
+    "Source": "https://github.com/alisaifee/flask-limiter"
+  },
+  "release_url": "https://pypi.org/project/Flask-Limiter/3.5.0/",
+  "requires_dist": [
+    "limits >=2.8",
+    "Flask >=2",
+    "ordered-set <5,>4",
+    "rich <14,>=12",
+    "typing-extensions >=4",
+    "limits[memcached] ; extra == 'memcached'",
+    "limits[mongodb] ; extra == 'mongodb'",
+    "limits[redis] ; extra == 'redis'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "rate limiting for flask applications",
+  "version": "3.5.0",
+  "releases": [],
+  "developers": [
+    "ali",
+    "ali@indydevs.org"
+  ],
+  "kwds": "flask_limiter flask flask_app limiter default_limits",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flask_limiter",
+  "homepage": "https://flask-limiter.readthedocs.org",
+  "release_count": 99,
+  "dependency_ids": [
+    "pypi_flask",
+    "pypi_limits",
+    "pypi_ordered_set",
+    "pypi_rich",
+    "pypi_typing_extensions"
+  ]
+}

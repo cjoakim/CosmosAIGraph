@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: ironpython",
+    "programming language :: python :: implementation :: jython",
+    "programming language :: python :: implementation :: pypy",
+    "programming language :: python :: implementation :: stackless",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: logging"
+  ],
+  "description": "# autologging - easier logging and tracing for python classes\n\nhttp://ninthtest.info/python-autologging/\n\n[![pypi version](https://img.shields.io/pypi/v/autologging.svg)](https://pypi.python.org/pypi/autologging)\n[![python version](https://img.shields.io/pypi/pyversions/autologging.svg)](https://pypi.python.org/pypi/autologging)\n[![python implementation](https://img.shields.io/pypi/implementation/autologging.svg)](https://pypi.python.org/pypi/autologging)\n[![license](https://img.shields.io/pypi/l/autologging.svg)](https://github.com/mzipay/autologging/blob/master/license.txt)\n[![wheel availability](https://img.shields.io/pypi/wheel/autologging.svg)](https://pypi.python.org/pypi/autologging)\n\n## introduction\n\nautologging eliminates boilerplate logging setup code and tracing code,\nand provides a means to separate application logging from program flow\nand data tracing.\n\npython modules that make use of autologging are cleaner, leaner, and\nmore resilient to changes that would otherwise require updating tracing\nstatements.\n\nautologging allows for tracing to be configured (and controlled)\nindependently from application logging. toggle tracing on/off, write\ntrace log records to a separate log, and use different formatting for\ntrace log entries - all via standard python logging facilities, and\nwithout affecting your application logging.\n\n### what's in the `autologging` namespace?\n\nautologging exposes two decorators and a custom log level:\n\n**`logged`**\ndecorate a class to create a `__log` member. the logger is named by\ndefault to match the dotted-name of the containing class. a function\nmay also be decorated, creating a `_log` attribute on the function\nobject whose default name matches the containing module.\na specifically-named logger may also be passed to the decorator (i.e.\n`logged(my_logger)`).\n\n**`traced`**\ndecorate a class to provide **automatic** method call/return tracing. by\ndefault, all class, static, and instance methods are traced (excluding\n\"__special__\" methods, with the exception of `__init__` and `__call__`).\nas with the `logged` decorator, the default name of the tracing logger\nmatches the dotted-name of the containing class and may be overridden by\npassing a specifically-named logger to the decorator.\nadditionally, this decorator accepts multiple string arguments that\nexplicitly name the methods to be traced (and may even name\n\"__special__\" methods).\n\nmodule-level functions may also be traced using this decorator.\n\n*new in version 1.2.0:* automatic yield/stop tracing of python\n[generator iterators](https://docs.python.org/3/glossary.html#term-generator-iterator)\n(if the [generator](https://docs.python.org/3/glossary.html#term-generator)\nfunction is traced).\n\n**`trace`**\nthe `autologging.trace` (level 1) log level is registered with the\npython `logging` module when autologging is imported so that tracing\ncan be configured and controlled independently of application logging.\n\ntracing may be disabled entirely by setting the\n`autologging_traced_noop` environment variable or by calling the\n`autologging.install_traced_noop()` function.\n\n## a brief example\n\na simple logged and traced class:\n\n```python\n 1 import logging\n 2 import sys\n 3\n 4 from autologging import logged, trace, traced\n 5\n 6 @traced\n 7 @logged\n 8 class example:\n 9\n10     def __init__(self):\n11         self.__log.info(\"initialized\")\n12\n13     def backwards(self, *words):\n14         for word in words:\n15             yield \"\".join(reversed(word))\n16\n17\n18 if __name__ == \"__main__\":\n19     logging.basicconfig(\n20             level=trace, stream=sys.stderr,\n21             format=\"%(levelname)s:%(filename)s,%(lineno)d:%(name)s.%(funcname)s:%(message)s\")\n22     example = example()\n23     for result in example.backwards(\"spam\", \"eggs\"):\n24         print(result)\n```\n\nlogging and tracing output:\n\n```bash\n$ python example.py\ntrace:example.py,10:__main__.example.__init__:call *() **{}\ninfo:example.py,11:__main__.example.__init__:initialized\ntrace:example.py,11:__main__.example.__init__:return none\ntrace:example.py,13:__main__.example.backwards:call *('spam', 'eggs') **{}\ntrace:example.py,15:__main__.example.backwards:return <generator object backwards at 0x7fa534d61eb0>\ntrace:example.py,15:__main__.example.backwards:yield 'maps'\nmaps\ntrace:example.py,15:__main__.example.backwards:yield 'sgge'\nsgge\ntrace:example.py,15:__main__.example.backwards:stop\n```\n\n## installation\n\nthe easiest way to install autologging is to use\n[pip](https://pip.pypa.io/):\n\n```bash\n$ pip install autologging\n```\n\n### source installation\n\nclone or fork the repository:\n\n```bash\n$ git clone https://github.com/mzipay/autologging.git\n```\n\nalternatively, download and extract a source .zip or .tar.gz archive\nfrom https://github.com/mzipay/autologging/releases,\nhttps://pypi.python.org/pypi/autologging or\nhttps://sourceforge.net/projects/autologging/files/.\n\nrun the test suite and install the `autologging` module: (make sure you\nhave [setuptools](https://pypi.python.org/pypi/setuptools) installed!)\n\n```bash\n$ cd autologging\n$ python setup.py test\n$ python setup.py install\n```\n\n### binary installation\n\ndownload the python wheel (.whl) or a windows installer from\nhttps://pypi.python.org/pypi/autologging or\nhttps://sourceforge.net/projects/autologging/files/.\n\n(use [pip](https://pip.pypa.io/) or\n[wheel](https://pypi.python.org/pypi/wheel) to install the .whl.)\n\n\n\n",
+  "docs_url": "https://pythonhosted.org/Autologging/",
+  "keywords": "logging,tracing",
+  "license": "mit license",
+  "name": "autologging",
+  "package_url": "https://pypi.org/project/Autologging/",
+  "project_url": "https://pypi.org/project/Autologging/",
+  "project_urls": {
+    "Download": "https://sourceforge.net/projects/autologging/files/",
+    "Homepage": "http://ninthtest.info/python-autologging/"
+  },
+  "release_url": "https://pypi.org/project/Autologging/1.3.2/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "autologging makes logging and tracing python classes easy.",
+  "version": "1.3.2",
+  "releases": [],
+  "developers": [
+    "matthew_zipay",
+    "mattz@ninthtest.info"
+  ],
+  "kwds": "autologging_traced_noop logging autologging tracing my_logger",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_autologging",
+  "homepage": "http://ninthtest.info/python-autologging/",
+  "release_count": 12,
+  "dependency_ids": []
+}

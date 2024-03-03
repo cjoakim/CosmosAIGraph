@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "environment :: web environment",
+    "intended audience :: information technology",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: documentation",
+    "topic :: software development :: documentation",
+    "topic :: text processing :: markup :: markdown",
+    "typing :: typed"
+  ],
+  "description": "# mkdocs-section-index\n\n**[plugin][] for [mkdocs][] to allow clickable sections that lead to an index page**\n\n[![pypi](https://img.shields.io/pypi/v/mkdocs-section-index)](https://pypi.org/project/mkdocs-section-index/)\n[![github](https://img.shields.io/github/license/oprypin/mkdocs-section-index)](https://github.com/oprypin/mkdocs-section-index/blob/master/license.md)\n[![github workflow status](https://img.shields.io/github/actions/workflow/status/oprypin/mkdocs-section-index/ci.yml.svg)](https://github.com/oprypin/mkdocs-section-index/actions?query=event%3apush+branch%3amaster)\n\n```shell\npip install mkdocs-section-index\n```\n\n[mkdocs]: https://www.mkdocs.org/\n[plugin]: https://www.mkdocs.org/user-guide/plugins/\n\n## [example](example/)\n\n![screencast with comparison](https://user-images.githubusercontent.com/371383/99844559-8c4caa00-2b73-11eb-9e97-fad82447746c.gif)\n\nwith this `nav` in *mkdocs.yml* (or without `nav` but with [an equivalent directory structure](example/docs/)):\n\n```yaml\nnav:\n  - frob: index.md\n  - baz: baz.md\n  - borgs:\n    - borgs/index.md\n    - bar: borgs/bar.md\n    - foo: borgs/foo.md\n\nplugins:\n  - search\n  - section-index\n```\n\nthe *borgs/index.md* page is merged as the index of the \"borgs\" section. normally sections in [mkdocs][] cannot be clickable as pages themselves, but this plugin makes that possible.\n\n**see also: [a realistic demo site](https://oprypin.github.io/crystal-book/syntax_and_semantics/literals/).**\n\n## theme support\n\nthis plugin requires per-theme overrides (implemented within the plugin), or [support from themes themselves](#implementation-within-themes).\n\ncurrently supported [themes][] are:\n\n* [material](https://github.com/squidfunk/mkdocs-material)\n* [readthedocs](https://www.mkdocs.org/user-guide/styling-your-docs/#readthedocs)\n* [nature](https://github.com/waylan/mkdocs-nature)\n\n[themes]: https://github.com/mkdocs/mkdocs/wiki/mkdocs-themes\n\n## usage notes\n\nthe kind of *nav* as shown above also happens to be what mkdocs produces when `nav` is omitted; it detects [`index.md` and `readme.md`][nav-gen] pages and automatically puts them as the first item.\n\nto make writing this kind of `nav` more natural ([in yaml there's no better option](https://github.com/mkdocs/mkdocs/pull/1042#issuecomment-290787554)), consider using the **[literate-nav][] plugin** along with this; then the above *nav* might be written like this:\n\n```markdown\n* [frob](index.md)\n* [baz](baz.md)\n* [borgs](borgs/index.md)\n    * [bar](borgs/bar.md)\n    * [foo](borgs/foo.md)\n```\n\n[literate-nav]: https://oprypin.github.io/mkdocs-literate-nav/\n\n## [implementation](https://github.com/oprypin/mkdocs-section-index/blob/master/mkdocs_section_index/plugin.py)\n\n### \"protocol\"\n\nnormally in mkdocs [`nav`][nav], the items can be one of:\n\n* a [`section`][section], which has a `title` and `children`.\n    * (`url` is always `none`)\n* a [`page`][page], which has a `title` and `url`.\n    * (`title` can be omitted, and later deduced from the page content)\n    * ([`children`][children] is always `none`)\n* a [`link`][link] (inconsequential for our purposes).\n\nthis plugin introduces a [hybrid kind of `page`](https://github.com/oprypin/mkdocs-section-index/blob/master/mkdocs_section_index/__init__.py), which has all of these properties:\n\n* `title`: `str`\n* `url`: `str`\n* `children`: `list`\n* `is_page` = `true`\n* `is_section` = `true`\n\nsuch a special item gets put into a nav in the place of a `section` which has a `page` with an intentionally omitted title as its first child. those two are naturally combined into a special [section-page](https://github.com/oprypin/mkdocs-section-index/blob/master/mkdocs_section_index/__init__.py) that's a hybrid of the two.\n\n[nav]: https://www.mkdocs.org/user-guide/custom-themes/#nav\n[section]: https://www.mkdocs.org/user-guide/custom-themes/#section\n[page]: https://www.mkdocs.org/user-guide/custom-themes/#page\n[children]: https://github.com/mkdocs/mkdocs/blob/2f833a1a29095733e53a04d062d315629d974ebe/mkdocs/structure/pages.py#l26\n[link]: https://www.mkdocs.org/user-guide/custom-themes/#link\n\n### implementation within themes\n\nthen all that a theme's template needs to do is to meaningfully support such nav items -- ones that have both a `url` and `children`. the item should be directly clickable to go to the corresponding page, and also be able to house sub-items.\n\nof course, currently templates don't expect such a case; or if they did, it would be purely by chance. so currently this plugin \"hacks into\" templates of supported themes, [patching their source on the fly](https://github.com/oprypin/mkdocs-section-index/blob/master/mkdocs_section_index/rewrites.py) to fit its needs. the hope is that, once this plugin gains enough traction, theme authors will be happy to directly support this scenario (which is totally non-intrusive and backwards-compatible), and then the patches could be dropped.\n\n### \"alternatives considered\"\n\neven if all the template patches are gone, this plugin will still remain as the implementation of this special nav \"protocol\", and as the **opt-in mechanism**. in the author's view, such an approach is advantageous, because:\n\n* this is too controversial to be enabled by default, or even be part of mkdocs at all. this has been [discussed in the past and dropped](https://github.com/mkdocs/mkdocs/pull/1042#issuecomment-260813540). the main reason is that in mkdocs there's no requirement for a *nav*'s structure to follow the actual directory structure of the doc files. consequently, there's no natural way to deduce that a document should become the index page of a section just from its location, even if it's named *index.md*. although if the *nav* is [omitted & generated][nav-gen], then yes, such an assumption works. it also works in the vast majority of actual usages *with* a *nav*, but that doesn't help.\n\n* themes themselves also probably shouldn't directly try to detect logic such as \"first child of a section if it has no title\" and manually collapse the child *within jinja template code*, as that's too messy. this also shouldn't be enabled by default. and even though templates could also make this opt-in, a centralized approach like this one ensures that accessing this feature is done uniformly. not to mention that templates might never implement this themselves.\n\n[nav-gen]: https://www.mkdocs.org/user-guide/writing-your-docs/#configure-pages-and-navigation\n",
+  "docs_url": null,
+  "keywords": "mkdocs,mkdocs-plugin",
+  "license": "",
+  "name": "mkdocs-section-index",
+  "package_url": "https://pypi.org/project/mkdocs-section-index/",
+  "project_url": "https://pypi.org/project/mkdocs-section-index/",
+  "project_urls": {
+    "Documentation": "https://oprypin.github.io/mkdocs-section-index/",
+    "History": "https://github.com/oprypin/mkdocs-section-index/releases",
+    "Issues": "https://github.com/oprypin/mkdocs-section-index/issues",
+    "Source": "https://github.com/oprypin/mkdocs-section-index"
+  },
+  "release_url": "https://pypi.org/project/mkdocs-section-index/0.3.8/",
+  "requires_dist": [
+    "mkdocs>=1.2"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "mkdocs plugin to allow clickable sections that lead to an index page",
+  "version": "0.3.8",
+  "releases": [],
+  "developers": [
+    "oleh@pryp.in"
+  ],
+  "kwds": "mkdocs_section_index mkdocs section sections is_section",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_mkdocs_section_index",
+  "homepage": "",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_mkdocs"
+  ]
+}

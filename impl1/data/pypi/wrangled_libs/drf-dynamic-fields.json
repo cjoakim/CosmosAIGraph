@@ -1,0 +1,36 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3"
+  ],
+  "description": "dynamic serializer fields for django rest framework\n===================================================\n\n.. image:: https://secure.travis-ci.org/dbrgn/drf-dynamic-fields.png?branch=master\n    :alt: build status\n    :target: http://travis-ci.org/dbrgn/drf-dynamic-fields\n\n.. image:: https://img.shields.io/pypi/v/drf-dynamic-fields.svg\n    :alt: pypi version\n    :target: https://pypi.python.org/pypi/drf-dynamic-fields\n\n.. image:: https://img.shields.io/pypi/dm/drf-dynamic-fields.svg?maxage=3600\n    :alt: pypi downloads\n    :target: https://pypi.python.org/pypi/drf-dynamic-fields\n\n.. image:: https://img.shields.io/github/license/mashape/apistatus.svg?maxage=2592000\n    :alt: license is mit\n    :target: https://github.com/dbrgn/drf-dynamic-fields/blob/master/license\n\nthis package provides a mixin that allows the user to dynamically select only a\nsubset of fields per resource.\n\nofficial version support:\n\n- django 2.2 lts, 3.2 lts, 4.0\n- supported rest framework versions: 3.8, 3.9\n- python 3.7+\n\n\nscope\n-----\n\nthis library is about filtering fields based on individual requests. it is\ndeliberately kept simple and we do not plan to add new features (including\nsupport for nested fields). feel free to contribute improvements, code\nsimplifications and bugfixes though! (see also: `#18\n<https://github.com/dbrgn/drf-dynamic-fields/issues/18>`__)\n\nif you need more advanced filtering features, maybe `drf-flex-fields\n<https://github.com/rsinger86/drf-flex-fields>`_ could be something for you.\n\n\ninstalling\n----------\n\n::\n\n    pip install drf-dynamic-fields\n\nwhat it does\n------------\n\nexample serializer:\n\n.. sourcecode:: python\n\n    class identityserializer(dynamicfieldsmixin, serializers.hyperlinkedmodelserializer):\n        class meta:\n            model = models.identity\n            fields = ('id', 'url', 'type', 'data')\n\na regular request returns all fields:\n\n``get /identities``\n\n.. sourcecode:: json\n\n    [\n      {\n        \"id\": 1,\n        \"url\": \"http://localhost:8000/api/identities/1/\",\n        \"type\": 5,\n        \"data\": \"john doe\"\n      },\n      ...\n    ]\n\na query with the `fields` parameter on the other hand returns only a subset of\nthe fields:\n\n``get /identities/?fields=id,data``\n\n.. sourcecode:: json\n\n    [\n      {\n        \"id\": 1,\n        \"data\": \"john doe\"\n      },\n      ...\n    ]\n\nand a query with the `omit` parameter excludes specified fields.\n\n``get /identities/?omit=data``\n\n.. sourcecode:: json\n\n    [\n      {\n        \"id\": 1,\n        \"url\": \"http://localhost:8000/api/identities/1/\",\n        \"type\": 5\n      },\n      ...\n    ]\n\nyou can use both `fields` and `omit` in the same request!\n\n``get /identities/?omit=data,fields=data,id``\n\n.. sourcecode:: json\n\n    [\n      {\n        \"id\": 1\n      },\n      ...\n    ]\n\n\nthough why you would want to do something like that is beyond this author.\n\nit also works on single objects!\n\n``get /identities/1/?fields=id,data``\n\n.. sourcecode:: json\n\n    {\n      \"id\": 1,\n      \"data\": \"john doe\"\n    }\n\nusage\n-----\n\nwhen defining a serializer, use the ``dynamicfieldsmixin``:\n\n.. sourcecode:: python\n\n    from drf_dynamic_fields import dynamicfieldsmixin\n\n    class identityserializer(dynamicfieldsmixin, serializers.modelserializer):\n        class meta:\n            model = models.identity\n            fields = ('id', 'url', 'type', 'data')\n\nthe mixin needs access to the ``request`` object. some drf classes like the\n``modelviewset`` set that by default, but if you handle serializers yourself,\npass in the request through the context:\n\n.. sourcecode:: python\n\n    events = event.objects.all()\n    serializer = eventserializer(events, many=true, context={'request': request})\n\n\nwarnings\n--------\n\nif the request context does not have access to the request, a warning is\nemitted::\n\n   userwarning: context does not have access to request.\n\nfirst, make sure that you are passing the request to the serializer context (see\n\"usage\" section).\n\nthere are some cases (e.g. nested serializers) where you cannot get rid of the\nwarning that way (see `issue 27 <https://github.com/dbrgn/drf-dynamic-fields/issues/27>`_).\nin that case, you can silence the warning through ``settings.py``:\n\n.. sourcecode:: python\n\n   drf_dynamic_fields = {\n      'suppress_context_warning': true,\n   }\n\n\ntesting\n-------\n\nto run tests, install django and drf and then run ``runtests.py``:\n\n    $ python runtests.py\n\n\ncredits\n-------\n\n- the implementation is based on `this\n  <http://stackoverflow.com/a/23674297/284318>`__ stackoverflow answer. thanks\n  ``yatoff``!\n- the github users ``x17`` and ``rawbeans`` provided improvements on `my gist\n  <https://gist.github.com/dbrgn/4e6fc1fe5922598592d6>`__ that were incorporated\n  into this library. thanks!\n- for other contributors, please see `github contributor stats\n  <https://github.com/dbrgn/drf-dynamic-fields/graphs/contributors>`__.\n\n\nlicense\n-------\n\nmit license, see ``license`` file.\n\n\n",
+  "docs_url": null,
+  "keywords": "drf restframework rest_framework django_rest_framework serializers",
+  "license": "mit",
+  "name": "drf-dynamic-fields",
+  "package_url": "https://pypi.org/project/drf-dynamic-fields/",
+  "project_url": "https://pypi.org/project/drf-dynamic-fields/",
+  "project_urls": {
+    "Homepage": "https://github.com/dbrgn/drf-dynamic-fields"
+  },
+  "release_url": "https://pypi.org/project/drf-dynamic-fields/0.4.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "dynamically return subset of django rest framework serializer fields",
+  "version": "0.4.0",
+  "releases": [],
+  "developers": [
+    "danilo_bargen",
+    "mail@dbrgn.ch"
+  ],
+  "kwds": "drf_dynamic_fields django_rest_framework dynamicfieldsmixin rest_framework serializer",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_drf_dynamic_fields",
+  "homepage": "https://github.com/dbrgn/drf-dynamic-fields",
+  "release_count": 6,
+  "dependency_ids": []
+}

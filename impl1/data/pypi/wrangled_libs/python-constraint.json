@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: console",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: cython",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "topic :: scientific/engineering"
+  ],
+  "description": "|build status| |code health| |code coverage|\n\npython-constraint\n=================\n\nintroduction\n------------\nthe python constraint module offers solvers for `constraint satisfaction problems (csps) <https://en.wikipedia.org/wiki/constraint_satisfaction_problem>`_ over finite domains in simple and pure python. csp is class of problems which may be represented in terms of variables (a, b, ...), domains (a in [1, 2, 3], ...), and constraints (a < b, ...).\n\nexamples\n--------\n\nbasics\n~~~~~~\n\nthis interactive python session demonstrates the module basic operation:\n\n.. code-block:: python\n\n    >>> from constraint import *\n    >>> problem = problem()\n    >>> problem.addvariable(\"a\", [1,2,3])\n    >>> problem.addvariable(\"b\", [4,5,6])\n    >>> problem.getsolutions()\n    [{'a': 3, 'b': 6}, {'a': 3, 'b': 5}, {'a': 3, 'b': 4},\n     {'a': 2, 'b': 6}, {'a': 2, 'b': 5}, {'a': 2, 'b': 4},\n     {'a': 1, 'b': 6}, {'a': 1, 'b': 5}, {'a': 1, 'b': 4}]\n\n    >>> problem.addconstraint(lambda a, b: a*2 == b,\n                              (\"a\", \"b\"))\n    >>> problem.getsolutions()\n    [{'a': 3, 'b': 6}, {'a': 2, 'b': 4}]\n\n    >>> problem = problem()\n    >>> problem.addvariables([\"a\", \"b\"], [1, 2, 3])\n    >>> problem.addconstraint(alldifferentconstraint())\n    >>> problem.getsolutions()\n    [{'a': 3, 'b': 2}, {'a': 3, 'b': 1}, {'a': 2, 'b': 3},\n     {'a': 2, 'b': 1}, {'a': 1, 'b': 2}, {'a': 1, 'b': 3}]\n\nrooks problem\n~~~~~~~~~~~~~\n\nthe following example solves the classical eight rooks problem:\n\n.. code-block:: python\n\n    >>> problem = problem()\n    >>> numpieces = 8\n    >>> cols = range(numpieces)\n    >>> rows = range(numpieces)\n    >>> problem.addvariables(cols, rows)\n    >>> for col1 in cols:\n    ...     for col2 in cols:\n    ...         if col1 < col2:\n    ...             problem.addconstraint(lambda row1, row2: row1 != row2,\n    ...                                   (col1, col2))\n    >>> solutions = problem.getsolutions()\n    >>> solutions\n    >>> solutions\n    [{0: 7, 1: 6, 2: 5, 3: 4, 4: 3, 5: 2, 6: 1, 7: 0},\n     {0: 7, 1: 6, 2: 5, 3: 4, 4: 3, 5: 2, 6: 0, 7: 1},\n     {0: 7, 1: 6, 2: 5, 3: 4, 4: 3, 5: 1, 6: 2, 7: 0},\n     {0: 7, 1: 6, 2: 5, 3: 4, 4: 3, 5: 1, 6: 0, 7: 2},\n     ...\n     {0: 7, 1: 5, 2: 3, 3: 6, 4: 2, 5: 1, 6: 4, 7: 0},\n     {0: 7, 1: 5, 2: 3, 3: 6, 4: 1, 5: 2, 6: 0, 7: 4},\n     {0: 7, 1: 5, 2: 3, 3: 6, 4: 1, 5: 2, 6: 4, 7: 0},\n     {0: 7, 1: 5, 2: 3, 3: 6, 4: 1, 5: 4, 6: 2, 7: 0},\n     {0: 7, 1: 5, 2: 3, 3: 6, 4: 1, 5: 4, 6: 0, 7: 2},\n     ...]\n\n\nmagic squares\n~~~~~~~~~~~~~\n\nthis example solves a 4x4 magic square:\n\n.. code-block:: python\n\n    >>> problem = problem()\n    >>> problem.addvariables(range(0, 16), range(1, 16 + 1))\n    >>> problem.addconstraint(alldifferentconstraint(), range(0, 16))\n    >>> problem.addconstraint(exactsumconstraint(34), [0, 5, 10, 15])\n    >>> problem.addconstraint(exactsumconstraint(34), [3, 6, 9, 12])\n    >>> for row in range(4):\n    ...     problem.addconstraint(exactsumconstraint(34),\n                                  [row * 4 + i for i in range(4)])\n    >>> for col in range(4):\n    ...     problem.addconstraint(exactsumconstraint(34),\n                                  [col + 4 * i for i in range(4)])\n    >>> solutions = problem.getsolutions()\n\nfeatures\n--------\n\nthe following solvers are available:\n\n- backtracking solver\n- recursive backtracking solver\n- minimum conflicts solver\n\n\n.. role:: python(code)\n   :language: python\n\npredefined constraint types currently available:\n\n- :python:`functionconstraint`\n- :python:`alldifferentconstraint`\n- :python:`allequalconstraint`\n- :python:`exactsumconstraint`\n- :python:`maxsumconstraint`\n- :python:`minsumconstraint`\n- :python:`insetconstraint`\n- :python:`notinsetconstraint`\n- :python:`someinsetconstraint`\n- :python:`somenotinsetconstraint`\n\napi documentation\n-----------------\ndocumentation for the module is available at: http://labix.org/doc/constraint/\n\ndownload and install\n--------------------\n\n.. code-block:: shell\n\n    $ pip install python-constraint\n\nroadmap\n-------\n\nthis github organization and repository is a global effort to help to\nmaintain python-constraint which was written by gustavo niemeyer\nand originaly located at https://labix.org/python-constraint\n\n- create some unit tests - done\n- enable continuous integration - done\n- port to python 3 (python 2 being also supported) - done\n- respect style guide for python code (pep8) - done\n- improve code coverage writting more unit tests - todo\n- move doc to sphinx or mkdocs - https://readthedocs.org/ - todo\n\ncontact\n-------\n- `gustavo niemeyer <https://github.com/niemeyer/>`_ <gustavo@niemeyer.net>\n- `s\u00e9bastien celles <https://github.com/scls19fr/>`_ <s.celles@gmail.com>\n\nbut it's probably better to `open an issue <https://github.com/python-constraint/python-constraint/issues>`_.\n\n\n.. |build status| image:: https://travis-ci.org/python-constraint/python-constraint.svg?branch=master\n   :target: https://travis-ci.org/python-constraint/python-constraint\n.. |code health| image:: https://landscape.io/github/python-constraint/python-constraint/master/landscape.svg?style=flat\n   :target: https://landscape.io/github/python-constraint/python-constraint/master\n   :alt: code health\n.. |code coverage| image:: https://coveralls.io/repos/github/python-constraint/python-constraint/badge.svg\n   :target: https://coveralls.io/github/python-constraint/python-constraint",
+  "docs_url": null,
+  "keywords": "csp constraint solving problems problem solver",
+  "license": "",
+  "name": "python-constraint",
+  "package_url": "https://pypi.org/project/python-constraint/",
+  "project_url": "https://pypi.org/project/python-constraint/",
+  "project_urls": {
+    "Homepage": "https://github.com/python-constraint/python-constraint"
+  },
+  "release_url": "https://pypi.org/project/python-constraint/1.4.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python-constraint is a module implementing support for handling csps (constraint solving problems) over finite domain",
+  "version": "1.4.0",
+  "releases": [],
+  "developers": [
+    "gustavo@niemeyer.net",
+    "gustavo_niemeyer"
+  ],
+  "kwds": "constraint_satisfaction_problem constraint constraints someinsetconstraint solvers",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_python_constraint",
+  "homepage": "https://github.com/python-constraint/python-constraint",
+  "release_count": 6,
+  "dependency_ids": []
+}

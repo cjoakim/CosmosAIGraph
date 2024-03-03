@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: plugins",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http",
+    "topic :: security",
+    "topic :: system :: installation/setup",
+    "topic :: system :: networking",
+    "topic :: system :: systems administration",
+    "topic :: utilities"
+  ],
+  "description": "certbot-dns-godaddy\n==================\n\n[![version](https://img.shields.io/pypi/v/certbot-dns-godaddy.svg)](https://pypi.python.org/pypi/certbot-dns-godaddy) [![license: apache](https://img.shields.io/pypi/l/certbot-dns-godaddy.svg)](https://github.com/miigotu/certbot-dns-godaddy/blob/master/license.txt) [![docker image size](https://img.shields.io/docker/image-size/miigotu/certbot-dns-godaddy)](https://hub.docker.com/repository/docker/miigotu/certbot-dns-godaddy)\n\n[godaddy](https://www.godaddy.com/) dns authenticator plugin for [certbot](https://certbot.eff.org/).\n\nthis plugin automates the process of completing a `dns-01` challenge by creating, and subsequently removing, `txt` records using the godaddy [api](https://developer.godaddy.com/doc/endpoint/domains) via [lexicon](https://github.com/analogj/lexicon).\n\n**note:** this manual assumes certbot >=2.7.4 which has improved the naming scheme for external plugins.\n\ninstallation\n------------\n\n    # create a virtual environment, to avoid conflicts\n    python3 -m venv /some/path\n\n    # use the pip in the virtual environment to install or update\n    /some/path/bin/pip install -u certbot-dns-godaddy\n\n    # yse the cerbot from the virtualenv, to avoid accidentally\n    # using one from a different environment that does not have this library\n    /some/path/bin/certbot\n\nnamed arguments\n---------------\n\nto start using dns authentication for godaddy, pass the following arguments on certbot's command line:\n\n| option                                  | description                                                                           |\n|-----------------------------------------|---------------------------------------------------------------------------------------|\n| `--authenticator dns-godaddy`           | select the authenticator plugin (required)                                            |\n| `--dns-godaddy-credentials file`        | godaddy credentials ini file. (required)                                              |\n| `--dns-godaddy-propagation-seconds num` | how long to wait before acme tries to verify dns. (default: 30, recommended: \\>= 600) |\n\nyou may need to set an unexpectedly high propagation time (\u2265 900 seconds) to give the godaddy dns time to propagate the entries! this may be annoying when calling certbot manually but should not be a problem in automated setups.\n\ncredentials\n-----------\n\nuse of this plugin requires a configuration file containing godaddy api credentials, obtained from your [developer.godaddy.com](https://developer.godaddy.com/).\n\nan example `credentials.ini` file:\n\n``` {.sourcecode .ini}\ndns_godaddy_secret      = 0123456789abcdef0123456789abcdef01234567\ndns_godaddy_key = abcdef0123456789abcdef01234567abcdef0123\n```\n\nthe path to this file can be provided interactively or using the `--dns-godaddy-credentials` command-line argument. certbot records the path to this file for use during renewal, but does not store the file's contents.\n\n**caution:** you should protect these api credentials as you would the password to your godaddy account. users who can read this file can use these credentials to issue arbitrary api calls on your behalf. users who can cause certbot to run using these credentials can complete a `dns-01` challenge to acquire new certificates or revoke existing certificates for associated domains, even if those domains aren't being managed by this server.\n\ncertbot will emit a warning if it detects that the credentials file can be accessed by other users on your system. the warning reads \"unsafe permissions on credentials configuration file\", followed by the path to the credentials file. this warning will be emitted each time certbot uses the credentials file, including for renewal, and cannot be silenced except by addressing the issue (e.g., by using a command like `chmod 600` to restrict access to the file).\n\nexamples\n--------\n\nto acquire a single certificate for both `example.com` and `*.example.com`, waiting 900 seconds for dns propagation:\n\n    certbot certonly \\\\\n      --authenticator dns-godaddy \\\\\n      --dns-godaddy-credentials ~/.secrets/certbot/godaddy.ini \\\\\n      --dns-godaddy-propagation-seconds 900 \\\\\n      --keep-until-expiring --non-interactive --expand \\\n      --server https://acme-v02.api.letsencrypt.org/directory \\\n      -d 'example.com' \\\\\n      -d '*.example.com'\n\ndocker\n------\n\nyou can build a docker image from source using the included `dockerfile` or pull the latest version directly from docker hub:\n\n    docker pull miigotu/certbot-dns-godaddy\n\nonce that's finished, the application can be run as follows:\n\n    docker run --rm \\\n      -v /var/lib/letsencrypt:/var/lib/letsencrypt \\\n      -v /etc/letsencrypt:/etc/letsencrypt \\\n      --cap-drop=all \\\n      miigotu/certbot-dns-godaddy certbot certonly \\\n        --authenticator dns-godaddy \\\n        --dns-godaddy-propagation-seconds 900 \\\n        --dns-godaddy-credentials /var/lib/letsencrypt/godaddy_credentials.ini \\\n        --keep-until-expiring --non-interactive --expand \\\n        --server https://acme-v02.api.letsencrypt.org/directory \\\n        --agree-tos --email \"webmaster@example.com\" \\\n        -d example.com -d '*.example.com'\n\nyou may want to change the volumes `/var/lib/letsencrypt` and `/etc/letsencrypt` to local directories where the certificates and configuration should be stored.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "certbot-dns-godaddy",
+  "package_url": "https://pypi.org/project/certbot-dns-godaddy/",
+  "project_url": "https://pypi.org/project/certbot-dns-godaddy/",
+  "project_urls": {
+    "Homepage": "https://github.com/miigotu/certbot-dns-godaddy",
+    "Repository": "https://github.com/miigotu/certbot-dns-godaddy"
+  },
+  "release_url": "https://pypi.org/project/certbot-dns-godaddy/2.7.4/",
+  "requires_dist": [
+    "certbot (>=2.7.4)",
+    "dns-lexicon (>=3.14.0)"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "a certbot plugin that implements letsencrypt dns wildcard support for godaddy using lexicon",
+  "version": "2.7.4",
+  "releases": [],
+  "developers": [
+    "dustyn_gibson",
+    "miigotu@gmail.com"
+  ],
+  "kwds": "certbot dns_godaddy_key dns_godaddy_secret godaddy certificate",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_certbot_dns_godaddy",
+  "homepage": "https://github.com/miigotu/certbot-dns-godaddy",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_certbot",
+    "pypi_dns_lexicon"
+  ]
+}

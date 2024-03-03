@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: quality assurance",
+    "topic :: software development :: testing",
+    "topic :: utilities"
+  ],
+  "description": "pytest-metadata\n===============\n\npytest-metadata is a plugin for `pytest <http://pytest.org>`_ that provides\naccess to test session metadata.\n\n.. image:: https://img.shields.io/badge/license-mpl%202.0-blue.svg\n   :target: https://github.com/pytest-dev/pytest-metadata/blob/master/license\n   :alt: license\n.. image:: https://img.shields.io/pypi/v/pytest-metadata.svg\n   :target: https://pypi.python.org/pypi/pytest-metadata/\n   :alt: pypi\n.. image:: https://img.shields.io/travis/pytest-dev/pytest-metadata.svg\n   :target: https://travis-ci.org/pytest-dev/pytest-metadata/\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg\n   :target: https://github.com/ambv/black\n   :alt: travis\n.. image:: https://img.shields.io/github/issues-raw/pytest-dev/pytest-metadata.svg\n   :target: https://github.com/pytest-dev/pytest-metadata/issues\n   :alt: issues\n.. image:: https://img.shields.io/requires/github/pytest-dev/pytest-metadata.svg\n   :target: https://requires.io/github/pytest-dev/pytest-metadata/requirements/?branch=master\n   :alt: requirements\n\nrequirements\n------------\n\nyou will need the following in order to use pytest-metadata:\n\n- python 3.7+ or pypy3\n\ninstallation\n------------\n\nto install pytest-metadata:\n\n.. code-block:: bash\n\n  $ pip install pytest-metadata\n\ncontributing\n------------\n\nwe welcome contributions.\n\nto learn more, see `development <https://github.com/pytest-dev/pytest-metadata/blob/master/development.rst>`_\n\navailable metadata\n------------------\n\nthe following metadata is gathered by this plugin:\n\n========  =============== ===================================\nkey       description     example\n========  =============== ===================================\npython    python version  3.6.4\nplatform  platform        darwin-17.4.0-x86_64-i386-64bit\npackages  pytest packages {'py': '1.5.2', 'pytest': '3.4.1'}\nplugins   pytest plugins  {'metadata': '1.6.0'}\n========  =============== ===================================\n\nadditional metadata\n-------------------\n\nyou can provide your own metadata (key, value pair) by specifying ``--metadata`` on the commandline::\n\n   pytest --metadata foo bar\n\nnote: you can provide multiple sets of ``--metadata``::\n\n   pytest --metadata foo bar --metadata baz zoo\n\nthere's also the possibility of passing in metadata as a json string::\n\n    pytest --metadata-from-json '{\"cat_says\": \"bring the cat nip\", \"human_says\": \"yes kitty\"}'\n\nalternatively a json can be read from a given file::\n\n    pytest --metadata-from-json-file path/to/valid/file.json\n\ncontinuous integration\n----------------------\n\nwhen run in a continuous integration environment, additional metadata is added\nfrom environment variables. below is a list of the supported continuous\nintegration providers, along with links to the environment variables that are\nadded to metadata if they're present.\n\n* `appveyor <https://www.appveyor.com/docs/environment-variables/>`_\n* `bitbucket <https://confluence.atlassian.com/bitbucket/environment-variables-794502608.html>`_\n* `circleci <https://circleci.com/docs/1.0/environment-variables/>`_\n* `gitlab ci <http://docs.gitlab.com/ce/ci/variables/readme.html>`_\n* `jenkins <https://wiki.jenkins-ci.org/display/jenkins/building+a+software+project#buildingasoftwareproject-jenkinssetenvironmentvariables>`_\n* `taskcluster <https://docs.taskcluster.net/reference/workers/docker-worker/environment>`_\n* `travis ci <https://docs.travis-ci.com/user/environment-variables/>`_\n\nnote that if you're using `tox <http://tox.readthedocs.io/>`_ to run your tests\nthen you will need to `pass down any additional environment variables <http://tox.readthedocs.io/en/latest/example/basic.html#passing-down-environment-variables>`_\nfor these to be picked up.\n\nviewing metadata\n----------------\n\nif you pass ``--verbose`` on the command line when running your tests, then the\nmetadata will be displayed in the terminal report header::\n\n  pytest --verbose\n  ============================ test session starts ============================\n  platform darwin -- python 3.6.4, pytest-3.4.1, py-1.5.2, pluggy-0.6.0 -- /usr/bin/python\n  cachedir: .pytest_cache\n  metadata: {'python': '3.6.4', 'platform': 'darwin-17.4.0-x86_64-i386-64bit', 'packages': {'pytest': '3.4.1', 'py': '1.5.2', 'pluggy': '0.6.0'}, 'plugins': {'metadata': '1.6.0'}}\n  plugins: metadata-1.6.0\n\nincluding metadata in junit xml\n-------------------------------\n\npytest-metadata provides the session scoped fixture :code:`include_metadata_in_junit_xml` that you may use to include any metadata in junit xml as ``property`` tags.\nfor example the following test module\n\n.. code-block:: python\n\n  import pytest\n\n  pytestmark = pytest.mark.usefixtures('include_metadata_in_junit_xml')\n\n  def test():\n      pass\n\nwhen called with\n\n.. code-block:: bash\n\n  pytest --metadata daffy duck --junit-xml=results.xml\n\nwould produce the following xml\n\n.. code-block:: xml\n\n  <?xml version=\"1.0\" encoding=\"utf-8\"?>\n  <testsuites>\n    <testsuite name=\"pytest\" errors=\"0\" failures=\"0\" skipped=\"0\" tests=\"1\" time=\"0.009\" timestamp=\"2020-11-27t06:38:44.407674\" hostname=\"sam\">\n      <properties>\n        <property name=\"daffy\" value=\"duck\"/>\n  ...\n\naccessing metadata\n------------------\n\nto add/modify/delete metadata at the end of metadata collection, you can use the ``pytest_metadata`` hook:\n\n.. code-block:: python\n\n  import pytest\n  @pytest.hookimpl(optionalhook=true)\n  def pytest_metadata(metadata):\n      metadata.pop(\"password\", none)\n\nto access the metadata from a test or fixture, you can use the ``metadata``\nfixture:\n\n.. code-block:: python\n\n  def test_metadata(metadata):\n      assert 'metadata' in metadata['plugins']\n\nto access the metadata from a plugin, you can use the ``stash`` attribute of\nthe ``config`` object. this can be used to read/add/modify the metadata:\n\n.. code-block:: python\n\n  def pytest_configure(config):\n    metadata = config.pluginmanager.getplugin(\"metadata\")\n    if metadata:\n        from pytest_metadata.plugin import metadata_key\n        config.stash[metadata_key]['foo'] = 'bar'\n\nplugin integrations\n-------------------\n\nhere's a handy list of plugins that either read or contribute to the metadata:\n\n* `pytest-base-url <https://pypi.python.org/pypi/pytest-base-url/>`_ - adds the\n  base url to the metadata.\n* `pytest-html <https://pypi.python.org/pypi/pytest-html/>`_ - displays the\n  metadata at the start of each report.\n* `pytest-reporter-html1 <https://pypi.org/project/pytest-reporter-html1/>`_ -\n  presents metadata as part of the report.\n* `pytest-selenium <https://pypi.python.org/pypi/pytest-selenium/>`_ - adds the\n  driver, capabilities, and remote server to the metadata.\n\nresources\n---------\n\n- `release notes <http://github.com/davehunt/pytest-metadata/blob/master/changes.rst>`_\n- `issue tracker <http://github.com/davehunt/pytest-metadata/issues>`_\n- `code <http://github.com/davehunt/pytest-metadata/>`_\n",
+  "docs_url": null,
+  "keywords": "metadata,pytest",
+  "license": "",
+  "name": "pytest-metadata",
+  "package_url": "https://pypi.org/project/pytest-metadata/",
+  "project_url": "https://pypi.org/project/pytest-metadata/",
+  "project_urls": {
+    "Homepage": "https://github.com/pytest-dev/pytest-metadata",
+    "Source": "https://github.com/pytest-dev/pytest-metadata",
+    "Tracker": "https://github.com/pytest-dev/pytest-metadata/issues"
+  },
+  "release_url": "https://pypi.org/project/pytest-metadata/3.0.0/",
+  "requires_dist": [
+    "pytest>=7.0.0",
+    "black>=22.1.0; extra == 'test'",
+    "flake8>=4.0.1; extra == 'test'",
+    "pre-commit>=2.17.0; extra == 'test'",
+    "tox>=3.24.5; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "pytest plugin for test session metadata",
+  "version": "3.0.0",
+  "releases": [],
+  "developers": [
+    "dhunt@mozilla.com",
+    "jimbrannlund@fastmail.com"
+  ],
+  "kwds": "pytest_metadata pytest_configure pytest_cache pytest pytestmark",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pytest_metadata",
+  "homepage": "",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_flake8",
+    "pypi_pre_commit",
+    "pypi_pytest",
+    "pypi_tox"
+  ]
+}

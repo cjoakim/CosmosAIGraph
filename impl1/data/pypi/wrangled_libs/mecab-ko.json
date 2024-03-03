@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 6 - mature",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "natural language :: korean",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: text processing :: linguistic"
+  ],
+  "description": "this is a python wrapper for the [mecab-ko] morphological analyzer for korean text.\nit works with python 3.6 and greater. \n\nthere are several implementations of python binding or wrapper for mecab-ko, but they are generally not well maintained.  \ni made it to stand on the shoulders of giants(well-maintained open-source projects like [mecab], [mecab-ko] and [mecab-python3]) with minimum modifications.  \ni initially named it `mecab-ko-python3` because the package name referenced for development was [mecab-python3],  \nit may seem a little arrogant, but to reduce confusion in the pypi, the name was changed to 'mecab-ko'.  \n(the repository is named 'pymecab-ko' to distinguish it from original [mecab-ko])  \n\n**note:** if using macos big sur, you'll need to upgrade pip to version 20.3 or\nhigher to use wheels due to a pip issue.\n\n**issue\ub97c \uc601\uc5b4\ub85c \uc791\uc131\ud560 \ud544\uc694\ub294 \uc5c6\uc2b5\ub2c8\ub2e4.**\n\n[mecab]: https://taku910.github.io/mecab\n[mecab-ko]: https://bitbucket.org/eunjeon/mecab-ko\n[mecab-python3]: https://github.com/samurait/mecab-python3\n\nnote that windows wheels require a [microsoft visual c++\nredistributable][msvc], so be sure to install that.\n\n[msvc]: https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads\n\n# basic usage\n\n```py\n>>> import mecab_ko as mecab\n>>> tagger = mecab.tagger(\"-owakati\")\n>>> tagger.parse(\"\uc544\ubc84\uc9c0\uac00\ubc29\uc5d0\ub4e4\uc5b4\uac00\uc2e0\ub2e4\").split()\n['\uc544\ubc84\uc9c0', '\uac00', '\ubc29', '\uc5d0', '\ub4e4\uc5b4\uac00', '\uc2e0\ub2e4']\n\n>>> tagger = mecab.tagger()\n>>> print(tagger.parse(\"\uc544\ubc84\uc9c0\uac00\ubc29\uc5d0\ub4e4\uc5b4\uac00\uc2e0\ub2e4\"))\n\uc544\ubc84\uc9c0  nng,*,f,\uc544\ubc84\uc9c0,*,*,*,*\n\uac00      jks,*,f,\uac00,*,*,*,*\n\ubc29      nng,*,t,\ubc29,*,*,*,*\n\uc5d0      jkb,*,f,\uc5d0,*,*,*,*\n\ub4e4\uc5b4\uac00  vv,*,f,\ub4e4\uc5b4\uac00,*,*,*,*\n\uc2e0\ub2e4    ep+ec,*,f,\uc2e0\ub2e4,inflect,ep,ec,\uc2dc/ep/*+\u3134\ub2e4/ec/*\neos\n```\n\nthe api for `pymecab-ko` closely follows the api for mecab itself,\neven when this makes it not very \u201cpythonic.\u201d  please consult the [official mecab\ndocumentation][mecab-docs] for more information.\n\n[mecab-docs]: https://taku910.github.io/mecab/\n\n# installation\n\nbinary wheels are available for macos x, linux, and windows (64bit) are\ninstalled by default when you use `pip`:\n\n```sh\npip install mecab-ko\n```\n\nthese wheels include a copy of the mecab-ko library and a dictionary.\nthere is a unique dictionary available for mecab-ko. `mecab-ko-dic` is automatically installed when installing pymacab-ko.\n\nto build from source using pip,\n\n```sh\npip install --no-binary :all: mecab-ko\n```\n\n## dictionaries\n\nin order to use mecab-ko, you must install a dictionary. there are 2 dictionaries available for mecab-ko.  \nthese packages, which include slight modifications for ease of use, are recommended:\n\n- [mecab-ko-dic](https://github.com/luminosoinsight/mecab-ko-dic): the pre-built [mecab-ko-dic](https://bitbucket.org/eunjeon/mecab-ko-dic) 2.1.1-20180720 based on [ipadic-py](https://github.com/polm/ipadic-py). it will be installed along with pymecab-ko.\n- [openkorpos-dic](https://github.com/nounique/openkorpos-dic-py): [a dictionary](https://github.com/openkorpos/model-mecab) trained with [openkorpos](https://github.com/openkorpos/openkorpos)(free and open alternative to the sejong corpus)\n# common issues\n\nif you get a `runtimeerror` when you try to run mecab, here are some things to check:\n\n## windows redistributable\n\nyou have to install [this][msvc] to use this package on windows.\n\n## specifying a mecabrc\n\nif you get this error:\n\n    error message: [ifs] no such file or directory: /usr/local/etc/mecabrc\n\nyou need to specify a `mecabrc` file. it's ok to specify an empty file, it just\nhas to exist. you can specify a `mecabrc` with `-r`. this may be necessary on\ndebian or ubuntu, where the `mecabrc` is in `/etc/mecabrc`.\n\nyou can specify an empty `mecabrc` like this:\n\n    tagger = mecab.tagger('-r/dev/null -d/home/hoge/mydic')\n\n## using unsupported output modes like `-ochasen`\n\nchasen output is not a built-in feature of mecab, you must specify it in your\n`dicrc` or `mecabrc`. notably, mecab-ko-dic does not include chasen output format.\nplease see [the mecab documentation](https://taku910.github.io/mecab/#format).\n\n# alternatives\n\n- [python-mecab-ko](https://github.com/jonghwanhyeon/python-mecab-ko) is a python binding for mecab-ko\n- [mecab-python-msvc](https://github.com/pusnow/mecab-python-msvc) is a mecab-python for mecab-ko-msvc \n- [konlpy](https://konlpy.org/en/latest/) is a library for korean nlp that includes a mecab wrapper\n\n# licensing\n\nlike mecab and mecab-python3, `pymecab-ko` is copyrighted free software by\ntaku kudo <taku@chasen.org> and nippon telegraph and telephone corporation,\nand is distributed under a 3-clause bsd license (see the file `bsd`).\nalternatively, it may be redistributed under the terms of the\ngnu general public license, version 2 (see the file `gpl`) or the\ngnu lesser general public license, version 2.1 (see the file `lgpl`).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "mecab-ko",
+  "package_url": "https://pypi.org/project/mecab-ko/",
+  "project_url": "https://pypi.org/project/mecab-ko/",
+  "project_urls": {
+    "Homepage": "https://github.com/NoUnique/pymecab-ko"
+  },
+  "release_url": "https://pypi.org/project/mecab-ko/1.0.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python wrapper for the mecab-ko morphological analyzer for korean",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "kofmap@gmail.com",
+    "taehwan_yoo"
+  ],
+  "kwds": "mecab_ko python3 mecab python pip",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_mecab_ko",
+  "homepage": "https://github.com/nounique/pymecab-ko",
+  "release_count": 6,
+  "dependency_ids": []
+}

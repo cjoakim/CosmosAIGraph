@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "\n.. image:: https://img.shields.io/pypi/v/mattermostdriver.svg\n    :target: https://pypi.python.org/pypi/mattermostdriver\n\n.. image:: https://img.shields.io/pypi/l/mattermostdriver.svg\n    :target: https://pypi.python.org/pypi/mattermostdriver\n\n.. image:: https://img.shields.io/pypi/pyversions/mattermostdriver.svg\n    :target: https://pypi.python.org/pypi/mattermostdriver\n\npython mattermost driver (apiv4)\n================================\n\ninfo\n----\n\nthe repository will try to keep up with the master of https://github.com/mattermost/mattermost-api-reference\n\nif something changes, it is most likely to change because the official mattermost api changed.\n\npython 3.5 or later is required.\n\ninstallation\n------------\n\n.. inclusion-marker-start-install\n\n``pip install mattermostdriver``\n\n.. inclusion-marker-end-install\n\ndocumentation\n-------------\ndocumentation can be found at https://vaelor.github.io/python-mattermost-driver/ .\n\nusage\n-----\n\n.. inclusion-marker-start-usage\n\n.. code:: python\n\n    from mattermostdriver import driver\n\n    foo = driver({\n        \"\"\"\n        required options\n\n        instead of the login/password, you can also use a personal access token.\n        if you have a token, you don't need to pass login/pass.\n        it is also possible to use 'auth' to pass a auth header in directly,\n        for an example, see:\n        https://vaelor.github.io/python-mattermost-driver/#authentication\n        \"\"\"\n        'url': 'mattermost.server.com',\n        'login_id': 'user.name',\n        'password': 'verysecret',\n        'token': 'yourpersonalaccesstoken',\n\n        \"\"\"\n        optional options\n\n        these options already have useful defaults or are just not needed in every case.\n        in most cases, you won't need to modify these, especially the basepath.\n        if you can only use a self signed/insecure certificate, you should set\n        verify to your ca file or to false. please double check this if you have any errors while\n        using a self signed certificate!\n        \"\"\"\n        'scheme': 'https',\n        'port': 8065,\n        'basepath': '/api/v4',\n        'verify': true,  # or /path/to/file.pem\n        'mfa_token': 'yourmfatoken',\n        \"\"\"\n        setting this will pass the your auth header directly to\n        the request libraries 'auth' parameter.\n        you probably only want that, if token or login/password is not set or\n        you want to set a custom auth header.\n        \"\"\"\n        'auth': none,\n        \"\"\"\n        if for some reasons you get regular timeouts after a while, try to decrease\n        this value. the websocket will ping the server in this interval to keep the connection\n        alive.\n        if you have access to your server configuration, you can of course increase the timeout\n        there.\n        \"\"\"\n        'timeout': 30,\n\n        \"\"\"\n        this value controls the request timeout.\n        see https://python-requests.org/en/master/user/advanced/#timeouts\n        for more information.\n        the default value is none here, because it is the default in the\n        request library, too.\n        \"\"\"\n        'request_timeout': none,\n\n        \"\"\"\n        to keep the websocket connection alive even if it gets disconnected for some reason you \n        can set the  keepalive option to true. the keepalive_delay defines how long to wait in seconds\n        before attempting to reconnect the websocket. \n        \"\"\"\n        'keepalive': false,\n        'keepalive_delay': 5,\n\n        \"\"\"\n        this option allows you to provide additional keyword arguments when calling websockets.connect()\n        by default it is none, meaning we will not add any additional arguments. an example of an \n        additional argument you can pass is one used to  disable the client side pings:\n        'websocket_kw_args': {\"ping_interval\": none},\n        \"\"\"\n        'websocket_kw_args': none\n\n        \"\"\"\n        setting debug to true, will activate a very verbose logging.\n        this also activates the logging for the requests package,\n        so you can see every request you send.\n\n        be careful. this should not be active in production, because this logs a lot!\n        even the password for your account when doing driver.login()!\n        \"\"\"\n        'debug': false,\n    })\n\n    \"\"\"\n    most of the requests need you to be logged in, so calling login()\n    should be the first thing you do after you created your driver instance.\n    login() returns the raw response.\n    if using a personal access token, you still need to run login().\n    in this case, does not make a login request, but a `get_user('me')`\n    and sets everything up in the client.\n    \"\"\"\n    foo.login()\n\n    \"\"\"\n    you can make api calls by using calling `driver.endpointofchoice`.\n    using api[''] is deprecated for 5.0.0!\n\n    so, for example, if you used `driver.api['users'].get_user('me')` before,\n    you now just do `driver.users.get_user('me')`.\n    the names of the endpoints and requests are almost identical to\n    the names on the api.mattermost.com/v4 page.\n    api calls always return the json the server send as a response.\n    \"\"\"\n    foo.users.get_user_by_username('another.name')\n\n    \"\"\"\n    if the api request needs additional parameters\n    you can pass them to the function in the following way:\n    - path parameters are always simple parameters you pass to the function\n    \"\"\"\n    foo.users.get_user(user_id='me')\n\n    # - query parameters are always passed by passing a `params` dict to the function\n    foo.teams.get_teams(params={...})\n\n    # - request bodies are always passed by passing an `options` dict or array to the function\n    foo.channels.create_channel(options={...})\n\n    # see the mattermost api documentation to see which parameters you need to pass.\n    foo.channels.create_channel(options={\n        'team_id': 'some_team_id',\n        'name': 'awesome-channel',\n        'display_name': 'awesome channel',\n        'type': 'o'\n    })\n\n    \"\"\"\n    if you want to make a websocket connection to the mattermost server\n    you can call the init_websocket method, passing an event_handler.\n    every websocket event send by mattermost will be send to that event_handler.\n    see the api documentation for which events are available.\n    \"\"\"\n    foo.init_websocket(event_handler)\n\n    # use `disconnect()` to disconnect the websocket\n    foo.disconnect()\n\n    # to upload a file you will need to pass a `files` dictionary\n    channel_id = foo.channels.get_channel_by_name_and_team_name('team', 'channel')['id']\n    file_id = foo.files.upload_file(\n        channel_id=channel_id\n        files={'files': (filename, open(filename))}\n    )['file_infos'][0]['id']\n\n\n    # track the file id and pass it in `create_post` options, to attach the file\n    foo.posts.create_post(options={\n        'channel_id': channel_id,\n        'message': 'this is the important file',\n        'file_ids': [file_id]})\n\n    # if needed, you can make custom requests by calling `make_request`\n    foo.client.make_request('post', '/endpoint', options=none, params=none, data=none, files=none, basepath=none)\n\n    # if you want to call a webhook/execute it use the `call_webhook` method.\n    # this method does not exist on the mattermost api afaik, i added it for ease of use.\n    foo.webhooks.call_webhook('myhookid', options) # options are optional\n\n\n.. inclusion-marker-end-usage\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "mattermostdriver",
+  "package_url": "https://pypi.org/project/mattermostdriver/",
+  "project_url": "https://pypi.org/project/mattermostdriver/",
+  "project_urls": {
+    "Homepage": "https://github.com/Vaelor/python-mattermost-driver"
+  },
+  "release_url": "https://pypi.org/project/mattermostdriver/7.3.2/",
+  "requires_dist": [
+    "websockets (>=8)",
+    "requests (>=2.25)"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "a python mattermost driver",
+  "version": "7.3.2",
+  "releases": [],
+  "developers": [
+    "github@kuuku.net"
+  ],
+  "kwds": "mattermostdriver repository pyversions mattermost github",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_mattermostdriver",
+  "homepage": "https://github.com/vaelor/python-mattermost-driver",
+  "release_count": 48,
+  "dependency_ids": [
+    "pypi_requests",
+    "pypi_websockets"
+  ]
+}

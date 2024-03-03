@@ -1,0 +1,68 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "environment :: plugins",
+    "intended audience :: science/research",
+    "intended audience :: telecommunications industry",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: multimedia :: sound/audio :: analysis",
+    "topic :: multimedia :: sound/audio :: sound synthesis"
+  ],
+  "description": "# museval\n\n[![build status](https://github.com/sigsep/sigsep-mus-eval/workflows/ci/badge.svg)](https://github.com/sigsep/sigsep-mus-eval/actions?query=workflow%3aci+branch%3amaster+event%3apush)\n[![latest version](https://img.shields.io/pypi/v/museval.svg)](https://pypi.python.org/pypi/museval)\n[![supported python versions](https://img.shields.io/pypi/pyversions/museval.svg)](https://pypi.python.org/pypi/museval)\n\na python package to evaluate source separation results using the [musdb18](https://sigsep.github.io/musdb) dataset. this package was part of the [mus task](https://sisec.inria.fr/home/2018-professionally-produced-music-recordings/) of the [signal separation evaluation campaign (sisec)](https://sisec.inria.fr/).\n\n### bsseval v4\n\nthe bsseval metrics, as implemented in the [matlab toolboxes](http://bass-db.gforge.inria.fr/bss_eval/) and their re-implementation in [mir_eval](http://craffel.github.io/mir_eval/#module-mir_eval.separation) are widely used in the audio separation literature. one particularity of bsseval is to compute the metrics after optimally matching the estimates to the true sources through linear distortion filters. this allows the criteria to be robust to some linear mismatches. apart from the optional evaluation for all possible permutations of the sources, this matching is the reason for most of the computation cost of bsseval, especially considering it is done for each evaluation window when the metrics are computed on a framewise basis.\n\nfor this package, we enabled the option of having _time invariant_ distortion filters, instead of necessarily taking them as varying over time as done in the previous versions of bss eval. first, enabling this option _significantly reduces_ the computational cost for evaluation because matching needs to be done only once for the whole signal. second, it introduces much more dynamics in the evaluation, because time-varying matching filters turn out to over-estimate performance. third, this makes matching more robust, because true sources are not silent throughout the whole recording, while they often were for short windows.\n\n## installation\n\n### package installation\n\nyou can install the `museval` parsing package using pip:\n\n```bash\npip install museval\n```\n\n## usage\n\nthe purpose of this package is to evaluate source separation results and write out validated `json` files. we want to encourage users to use this evaluation output format as the standardized way to share source separation results. `museval` is designed to work in conjuction with the [musdb](https://github.com/sigsep/sigsep-mus-db) tools and the musdb18 dataset (however, `museval` can also be used without `musdb`).\n\n### separate musdb18 tracks and evaluate on-the-fly\n\n- if you want to perform evaluation while processing your source separation results, you can make use `musdb` track objects.\nhere is an example for such a function separating the mixture into a __vocals__ and __accompaniment__ track:\n\n```python\nimport musdb\nimport museval\n\ndef estimate_and_evaluate(track):\n    # assume mix as estimates\n    estimates = {\n        'vocals': track.audio,\n        'accompaniment': track.audio\n    }\n\n    # evaluate using museval\n    scores = museval.eval_mus_track(\n        track, estimates, output_dir=\"path/to/json\"\n    )\n\n    # print nicely formatted and aggregated scores\n    print(scores)\n\nmus = musdb.db()\nfor track in mus:\n    estimate_and_evaluate(track)\n\n```\n\nmake sure `output_dir` is set. `museval` will recreate the `musdb` file structure in that folder and write the evaluation results to this folder.\n\n### evaluate musdb18 tracks later\n\nif you have already computed your estimates, we provide you with an easy-to-use function to process evaluation results afterwards.\n\nsimply use the `museval.eval_mus_dir` to evaluate your `estimates_dir` and write the results into the `output_dir`. for convenience, the `eval_mus_dir` function accepts all parameters of the `musdb.run()`.\n\n```python\nimport musdb\nimport museval\n\n# initiate musdb\nmus = musdb.db()\n\n# evaluate an existing estimate folder with wav files\nmuseval.eval_mus_dir(\n    dataset=mus,  # instance of musdb\n    estimates_dir=...,  # path to estimate folder\n    output_dir=...,  # set a folder to write eval json files\n    ext='wav\n)\n```\n\n### aggregate and analyze scores\n\nscores for each track can also be aggregated in a pandas dataframe for easier analysis or the creation of boxplots.\nto aggregate multiple tracks in a dataframe, create `museval.evalstore()` object and add the track scores successively.\n\n```python\nresults = museval.evalstore(frames_agg='median', tracks_agg='median')\nfor track in tracks:\n    # ...\n    results.add_track(museval.eval_mus_track(track, estimates))\n```\n\nyou may also add scores that have been computed beforehand through `museval.eval_mus_dir`:\n```python\nresults = museval.evalstore(frames_agg='median', tracks_agg='median')\nresults.add_eval_dir(\n    path=...# path to the output_dir for eval_mus_dir\n)\n```\n\nwhen all tracks have been added, the aggregated scores can be shown using `print(results)` and results may be saved as a pandas dataframe `results.save('my_method.pandas')`.\n\nto compare multiple methods, create a `museval.methodstore()` object add the results\n\n```python\nmethods = museval.methodstore()\nmethods.add_evalstore(results, name=\"xzy\")\n```\n\nto compare against participants from [sisec mus 2018](https://github.com/sigsep/sigsep-mus-2018), we provide a convenient method to load the existing scores on demand using `methods.add_sisec18()`. for the creation of plots and statistical significance tests we refer to our [list of examples](/examples).\n\n#### commandline tool\n\nwe provide a command line wrapper of `eval_mus_dir` by calling the `museval` command line tool. the following example is equivalent to the code example above:\n\n```\nmuseval --musdb path/to/musdb -o path/to/output_dir path/to/estimate_dir\n```\n\n:bulb: you use the `--is-wav` flag to use the decoded wav _musdb_ dataset.\n\n### using docker for evaluation\n\nif you don't want to set up a python environment to run the evaluation, we would recommend to use [docker](http://docker.com). assuming you have already computed your estimates and installed docker in your machine, you just need to run the following two lines in your terminal:\n\n#### 1. pull docker container\n\npull our precompiled `sigsep-mus-eval` image from [dockerhub](https://hub.docker.com/r/faroit/sigsep-mus-eval/):\n\n```\ndocker pull faroit/sigsep-mus-eval\n```\n\n#### 2. run evaluation\n\nto run the evaluation inside of the docker, three absolute paths are required:\n\n* `estimatesdir` will stand here for the absolute path to the estimates directory. (for instance `/home/faroit/dev/mymethod/musdboutput`)\n* `musdbdir` will stand here for the absolute path to the root folder of musdb. (for instance `/home/faroit/dev/data/musdb18`)\n* `outputdir` will stand here for the absolute path to the output directory. (for instance `/home/faroit/dev/mymethod/scores`)\n\nwe just mount these directories into the docker container using the `-v` flags and start the docker instance:\n\n```\ndocker run --rm -v estimatesdir:/est -v musdbdir:/mus -v outputdir:/out faroit/sigsep-mus-eval --musdb /mus -o /out /est\n```\n\nin the line above, replace `estimatesdir`, `musdbdir` and `outputdir` by the absolute paths for your setting.  please note that docker requires absolute paths so you have to rely on your command line environment to convert relative paths to absolute paths (e.g. by using `$home/` on unix).\n\n:warning: `museval` requires a significant amount of memory for the evaluation. evaluating all five targets for _musdb18_ may require more than 4gb of ram. it is recommended to adjust your docker preferences, because the docker container might just quit if its out of memory.\n\n## how to contribute\n\n_museval_ is a community focused project, we therefore encourage the community to submit bug-fixes and requests for technical support through [github issues](https://github.com/sigsep/sigsep-mus-eval/issues/new). for more details of how to contribute, please follow our [`contributing.md`](contributing.md). \n\n## references\n\na. if you use the `museval` in the context of source separation evaluation comparing a method it to other methods of [sisec 2018](http://sisec18.unmix.app/), please cite\n\n```\n@inproceedings{sisec18,\n  author=\"st{\\\"o}ter, fabian-robert and liutkus, antoine and ito, nobutaka\",\n  title=\"the 2018 signal separation evaluation campaign\",\n  booktitle=\"latent variable analysis and signal separation:\n  14th international conference, lva/ica 2018, surrey, uk\",\n  year=\"2018\",\n  pages=\"293--305\"\n}\n```\n\nb. if you use the software for any other purpose, you can cite the software release\n\n[![doi](https://zenodo.org/badge/doi/10.5281/zenodo.3376621.svg)](https://doi.org/10.5281/zenodo.3376621)\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "museval",
+  "package_url": "https://pypi.org/project/museval/",
+  "project_url": "https://pypi.org/project/museval/",
+  "project_urls": {
+    "Homepage": "https://github.com/sigsep/sigsep-mus-eval"
+  },
+  "release_url": "https://pypi.org/project/museval/0.4.1/",
+  "requires_dist": [
+    "musdb (>=0.4.0)",
+    "pandas (>=1.0.1)",
+    "numpy",
+    "scipy",
+    "simplejson (>=3.19.0)",
+    "soundfile",
+    "jsonschema",
+    "check-manifest ; extra == 'dev'",
+    "sphinx ; extra == 'docs'",
+    "sphinx-rtd-theme ; extra == 'docs'",
+    "recommonmark ; extra == 'docs'",
+    "numpydoc ; extra == 'docs'",
+    "pytest ; extra == 'tests'"
+  ],
+  "requires_python": "",
+  "summary": "evaluation tools for the sigsep mus database",
+  "version": "0.4.1",
+  "releases": [],
+  "developers": [
+    "fabian",
+    "mail@faroit.com"
+  ],
+  "kwds": "eval_mus_track pyversions museval musdb18 mus",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_museval",
+  "homepage": "https://github.com/sigsep/sigsep-mus-eval",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_check_manifest",
+    "pypi_jsonschema",
+    "pypi_musdb",
+    "pypi_numpy",
+    "pypi_numpydoc",
+    "pypi_pandas",
+    "pypi_pytest",
+    "pypi_recommonmark",
+    "pypi_scipy",
+    "pypi_simplejson",
+    "pypi_soundfile",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme"
+  ]
+}

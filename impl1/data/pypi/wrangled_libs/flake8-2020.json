@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: implementation :: cpython"
+  ],
+  "description": "[![build status](https://github.com/asottile/flake8-2020/actions/workflows/main.yml/badge.svg)](https://github.com/asottile/flake8-2020/actions/workflows/main.yml)\n[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/asottile/flake8-2020/main.svg)](https://results.pre-commit.ci/latest/github/asottile/flake8-2020/main)\n\nflake8-2020\n===========\n\nflake8 plugin which checks for misuse of `sys.version` or `sys.version_info`\n\nthis will become a problem when `python3.10` or `python4.0` exists (presumably\nduring the year 2020).\n\nyou might also find an early build of [python3.10] useful\n\n[python3.10]: https://github.com/asottile/python3.10\n\n## installation\n\n```bash\npip install flake8-2020\n```\n\n## flake8 codes\n\n| code   | description                                            |\n|--------|--------------------------------------------------------|\n| ytt101 | `sys.version[:3]` referenced (python3.10)              |\n| ytt102 | `sys.version[2]` referenced (python3.10)               |\n| ytt103 | `sys.version` compared to string (python3.10)          |\n| ytt201 | `sys.version_info[0] == 3` referenced (python4)        |\n| ytt202 | `six.py3` referenced (python4)                         |\n| ytt203 | `sys.version_info[1]` compared to integer (python4)    |\n| ytt204 | `sys.version_info.minor` compared to integer (python4) |\n| ytt301 | `sys.version[0]` referenced (python10)                 |\n| ytt302 | `sys.version` compared to string (python10)            |\n| ytt303 | `sys.version[:1]` referenced (python10)                |\n\n## rationale\n\nlots of code incorrectly references the `sys.version` and `sys.version_info`\nmembers.  in particular, this will cause some issues when the version of python\nafter python3.9 is released.  my current recommendation is 3.10 since i believe\nit breaks less code, here's a few patterns that will cause issues:\n\n```python\n# in python3.10 this will report as '3.1' (should be '3.10')\npython_version = sys.version[:3]  # ytt101\n# in python3.10 this will report as '1' (should be '10')\npy_minor = sys.version[2]\n# in python3.10 this will be false (which goes against developer intention)\nsys.version >= '3.5'  # ytt103\n\n\n# correct way to do this\npython_version = '{}.{}'.format(*sys.version_info)\npy_minor = str(sys.version_info[1])\nsys.version_info >= (3, 5)\n```\n\n```python\n# in python4 this will report as `false` (and suddenly run python2 code!)\nis_py3 = sys.version_info[0] == 3  # ytt201\n\n# in python4 this will report as `false` (six violates ytt201!)\nif six.py3:  # ytt202\n    print('python3!')\n\nif sys.version_info[0] >= 3 and sys.version_info[1] >= 5:  # ytt203\n    print('py35+')\n\nif sys.version_info.major >= 3 and sys.version_info.minor >= 6:  # ytt204\n    print('py36+')\n\n# correct way to do this\nis_py3 = sys.version_info >= (3,)\n\nif not six.py2:\n    print('python3!')\n\nif sys.version_info >= (3, 5):\n    print('py35+')\n\nif sys.version_info >= (3, 6):\n    print('py36+')\n```\n\n```python\n# in python10 this will report as '1'\npython_major_version = sys.version[0]  # ytt301\n# in python10 this will be false\nif sys.version >= '3':  # ytt302\n    print('python3!')\n# in python10 this will be false\nif sys.version[:1] >= '3':  # ytt303\n    print('python3!')\n\n\n# correct way to do this\npython_major_version = str(sys.version_info[0])\n\nif sys.version_info >= (3,):\n    print('python3!')\n\nif sys.version_info >= (3,):\n    print('python3!')\n```\n\n## as a pre-commit hook\n\nsee [pre-commit](https://github.com/pre-commit/pre-commit) for instructions\n\nsample `.pre-commit-config.yaml`:\n\n```yaml\n-   repo: https://github.com/pycqa/flake8\n    rev: 3.7.8\n    hooks:\n    -   id: flake8\n        additional_dependencies: [flake8-2020==1.6.1]\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "flake8-2020",
+  "package_url": "https://pypi.org/project/flake8-2020/",
+  "project_url": "https://pypi.org/project/flake8-2020/",
+  "project_urls": {
+    "Homepage": "https://github.com/asottile/flake8-2020"
+  },
+  "release_url": "https://pypi.org/project/flake8-2020/1.8.1/",
+  "requires_dist": [
+    "flake8 (>=5)"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "flake8 plugin which checks for misuse of `sys.version` or `sys.version_info`",
+  "version": "1.8.1",
+  "releases": [],
+  "developers": [
+    "anthony_sottile",
+    "asottile@umich.edu"
+  ],
+  "kwds": "python_version python_major_version flake8 version_info is_py3",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flake8_2020",
+  "homepage": "https://github.com/asottile/flake8-2020",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_flake8"
+  ]
+}

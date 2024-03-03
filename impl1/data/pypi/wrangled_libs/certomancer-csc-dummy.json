@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: security :: cryptography",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# certomancer-based dummy csc server implementation\n\n## overview\n\nthis package contains a minimal implementation of the cloud signature\nconsortium (csc) api for remote signing. it's intended for use in\nintegration tests and demonstrations.\nmost of the heavy lifting is actually done by\n[certomancer](https://github.com/matthiasvalvekens/certomancer). this package\nmerely wraps calls to certomancer in an `aiohttp`-based web interface that\nexposes (a subset of) the csc api.\n\nthis is a **testing tool**, and it omits all sorts of essential security features:\n\n - requests are not authenticated\n - no sad replay prevention of any sort, other than the standard hash pinning\n   supported by the csc protocol\n - all keys in the certomancer config can be used to sign hashes in csc calls\n\n**it goes without saying that you should _never_ use this implementation, or any\nderivative thereof, with production keys.**\n\n\n## missing features\n\nbesides most authentication-related endpoints, the\n`credentials/extendtransaction` endpoint is currently also unavailable. support\nfor this endpoint may be implemented in the future.\n\nthe other obvious missing feature is \"anything resembling a decent user interface\".\nthis code was essentially isolated from\n[pyhanko's](https://github.com/matthiasvalvekens/pyhanko) integration tests in the hope that\nit might be useful for others to play around with, and the primitive cli reflects that.\n\n\n## invocation\n\nthe package is on [pypi](https://pypi.org/project/certomancer-csc-dummy/0.1.0/)\nand can be installed via `pip`:\n\n```bash\npip install certomancer-csc-dummy\n```\n\nthis is the command syntax. all parameters are required.\n\n```bash\ncertomancer-csc certomancer_config port scal\n```\n\nthe meaning of the parameters is as follows:\n\n - `certomancer_config` is the path to your certomancer config file, usually called\n   `certomancer.yml`\n - `port` is the port on which you want the dummy server to listen\n - `scal` indicates whether sad data is required to be bound to hashes\n   (`1`=no, `2`=yes) &mdash; see the csc specification for details.\n \nthe credentials exposed in the csc api are in one-to-one correspondence with\ncertificates in certomancer (assuming certomancer has access to all the private keys).\nthe naming convention for credentials is `<arch>/<cert-label>`, where `<arch>` is the\nname of the certomancer pki architecture you're trying to access, and `<cert-label>`\nis the label of the certificate that will be treated as the signer's certificate.\nexample: `testing-ca/signer1` would access the certificate `signer1` in the\narchitecture labelled `testing-ca`. signatures will be produced by the corresponding\nprivate key.\n\nagain, note that all credentials are always available without any form of authentication,\nalthough the caller is still required to go through the motions of requesting a sad token\nbefore any signatures will be returned.\n\n**note:** the csc dummy server currently does _not_ launch certomancer animator or otherwise\nexpose access to trust services managed by certomancer. for now, you need to launch\ncertomancer animator in a separate process if you need those.\n\n(the reason is that certomancer doesn't (yet) natively integrate with `aiohttp`, it\ncurrently only does wsgi. that may change in the future.)\n\n## example usage\n\nsee here:\n\n - [the workflow code](https://github.com/matthiasvalvekens/pyhanko/blob/master/.github/workflows/live-integration-tests.yml)\n   for pyhanko's \"live\" integration test setup\n - [the dummy client implementation](https://github.com/matthiasvalvekens/pyhanko/blob/master/pyhanko_tests/csc_utils/csc_dummy_client.py)\n   used in pyhanko's tests\n\n## license\n\nmit license.\n",
+  "docs_url": null,
+  "keywords": "pki testing csc signature",
+  "license": "mit",
+  "name": "certomancer-csc-dummy",
+  "package_url": "https://pypi.org/project/certomancer-csc-dummy/",
+  "project_url": "https://pypi.org/project/certomancer-csc-dummy/",
+  "project_urls": {
+    "Homepage": "https://github.com/MatthiasValvekens/certomancer-csc-dummy"
+  },
+  "release_url": "https://pypi.org/project/certomancer-csc-dummy/0.2.3/",
+  "requires_dist": [
+    "asn1crypto >=1.5.0",
+    "cryptography >=3.3.1",
+    "certomancer <0.12.0,>=0.11.0",
+    "aiohttp ~=3.9.0",
+    "python-pae ==0.1.0"
+  ],
+  "requires_python": "",
+  "summary": "a certomancer-based demo csc server for integration tests",
+  "version": "0.2.3",
+  "releases": [],
+  "developers": [
+    "dev@mvalvekens.be",
+    "matthias_valvekens"
+  ],
+  "kwds": "certomancer_config certomancer cert csc csc_utils",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_certomancer_csc_dummy",
+  "homepage": "https://github.com/matthiasvalvekens/certomancer-csc-dummy",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_asn1crypto",
+    "pypi_certomancer",
+    "pypi_cryptography",
+    "pypi_python_pae"
+  ]
+}

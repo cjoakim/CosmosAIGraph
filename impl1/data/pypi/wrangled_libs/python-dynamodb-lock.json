@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7"
+  ],
+  "description": "====================\npython dynamodb lock\n====================\n\n\n.. image:: https://img.shields.io/pypi/v/python_dynamodb_lock.svg\n        :target: https://pypi.python.org/pypi/python_dynamodb_lock\n\n.. image:: https://img.shields.io/travis/mohankishore/python_dynamodb_lock.svg\n        :target: https://travis-ci.org/mohankishore/python_dynamodb_lock\n\n.. image:: https://readthedocs.org/projects/python-dynamodb-lock/badge/?version=latest\n        :target: https://python-dynamodb-lock.readthedocs.io/en/latest/?badge=latest\n        :alt: documentation status\n\n\n\n\nthis is a general purpose distributed locking library built on top of dynamodb. it is heavily\n\"inspired\" by the java-based `amazondynamodblockclient <https://github.com/awslabs/dynamodb-lock-client>`_\nlibrary, and supports both coarse-grained and fine-grained locking.\n\n* free software: apache software license 2.0\n* documentation: https://python-dynamodb-lock.readthedocs.io\n* source code: https://github.com/mohankishore/python_dynamodb_lock\n\n\nfeatures\n--------\n\n* acquire named locks - with configurable retry semantics\n* periodic heartbeat/update for the locks to keep them alive\n* auto-release the locks if there is no heartbeat for a configurable lease-duration\n* notify an app-callback function if the lock is stolen, or gets too close to lease expiry\n* store arbitrary application data along with the locks\n* uses monotonically increasing clock to avoid issues due to clock skew and/or dst etc.\n* auto-delete the database entries after a configurable expiry-period\n\n\nconsistency notes\n-----------------\n\nnote that while the lock itself can offer fairly strong consistency guarantees, it does not\nparticipate in any kind of distributed transaction.\n\nfor example, you may wish to acquire a lock for some customer-id \"xyz\", and then make some changes\nto the corresponding database entry for this customer-id, and then release the lock - thereby\nguaranteeing that only one process changes any given customer-id at a time.\n\nwhile the happy path looks okay, consider a case where the application changes take a long time,\nand some errors/gc-pauses prevent the heartbeat from updating the lock. then, some other client\ncan assume the lock to be abandoned, and start processing the same customer in parallel. the original\nlock-client will recognize that its lock has been \"stolen\" and will let the app know through a callback\nevent, but the app may have already committed its changes to the database. this can only be solved by\nhaving the application changes and the lock-release be part of a single distributed transaction - which,\nas indicated earlier, is not supported.\n\nthat said, in most cases, where the heartbeat is not expected to get delayed beyond the lock's lease\nduration, the implementation should work just fine.\n\nrefer to an excellent post by martin kleppmann on this subject:\nhttps://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html\n\ncredits\n-------\n\n* amazondynamodblockclient: https://github.com/awslabs/dynamodb-lock-client\n* cookiecutter: https://github.com/audreyr/cookiecutter\n* cookiecutter python: https://github.com/audreyr/cookiecutter-pypackage\n\n\n\n=======\nhistory\n=======\n\n0.9.0 (2018-10-28)\n------------------\n\n* first release on pypi.\n\n\n",
+  "docs_url": null,
+  "keywords": "python_dynamodb_lock",
+  "license": "apache software license 2.0",
+  "name": "python-dynamodb-lock",
+  "package_url": "https://pypi.org/project/python-dynamodb-lock/",
+  "project_url": "https://pypi.org/project/python-dynamodb-lock/",
+  "project_urls": {
+    "Homepage": "https://github.com/mohankishore/python_dynamodb_lock"
+  },
+  "release_url": "https://pypi.org/project/python-dynamodb-lock/0.9.1/",
+  "requires_dist": [
+    "boto3",
+    "botocore"
+  ],
+  "requires_python": "",
+  "summary": "python library that emulates the java-based dynamo-db-client from awslabs",
+  "version": "0.9.1",
+  "releases": [],
+  "developers": [
+    "mohan_kishore",
+    "mohankishore@yahoo.com"
+  ],
+  "kwds": "python_dynamodb_lock dynamodb dynamo locking locks",
+  "license_kwds": "apache software license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_python_dynamodb_lock",
+  "homepage": "https://github.com/mohankishore/python_dynamodb_lock",
+  "release_count": 1,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_botocore"
+  ]
+}

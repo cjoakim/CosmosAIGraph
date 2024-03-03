@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "framework :: sphinx",
+    "framework :: sphinx :: extension",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: documentation",
+    "topic :: documentation :: sphinx"
+  ],
+  "description": "sphinx github changelog: build a sphinx changelog from github releases\n======================================================================\n\n.. image:: https://img.shields.io/pypi/v/sphinx-github-changelog?logo=pypi&logocolor=white\n    :target: https://pypi.org/pypi/sphinx-github-changelog\n    :alt: deployed to pypi\n\n.. image:: https://img.shields.io/pypi/pyversions/sphinx-github-changelog?logo=pypi&logocolor=white\n    :target: https://pypi.org/pypi/sphinx-github-changelog\n    :alt: deployed to pypi\n\n.. image:: https://img.shields.io/github/stars/ewjoachim/sphinx-github-changelog?logo=github\n    :target: https://github.com/ewjoachim/sphinx-github-changelog/\n    :alt: github repository\n\n.. image:: https://img.shields.io/github/workflow/status/ewjoachim/sphinx-github-changelog/ci?logo=github\n    :target: https://github.com/ewjoachim/sphinx-github-changelog/actions?workflow=ci\n    :alt: continuous integration\n\n.. image:: https://img.shields.io/readthedocs/sphinx-github-changelog?logo=read-the-docs&logocolor=white\n    :target: http://sphinx-github-changelog.readthedocs.io/en/latest/?badge=latest\n    :alt: documentation\n\n.. image:: https://img.shields.io/endpoint?logo=codecov&logocolor=white&url=https://raw.githubusercontent.com/wiki/ewjoachim/sphinx-github-changelog/coverage-comment-badge.json\n    :target: https://github.com/marketplace/actions/coverage-comment\n    :alt: coverage\n\n.. image:: https://img.shields.io/github/license/ewjoachim/sphinx-github-changelog?logo=open-source-initiative&logocolor=white\n    :target: https://github.com/ewjoachim/sphinx-github-changelog/blob/master/license\n    :alt: mit license\n\n.. image:: https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg\n    :target: https://github.com/ewjoachim/sphinx-github-changelog/blob/master/code_of_conduct.md\n    :alt: contributor covenant\n\nsphinx-github-changelog is a sphinx_ plugin that builds a changelog section based on\na repository's `github releases`_ content.\n\n.. _sphinx: https://www.sphinx-doc.org/en/master/\n.. _`github releases`: https://docs.github.com/en/github/administering-a-repository/about-releases\n\nhow ? (the short version)\n=========================\n\nin your sphinx documentation ``conf.py``:\n\n.. code-block:: python\n\n    extensions = [\n        ...,  # your other extensions\n        \"sphinx_github_changelog\",\n    ]\n\n    # provide a github api token:\n    # pass the sphinx_github_changelog_token environment variable to your build\n    # or\n    sphinx_github_changelog_token = \"...\"\n\nin your documentation:\n\n.. code-block:: restructuredtext\n\n    .. changelog::\n        :changelog-url: https://your-project.readthedocs.io/en/stable/#changelog\n        :github: https://github.com/you/your-project/releases/\n        :pypi: https://pypi.org/project/your-project/\n\n\nsee the end result for this project on readthedocs__.\n\n.. __: https://sphinx-github-changelog.readthedocs.io/en/stable/#changelog\n\nwhy ?\n=====\n\non the way to continuous delivery, it's important to be able to release easily.\none of the criteria for easy releases is that the release doesn't require a commit and\na pull request. release pull requests usually include 2 parts:\n\n- changing the version\n- updating the changelog (if you keep a changelog, let's assume you do)\n\ncommitless releases need a way to store the version and the changelog, as close as\npossible to the code, but actually **not in** the code.\n\nsetting aside the \"version\" question, ``sphinx-github-changelog`` aims at providing\na good way of managing the \"changelog\" part:\n\nthe best solution we've found so far for the changelog is to store it in the body of\n`github releases`_. that's very practical for maintainers, but it may not be the first\nplace people will look for it. as far as we've seen, people expect the changelog to\nbe:\n\n- in the repo, in ``changelog.rst``,\n- in the documentation.\n\nhaving the changelog in ``changelog.rst`` causes a few problems:\n\n- either each pr adds its single line of changelog, but:\n\n  - you'll most probably run into countless merge conflicts,\n  - the changelog won't tell you which contribution was part of which release\n\n  this reduces the interest for the whole thing.\n\n- or your changelog is edited at release time. maybe you're using towncrier_ for\n  fragment-based changelog, but you're not doing commitless releases anymore. you could\n  imagine that the release commit is done by your ci, but this can quickly become\n  annoying, especially if you require pull requests.\n\nbut there is another way. instead of providing the changelog, the ``changelog.rst``\nfile can hold a *link* to the changelog. this makes things much easier.\n``sphinx-github-changelog`` encourages you to do that.\n\na complete toolbelt\n-------------------\n\nalongside ``sphinx-github-changelog``, we suggest a few tools that play nice together:\n\n- `setuptools-scm`_ will compute your version in ``setup.py`` based on git tags.\n- `release-drafter`_ will keep a \"draft release\" updated as you merge pull requests to\n  your repository, so you just have to slightly adjust the release body, and create a\n  tag.\n- any continuous integration solution should be able to listen to new tags, and build\n  and upload distributions to pypi. don't forget to use `pypi api tokens`_!\n- and readthedocs_ to host your built documentation, of course.\n\n.. _`setuptools-scm`: https://pypi.org/project/setuptools-scm/\n.. _`release-drafter`: https://help.github.com/en/github/administering-a-repository/about-releases\n.. _towncrier: https://pypi.org/project/towncrier/\n.. _`pypi api tokens`: https://pypi.org/help/#token\n.. _readthedocs: https://readthedocs.org/\n\nif you're using all the tools above, then releasing is simple as proof-reading the\ndraft github release and press \"publish release\". that's it.\n\nreference documentation\n=======================\n\nextension options (``conf.py``)\n-------------------------------\n\n- ``changelog_github_token``: github api token, with read access to the repository.\n  defaults to the value of the environment variable ``sphinx_github_changelog_token``.\n  if no value is provided, the build will still pass but the changelog will not be\n  built, and a link to the ``changelog-url`` will be displayed (if provided).\n\ndirective\n---------\n\n.. code-block:: restructuredtext\n\n    .. changelog::\n        :changelog-url: https://your-project.readthedocs.io/en/stable/changelog.html\n        :github: https://github.com/you/your-project/releases/\n        :pypi: https://pypi.org/project/your-project/\n\nattributes\n~~~~~~~~~~\n\n- ``github`` (**required**): url to the releases page of the repository.\n- ``changelog-url`` (optional): url to the built version of your changelog.\n  ``sphinx-github-changelog`` will display a link to your built changelog if the github\n  token is not provided (hopefully, this does not happen in your built documentation)\n- ``pypi`` (optional): url to the pypi page of the repository. this allows the changelog\n  to display links to each pypi release.\n\nyou'll notice that each parameter here is not requested in the simplest form but as\nvery specific urls from which the program extracts the needed information. this is\ndone on purpose. if people browse the unbuilt version of your documentation\n(e.g. on github or pypi directly), they'll still be presented with links to the pages\nthat contain the information they will need, instead of unhelping directives.\n\n.. below this line is content specific to github / pypi that will not appear in the\n   built doc.\n.. end-of-index-doc\n\ncheck out the built version!\n============================\n\nthis readme is also built as a sphinx documentation, and it includes the changelog.\ninterested to see how it looks? check it out on `our readthedocs space`_.\n\n.. _`our readthedocs space`: https://sphinx-github-changelog.readthedocs.io/en/stable\n\nif you encounter a bug, or want to get in touch, you're always welcome to open a\nticket_.\n\n.. _ticket: https://github.com/peopledoc/sphinx-github-changelog/issues/new\n\nother links\n===========\n\n- `code of conduct <code_of_conduct.rst>`_.\n- `license <licence.rst>`_.\n- `contributing guidelines <contributing.rst>`_.\n",
+  "docs_url": null,
+  "keywords": "sphinx,github,releases,changelog",
+  "license": "mit",
+  "name": "sphinx-github-changelog",
+  "package_url": "https://pypi.org/project/sphinx-github-changelog/",
+  "project_url": "https://pypi.org/project/sphinx-github-changelog/",
+  "project_urls": {
+    "Documentation": "https://sphinx-github-changelog.readthedocs.io/en/latest/",
+    "Homepage": "https://sphinx-github-changelog.readthedocs.io/en/latest/",
+    "Repository": "https://github.com/ewjoachim/sphinx-github-changelog"
+  },
+  "release_url": "https://pypi.org/project/sphinx-github-changelog/1.2.1/",
+  "requires_dist": [
+    "docutils",
+    "importlib-metadata ; python_version < \"3.8\"",
+    "requests",
+    "Sphinx"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "build a sphinx changelog from github releases",
+  "version": "1.2.1",
+  "releases": [],
+  "developers": [
+    "ewjoachim@gmail.com",
+    "joachim_jablon"
+  ],
+  "kwds": "sphinx_github_changelog sphinx_github_changelog_token sphinx_ sphinx _sphinx",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_sphinx_github_changelog",
+  "homepage": "https://sphinx-github-changelog.readthedocs.io/en/latest/",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_docutils",
+    "pypi_importlib_metadata",
+    "pypi_requests",
+    "pypi_sphinx"
+  ]
+}

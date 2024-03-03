@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon route53 resolver construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\n## dns firewall\n\nwith route 53 resolver dns firewall, you can filter and regulate outbound dns traffic for your\nvirtual private connections (vpcs). to do this, you create reusable collections of filtering rules\nin dns firewall rule groups and associate the rule groups to your vpc.\n\ndns firewall provides protection for outbound dns requests from your vpcs. these requests route\nthrough resolver for domain name resolution. a primary use of dns firewall protections is to help\nprevent dns exfiltration of your data. dns exfiltration can happen when a bad actor compromises\nan application instance in your vpc and then uses dns lookup to send data out of the vpc to a domain\nthat they control. with dns firewall, you can monitor and control the domains that your applications\ncan query. you can deny access to the domains that you know to be bad and allow all other queries\nto pass through. alternately, you can deny access to all domains except for the ones that you\nexplicitly trust.\n\n### domain lists\n\ndomain lists can be created using a list of strings, a text file stored in amazon s3 or a local\ntext file:\n\n```python\nblock_list = route53resolver.firewalldomainlist(self, \"blocklist\",\n    domains=route53resolver.firewalldomains.from_list([\"bad-domain.com\", \"bot-domain.net\"])\n)\n\ns3_list = route53resolver.firewalldomainlist(self, \"s3list\",\n    domains=route53resolver.firewalldomains.from_s3_url(\"s3://bucket/prefix/object\")\n)\n\nasset_list = route53resolver.firewalldomainlist(self, \"assetlist\",\n    domains=route53resolver.firewalldomains.from_asset(\"/path/to/domains.txt\")\n)\n```\n\nthe file must be a text file and must contain a single domain per line.\n\nuse `firewalldomainlist.fromfirewalldomainlistid()` to import an existing or [aws managed domain list](https://docs.aws.amazon.com/route53/latest/developerguide/resolver-dns-firewall-managed-domain-lists.html):\n\n```python\n# awsmanageddomainsmalwaredomainlist in us-east-1\nmalware_list = route53resolver.firewalldomainlist.from_firewall_domain_list_id(self, \"malware\", \"rslvr-fdl-2c46f2ecbfec4dcc\")\n```\n\n### rule group\n\ncreate a rule group:\n\n```python\n# my_block_list: route53resolver.firewalldomainlist\n\nroute53resolver.firewallrulegroup(self, \"rulegroup\",\n    rules=[route53resolver.firewallrule(\n        priority=10,\n        firewall_domain_list=my_block_list,\n        # block and reply with nodata\n        action=route53resolver.firewallruleaction.block()\n    )\n    ]\n)\n```\n\nrules can be added at construction time or using `addrule()`:\n\n```python\n# my_block_list: route53resolver.firewalldomainlist\n# rule_group: route53resolver.firewallrulegroup\n\n\nrule_group.add_rule(\n    priority=10,\n    firewall_domain_list=my_block_list,\n    # block and reply with nxdomain\n    action=route53resolver.firewallruleaction.block(route53resolver.dnsblockresponse.nx_domain())\n)\n\nrule_group.add_rule(\n    priority=20,\n    firewall_domain_list=my_block_list,\n    # block and override dns response with a custom domain\n    action=route53resolver.firewallruleaction.block(route53resolver.dnsblockresponse.override(\"amazon.com\"))\n)\n```\n\nuse `associate()` to associate a rule group with a vpc:\n\n```python\nimport aws_cdk.aws_ec2 as ec2\n\n# rule_group: route53resolver.firewallrulegroup\n# my_vpc: ec2.vpc\n\n\nrule_group.associate(\"association\",\n    priority=101,\n    vpc=my_vpc\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-route53resolver",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-route53resolver/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-route53resolver/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-route53resolver/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-ec2 (==1.204.0)",
+    "aws-cdk.aws-s3-assets (==1.204.0)",
+    "aws-cdk.aws-s3 (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::route53resolver",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "route53resolver aws_cdk route53 firewalldomains dns",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_route53resolver",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_ec2",
+    "pypi_aws_cdk.aws_s3",
+    "pypi_aws_cdk.aws_s3_assets",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

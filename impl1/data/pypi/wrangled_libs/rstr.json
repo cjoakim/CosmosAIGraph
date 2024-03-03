@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: testing"
+  ],
+  "description": "===============================\nrstr = random strings in python\n===============================\n\n.. image:: https://circleci.com/gh/leapfrogonline/rstr.svg?style=svg\n    :target: https://circleci.com/gh/leapfrogonline/rstr\n\nrstr is a helper module for easily generating random strings of various types.\nit could be useful for fuzz testing, generating dummy data, or other\napplications.\n\nit has no dependencies outside the standard library.\n\na word of caution\n-----------------\n\nby default, rstr uses the python ``random`` module to generate pseudorandom text. this module is based on the mersenne twister and is *not* cryptographically secure.\n\n**if you wish to use rstr for password-generation or other cryptographic\napplications, you must create an instance that uses** systemrandom_.\n\nfor example:\n\n::\n\n    >> from rstr import rstr\n    >> from random import systemrandom\n    >> rs = rstr(systemrandom())\n\n\nuse\n---\n\nthe basic method of rstr is ``rstr()``. at a minimum, it requires one argument,\nan alphabet of characters from which to create a string.\n\n::\n\n    >>> import rstr\n    >>> rstr.rstr('abc')\n    'aacaaccb'\n\nby default, it will return a string between 1 and 10 characters in length. you\nmay specify an exact length by including it as a second argument:\n\n::\n\n    >>> rstr.rstr('abc', 4)\n    'acbc'\n\nyou can also generate a range of lengths by adding two arguments. in the following\ncase, rstr will return a string with a randomly selected length between 5 and 10\ncharacters.\n\n::\n\n    >>> rstr.rstr('abc', 5, 10)\n    'cbcccabaa'\n\nit's also possible to include particular characters in your string. this is useful\nwhen testing a validator to make sure that certain characters are rejected.\ncharacters listed in the 'include' argument will *always* be present somewhere\nin the resulting string.\n\n::\n\n    >>> rstr.rstr('abc', include='&')\n    'ca&a'\n\nconversely, you can exclude particular characters from the generated string. this is\nhelpful when starting with a pre-defined population of characters.\n\n::\n\n    >>> import string\n    >>> rstr.rstr(string.digits, exclude='5')\n    '8661442'\n\nnote that any of the arguments that accept strings can also\naccept lists or tuples of strings:\n\n::\n\n    >>> rstr.rstr(['a', 'b', 'c'], include = ['@'], exclude=('c',))\n    'baaabba@baa'\n\nother methods\n-------------\n\nthe other methods provided by rstr, besides ``rstr()`` and ``xeger()``, are convenience\nmethods that can be called without arguments, and provide a pre-defined alphabet.\nthey accept the same arguments as ``rstr()`` for purposes of\nspecifying lengths and including or excluding particular characters.\n\nletters()\n    the characters provided by string.letters in the standard library.\n\nuppercase()\n    the characters provided by string.uppercase in the standard library.\n\nlowercase()\n    the characters provided by string.lowercase in the standard library.\n\nprintable()\n    the characters provided by string.printable in the standard library.\n\npunctuation()\n    the characters provided by string.punctuation in the standard library.\n\nnonwhitespace()\n    the characters provided by string.printable in the standard library, except\n    for those representing whitespace: tab, space, etc.\n\ndigits()\n    the characters provided by string.digits in the standard library.\n\nnondigits()\n    the characters provided by the concatenation of string.letters and\n    string.punctuation in the standard library.\n\nnonletters()\n    the characters provided by the concatenation of string.digits and\n    string.punctuation in the standard library.\n\nnormal()\n    characters commonly accepted in text input, equivalent to string.digits +\n    string.letters + ' ' (the space character).\n\nunambiguous()\n    the characters provided by the concatenation of string.digits and\n    string.letters except characters which are similar: 1, l and i, etc.\n\npostalsafe()\n    characters that are safe for use in postal addresses in the united states:\n    upper- and lower-case letters, digits, spaces, and the punctuation marks period,\n    hash (#), hyphen, and forward-slash.\n\nurlsafe()\n    characters safe (unreserved) for use in urls: letters, digits, hyphen, period, underscore,\n    and tilde.\n\ndomainsafe()\n    characters that are allowed for use in hostnames, and consequently, in internet domains: letters,\n    digits, and the hyphen.\n\nxeger\n-----\n\ninspired by the java library of the same name, the ``xeger()`` method allows users to\ncreate a random string from a regular expression.\n\nfor example to generate a postal code that fits the canadian format:\n\n    >>> import rstr\n    >>> rstr.xeger(r'[a-z]\\d[a-z] \\d[a-z]\\d')\n    u'r6m 1w5'\n\nxeger works fine with most simple regular expressions, but it doesn't support all\npython regular expression features.\n\ncustom alphabets\n----------------\n\nif you have custom alphabets of characters that you would like to use with a method\nshortcut, you can specify them by keyword when instantiating an rstr object:\n\n    >>> from rstr import rstr\n    >>> rs = rstr(vowels='aeiou')\n    >>> rs.vowels()\n    'aeeuu'\n\nyou can also add an alphabet to an existing instance with the add_alphabet() method:\n\n    >>> rs.add_alphabet('odds', '13579')\n    >>> rs.odds()\n    '339599519'\n\nexamples\n--------\n\nyou can combine rstr with python's built-in string formatting to produce strings\nthat fit a variety of templates.\n\nan email address:\n\n::\n\n    '{0}@{1}.{2}'.format(rstr.nonwhitespace(exclude='@'),\n                         rstr.domainsafe(),\n                         rstr.letters(3))\n\na url:\n\n::\n\n    'http://{0}.{1}/{2}/?{3}'.format(rstr.domainsafe(),\n                                    rstr.letters(3),\n                                    rstr.urlsafe(),\n                                    rstr.urlsafe())\n\na postal address:\n\n::\n\n    \"\"\"{0} {1}\n    {2} {3}\n    {4}, {5} {6}\n    \"\"\".format(rstr.letters(4, 8).title(),\n               rstr.letters(4, 8).title(),\n               rstr.digits(3, 5),\n               rstr.letters(4, 10).title(),\n               rstr.letters(4, 15).title(),\n               rstr.uppercase(2),\n               rstr.digits(5),\n               )\n\n.. _systemrandom: https://docs.python.org/3/library/random.html#random.systemrandom\n",
+  "docs_url": null,
+  "keywords": "random string,reverse regex,reverse regular expression,testing,fuzz testing",
+  "license": "",
+  "name": "rstr",
+  "package_url": "https://pypi.org/project/rstr/",
+  "project_url": "https://pypi.org/project/rstr/",
+  "project_urls": {
+    "Homepage": "https://github.com/leapfrogonline/rstr"
+  },
+  "release_url": "https://pypi.org/project/rstr/3.2.2/",
+  "requires_dist": [],
+  "requires_python": ">=3.7",
+  "summary": "generate random strings in python",
+  "version": "3.2.2",
+  "releases": [],
+  "developers": [
+    "oss@leapfrogdevelopment.com",
+    "rstr@mccoll.am"
+  ],
+  "kwds": "strings python string generate rstr",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_rstr",
+  "homepage": "",
+  "release_count": 16,
+  "dependency_ids": []
+}

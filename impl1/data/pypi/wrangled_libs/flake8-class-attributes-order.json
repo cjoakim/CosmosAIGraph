@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "framework :: flake8",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: documentation",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: quality assurance"
+  ],
+  "description": "# flake8-class-attributes-order\n\n[![build status](https://github.com/best-doctor/flake8-class-attributes-order/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/best-doctor/flake8-class-attributes-order/actions/workflows/build.yml)\n[![maintainability](https://api.codeclimate.com/v1/badges/28b7cd9d0714ec4b93a3/maintainability)](https://codeclimate.com/github/best-doctor/flake8-class-attributes-order/maintainability)\n[![test coverage](https://api.codeclimate.com/v1/badges/28b7cd9d0714ec4b93a3/test_coverage)](https://codeclimate.com/github/best-doctor/flake8-class-attributes-order/test_coverage)\n![pypi - python version](https://img.shields.io/pypi/pyversions/flake8-class-attributes-order)\n\nan extension for flake8 to report on wrong class attributes order and\nclass level logic.\n\nthe validator can extract class attribute type: docstring, property,\nnested class, `global_var`, etc.\nif django model fields are detected, the validator can detect,\nif the field is link to another table (foreign key, generic key, etc)\nor not.\n\nafter resolving each attribute type, validator checks attributes order.\n\ndefault configuration checks for the following order of attributes:\n\n- `__new__`\n- `__init__`\n- `__post_init__`\n- other magic methods\n- `@property`\n- `@staticmethod`\n- `@classmethod`\n- other methods\n- private methods\n\nif the order is broken, validator will report on it.\n\nbesides methods, the validator checks other attributes methods:\ndocstrings, nested classes, constants, attributes, and so on.\n\nalso validator checks, if class has no class level logic and report\nif any. here is an example:\n\n```python\nclass phoneform(forms.form):\n    phone = forms.charfield(17, label='\u0442\u0435\u043b\u0435\u0444\u043e\u043d'.upper())\n\n    # this should happen in __init__!\n    phone.widget.attrs.update({'class': 'form-control phone'})\n\n```\n\n## installation\n\n```terminal\npip install flake8-class-attributes-order\n```\n\n## configuration\n\n### strict mode\n\nthere is another preconfigured order that is more strict on private subtypes:\n\n- `__new__`\n- `__init__`\n- `__post_init__`\n- other magic method\n- `@property`\n- `@staticmethod`\n- `@classmethod`\n- other methods\n- private `@property`\n- private `@staticmethod`\n- private `@classmethod`\n- other private methods\n\nto enable strict validation, please set the flag in your config file:\n\n```ini\n[flake8]\nuse_class_attributes_order_strict_mode = true\n```\n\n### manual order configuration\n\norder can be manually configured via `class_attributes_order` config setting.\n\nfor example, if you prefer to put `class meta` after constants and fields:\n\n```ini\n[flake8]\nclass_attributes_order =\n    field,\n    meta_class,\n    nested_class,\n    magic_method,\n    property_method,\n    static_method,\n    class_method,\n    method,\n    private_method\n```\n\nconfigurable options:\n\n| option                |               description           | fallbacks to\\* |\n|:---------------------:|:-----------------------------------:|:--------------:|\n|meta_class             |class meta: (e.g. in django projects)| nested_class   |\n|nested_class           |other nested classes                 | none\\*         |\n|constant               |some_constants                       | field          |\n|outer_field            |some = models.foreignkey etc.        | field          |\n|field                  |other fields                         | none           |\n|`__new__`              |`__new__`                            | magic_method   |\n|`__init__`             |`__init__`                           | magic_method   |\n|`__post_init__`        |`__post_init__`                      | magic_method   |\n|`__str__`              |`__str__`                            | magic_method   |\n|magic_method           |other magic methods                  | method         |\n|save                   |def save(...)                        | method         |\n|delete                 |def delete(...)                      | method         |\n|property_method        |@property/@cached_property etc.      | method         |\n|private_property_method|@property/@cached_property with _    | property_method|\n|static_method          |@staticmethod                        | method         |\n|private_static_method  |@staticmethod beginning with _       | static_method  |\n|class_method           |@classmethod                         | method         |\n|private_class_method   |@classmethod beginning with _        | class_method   |\n|private_method         |other methods beginning with _       | method         |\n|method                 |other methods                        | none           |\n\n\\* if not provided, will use its supertype order\n\n\\*\\*  if not defined, such base types and all their subtypes (unless defined)\nwill be ignored during validation. it's recommended\nto set at least `nested_class`, `field` and `method`\n\nyou choose how detailed your configuration is.\nfor example, you can define order of each supported magic method\n(`__new__`, `__str__`, etc.), or set `magic_method`\nto allow any order among them or even just use `method`\n\n## example\n\n```python\ndebug = true\n\n\nclass user:\n    def fetch_info_from_crm(self):\n        pass\n\n    login_field = 'email'  # wtf? this should be on top of class definition!\n\n\nclass usernode:\n    class meta:\n        model = user\n\n    if debug:  # not great idea at all\n        def is_synced_with_crm(self):\n            pass\n\n```\n\nusage:\n\n```terminal\n$ flake8 test.py\ntest.py:5:5: cce001 user.fetch_info_from_crm should be after user.login_field\ntest.py:15:5: cce002 class level expression detected model usernode, line 15\n```\n\ntested on python 3.7.x and flake8 3.7.5.\n\n## error codes\n\n| error code |                     description                          |\n|:----------:|:--------------------------------------------------------:|\n|   cce001   | wrong class attributes order (`xxx should be after yyy`) |\n|   cce002   | class level expression detected                          |\n\n## contributing\n\nwe would love you to contribute to our project. it's simple:\n\n- create an issue with bug you found or proposal you have.\n  wait for approve from maintainer.\n- create a pull request. make sure all checks are green.\n- fix review comments if any.\n- be awesome.\n\nhere are useful tips:\n\n- you can run all checks and tests with `make check`. please do it\n  before travisci does.\n- we use\n  [bestdoctor python styleguide](https://github.com/best-doctor/guides/blob/master/guides/en/python_styleguide.md).\n- we respect [django coc](https://www.djangoproject.com/conduct/).\n  make soft, not bullshit.\n\n\n",
+  "docs_url": null,
+  "keywords": "flake8",
+  "license": "mit",
+  "name": "flake8-class-attributes-order",
+  "package_url": "https://pypi.org/project/flake8-class-attributes-order/",
+  "project_url": "https://pypi.org/project/flake8-class-attributes-order/",
+  "project_urls": {
+    "Homepage": "https://github.com/best-doctor/flake8-class-attributes-order"
+  },
+  "release_url": "https://pypi.org/project/flake8-class-attributes-order/0.1.3/",
+  "requires_dist": [
+    "flake8",
+    "typing-extensions"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a flake8 extension that checks classes attributes order",
+  "version": "0.1.3",
+  "releases": [],
+  "developers": [
+    "ilya_lebedev",
+    "melevir@gmail.com"
+  ],
+  "kwds": "class_attributes_order use_class_attributes_order_strict_mode attributes flake8 attribute",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flake8_class_attributes_order",
+  "homepage": "https://github.com/best-doctor/flake8-class-attributes-order",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_flake8",
+    "pypi_typing_extensions"
+  ]
+}

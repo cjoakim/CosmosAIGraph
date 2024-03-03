@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# placekey-py\n\n[![pypi version](https://badge.fury.io/py/placekey.svg)](https://badge.fury.io/py/placekey)\n[![pypi downloads](https://img.shields.io/pypi/dm/placekey)](https://pypistats.org/packages/placekey)\n[![version](https://img.shields.io/badge/license-apache%202.0-blue.svg)](license)\n\na python library for working with [placekeys](https://placekey.io). documentation for this package can be found [here](https://placekey.github.io/placekey-py/), and documentation for the placekey service api can be found [here](https://docs.placekey.io/). the plackey design specification is available [here](https://docs.placekey.io/placekey_technical_white_paper.pdf). the details in placekey encoding is [here](https://docs.placekey.io/placekey_encoding_specification%20white_paper.pdf). we welcome your feedback. \n\n## installation\n\nthis package can be installed from [pypi](https://pypi.org/project/placekey/) by\n\n```shell script\npip install placekey\n```\n\nmacos big sur may need to run `brew install geos` if the installation of the `shapely` dependency fails.\n\n## usage\n\nthe basic functionality of the placekey library is conversion between placekeys and latitude-longitude coordinates.\n\n```python\n>>> import placekey as pk\n>>> lat, long = 0.0, 0.0\n>>> pk.geo_to_placekey(lat, long)\n'@dvt-smp-tvz'\n```\n\n```python\n>>> pk.placekey_to_geo('@dvt-smp-tvz')\n(0.00018033323813810344, -0.00018985758738881587)\n```\n\nthe library also allows for conversion between placekeys and [h3 indices](https://github.com/uber/h3-py).\n\n```python\n>>> pk.placekey_to_h3('@dvt-smp-tvz')\n'8a754e64992ffff'\n```\n\n```python\n>>> pk.h3_to_placekey('8a754e64992ffff')\n'@dvt-smp-tvz'\n```\n\nthe distance in meters between two placekeys can be found with the following function.\n\n```python\n>>> pk.placekey_distance('@dvt-smp-tvz', '@5vg-7gq-tjv')\n12795124.895573696\n```\n\nan upper bound on the maximal distance in meters between two placekeys based on the length of their shared prefix is provided by `placekey.get_prefix_distance_dict()`.\n\n```python\n>>> pk.get_prefix_distance_dict()\n{0: 20040000.0,\n 1: 20040000.0,\n 2: 2777000.0,\n 3: 1065000.0,\n 4: 152400.0,\n 5: 21770.0,\n 6: 8227.0,\n 7: 1176.0,\n 8: 444.3,\n 9: 63.47}\n```\n\nplacekeys found in a data set can be partially validated by\n\n```python\n>>> pk.placekey_format_is_valid('222-227@dvt-smp-tvz')\ntrue\n```\n\n```python\n>>> pk.placekey_format_is_valid('@123-456-789')\nfalse\n```\n\n## api client\n\nthis package also includes a client for the placekey api. the methods in the client are automatically rate limited.\n\n```python\n>>> from placekey.api import placekeyapi\n>>> placekey_api_key = \"...\"\n>>> pk_api = placekeyapi(placekey_api_key)\n```\n\nthe `placekeyapi.lookup_placekey` method can be used to lookup the placekey for a single place.\n\n```python\n>>> pk_api.lookup_placekey(latitude=37.7371, longitude=-122.44283)\n{'query_id': '0', 'placekey': '@5vg-82n-kzz'}\n```\n\n```python\n>>> place = {\n>>>   \"street_address\": \"598 portola dr\",\n>>>   \"city\": \"san francisco\",\n>>>   \"region\": \"ca\",\n>>>   \"postal_code\": \"94131\",\n>>>   \"iso_country_code\": \"us\"\n>>> }\n>>> pk_api.lookup_placekey(**place, strict_address_match=true)\n{'query_id': '0', 'placekey': '227@5vg-82n-pgk'}\n```\n\nthe `placekeyapi.lookup_placekeys` method can be used to lookup placekeys for multiple places.\n\n```python\n>>> places = [\n>>>   {\n>>>     \"street_address\": \"1543 mission street, floor 3\",\n>>>     \"city\": \"san francisco\",\n>>>     \"region\": \"ca\",\n>>>     \"postal_code\": \"94105\",\n>>>     \"iso_country_code\": \"us\"\n>>>   },\n>>>   {\n>>>     \"query_id\": \"thisqueryidaloneiscustom\",\n>>>     \"location_name\": \"twin peaks petroleum\",\n>>>     \"street_address\": \"598 portola dr\",\n>>>     \"city\": \"san francisco\",\n>>>     \"region\": \"ca\",\n>>>     \"postal_code\": \"94131\",\n>>>     \"iso_country_code\": \"us\"\n>>>   },\n>>>   {\n>>>     \"latitude\": 37.7371,\n>>>     \"longitude\": -122.44283\n>>>   }\n>>> ]\n>>> pk_api.lookup_placekeys(places)\n[{'query_id': 'place_0', 'placekey': '226@5vg-7gq-5mk'},\n {'query_id': 'thisqueryidaloneiscustom', 'placekey': '227-222@5vg-82n-pgk'},\n {'query_id': 'place_2', 'placekey': '@5vg-82n-kzz'}]\n```\n\nfull details on how to query the api and how to get an api key can be found [here](https://docs.placekey.io/).\n\n## notebooks\n\njupyter notebooks demonstrating various placekey functionality are contained in the [placekey-notebooks](https://github.com/placekey/placekey-notebooks) repository.\n\n## support\n\nthis package runs on python 3.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "placekey",
+  "package_url": "https://pypi.org/project/placekey/",
+  "project_url": "https://pypi.org/project/placekey/",
+  "project_urls": {
+    "Homepage": "https://github.com/Placekey/placekey-py"
+  },
+  "release_url": "https://pypi.org/project/placekey/0.0.12/",
+  "requires_dist": [
+    "h3",
+    "shapely",
+    "requests",
+    "ratelimit",
+    "backoff"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "utilities for working with placekeys",
+  "version": "0.0.12",
+  "releases": [],
+  "developers": [
+    "russ@safegraph.com",
+    "safegraph_inc"
+  ],
+  "kwds": "placekeys placekey placekeyapi placekey_technical_white_paper placekey_api_key",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_placekey",
+  "homepage": "https://github.com/placekey/placekey-py",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_backoff",
+    "pypi_h3",
+    "pypi_ratelimit",
+    "pypi_requests",
+    "pypi_shapely"
+  ]
+}

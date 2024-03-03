@@ -1,0 +1,64 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# tabpfn\n\nthe tabpfn is a neural network that learned to do tabular data prediction.\nthis is the original cuda-supporting pytorch impelementation.\n\nwe created a [colab](https://colab.research.google.com/drive/194mcs6sepew6c0rcp7xwzcett1rbc8jj), that lets you play with our scikit-learn interface.\n\nwe also created two demos. one to experiment with the tabpfns predictions (https://huggingface.co/spaces/tabpfn/tabpfnprediction) and one to check cross-\nvalidation roc auc scores on new datasets (https://huggingface.co/spaces/tabpfn/tabpfnevaluation). both of them run on a weak cpu, thus it can require a little bit of time.\nboth demos are based on a scikit-learn interface that makes using the tabpfn as easy as a scikit-learn svm.\n\n## installation\n\n```bash\npip install tabpfn\n```\n\nif you want to train and evaluate our method like we did in the paper (including baselines) please install with\n```bash\npip install tabpfn[full]\n```\nto run the autogluon and autosklearn baseline please create a separate environment and install autosklearn==0.14.5 / autogluon==0.4.0, installation in the same environment as our other baselines is not possible.\n\n## getting started\n\na simple usage of our sklearn interface is:\n```python\nfrom sklearn.metrics import accuracy_score\nfrom sklearn.datasets import load_breast_cancer\nfrom sklearn.model_selection import train_test_split\n\nfrom tabpfn import tabpfnclassifier\n\nx, y = load_breast_cancer(return_x_y=true)\nx_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.33, random_state=42)\n\n# n_ensemble_configurations controls the number of model predictions that are ensembled with feature and class rotations (see our work for details).\n# when n_ensemble_configurations > #features * #classes, no further averaging is applied.\n\nclassifier = tabpfnclassifier(device='cpu', n_ensemble_configurations=32)\n\nclassifier.fit(x_train, y_train)\ny_eval, p_eval = classifier.predict(x_test, return_winning_probability=true)\n\nprint('accuracy', accuracy_score(y_test, y_eval))\n```\n\n### tabpfn usage\n\ntabpfn is different from other methods you might know for tabular classification.\nhere, we list some tips and tricks that might help you understand how to use it best.\n\n- do not preprocess inputs to tabpfn. tabpfn pre-processes inputs internally. it applies a z-score normalization (`x-train_x.mean()/train_x.std()`) per feature (fitted on the training set) and log-scales outliers [heuristically](https://github.com/automl/tabpfn/blob/f7402ec1916aa78d953574daf95508045af5953e/tabpfn/utils.py#l201). finally, tabpfn  applies a powertransform to all features for every second ensemble member. pre-processing is important for the tabpfn to make sure that the real-world dataset lies in the distribution of the synthetic datasets seen during training. so to get the best results, do not apply a powertransformation to the inputs.\n- tabpfn expects scalar values only (you need to encode categoricals as integers e.g. with [ordinalencoder](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.ordinalencoder.html#sklearn.preprocessing.ordinalencoder)). it works best on data that does not contain any categorical or nan data (see [appendix b.1](https://arxiv.org/abs/2207.01848)).\n- tabpfn ensembles multiple input encodings per default. it feeds different index rotations of the features and labels to the model per ensemble member. you can control the ensembling with `tabpfnclassifier(...,n_ensemble_configurations=?)`\n- tabpfn does not use any statistics from the test set. that means predicting each test example one-by-one will yield the same result as feeding the whole test set together.\n- tabpfn is differentiable in principle, only the pre-processing is not and relies on numpy.\n\n## our paper\nread our [paper](https://arxiv.org/abs/2207.01848) for more information about the setup (or contact us \u263a\ufe0f).\nif you use our method, please cite us using\n```\n@misc{tabpfn,\n  doi = {10.48550/arxiv.2207.01848},\n  url = {https://arxiv.org/abs/2207.01848},\n  author = {hollmann, noah and m\u00fcller, samuel and eggensperger, katharina and hutter, frank},\n  keywords = {machine learning (cs.lg), machine learning (stat.ml), fos: computer and information sciences, fos: computer and information sciences},\n  title = {tabpfn: a transformer that solves small tabular classification problems in a second},\n  publisher = {arxiv},\n  year = {2022},\n  copyright = {arxiv.org perpetual, non-exclusive license}\n}\n```\n\n## license\ncopyright 2022 noah hollmann, samuel m\u00fcller, katharina eggensperger, frank hutter\n\nlicensed under the apache license, version 2.0 (the \"license\");\nyou may not use this file except in compliance with the license.\nyou may obtain a copy of the license at\n\n    http://www.apache.org/licenses/license-2.0\n\nunless required by applicable law or agreed to in writing, software\ndistributed under the license is distributed on an \"as is\" basis,\nwithout warranties or conditions of any kind, either express or implied.\nsee the license for the specific language governing permissions and\nlimitations under the license.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "tabpfn",
+  "package_url": "https://pypi.org/project/tabpfn/",
+  "project_url": "https://pypi.org/project/tabpfn/",
+  "project_urls": {
+    "Homepage": "https://github.com/automl/TabPFN'"
+  },
+  "release_url": "https://pypi.org/project/tabpfn/0.1.9/",
+  "requires_dist": [
+    "numpy>=1.21.2",
+    "pyyaml>=5.4.1",
+    "requests>=2.23.0",
+    "scikit-learn>=0.24.2",
+    "torch>=1.9.0",
+    "auto-sklearn>=0.14.5; extra == 'full'",
+    "catboost>=0.26.1; extra == 'full'",
+    "configspace>=0.4.21; extra == 'full'",
+    "gpytorch>=1.5.0; extra == 'full'",
+    "hyperopt>=0.2.5; extra == 'full'",
+    "openml>=0.12.2; extra == 'full'",
+    "seaborn==0.11; extra == 'full'",
+    "tqdm>=4.62.1; extra == 'full'",
+    "xgboost>=1.4.0; extra == 'full'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "interface for using tabpfn and library to train tabpfn'",
+  "version": "0.1.9",
+  "releases": [],
+  "developers": [
+    "muellesa@tf.uni-freiburg.de",
+    "noah_hollmann"
+  ],
+  "kwds": "tabpfn tabpfns tabpfnclassifier tabpfnprediction cuda",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_tabpfn",
+  "homepage": "",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_auto_sklearn",
+    "pypi_catboost",
+    "pypi_configspace",
+    "pypi_gpytorch",
+    "pypi_hyperopt",
+    "pypi_numpy",
+    "pypi_openml",
+    "pypi_pyyaml",
+    "pypi_requests",
+    "pypi_scikit_learn",
+    "pypi_seaborn",
+    "pypi_torch",
+    "pypi_tqdm",
+    "pypi_xgboost"
+  ]
+}

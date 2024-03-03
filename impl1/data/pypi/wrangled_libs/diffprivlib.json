@@ -1,0 +1,66 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "topic :: security",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# diffprivlib v0.6\n\n[![python versions](https://img.shields.io/pypi/pyversions/diffprivlib.svg)](https://pypi.org/project/diffprivlib/)\n[![downloads](https://pepy.tech/badge/diffprivlib)](https://pepy.tech/project/diffprivlib)\n[![pypi version](https://img.shields.io/pypi/v/diffprivlib.svg)](https://pypi.org/project/diffprivlib/)\n[![pypi status](https://img.shields.io/pypi/status/diffprivlib.svg)](https://pypi.org/project/diffprivlib/)\n[![general tests](https://github.com/ibm/differential-privacy-library/actions/workflows/general.yml/badge.svg)](https://github.com/ibm/differential-privacy-library/actions/workflows/general.yml)\n[![documentation status](https://readthedocs.org/projects/diffprivlib/badge/?version=latest)](https://diffprivlib.readthedocs.io/en/latest/?badge=latest)\n[![codeql](https://github.com/ibm/differential-privacy-library/actions/workflows/codeql.yml/badge.svg)](https://github.com/ibm/differential-privacy-library/actions/workflows/codeql.yml)\n[![codecov](https://codecov.io/gh/ibm/differential-privacy-library/branch/main/graph/badge.svg)](https://codecov.io/gh/ibm/differential-privacy-library)\n\ndiffprivlib is a general-purpose library for experimenting with, investigating and developing applications in, differential privacy.\n\nuse diffprivlib if you are looking to:\n\n- experiment with differential privacy\n- explore the impact of differential privacy on machine learning accuracy using classification and clustering models \n- build your own differential privacy applications, using our extensive collection of mechanisms\n\ndiffprivlib supports python versions 3.8 to 3.11.\n\n## getting started: [machine learning with differential privacy in 30 seconds](https://github.com/ibm/differential-privacy-library/blob/main/notebooks/30seconds.ipynb)\nwe're using the [iris dataset](https://archive.ics.uci.edu/ml/datasets/iris), so let's load it and perform an 80/20 train/test split.\n\n```python\nfrom sklearn import datasets\nfrom sklearn.model_selection import train_test_split\n\ndataset = datasets.load_iris()\nx_train, x_test, y_train, y_test = train_test_split(dataset.data, dataset.target, test_size=0.2)\n```\n\nnow, let's train a differentially private naive bayes classifier. our classifier __runs just like an `sklearn` classifier__, so you can get up and running quickly.\n\n`diffprivlib.models.gaussiannb` can be run __without any parameters__, although this will throw a warning (we need to specify the `bounds` parameter to avoid this). the privacy level is controlled by the parameter `epsilon`, which is passed to the classifier at initialisation (e.g. `gaussiannb(epsilon=0.1)`). the default is `epsilon = 1.0`.\n\n```python\nfrom diffprivlib.models import gaussiannb\n\nclf = gaussiannb()\nclf.fit(x_train, y_train)\n```\n\nwe can now classify unseen examples, knowing that the trained model is differentially private and preserves the privacy of the 'individuals' in the training set (flowers are entitled to their privacy too!).\n\n```python\nclf.predict(x_test)\n```\n\nevery time the model is trained with `.fit()`, a different model is produced due to the randomness of differential privacy. the accuracy will therefore change, even if it's re-trained with the same training data. try it for yourself to find out!\n\n```python\nprint(\"test accuracy: %f\" % clf.score(x_test, y_test))\n```\n\nwe can easily evaluate the accuracy of the model for various `epsilon` values and plot it with `matplotlib`.\n\n```python\nimport numpy as np\nimport matplotlib.pyplot as plt\n\nepsilons = np.logspace(-2, 2, 50)\nbounds = ([4.3, 2.0, 1.1, 0.1], [7.9, 4.4, 6.9, 2.5])\naccuracy = list()\n\nfor epsilon in epsilons:\n    clf = gaussiannb(bounds=bounds, epsilon=epsilon)\n    clf.fit(x_train, y_train)\n    \n    accuracy.append(clf.score(x_test, y_test))\n\nplt.semilogx(epsilons, accuracy)\nplt.title(\"differentially private naive bayes accuracy\")\nplt.xlabel(\"epsilon\")\nplt.ylabel(\"accuracy\")\nplt.show()\n```\n\n![differentially private naive bayes](https://github.com/ibm/differential-privacy-library/raw/main/notebooks/30seconds.png)\n\ncongratulations, you've completed your first differentially private machine learning task with the differential privacy library!  check out more examples in the [notebooks](https://github.com/ibm/differential-privacy-library/blob/main/notebooks/) directory, or [dive straight in](https://github.com/ibm/differential-privacy-library/blob/main/diffprivlib/).\n\n## contents\n\ndiffprivlib is comprised of four major components:\n1. __mechanisms:__ these are the building blocks of differential privacy, and are used in all models that implement differential privacy. mechanisms have little or no default settings, and are intended for use by experts implementing their own models. they can, however, be used outside models for separate investigations, etc.\n1. __models:__ this module includes machine learning models with differential privacy. diffprivlib currently has models for clustering, classification, regression, dimensionality reduction and pre-processing.\n1. __tools:__ diffprivlib comes with a number of generic tools for differentially private data analysis. this includes differentially private histograms, following the same format as [numpy's histogram function](https://docs.scipy.org/doc/numpy/reference/generated/numpy.histogram.html).\n1. __accountant:__ the `budgetaccountant` class can be used to track privacy budget and calculate total privacy loss using advanced composition techniques. \n\n\n## setup\n\n### installation with `pip`\n\nthe library is designed to run with python 3.\nthe library can be installed from the pypi repository using `pip` (or `pip3`):\n\n```bash\npip install diffprivlib\n```\n\n### manual installation\n\nfor the most recent version of the library, either download the source code or clone the repository in your directory of choice:\n\n```bash\ngit clone https://github.com/ibm/differential-privacy-library\n```\n\nto install `diffprivlib`, do the following in the project folder (alternatively, you can run `python3 -m pip install .`):\n```bash\npip install .\n```\n\nthe library comes with a basic set of unit tests for `pytest`. to check your install, you can run all the unit tests by calling `pytest` in the install folder:\n\n```bash\npytest\n```\n\n## citing diffprivlib\nif you use diffprivlib for research, please consider citing the following reference paper:\n```\n@article{diffprivlib,\n  title={diffprivlib: the {ibm} differential privacy library},\n  author={holohan, naoise and braghin, stefano and mac aonghusa, p{\\'o}l and levacher, killian},\n  year={2019},\n  journal = {arxiv e-prints},\n  archiveprefix = \"arxiv\",\n  volume = {1907.02444 [cs.cr]},\n  primaryclass = \"cs.cr\",\n  month = jul\n}\n```\n\n## references\n\n* holohan, n., antonatos, s., braghin, s. and mac aonghusa, p., 2018. the bounded laplace mechanism in differential privacy. arxiv preprint arxiv:1808.10410.\n* holohan, n., braghin, s., mac aonghusa, p. and levacher, k., 2019. diffprivlib: the ibm differential privacy library. arxiv preprint arxiv:1907.02444.\n* ludwig, h., baracaldo, n., thomas, g., zhou, y., anwar, a., rajamoni, s., ong, y., radhakrishnan, j., verma, a., sinn, m. and purcell, m., 2020. ibm federated learning: an enterprise framework white paper v0. 1. arxiv preprint arxiv:2007.10987.\n* holohan, n. and braghin, s., 2021. secure random sampling in differential privacy. in computer security\u2013esorics 2021: 26th european symposium on research in computer security, darmstadt, germany, october 4\u20138, 2021, proceedings, part ii 26 (pp. 523-542). springer international publishing.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "diffprivlib",
+  "package_url": "https://pypi.org/project/diffprivlib/",
+  "project_url": "https://pypi.org/project/diffprivlib/",
+  "project_urls": {
+    "Homepage": "https://github.com/IBM/differential-privacy-library"
+  },
+  "release_url": "https://pypi.org/project/diffprivlib/0.6.3/",
+  "requires_dist": [
+    "numpy (>=1.21.6)",
+    "scikit-learn (>=0.24.2)",
+    "scipy (>=1.7.3)",
+    "joblib (>=0.16.0)",
+    "setuptools (>=49.0.0)",
+    "crlibm ; extra == 'crlibm'",
+    "sphinx (>=1.4) ; extra == 'docs'",
+    "sphinx-rtd-theme ; extra == 'docs'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "ibm differential privacy library",
+  "version": "0.6.3",
+  "releases": [],
+  "developers": [
+    "naoise.holohan@ibm.com",
+    "naoise_holohan"
+  ],
+  "kwds": "diffprivlib pyversions pip3 pytest pypi",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_diffprivlib",
+  "homepage": "https://github.com/ibm/differential-privacy-library",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_crlibm",
+    "pypi_joblib",
+    "pypi_numpy",
+    "pypi_scikit_learn",
+    "pypi_scipy",
+    "pypi_setuptools",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme"
+  ]
+}

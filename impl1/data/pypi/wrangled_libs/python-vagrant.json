@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: utilities"
+  ],
+  "description": "## introduction\n\npython-vagrant is a python module that provides a _thin_ wrapper around the\n`vagrant` command line executable, allowing programmatic control of vagrant\nvirtual machines (boxes). this module is useful for:\n\n- starting a vagrant virtual machine (vm) (`up`).\n- terminating a vagrant vm (`destroy`).\n- halting a vagrant vm without destroying it (`halt`).\n- querying the status of a vm or vms (`status`).\n- getting ssh configuration information useful for sshing into the vm. (`host`, `port`, ...)\n- running `vagrant` commands in a [multi-vm environment](http://vagrantup.com/v1/docs/multivm.html)\n  by using `vm_name` parameter.\n- initializing the vm based on a named base box, using init().\n- adding, removing, and listing boxes (`box add`, `box remove`, `box list`).\n- provisioning vms - up() accepts options like `no_provision`, `provision`, and `provision_with`, and there is a `provision()` method.\n- using sandbox mode from the [sahara](https://github.com/jedi4ever/sahara) gem.\n\nthis project began because i wanted python bindings for vagrant so i could\nprogrammatically access my vagrant box using fabric. drop me a line to let me\nknow how you use python-vagrant. i'd love to share more use cases. -todd deluca\n\n## versioning and api stability\n\nthis package is _beta_ and its api is not guaranteed to be stable. the api\nattempts to be congruent with the `vagrant` api terminology, to facilitate\nknowledge transfer for users already familiar with vagrant. over time, the\npython-vagrant api has changed to better match the underling `vagrant` cli and\nto evolve with the changes in that cli.\n\nthe package version numbering is in the form `0.x.y`. the initial `0` reflects\nthe _beta_ nature of this project. the number `x` is incremented when\nbackwards-incompatible changes occur. the number `y` is incremented when\nbackwards-compatible features or bug fixes are added.\n\n## requirements\n\n- vagrant 2.2 or greater. using the latest version of vagrant is strongly\n  recommended.\n- vagrant requires virtualbox, vmware, or another supported provider.\n- python 3.8 or newer.\n- the sahara gem for vagrant is optional. it will allow you to use\n  `sandboxvagrant`.\n\n## installation\n\n### install from pypi.python.org\n\ndownload and install python-vagrant:\n\n```shell\npip install python-vagrant\n```\n\n### install from github.com\n\nclone and install python-vagrant\n\n```shell\ncd ~\ngit clone git@github.com:pycontribs/python-vagrant.git\ncd python-vagrant\npython setup.py install\n```\n\n## usage\n\na contrived example of starting a vagrant box (using a vagrantfile from the\ncurrent directory) and running a fabric task on it:\n\n```python\nimport vagrant\nfrom fabric.api import env, execute, task, run\n\n@task\ndef mytask():\n    run('echo $user')\n\nv = vagrant.vagrant()\nv.up()\nenv.hosts = [v.user_hostname_port()]\nenv.key_filename = v.keyfile()\nenv.disable_known_hosts = true # useful for when the vagrant box ip changes.\nexecute(mytask) # run a fabric task on the vagrant host.\n```\n\nanother example showing how to use vagrant multi-vm feature with fabric:\n\n```python\nimport vagrant\nfrom fabric.api import *\n\n@task\ndef start(machine_name):\n   \"\"\"starts the specified machine using vagrant\"\"\"\n   v = vagrant.vagrant()\n   v.up(vm_name=machine_name)\n   with settings(host_string= v.user_hostname_port(vm_name=machine_name),\n                 key_filename = v.keyfile(vm_name=machine_name),\n                 disable_known_hosts = true):\n        run(\"echo hello\")\n```\n\nby default python vagrant instances are quiet, meaning that they capture stdout\nand stderr. for a \"loud\" instance, use `vagrant.vagrant(quiet_stdout=false)`.\nset `quiet_stderr=false` for an even louder version.\n\n### interacting with the vagrant subprocess\n\nthe `vagrant` class works by executing `vagrant` commands in a subprocess and\ninterpreting the output. depending on the needs of the user, the communication\nto and from the subprocess can be tailored by altering its environment and\nwhere it sends its stdout and stderr.\n\n#### silencing the stdout or stderr of the vagrant subprocess\n\nthe stdout and stderr of the underlying vagrant process can be silenced by\nusing the `out_cm` and `err_cm` parameters, or by using the `quiet_stdout` and\n`quiet_stderr` parameters of `vagrant.__init__`.\n\nusing `out_cm` and `err_cm` to redirect stdout and stderr to `/dev/null`:\n\n```python\nv = vagrant.vagrant(out_cm=vagrant.devnull_cm, err_cm=vagrant.devnull_cm)\nv.up() # normally noisy\n```\n\nusing `quiet_stdout` and `quiet_stderr` to redirect stdout and stderr to\n`/dev/null`:\n\n```python\nv = vagrant.vagrant(quiet_stdout=true, quiet_stderr=true)\nv.up() # normally noisy\n```\n\nthese are functionally equivalent.\n\n#### logging the stdout or stderr of the vagrant subprocess\n\na user might wish to direct the stdout and stderr of a vagrant subprocess to\na file, perhaps to log and analyze the results of an automated process. this\ncan be accomplished using the `out_cm` and `err_cm` parameters of\n`vagrant.__init__`.\n\nfor example, log the stdout and stderr of the subprocess to the file\n'deployment.log':\n\n```python\nlog_cm = vagrant.make_file_cm('deployment.log')\nv = vagrant.vagrant(out_cm=log_cm, err_cm=log_cm)\nv.up() # normally noisy\n```\n\n#### altering the environment of the vagrant subprocess\n\nit's possible to communicate with the vagrant subprocess using environment\nvariables. the `vagrantfile` could expect environment variables to be present\nand act accordingly. the environment variables can be set by `python-vagrant`.\n\n```python\nimport vagrant\n\nv = vagrant.vagrant()\n\nos_env = os.environ.copy()\nos_env['use_nfs'] = '1'\n\nv.env = os_env\nv.up()  # will pass env to the vagrant subprocess\n```\n\nalternatively, the environment can be passed at instantiation time.\n\n```python\nimport vagrant\n\nos_env = os.environ.copy()\nos_env['use_nfs'] = '1'\n\nv = vagrant.vagrant(env=env)\nassert v.env is env  # true\nv.up()  # will pass env to the vagrant subprocess\n```\n\n## contribute\n\nif you use python and vagrant and this project does not do what you want,\nplease open an issue or a pull request on\n[github](https://github.com/pycontribs/python-vagrant/edit/main/readme.md).\n\nplease see changelog.md for a detailed list of contributions and authors.\n\nwhen making a pull request, please include unit tests that test your changes\nand make sure any existing tests still work. see the testing section below.\n\n## testing\n\nrunning the full suite of tests might take 10 minutes or so. it involves\ndownloading boxes and starting and stopping virtual machines several times.\n\nrun the tests from the top-level directory of the repository:\n\n```shell\ntox -e py\n```\n\nhere is an example of running an individual test:\n\n```shell\ntox -e py -- -k tests.test_vagrant:test_boxes\n```\n\nmanual test of functionality for controlling where the vagrant subcommand\noutput is sent -- console or devnull:\n\n    >>> import vagrant\n    >>> import os\n    >>> vagrantfile = '/users/tfd/proj/python-vagrant/tests/vagrantfiles/single_box'\n    >>> # demonstrate a quiet vagrant.  equivalent to out_cm=vagrant.devnull_cm\n    ... v1 = vagrant.vagrant(vagrantfile)\n    >>> v1.destroy() # output to /dev/null\n    >>> # demonstrate a loud vagrant.  equivalent to out_cm=vagrant.stdout_cm\n    ... v2 = vagrant.vagrant(vagrantfile, quiet_stdout=false)\n    >>> v2.destroy() # stdout sent to console\n    ==> default: vm not created. moving on...\n    >>> # demonstrate that out_cm takes precedence over quiet_stdout=true\n    ... v3 = vagrant.vagrant(vagrantfile, out_cm=vagrant.stdout_cm)\n    >>> v3.destroy() # output to console\n    ==> default: vm not created. moving on...\n    >>> # demonstrate a quiet vagrant using devnull_cm directly\n    ... v4 = vagrant.vagrant(vagrantfile, out_cm=vagrant.devnull_cm)\n    >>> v4.destroy() # output to console\n    >>>\n\n\n",
+  "docs_url": null,
+  "keywords": "box,vagrant,vagrantfile,virtual-machine,virtualbox",
+  "license": "mit",
+  "name": "python-vagrant",
+  "package_url": "https://pypi.org/project/python-vagrant/",
+  "project_url": "https://pypi.org/project/python-vagrant/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/pycontribs/python-vagrant/issues",
+    "CI: GitHub": "https://github.com/pycontribs/python-vagrant/actions?query=workflow:gh+branch:main+event:push",
+    "Homepage": "https://github.com/pycontribs/python-vagrant",
+    "Source Code": "https://github.com/pycontribs/python-vagrant"
+  },
+  "release_url": "https://pypi.org/project/python-vagrant/1.0.0/",
+  "requires_dist": [
+    "coverage (>=6.3) ; extra == 'test'",
+    "pytest-cov (>=3.0.0) ; extra == 'test'",
+    "pytest (>=7.0.0) ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "python bindings for interacting with vagrant virtual machines.",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "todd_francis_deluca",
+    "todddeluca@yahoo.com"
+  ],
+  "kwds": "test_vagrant vagrantfile vagrantup vagrant vagrantfiles",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python_vagrant",
+  "homepage": "https://github.com/pycontribs/python-vagrant",
+  "release_count": 27,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_pytest",
+    "pypi_pytest_cov"
+  ]
+}

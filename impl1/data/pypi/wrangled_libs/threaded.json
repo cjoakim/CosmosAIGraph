@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "threaded\n========\n\n.. image:: https://github.com/python-useful-helpers/threaded/workflows/python%20package/badge.svg\n    :target: https://github.com/python-useful-helpers/threaded/actions\n.. image:: https://coveralls.io/repos/github/python-useful-helpers/threaded/badge.svg?branch=master\n    :target: https://coveralls.io/github/python-useful-helpers/threaded?branch=master\n.. image:: https://readthedocs.org/projects/threaded/badge/?version=latest\n    :target: https://threaded.readthedocs.io/\n    :alt: documentation status\n.. image:: https://img.shields.io/pypi/v/threaded.svg\n    :target: https://pypi.python.org/pypi/threaded\n.. image:: https://img.shields.io/pypi/pyversions/threaded.svg\n    :target: https://pypi.python.org/pypi/threaded\n.. image:: https://img.shields.io/pypi/status/threaded.svg\n    :target: https://pypi.python.org/pypi/threaded\n.. image:: https://img.shields.io/github/license/python-useful-helpers/threaded.svg\n    :target: https://raw.githubusercontent.com/python-useful-helpers/threaded/master/license\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg\n    :target: https://github.com/ambv/black\n\nthreaded is a set of decorators, which wrap functions in:\n\n  * `concurrent.futures.threadpool`\n  * `threading.thread`\n  * `asyncio.task` in python 3.\n\nwhy? because copy-paste of `loop.create_task`, `threading.thread` and `thread_pool.submit` is boring,\nespecially if target functions is used by this way only.\n\npros:\n\n* free software: apache license\n* open source: https://github.com/python-useful-helpers/threaded\n* pypi packaged: https://pypi.python.org/pypi/threaded\n* tested: see bages on top\n\ndecorators:\n\n* `threadpooled` - native ``concurrent.futures.threadpool``.\n* `threadpooled` is alias for `threadpooled`.\n\n* `threaded` - wrap in ``threading.thread``.\n* `threaded` is alias for `threaded`.\n\n* `asynciotask` - wrap in ``asyncio.task``. uses the same api, as `threadpooled`.\n* `asynciotask` is alias for `asynciotask`.\n\nusage\n=====\n\nthreadpooled\n------------\nmostly it is required decorator: submit function to threadpoolexecutor on call.\n\n.. code-block:: python\n\n    threaded.threadpooled.configure(max_workers=3)\n\n.. note::\n\n    by default, if executor is not configured - it configures with default parameters: ``max_workers=cpu_count * 5``\n\n.. code-block:: python\n\n    @threaded.threadpooled\n    def func():\n        pass\n\n    concurrent.futures.wait([func()])\n\nusage with asyncio:\n\n.. note::\n\n    if `loop_getter` is not callable, `loop_getter_need_context` is ignored.\n\n.. code-block:: python\n\n    loop = asyncio.get_event_loop()\n    @threaded.threadpooled(loop_getter=loop, loop_getter_need_context=false)\n    def func():\n        pass\n\n    loop.run_until_complete(asyncio.wait_for(func(), timeout))\n\npython 3.5+ usage with asyncio and loop extraction from call arguments:\n\n.. code-block:: python\n\n    loop_getter = lambda tgt_loop: tgt_loop\n    @threaded.threadpooled(loop_getter=loop_getter, loop_getter_need_context=true)  # loop_getter_need_context is required\n    def func(*args, **kwargs):\n        pass\n\n    loop = asyncio.get_event_loop()\n    loop.run_until_complete(asyncio.wait_for(func(loop), timeout))\n\nduring application shutdown, pool can be stopped (while it will be recreated automatically, if some component will request).\n\n.. code-block:: python\n\n    threaded.threadpooled.shutdown()\n\nthreaded\n--------\nclassic ``threading.thread``. useful for running until close and self-closing threads without return.\n\nusage example:\n\n.. code-block:: python\n\n    @threaded.threaded\n    def func(*args, **kwargs):\n        pass\n\n    thread = func()\n    thread.start()\n    thread.join()\n\nwithout arguments, thread name will use pattern: ``'threaded: ' + func.__name__``\n\n.. note::\n\n    if func.__name__ is not accessible, str(hash(func)) will be used instead.\n\noverride name can be don via corresponding argument:\n\n.. code-block:: python\n\n    @threaded.threaded(name='function in thread')\n    def func(*args, **kwargs):\n        pass\n\nthread can be daemonized automatically:\n\n.. code-block:: python\n\n    @threaded.threaded(daemon=true)\n    def func(*args, **kwargs):\n        pass\n\nalso, if no any addition manipulations expected before thread start,\nit can be started automatically before return:\n\n.. code-block:: python\n\n    @threaded.threaded(started=true)\n    def func(*args, **kwargs):\n        pass\n\nasynciotask\n-----------\nwrap in ``asyncio.task``.\n\nusage with asyncio:\n\n.. code-block:: python\n\n    @threaded.asynciotask\n    def func():\n        pass\n\n    loop = asyncio.get_event_loop()\n    loop.run_until_complete(asyncio.wait_for(func(), timeout))\n\nprovide event loop directly:\n\n.. note::\n\n    if `loop_getter` is not callable, `loop_getter_need_context` is ignored.\n\n.. code-block:: python\n\n    loop = asyncio.get_event_loop()\n    @threaded.asynciotask(loop_getter=loop)\n    def func():\n        pass\n\n    loop.run_until_complete(asyncio.wait_for(func(), timeout))\n\nusage with loop extraction from call arguments:\n\n.. code-block:: python\n\n    loop_getter = lambda tgt_loop: tgt_loop\n    @threaded.asynciotask(loop_getter=loop_getter, loop_getter_need_context=true)\n    def func(*args, **kwargs):\n        pass\n\n    loop = asyncio.get_event_loop()\n    loop.run_until_complete(asyncio.wait_for(func(loop), timeout))\n\ntesting\n=======\nthe main test mechanism for the package `threaded` is using `tox`.\navailable environments can be collected via `tox -l`\n\nci systems\n==========\nfor code checking several ci systems is used in parallel:\n\n2. `github actions: <https://github.com/python-useful-helpers/threaded/actions>`_ is used for checking: pep8, pylint, bandit, installation possibility and unit tests.\n3. `coveralls: <https://coveralls.io/github/python-useful-helpers/threaded>`_ is used for coverage display.\n\ncd system\n=========\n`github actions: <https://github.com/python-useful-helpers/threaded/actions>`_ is used for package delivery on pypi.\n",
+  "docs_url": null,
+  "keywords": "pooling,multithreading,threading,asyncio,development",
+  "license": "apache-2.0",
+  "name": "threaded",
+  "package_url": "https://pypi.org/project/threaded/",
+  "project_url": "https://pypi.org/project/threaded/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/python-useful-helpers/threaded/issues",
+    "Documentation": "https://threaded.readthedocs.io/",
+    "Homepage": "https://github.com/python-useful-helpers/threaded",
+    "Repository": "https://github.com/python-useful-helpers/threaded"
+  },
+  "release_url": "https://pypi.org/project/threaded/4.2.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.8.0",
+  "summary": "decorators for running functions in thread/threadpool/ioloop",
+  "version": "4.2.0",
+  "releases": [],
+  "developers": [
+    "dis-xcom@gmail.com",
+    "esposito.cloud@gmail.com",
+    "penguinolog@gmail.com"
+  ],
+  "kwds": "thread_pool threadpool multithreading threadpooled threaded",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_threaded",
+  "homepage": "https://github.com/python-useful-helpers/threaded",
+  "release_count": 39,
+  "dependency_ids": []
+}

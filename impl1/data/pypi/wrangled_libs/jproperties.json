@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development"
+  ],
+  "description": "jproperties for python |pypi-badge|\n===================================\n\njproperties is a java property file parser and writer for python. it aims to provide the same functionality\nas `java's properties class <http://docs.oracle.com/javase/7/docs/api/java/util/properties.html>`_, although\ncurrently the xml property format is not supported.\n\n.. sectnum::\n.. contents:: **table of contents**\n\ninstallation\n------------\n\nyou can install jproperties using `pip <https://pip.pypa.io/>`_::\n\n    pip install jproperties\n\noverview\n--------\n\nobjects of the type ``properties`` can be used like a python dictionary (but see caveats_ below).\nthe ``load()`` method populates the object by parsing input in the java property file format; the ``store()``\nmethod writes the key-value pairs stored in the object to a stream in the same format.\n\nthe ``load()`` and ``store()`` methods both take an ``encoding`` parameter. by default this is set to\n``iso-8859-1``, but it can be set to any encoding supported by python, including e. g. the widely used\n``utf-8``.\n\nparsing a property file\n+++++++++++++++++++++++\n\n.. code:: python\n\n    from jproperties import properties\n\n    p = properties()\n    with open(\"foobar.properties\", \"rb\") as f:\n        p.load(f, \"utf-8\")\n\nthat's it, ``p`` now can be used like a dictionary containing properties from ``foobar.properties``.\n\nwriting a property file\n+++++++++++++++++++++++\n\n.. code:: python\n\n    from jproperties import properties\n\n    p = properties()\n    p[\"foobar\"] = \"a very important message from our sponsors: python is great!\"\n\n    with open(\"foobar.properties\", \"wb\") as f:\n        p.store(f, encoding=\"utf-8\")\n\nreading from and writing to the same file-like object\n+++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n.. code:: python\n\n    from jproperties import properties\n\n    with open(\"foobar.properties\", \"r+b\") as f:\n        p = properties()\n        p.load(f, \"utf-8\")\n\n        # do stuff with the p object...\n\n        f.seek(0)\n        f.truncate(0)\n        p.store(f, encoding=\"utf-8\")\n\nspecial features\n----------------\n\nmetadata\n++++++++\n\nthe property file parser supports including programmatically readable and settable metadata in property files.\nmetadata for a key is represented as a python dictionary; the keys and values of this dictionary should be strings,\nalthough when the property file is written, all non-string objects will be converted to strings. **this is a\none-way conversion**; when the metadata is read back again during a ``load()``, all keys and values will be treated\nas simple strings.\n\nby default, the ``store()`` method does not write out the metadata. to enable that feature, set the keyword argument\n``strip_meta=false`` when calling the method.\n\nnote that metadata support is always enabled. the only thing that is optional is actually writing out the metadata.\n\nmetadata keys beginning with two underscores (``__``) are not written to the output stream by the ``store()`` method.\nthus, they can be used to attach \"runtime-only\" metadata to properties. currently, however, metadata with such keys is\nstill read from the input stream by ``load()``; this should probably be considered erroneous behaviour.\n\ndocumenting properties\n^^^^^^^^^^^^^^^^^^^^^^\n\nthe comments after a property definition can be added to the metadata\nwith the key ``_doc`` if the ``metadoc=true`` optional argument is given\nto the ``load`` method.  this allows properties to be documented in the\nproperties file.  for example, the properties file::\n\n    #: _severity=fatal\n    10001=fatal internal error: %s\n    # a fatal internal error occurred.  please re-run the command\n    # with the -d option to generate additional debug information.\n\nthe following example code shows how this documentation can be accessed.\n\n.. code:: python\n\n    from jproperties import properties\n\n    p = properties()\n    with open(\"foobar.properties\", \"rb\") as f:\n        p.load(f, \"utf-8\", metadoc=true)\n    # print the explicitly defined '_severity' metadata\n    print(\"severity: \", p.getmeta(\"10001\")['_severity'])\n    # print the implicitly defined '_doc' metadata\n    print(\"explanation: \", p.getmeta(\"10001\")['_doc'])\n\nthe documentation can be extracted from properties files and used to generate\npages in the overall system documentation or can be accessed via options\nfor command line utilities.\n\ncaveats\n^^^^^^^\n\nmetadata support influences how ``properties`` objects are used as dictionary objects:\n\n- to set a value for a key, do ``prop_object[key] = value`` or ``prop_object[key] = value, metadata``. the first form\n  will leave the key's metadata unchanged. you can also use the ``setmeta()`` method to set a key's metadata.\n- to get the value of a key, do ``value, metadata = prop_object[key]``. if there is no metadata for a key,\n  ``metadata`` will be an empty dictionary. to retrieve only the metadata for a key, the ``getmeta()`` method can\n  be used.\n- when used as an iterator, ``properties`` objects will simply return all keys in an unspecified order. no metadata is\n  returned (but can be retrieved using  ``getmeta()``).\n\nsetting defaults\n++++++++++++++++\n\nthe internal dictionary holding the key-value pairs can be accessed using the ``properties`` property. deleting that\nproperty deletes all key-value pairs from the object.\n\nhowever, modifying properties using this special property will **not** modify metadata in any way. that means that\ndeleting properties by doing ``del prop_obj.properties[key]`` will not remove the associated metadata from the object.\ninstead, do ``del prop_obj[key]``.\n\nthe ``properties`` property is nevertheless useful to set many default values before parsing a property file:\n\n.. code:: python\n\n    from jproperties import properties\n\n    prop_obj = properties()\n    prop_obj.properties = a_big_dictionary_with_defaults\n    file_obj = codecs.open(\"foobar.properties\", \"rb\", \"iso-8859-1\")\n    prop_obj.load(file_obj, encoding=none)\n\n\ndevelopment\n++++++++++++++++\n\nif you want to help development, there is\n`overview documentation <./development.rst>`_\n\nversion history\n---------------\n\nversion 2.1.1\n+++++++++++++\n\n- compatibility with python 3.10. (`#10`_)\n- documentation improvements. (`#13`_)\n- support decoding surrogate pairs on narrow python builds (such as\n  python 2.7 on mac os x). (`#14`_)\n\nversion 2.1.0\n+++++++++++++\n\n- add support for optional documentation comments (see `documenting\n  properties`_). thanks to @mkrohan! (`#5`_)\n\nversion 2.0.0\n+++++++++++++\n\n- **python 3 support!** thanks to @tboz203, who did a lot of the work. (`#1`_)\n- drop support for python 2.6.\n\nversion 1.0.1\n+++++++++++++\n\n- this is the first \"proper\" pypi release, with proper pypi metadata and proper pypi distributions.\n  nothing else has changed.\n\nversion 1.0\n+++++++++++\n\n- initial release\n\n\n.. _#5: https://github.com/tblue/python-jproperties/pull/5\n.. _#1: https://github.com/tblue/python-jproperties/pull/1\n.. _#10: https://github.com/tblue/python-jproperties/pull/10\n.. _#13: https://github.com/tblue/python-jproperties/pull/13\n.. _#14: https://github.com/tblue/python-jproperties/pull/14\n\n..\n    nb: without a trailing question mark in the following image url, the\n        generated html will contain an <object> element instead of an <img>\n        element, which apparently cannot be made into a link (i. e. a\n        \"clickable\" image).\n.. |pypi-badge| image:: https://img.shields.io/pypi/v/jproperties.svg?\n    :align: middle\n    :target: https://pypi.python.org/pypi/jproperties\n\n\n",
+  "docs_url": null,
+  "keywords": "java property properties file parser reader writer",
+  "license": "bsd 3-clause license; partially licensed under the python software foundation license",
+  "name": "jproperties",
+  "package_url": "https://pypi.org/project/jproperties/",
+  "project_url": "https://pypi.org/project/jproperties/",
+  "project_urls": {
+    "Homepage": "https://github.com/Tblue/python-jproperties"
+  },
+  "release_url": "https://pypi.org/project/jproperties/2.1.1/",
+  "requires_dist": [
+    "six (~=1.13)"
+  ],
+  "requires_python": "",
+  "summary": "java property file parser and writer for python",
+  "version": "2.1.1",
+  "releases": [],
+  "developers": [
+    "tilman+pypi@ax86.net",
+    "tilman_blumenbach"
+  ],
+  "kwds": "jproperties parser metadata programmatically xml",
+  "license_kwds": "bsd 3-clause license; partially licensed under the python software foundation license",
+  "libtype": "pypi",
+  "id": "pypi_jproperties",
+  "homepage": "https://github.com/tblue/python-jproperties",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_six"
+  ]
+}

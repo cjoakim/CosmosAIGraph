@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "# `backports.zoneinfo`: backport of the standard library module `zoneinfo`\n\nthis package was originally the reference implementation for [pep 615](https://www.python.org/dev/peps/pep-0615/), which proposes support for the iana time zone database in the standard library, and now serves as a backport to python 3.6+ (including pypy).\n\nthis exposes the `backports.zoneinfo` module, which is a backport of the [`zoneinfo`](https://docs.python.org/3.9/library/zoneinfo.html#module-zoneinfo) module. the backport's documentation can be found [on readthedocs](https://zoneinfo.readthedocs.io/en/latest/).\n\nthe module uses the system time zone data if available, and falls back to the [`tzdata`](https://tzdata.readthedocs.io/en/latest/) package (available [on pypi](https://pypi.org/project/tzdata/)) if installed.\n\n## installation and depending on this library\n\nthis module is called [`backports.zoneinfo`](https://pypi.org/project/backports.zoneinfo) on pypi. to install it in your local environment, use:\n\n```\npip install backports.zoneinfo\n```\n\nor (particularly on windows), you can also use the `tzdata` extra (which basically just declares a dependency on `tzdata`, so this doesn't actually save you any typing \ud83d\ude05):\n\n```\npip install backports.zoneinfo[tzdata]\n```\n\nif you want to use this in your application, it is best to use [pep 508 environment markers](https://www.python.org/dev/peps/pep-0508/#environment-markers) to declare a dependency *conditional on the python version*:\n\n```\nbackports.zoneinfo;python_version<\"3.9\"\n```\n\nsupport for `backports.zoneinfo` in python 3.9+ is currently minimal, since it is expected that you would use the standard library `zoneinfo` module instead.\n\n## use\n\nthe `backports.zoneinfo` module should be a drop-in replacement for the python 3.9 standard library module `zoneinfo`. if you do not support anything earlier than python 3.9, **you do not need this library**; if you are supporting python 3.6+, you may want to use this idiom to \"fall back\" to ``backports.zoneinfo``:\n\n```python\ntry:\n    import zoneinfo\nexcept importerror:\n    from backports import zoneinfo\n```\n\nto get access to time zones with this module, construct a `zoneinfo` object and attach it to your datetime:\n\n```python\n>>> from backports.zoneinfo import zoneinfo\n>>> from datetime import datetime, timedelta, timezone\n>>> dt = datetime(1992, 3, 1, tzinfo=zoneinfo(\"europe/minsk\"))\n>>> print(dt)\n1992-03-01 00:00:00+02:00\n>>> print(dt.utcoffset())\n2:00:00\n>>> print(dt.tzname())\neet\n```\n\narithmetic works as expected without the need for a \"normalization\" step:\n\n```python\n>>> dt += timedelta(days=90)\n>>> print(dt)\n1992-05-30 00:00:00+03:00\n>>> dt.utcoffset()\ndatetime.timedelta(seconds=10800)\n>>> dt.tzname()\n'eest'\n```\n\nambiguous and imaginary times are handled using the `fold` attribute added in [pep 495](https://www.python.org/dev/peps/pep-0495/):\n\n```python\n>>> dt = datetime(2020, 11, 1, 1, tzinfo=zoneinfo(\"america/chicago\"))\n>>> print(dt)\n2020-11-01 01:00:00-05:00\n>>> print(dt.replace(fold=1))\n2020-11-01 01:00:00-06:00\n\n>>> utc = timezone.utc\n>>> print(dt.astimezone(utc))\n2020-11-01 06:00:00+00:00\n>>> print(dt.replace(fold=1).astimezone(utc))\n2020-11-01 07:00:00+00:00\n```\n\n# contributing\n\ncurrently we are not accepting contributions to this repository because we have not put the cla in place and we would like to avoid complicating the process of adoption into the standard library. contributions to [cpython](https://github.com/python/cpython) will eventually be backported to this repository \u2014 see [the python developer's guide](https://devguide.python.org/) for more information on how to contribute to cpython.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "backports.zoneinfo",
+  "package_url": "https://pypi.org/project/backports.zoneinfo/",
+  "project_url": "https://pypi.org/project/backports.zoneinfo/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/pganssle/zoneinfo/issues",
+    "Documentation": "https://zoneinfo.readthedocs.io/en/latest/",
+    "Homepage": "https://github.com/pganssle/zoneinfo",
+    "Source": "https://github.com/pganssle/zoneinfo"
+  },
+  "release_url": "https://pypi.org/project/backports.zoneinfo/0.2.1/",
+  "requires_dist": [
+    "importlib-resources ; python_version < \"3.7\"",
+    "tzdata ; extra == 'tzdata'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "backport of the standard library zoneinfo module",
+  "version": "0.2.1",
+  "releases": [],
+  "developers": [
+    "datetime-sig@python.org",
+    "python_software_foundation"
+  ],
+  "kwds": "timezone zoneinfo utc utcoffset backports",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_backports.zoneinfo",
+  "homepage": "https://github.com/pganssle/zoneinfo",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_importlib_resources",
+    "pypi_tzdata"
+  ]
+}

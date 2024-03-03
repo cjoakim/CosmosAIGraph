@@ -1,0 +1,68 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: artificial intelligence"
+  ],
+  "description": "<p align=\"center\">\n    <br>\n    <img src=\"https://huggingface.co/landing/assets/tokenizers/tokenizers-logo.png\" width=\"600\"/>\n    <br>\n<p>\n<p align=\"center\">\n    <a href=\"https://badge.fury.io/py/tokenizers\">\n         <img alt=\"build\" src=\"https://badge.fury.io/py/tokenizers.svg\">\n    </a>\n    <a href=\"https://github.com/huggingface/tokenizers/blob/master/license\">\n        <img alt=\"github\" src=\"https://img.shields.io/github/license/huggingface/tokenizers.svg?color=blue\">\n    </a>\n</p>\n<br>\n\n# tokenizers\n\nprovides an implementation of today's most used tokenizers, with a focus on performance and\nversatility.\n\nbindings over the [rust](https://github.com/huggingface/tokenizers/tree/master/tokenizers) implementation.\nif you are interested in the high-level design, you can go check it there.\n\notherwise, let's dive in!\n\n## main features:\n\n - train new vocabularies and tokenize using 4 pre-made tokenizers (bert wordpiece and the 3\n   most common bpe versions).\n - extremely fast (both training and tokenization), thanks to the rust implementation. takes\n   less than 20 seconds to tokenize a gb of text on a server's cpu.\n - easy to use, but also extremely versatile.\n - designed for research and production.\n - normalization comes with alignments tracking. it's always possible to get the part of the\n   original sentence that corresponds to a given token.\n - does all the pre-processing: truncate, pad, add the special tokens your model needs.\n\n### installation\n\n#### with pip:\n\n```bash\npip install tokenizers\n```\n\n#### from sources:\n\nto use this method, you need to have the rust installed:\n\n```bash\n# install with:\ncurl https://sh.rustup.rs -ssf | sh -s -- -y\nexport path=\"$home/.cargo/bin:$path\"\n```\n\nonce rust is installed, you can compile doing the following\n\n```bash\ngit clone https://github.com/huggingface/tokenizers\ncd tokenizers/bindings/python\n\n# create a virtual env (you can use yours as well)\npython -m venv .env\nsource .env/bin/activate\n\n# install `tokenizers` in the current virtual env\npip install -e .\n```\n\n### load a pretrained tokenizer from the hub\n\n```python\nfrom tokenizers import tokenizer\n\ntokenizer = tokenizer.from_pretrained(\"bert-base-cased\")\n```\n\n### using the provided tokenizers\n\nwe provide some pre-build tokenizers to cover the most common cases. you can easily load one of\nthese using some `vocab.json` and `merges.txt` files:\n\n```python\nfrom tokenizers import charbpetokenizer\n\n# initialize a tokenizer\nvocab = \"./path/to/vocab.json\"\nmerges = \"./path/to/merges.txt\"\ntokenizer = charbpetokenizer(vocab, merges)\n\n# and then encode:\nencoded = tokenizer.encode(\"i can feel the magic, can you?\")\nprint(encoded.ids)\nprint(encoded.tokens)\n```\n\nand you can train them just as simply:\n\n```python\nfrom tokenizers import charbpetokenizer\n\n# initialize a tokenizer\ntokenizer = charbpetokenizer()\n\n# then train it!\ntokenizer.train([ \"./path/to/files/1.txt\", \"./path/to/files/2.txt\" ])\n\n# now, let's use it:\nencoded = tokenizer.encode(\"i can feel the magic, can you?\")\n\n# and finally save it somewhere\ntokenizer.save(\"./path/to/directory/my-bpe.tokenizer.json\")\n```\n\n#### provided tokenizers\n\n - `charbpetokenizer`: the original bpe\n - `bytelevelbpetokenizer`: the byte level version of the bpe\n - `sentencepiecebpetokenizer`: a bpe implementation compatible with the one used by sentencepiece\n - `bertwordpiecetokenizer`: the famous bert tokenizer, using wordpiece\n\nall of these can be used and trained as explained above!\n\n### build your own\n\nwhenever these provided tokenizers don't give you enough freedom, you can build your own tokenizer,\nby putting all the different parts you need together.\nyou can check how we implemented the [provided tokenizers](https://github.com/huggingface/tokenizers/tree/master/bindings/python/py_src/tokenizers/implementations) and adapt them easily to your own needs.\n\n#### building a byte-level bpe\n\nhere is an example showing how to build your own byte-level bpe by putting all the different pieces\ntogether, and then saving it to a single file:\n\n```python\nfrom tokenizers import tokenizer, models, pre_tokenizers, decoders, trainers, processors\n\n# initialize a tokenizer\ntokenizer = tokenizer(models.bpe())\n\n# customize pre-tokenization and decoding\ntokenizer.pre_tokenizer = pre_tokenizers.bytelevel(add_prefix_space=true)\ntokenizer.decoder = decoders.bytelevel()\ntokenizer.post_processor = processors.bytelevel(trim_offsets=true)\n\n# and then train\ntrainer = trainers.bpetrainer(\n    vocab_size=20000,\n    min_frequency=2,\n    initial_alphabet=pre_tokenizers.bytelevel.alphabet()\n)\ntokenizer.train([\n    \"./path/to/dataset/1.txt\",\n    \"./path/to/dataset/2.txt\",\n    \"./path/to/dataset/3.txt\"\n], trainer=trainer)\n\n# and save it\ntokenizer.save(\"byte-level-bpe.tokenizer.json\", pretty=true)\n```\n\nnow, when you want to use this tokenizer, this is as simple as:\n\n```python\nfrom tokenizers import tokenizer\n\ntokenizer = tokenizer.from_file(\"byte-level-bpe.tokenizer.json\")\n\nencoded = tokenizer.encode(\"i can feel the magic, can you?\")\n```\n\n",
+  "docs_url": null,
+  "keywords": "nlp,tokenizer,bpe,transformer,deep learning",
+  "license": "",
+  "name": "tokenizers",
+  "package_url": "https://pypi.org/project/tokenizers/",
+  "project_url": "https://pypi.org/project/tokenizers/",
+  "project_urls": {
+    "Homepage": "https://github.com/huggingface/tokenizers",
+    "Source": "https://github.com/huggingface/tokenizers"
+  },
+  "release_url": "https://pypi.org/project/tokenizers/0.15.0/",
+  "requires_dist": [
+    "huggingface_hub >=0.16.4, <1.0",
+    "pytest ; extra == 'testing'",
+    "requests ; extra == 'testing'",
+    "numpy ; extra == 'testing'",
+    "datasets ; extra == 'testing'",
+    "black ==22.3 ; extra == 'testing'",
+    "sphinx ; extra == 'docs'",
+    "sphinx_rtd_theme ; extra == 'docs'",
+    "setuptools_rust ; extra == 'docs'",
+    "tokenizers[testing] ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "",
+  "version": "0.15.0",
+  "releases": [],
+  "developers": [
+    "anthony@huggingface.co",
+    "m.anthony.moi@gmail.com",
+    "patry.nicolas@protonmail.com"
+  ],
+  "kwds": "tokenizer tokenizers tokenize tokenization pre_tokenizers",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_tokenizers",
+  "homepage": "",
+  "release_count": 85,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_datasets",
+    "pypi_huggingface_hub",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_requests",
+    "pypi_setuptools_rust",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_tokenizers"
+  ]
+}

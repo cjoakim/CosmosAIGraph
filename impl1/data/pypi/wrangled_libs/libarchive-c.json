@@ -1,0 +1,30 @@
+{
+  "classifiers": [],
+  "description": "a python interface to libarchive. it uses the standard ctypes_ module to\ndynamically load and access the c library.\n\n.. _ctypes: https://docs.python.org/3/library/ctypes.html\n\ninstallation\n============\n\n    pip install libarchive-c\n\ncompatibility\n=============\n\npython\n------\n\npython-libarchive-c is currently tested with python 3.8, 3.9, 3.10 and 3.11.\n\nif you find an incompatibility with older versions you can send us a small patch,\nbut we won't accept big changes.\n\nlibarchive\n----------\n\npython-libarchive-c may not work properly with obsolete versions of libarchive such as the ones included in macos. in that case you can install a recent version of libarchive (e.g. with ``brew install libarchive`` on macos) and use the ``libarchive`` environment variable to point python-libarchive-c to it::\n\n    export libarchive=/usr/local/cellar/libarchive/3.3.3/lib/libarchive.13.dylib\n\nusage\n=====\n\nimport::\n\n    import libarchive\n\nextracting archives\n-------------------\n\nto extract an archive, use the ``extract_file`` function::\n\n    os.chdir('/path/to/target/directory')\n    libarchive.extract_file('test.zip')\n\nalternatively, the ``extract_memory`` function can be used to extract from a buffer,\nand ``extract_fd`` from a file descriptor.\n\nthe ``extract_*`` functions all have an integer ``flags`` argument which is passed\ndirectly to the c function ``archive_write_disk_set_options()``. you can import\nthe ``extract_*`` constants from the ``libarchive.extract`` module and see the\nofficial description of each flag in the ``archive_write_disk(3)`` man page.\n\nby default, when the ``flags`` argument is ``none``, the ``secure_nodotdot``,\n``secure_noabsolutepaths`` and ``secure_symlinks`` flags are passed to\nlibarchive, unless the current directory is the root (``/``).\n\nreading archives\n----------------\n\nto read an archive, use the ``file_reader`` function::\n\n    with libarchive.file_reader('test.7z') as archive:\n        for entry in archive:\n            for block in entry.get_blocks():\n                ...\n\nalternatively, the ``memory_reader`` function can be used to read from a buffer,\n``fd_reader`` from a file descriptor, ``stream_reader`` from a stream object\n(which must support the standard ``readinto`` method), and ``custom_reader``\nfrom anywhere using callbacks.\n\nto learn about the attributes of the ``entry`` object, see the ``libarchive/entry.py``\nsource code or run ``help(libarchive.entry.archiveentry)`` in a python shell.\n\ndisplaying progress\n~~~~~~~~~~~~~~~~~~~\n\nif your program processes large archives, you can keep track of its progress\nwith the ``bytes_read`` attribute. here's an example of a progress bar using\n`tqdm <https://pypi.org/project/tqdm/>`_::\n\n    with tqdm(total=os.stat(archive_path).st_size, unit='bytes') as pbar, \\\n         libarchive.file_reader(archive_path) as archive:\n        for entry in archive:\n            ...\n            pbar.update(archive.bytes_read - pbar.n)\n\ncreating archives\n-----------------\n\nto create an archive, use the ``file_writer`` function::\n\n    from libarchive.entry import filetype\n\n    with libarchive.file_writer('test.tar.gz', 'ustar', 'gzip') as archive:\n        # add the `libarchive/` directory and everything in it (recursively),\n        # then the `readme.rst` file.\n        archive.add_files('libarchive/', 'readme.rst')\n        # add a regular file defined from scratch.\n        data = b'foobar'\n        archive.add_file_from_memory('../escape-test', len(data), data)\n        # add a directory defined from scratch.\n        early_epoch = (42, 42)  # 1970-01-01 00:00:42.000000042\n        archive.add_file_from_memory(\n            'metadata-test', 0, b'',\n            filetype=filetype.directory, permission=0o755, uid=4242, gid=4242,\n            atime=early_epoch, mtime=early_epoch, ctime=early_epoch, birthtime=early_epoch,\n        )\n\nalternatively, the ``memory_writer`` function can be used to write to a memory buffer,\n``fd_writer`` to a file descriptor, and ``custom_writer`` to a callback function.\n\nfor each of those functions, the mandatory second argument is the archive format,\nand the optional third argument is the compression format (called \u201cfilter\u201d in\nlibarchive). the acceptable values are listed in ``libarchive.ffi.write_formats``\nand ``libarchive.ffi.write_filters``.\n\nfile metadata codecs\n--------------------\n\nby default, utf-8 is used to read and write file attributes from and to archives.\na different codec can be specified through the ``header_codec`` arguments of the\n``*_reader`` and ``*_writer`` functions. example::\n\n    with libarchive.file_writer('test.tar', 'ustar', header_codec='cp037') as archive:\n        ...\n    with file_reader('test.tar', header_codec='cp037') as archive:\n        ...\n\nin addition to file paths (``pathname`` and ``linkpath``), the specified codec is\nused to encode and decode user and group names (``uname`` and ``gname``).\n\nlicense\n=======\n\n`cc0 public domain dedication <http://creativecommons.org/publicdomain/zero/1.0/>`_\n",
+  "docs_url": null,
+  "keywords": "archive libarchive 7z tar bz2 zip gz",
+  "license": "cc0",
+  "name": "libarchive-c",
+  "package_url": "https://pypi.org/project/libarchive-c/",
+  "project_url": "https://pypi.org/project/libarchive-c/",
+  "project_urls": {
+    "Homepage": "https://github.com/Changaco/python-libarchive-c"
+  },
+  "release_url": "https://pypi.org/project/libarchive-c/5.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python interface to libarchive",
+  "version": "5.0",
+  "releases": [],
+  "developers": [
+    "changaco",
+    "changaco@changaco.oy.lc"
+  ],
+  "kwds": "libarchive archive_path pip foobar lib",
+  "license_kwds": "cc0",
+  "libtype": "pypi",
+  "id": "pypi_libarchive_c",
+  "homepage": "https://github.com/changaco/python-libarchive-c",
+  "release_count": 17,
+  "dependency_ids": []
+}

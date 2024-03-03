@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: communications :: chat",
+    "topic :: office/business",
+    "topic :: system :: networking"
+  ],
+  "description": "slack events api adapter for python\n===================================\n\n.. image:: https://badge.fury.io/py/slackeventsapi.svg\n  :target: https://pypi.org/project/slackeventsapi/\n.. image:: https://github.com/slackapi/python-slack-events-api/actions/workflows/ci-build.yml/badge.svg\n  :target: https://github.com/slackapi/python-slack-events-api/actions/workflows/ci-build.yml\n.. image:: https://codecov.io/gh/slackapi/python-slack-events-api/branch/main/graph/badge.svg\n  :target: https://codecov.io/gh/slackapi/python-slack-events-api\n\n\nthe slack events adapter is a python-based solution to receive and parse events\nfrom slack\u2019s events api. this library uses an event emitter framework to allow\nyou to easily process slack events by simply attaching functions\nto event listeners.\n\nthis adapter enhances and simplifies slack's events api by incorporating useful best practices, patterns, and opportunities to abstract out common tasks.\n\n\ud83d\udca1  we wrote a `blog post which explains how`_ the events api can help you, why we built these tools, and how you can use them to build production-ready slack apps.\n\n.. _blog post which explains how: https://medium.com/@slackapi/enhancing-slacks-events-api-7535827829ab\n\n\u26a0\ufe0f  important notice\n---------------------\n\nif you use this library for events api handling, you may need to use threads for stable event acknowledgement. see https://github.com/slackapi/python-slack-events-api/issues/84 for details.\n\nif you're looking for the best recommended library at this point, check bolt for python: https://github.com/slackapi/bolt-python\n\nthe framework covers not only events api but also all the latest slack platform features.\n\n\ud83e\udd16  installation\n----------------\n\n.. code:: shell\n\n  pip install slackeventsapi\n\n\ud83e\udd16  app setup\n--------------------\n\nbefore you can use the `events api`_ you must\n`create a slack app`_, and turn on\n`event subscriptions`_.\n\n\ud83d\udca1  when you add the request url to your app's event subscription settings,\nslack will send a request containing a `challenge` code to verify that your\nserver is alive. this package handles that url verification event for you, so\nall you need to do is start the example app, start ngrok and configure your\nurl accordingly.\n\n\u2705  once you have your `request url` verified, your app is ready to start\nreceiving team events.\n\n\ud83d\udd11  your server will begin receiving events from slack's events api as soon as a\nuser has authorized your app.\n\n\ud83e\udd16  development workflow:\n===========================\n\n(1) create a slack app on https://api.slack.com/apps\n(2) add a `bot user` for your app\n(3) start the example app on your **request url** endpoint\n(4) start ngrok and copy the **https** url\n(5) add your **request url** and subscribe your app to events\n(6) go to your ngrok url (e.g. https://myapp12.ngrok.com/) and auth your app\n\n**\ud83c\udf89 once your app has been authorized, you will begin receiving slack events**\n\n    \u26a0\ufe0f  ngrok is a great tool for developing slack apps, but we don't recommend using ngrok\n    for production apps.\n\n\ud83e\udd16  usage\n----------\n  **\u26a0\ufe0f  keep your app's credentials safe!**\n\n  - for development, keep them in virtualenv variables.\n\n  - for production, use a secure data store.\n\n  - never post your app's credentials to github.\n\n.. code:: python\n\n  slack_signing_secret = os.environ[\"slack_signing_secret\"]\n\ncreate a slack event adapter for receiving actions via the events api\n-----------------------------------------------------------------------\n**using the built-in flask server:**\n\n.. code:: python\n\n  from slackeventsapi import slackeventadapter\n\n\n  slack_events_adapter = slackeventadapter(slack_signing_secret, endpoint=\"/slack/events\")\n\n\n  # create an event listener for \"reaction_added\" events and print the emoji name\n  @slack_events_adapter.on(\"reaction_added\")\n  def reaction_added(event_data):\n    emoji = event_data[\"event\"][\"reaction\"]\n    print(emoji)\n\n\n  # start the server on port 3000\n  slack_events_adapter.start(port=3000)\n\n\n**using your existing flask instance:**\n\n\n.. code:: python\n\n  from flask import flask\n  from slackeventsapi import slackeventadapter\n\n\n  # this `app` represents your existing flask app\n  app = flask(__name__)\n\n\n  # an example of one of your flask app's routes\n  @app.route(\"/\")\n  def hello():\n    return \"hello there!\"\n\n\n  # bind the events api route to your existing flask app by passing the server\n  # instance as the last param, or with `server=app`.\n  slack_events_adapter = slackeventadapter(slack_signing_secret, \"/slack/events\", app)\n\n\n  # create an event listener for \"reaction_added\" events and print the emoji name\n  @slack_events_adapter.on(\"reaction_added\")\n  def reaction_added(event_data):\n    emoji = event_data[\"event\"][\"reaction\"]\n    print(emoji)\n\n\n  # start the server on port 3000\n  if __name__ == \"__main__\":\n    app.run(port=3000)\n\nfor a comprehensive list of available slack `events` and more information on\n`scopes`, see https://api.slack.com/events-api\n\n\ud83e\udd16  example event listeners\n-----------------------------\n\nsee `example.py`_ for usage examples. this example also utilizes the\nslackclient web api client.\n\n.. _example.py: /example/\n\n\ud83e\udd14  support\n-----------\n\nneed help? join `slack community`_ and talk to us in `#slack-api`_.\n\nyou can also `create an issue`_ right here on github.\n\n.. _events api: https://api.slack.com/events-api\n.. _create a slack app: https://api.slack.com/apps/new\n.. _event subscriptions: https://api.slack.com/events-api#subscriptions\n.. _slack community: http://slackcommunity.com/\n.. _#slack-api: https://dev4slack.slack.com/messages/slack-api/\n.. _create an issue: https://github.com/slackapi/python-slack-events-api/issues/new\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "slackeventsapi",
+  "package_url": "https://pypi.org/project/slackeventsapi/",
+  "project_url": "https://pypi.org/project/slackeventsapi/",
+  "project_urls": {
+    "Homepage": "http://github.com/slackapi/python-slack-events-api"
+  },
+  "release_url": "https://pypi.org/project/slackeventsapi/3.0.1/",
+  "requires_dist": [
+    "flask (<3,>=2)",
+    "pyee (>=8)"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "python slack events api adapter for flask",
+  "version": "3.0.1",
+  "releases": [],
+  "developers": [
+    "opensource@slack.com",
+    "slack_technologies"
+  ],
+  "kwds": "slack_events_adapter slackeventsapi slackeventadapter slack slackapi",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_slackeventsapi",
+  "homepage": "http://github.com/slackapi/python-slack-events-api",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_flask",
+    "pypi_pyee"
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3 :: only",
+    "topic :: education",
+    "topic :: home automation",
+    "topic :: software development :: embedded systems",
+    "topic :: system :: hardware"
+  ],
+  "description": "==============================\nbluez bluetooth management api\n==============================\na python library to interact with bluez bluetooth management api on linux.\nat this time it should be seen as a very early stage proof of concept.\nif you are new to bluetooth this might not be the best library to start with\n\noverview\n--------\nthis library aims to offer assistance to accessing the `bluez bluetooth\nmanagement api\n<https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/mgmt-api.txt>`_\nusing python.\nwith the `mgmt` api there are no commands for reading and writing data on a\nconnected device.\nthis library has to have root privilege to access most things.\n\n\nthree levels\n------------\nthis library has tried to split things in to the how, what and when. the aim\nis by keeping the transport, protocol, and programming paradigm separate a\nplug and play approach can be taken. for example, if the python bug in sockets\ngets fixed, just that part can be updated without too much disruption.\nit should also be possible to use different programming paradigms (models)\nfor how commands and responses are handled and still use the socket and\nprotocol pieces.\n\nsocket (how)\n############\nthis library came into being because of a bug in python as documented at:\nhttps://bugs.python.org/issue36132\n\npython currently does not allow any way to initialize hci_channel, so you\ncannot use a `user channel` socket and so instead `btmgmt_socket` in\n**btsocket/btmgmt_socket.py** accesses the `user channel` by using the\nunderlying libc socket.\n\nprotocol (what)\n###############\nthe file **btsocket/btmgmt_protocol.py** is to assist in encoding and decoding\nthe binary format that is used to communicate\n\nthis module assists in encoding and decoding the binary data\n\nprogramming paradigm (when)\n###########################\nhandling communication with the sockets can be done a number of different ways\nand there are trade-offs for each of them. initially this library is supporting\ntwo types. a procedural approach with  **btsocket/btmgmt_sync.py** and\na callback (or event-driven) approach with **btsocket/btmgmt_callback.py**.\n\nfor actions like turning the controller on and off then these can be done\nwith either methodology. for listening for async events like the discovery\nof devices, then only the callback model is practical.\n\ncommands\n--------\nfor the vast majority of the commands, the process of creating the\nmgmt socket is required to have the cap_net_admin capability\n(e.g. root/sudo would have this).\n\nthe documentation for commands is at:\nhttps://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/doc/mgmt-api.txt\n\nthat documentation has been used to auto-generate parts of `btmgmt_protocol.py`\n\nto take one command as an example; powered command:\n::\n\n    set powered command\n    ===================\n\n        command code:\t\t0x0005\n        controller index:\t<controller id>\n        command parameters:\tpowered (1 octet)\n        return parameters:\tcurrent_settings (4 octets)\n\nto power-on adapter at index zero, the following command would be sent with the\nsynchronous api\n\n.. code-block:: python\n\n    from btsocket import btmgmt_sync\n    response = btmgmt_sync.send('setpowered', 0, 1)\n\nthe format of the `send` command is :\n\n`response = send(<command_name>, <adapter index>, <positional paramters>)`\n\nthe command name is taken from the heading in the documentation with the spaces\nand the word \"command\" removed. a typical response is given below:\n::\n\n    response(\n        header=<\n            event_code=commandcompleteevent,\n            controller_idx=0,\n            param_len=7>,\n        event_frame=<\n            command_opcode=setpowered,\n            status=success>,\n        cmd_response_frame=<\n            current_settings=2752>)\n\nan example of the python to access the values in the response is:\n\n.. code-block:: python\n\n    print(response.event_frame.command_opcode,\n          response.event_frame.status)\n\ncallbacks on events\n-------------------\nthe structure for running with callbacks on events is below.\n\ngetting the event loop and running until complete should be familiar to\nregular users of asyncio.\n\n`mgmt = btmgmt_callback.mgmt()` sets up the sockets and the readers and writers\nto the sockets.\n\n`mgmt.add_event_callback` takes two arguments, the first is the btmgmt event\nand the second is the callback function to use when that event is detected.\n\n`mgmt.send` is how to send commands and is similar to the synchronous api\nexcept it doesn't get a response. you will have to add an event callback to\naccess the response.\nthe command(s) are not sent until `mgmt.start()` as this is what\nstarts the writers and readers of the sockets.\n\n.. code-block:: python\n\n    from btsocket import btmgmt_callback\n    from btsocket import btmgmt_protocol\n\n    def device_found(response, mgmt_obj):\n        print('new device found', response.event_frame.address)\n        # to exit set running to false\n        mgmt_obj.stop()\n\n    def app():\n        mgmt = btmgmt_callback.mgmt()\n        mgmt.add_event_callback(btmgmt_protocol.events.devicefoundevent,\n                                device_found)\n        mgmt.send('startdiscovery', 0, [btmgmt_protocol.addresstype.lepublic,\n                                        btmgmt_protocol.addresstype.lerandom,\n                                        btmgmt_protocol.addresstype.bredr])\n        mgmt.start()\n\n\n    if __name__ == '__main__':\n        app()\n\nthere are more examples in the examples folder\n\n\n",
+  "docs_url": null,
+  "keywords": "bluez bluetooth management mgmt api",
+  "license": "mit",
+  "name": "btsocket",
+  "package_url": "https://pypi.org/project/btsocket/",
+  "project_url": "https://pypi.org/project/btsocket/",
+  "project_urls": {
+    "Homepage": "https://github.com/ukBaz/python_bluezmgmt"
+  },
+  "release_url": "https://pypi.org/project/btsocket/0.2.0/",
+  "requires_dist": [
+    "bumpversion ; extra == 'dev'",
+    "twine ; extra == 'dev'",
+    "sphinx ; extra == 'dev'",
+    "sphinx-rtd-theme ; extra == 'dev'",
+    "pygments ; extra == 'dev'",
+    "coverage ; extra == 'dev'",
+    "pycodestyle ; extra == 'dev'",
+    "sphinx ; extra == 'docs'",
+    "sphinx-rtd-theme ; extra == 'docs'",
+    "pygments ; extra == 'docs'",
+    "bumpversion ; extra == 'rel'",
+    "twine ; extra == 'rel'",
+    "coverage ; extra == 'test'",
+    "pycodestyle ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "python library for bluez bluetooth management api",
+  "version": "0.2.0",
+  "releases": [],
+  "developers": [
+    "barry_byford",
+    "barry_byford@yahoo.co.uk"
+  ],
+  "kwds": "bluetooth btmgmt_protocol btmgmt_socket btmgmt_sync btmgmt_callback",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_btsocket",
+  "homepage": "https://github.com/ukbaz/python_bluezmgmt",
+  "release_count": 2,
+  "dependency_ids": [
+    "pypi_bumpversion",
+    "pypi_coverage",
+    "pypi_pycodestyle",
+    "pypi_pygments",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_twine"
+  ]
+}

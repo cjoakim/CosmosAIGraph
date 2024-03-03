@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: system administrators",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: communications",
+    "topic :: scientific/engineering :: human machine interfaces",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: user interfaces",
+    "topic :: system :: shells",
+    "topic :: system :: system shells",
+    "topic :: system :: systems administration",
+    "topic :: terminals",
+    "topic :: text processing :: general"
+  ],
+  "description": "capturer: easily capture stdout/stderr of the current process and subprocesses\n==============================================================================\n\n.. image:: https://travis-ci.org/xolox/python-capturer.svg?branch=master\n   :target: https://travis-ci.org/xolox/python-capturer\n\n.. image:: https://coveralls.io/repos/xolox/python-capturer/badge.svg?branch=master\n  :target: https://coveralls.io/r/xolox/python-capturer?branch=master\n\nthe capturer package makes it easy to capture the stdout_ and stderr_ streams\nof the current process *and subprocesses*. output can be relayed to the\nterminal in real time but is also available to the python program for\nadditional processing. it's currently tested on cpython 2.7, 3.5+ and pypy\n(2.7). it's tested on linux and mac os x and may work on other unixes but\ndefinitely won't work on windows (due to the use of the platform dependent pty_\nmodule). for usage instructions please refer to the documentation_.\n\n.. contents::\n   :local:\n\nstatus\n------\n\nthe `capturer` package was developed as a proof of concept over the course of a\nweekend, because i was curious to see if it could be done (reliably). after a\nweekend of extensive testing it seems to work fairly well so i'm publishing the\ninitial release as version 1.0, however i still consider this a proof of\nconcept because i don't have extensive \"production\" experience using it yet.\nhere's hoping it works as well in practice as it did during my testing :-).\n\ninstallation\n------------\n\nthe `capturer` package is available on pypi_ which means installation should be\nas simple as:\n\n.. code-block:: console\n\n   $ pip install capturer\n\nthere's actually a multitude of ways to install python packages (e.g. the `per\nuser site-packages directory`_, `virtual environments`_ or just installing\nsystem wide) and i have no intention of getting into that discussion here, so\nif this intimidates you then read up on your options before returning to these\ninstructions ;-).\n\ngetting started\n---------------\n\nthe easiest way to capture output is to use a context manager:\n\n.. code-block:: python\n\n   import subprocess\n   from capturer import captureoutput\n\n   with captureoutput() as capturer:\n       # generate some output from python.\n       print \"output from python\"\n       # generate output from a subprocess.\n       subprocess.call([\"echo\", \"output from a subprocess\"])\n       # get the output in each of the supported formats.\n       assert capturer.get_bytes() == b'output from python\\r\\noutput from a subprocess\\r\\n'\n       assert capturer.get_lines() == [u'output from python', u'output from a subprocess']\n       assert capturer.get_text() == u'output from python\\noutput from a subprocess'\n\nthe use of a context manager (`the with statement`_) ensures that output\ncapturing is enabled and disabled at the appropriate time, regardless of\nwhether exceptions interrupt the normal flow of processing.\n\nnote that the first call to `get_bytes()`_, `get_lines()`_ or `get_text()`_\nwill stop the capturing of output by default. this is intended as a sane\ndefault to prevent partial reads (which can be confusing as hell when you don't\nhave experience with them). so we could have simply used ``print`` to show\nthe results without causing a recursive \"captured output is printed and then\ncaptured again\" loop. there's an optional ``partial=true`` keyword argument\nthat can be used to disable this behavior (please refer to the documentation_\nfor details).\n\ndesign choices\n--------------\n\nthere are existing solutions out there to capture the stdout_ and stderr_\nstreams of (python) processes. the `capturer` package was created for a very\nspecific use case that wasn't catered for by existing solutions (that i could\nfind). this section documents the design choices that guided the development of\nthe `capturer` package:\n\n.. contents::\n  :local:\n\nintercepts writes to low level file descriptors\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nlibraries like capture_ and iocapture_ change python's sys.stdout_ and\nsys.stderr_ file objects to fake file objects (using stringio_). this enables\ncapturing of (most) output written to the stdout_ and stderr_ streams from the\nsame python process, however any output from subprocesses is unaffected by the\nredirection and not captured.\n\nthe `capturer` package instead intercepts writes to low level file descriptors\n(similar to and inspired by `how pytest does it`_). this enables capturing of\noutput written to the standard output and error streams from the same python\nprocess as well as any subprocesses.\n\nuses a pseudo terminal to emulate a real terminal\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthe `capturer` package uses a pseudo terminal created using `pty.openpty()`_ to\ncapture output. this means subprocesses will use ansi escape sequences because\nthey think they're connected to a terminal. in the current implementation you\ncan't opt out of this, but feel free to submit a feature request to change this\n:-). this does have some drawbacks:\n\n- the use of `pty.openpty()`_ means you need to be running in a unix like\n  environment for `capturer` to work (windows definitely isn't supported).\n\n- all output captured is relayed on the stderr_ stream by default, so capturing\n  changes the semantics of your programs. how much this matters obviously\n  depends on your use case. for the use cases that triggered me to create\n  `capturer` it doesn't matter, which explains why this is the default mode.\n\n  there is experimental support for capturing stdout_ and stderr_ separately\n  and relaying captured output to the appropriate original stream. basically\n  you call ``captureoutput(merged=false)`` and then you use the ``stdout`` and\n  ``stderr`` attributes of the ``captureoutput`` object to get at the output\n  captured on each stream.\n\n  i say experimental because this method of capturing can unintentionally\n  change the order in which captured output is emitted, in order to avoid\n  interleaving output emitted on the stdout_ and stderr_ streams (which would\n  most likely result in incomprehensible output). basically output is relayed\n  on each stream separately after each line break. this means interactive\n  prompts that block on reading from standard input without emitting a line\n  break won't show up (until it's too late ;-).\n\nrelays output to the terminal in real time\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthe main use case of `capturer` is to capture all output of a snippet of python\ncode (including any output by subprocesses) but also relay the output to the\nterminal in real time. this has a couple of useful properties:\n\n- long running operations can provide the operator with real time feedback by\n  emitting output on the terminal. this sounds obvious (and it is!) but it is\n  non-trivial to implement (an understatement :-) when you *also* want to\n  capture the output.\n\n- programs like gpg_ and ssh_ that use interactive password prompts will render\n  their password prompt on the terminal in real time. this avoids the awkward\n  interaction where a password prompt is silenced but the program still hangs,\n  waiting for input on stdin_.\n\ncontact\n-------\n\nthe latest version of `capturer` is available on pypi_ and github_. the\ndocumentation is hosted on `read the docs`_ and includes a changelog_. for bug\nreports please create an issue on github_. if you have questions, suggestions,\netc. feel free to send me an e-mail at `peter@peterodding.com`_.\n\nlicense\n-------\n\nthis software is licensed under the `mit license`_.\n\n\u00a9 2020 peter odding.\n\na big thanks goes out to the pytest_ developers because pytest's mechanism for\ncapturing the output of subprocesses provided inspiration for the `capturer`\npackage. no code was copied, but both projects are mit licensed anyway, so it's\nnot like it's very relevant :-).\n\n.. external references:\n.. _capture: https://pypi.org/project/capture\n.. _changelog: https://capturer.readthedocs.io/en/latest/changelog.html\n.. _documentation: https://capturer.readthedocs.io\n.. _get_bytes(): https://capturer.readthedocs.io/en/latest/api.html#capturer.captureoutput.get_bytes\n.. _get_lines(): https://capturer.readthedocs.io/en/latest/api.html#capturer.captureoutput.get_lines\n.. _get_text(): https://capturer.readthedocs.io/en/latest/api.html#capturer.captureoutput.get_text\n.. _github: https://github.com/xolox/python-capturer\n.. _gpg: https://en.wikipedia.org/wiki/gnu_privacy_guard\n.. _how pytest does it: https://pytest.org/latest/capture.html\n.. _iocapture: https://pypi.org/project/iocapture\n.. _mit license: http://en.wikipedia.org/wiki/mit_license\n.. _per user site-packages directory: https://www.python.org/dev/peps/pep-0370/\n.. _peter@peterodding.com: peter@peterodding.com\n.. _pty.openpty(): https://docs.python.org/2/library/pty.html#pty.openpty\n.. _pty: https://docs.python.org/2/library/pty.html\n.. _pypi: https://pypi.org/project/capturer\n.. _pytest: https://pypi.org/project/pytest\n.. _read the docs: https://capturer.readthedocs.io\n.. _ssh: https://en.wikipedia.org/wiki/secure_shell\n.. _stderr: https://en.wikipedia.org/wiki/standard_streams#standard_error_.28stderr.29\n.. _stdin: https://en.wikipedia.org/wiki/standard_streams#standard_input_.28stdin.29\n.. _stdout: https://en.wikipedia.org/wiki/standard_streams#standard_output_.28stdout.29\n.. _stringio: https://docs.python.org/2/library/stringio.html\n.. _sys.stderr: https://docs.python.org/2/library/sys.html#sys.stderr\n.. _sys.stdout: https://docs.python.org/2/library/sys.html#sys.stdout\n.. _the with statement: https://docs.python.org/2/reference/compound_stmts.html#the-with-statement\n.. _virtual environments: http://docs.python-guide.org/en/latest/dev/virtualenvs/\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "capturer",
+  "package_url": "https://pypi.org/project/capturer/",
+  "project_url": "https://pypi.org/project/capturer/",
+  "project_urls": {
+    "Homepage": "https://capturer.readthedocs.io"
+  },
+  "release_url": "https://pypi.org/project/capturer/3.0/",
+  "requires_dist": [
+    "humanfriendly (>=8.0)"
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+  "summary": "easily capture stdout/stderr of the current process and subprocesses",
+  "version": "3.0",
+  "releases": [],
+  "developers": [
+    "peter@peterodding.com",
+    "peter_odding"
+  ],
+  "kwds": "_stdout capturer stdout stdout_ subprocesses",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_capturer",
+  "homepage": "https://capturer.readthedocs.io",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_humanfriendly"
+  ]
+}

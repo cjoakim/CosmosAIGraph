@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: utilities"
+  ],
+  "description": "tmdbsimple\n==========\n\n![python package](https://github.com/celiao/tmdbsimple/workflows/build/badge.svg)\n![codecov](https://img.shields.io/codecov/c/github/celiao/tmdbsimple)\n![pypi](https://img.shields.io/pypi/pyversions/tmdbsimple)\n![pypi](https://img.shields.io/pypi/v/tmdbsimple)\n\na wrapper for the movie database api v3\n---------------------------------------\n*tmdbsimple* is a wrapper, written in python, for the movie database (tmdb) api\nv3.  by calling the functions available in *tmdbsimple* you can simplify your\ncode and easily access a vast amount of movie, tv, and cast data.  to learn\nmore about the movie database api, check out the [overview](\nhttp://www.themoviedb.org/documentation/api) and [documentation](\nhttps://developers.themoviedb.org/3).\n\nfeatures\n--------\n- completely updated and fully tested.\n- supports only [python versions with tls\n  1.2](http://pyfound.blogspot.com/2017/01/time-to-upgrade-your-python-tls-v12.html).\n  keep it simple!\n- tested with python 3.6, 3.7, and 3.8.\n- one-to-one mapping between *tmdbsimple* methods and tmdb endpoints.\n- implements all tmdb methods, including accounts and authentication.\n- easy to access data using python class attributes.\n- easy to experiment with *tmdbsimple* functions inside the python interpreter.\n- code tested with unittests.  refer to the unittest code for method call syntax.\n\ninstallation\n------------\n*tmdbsimple* is available on the python package index (pypi) at\nhttps://pypi.python.org/pypi/tmdbsimple.\n\nyou can install *tmdbsimple* using one of the following techniques.\n\n- use pip:\n\n```\npip install tmdbsimple\n```\n\n- download the .zip or .tar.gz file from pypi and install it yourself\n- download the [source from github](http://github.com/celiao/tmdbsimple) and\n  install it yourself\n\nif you install it yourself, also install\n[requests](https://requests.readthedocs.io/en/master/).\n\napi key\n-------\nyou will need an api key to the movie database to access the api.  to obtain a\nkey, follow these steps:\n\n1) register for and verify an [account](https://www.themoviedb.org/account/signup).\n2) [log into](https://www.themoviedb.org/login) your account.\n3) select the api section on left side of your account page.\n4) click on the link to generate a new api key and follow the instructions.\n\nexamples\n--------\nonce you have the *tmdbsimple* package installed and a tmdb api key, you can\nstart to play with the data.\n\nfirst, import the library and assign your api_key.\n\n```python\nimport tmdbsimple as tmdb\ntmdb.api_key = 'your_api_key_here'\n```\n\n_optionally_, set a timeout for requests. see [here](https://docs.python-requests.org/en/master/user/advanced/#timeouts) for more info.\n\n```python\ntmdb.requests_timeout = 5  # seconds, for both connect and read\n```\n\nor\n\n```python\ntmdb.requests_timeout = (2, 5)  # seconds, for connect and read specifically \n```\n\n_optionally_, configure the library to use your own requests_session. see [here](https://docs.python-requests.org/en/master/user/advanced/#session-objects) for more info.\n\n```python\nimport requests\ntmdb.requests_session = requests.session()\n```\n\nto communicate with the movie database api, create an instance of one of the\nobject types, call one of the methods on the instance, and access the instance\nattributes.  use keys to access the values of attributes that are dictionaries.\nin this example, we create a movie instance for 'the matrix' and determine the\nbudget and certification.\n\n```python\n    >>> movie = tmdb.movies(603)\n    >>> response = movie.info()\n    >>> movie.title\n    'the matrix'\n    >>> movie.budget\n    63000000\n    >>> response = movie.releases()\n    >>> for c in movie.countries:\n    ...    if c['iso_3166_1'] == 'us':\n    ...         print(c['certification'])\n    ...\n    'r'\n```\n\nlet's play with the interface a bit more.  suppose you and your friend are\narguing over which movie in the bourne series was most popular.  your friend\nsays the first in a series is always most popular.  you disagree.\n\n```python\n    >>> search = tmdb.search()\n    >>> response = search.movie(query='the bourne')\n    >>> for s in search.results:\n    ...     print(s['title'], s['id'], s['release_date'], s['popularity'])\n    ...\n    the bourne ultimatum 2503 2007-08-03 55.2447062124256\n    the bourne supremacy 2502 2004-07-23 43.4553609681985\n    the bourne identity 2501 2002-06-06 38.5531563780592\n    the bourne legacy 49040 2012-08-10 9.90635210153143\n    the bourne identity 8677 1988-05-08 1.53988446573129\n    bette bourne: it goes with the shoes 179304  0.23\n```\n\nyou are correct!  now you claim the producers should be able to make sequels\ncheaper, based on what they learned from making the first movie.  to be fair,\nyou compute the budget per minute of runtime.  your friend disagrees, claiming\nthe producers spend more money trying to out do the previous sequel.\n\n```python\n    >>> identity = tmdb.movies(2501)\n    >>> response = identity.info()\n    >>> identity.budget, identity.runtime\n    (60000000, 119)\n    >>> int(identity.budget/identity.runtime)\n    504201\n    >>> supremacy = tmdb.movies(2502)\n    >>> response = supremacy.info()\n    >>> supremacy.budget, supremacy.runtime\n    (75000000, 108)\n    >>> int(supremacy.budget/supremacy.runtime)\n    694444\n    >>> ultimatum = tmdb.movies(2503)\n    >>> response = ultimatum.info()\n    >>> ultimatum.budget, ultimatum.runtime\n    (70000000, 115)\n    >>> int(ultimatum.budget/ultimatum.runtime)\n    608695\n```\n\nin this case you are both correct.  the third movie was cheaper than the\nsecond, which was more expensive than the first.\n\nyou also can call one of the methods without explicitly instanciating an\nobject.\n\n```python\n    >>> response = tmdb.movies(603).info()\n    >>> response['budget']\n    63000000\n```\n\nif you use authentication to access a user account, be sure to check out\nhttps://www.themoviedb.org/documentation/api/sessions.\n\nif you like this wrapper, and would like access to even more movie and tv data,\ncheck out *rtsimple* https://pypi.python.org/pypi/rtsimple, a wrapper for the\nrotten tomatoes api.\n\n\n",
+  "docs_url": null,
+  "keywords": "movie,the movie database,movie database,tmdb,wrapper,database,themoviedb,moviedb,api",
+  "license": "",
+  "name": "tmdbsimple",
+  "package_url": "https://pypi.org/project/tmdbsimple/",
+  "project_url": "https://pypi.org/project/tmdbsimple/",
+  "project_urls": {
+    "Download": "https://github.com/celiao/tmdbsimple/tarball/2.9.1",
+    "Homepage": "https://github.com/celiao/tmdbsimple"
+  },
+  "release_url": "https://pypi.org/project/tmdbsimple/2.9.1/",
+  "requires_dist": [
+    "requests"
+  ],
+  "requires_python": "",
+  "summary": "a python wrapper for the movie database api v3",
+  "version": "2.9.1",
+  "releases": [],
+  "developers": [
+    "celia.oakley@alumni.stanford.edu",
+    "celia_oakley"
+  ],
+  "kwds": "moviedb tmdbsimple codecov tmdb api",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_tmdbsimple",
+  "homepage": "https://github.com/celiao/tmdbsimple",
+  "release_count": 73,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

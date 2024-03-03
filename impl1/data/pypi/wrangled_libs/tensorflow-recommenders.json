@@ -1,0 +1,62 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: scientific/engineering :: mathematics",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# tensorflow recommenders\n\n![tensorflow recommenders logo](assets/full_logo.png)\n\n![tensorflow recommenders build badge](https://github.com/tensorflow/recommenders/actions/workflows/test.yaml/badge.svg)\n[![pypi badge](https://img.shields.io/pypi/v/tensorflow-recommenders.svg)](https://pypi.python.org/pypi/tensorflow-recommenders/)\n\ntensorflow recommenders is a library for building recommender system models\nusing [tensorflow](https://www.tensorflow.org).\n\nit helps with the full workflow of building a recommender system: data\npreparation, model formulation, training, evaluation, and deployment.\n\nit's built on keras and aims to have a gentle learning curve while still giving\nyou the flexibility to build complex models.\n\n## installation\n\nmake sure you have tensorflow 2.x installed, and install from `pip`:\n\n```shell\npip install tensorflow-recommenders\n```\n\n## documentation\n\nhave a look at our\n[tutorials](https://tensorflow.org/recommenders/examples/quickstart) and\n[api reference](https://www.tensorflow.org/recommenders/api_docs/python/tfrs/).\n\n## quick start\n\nbuilding a factorization model for the movielens 100k dataset is very simple\n([colab](https://tensorflow.org/recommenders/examples/quickstart)):\n\n```python\nfrom typing import dict, text\n\nimport tensorflow as tf\nimport tensorflow_datasets as tfds\nimport tensorflow_recommenders as tfrs\n\n# ratings data.\nratings = tfds.load('movielens/100k-ratings', split=\"train\")\n# features of all the available movies.\nmovies = tfds.load('movielens/100k-movies', split=\"train\")\n\n# select the basic features.\nratings = ratings.map(lambda x: {\n    \"movie_id\": tf.strings.to_number(x[\"movie_id\"]),\n    \"user_id\": tf.strings.to_number(x[\"user_id\"])\n})\nmovies = movies.map(lambda x: tf.strings.to_number(x[\"movie_id\"]))\n\n# build a model.\nclass model(tfrs.model):\n\n  def __init__(self):\n    super().__init__()\n\n    # set up user representation.\n    self.user_model = tf.keras.layers.embedding(\n        input_dim=2000, output_dim=64)\n    # set up movie representation.\n    self.item_model = tf.keras.layers.embedding(\n        input_dim=2000, output_dim=64)\n    # set up a retrieval task and evaluation metrics over the\n    # entire dataset of candidates.\n    self.task = tfrs.tasks.retrieval(\n        metrics=tfrs.metrics.factorizedtopk(\n            candidates=movies.batch(128).map(self.item_model)\n        )\n    )\n\n  def compute_loss(self, features: dict[text, tf.tensor], training=false) -> tf.tensor:\n\n    user_embeddings = self.user_model(features[\"user_id\"])\n    movie_embeddings = self.item_model(features[\"movie_id\"])\n\n    return self.task(user_embeddings, movie_embeddings)\n\n\nmodel = model()\nmodel.compile(optimizer=tf.keras.optimizers.adagrad(0.5))\n\n# randomly shuffle data and split between train and test.\ntf.random.set_seed(42)\nshuffled = ratings.shuffle(100_000, seed=42, reshuffle_each_iteration=false)\n\ntrain = shuffled.take(80_000)\ntest = shuffled.skip(80_000).take(20_000)\n\n# train.\nmodel.fit(train.batch(4096), epochs=5)\n\n# evaluate.\nmodel.evaluate(test.batch(4096), return_dict=true)\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "tensorflow recommenders recommendations",
+  "license": "apache 2.0",
+  "name": "tensorflow-recommenders",
+  "package_url": "https://pypi.org/project/tensorflow-recommenders/",
+  "project_url": "https://pypi.org/project/tensorflow-recommenders/",
+  "project_urls": {
+    "Homepage": "https://github.com/tensorflow/recommenders"
+  },
+  "release_url": "https://pypi.org/project/tensorflow-recommenders/0.7.3/",
+  "requires_dist": [
+    "absl-py (>=0.1.6)",
+    "tensorflow (>=2.9.0) ; sys_platform != \"darwin\"",
+    "tensorflow-macos (>=2.9.0) ; sys_platform == \"darwin\"",
+    "annoy ; extra == 'docs'",
+    "fire ; extra == 'docs'",
+    "scann (==1.2.*) ; extra == 'docs'",
+    "tensorflow-ranking ; extra == 'docs'"
+  ],
+  "requires_python": "",
+  "summary": "tensorflow recommenders, a tensorflow library for recommender systems.",
+  "version": "0.7.3",
+  "releases": [],
+  "developers": [
+    "google_inc",
+    "packages@tensorflow.org"
+  ],
+  "kwds": "tensorflow_recommenders recommender recommenders tensorflow recommendations",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_tensorflow_recommenders",
+  "homepage": "https://github.com/tensorflow/recommenders",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_absl_py",
+    "pypi_annoy",
+    "pypi_fire",
+    "pypi_scann",
+    "pypi_tensorflow",
+    "pypi_tensorflow_macos",
+    "pypi_tensorflow_ranking"
+  ]
+}

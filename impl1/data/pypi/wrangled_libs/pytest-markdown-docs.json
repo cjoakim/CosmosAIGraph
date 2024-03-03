@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "framework :: pytest",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# pytest markdown docs\n\na plugin for [pytest](https://docs.pytest.org) that uses markdown code snippets from markdown files and docstrings as tests.\n\ndetects python code fences (triple backtick escaped blocks) in markdown files as\nwell as inline python docstrings (similar to doctests) and runs them as tests.\n\npython file example:\n\n````python\n# mymodule.py\nclass foo:\n    def bar(self):\n        \"\"\"bar the foo\n\n        this is a sample docstring for the bar method\n\n        usage:\n        ```python\n        import mymodule\n        result = mymodule.foo().bar()\n        assert result == \"hello\"\n        ```\n        \"\"\"\n        return \"hello\"\n````\n\nmarkdown file examples:\n\n````markdown\n# title\n\nlorem ipsum yada yada yada\n\n```python\nimport mymodule\nresult = mymodule.foo().bar()\nassert result == \"hello\"\n```\n````\n\n## usage\n\nfirst, make sure to install the plugin:\n\n```shell\npip install pytest-markdown-docs\n```\n\nto enable markdown python tests, pass the `--markdown-docs` flag to `pytest`:\n\n```shell\npytest --markdown-docs\n```\n\nyou can also use the `markdown-docs` flag to filter *only* markdown-docs tests:\n\n```shell\npytest --markdown-docs -m markdown-docs\n```\n\n### detection conditions\n\nfence blocks (` ``` `) starting with the `python`, `python3` or `py` language definitions are detected as tests in:\n\n* python (.py) files, within docstrings of classes and functions\n* `.md`, `.mdx` and `.svx` files\n\n## skipping tests\n\nto exclude a python code fence from testing, add a `notest` info string to the\ncode fence, e.g:\n\n````markdown\n```python notest\nprint(\"this will not be run\")\n```\n````\n\n## code block dependencies\n\nsometimes you might wish to run code blocks that depend on entities to already\nbe declared in the scope of the code, without explicitly declaring them. there\nare currently two ways you can do this with pytest-markdown:\n\n### injecting global/local variables\n\nif you have some common imports or other common variables that you want to make\nuse of in snippets, you can add them by creating a `pytest_markdown_docs_globals`\nhook in your `conftest.py`:\n\n```python\ndef pytest_markdown_docs_globals():\n    import math\n    return {\"math\": math, \"myvar\": \"hello\"}\n```\n\nwith this conftest, you would be able to run the following markdown snippet as a\ntest, without causing an error:\n\n````markdown\n```python\nprint(myvar, math.pi)\n```\n````\n\n### fixtures\n\nyou can use both `autouse=true` pytest fixtures in a conftest.py or named fixtures with\nyour markdown tests. to specify named fixtures, add `fixture:<name>` markers to the code\nfence info string, e.g.,\n\n````markdown\n```python fixture:capsys\nprint(\"hello\")\ncaptured = capsys.readouterr()\nassert captured.out == \"hello\\n\"\n```\n````\n\nas you can see above, the fixture value will be injected as a global. for `autouse=true` fixtures, the value is only injected as a global if it's explicitly added using a `fixture:<name>` marker.\n\n### depending on previous snippets\n\nif you have multiple snippets following each other and want to keep the side\neffects from the previous snippets, you can do so by adding the `continuation`\ninfo string to your code fence:\n\n````markdown\n```python\na = \"hello\"\n```\n\n```python continuation\nassert a + \" world\" == \"hello world\"\n```\n````\n\n## testing of this plugin\n\nyou can test this module itself (sadly not using markdown tests at the moment) using pytest:\n\n```shell\n> poetry run pytest\n```\n\nor for fun, you can use this plugin to include testing of the validity of snippets in this readme.md file:\n\n```shell\n> poetry run pytest --markdown-docs\n```\n\n## known issues\n\n* only tested with pytest 6.2.5. there seem to be some minor issue with pytest >7 due to changes of some internal functions in pytest, but that should be relatively easy to fix. contributions are welcome :)\n* code for docstring-inlined test discovery can probably be done better (similar to how doctest does it). currently, seems to sometimes traverse into python's standard library which isn't great...\n* traceback logic is extremely hacky, wouldn't be surprised if the tracebacks look weird sometimes\n  * line numbers are \"wrong\" for docstring-inlined snippets (since we don't know where in the file the docstring starts)\n  * line numbers are \"wrong\" for continuation blocks even in pure markdown files (can be worked out with some refactoring)\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pytest-markdown-docs",
+  "package_url": "https://pypi.org/project/pytest-markdown-docs/",
+  "project_url": "https://pypi.org/project/pytest-markdown-docs/",
+  "project_urls": {
+    "Homepage": "https://github.com/modal-com/pytest-markdown-docs",
+    "Repository": "https://github.com/modal-com/pytest-markdown-docs"
+  },
+  "release_url": "https://pypi.org/project/pytest-markdown-docs/0.4.3/",
+  "requires_dist": [
+    "markdown-it-py (>=2.2.0,<2.3.0)"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "run markdown code fences through pytest",
+  "version": "0.4.3",
+  "releases": [],
+  "developers": [
+    "modal_labs"
+  ],
+  "kwds": "pytest_markdown_docs_globals pytest markdown docstrings docstring",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_markdown_docs",
+  "homepage": "https://github.com/modal-com/pytest-markdown-docs",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_markdown_it_py"
+  ]
+}

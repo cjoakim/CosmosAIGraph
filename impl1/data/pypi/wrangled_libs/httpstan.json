@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "intended audience :: science/research",
+    "license :: osi approved",
+    "license :: osi approved :: isc license (iscl)",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "========\nhttpstan\n========\n\n.. image:: https://raw.githubusercontent.com/stan-dev/logos/master/logo.png\n    :alt: stan logo\n    :height: 333px\n    :width: 333px\n    :scale: 40 %\n\n|pypi|\n\nhttp-based rest interface to stan, a package for bayesian inference.\n\nan http 1.1 interface to the stan_ c++ package, **httpstan** is a shim_ that\nallows users to interact with the stan c++ library using a rest api. the\npackage is intended for use as a universal backend for frontends which know how\nto make http requests. the primary audience for this package is developers.\n\nin addition to providing the essential functionality of the command-line interface\nto stan (cmdstan_) over http, **httpstan** provides the following features:\n\n* automatic caching of compiled stan models\n* automatic caching of samples from stan models\n* parallel sampling\n\ndocumentation: `https://httpstan.readthedocs.org <https://httpstan.readthedocs.org>`_.\n\nrequirements\n============\n\n- linux or macos\n- c++ compiler: gcc \u22659.0 or clang \u226510.0.\n\nbackground\n==========\n\n**httpstan** is a shim_ allowing clients able to make http-based requests to\ncall functions in the stan c++ library's ``stan::services`` namespace.\n**httpstan** was originally developed as a \"backend\" for a stan interface\nwritten in python, pystan_.\n\nstability and maintainability are two overriding goals of this software package.\n\ninstall\n=======\n\n.. these instructions appear in both readme.rst and installation.rst\n\n::\n\n    $ python3 -m pip install httpstan\n\nin order to install httpstan from pypi make sure your system satisfies the requirements:\n\n- linux or macos\n- x86-64 cpu\n- c++ compiler: gcc \u22659.0 or clang \u226510.0.\n\nif your system uses a different kind of cpu, you should be able to install from source using the following commands:\n\n::\n\n    # build shared libraries\n    make\n\n    # build the httpstan wheel on your system\n    python3 -m pip install poetry\n    python3 -m poetry build\n\n    # install the wheel\n    python3 -m pip install dist/*.whl\n\n\nusage\n=====\n\nafter installing ``httpstan``, running the module will begin listening on\nlocalhost, port 8080::\n\n    python3 -m httpstan\n\nin a different terminal, make a post request to\n``http://localhost:8080/v1/models`` with stan program code to compile the\nprogram::\n\n    curl -h \"content-type: application/json\" \\\n        --data '{\"program_code\":\"parameters {real y;} model {y ~ normal(0,1);}\"}' \\\n        http://localhost:8080/v1/models\n\nthis request will return a model name along with all the compiler output::\n\n    {\"compiler_output\": \"in file included from \u2026\", \"stanc_warnings\": \"\", \"name\": \"models/xc2pdjb4\"}\n\n(the model ``name`` depends on the platform and the version of stan.)\n\ndrawing samples from this model using default settings requires two steps: (1)\nlaunching the sampling operation and (2) retrieving the output of the operation\n(once it has finished).\n\nfirst we make a request to launch the sampling operation::\n\n    curl -h \"content-type: application/json\" \\\n        --data '{\"function\":\"stan::services::sample::hmc_nuts_diag_e_adapt\"}' \\\n        http://localhost:8080/v1/models/xc2pdjb4/fits\n\nthis request instructs ``httpstan`` to draw samples from the normal\ndistribution described in the model. the function name picks out a specific\nfunction in the ``stan::services`` namespace found in the stan c++ library (see\nthe stan c++ documentation for details).  this request will return immediately\nwith a reference to a long-running fit operation::\n\n    {\"name\": \"operations/gkf54axb\", \"done\": false, \"metadata\": {\"fit\": {\"name\": \"models/xc2pdjb4/fits/gkf54axb\"}}}\n\nonce the operation is complete, the \"fit\" can be retrieved. the name of the fit,\n``models/xc2pdjb4/fits/gkf54axb``, is included in the ``metadata`` field of the operation.\nthe fit is saved as sequence of json-encoded messages. these messages are strung together\nwith newlines. to retrieve these messages, saving them locally in the file\n``myfit.jsonlines``, make the following request::\n\n    curl http://localhost:8080/v1/models/xc2pdjb4/fits/gkf54axb > myfit.jsonlines\n\nthe stan \"fit\", saved in ``myfit.jsonlines``, aggregates all messages. by reading\nthem one by one you can recover all messages sent by the stan c++ library.\n\ncitation\n========\n\nwe appreciate citations as they let us discover what people have been doing\nwith the software. citations also provide evidence of use which can help in\nobtaining grant funding.\n\nto cite httpstan in publications use:\n\nriddell, a., hartikainen, a., & carter, m. (2021). httpstan (4.4.0). https://pypi.org/project/httpstan\n\nor use the following bibtex entry::\n\n    @misc{httpstan,\n      title = {httpstan (4.4.0)},\n      author = {riddell, allen and hartikainen, ari and carter, matthew},\n      year = {2021},\n      month = mar,\n      howpublished = {pypi}\n    }\n\nplease also cite stan.\n\nlicense\n=======\n\nisc license.\n\n.. _shim: https://en.wikipedia.org/wiki/shim_%28computing%29\n.. _cmdstan: http://mc-stan.org/interfaces/cmdstan.html\n.. _pystan: http://mc-stan.org/interfaces/pystan.html\n.. _stan: http://mc-stan.org/\n.. _`openapi documentation for httpstan`: api.html\n\n.. |pypi| image:: https://img.shields.io/pypi/v/httpstan.svg\n    :target: https://pypi.org/project/httpstan/\n    :alt: pypi version\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "isc",
+  "name": "httpstan",
+  "package_url": "https://pypi.org/project/httpstan/",
+  "project_url": "https://pypi.org/project/httpstan/",
+  "project_urls": {
+    "Documentation": "https://httpstan.readthedocs.io",
+    "Homepage": "https://mc-stan.org",
+    "Repository": "https://github.com/stan-dev/httpstan"
+  },
+  "release_url": "https://pypi.org/project/httpstan/4.11.0/",
+  "requires_dist": [
+    "aiohttp (>=3.7,<4.0)",
+    "appdirs (>=1.4,<2.0)",
+    "marshmallow (>=3.10,<4.0)",
+    "numpy (>=1.19,<2.0)",
+    "setuptools (>=48.0)",
+    "webargs (>=8.0,<9.0)"
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "http-based interface to stan, a package for bayesian inference.",
+  "version": "4.11.0",
+  "releases": [],
+  "developers": [
+    "allen_riddell",
+    "riddella@indiana.edu"
+  ],
+  "kwds": "httpstan stan stan_ stanc_warnings _stan",
+  "license_kwds": "isc",
+  "libtype": "pypi",
+  "id": "pypi_httpstan",
+  "homepage": "https://mc-stan.org",
+  "release_count": 54,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_appdirs",
+    "pypi_marshmallow",
+    "pypi_numpy",
+    "pypi_setuptools",
+    "pypi_webargs"
+  ]
+}

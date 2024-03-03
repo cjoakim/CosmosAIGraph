@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "framework :: flake8",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: quality assurance"
+  ],
+  "description": "=============================\n polyfill for flake8 plugins\n=============================\n\n``flake8-polyfill`` is a package that provides some compatibility helpers for\nflake8 plugins that intend to support flake8 2.x and 3.x simultaneously.\n\n\ninstallation\n============\n\n.. code-block:: bash\n\n    pip install flake8-polyfill\n\n\nusage\n=====\n\noption handling\n---------------\n\none problem area with compatibility with flake8 2.x and 3.x is the registering\noptions and receiving the parsed values.\n\nflake8 3.0 added extra parameters to the ``add_option`` method which don't\nhave the same effect on flake8 2.x. to accomodate the change, this polyfill\nmodule allows you to do:\n\n.. code-block:: python\n\n    from flake8_polyfill import options\n\n    class myflake8plugin(object):\n        @classmethod\n        def add_options(cls, parser):\n            options.register(parser, '--my-long-option-name',\n                             parse_from_config=true,\n                             comma_separated_list=true,\n                             default='...',\n                             help='...')\n            options.register(parser, '-m', '--my-other-long-option-name',\n                             parse_from_config=true,\n                             normalize_paths=true,\n                             default='...',\n                             help='...')\n\n        @classmethod\n        def parse_options(cls, values):\n            cls.my_long_option_name = values.my_long_option_name\n            cls.my_other_long_option_name = values.my_other_long_option_name\n\nand have the code work the same way on both versions.\n\nretrieving standard in\n----------------------\n\nuntil flake8 2.6, getting the code on standard in from a plugin has been\nsimple:\n\n.. code-block:: python\n\n    import pep8\n\n    stdin = pep8.get_stdin_value()\n\nin 2.6 you now have to know whether to use ``pep8`` or ``pycodestyle`` since\nflake8 2.6 made a hard change to ``pycodestyle``.\n\nthe reason you need to know which module to use is because standard in can be\nexhausted and flake8 does some work to cache the value so that call always\nreturns the desired data.\n\nin 3.0, flake8 no longer monkey-patches those modules.\n\nto accommodate this, this package provides:\n\n.. code-block:: python\n\n    from flake8_polyfill import stdin\n\n    stdin.monkey_patch('all')\n    stdin.monkey_patch('pep8')\n    stdin.monkey_patch('pycodestyle')\n\nthis allows you to have the polyfill module monkey-patch what you want so it\nis always monkey-patched. it will also do so in an intelligent way.\n\nversion comparison\n------------------\n\nflake8 2.x did not include an object that would allow for easy version\ncomparison. flake8 3.0, however, added a ``__version_info__`` attribute. for\nconsistency, flake8 polyfill will turn 2.x's version string into a tuple\nsuitable for comparison.\n\n.. code-block:: python\n\n    from flake8_polyfill import version\n\n    if (2, 4) <= version.version_info < (2, 6):\n        # ...\n    elif (2, 6) <= version.version_info < (3, 0):\n        # ...\n    elif (3, 0) <= version.version_info < (4, 0):\n        # ...\n\n\nlicense\n=======\n\nmit\n\n\ncreator\n=======\n\nian cordasco\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "flake8-polyfill",
+  "package_url": "https://pypi.org/project/flake8-polyfill/",
+  "project_url": "https://pypi.org/project/flake8-polyfill/",
+  "project_urls": {
+    "Homepage": "https://gitlab.com/pycqa/flake8-polyfill"
+  },
+  "release_url": "https://pypi.org/project/flake8-polyfill/1.0.2/",
+  "requires_dist": [
+    "flake8"
+  ],
+  "requires_python": "",
+  "summary": "polyfill package for flake8 plugins",
+  "version": "1.0.2",
+  "releases": [],
+  "developers": [
+    "graffatcolmingov@gmail.com",
+    "ian_cordasco"
+  ],
+  "kwds": "flake8_polyfill flake8 myflake8plugin add_options pip",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flake8_polyfill",
+  "homepage": "https://gitlab.com/pycqa/flake8-polyfill",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_flake8"
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 3.0",
+    "framework :: django :: 3.1",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "framework :: django :: 4.1",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: internet :: www/http :: wsgi",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: application frameworks",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "django guid\n===========\n\n\n.. image:: https://img.shields.io/pypi/v/django-guid.svg\n    :target: https://pypi.org/pypi/django-guid\n\n.. image:: https://img.shields.io/badge/python-3.6+-blue.svg\n    :target: https://pypi.python.org/pypi/django-guid#downloads\n\n.. image:: https://img.shields.io/badge/django-2.2%20|%203.0%20|%203.1%20-blue.svg\n    :target: https://pypi.python.org/pypi/django-guid\n\n.. image:: https://img.shields.io/badge/asgi-supported-brightgreen.svg\n    :target: https://img.shields.io/badge/asgi-supported-brightgreen.svg\n\n.. image:: https://img.shields.io/badge/wsgi-supported-brightgreen.svg\n    :target: https://img.shields.io/badge/wsgi-supported-brightgreen.svg\n\n.. image:: https://readthedocs.org/projects/django-guid/badge/?version=latest\n    :target: https://django-guid.readthedocs.io/en/latest/?badge=latest\n\n.. image:: https://codecov.io/gh/snok/django-guid/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/snok/django-guid\n\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg\n    :target: https://github.com/psf/black\n\n.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logocolor=white\n    :target: https://github.com/pre-commit/pre-commit\n\n\n\n--------------\n\n\ndjango guid attaches a unique correlation id/request id to all your log outputs for every request.\nin other words, all logs connected to a request now has a unique id attached to it, making debugging simple.\n\nwhich version of django guid you should use depends on your django version and whether you run ``asgi`` or ``wsgi`` servers.\nto determine which django-guid version you should use, please see the table below.\n\n+---------------------+--------------------------+\n|   django version    |   django-guid version    |\n+=====================+==========================+\n| 3.1.1 or above      |  3.x.x - asgi and wsgi   |\n+---------------------+--------------------------+\n| 3.0.0 - 3.1.0       |  2.x.x - only wsgi       |\n+---------------------+--------------------------+\n| 2.2.x               |  2.x.x - only wsgi       |\n+---------------------+--------------------------+\n\ndjango guid >= 3.0.0 uses ``contextvar`` to store and access the guid. previous versions stored the guid to an object,\nmaking it accessible by using the id of the current thread. (version 2 of django guid is supported until django2.2 lts has passed.)\n\n--------------\n\n\n**resources**:\n\n* free software: bsd license\n* documentation: https://django-guid.readthedocs.io\n* homepage: https://github.com/snok/django-guid\n\n--------------\n\n\n**examples**\n\nlog output with a guid:\n\n.. code-block::\n\n    info ... [773fa6885e03493498077a273d1b7f2d] project.views this is a drf view log, and should have a guid.\n    warning ... [773fa6885e03493498077a273d1b7f2d] project.services.file some warning in a function\n    info ... [0d1c3919e46e4cd2b2f4ac9a187a8ea1] project.views this is a drf view log, and should have a guid.\n    info ... [99d44111e9174c5a9494275aa7f28858] project.views this is a drf view log, and should have a guid.\n    warning ... [0d1c3919e46e4cd2b2f4ac9a187a8ea1] project.services.file some warning in a function\n    warning ... [99d44111e9174c5a9494275aa7f28858] project.services.file some warning in a function\n\n\nlog output without a guid:\n\n.. code-block::\n\n    info ... project.views this is a drf view log, and should have a guid.\n    warning ... project.services.file some warning in a function\n    info ... project.views this is a drf view log, and should have a guid.\n    info ... project.views this is a drf view log, and should have a guid.\n    warning ... project.services.file some warning in a function\n    warning ... project.services.file some warning in a function\n\n\nsee the `documentation <https://django-guid.readthedocs.io>`_ for more examples.\n\n************\ninstallation\n************\n\ninstall using pip:\n\n.. code-block:: bash\n\n    pip install django-guid\n\n\n********\nsettings\n********\n\npackage settings are added in your ``settings.py``:\n\n.. code-block:: python\n\n    django_guid = {\n        'guid_header_name': 'correlation-id',\n        'validate_guid': true,\n        'return_header': true,\n        'expose_header': true,\n        'integrations': [],\n        'ignore_urls': [],\n        'uuid_length': 32,\n    }\n\n\n\n**optional parameters**\n\n* :code:`guid_header_name`\n        the name of the guid to look for in a header in an incoming request. remember that it's case insensitive.\n\n    default: correlation-id\n\n* :code:`validate_guid`\n        whether the :code:`guid_header_name` should be validated or not.\n        if the guid sent to through the header is not a valid guid (:code:`uuid.uuid4`).\n\n    default: true\n\n* :code:`return_header`\n        whether to return the guid (correlation-id) as a header in the response or not.\n        it will have the same name as the :code:`guid_header_name` setting.\n\n    default: true\n\n* :code:`expose_header`\n        whether to return :code:`access-control-expose-headers` for the guid header if\n        :code:`return_header` is :code:`true`, has no effect if :code:`return_header` is :code:`false`.\n        this is allows the javascript fetch api to access the header when cors is enabled.\n\n    default: true\n\n* :code:`integrations`\n        whether to enable any custom or available integrations with :code:`django_guid`.\n        as an example, using :code:`sentryintegration()` as an integration would set sentry's :code:`transaction_id` to\n        match the guid used by the middleware.\n\n    default: []\n\n* :code:`ignore_urls`\n        url endpoints where the middleware will be disabled. you can put your health check endpoints here.\n\n    default: []\n\n* :code:`uuid_length`\n        lets you optionally trim the length of the package generated uuids.\n\n    default: 32\n\n*************\nconfiguration\n*************\n\nonce settings have set up, add the following to your projects' ``settings.py``:\n\n1. installed apps\n=================\n\nadd :code:`django_guid` to your :code:`installed_apps`:\n\n.. code-block:: python\n\n    installed_apps = [\n        ...\n        'django_guid',\n    ]\n\n\n2. middleware\n=============\n\nadd the :code:`django_guid.middleware.guid_middleware` to your ``middleware``:\n\n.. code-block:: python\n\n    middleware = [\n        'django_guid.middleware.guid_middleware',\n        ...\n     ]\n\n\nit is recommended that you add the middleware at the top, so that the remaining middleware loggers include the requests guid.\n\n3. logging configuration\n========================\n\nadd :code:`django_guid.log_filters.correlationid` as a filter in your ``logging`` configuration:\n\n.. code-block:: python\n\n    logging = {\n        ...\n        'filters': {\n            'correlation_id': {\n                '()': 'django_guid.log_filters.correlationid'\n            }\n        }\n    }\n\nput that filter in your handler:\n\n.. code-block:: python\n\n    logging = {\n        ...\n        'handlers': {\n            'console': {\n                'class': 'logging.streamhandler',\n                'formatter': 'medium',\n                'filters': ['correlation_id'],\n            }\n        }\n    }\n\nand make sure to add the new ``correlation_id`` filter to one or all of your formatters:\n\n.. code-block:: python\n\n    logging = {\n        ...\n        'formatters': {\n            'medium': {\n                'format': '%(levelname)s %(asctime)s [%(correlation_id)s] %(name)s %(message)s'\n            }\n        }\n    }\n\n\nif these settings were confusing, please have a look in the demo projects'\n`settings.py <https://github.com/snok/django-guid/blob/master/demoproj/settings.py>`_ file for a complete example.\n\n4. django guid logger (optional)\n================================\n\nif you wish to see the django guid middleware outputs, you may configure a logger for the module.\nsimply add django_guid to your loggers in the project, like in the example below:\n\n.. code-block:: python\n\n    logging = {\n        ...\n        'loggers': {\n            'django_guid': {\n                'handlers': ['console', 'logstash'],\n                'level': 'warning',\n                'propagate': false,\n            }\n        }\n    }\n\nthis is especially useful when implementing the package, if you plan to pass existing guids to the middleware, as misconfigured guids will not raise exceptions, but will generate warning logs.\n",
+  "docs_url": null,
+  "keywords": "asgi,async,async support,correlation,correlation-id,django,guid,log id,logging,logging id,middleware,request,request id,request-id,uuid,web,sentry,celery",
+  "license": "mit",
+  "name": "django-guid",
+  "package_url": "https://pypi.org/project/django-guid/",
+  "project_url": "https://pypi.org/project/django-guid/",
+  "project_urls": {
+    "Documentation": "https://django-guid.readthedocs.io/en/latest",
+    "Homepage": "https://github.com/snok/django-guid",
+    "Release notes": "https://github.com/snok/django-guid/releases",
+    "Repository": "https://github.com/snok/django-guid"
+  },
+  "release_url": "https://pypi.org/project/django-guid/3.3.1/",
+  "requires_dist": [
+    "django (>=3.1.1,<4.0.0) ; python_version < \"3.8\"",
+    "django (>=3.1.1,<5.0) ; python_version >= \"3.8\""
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "middleware that enables single request-response cycle tracing by injecting a unique id into project logs",
+  "version": "3.3.1",
+  "releases": [],
+  "developers": [
+    "jonas-ks@hotmail.com",
+    "sondrelg@live.no"
+  ],
+  "kwds": "django_guid django django2 wsgi asgi",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_django_guid",
+  "homepage": "https://github.com/snok/django-guid",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_django"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "framework :: setuptools plugin",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4"
+  ],
+  "description": "setuptools-version-command\n==========================\n\n*get version from version control instead of hardcoding it into setup.py*\n\n\u26a0 deprecation notice \u26a0\n----------------------\n\nthis package is no longer maintained. it will not evolve along with the python\npackaging ecosystem. specifically, as of november 2021, it will not work with\nstatic metadata defined in `setup.cfg` as opposed to metadata defined in\n`setup.py`.\n\nthere is a good alternative: use `setuptools-scm`_ instead. this is easy to\nset up in a `setup.cfg`, see the pypa `packaging python projects`_ tutorial.\n\n.. _setuptools-scm: https://pypi.org/project/setuptools-scm/\n.. _packaging python projects: https://packaging.python.org/tutorials/packaging-projects/\n\nintroduction\n------------\n\ninstead of hardcoding the version in ``setup.py`` like this:\n\n.. code-block:: python\n\n    setup(\n        name='some-dist-name',\n        version='1.0',\n        ...)\n\nthis package allows specifying a vcs command like this:\n\n.. code-block:: python\n\n    setup(\n        name='some-dist-name',\n        version_command='git describe',\n        ...)\n\n...which will then update the version into\n``some-dist-name.egg-info/version.txt``, so that the version can also be found\nif ``setup.py`` is being run from an sdist or something.\n\nwhen it can find the version from either\n``some-dist-name.egg-info/version.txt`` or the output of the\n``version_command``, it will update the version key that is normally used for\nthe version, such as what's used in the sdist filename and so on.\n\nsetup keyword\n-------------\n\ninstead of specifying the ``version`` keyword argument, specify the\n``version_command`` keyword argument. it can either be a str or a tuple. if\nit's a str, it's interpreted as just the command to execute, for example ``git\ndescribe``. if it's a tuple, it must have two or three elements, and have the\nform ``(command, pep440_mode[, post_mode])``. ``pep440_mode`` can only be\nspecified in the tuple of ``version_argument``, not as separate\nargument of ``setup``.\n\na list of possible values for tuples passed to the ``version_command`` keyword\nargument:\n\n:``command``: must be ``\"git describe\"``, but could also support other vcs in\n    the future.\n\n:``pep440_mode`` = ``none``: takes output of command as is, so ignores pep440.\n    ``pip`` and ``setuptools`` will throw warnings.\n\n:``pep440_mode`` = ``\"pep440-git-local\"``: moves number of commits and hash as\n    local identifier:\n\n    * change ``1.2.3`` to ``1.2.3``\n    * change ``1.2.3-10-abc1234`` to ``1.2.3+git-10-abc1234``\n\n:``pep440_mode`` = ``\"pep440-git-dev\"``: (deprecated) adds rhe number of\n    commits since a git tag as a .dev tag:\n\n    * change ``1.2.3-n-abc1234`` to ``1.2.3.devn``\n\n    this is against pep440-specification and supported only for backwards\n    compatibility. it may be removed in time.\n\n:``pep440_mode`` = ``\"pep440-git\"``: works with pre-release versions (alpha,\n    beta, rc etc), post-release versions (post, rev, etc) and dev versions.\n\n    * leave ``1.2.3.dev`` and ``1.2.3.dev0`` as they are\n    * change ``1.2.3.dev-n-abc1234`` to ``1.2.3.devn``\n    * change ``1.2.3a-n-ab1234`` to ``1.2.3an``\n    * change ``1.2.3`` to ``1.2.3``\n    * change ``1.2.3-10-abcd123`` to ``1.2.3.post10``, or ``1.2.3-rev10``, as\n      you prefer\n\n    in other words, a tag can be absent, open (implicitly or explicitly 0), or\n    closed (have a number greater than zero). if the last git tag is an open\n    dev tag, that's the one that will be used for the revision number. if the\n    last git tag is an open post-release tag, then that will be used. if the\n    last git tag is an open pre-release tag, that will be used. in other cases,\n    a post-release tag will be added.\n\n:``pep440_mode`` = ``\"pep440-git-full``: similar to ``\"pep440-git\"`` but\n    includes the commit hash and dirty marker (if present) in the local version\n    portion.\n\n    * change ``1.2.3.dev-n-abc1234`` to ``1.2.3.devn+gabc1234``\n    * change ``1.2.3-dirty`` to ``1.2.3+dirty``\n    * change ``1.2.3-10-abcd123-dirty`` to ``1.2.3.post10+gabcd123.dirty``\n\n    the inclusion of the hash in the local identifier helps avoid ambiguity\n    between two versions that are the same number of commits from the latest\n    tag.\n\n    the inclusion of the dirty flag (which requires ``command`` value to\n    include the ``--dirty`` option) ensures that local uncommitted changes\n    are considered newer than the last set of committed changes.\n\n:``post_mode``: template for adding post-release tags. optional separator (dot,\n    dash or underscore), followed by ``\"post\"``, ``\"rev\"`` or ``\"r\"``, followed\n    by another optional separator. can also be a single dash. default is\n    ``\".post\"``.\n\n    given a git describe output of ``1.2a3-4-abcd123``:\n\n    * ``\".post\"`` gives ``1.2a3.post4``\n    * ``\".rev_\"`` gives ``1.2a3.rev_4``\n    * ``\"-\"`` gives ``1.2a3-4``\n\ninstallation\n------------\n\nto use it, just do this:\n\n.. code-block:: shell\n\n    pip install setuptools-version-command\n\nwith the pip of the global python. (or use ``--user``.)\n\ntesting\n-------\n\nto test it, run ``./setup.py --version``.\n\ndeveloping\n----------\n\nwithin a checkout of this repo:\n\n.. code-block:: shell\n\n    virtualenv env\n    env/bin/pip install --editable .\n    env/bin/python setup.py --version\n\nmake sure that you change the ``setup.py`` so that it actually makes use of\nsetuptools-version-command.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "http://opensource.org/licenses/mit",
+  "name": "setuptools-version-command",
+  "package_url": "https://pypi.org/project/setuptools-version-command/",
+  "project_url": "https://pypi.org/project/setuptools-version-command/",
+  "project_urls": {
+    "Homepage": "https://github.com/j0057/setuptools-version-command"
+  },
+  "release_url": "https://pypi.org/project/setuptools-version-command/99.9/",
+  "requires_dist": [
+    "setuptools"
+  ],
+  "requires_python": "",
+  "summary": "adds a command to dynamically get the version from the vcs of choice",
+  "version": "99.9",
+  "releases": [],
+  "developers": [
+    "j.j.molenaar@gmail.com",
+    "joost_molenaar"
+  ],
+  "kwds": "_setuptools setuptools version_command version_argument pip",
+  "license_kwds": "http://opensource.org/licenses/mit",
+  "libtype": "pypi",
+  "id": "pypi_setuptools_version_command",
+  "homepage": "https://github.com/j0057/setuptools-version-command",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_setuptools"
+  ]
+}

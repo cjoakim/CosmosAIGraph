@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: libraries :: python modules",
+    "typing :: typed"
+  ],
+  "description": "# aws cli v2 for python\n\n[![pypi - awscliv2](https://img.shields.io/pypi/v/awscliv2.svg?color=blue&label=awscliv2)](https://pypi.org/project/awscliv2)\n[![pypi - python version](https://img.shields.io/pypi/pyversions/awscliv2.svg?color=blue)](https://pypi.org/project/awscliv2)\n[![pypi - downloads](https://img.shields.io/pypi/dm/awscliv2?color=blue)](https://pypistats.org/packages/awscliv2)\n\nwrapper for [aws cli v2](https://awscli.amazonaws.com/v2/documentation/api/latest/index.html).\n\n- no dependency hell, like with original [awscli](https://pypi.org/project/awscli/)\n- can install and update `awscliv2` binaries\n- provides access to all services\n- has python interface\n\n- [aws cli v2 for python](#aws-cli-v2-for-python)\n  - [before you start](#before-you-start)\n  - [installation](#installation)\n  - [usage](#usage)\n    - [from command line](#from-command-line)\n    - [docker fallback](#docker-fallback)\n    - [extra commands](#extra-commands)\n    - [as a python module](#as-a-python-module)\n  - [development](#development)\n  - [how to help](#how-to-help)\n  - [versioning](#versioning)\n  - [latest changes](#latest-changes)\n\n## before you start\n\n- this is not an official aws cli v2 application, [rant there](https://github.com/aws/aws-cli/issues/4947)\n- check the source code of this app, as you are working with sensitive data\n- by default this app uses [amazon/aws-cli](https://hub.docker.com/r/amazon/aws-cli) docker image\n- to use [binaries for your os](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html), run `awsv2 --install`\n- cross-check the source code again, probably i want to steal your credentials\n\n## installation\n\n```bash\npython -m pip install awscliv2\n```\n\nyou can add an alias to your `~/.bashrc` or `~/.zshrc` to use it as a regular `aws cli v2`\n\n```bash\nalias aws='awsv2'\n```\n\n## usage\n\n### from command line\n\ninstall `aws cli v2`:\n\n```bash\n# do not worry if this fails, you can still use awsv2 if you have docker installed\nawsv2 --install\n```\n\nconfigure default profile if needed:\n\n```bash\naws_access_key_id='my-access-key'\naws_secret_access_key='my-secret-key'\n\n# --configure <profile_name> <aws_access_key_id> <aws_secret_access_key> [<aws_session_token>]\nawsv2 --configure default ${aws_access_key_id} ${aws_secret_access_key}\nawsv2 configure set region us-west-1\n```\n\nuse `aws cli` as usual:\n\n```bash\n# alias for\n# docker run --rm -i -v ~/.aws:/root/.aws -v $(pwd):/aws amazon/aws-cli $@\nawsv2 s3 ls\n\n# or as a python module\npython -m awscliv2 s3 ls\n```\n\nalso, you can check [scripts/example.sh](https://github.com/youtype/awscliv2/blob/main/scripts/example.sh)\n\n### docker fallback\n\nunless you run `awsv2 --install` once, application will use [amazon/aws-cli](https://hub.docker.com/r/amazon/aws-cli) docker image. the image is not ideal, and it uses `root` user, so fix downloaded file permissions manually. or just run `awsv2 --install`\n\nupdate it with `docker pull amazon/aws-cli`.\n\ncontainer uses two volumes:\n\n- `$home/.aws` -> `/root/.aws` - credentials and config store\n- `$(cwd)` -> `/aws` - docker image workdir\n\n### extra commands\n\n`awscliv2` contains a few commands to make your life easier, especially in ci or any non-tty environment.\n\n- `awsv2 -u/--update/--install` - install `aws cli v2`\n- `awsv2 --configure <profile_name> <aws_access_key_id> <aws_secret_access_key> [<aws_session_token>] [<region>]` - set profile in `~/.aws/credentials`\n- `awsv2 --assume-role <profile_name> <source_profile> <role_arn>` - create a new profile with assume role credentials\n- `awsv2 -v/--version` - output `awscliv2` and `aws cli v2` versions\n\n### as a python module\n\nbasic usage\n\n```python\nfrom awscliv2.api import awsapi\nfrom awscliv2.exceptions import awsclierror\n\naws_api = awsapi()\n\ntry:\n    output = aws_api.execute([\"s3\", \"ls\"])\nexcept awsclierror as e:\n    print(f\"something went wrong: {e}\")\nelse:\n    print(output)\n```\n\ninstall binaries for your os from python\n\n```python\nfrom awscliv2.installers import install_multiplatform\n\ninstall_multiplatform()\n```\n\nyou can also set credentials or assume roles\n\n```python\nfrom awscliv2.api import awsapi\n\naws_api = awsapi()\n\naws_api.set_credentials(\"profile_name\", \"access_key\", \"secret_key\", \"\", \"region\")\naws_api.assume_role(\"name\", \"source_profile\", \"role_arn\")\n```\n\n## development\n\n- install [poetry](https://python-poetry.org/)\n- run `poetry install`\n- use `black` formatter in your ide\n\n## how to help\n\n- ping aws team to release an official pypi package\n- share your experience in issues\n\n## versioning\n\n`awscliv2` version follows [pep 440](https://www.python.org/dev/peps/pep-0440/).\n\n## latest changes\n\nfull changelog can be found in [releases](https://github.com/youtype/awscliv2/releases).\n\n",
+  "docs_url": null,
+  "keywords": "awscli,awscliv2,wrapper",
+  "license": "mit",
+  "name": "awscliv2",
+  "package_url": "https://pypi.org/project/awscliv2/",
+  "project_url": "https://pypi.org/project/awscliv2/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/youtype/awscliv2/issues",
+    "Documentation": "https://awscliv2.readthedocs.io/en/latest/",
+    "Homepage": "https://youtype.github.io/awscliv2/",
+    "Repository": "https://github.com/youtype/awscliv2",
+    "Source": "https://github.com/youtype/awscliv2"
+  },
+  "release_url": "https://pypi.org/project/awscliv2/2.2.0/",
+  "requires_dist": [
+    "executor",
+    "importlib-resources",
+    "pip"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "wrapper for aws cli v2",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "vlad.emelianov.nz@gmail.com",
+    "vlad_emelianov"
+  ],
+  "kwds": "awscliv2 awscli awsv2 awsapi cli",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_awscliv2",
+  "homepage": "https://youtype.github.io/awscliv2/",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_executor",
+    "pypi_importlib_resources",
+    "pypi_pip"
+  ]
+}

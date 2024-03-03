@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "|license mit| | |pypi package| | |pypi versions|\n\n|build status| | |test coverage| | |code climate|\n\n============\npython five9\n============\n\nthis library allows you to interact with the five9 settings and statistics web\nservices using python.\n\n* `read the api documentation <https://laslabs.github.io/python-five9>`_\n\ninstallation\n============\n\ninstallation is easiest using pip and pypi::\n\n   pip install five9\n\nif you would like to contribute, or prefer git::\n\n   git clone https://github.com/laslabs/python-five9.git\n   cd python-five9\n   pip install -r requirements.txt\n   pip install .\n\nusage\n=====\n\nconnect\n-------\n\n.. code-block:: python\n\n   from five9 import five9\n\n   client = five9('user', 'password')\n\nconfiguration web services\n--------------------------\n\ndocumentation:\n\n* `five9 <http://webapps.five9.com/assets/files/for_customers/documentation/apis/config-webservices-api-reference-guide.pdf>`_\n* `api docs <https://laslabs.github.io/python-five9/adminwebservice.html>`_\n\nexample - get all skills:\n\n.. code-block:: python\n\n   client.configuration.getskills()\n   # returns\n   [{\n       'description': none,\n       'id': 266184l,\n       'messageoftheday': none,\n       'name': 'testskill',\n       'routevoicemails': false\n   }]\n\nexample - create a contact field to track modified time:\n\n.. code-block:: python\n\n   client.configuration.createcontactfield({\n       'name': 'modified_at',\n       'displayas': 'invisible',\n       'mapto': 'lastmodifieddatetime',\n       'type': 'date_time',\n       'system': true,\n   })\n\nexample - search for a contact by first and last name and get a list of ``dict``s\nrepresenting the result:\n\n.. code-block:: python\n\n   criteria = client.create_criteria({\n       'first_name': 'test',\n       'last_name': 'user',\n   })\n   result = client.configuration.getcontactrecords(criteria)\n   # the above result is basically unusable. parse into a list of dicts::\n   client.parse_response(result['fields'], result['records'])\n\nexample - update a contact using their first and last name as the search keys:\n\n.. code-block:: python\n\n   contact = {\n       'first_name': 'test',\n       'last_name': 'user',\n       'city': 'las vegas',\n       'state': 'nv',\n       'number1': '1234567890',\n   }\n   mapping = client.create_mapping(contact, keys=['first_name', 'last_name'])\n   client.configuration.updatecrmrecord(\n       record={'fields': mapping['fields']},\n       crmupdatesettings={\n           'fieldsmapping': mapping['field_mappings'],\n           'skipheaderline': true,\n           'crmaddmode': 'dont_add',\n           'crmupdatemode': 'update_sole_matches',\n       }\n   )\n\nstatistics web services\n-----------------------\n\ndocumentation:\n\n* `five9 <http://webapps.five9.com/assets/files/for_customers/documentation/apis/statistics-webservices-api-reference-guide.pdf>`_\n* `api docs <https://laslabs.github.io/python-five9/supervisorwebservice.html>`_\n\na supervisor session is required in order to perform most actions provided in the\nsupervisor web service. due to this, a session is implicitly created before the\nsupervisor is used.\n\nthe session is created with the following defaults. you can change the parameters\nby changing the proper instance variable on the `five9` object:\n\n+----------------------+------------------------+---------------+\n| five9 parameter      | instance variable      | default       |\n+======================+========================+===============+\n| `forcelogoutsession` | `force_logout_session` | `true`        |\n+----------------------+------------------------+---------------+\n| `rollingperiod`      | `rolling_period`       | `minutes30`   |\n+----------------------+------------------------+---------------+\n| `statisticsrange`    | `statistics_range`     | `currentweek` |\n+----------------------+------------------------+---------------+\n| `shiftstart`         | `shift_start_hour`     | `8`           |\n+----------------------+------------------------+---------------+\n| `timezone`           | `time_zone_offset`     | `-7`          |\n+----------------------+------------------------+---------------+\n\nexample use:\n\n.. code-block:: python\n\n   # setup a session - required for most things\n   client.supervisor.getuserlimits()\n   # returns\n   {\n       'mobilelimit': 0l,\n       'mobileloggedin': 0l,\n       'supervisorlimit': 1l,\n       'supervisorsloggedin': 1l\n   }\n\nknown issues / roadmap\n======================\n\n* the supervisor session options should be represented in a class and documented,\n  instead of the mostly undocumented free-form dictionary mapped to instance\n  variables.\n\ncredits\n=======\n\nimages\n------\n\n* laslabs: `icon <https://repo.laslabs.com/projects/tem/repos/odoo-module_template/browse/module_name/static/description/icon.svg?raw>`_.\n\ncontributors\n------------\n\n* dave lasley <dave@laslabs.com>\n\nmaintainer\n----------\n\n.. image:: https://laslabs.com/logo.png\n   :alt: laslabs inc.\n   :target: https://laslabs.com\n\nthis module is maintained by laslabs inc.\n\n.. |build status| image:: https://img.shields.io/travis/laslabs/python-five9/master.svg\n   :target: https://travis-ci.org/laslabs/python-five9\n.. |test coverage| image:: https://img.shields.io/codecov/c/github/laslabs/python-five9/master.svg\n   :target: https://codecov.io/gh/laslabs/python-five9\n.. |code climate| image:: https://img.shields.io/codeclimate/github/laslabs/python-five9.svg\n   :target: https://codeclimate.com/github/laslabs/python-five9\n.. |license mit| image:: https://img.shields.io/github/license/laslabs/python-five9.svg\n   :target: https://opensource.org/licenses/mit\n   :alt: license: mit\n.. |pypi package| image:: https://img.shields.io/pypi/v/five9.svg\n   :target: https://pypi.python.org/pypi/five9\n   :alt: pypi package\n.. |pypi versions| image:: https://img.shields.io/pypi/pyversions/five9.svg\n   :target: https://pypi.python.org/pypi/five9\n   :alt: pypi versions\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "five9",
+  "package_url": "https://pypi.org/project/five9/",
+  "project_url": "https://pypi.org/project/five9/",
+  "project_urls": {
+    "Download": "https://github.com/LasLabs/python-five9",
+    "Homepage": "https://laslabs.github.io/python-five9"
+  },
+  "release_url": "https://pypi.org/project/five9/0.0.3b192/",
+  "requires_dist": [
+    "properties",
+    "requests",
+    "six",
+    "websocket-client",
+    "zeep"
+  ],
+  "requires_python": "",
+  "summary": "this library allows for you to integrate with five9 cloud contact center using python.",
+  "version": "0.0.3b192",
+  "releases": [],
+  "developers": [
+    "laslabs_inc",
+    "support@laslabs.com"
+  ],
+  "kwds": "laslabs pip python five9 lasley",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_five9",
+  "homepage": "https://laslabs.github.io/python-five9",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_properties",
+    "pypi_requests",
+    "pypi_six",
+    "pypi_websocket_client",
+    "pypi_zeep"
+  ]
+}

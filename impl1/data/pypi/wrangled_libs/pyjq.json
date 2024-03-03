@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: javascript",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "pyjq: binding for jq json processor\n===================================\n\n[![circleci](https://circleci.com/gh/doloopwhile/pyjq.svg?style=svg)](https://circleci.com/gh/doloopwhile/pyjq)\n\npyjq is a python bindings for jq (<http://stedolan.github.io/jq/>).\n\n> jq is like sed for json data - you can use it to slice and filter and\n> map and transform structured data with the same ease that sed, awk,\n> grep and friends let you play with text.\n>\n> <http://stedolan.github.io/jq/>\n\nyou can seamlessly call jq script (like regular expression) and process\na plain python data structure.\n\nfor your information, <https://pypi.python.org/pypi/jq> is another jq\nbinding which is different and incompatible with pyjq.\n\nexample\n-------\n\n```python\n>>> data = dict(\n...     parameters= [\n...         dict(name=\"pkg_tag_name\", value=\"trunk\"),\n...         dict(name=\"git_commit\", value=\"master\"),\n...         dict(name=\"triggered_job\", value=\"trunk-buildall\")\n...     ],\n...     id=\"2013-12-27_00-09-37\",\n...     changeset=dict(items=[], kind=\"git\"),\n... )\n>>> import pyjq\n>>> pyjq.first('.parameters[] | {\"param_name\": .name, \"param_type\":.type}', data)\n{'param_name': 'pkg_tag_name', 'param_type': none}\n\n```\n\ninstall\n-------\n\nyou will need flex, bison (3.0 or newer), libtool, make, automake and autoconf to build jq.\ninstall them by homebrew, apt or other way.\n\nyou can install from pypi by usual way.\n\n```shell\npip install pyjq\n```\n\napi\n---\n\nfor jq script, [see its manual](http://stedolan.github.io/jq/manual/).\n\nonly four apis are provided:\n\n- `all`\n- `first`\n- `one`\n- `compile`\n\n`all` transforms a value by json script and returns all results as a list.\n\n```python\n>>> value = {\"user\":\"stedolan\",\"titles\":[\"jq primer\", \"more jq\"]}\n>>> pyjq.all('{user, title: .titles[]}', value)\n[{'user': 'stedolan', 'title': 'jq primer'}, {'user': 'stedolan', 'title': 'more jq'}]\n```\n\n`all` takes an optional argument `vars`.\n`vars` is a dictonary of predefined variables for `script`.\nthe values in `vars` are available in the `script` as a `$key`.\nthat is, `vars` works like `--arg` option and `--argjson` option of jq command.\n\n```python\n>>> pyjq.all('{user, title: .titles[]} | select(.title == $title)', value, vars={\"title\": \"more jq\"})\n[{'user': 'stedolan', 'title': 'more jq'}]\n```\n\n`all` takes an optional argument `url`.\nif `url` is given, the subject of transformation is retrieved from the `url`.\n\n```python\n>> pyjq.all(\".[] | .login\", url=\"https://api.github.com/repos/stedolan/jq/contributors\") # get all contributors of jq\n['nicowilliams', 'stedolan', 'dtolnay', ... ]\n```\n\nadditionally, `all` takes an optional argument `opener`.\nthe default `opener` will download contents using `urllib.request.urlopen` and decode using `json.decode`.\nhowever, you can customize this behavior using a custom `opener`.\n\n`first` and `one` are similar to to `all`.\n\n`first` returns the first result of transformation.\nwhen there are no results, `first` returns `none` or the given `default`.\n\n```python\n>>> data = {\"user\":\"stedolan\",\"titles\":[\"jq primer\", \"more jq\"]}\n>>> pyjq.first('{user, title: .titles[]}', data)\n{'user': 'stedolan', 'title': 'jq primer'}\n>>> pyjq.first('.titles[] | select(test(\"t\"))', data) # returns none\n>>> pyjq.first('.titles[] | select(test(\"t\"))', data, default=\"third js\")\n'third js'\n```\n\n`one` returns the only result of a transformation.\nit raises an exception when there are no results or when there are two or more results.\n\n```python\n>>> data = {\"user\":\"stedolan\",\"titles\": [\"jq primer\", \"more jq\"]}\n>>> pyjq.one('.titles[] | select(test(\"p\"))', data)\n'jq primer'\n>>> pyjq.one('.titles[] | select(test(\"t\"))', data)\ntraceback (most recent call last):\nindexerror: result of jq is empty\n>>> pyjq.one('.titles[] | select(test(\"j\"))', data)\ntraceback (most recent call last):\nindexerror: result of jq have multiple elements\n```\n\n`compile` is similar to `re.compile`. it accepts jq script and returns an object with methods.\n\n```python\n>>> data = {\"user\":\"stedolan\",\"titles\":[\"jq primer\", \"more jq\"]}\n>>> import pyjq\n>>> pat = pyjq.compile('{user, title: .titles[]}')\n>>> pat.all(data)\n[{'user': 'stedolan', 'title': 'jq primer'}, {'user': 'stedolan', 'title': 'more jq'}]\n```\n\nlimitations\n-----------\n\njq is a json processor. therefore pyjq is able to process only\n\"json compatible\" data (object made only from str, int, float, list, dict).\n\nq&a\n---\n\n### how can i process a json string (f.e. gotten from an api) with pyjq?\n\nyou should call `json.loads` from the standard library on the string, before you pass it to pyjq.\n\nauthor\n------\n[omoto kenji](https://github.com/doloopwhile)\n\nlicense\n-------\nmit license. see [license](./license).\n\nthis package includes [jq](https://github.com/stedolan/jq) and [oniguruma](https://github.com/kkos/oniguruma). their license files are included in their respective archive files.\n\n- jq: `dependencies/jq-1.5.tar.gz`\n- oniguruma: `dependencies/onig-6.9.0.tar.gz`\n\nchangelog\n---------\n\n### 2.6.0\n\n- supports 3.10\n\n### 2.5.1\n\n- fixed typo.\n\n### 2.5.0\n\n- supports only 3.7+.\n- added pyjq.scriptruntimeerror.\n\n### 2.4.0\n\n- dropped support for python 2.7, 3.4, 3.5 (supports only 3.6+).\n\n### 2.3.0\n\n- supported windowspe(msys)\n\n### 2.2.0\n\n- added `library_paths=` option.\n\n### 2.1.0\n\n- api's translate js object not to `dict` but to `collections.ordereddict`.\n\n### 2.0.0\n\n- semantic versioning.\n- bundle source codes of jq and oniguruma.\n- supported python 3.5.\n- dropped support for python 3.2.\n- aeded `all` method.\n\n### 1.0\n\n- first release.\n",
+  "docs_url": null,
+  "keywords": "jq",
+  "license": "mit license",
+  "name": "pyjq",
+  "package_url": "https://pypi.org/project/pyjq/",
+  "project_url": "https://pypi.org/project/pyjq/",
+  "project_urls": {
+    "Homepage": "http://github.com/doloopwhile/pyjq"
+  },
+  "release_url": "https://pypi.org/project/pyjq/2.6.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "binding for jq json processor.",
+  "version": "2.6.0",
+  "releases": [],
+  "developers": [
+    "omoto_kenji"
+  ],
+  "kwds": "pyjq jq json argjson python",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_pyjq",
+  "homepage": "http://github.com/doloopwhile/pyjq",
+  "release_count": 10,
+  "dependency_ids": []
+}

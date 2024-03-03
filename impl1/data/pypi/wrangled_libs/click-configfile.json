@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: end users/desktop",
+    "intended audience :: system administrators",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "topic :: utilities"
+  ],
+  "description": "click_ is a framework to simplify writing composable commands for\ncommand-line tools. this package extends the click_ functionality\nby adding support for commands that use configuration files.\n\n.. _click: https://click.pocoo.org/\n\nexample:\n\na configuration file, like:\n\n.. code-block:: ini\n\n    # -- file: foo.ini\n    [foo]\n    flag = yes\n    name = alice and bob\n    numbers = 1 4 9 16 25\n    filenames = foo/xxx.txt\n        bar/baz/zzz.txt\n\n    [person.alice]\n    name = alice\n    birthyear = 1995\n\n    [person.bob]\n    name = bob\n    birthyear = 2001\n\ncan be processed with:\n\n.. code-block:: python\n\n    # example:\n    # -- file: example_command_with_configfile.py (all parts: simplified)\n    from click_configfile import configfilereader, param, sectionschema\n    from click_configfile import matches_section\n    import click\n\n    class configsectionschema(object):\n        \"\"\"describes all config sections of this configuration file.\"\"\"\n\n        @matches_section(\"foo\")\n        class foo(sectionschema):\n            name    = param(type=str)\n            flag    = param(type=bool, default=true)\n            numbers = param(type=int, multiple=true)\n            filenames = param(type=click.path(), multiple=true)\n\n        @matches_section(\"person.*\")   # matches multiple sections\n        class person(sectionschema):\n            name      = param(type=str)\n            birthyear = param(type=click.intrange(1990, 2100))\n\n\n    class configfileprocessor(configfilereader):\n        config_files = [\"foo.ini\", \"foo.cfg\"]\n        config_section_schemas = [\n            configsectionschema.foo,     # primary schema\n            configsectionschema.person,\n        ]\n\n        # -- simplified storage-schema:\n        #   section:person.*        -> storage:person.*\n        #   section:person.alice    -> storage:person.alice\n        #   section:person.bob      -> storage:person.bob\n\n        # -- alternatives: override configfilereader methods:\n        #  * process_config_section(config_section, storage)\n        #  * get_storage_name_for(section_name)\n        #  * get_storage_for(section_name, storage)\n\n\n    # -- command:\n    context_settings = dict(default_map=configfileprocessor.read_config())\n\n    @click.command(context_settings=context_settings)\n    @click.option(\"-n\", \"--number\", \"numbers\", type=int, multiple=true)\n    @click.pass_context\n    def command_with_config(ctx, numbers):\n        # -- access additional data from config files: using ctx.default_map\n        for person_data_key in ctx.default_map.keys():\n            if not person_data_key.startswith(\"person.\"):\n                continue\n            person_data = ctx.default_map[person_data_key]\n            process_person_data(person_data)    # as dict.\n\n\n",
+  "docs_url": null,
+  "keywords": "click,configfile,configparser",
+  "license": "bsd",
+  "name": "click-configfile",
+  "package_url": "https://pypi.org/project/click-configfile/",
+  "project_url": "https://pypi.org/project/click-configfile/",
+  "project_urls": {
+    "Download": "https://pypi.python.org/pypi/click-configfile/0.2.3",
+    "Homepage": "https://github.com/click-contrib/click-configfile"
+  },
+  "release_url": "https://pypi.org/project/click-configfile/0.2.3/",
+  "requires_dist": [
+    "click (>=6.6)",
+    "configparser (>=3.5.0)",
+    "six (>=1.10)",
+    "configparser (>=3.5.0); python_version==\"2.6\"",
+    "configparser (>=3.5.0); python_version==\"2.7\"",
+    "configparser (>=3.5.0); python_version==\"3.3\"",
+    "configparser (>=3.5.0); python_version==\"3.4\""
+  ],
+  "requires_python": "",
+  "summary": "this package supports click commands that use configuration files.",
+  "version": "0.2.3",
+  "releases": [],
+  "developers": [
+    "jenisys@noreply.github.com",
+    "jens_engel"
+  ],
+  "kwds": "click_configfile configparser example_command_with_configfile command_with_config config_files",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_click_configfile",
+  "homepage": "https://github.com/click-contrib/click-configfile",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_configparser",
+    "pypi_six"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "overrides\n=========\n\n.. image:: https://img.shields.io/pypi/v/overrides.svg\n  :target: https://pypi.python.org/pypi/overrides\n\n.. image:: http://pepy.tech/badge/overrides\n  :target: http://pepy.tech/project/overrides\n\na decorator ``@override`` that verifies that a method that should override an inherited method actually does it.\n\ncopies the docstring of the inherited method to the overridden method.\n\nsince signature validation and docstring inheritance are performed on class creation and not on class instantiation,\nthis library significantly improves the safety and experience of creating class hierarchies in \npython without significantly impacting performance. see https://stackoverflow.com/q/1167617 for the\ninitial inspiration for this library.\n\nmotivation\n----------\n\npython has no standard mechanism by which to guarantee that (1) a method that previously overrode an inherited method\ncontinues to do so, and (2) a method that previously did not override an inherited will not override now.\nthis opens the door for subtle problems as class hierarchies evolve over time. for example,\n\n1. a method that is added to a superclass is shadowed by an existing method with the same name in a \n   subclass.\n\n2. a method of a superclass that is overridden by a subclass is renamed in the superclass but not in \n   the subclass.\n\n3. a method of a superclass that is overridden by a subclass is removed in the superclass but not in\n   the subclass.\n\n4. a method of a superclass that is overridden by a subclass but the signature of the overridden\n   method is incompatible with that of the inherited one.\n\nthese can be only checked by explicitly marking method override in the code.\n\npython also has no standard mechanism by which to inherit docstrings in overridden methods. because \nmost standard linters (e.g., flake8) have rules that require all public methods to have a docstring, \nthis inevitably leads to a proliferation of ``see parent class for usage`` docstrings on overridden\nmethods, or, worse, to a disabling of these rules altogether. in addition, mediocre or missing\ndocstrings degrade the quality of tooltips and completions that can be provided by an editor.\n\ninstallation\n------------\n\ncompatible with python 3.6+.\n\n.. code-block:: bash\n\n    $ pip install overrides\n\nusage\n-----\n\nuse ``@override`` to indicate that a subclass method should override a superclass method.\n\n.. code-block:: python\n\n    from overrides import override\n\n    class superclass:\n\n        def foo(self):\n            \"\"\"this docstring will be inherited by any method that overrides this!\"\"\"\n            return 1\n\n        def bar(self, x) -> str:\n            return x\n\n    class subclass(superclass):\n\n        @override\n        def foo(self):\n            return 2\n\n        @override\n        def bar(self, y) -> int: # raises, because the signature is not compatible.\n            return y\n            \n        @override\n        def zoo(self): # raises, because does not exist in the super class.\n            return \"foobarzoo\"\n\nuse ``enforceoverrides`` to require subclass methods that shadow superclass methods to be decorated \nwith ``@override``.\n\n.. code-block:: python\n \n    from overrides import enforceoverrides\n\n    class superclass(enforceoverrides):\n\n        def foo(self):\n            return 1\n\n    class subclass(superclass):\n\n        def foo(self): # raises, because @override is missing.\n            return 2\n\nuse ``@final`` to indicate that a superclass method cannot be overriden.\nwith python 3.11 and above ``@final`` is directly `typing.final <https://docs.python.org/3.11/library/typing.html#typing.final>`_.\n\n.. code-block:: python\n\n    from overrides import enforceoverrides, final, override\n\n    class superclass(enforceoverrides):\n\n        @final\n        def foo(self):\n            return 1\n\n    class subclass(superclass):\n\n        @override\n        def foo(self): # raises, because overriding a final method is forbidden.\n            return 2\n\nnote that ``@classmethod`` and ``@staticmethod`` must be declared before ``@override``.\n\n.. code-block:: python\n\n    from overrides import override\n\n    class superclass:\n\n        @staticmethod\n        def foo(x):\n            return 1\n\n    class subclass(superclass):\n\n        @staticmethod\n        @override\n        def foo(x):\n            return 2\n\n\nflags of control\n----------------\n\n.. code-block:: python\n\n    # to prevent all signature checks do:\n    @override(check_signature=false)\n    def some_method(self, now_this_can_be_funny_and_wrong: str, what_ever: int) -> \"dictirux\":\n        pass\n\n    # to do the check only at runtime and solve some forward reference problems\n    @override(check_at_runtime=true)\n    def some_other_method(self, ..) -> \"somethingdefinedlater\":\n        pass\n\n    a.some_other_method() # kaboom if not somethingdefinedlater\n\n\ncontributors\n------------\n\nthis project exists only through the work of all the people who contribute.\n\nmkorpela, drorasaf, ngoodman90, tyleryep, leeopop, donpatrice, jayvdb, joelgrus, lisyarus, \nsoulmerge, rkr-at-dbx, ashwin153, brentyi,  jobh, tjsmart, bersbersbers.\n",
+  "docs_url": null,
+  "keywords": "override,inheritence,oop",
+  "license": "apache license, version 2.0",
+  "name": "overrides",
+  "package_url": "https://pypi.org/project/overrides/",
+  "project_url": "https://pypi.org/project/overrides/",
+  "project_urls": {
+    "Homepage": "https://github.com/mkorpela/overrides"
+  },
+  "release_url": "https://pypi.org/project/overrides/7.4.0/",
+  "requires_dist": [
+    "typing ; python_version < \"3.5\""
+  ],
+  "requires_python": ">=3.6",
+  "summary": "a decorator to automatically detect mismatch when overriding a method.",
+  "version": "7.4.0",
+  "releases": [],
+  "developers": [
+    "mikko.korpela@gmail.com",
+    "mikko_korpela"
+  ],
+  "kwds": "overriding overrides inheritance override inherit",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_overrides",
+  "homepage": "https://github.com/mkorpela/overrides",
+  "release_count": 40,
+  "dependency_ids": [
+    "pypi_typing"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "classifiers": [],
+  "description": "# sparse\\_dot\\_topn: \n\n**sparse\\_dot\\_topn** provides a fast way to performing a sparse matrix multiplication followed by top-n multiplication result selection.\n\ncomparing very large feature vectors and picking the best matches, in practice often results in performing a sparse matrix multiplication followed by selecting the top-n multiplication results. in this package, we implement a customized cython function for this purpose. when comparing our cythonic approach to doing the same use with scipy and numpy functions, **our approach improves the speed by about 40% and reduces memory consumption.**\n\nthis package is made by ing wholesale banking advanced analytics team. this [blog](https://medium.com/@ingwbaa/https-medium-com-ingwbaa-boosting-selection-of-the-most-similar-entities-in-large-scale-datasets-450b3242e618) or this [blog](https://www.sun-analytics.nl/posts/2017-07-26-boosting-selection-of-most-similar-entities-in-large-scale-datasets/) explains how we implement it.\n\n## example\n``` python\nimport numpy as np\nfrom scipy.sparse import csr_matrix\nfrom scipy.sparse import rand\nfrom sparse_dot_topn import awesome_cossim_topn\n\nn = 10\na = rand(100, 1000000, density=0.005, format='csr')\nb = rand(1000000, 200, density=0.005, format='csr')\n\n# default precision type is np.float64, but you can down cast to have a small memory footprint and faster execution\n# remark : these are the only 2 types supported now, since we assume that float16 will be difficult to implement and will be slower, because c doesn't support a 16-bit float type on most pcs\na = a.astype(np.float32)\nb = b.astype(np.float32)\n\n# use standard implementation\nc = awesome_cossim_topn(a, b, n, 0.01)\n\n# use parallel implementation with 4 threads\nd = awesome_cossim_topn(a, b, n, 0.01, use_threads=true, n_jobs=4)\n\n# use standard implementation with 4 threads and with the computation of best_ntop: the value of ntop needed to capture all results above lower_bound\nd, best_ntop = awesome_cossim_topn(a, b, n, 0.01, use_threads=true, n_jobs=4, return_best_ntop=true)\n```\n\nyou can also find code which compares our boosting method with calling scipy+numpy function directly in example/comparison.py\n\n## dependency and install\ninstall `numpy` and `cython` first before installing this package. then,\n``` sh\npip install sparse_dot_topn\n```\n\nfrom version >=0.3.0, we don't proactively support python 2.7. however, you should still be able to install this package in python 2.7.\nif you encounter gcc compiling issue, please refer these discussions and setup cflags and cxxflags variables\n- https://github.com/ing-bank/sparse_dot_topn/issues/7#issuecomment-695165663\n\n## uninstall\n``` sh\npip uninstall sparse_dot_topn\n```\n\n\n## local development\n\n``` sh\npython setup.py clean --all\npython setup.py develop\npytest\n```\n\n\n``` sh\npython -m build\ncd dist/\npip install sparse_dot_topn-*.tar.gz\n```\n\n## release strategy\nfrom version 0.3.2, we employ github actions to build wheels in different os and python environments with cibuildwheel, and release automatically. hopefully this will solve many issues related to installation. the build and publish pipeline is configured in `./github/workflows/wheels.yml`. when a new release is neeeded, please follow these steps\n\n1. create a test branch with branch name `test/x.x.x` from main branch.\n2. in `test/x.x.x` branch, update the version number such as `x.x.x.rcx` (e.g. 0.3.4.rc0) in setup.py, and update changelog in changes.md file.\n3. git push `test/x.x.x` branch, then build and publish pipeline will be triggered automatically. new release will be uploaded in pypi test [https://test.pypi.org/project/sparse-dot-topn/](https://test.pypi.org/project/sparse-dot-topn/).\n4. please do a sanity check on pypi test release.\n5. update the changelog in changes.md\n6. create a branch on top of the test branch.\n7. modify the version number by remove the `rcx` suffix in setup.py.\n8. git push, then build and publish pipeline will be triggered automatically. new release will be uploaded to pypi [https://pypi.org/project/sparse-dot-topn](https://pypi.org/project/sparse-dot-topn/)\n9. merge the release branch back to master\n\n\n\n\n",
+  "docs_url": null,
+  "keywords": "cosine-similarity sparse-matrix scipy cython",
+  "license": "apache 2.0",
+  "name": "sparse-dot-topn",
+  "package_url": "https://pypi.org/project/sparse-dot-topn/",
+  "project_url": "https://pypi.org/project/sparse-dot-topn/",
+  "project_urls": {
+    "Homepage": "https://github.com/ing-bank/sparse_dot_topn"
+  },
+  "release_url": "https://pypi.org/project/sparse-dot-topn/0.3.6/",
+  "requires_dist": [
+    "numpy >=1.14.5",
+    "scipy >=1.2.3"
+  ],
+  "requires_python": "",
+  "summary": "this package boosts a sparse matrix multiplication followed by selecting the top-n multiplication",
+  "version": "0.3.6",
+  "releases": [],
+  "developers": [
+    "ymwdalex@gmail.com",
+    "zhe_sun"
+  ],
+  "kwds": "sparse_dot_topn sparse cython scipy cythonic",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_sparse_dot_topn",
+  "homepage": "https://github.com/ing-bank/sparse_dot_topn",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_scipy"
+  ]
+}

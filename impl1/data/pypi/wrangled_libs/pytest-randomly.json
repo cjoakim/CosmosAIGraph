@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "===============\npytest-randomly\n===============\n\n.. image:: https://img.shields.io/github/actions/workflow/status/pytest-dev/pytest-randomly/main.yml?branch=main&style=for-the-badge\n   :target: https://github.com/pytest-dev/pytest-randomly/actions?workflow=ci\n\n.. image:: https://img.shields.io/badge/coverage-100%25-success?style=for-the-badge\n  :target: https://github.com/pytest-dev/pytest-randomly/actions?workflow=ci\n\n.. image:: https://img.shields.io/pypi/v/pytest-randomly.svg?style=for-the-badge\n   :target: https://pypi.org/project/pytest-randomly/\n\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge\n   :target: https://github.com/psf/black\n\n.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logocolor=white&style=for-the-badge\n   :target: https://github.com/pre-commit/pre-commit\n   :alt: pre-commit\n\n.. figure:: https://raw.githubusercontent.com/pytest-dev/pytest-randomly/main/logo.png\n   :scale: 50%\n   :alt: randomness power.\n\npytest plugin to randomly order tests and control ``random.seed``.\n\nfeatures\n========\n\nall of these features are on by default but can be disabled with flags.\n\n* randomly shuffles the order of test items. this is done first at the level of\n  modules, then at the level of test classes (if you have them), then at the\n  order of functions. this also works with things like doctests.\n\n* resets the global ``random.seed()`` at the start of every test case and test\n  to a fixed number - this defaults to ``time.time()`` from the start of your\n  test run, but you can pass in ``--randomly-seed`` to repeat a\n  randomness-induced failure.\n\n* if\n  `factory boy <https://factoryboy.readthedocs.io/en/latest/reference.html>`_\n  is installed, its random state is reset at the start of every test. this\n  allows for repeatable use of its random 'fuzzy' features.\n\n* if `faker <https://pypi.org/project/faker>`_ is installed, its random\n  state is reset at the start of every test. this is also for repeatable fuzzy\n  data in tests - factory boy uses faker for lots of data. this is also done\n  if you're using the ``faker`` pytest fixture, by defining the ``faker_seed``\n  fixture\n  (`docs <https://faker.readthedocs.io/en/master/pytest-fixtures.html#seeding-configuration>`__).\n\n* if\n  `model bakery <https://model-bakery.readthedocs.io/en/latest/>`_\n  is installed, its random state is reset at the start of every test. this\n  allows for repeatable use of its random fixture field values.\n\n* if `numpy <http://www.numpy.org/>`_ is installed, its legacy global random state in |numpy.random|__ is reset at the start of every test.\n\n  .. |numpy.random| replace:: ``numpy.random``\n  __ https://numpy.org/doc/stable/reference/random/index.html\n\n* if additional random generators are used, they can be registered under the\n  ``pytest_randomly.random_seeder``\n  `entry point <https://packaging.python.org/specifications/entry-points/>`_ and\n  will have their seed reset at the start of every test. register a function\n  that takes the current seed value.\n\n* works with `pytest-xdist <https://pypi.org/project/pytest-xdist/>`__.\n\nabout\n=====\n\nrandomness in testing can be quite powerful to discover hidden flaws in the\ntests themselves, as well as giving a little more coverage to your system.\n\nby randomly ordering the tests, the risk of surprising inter-test dependencies\nis reduced - a technique used in many places, for example google's c++ test\nrunner `googletest\n<https://code.google.com/p/googletest/wiki/v1_5_advancedguide#shuffling_the_tests>`_.\nresearch suggests that \"dependent tests do exist in practice\" and a random\norder of test executions can effectively detect such dependencies [1]_.\nalternatively, a reverse order of test executions, as provided by `pytest-reverse\n<https://github.com/adamchainz/pytest-reverse>`__, may find less dependent\ntests but can achieve a better benefit/cost ratio.\n\nby resetting the random seed to a repeatable number for each test, tests can\ncreate data based on random numbers and yet remain repeatable, for example\nfactory boy's fuzzy values. this is good for ensuring that tests specify the\ndata they need and that the tested system is not affected by any data that is\nfilled in randomly due to not being specified.\n\ni have written a `blog post covering the history of\npytest-randomly <https://adamj.eu/tech/2018/01/08/pytest-randomly-history/>`__,\nincluding how it started life as the nose plugin\n`nose-randomly <https://github.com/adamchainz/nose-randomly>`__.\n\nadditionally, i appeared on the test and code podcast to `talk about\npytest-randomly <https://testandcode.com/128>`__.\n\ninstallation\n============\n\ninstall with:\n\n.. code-block:: bash\n\n    python -m pip install pytest-randomly\n\npython 3.8 to 3.12 supported.\n\n----\n\n**testing a django project?**\ncheck out my book `speed up your django tests <https://adamchainz.gumroad.com/l/suydt>`__ which covers loads of ways to write faster, more accurate tests.\n\n----\n\nusage\n=====\n\npytest will automatically find the plugin and use it when you run ``pytest``.\nthe output will start with an extra line that tells you the random seed that is\nbeing used:\n\n.. code-block:: bash\n\n    $ pytest\n    ...\n    platform darwin -- python ...\n    using --randomly-seed=1553614239\n    ...\n\nif the tests fail due to ordering or randomly created data, you can restart\nthem with that seed using the flag as suggested:\n\n.. code-block:: bash\n\n    pytest --randomly-seed=1234\n\nor more conveniently, use the special value ``last``:\n\n.. code-block:: bash\n\n    pytest --randomly-seed=last\n\n(this only works if pytest\u2019s cacheprovider plugin has not been disabled.)\n\nsince the ordering is by module, then by class, you can debug inter-test\npollution failures by narrowing down which tests are being run to find the bad\ninteraction by rerunning just the module/class:\n\n.. code-block:: bash\n\n    pytest --randomly-seed=1234 tests/module_that_failed/\n\nyou can disable behaviours you don't like with the following flags:\n\n* ``--randomly-dont-reset-seed`` - turn off the reset of ``random.seed()`` at\n  the start of every test\n* ``--randomly-dont-reorganize`` - turn off the shuffling of the order of tests\n\nthe plugin appears to pytest with the name 'randomly'. to disable it\naltogether, you can use the ``-p`` argument, for example:\n\n.. code-block:: sh\n\n    pytest -p no:randomly\n\nentry point\n===========\n\nif you're using a different randomness generator in your third party package,\nyou can register an entrypoint to be called every time ``pytest-randomly``\nreseeds. implement the entrypoint ``pytest_randomly.random_seeder``, referring\nto a function/callable that takes one argument, the new seed (int).\n\nfor example in your ``setup.cfg``:\n\n.. code-block:: ini\n\n    [options.entry_points]\n    pytest_randomly.random_seeder =\n        mypackage = mypackage.reseed\n\nthen implement ``reseed(new_seed)``.\n\nreferences\n==========\n\n.. [1] sai zhang, darioush jalali, jochen wuttke, k\u0131van\u00e7 mu\u015flu, wing lam, michael d. ernst, and david notkin. 2014. empirically revisiting the test independence assumption. in proceedings of the 2014 international symposium on software testing and analysis (issta 2014). association for computing machinery, new york, ny, usa, 385\u2013396. doi:https://doi.org/10.1145/2610384.2610404\n",
+  "docs_url": null,
+  "keywords": "pytest,random,randomize,randomise,randomly",
+  "license": "mit",
+  "name": "pytest-randomly",
+  "package_url": "https://pypi.org/project/pytest-randomly/",
+  "project_url": "https://pypi.org/project/pytest-randomly/",
+  "project_urls": {
+    "Changelog": "https://github.com/pytest-dev/pytest-randomly/blob/main/CHANGELOG.rst",
+    "Homepage": "https://github.com/pytest-dev/pytest-randomly",
+    "Mastodon": "https://fosstodon.org/@adamchainz",
+    "Twitter": "https://twitter.com/adamchainz"
+  },
+  "release_url": "https://pypi.org/project/pytest-randomly/3.15.0/",
+  "requires_dist": [
+    "pytest",
+    "importlib-metadata >=3.6.0 ; python_version < \"3.10\""
+  ],
+  "requires_python": ">=3.8",
+  "summary": "pytest plugin to randomly order tests and control random.seed.",
+  "version": "3.15.0",
+  "releases": [],
+  "developers": [
+    "adam_johnson",
+    "me@adamj.eu"
+  ],
+  "kwds": "pytest_randomly pytest random_seeder randomize randomise",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_randomly",
+  "homepage": "https://github.com/pytest-dev/pytest-randomly",
+  "release_count": 33,
+  "dependency_ids": [
+    "pypi_importlib_metadata",
+    "pypi_pytest"
+  ]
+}

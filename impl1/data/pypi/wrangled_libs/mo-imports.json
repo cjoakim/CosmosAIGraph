@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mozilla public license 2.0 (mpl 2.0)",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# more imports! - delayed importing \r\n\r\na couple of methods to make late importing cleaner\r\n\r\n\r\n|branch      |status   |\r\n|------------|---------|\r\n|master      | [![build status](https://app.travis-ci.com/klahnakoski/mo-imports.svg?branch=master)](https://travis-ci.com/github/klahnakoski/mo-imports) |\r\n|dev         | [![build status](https://app.travis-ci.com/klahnakoski/mo-imports.svg?branch=dev)](https://travis-ci.com/github/klahnakoski/mo-imports)    |\r\n\r\n\r\n\r\n## problem\r\n\r\nsplitting code into modules is nice, but it can result in cyclic dependencies.  \r\n\r\n\r\n**foos.py**\r\n\r\n```python\r\nfrom bars import bar\r\n\r\ndef foo():\r\n    bar()\r\n```\r\n\r\n**bars.py**\r\n\r\n```python\r\nfrom foos import foo\r\n\r\ndef bar():\r\n    foo()\r\n```\r\n\r\n> we are not concerned with the infinite recursion; this is only for demonstrating cyclic dependencies. \r\n\r\n\r\n## more imports!\r\n\r\n### solution: use `expect`/`export` pattern\r\n\r\nall your cyclic dependencies are covered with this one pattern: break cycles by `expect`ing a name in the first module, and let the second module `export` to the first when the value is available\r\n\r\n**foos.py**\r\n\r\n```python\r\nfrom mo_imports import expect\r\n\r\nbar = expect(\"bar\")\r\n\r\ndef foo():\r\n    bar()\r\n```\r\n\r\n**bars.py**\r\n\r\n```python\r\nfrom mo_imports import export\r\nfrom foos import foo\r\n\r\ndef bar():\r\n    foo()\r\n\r\nexport(\"bars\", bar)\r\n```\r\n\r\n**benefits**\r\n  \r\n \r\n* every `expect` is verified to match with an `export` (and visa-versa)\r\n* using an expected variable before `export` raises an error     \r\n* code is run only once, at module load time, not later\r\n* methods do not run import code\r\n* all \"imports\" are at the top of the file\r\n\r\n\r\n### solution: use `delay_import`\r\n\r\nprovide a proxy which is responsible for import upon first use of the module variable.\r\n\r\n**foos.py**\r\n\r\n```python\r\nfrom mo_imports import delay_import\r\nfrom bars import bar\r\n\r\nbar = delay_import(\"bars.bar\")\r\n\r\ndef foo():\r\n    bar()\r\n\r\n```\r\n\r\n**bars.py**\r\n\r\n```python\r\nfrom foos import foo\r\n\r\ndef bar():\r\n    foo()\r\n```\r\n\r\nthis is the cleanest, but it requires any of `__call__`, `__getitem__`, `__getattr__` to be called. sentinals, placeholders, and default values can not be imported this way\r\n\r\n\r\n  \r\n## other solutions\r\n\r\nif you do not use `mo-imports` your import cycles can be broken using one of the following common patterns:\r\n\r\n\r\n### bad solution: keep in single file\r\n\r\nyou can declare yet-another-module that holds the cycles\r\n\r\n**foosbars.py**\r\n\r\n```python\r\n    def foo():\r\n        bar()\r\n\r\n    def bar():\r\n        foo()\r\n```\r\n\r\nbut this breaks the code modularity\r\n\r\n\r\n\r\n### bad solution: use end-of-file imports\r\n\r\nduring import, setup of the first module is paused while it imports a second. a bottom-of-file import will ensure the first module is mostly setup to be used by the second. \r\n\r\n**foos.py**\r\n\r\n```python\r\ndef foo():\r\n    bar()\r\n\r\nfrom bars import bar\r\n```\r\n\r\n**bars.py**\r\n\r\n```python\r\ndef bar():\r\n    foo()\r\n\r\nfrom foos import foo\r\n```\r\n\r\nlinters do not like this pattern: you may miss imports, since these are hiding at the bottom.\r\n    \r\n\r\n\r\n### bad solution: inline import\r\n\r\nimport the name only when it is needed\r\n\r\n**foos.py**\r\n\r\n```python\r\ndef foo():\r\n    from bars import bar\r\n    bar()\r\n```\r\n    \r\n**bars.py**\r\n\r\n\r\n```python\r\ndef bar():\r\n    from foos import foo\r\n    foo()\r\n```\r\n\r\nthis is fine for rarely run code, but there is an undesirable overhead because import is checked everytime the method is run. you may miss imports because they are hiding inline rather than at the top of the file.\r\n  \r\n\r\n\r\n### bad solution: use the `_late_import()` pattern\r\n\r\nwhen other bad solutions do not work work, then importing late is the remaining option\r\n\r\n**foos.py**\r\n\r\n```python\r\nfrom bars import bar\r\n\r\ndef foo():\r\n    bar()\r\n```\r\n\r\n**bars.py**\r\n\r\n```python\r\nfoo = none\r\n\r\ndef _late_import():\r\n    global foo\r\n    from foos import foo\r\n    _ = foo\r\n\r\ndef bar():\r\n    if not foo:\r\n        _late_import()\r\n    foo()\r\n```\r\n\r\nplaceholders variables are added, which linters complain about type. there is the added `_late_import()` method. you risk it is not run everywhere as needed. this has less overhead than an inline import, but there is still a check.\r\n \r\n\r\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mpl 2.0",
+  "name": "mo-imports",
+  "package_url": "https://pypi.org/project/mo-imports/",
+  "project_url": "https://pypi.org/project/mo-imports/",
+  "project_urls": {
+    "Homepage": "https://github.com/klahnakoski/mo-imports"
+  },
+  "release_url": "https://pypi.org/project/mo-imports/7.449.23304/",
+  "requires_dist": [
+    "mo-future ==7.449.23304",
+    "mo-logs ; extra == 'tests'"
+  ],
+  "requires_python": "",
+  "summary": "more imports! - delayed importing",
+  "version": "7.449.23304",
+  "releases": [],
+  "developers": [
+    "kyle@lahnakoski.com",
+    "kyle_lahnakoski"
+  ],
+  "kwds": "mo_imports delay_import _late_import imports import",
+  "license_kwds": "mpl 2.0",
+  "libtype": "pypi",
+  "id": "pypi_mo_imports",
+  "homepage": "https://github.com/klahnakoski/mo-imports",
+  "release_count": 33,
+  "dependency_ids": [
+    "pypi_mo_future",
+    "pypi_mo_logs"
+  ]
+}

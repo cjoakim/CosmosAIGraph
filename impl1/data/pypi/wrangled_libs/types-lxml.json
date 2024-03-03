@@ -1,0 +1,62 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: stubs only"
+  ],
+  "description": "[![pypi version](https://img.shields.io/pypi/v/types-lxml.svg)](https://pypi.org/project/types-lxml/)\n![supported python](https://img.shields.io/pypi/pyversions/types-lxml.svg)\n![wheel](https://img.shields.io/pypi/wheel/types-lxml.svg)\n\nthis repository contains [external type annotations](https://peps.python.org/pep-0561/) for [`lxml`](http://lxml.de/). it can be used by type-checking tools (currently supporting [`mypy`](https://pypi.org/project/mypy/) and [`pyright`](https://github.com/microsoft/pyright)) to check code that uses `lxml`, or used within ides like [vscode](https://code.visualstudio.com/) or [pycharm](https://www.jetbrains.com/pycharm/) to facilitate development.\n\n## goal \u2460 : completion\n\nnow the coverage of `lxml` submodules is complete (unless intentionally rejected, see further below), thus no more [considered as `partial`](https://peps.python.org/pep-0561/#partial-stub-packages):\n  - [x] `lxml.etree`\n  - [x] `lxml.html`\n    - [x] `lxml.html.builder`\n    - [x] `lxml.html.clean`\n    - [x] `lxml.html.diff`\n    - [x] `lxml.html.html5parser`\n    - [x] `lxml.html.soupparser`\n  - [x] `lxml.isoschematron`\n  - [x] `lxml.objectify`\n  - [x] `lxml.builder`\n  - [x] `lxml.cssselect`\n  - [x] `lxml.sax`\n  - [x] `lxml.elementinclude`\n\nfollowing submodules will not be implemented due to irrelevance to type checking or other reasons:\n\n  - `lxml.etree.schematron` (obsolete and superseded by `lxml.isoschematron`)\n  - `lxml.usedoctest`\n  - `lxml.html.usedoctest`\n  - `lxml.html.formfill` (shouldn't have existed, this would belong to http libraries like `requests` or `httpx`)\n\ncheck out [project page](https://github.com/abelcheung/types-lxml/projects/1) for future plans and progress.\n\n## goal \u2461 : support multiple type checkers\n\ncurrently the annotations are validated for both `mypy` and `pyright` strict mode.\n\nin the future, there is plan to bring even more type checker support.\n\n## goal \u2462: review and test suite\n\n- [x] all prior `lxml-stubs` contributions are reviewed thoroughly, bringing coherency of annotation across the whole package\n- [x] much more extensive test cases\n  - [x] mypy test suite already vastly expanded\n  - [x] perform runtime check, and compare against static type checker result; this guarantees annotations are indeed working in real code, not just in some cooked up test suite\n    - [x] proof of concept for incorporating `pyright` result under progress, currently just comparing `reveal_type()` results\n    - [ ] migrate static `mypy` tests to runtime `pyright` tests in future\n- [x] modernize package building infrastructure\n\n## goal \u2463 : support for ides\n\ndespite having no official pep, some ides support showing docstring from external annotations. this package tries to bring type annotation specific docstrings for some `lxml` classes and functions, explaining how they can be used. following screenshots show what would look like in visual studio code, behaving as if docstrings come from real python code:\n\n![stub docstring in vscode mouseover tooltip](https://user-images.githubusercontent.com/83110/277119481-debbd929-afbd-4f59-b9e6-52a1f7f23241.png)\n\nbesides docstring, current annotations are geared towards convenience for code writers instead of absolute logical 'correctness'. the [deviation of class inheritance](https://github.com/abelcheung/types-lxml/wiki/element-inheritance-change) for `htmlcomment` and friends is one prominent example.\n\n\n## installation\n\nthe normal choice for most people is to fetch package from pypi via `pip`:\n\n    pip install -u types-lxml\n\nthere are a few other alternatives though.\n\n### from downloaded wheel file\n\nhead over to [latest release in github](https://github.com/abelcheung/types-lxml/releases/latest) and download wheel file (with extension `.whl`), which can be installed in the same way as pypi package:\n\n    pip install -u types-lxml*.whl\n\n### bleeding edge from github\n\n    pip install -u git+https://github.com/abelcheung/types-lxml.git\n\n## special notes\n\n### type checker support\n\nactually, `pyright` is the preferred type checker to use for `lxml` code. `mypy` can be either too restrictive or doesn't support some feature needed by lxml.\n\nhere is one example: normalisation of element attributes.\n\nit is employed by many other projects, so that users can supply common type of value while setting object attributes, and the code internally canonicalise/converts supplied argument to specific type. this is a convenience for library users, so they don't always need to do internal conversion by themselves. consider the example below:\n\n```python\nfrom typing_extensions import reveal_type\nfrom lxml.etree import fromstring, qname\n\nperson = fromstring('<person><height>170</height></person>')\nreveal_type(person[0].tag)\nperson[0].tag = qname('http://ns.prefix', person[0].tag)\n```\n\nlxml supports stringify qnames when setting element tags. of course, during runtime, everything work as expected:\n\n```pycon\n>>> print(e.tostring(person, encoding=str))\n<person><ns0:height xmlns:ns0=\"http://ns.prefix\">170</ns0:height></person>\n```\n\n`pyright` correctly reports element tag type, and don't complain about assignment:\n\n```\ninformation: type of \"person[0].tag\" is \"str\"\n```\n\nbut `mypy` barks loudly about the feature:\n\n```\nerror: incompatible types in assignment (expression has type \"qname\", variable has type \"str\")  [assignment]\n```\n\nthere are many, many more places in lxml that employs such normalisation.\n\n### parsertarget\nthere is now only one stub-only classes that do not exist as concrete class in `lxml` &mdash; `lxml.etree.parsertarget`. however the support of custom parser target is shelved, so this virtual class is not very relevant for now.\n\n## history\n\ntype annotations for `lxml` were initially included in [typeshed](https://www.github.com/python/typeshed), but as it was still incomplete at that time, the stubs are [ripped out as a separate project](https://github.com/python/typeshed/issues/525). the code was extracted by jelle zijlstra and moved to `lxml-stubs` repository using `git filter-branch`.\n\n`types-lxml` is a fork of `lxml-stubs` that strives for the goals described above, so that most people would find it more useful.\n",
+  "docs_url": null,
+  "keywords": "lxml,typing,stubs,annotation",
+  "license": "apache-2.0",
+  "name": "types-lxml",
+  "package_url": "https://pypi.org/project/types-lxml/",
+  "project_url": "https://pypi.org/project/types-lxml/",
+  "project_urls": {
+    "homepage": "https://github.com/abelcheung/types-lxml"
+  },
+  "release_url": "https://pypi.org/project/types-lxml/2023.10.21/",
+  "requires_dist": [
+    "types-beautifulsoup4",
+    "typing-extensions ~=4.5",
+    "pytest-mypy-plugins <2.0,>=1.10.1 ; extra == 'dev'",
+    "pytest >=7 ; extra == 'dev'",
+    "black ; extra == 'dev'",
+    "isort >=5 ; extra == 'dev'",
+    "mypy <1.4,>=1.1 ; extra == 'dev'",
+    "pyright <1.1.332,>=1.1.289 ; extra == 'dev'",
+    "lxml ==4.9.* ; extra == 'dev'",
+    "typeguard ==3.0.* ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "complete lxml external type annotation",
+  "version": "2023.10.21",
+  "releases": [],
+  "developers": [
+    "abelcheung@gmail.com"
+  ],
+  "kwds": "lxml pyversions types typing_extensions annotations",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_types_lxml",
+  "homepage": "",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_isort",
+    "pypi_lxml",
+    "pypi_mypy",
+    "pypi_pyright",
+    "pypi_pytest",
+    "pypi_pytest_mypy_plugins",
+    "pypi_typeguard",
+    "pypi_types_beautifulsoup4",
+    "pypi_typing_extensions"
+  ]
+}

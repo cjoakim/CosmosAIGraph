@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: macos :: macos x",
+    "operating system :: posix",
+    "operating system :: posix :: bsd :: freebsd",
+    "operating system :: posix :: linux",
+    "operating system :: posix :: sunos/solaris",
+    "programming language :: c",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: systems administration",
+    "topic :: utilities"
+  ],
+  "description": "# redislite\n\n[![ci/cd](https://img.shields.io/badge/ci/cd-screwdriver-blue.svg)](https://screwdriver.cd/)\n[![build status](https://cd.screwdriver.cd/pipelines/2880/badge)](https://cd.screwdriver.cd/pipelines/2880)\n[![codestyle](https://img.shields.io/badge/code%20style-pep8-blue.svg)](https://www.python.org/dev/peps/pep-0008/)\n[![coverage](https://codecov.io/gh/yahoo/redislite/branch/master/graph/badge.svg)](https://codecov.io/gh/yahoo/redislite)\n[![current version](https://img.shields.io/pypi/v/redislite.svg)](https://pypi.python.org/pypi/redislite/)\n[![supported python](https://img.shields.io/badge/python-3.6,3.7,3.8-blue.svg)](https://pypi.python.org/pypi/redislite/)\n[![license](https://img.shields.io/pypi/l/redislite.svg)](https://pypi.python.org/pypi/redislite/)\n[![documentation](https://readthedocs.org/projects/redislite/badge/?version=latest)](http://redislite.readthedocs.org/en/latest/)\n\n\n## description\n\nredislite is a self contained python interface to the redis key-value store.\n\nit provides enhanced versions of the redis-py python bindings for redis.  that provide the following added functionality:\n\n* **easy to use** - it provides a built in redis server that is automatically installed, configured and managed when the redis bindings are used.\n* **flexible** - create a single server shared by multiple programs or multiple independent servers.  all the servers provided by redislite support all redis functionality including advanced features such as replication and clustering.\n* **compatible** - it provides enhanced versions of the redis-py python redis bindings as well as functions to patch them to allow most existing code that uses them to run with little or no modifications.\n* **secure** - it uses a secure default redis configuraton that is only accessible by the creating user on the computer system it is run on.\n\n## requirements\n\nthe redislite module requires python 3.6 or higher.\n\n\n### installing requirements on linux\n\nmake sure python development headers are available when installing redislite.\n\non ubuntu/debian systems, install them with:\n\n`apt-get install python-dev`\n\non redhat/fedora systems, install them with:\n\n`yum install python-devel`\n\n### installing requirements on mac osx\n\nredislite for osx comes as a wheel package by default that can be installed\nusing current versions of pip.\n\nto install redislite on macosx using the sdist package instead you will need\nthe xcode command line utilities installed.  if you do not have xcode\ninstalled on recent osx releases they can be installed by\nrunning:\n\n`xcode-select --install`\n\n### installing requirements on microsoft windows\n\nredislite can be installed on newer releases of windows 10 under the bash on ubuntu shell.\n\ninstall it using the instructions at https://msdn.microsoft.com/commandline/wsl/install_guide \n\nthen start the bash shell and install the python-dev package as follows:\n\n`apt-get install python-dev`    \n    \n## installation\n\nto install redislite, simply:\n\n```console\n$ pip install redislite\n```\n\nor from source:\n\n```console\n$ python setup.py install\n```\n\n\n## getting started\n\nredislite provides enhanced versions of the redis-py redis.redis() and \nredis.strictredis() classes that take the same arguments as the corresponding\nredis classes and take one additional optional argument.  which is the\nname of the redis rdb file to use.  if the argument is not provided it will\ncreate set up a new redis server.\n\nredislite also provides functions to monkeypatch the redis.redis and \nredis.strictredis classes to use redislite, so existing python code that uses\nredis can use the redislite version.\n    \n## examples\n\nhere are some examples of using the redislite module.\n\n### setting a value\n\nhere we open a python shell and set a key in our embedded redis db.  redislite will automatically start the redis server when\nthe redis() object is created and shut it down cleanly when the python interpreter exits.\n\n```python\n>>> from redislite import redis\n>>> redis_connection = redis('/tmp/redis.db')\n>>> redis_connection.keys()\n[]\n>>> redis_connection.set('key', 'value')\ntrue\n>>> redis_connection.get('key')\n'value'\n```\n\n### persistence\n\nnow we open the same redis db and access the key we created during the last run.  redislite will automatically start the\nredis server using the same configuration as last time, so the value that was set in the previous example is still available.\n\n```python\n>>> from redislite import redis\n>>> redis_connection = redis('/tmp/redis.db')\n>>> redis_connection.keys()\n['key']\n>>> redis_connection.get('key')\n'value'\n```\n\n## compatibility\n\nit's possible to monkeypatch the normal redis classes to allow modules \nthat use redis to use the redislite classes.  here we patch redis and use the \nredis_collections module.\n\n```python\n>>> import redislite.patch\n>>> redislite.patch.patch_redis()\n>>> import redis_collections\n>>> td = redis_collections.dict()\n>>> td['foo']='bar'\n>>> td.keys()\n['foo']\n```\n\n## running and using multiple servers\n\nredislite will start a new server if the redis rdb fileame isn't specified or is new.  in this example we start 10 seperate redis servers and set the value of the key 'servernumber' to a different value in each server.  \n\nthen we access the value of 'servernumber' and print it.\n\n```python\n>>> import redislite\n>>> servers = {}\n>>> for redis_server_number in range(10):\n...     servers[redis_server_number] = redislite.redis()\n...     servers[redis_server_number].set('servernumber', redis_server_number)\n...\ntrue\ntrue\ntrue\ntrue\ntrue\ntrue\ntrue\ntrue\ntrue\ntrue\n>>> for redis_server in servers.values():\n...     redis_server.get('servernumber')\n...\nb'0'\nb'1'\nb'2'\nb'3'\nb'4'\nb'5'\nb'6'\nb'7'\nb'8'\nb'9'\n```\n\n## multiple servers with different configurations in the same script\n\nit's possible to spin up multiple instances with different\nconfiguration settings for the redis server.  here is an example that sets up 2\nredis server instances.  one instance is configured to listen on port 8002, the\nsecond instance is a read-only slave of the first instance.\n\n\n```python\n>>> import redislite\n>>> master=redislite.redis(serverconfig={'port': '8002'})\n>>> slave=redislite.redis(serverconfig={'slaveof': \"127.0.0.1 8002\"})\n>>> slave.keys()\n[]\n>>> master.set('key', 'value')\ntrue\n>>> master.keys()\n['key']\n>>> slave.keys()\n['key']\n>>>\n```\n\n## more information\n\nthere is more detailed information on the redislite documentation page at\nhttp://redislite.readthedocs.org/en/latest/\n\nredislite is free software under the new bsd license, see license.txt for\ndetails.\n",
+  "docs_url": null,
+  "keywords": "redis sqlite python service integrated",
+  "license": "bsd license",
+  "name": "redislite",
+  "package_url": "https://pypi.org/project/redislite/",
+  "project_url": "https://pypi.org/project/redislite/",
+  "project_urls": {
+    "CI Pipeline": "https://cd.screwdriver.cd/pipelines/2880/events",
+    "Documentation": "https://redislite.readthedocs.io/en/latest/",
+    "Homepage": "https://github.com/yahoo/redislite",
+    "Source": "https://github.com/yahoo/redislite"
+  },
+  "release_url": "https://pypi.org/project/redislite/6.2.912183/",
+  "requires_dist": [
+    "redis>=4.5",
+    "psutil",
+    "setuptools>38.0"
+  ],
+  "requires_python": ">=3.8.0",
+  "summary": "redis built into a python package",
+  "version": "6.2.912183",
+  "releases": [],
+  "developers": [
+    "254983+dwighthubbard@users.noreply.github.com",
+    "verizon_media_python_platform_team"
+  ],
+  "kwds": "patch_redis redislite redis redis_collections redis_connection",
+  "license_kwds": "bsd license",
+  "libtype": "pypi",
+  "id": "pypi_redislite",
+  "homepage": "https://github.com/yahoo/redislite",
+  "release_count": 64,
+  "dependency_ids": [
+    "pypi_psutil",
+    "pypi_redis",
+    "pypi_setuptools"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "lexery\n======\n\n.. image:: https://github.com/parquery/lexery/actions/workflows/ci.yml/badge.svg\n    :target: https://github.com/parquery/lexery/actions/workflows/ci.yml\n    :alt: continuous integration\n\n.. image:: https://coveralls.io/repos/github/parquery/lexery/badge.svg?branch=master\n    :target: https://coveralls.io/github/parquery/lexery?branch=master\n    :alt: coverage\n\n.. image:: https://badge.fury.io/py/lexery.svg\n    :target: https://pypi.org/project/lexery/\n    :alt: pypi - version\n\n.. image:: https://img.shields.io/pypi/pyversions/lexery.svg\n    :target: https://pypi.org/project/lexery/\n    :alt: pypi - python version\n\na simple lexer based on regular expressions.\n\ninspired by https://eli.thegreenplace.net/2013/06/25/regex-based-lexical-analysis-in-python-and-javascript\n\nusage\n=====\nyou define the lexing rules and lexery matches them iteratively as a look-up:\n\n.. code-block:: python\n\n    >>> import lexery\n    >>> import re\n    >>> text = 'crop \\t   ( 20, 30, 40, 10 ) ;'\n    >>>\n    >>> lexer = lexery.lexer(\n    ...     rules=[\n    ...         lexery.rule(identifier='identifier',\n    ...             pattern=re.compile(r'[a-za-z_][a-za-z_]*')),\n    ...         lexery.rule(identifier='lpar', pattern=re.compile(r'\\(')),\n    ...         lexery.rule(identifier='number', pattern=re.compile(r'[1-9][0-9]*')),\n    ...         lexery.rule(identifier='rpar', pattern=re.compile(r'\\)')),\n    ...         lexery.rule(identifier='comma', pattern=re.compile(r',')),\n    ...         lexery.rule(identifier='semi', pattern=re.compile(r';'))\n    ...     ],\n    ...     skip_whitespace=true)\n    >>> tokens = lexer.lex(text=text)\n    >>> assert tokens == [[\n    ...     lexery.token('identifier', 'crop', 0, 0), \n    ...     lexery.token('lpar', '(', 9, 0),\n    ...     lexery.token('number', '20', 11, 0),\n    ...     lexery.token('comma', ',', 13, 0),\n    ...     lexery.token('number', '30', 15, 0),\n    ...     lexery.token('comma', ',', 17, 0),\n    ...     lexery.token('number', '40', 19, 0),\n    ...     lexery.token('comma', ',', 21, 0),\n    ...     lexery.token('number', '10', 23, 0),\n    ...     lexery.token('rpar', ')', 26, 0),\n    ...     lexery.token('semi', ';', 28, 0)]]\n\nmind that if a part of the text can not be matched, a ``lexery.error`` is raised:\n\n.. code-block:: python\n\n    >>> import lexery\n    >>> import re\n    >>> text = 'some-identifier ( 23 )'\n    >>>\n    >>> lexer = lexery.lexer(\n    ...     rules=[\n    ...         lexery.rule(identifier='identifier', pattern=re.compile(r'[a-za-z_][a-za-z_]*')),\n    ...         lexery.rule(identifier='number', pattern=re.compile(r'[1-9][0-9]*')),\n    ...     ],\n    ...     skip_whitespace=true)\n    >>> tokens = lexer.lex(text=text)\n    traceback (most recent call last):\n    ...\n    lexery.error: unmatched text at line 0 and position 4:\n    some-identifier ( 23 )\n        ^\n\nif you specify an ``unmatched_identifier``, all the unmatched characters are accumulated in tokens with that identifier:\n\n.. code-block:: python\n\n    >>> import lexery\n    >>> import re\n    >>> text = 'some-identifier ( 23 )-'\n    >>>\n    >>> lexer = lexery.lexer(\n    ...     rules=[\n    ...         lexery.rule(identifier='identifier', pattern=re.compile(r'[a-za-z_][a-za-z_]*')),\n    ...         lexery.rule(identifier='number', pattern=re.compile(r'[1-9][0-9]*')),\n    ...     ],\n    ...     skip_whitespace=true,\n    ...     unmatched_identifier='unmatched')\n    >>> tokens = lexer.lex(text=text)\n    >>> assert tokens == [[\n    ...     lexery.token('identifier', 'some', 0, 0),\n    ...    lexery.token('unmatched', '-', 4, 0),\n    ...    lexery.token('identifier', 'identifier', 5, 0),\n    ...    lexery.token('unmatched', '(', 16, 0),\n    ...    lexery.token('number', '23', 18, 0),\n    ...    lexery.token('unmatched', ')-', 21, 0)]]\n\n\ninstallation\n============\n\n* install lexery with pip:\n\n.. code-block:: bash\n\n    pip3 install lexery\n\ndevelopment\n===========\n\n* check out the repository.\n\n* in the repository root, create the virtual environment:\n\n.. code-block:: bash\n\n    python3 -m venv venv3\n\n* activate the virtual environment:\n\n.. code-block:: bash\n\n    source venv3/bin/activate\n\n* install the development dependencies:\n\n.. code-block:: bash\n\n    pip3 install -e .[dev]\n\npre-commit checks\n-----------------\nwe provide a set of pre-commit checks that run unit tests, lint and check code for formatting.\n\nnamely, we use:\n\n* `yapf <https://github.com/google/yapf>`_ to check the formatting.\n* the style of the docstrings is checked with `pydocstyle <https://github.com/pycqa/pydocstyle>`_.\n* static type analysis is performed with `mypy <http://mypy-lang.org/>`_.\n* various linter checks are done with `pylint <https://www.pylint.org/>`_.\n\nrun the pre-commit checks locally from an activated virtual environment with development dependencies:\n\n.. code-block:: bash\n\n    ./precommit.py\n\n* the pre-commit script can also automatically format the code:\n\n.. code-block:: bash\n\n    ./precommit.py  --overwrite\n\n\nversioning\n==========\nwe follow `semantic versioning <http://semver.org/spec/v1.0.0.html>`_. the version x.y.z indicates:\n\n* x is the major version (backward-incompatible),\n* y is the minor version (backward-compatible), and\n* z is the patch version (backward-compatible bug fix).\n",
+  "docs_url": null,
+  "keywords": "lexer regexp regular expression",
+  "license": "license :: osi approved :: mit license",
+  "name": "lexery",
+  "package_url": "https://pypi.org/project/lexery/",
+  "project_url": "https://pypi.org/project/lexery/",
+  "project_urls": {
+    "Homepage": "https://github.com/Parquery/lexery"
+  },
+  "release_url": "https://pypi.org/project/lexery/1.2.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "a simple lexer based on regular expressions",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "marko@ristin.ch",
+    "marko_ristin"
+  ],
+  "kwds": "regexp regex lexery lexer lex",
+  "license_kwds": "license :: osi approved :: mit license",
+  "libtype": "pypi",
+  "id": "pypi_lexery",
+  "homepage": "https://github.com/parquery/lexery",
+  "release_count": 8,
+  "dependency_ids": []
+}

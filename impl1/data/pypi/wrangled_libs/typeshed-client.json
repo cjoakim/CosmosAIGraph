@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development"
+  ],
+  "description": "this project provides a way to retrieve information from\n`typeshed <https://www.github.com/python/typeshed>`_ and from\n`pep 561 <https://www.python.org/dev/peps/pep-0561/>`_ stub packages.\n\nexample use cases:\n\n- find the path to the stub file for a particular module.\n- find the names defined in a stub.\n- find the ast node that defines a particular name in a stub.\n\nprojects for which ``typeshed_client`` could be useful include:\n\n- static analyzers that want to access typeshed annotations.\n- tools that check stubs for correctness.\n- tools that use typeshed for runtime introspection.\n\ninstallation\n------------\n\n``typeshed_client`` works on python 3.7 and higher. to install it, run\n``python3 -m pip install typeshed_client``.\n\nfinding stubs\n-------------\n\nthe `typeshed_client.finder` module provides functions for finding stub files\ngiven a module name.\n\nfunctions provided:\n\n- ``get_search_context(*, typeshed: optional[path] = none,\n  search_path: optional[sequence[path]] = none, python_executable: optional[str] = none,\n  version: optional[pythonversion] = none, platform: str = sys.platform) -> searchcontext``:\n  returns a ``searchcontext``\n- ``typeshed_client.get_stub_file(module_name: str, *,\n  search_context: optional[searchcontext] = none) -> optional[path]``: returns\n  the path to a module's stub in typeshed. for example,\n  ``get_stub_file('typing', search_context=get_search_context(version=(2, 7)))`` may return\n  ``path('/path/to/typeshed/stdlib/@python2/typing.pyi')``. if there is no stub for the\n  module, returns none.\n- ``typeshed_client.get_stub_ast`` has the same interface, but returns an ast\n  object (parsed using the standard library ``ast`` module).\n\ncollecting names from stubs\n---------------------------\n\n``typeshed_client.parser`` collects the names defined in a stub. it provides:\n\n- ``typeshed_client.get_stub_names(module_name: str, *,\n  search_context: optional[searchcontext] = none) -> optional[namedict]`` collects the names\n  defined in a module, using the given python version and platform. it\n  returns a ``namedict``, a dictionary mapping object names defined in the module\n  to ``nameinfo`` records.\n- ``typeshed_client.nameinfo`` is a namedtuple defined as:\n\n  .. code-block:: python\n\n      class nameinfo(namedtuple):\n        name: str\n        is_exported: bool\n        ast: union[ast3.ast, importedname, overloadedname]\n        child_nodes: optional[namedict] = none\n\n  ``name`` is the object's name. ``is_exported`` indicates whether the name is a\n  part of the stub's public interface. ``ast`` is the ast node defining the name,\n  or a different structure if the name is imported from another module or is\n  overloaded. for classes, ``child_nodes`` is a dictionary containing the names\n  defined within the class.\n\nresolving names to their definitions\n------------------------------------\n\nthe third component of this package, ``typeshed_client.resolver``, maps names to\ntheir definitions, even if those names are defined in other stubs.\n\nto use the resolver, you need to instantiate the ``typeshed_client.resolver``\nclass. for example, given a ``resolver = typeshed_client.resolver()``, you can\ncall ``resolver.get_fully_qualified_name('collections.set')`` to retrieve the\n``nameinfo`` containing the ast node defining ``collections.set`` in typeshed.\n\nchangelog\n---------\n\nversion 2.4.0 (september 29, 2023)\n\n- update bundled typeshed\n- declare support for python 3.12\n\nversion 2.3.0 (april 30, 2023)\n\n- update bundled typeshed\n- support ``__all__.append`` and ``__all__.extend``\n\nversion 2.2.0 (january 24, 2023)\n\n- update bundled typeshed\n- fix crash on stubs that use ``if mypy``\n- fix incorrect handling of ``import *`` in stubs\n- drop support for python 3.6 (thanks to alex waygood)\n\nversion 2.1.0 (november 5, 2022)\n\n- update bundled typeshed\n- declare support for python 3.11\n- add ``typeshed_client.resolver.module.get_dunder_all`` to get the contents of ``__all__``\n- add support for ``__all__ +=`` syntax\n- type check the code using mypy (thanks to nicolas)\n\nversion 2.0.5 (april 17, 2022)\n\n- update bundled typeshed\n\nversion 2.0.4 (march 10, 2022)\n\n- update bundled typeshed\n\nversion 2.0.3 (february 2, 2022)\n\n- update bundled typeshed\n\nversion 2.0.2 (january 28, 2022)\n\n- update bundled typeshed\n\nversion 2.0.1 (january 14, 2022)\n\n- update bundled typeshed\n\nversion 2.0.0 (december 22, 2021)\n\n- breaking change: use `ast` instead of `typed_ast` for parsing\n\nversion 1.2.3 (december 12, 2021)\n\n- update bundled typeshed\n- remove noisy warning if a name is imported multiple times\n- fix `get_all_stub_files()` in python 3 for modules that also exist in python 2\n\nversion 1.2.2 (december 9, 2021)\n\n- further fix relative import resolution\n\nversion 1.2.1 (december 9, 2021)\n\n- fix bug with resolution of relative imports\n- update bundled typeshed\n\nversion 1.2.0 (december 6, 2021)\n\n- support overloaded methods\n- update bundled typeshed\n\nversion 1.1.4 (december 6, 2021)\n\n- updated bundled typeshed\n\nversion 1.1.3 (november 14, 2021)\n\n- update bundled typeshed\n- declare support for python 3.10\n- fix undeclared dependency on ``mypy_extensions``\n\nversion 1.1.2 (november 5, 2021)\n\n- update bundled typeshed\n\nversion 1.1.1 (july 31, 2021)\n\n- update bundled typeshed\n- improve error message when encountering a duplicate name\n\nversion 1.1.0 (june 24, 2021)\n\n- update bundled typeshed\n- handle missing `@python2` directory\n- allow comments in versions file\n\nversion 1.0.2 (may 5, 2021)\n\n- handle version ranges in typeshed versions file\n- update bundled typeshed\n\nversion 1.0.1 (april 24, 2021)\n\n- update bundled typeshed\n\nversion 1.0.0 (april 11, 2021)\n\n- improve docstrings\n\nversion 1.0.0rc1 (april 11, 2021)\n\n- support new typeshed layout\n- support pep 561 packages\n- bundle typeshed directly instead of relying on mypy\n\nversion 0.4 (december 2, 2019)\n\n- performance improvement\n- code quality improvements\n\nversion 0.3 (november 23, 2019)\n\n- update location of typeshed for newer mypy versions\n\nversion 0.2 (may 25, 2017)\n\n- support using a custom typeshed directory\n- add ``get_all_stub_files()``\n- handle ``from module import *``\n- bug fixes\n\nversion 0.1 (may 4, 2017)\n\n- initial release\n",
+  "docs_url": null,
+  "keywords": "typeshed typing annotations",
+  "license": "mit",
+  "name": "typeshed-client",
+  "package_url": "https://pypi.org/project/typeshed-client/",
+  "project_url": "https://pypi.org/project/typeshed-client/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/JelleZijlstra/typeshed_client/issues",
+    "Homepage": "https://github.com/JelleZijlstra/typeshed_client"
+  },
+  "release_url": "https://pypi.org/project/typeshed-client/2.4.0/",
+  "requires_dist": [
+    "importlib-resources >=1.4.0"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a library for accessing stubs in typeshed.",
+  "version": "2.4.0",
+  "releases": [],
+  "developers": [
+    "jelle.zijlstra@gmail.com",
+    "jelle_zijlstra"
+  ],
+  "kwds": "typeshed_client typeshed get_stub_ast get_stub_names get_all_stub_files",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_typeshed_client",
+  "homepage": "https://github.com/jellezijlstra/typeshed_client",
+  "release_count": 28,
+  "dependency_ids": [
+    "pypi_importlib_resources"
+  ]
+}

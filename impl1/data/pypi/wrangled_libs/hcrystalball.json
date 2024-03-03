@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: software development :: libraries"
+  ],
+  "description": "[![ci](https://github.com/heidelbergcement/hcrystalball/workflows/ci/badge.svg)](https://github.com/heidelbergcement/hcrystalball/actions/?query=workflow%3aci)\n[![cd](https://github.com/heidelbergcement/hcrystalball/workflows/cd/badge.svg)](https://github.com/heidelbergcement/hcrystalball/actions?query=workflow%3acd)\n[![documentation status](https://readthedocs.org/projects/hcrystalball/badge/?version=latest)](https://hcrystalball.readthedocs.io/en/latest/?badge=latest)\n[![pypi version](https://img.shields.io/pypi/v/hcrystalball)](https://pypi.org/project/hcrystalball/)\n[![conda version](https://img.shields.io/conda/vn/conda-forge/hcrystalball)](https://anaconda.org/conda-forge/hcrystalball)\n[![code coverage](https://codecov.io/gh/heidelbergcement/hcrystalball/branch/master/graph/badge.svg)](https://codecov.io/gh/heidelbergcement/hcrystalball)\n[![binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/heidelbergcement/hcrystalball/master?filepath=docs/examples/)\n[![license](https://img.shields.io/github/license/heidelbergcement/hcrystalball)](https://raw.githubusercontent.com/heidelbergcement/hcrystalball/master/license.txt)\n[![contributors](https://img.shields.io/github/contributors/heidelbergcement/hcrystalball)](https://github.com/heidelbergcement/hcrystalball/graphs/contributors)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n\n# hcrystal ball\n\n<div>\n    <a href=\"https://hcrystalball.readthedocs.io/en/latest/\">\n        <img src=\"https://raw.githubusercontent.com/heidelbergcement/hcrystalball/master/docs/_static/hcrystal_ball_logo_green.png\"    width=\"150px\" align=\"left\" /></a>\n    <i><br>a library that unifies the api for most commonly <br>\n    used libraries and modelling techniques for time-series <br>\n    forecasting in the python ecosystem.</i>\n</div>\n<br><br><br>\n\n**hcrystal ball** consists of two main parts:\n\n* **wrappers** - which bring different 3rd party\n   libraries to time series compatible sklearn api\n* **model selection** - to enable gridsearch over wrappers, general or custom made transformers\n   and add convenient layer over whole process (access to results, plots, storage, ...)\n\n## documentation\nsee examples, tutorials, contribution, api and more on the documentation [site](https://hcrystalball.readthedocs.io/en/latest) try notebooks on [binder](https://mybinder.org/v2/gh/heidelbergcement/hcrystalball/master) or browse example notebooks in [docs/examples](https://github.com/heidelbergcement/hcrystalball/tree/master/docs/examples) directly.\n\n## core installation\n\nif you want really minimal installation, you can install from pip or from conda-forge\n\n```bash\npip install hcrystalball\n```\n\n```bash\nconda install -c conda-forge hcrystalball\n```\n\n## typical installation\n\nvery often you will want to use more wrappers, than just sklearn, run examples in jupyterlab, or execute model selection in parallel. getting such dependencies to play together nicely might be cumbersome, so checking `envrionment.yml` might give you faster start.\n\n```bash\n# get dependencies file, e.g. using curl\ncurl -o https://raw.githubusercontent.com/heidelbergcement/hcrystalball/master/environment.yml\n# check comments in environment.yml, keep or remove as requested, than create environment using\nconda env create -f environment.yml\n# activate the environment\nconda activate hcrystalball\n# if you want to see progress bar in jupyterlab, execute also\njupyter labextension install @jupyter-widgets/jupyterlab-manager\n# install the library from pip\npip install hcrystalball\n# or from conda\nconda install -c conda-forge hcrystalball\n```\n\n## development installation:\n\nto have everything in place including docs build or executing tests, execute following code\n\n```bash\ngit clone https://github.com/heidelbergcement/hcrystalball\ncd hcrystalball\nconda env create -f environment.yml\nconda activate hcrystalball\n# ensures interactive progress bar will work in example notebooks\njupyter labextension install @jupyter-widgets/jupyterlab-manager\npython setup.py develop\n```\n\n## example usage\n### wrappers\n```python\nfrom hcrystalball.utils import generate_tsdata\nfrom hcrystalball.wrappers import prophetwrapper\n\nx, y = generate_tsdata(n_dates=365*2)\nx_train, y_train, x_test, y_test = x[:-10], y[:-10], x[-10:], y[-10:]\n\nmodel = prophetwrapper()\ny_pred = model.fit(x_train, y_train).predict(x_test)\ny_pred\n            prophet\n2018-12-22  6.066999\n2018-12-23  6.050076\n2018-12-24  6.105620\n2018-12-25  6.141953\n2018-12-26  6.150229\n2018-12-27  6.163615\n2018-12-28  6.147420\n2018-12-29  6.048633\n2018-12-30  6.031711\n2018-12-31  6.087255\n```\n\n### model selection\n\n```python\nimport pandas as pd\nimport matplotlib.pyplot as plt\nplt.style.use('seaborn')\nplt.rcparams['figure.figsize'] = [12, 6]\n\nfrom hcrystalball.utils import get_sales_data\nfrom hcrystalball.model_selection import modelselector\n\ndf = get_sales_data(n_dates=200,\n                    n_assortments=1,\n                    n_states=2,\n                    n_stores=2)\n\nms = modelselector(horizon=10,\n                   frequency=\"d\",\n                   country_code_column=\"holidaycode\",\n                   )\n\nms.create_gridsearch(n_splits=2,\n                     sklearn_models=true,\n                     prophet_models=false,\n                     exog_cols=[\"open\",\"promo\",\"schoolholiday\",\"promo2\"],\n                     )\n\nms.select_model(df=df,\n                target_col_name=\"sales\",\n                partition_columns=[\"assortment\", \"state\",\"store\"],\n                )\n\nms.plot_results(plot_from=\"2015-06-01\",\n                partitions=[{\"assortment\":\"a\",\"state\":\"nw\",\"store\":335}]\n               )\n```\n\n<img src=\"https://raw.githubusercontent.com/heidelbergcement/hcrystalball/master/docs/_static/forecast.png\" width=\"100%\" align=\"left\"/>\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "hcrystalball",
+  "package_url": "https://pypi.org/project/hcrystalball/",
+  "project_url": "https://pypi.org/project/hcrystalball/",
+  "project_urls": {
+    "Homepage": "https://hcrystalball.readthedocs.io/"
+  },
+  "release_url": "https://pypi.org/project/hcrystalball/0.1.12/",
+  "requires_dist": [
+    "numpy (>=1.18)",
+    "pandas (>=1.0)",
+    "scipy (>=1.4)",
+    "workalendar (>=10.1)",
+    "scikit-learn (>=0.23)",
+    "matplotlib",
+    "pytest ; extra == 'testing'",
+    "pytest-cov ; extra == 'testing'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a library that unifies the api for most commonly used libraries and modelling techniques for time-series forecasting in the python ecosystem.",
+  "version": "0.1.12",
+  "releases": [],
+  "developers": [
+    "data_science_team",
+    "datascience@heidelbergcement.com"
+  ],
+  "kwds": "hcrystalball badge workflows workflow hcrystal_ball_logo_green",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_hcrystalball",
+  "homepage": "https://hcrystalball.readthedocs.io/",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_scikit_learn",
+    "pypi_scipy",
+    "pypi_workalendar"
+  ]
+}

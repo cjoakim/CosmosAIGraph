@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: console",
+    "framework :: flake8",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: quality assurance"
+  ],
+  "description": "# flake8-mypy\n\n[![build status](https://travis-ci.org/ambv/flake8-mypy.svg?branch=master)](https://travis-ci.org/ambv/flake8-mypy)\n\na plugin for [flake8](http://flake8.pycqa.org/) integrating\n[mypy](http://mypy-lang.org/). the idea is to enable limited type\nchecking as a linter inside editors and other tools that already support\n*flake8* warning syntax and config.\n\n\n## list of warnings\n\n*flake8-mypy* reserves **t4** for all current and future codes, t being\nthe natural letter for typing-related errors.  there are other plugins\ngreedily reserving the entire letter **t**.  to this i say: `\u00af\\_(\u30c4)_/\u00af`.\n\n**t400**: any typing note.\n\n**t484**: any typing error (after pep 484, geddit?).\n\n**t498**: internal *mypy* error.\n\n**t499**: internal *mypy* traceback, stderr output, or an unmatched line.\n\ni plan to support more fine-grained error codes for specific *mypy*\nerrors in the future.\n\n\n## two levels of type checking\n\n*mypy* shines when given a full program to analyze.  you can then use\noptions like `--follow-imports` or `--disallow-untyped-calls` to\nexercise the full transitive closure of your modules, catching errors\nstemming from bad api usage or incompatible types.  that being said,\nthose checks take time, and require access to the entire codebase.  for\nsome tools, like an editor with an open file, or a code review tool,\nachieving this is not trivial.  this is where a more limited approach\ninside a linter comes in.\n\n*flake8* operates on unrelated files, it doesn't perform full program\nanalysis.  in other words, it doesn't follow imports.  this is a curse\nand a blessing.  we cannot find complex problems and the number of\nwarnings we can safely show without risking false positives is lower.\nin return, we can provide useful warnings with great performance, usable\nfor realtime editor integration.\n\nas it turns out, in this mode of operation, *mypy* is still able to\nprovide useful information on the annotations within and at least usage\nof stubbed standard library and third party libraries.  however, for\nbest effects, you will want to use separate configuration for *mypy*'s\nstandalone mode and for usage as a *flake8* plugin.\n\n\n## configuration\n\ndue to the reasoning above, by default *flake8-mypy* will operate with\noptions equivalent to the following:\n\n```ini\n[mypy]\n# specify the target platform details in config, so your developers are\n# free to run mypy on windows, linux, or macos and get consistent\n# results.\npython_version=3.6\nplatform=linux\n\n# flake8-mypy expects the two following for sensible formatting\nshow_column_numbers=true\nshow_error_context=false\n\n# do not follow imports (except for ones found in typeshed)\nfollow_imports=skip\n\n# since we're ignoring imports, writing .mypy_cache doesn't make any sense\ncache_dir=/dev/null\n\n# suppress errors about unsatisfied imports\nignore_missing_imports=true\n\n# allow untyped calls as a consequence of the options above\ndisallow_untyped_calls=false\n\n# allow returning any as a consequence of the options above\nwarn_return_any=false\n\n# treat optional per pep 484\nstrict_optional=true\n\n# ensure all execution paths are returning\nwarn_no_return=true\n\n# lint-style cleanliness for typing needs to be disabled; returns more errors\n# than the full run.\nwarn_redundant_casts=false\nwarn_unused_ignores=false\n\n# the following are off by default since they're too noisy.\n# flip them on if you feel adventurous.\ndisallow_untyped_defs=false\ncheck_untyped_defs=false\n```\n\nif you disagree with the defaults above, you can specify your own *mypy*\nconfiguration by providing the `--mypy-config=` command-line option to\n*flake8* (with the .flake8/setup.cfg equivalent being called\n`mypy_config`). the value of that option should be a path to a mypy.ini\nor setup.cfg compatible file.  for full configuration syntax, follow\n[mypy documentation](http://mypy.readthedocs.io/en/latest/config_file.html).\n\nfor the sake of simplicity and readability, the config you provide will\nfully replace the one listed above.  values left out will be using\n*mypy*'s own defaults.\n\nremember that for the best user experience, your linter integration mode\nshouldn't generally display errors that a full run of *mypy* wouldn't.\nthis would be confusing.\n\nnote: chaing the `follow_imports` option might have surprising effects.\nif the file you're linting with flake8 has other files around it, then in\n\"silent\" or \"normal\" mode those files will be used to follow imports.\nthis includes imports from [typeshed](https://github.com/python/typeshed/).\n\n\n## tests\n\njust run:\n\n```\npython setup.py test\n```\n\n## omg, this is python 3 only!\n\nyes, so is *mypy*.  relax, you can run *flake8* with all popular plugins\n**as a tool** perfectly fine under python 3.5+ even if you want to\nanalyze python\u00a02 code.  this way you'll be able to parse all of the new\nsyntax supported on python 3 but also *effectively all* the python 2\nsyntax at the same time.\n\nby making the code exclusively python 3.5+, i'm able to focus on the\nquality of the checks and re-use all the nice features of the new\nreleases (check out [pathlib](https://docs.python.org/3/library/pathlib.html))\ninstead of wasting cycles on unicode compatibility, etc.\n\n\n## license\n\nmit\n\n\n## change log\n\n### 17.8.0\n\n* avoid raising errors in the default config which don't happen during\n  a full run (disable warn_unused_ignores and warn_redundant_casts)\n\n* always run type checks from a temporary directory to avoid\n  clashing with unrelated files in the same directory\n\n### 17.3.3\n\n* suppress *mypy* messages about relative imports\n\n### 17.3.2\n\n* bugfix: using *flake8* with absolute paths now correctly matches *mypy*\n  messages\n\n* bugfix: don't crash on relative imports in the form `from . import x`\n\n### 17.3.1\n\n* switch `follow_imports` from \"silent\" to \"skip\" to avoid name clashing\n  files being used to follow imports within\n  [typeshed](https://github.com/python/typeshed/)\n\n* set mypypath by default to give stubs from typeshed higher priority\n  than local sources\n\n### 17.3.0\n\n* performance optimization: skip running *mypy* over files that contain\n  no annotations or imports from `typing`\n\n* bugfix: when running over an entire directory, t484 is now correctly\n  used instead of t499\n\n### 17.2.0\n\n* first published version\n\n* date-versioned\n\n\n## authors\n\nglued together by [\u0142ukasz langa](mailto:lukasz@langa.pl).\n",
+  "docs_url": null,
+  "keywords": "flake8,mypy,bugs,linter,qa,typing",
+  "license": "mit",
+  "name": "flake8-mypy-fork",
+  "package_url": "https://pypi.org/project/flake8-mypy-fork/",
+  "project_url": "https://pypi.org/project/flake8-mypy-fork/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/flake8-mypy-fork/20.5.1/",
+  "requires_dist": [
+    "mypy",
+    "attrs",
+    "flake8 (>=3.0.0)"
+  ],
+  "requires_python": ">=3.6,<4.0",
+  "summary": "a plugin for flake8 integrating mypy (fork).",
+  "version": "20.5.1",
+  "releases": [],
+  "developers": [
+    "lukasz@langa.pl"
+  ],
+  "kwds": "check_untyped_defs flake8 disallow_untyped_defs strict_optional warn_return_any",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flake8_mypy_fork",
+  "homepage": "",
+  "release_count": 2,
+  "dependency_ids": [
+    "pypi_attrs",
+    "pypi_flake8",
+    "pypi_mypy"
+  ]
+}

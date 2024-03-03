@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3"
+  ],
+  "description": "# pymde\n![](https://github.com/cvxgrp/pymde/workflows/test/badge.svg) ![](https://github.com/cvxgrp/pymde/workflows/deploy/badge.svg) [![pypi version](https://badge.fury.io/py/pymde.svg)](https://pypi.org/project/pymde/) [![conda version](https://img.shields.io/conda/vn/conda-forge/pymde.svg)](https://anaconda.org/conda-forge/pymde)\n\n*the official documentation for pymde is available at www.pymde.org.*\n\nthis repository accompanies the monograph [*minimum-distortion embedding*](https://web.stanford.edu/~boyd/papers/min_dist_emb.html).\n\npymde is a python library for computing vector embeddings for finite sets of\nitems, such as images, biological cells, nodes in a network, or any other\nabstract object.\n\nwhat sets pymde apart from other embedding libraries is that it provides a\nsimple but general framework for embedding, called _minimum-distortion\nembedding_ (mde). with mde, it is easy to recreate well-known embeddings and to\ncreate new ones, tailored to your particular application.\n\npymde is competitive\nin runtime with more specialized embedding methods. with a gpu, it can be\neven faster.\n\n## overview\npymde can be enjoyed by beginners and experts alike. it can be used to:\n\n* visualize datasets, small or large;\n* generate feature vectors for supervised learning;\n* compress high-dimensional vector data;\n* draw graphs (in up to orders of magnitude less time than packages like networkx);\n* create custom embeddings, with custom objective functions and constraints (such as having uncorrelated feature columns);\n* and more.\n\npymde is very young software, under active development. if you run into issues,\nor have any feedback, please reach out by [filing a github\nissue](https://github.com/cvxgrp/pymde/issues).\n\nthis readme gives a very brief overview of pymde. make sure to read the \nofficial documentation at www.pymde.org, which has in-depth tutorials\nand api documentation.\n\n- [installation](#installation)\n- [getting started](#getting-started)\n- [example notebooks](#example-notebooks)\n- [citing](#citing)\n\n## installation\npymde is available on the python package index, and on conda forge.\n\nto install with pip, use\n\n```\npip install pymde\n```\n\nalternatively, to install with conda, use\n\n```\nconda install -c pytorch -c conda-forge pymde\n```\n\npymde has the following requirements:\n\n* python >= 3.7\n* numpy >= 1.17.5\n* scipy\n* torch >= 1.7.1\n* torchvision >= 0.8.2\n* pynndescent\n* requests\n\n## getting started\ngetting started with pymde is easy. for embeddings that work out-of-the box, we provide two main functions:\n\n```python3\npymde.preserve_neighbors\n```\n\nwhich preserves the local structure of original data, and \n\n```python3\npymde.preserve_distances\n```\n\nwhich preserves pairwise distances or dissimilarity scores in the original\ndata.\n\n**arguments.** the input to these functions is the original data, represented\neither as a data matrix in which each row is a feature vector, or as a\n(possibly sparse) graph encoding pairwise distances. the embedding dimension is\nspecified by the `embedding_dim` keyword argument, which is `2` by default.\n\n**return value.** the return value is an `mde` object. calling the `embed()`\nmethod on this object returns an embedding, which is a matrix\n(`torch.tensor`) in which each row is an embedding vector. for example, if the\noriginal input is a data matrix of shape `(n_items, n_features)`, then the\nembedding matrix has shape `(n_items, embeddimg_dim)`.\n\nwe give examples of using these functions below. \n\n### preserving neighbors\nthe following code produces an embedding of the mnist dataset (images of\nhandwritten digits), in a fashion similar to largevis, t-sne, umap, and other\nneighborhood-based embeddings. the original data is a matrix of shape `(70000,\n784)`, with each row representing an image.\n\n```python3\nimport pymde\n\nmnist = pymde.datasets.mnist()\nembedding = pymde.preserve_neighbors(mnist.data, verbose=true).embed()\npymde.plot(embedding, color_by=mnist.attributes['digits'])\n```\n\n![](https://github.com/cvxgrp/pymde/blob/main/images/mnist.png?raw=true)\n\nunlike most other embedding methods, pymde can compute embeddings that satisfy\nconstraints. for example:\n\n```python3\nembedding = pymde.preserve_neighbors(mnist.data, constraint=pymde.standardized(), verbose=true).embed()\npymde.plot(embedding, color_by=mnist.attributes['digits'])\n```\n\n![](https://github.com/cvxgrp/pymde/blob/main/images/mnist_std.png?raw=true)\n\nthe standardization constraint enforces the embedding vectors to be centered\nand have uncorrelated features.\n\n\n### preserving distances\nthe function `pymde.preserve_distances` is useful when you're more interested\nin preserving the gross global structure instead of local structure. \n\nhere's an example that produces an embedding of an academic coauthorship\nnetwork, from google scholar. the original data is a sparse graph on roughly\n40,000 authors, with an edge between authors who have collaborated on at least\none paper.\n\n```python3\nimport pymde\n\ngoogle_scholar = pymde.datasets.google_scholar()\nembedding = pymde.preserve_distances(google_scholar.data, verbose=true).embed()\npymde.plot(embedding, color_by=google_scholar.attributes['coauthors'], color_map='viridis', background_color='black')\n```\n\n![](https://github.com/cvxgrp/pymde/blob/main/images/scholar.jpg?raw=true)\n\nmore collaborative authors are colored brighter, and are near the center of the\nembedding.\n\n\n## example notebooks\nwe have several [example notebooks](https://github.com/cvxgrp/pymde/tree/main/examples) that show how to use pymde on real (and synthetic) datasets.\n\n## citing\nto cite our work, please use the following bibtex entry.\n\n```\n@article{agrawal2021minimum,\n  author  = {agrawal, akshay and ali, alnur and boyd, stephen},\n  title   = {minimum-distortion embedding},\n  journal = {arxiv},\n  year    = {2021},\n}\n```\n\npymde was designed and developed by [akshay agrawal](https://www.akshayagrawal.com/).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license, version 2.0",
+  "name": "pymde",
+  "package_url": "https://pypi.org/project/pymde/",
+  "project_url": "https://pypi.org/project/pymde/",
+  "project_urls": {
+    "Homepage": "https://github.com/cvxgrp/pymde"
+  },
+  "release_url": "https://pypi.org/project/pymde/0.1.18/",
+  "requires_dist": [
+    "matplotlib",
+    "numpy (>=1.17.5)",
+    "pynndescent",
+    "scipy",
+    "torch (>=1.7.1)",
+    "torchvision (>=0.8.2)",
+    "requests"
+  ],
+  "requires_python": "",
+  "summary": "minimum-distortion embedding",
+  "version": "0.1.18",
+  "releases": [],
+  "developers": [
+    "akshay_agrawal",
+    "akshayka@cs.stanford.edu"
+  ],
+  "kwds": "pymde cvxgrp svg python3 python",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_pymde",
+  "homepage": "https://github.com/cvxgrp/pymde",
+  "release_count": 20,
+  "dependency_ids": [
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_pynndescent",
+    "pypi_requests",
+    "pypi_scipy",
+    "pypi_torch",
+    "pypi_torchvision"
+  ]
+}

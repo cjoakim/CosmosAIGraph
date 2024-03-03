@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "yq: command-line yaml/xml/toml processor - jq wrapper for yaml, xml, toml documents\n===================================================================================\n\ninstallation\n------------\n::\n\n    pip install yq\n\nbefore using ``yq``, you also have to install its dependency, ``jq``. see the `jq installation instructions\n<https://stedolan.github.io/jq/download/>`_ for details and directions specific to your platform.\n\non macos, ``yq`` is also available on `homebrew <https://brew.sh/>`_: use ``brew install python-yq``.\n\nsynopsis\n--------\n\n``yq`` takes yaml input, converts it to json, and pipes it to `jq <https://stedolan.github.io/jq/>`_::\n\n    cat input.yml | yq .foo.bar\n\nlike in ``jq``, you can also specify input filename(s) as arguments::\n\n    yq .foo.bar input.yml\n\nby default, no conversion of ``jq`` output is done. use the ``--yaml-output``/``-y`` option to convert it back into yaml::\n\n    cat input.yml | yq -y .foo.bar\n\nmapping key order is preserved. by default, custom `yaml tags <http://www.yaml.org/spec/1.2/spec.html#id2764295>`_ and\n`styles <https://yaml.org/spec/current.html#id2509255>`_ in the input are ignored. use the ``--yaml-roundtrip``/``-y``\noption to preserve yaml tags and styles by representing them as extra items in their enclosing mappings and sequences\nwhile in json::\n\n    yq -y .foo.bar input.yml\n\nyq can be called as a module if needed. with ``-y/-y``, files can be edited in place like with ``sed -i``::\n\n    python -m yq -y --indentless --in-place '.[\"current-context\"] = \"staging-cluster\"' ~/.kube/config\n\nuse the ``--width``/``-w`` option to pass the line wrap width for string literals. use\n``--explicit-start``/``--explicit-end`` to emit yaml start/end markers even when processing a single document. all other\ncommand line arguments are forwarded to ``jq``. ``yq`` forwards the exit code ``jq`` produced, unless there was an error\nin yaml parsing, in which case the exit code is 1. see the `jq manual <https://stedolan.github.io/jq/manual/>`_ for more\ndetails on ``jq`` features and options.\n\nbecause yaml treats json as a dialect of yaml, you can use yq to convert json to yaml: ``yq -y . < in.json > out.yml``.\n\npreserving tags and styles using the ``-y`` (``--yaml-roundtrip``) option\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthe ``-y`` option helps preserve custom `string styles <https://yaml-multiline.info/>`_ and\n`tags <https://camel.readthedocs.io/en/latest/yamlref.html#tags>`_ in your document. for example, consider the following\ndocument (an `aws cloudformation <https://aws.amazon.com/cloudformation/>`_ template fragment)::\n\n    resources:\n      elasticloadbalancer:\n        type: 'aws::elasticloadbalancing::loadbalancer'\n        properties:\n          availabilityzones: !getazs ''\n          instances:\n            - !ref ec2instance1\n            - !ref ec2instance2\n          description: >-\n            load balancer for big important service.\n\n            good thing it's managed by this template.\n\npassing this document through ``yq -y .resources.elasticloadbalancer`` will drop custom tags, such as ``!ref``,\nand styles, such as the `folded <https://yaml-multiline.info/>`_ style of the ``description`` field::\n\n    type: aws::elasticloadbalancing::loadbalancer\n    properties:\n      availabilityzones: ''\n      instances:\n        - ec2instance1\n        - ec2instance2\n      description: 'load balancer for big important service.\n\n        good thing it''s managed by this template.'\n\nby contrast, passing it through ``yq -y .resources.elasticloadbalancer`` will preserve tags and styles::\n\n    type: 'aws::elasticloadbalancing::loadbalancer'\n    properties:\n      availabilityzones: !getazs ''\n      instances:\n        - !ref 'ec2instance1'\n        - !ref 'ec2instance2'\n      description: >-\n        load balancer for big important service.\n\n        good thing it's managed by this template.\n\nto accomplish this in ``-y`` mode, yq carries extra metadata (mapping pairs and sequence values) in the json\nrepresentation of your document for any custom tags or styles that it finds. when converting the json back into yaml, it\nparses this metadata, re-applies the tags and styles, and discards the extra pairs and values.\n\n.. warning ::\n\n the ``-y`` option is incompatible with jq filters that do not expect the extra information injected into the document\n to preserve the yaml formatting. for example, a jq filter that counts entries in the instances array will come up with\n 4 entries instead of 2. a filter that expects all array entries to be mappings may break due to the presence of string\n metadata keys. check your jq filter for compatibility/semantic validity when using the ``-y`` option.\n\nxml support\n-----------\n``yq`` also supports xml. the ``yq`` package installs an executable, ``xq``, which\n`transcodes xml to json <https://www.xml.com/pub/a/2006/05/31/converting-between-xml-and-json.html>`_ using\n`xmltodict <https://github.com/martinblech/xmltodict>`_ and pipes it to ``jq``. roundtrip transcoding is available with\nthe ``xq --xml-output``/``xq -x`` option. multiple xml documents can be passed in separate files/streams as\n``xq a.xml b.xml``. use ``--xml-item-depth`` to descend into large documents, streaming their contents without loading\nthe full doc into memory (for example, stream a `wikipedia database dump <https://dumps.wikimedia.org>`_ with\n``cat enwiki-*.xml.bz2 | bunzip2 | xq . --xml-item-depth=2``). entity expansion and dtd resolution is disabled to avoid\nxml parsing vulnerabilities.\n\ntoml support\n------------\n``yq`` supports `toml <https://toml.io/>`_ as well. the ``yq`` package installs an executable, ``tomlq``, which uses the\n`tomlkit library <https://github.com/sdispater/tomlkit>`_ to transcode toml to json, then pipes it to ``jq``. roundtrip\ntranscoding is available with the ``tomlq --toml-output``/``tomlq -t`` option.\n\n.. admonition:: compatibility note\n\n this package's release series available on pypi begins with version 2.0.0. versions of ``yq`` prior to 2.0.0 are\n distributed by https://github.com/abesto/yq and are not related to this package. no guarantees of compatibility are\n made between abesto/yq and kislyuk/yq. this package follows the `semantic versioning 2.0.0 <http://semver.org/>`_\n standard. to ensure proper operation, declare dependency version ranges according to semver.\n\nauthors\n-------\n* andrey kislyuk\n\nlinks\n-----\n* `project home page (github) <https://github.com/kislyuk/yq>`_\n* `documentation <https://kislyuk.github.io/yq/>`_\n* `package distribution (pypi) <https://pypi.python.org/pypi/yq>`_\n* `change log <https://github.com/kislyuk/yq/blob/master/changes.rst>`_\n* `jq <https://stedolan.github.io/jq/>`_ - the command-line json processor utility powering ``yq``\n\nbugs\n~~~~\nplease report bugs, issues, feature requests, etc. on `github <https://github.com/kislyuk/yq/issues>`_.\n\nlicense\n-------\nlicensed under the terms of the `apache license, version 2.0 <http://www.apache.org/licenses/license-2.0>`_.\n\n.. image:: https://github.com/kislyuk/yq/workflows/python%20package/badge.svg\n        :target: https://github.com/kislyuk/yq/actions\n.. image:: https://codecov.io/github/kislyuk/yq/coverage.svg?branch=master\n        :target: https://codecov.io/github/kislyuk/yq?branch=master\n.. image:: https://img.shields.io/pypi/v/yq.svg\n        :target: https://pypi.python.org/pypi/yq\n.. image:: https://img.shields.io/pypi/l/yq.svg\n        :target: https://pypi.python.org/pypi/yq\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache software license",
+  "name": "yq",
+  "package_url": "https://pypi.org/project/yq/",
+  "project_url": "https://pypi.org/project/yq/",
+  "project_urls": {
+    "Homepage": "https://github.com/kislyuk/yq"
+  },
+  "release_url": "https://pypi.org/project/yq/3.2.3/",
+  "requires_dist": [
+    "PyYAML >=5.3.1",
+    "xmltodict >=0.11.0",
+    "tomlkit >=0.11.6",
+    "argcomplete >=1.8.1",
+    "coverage ; extra == 'tests'",
+    "wheel ; extra == 'tests'",
+    "build ; extra == 'tests'",
+    "ruff ; extra == 'tests'",
+    "mypy ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "command-line yaml/xml processor - jq wrapper for yaml/xml documents",
+  "version": "3.2.3",
+  "releases": [],
+  "developers": [
+    "andrey_kislyuk",
+    "kislyuk@gmail.com"
+  ],
+  "kwds": "yq jq yaml pip yml",
+  "license_kwds": "apache software license",
+  "libtype": "pypi",
+  "id": "pypi_yq",
+  "homepage": "https://github.com/kislyuk/yq",
+  "release_count": 42,
+  "dependency_ids": [
+    "pypi_argcomplete",
+    "pypi_build",
+    "pypi_coverage",
+    "pypi_mypy",
+    "pypi_pyyaml",
+    "pypi_ruff",
+    "pypi_tomlkit",
+    "pypi_wheel",
+    "pypi_xmltodict"
+  ]
+}

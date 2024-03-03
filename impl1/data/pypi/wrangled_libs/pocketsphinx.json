@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: c",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.7"
+  ],
+  "description": "pocketsphinx 5.0.2\n==================\n\nthis is pocketsphinx, one of carnegie mellon university's open source large\nvocabulary, speaker-independent continuous speech recognition engines.\n\nalthough this was at one point a research system, active development\nhas largely ceased and it has become very, very far from the state of\nthe art.  i am making a release, because people are nonetheless using\nit, and there are a number of historical errors in the build system\nand api which needed to be corrected.\n\nthe version number is strangely large because there was a \"release\"\nthat people are using called 5prealpha, and we will use proper\n[semantic versioning](https://semver.org/) from now on.\n\n**please see the license file for terms of use.**\n\ninstallation\n------------\n\nyou should be able to install this with pip for recent platforms and\nversions of python:\n\n    pip3 install pocketsphinx\n\nalternately, you can also compile it from the source tree.  i highly\nsuggest doing this in a virtual environment (replace\n`~/ve_pocketsphinx` with the virtual environment you wish to create),\nfrom the top level directory:\n\n    python3 -m venv ~/ve_pocketsphinx\n    . ~/ve_pocketsphinx/bin/activate\n    pip3 install .\n\non gnu/linux and maybe other platforms, you must have\n[portaudio](http://www.portaudio.com/) installed for the `livespeech`\nclass to work (we may add a fall-back to `sox` in the near future).\non debian-like systems this can be achieved by installing the\n`libportaudio2` package:\n\n    sudo apt-get install libportaudio2\n\nusage\n-----\n\nsee the [examples directory](../examples/) for a number of examples of\nusing the library from python.  you can also read the [documentation\nfor the python api](https://pocketsphinx.readthedocs.io) or [the c\napi](https://cmusphinx.github.io/doc/pocketsphinx/).\n\nit also mostly supports the same apis as the previous\n[pocketsphinx-python](https://github.com/bambocher/pocketsphinx-python)\nmodule, as described below.\n\n### livespeech\n\nan iterator class for continuous recognition or keyword search from a\nmicrophone.  for example, to do speech-to-text with the default (some\nkind of us english) model:\n\n```python\nfrom pocketsphinx import livespeech\nfor phrase in livespeech(): print(phrase)\n```\n\nor to do keyword search:\n\n```python\nfrom pocketsphinx import livespeech\n\nspeech = livespeech(keyphrase='forward', kws_threshold=1e-20)\nfor phrase in speech:\n    print(phrase.segments(detailed=true))\n```\n\nwith your model and dictionary:\n\n```python\nimport os\nfrom pocketsphinx import livespeech, get_model_path\n\nspeech = livespeech(\n    sampling_rate=16000,  # optional\n    hmm=get_model_path('en-us'),\n    lm=get_model_path('en-us.lm.bin'),\n    dic=get_model_path('cmudict-en-us.dict')\n)\n\nfor phrase in speech:\n    print(phrase)\n```\n\n### audiofile\n\nthis is an iterator class for continuous recognition or keyword search\nfrom a file.  currently it supports only raw, single-channel, 16-bit\npcm data in native byte order.\n\n```python\nfrom pocketsphinx import audiofile\nfor phrase in audiofile(\"goforward.raw\"): print(phrase) # => \"go forward ten meters\"\n```\n\nan example of a keyword search:\n\n```python\nfrom pocketsphinx import audiofile\n\naudio = audiofile(\"goforward.raw\", keyphrase='forward', kws_threshold=1e-20)\nfor phrase in audio:\n    print(phrase.segments(detailed=true)) # => \"[('forward', -617, 63, 121)]\"\n```\n\nwith your model and dictionary:\n\n```python\nimport os\nfrom pocketsphinx import audiofile, get_model_path\n\nmodel_path = get_model_path()\n\nconfig = {\n    'verbose': false,\n    'audio_file': 'goforward.raw',\n    'hmm': get_model_path('en-us'),\n    'lm': get_model_path('en-us.lm.bin'),\n    'dict': get_model_path('cmudict-en-us.dict')\n}\n\naudio = audiofile(**config)\nfor phrase in audio:\n    print(phrase)\n```\n\nconvert frame into time coordinates:\n\n```python\nfrom pocketsphinx import audiofile\n\n# frames per second\nfps = 100\n\nfor phrase in audiofile(frate=fps):  # frate (default=100)\n    print('-' * 28)\n    print('| %5s |  %3s  |   %4s   |' % ('start', 'end', 'word'))\n    print('-' * 28)\n    for s in phrase.seg():\n        print('| %4ss | %4ss | %8s |' % (s.start_frame / fps, s.end_frame / fps, s.word))\n    print('-' * 28)\n\n# ----------------------------\n# | start |  end  |   word   |\n# ----------------------------\n# |  0.0s | 0.24s | <s>      |\n# | 0.25s | 0.45s | <sil>    |\n# | 0.46s | 0.63s | go       |\n# | 0.64s | 1.16s | forward  |\n# | 1.17s | 1.52s | ten      |\n# | 1.53s | 2.11s | meters   |\n# | 2.12s |  2.6s | </s>     |\n# ----------------------------\n```\n\nauthors\n-------\n\npocketsphinx is ultimately based on `sphinx-ii` which in turn was\nbased on some older systems at carnegie mellon university, which were\nreleased as free software under a bsd-like license thanks to the\nefforts of kevin lenzo.  much of the decoder in particular was written\nby ravishankar mosur (look for \"rkm\" in the comments), but various\nother people contributed as well, see [the authors file](./authors)\nfor more details.\n\ndavid huggins-daines (the author of this document) is\nguilty^h^h^h^h^hresponsible for creating `pocketsphinx` which added\nvarious speed and memory optimizations, fixed-point computation, jsgf\nsupport, portability to various platforms, and a somewhat coherent\napi.  he then disappeared for a while.\n\nnickolay shmyrev took over maintenance for quite a long time\nafterwards, and a lot of code was contributed by alexander solovets,\nvyacheslav klimkov, and others.  the\n[pocketsphinx-python](https://github.com/bambocher/pocketsphinx-python)\nmodule was originally written by dmitry prazdnichnov.\n\ncurrently this is maintained by david huggins-daines again.\n",
+  "docs_url": null,
+  "keywords": "asr,speech",
+  "license": "mit",
+  "name": "pocketsphinx",
+  "package_url": "https://pypi.org/project/pocketsphinx/",
+  "project_url": "https://pypi.org/project/pocketsphinx/",
+  "project_urls": {
+    "Homepage": "https://github.com/cmusphinx/pocketsphinx",
+    "Source": "https://github.com/cmusphinx/pocketsphinx",
+    "Tracker": "https://github.com/cmusphinx/pocketsphinx/issues"
+  },
+  "release_url": "https://pypi.org/project/pocketsphinx/5.0.2/",
+  "requires_dist": [
+    "sounddevice"
+  ],
+  "requires_python": "",
+  "summary": "official python bindings for pocketsphinx",
+  "version": "5.0.2",
+  "releases": [],
+  "developers": [
+    "david_huggins",
+    "dhdaines@gmail.com"
+  ],
+  "kwds": "pocketsphinx ve_pocketsphinx cmusphinx cmudict speech",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pocketsphinx",
+  "homepage": "https://github.com/cmusphinx/pocketsphinx",
+  "release_count": 24,
+  "dependency_ids": [
+    "pypi_sounddevice"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "classifiers": [],
+  "description": "=============\nflask-apispec\n=============\n\n.. image:: https://img.shields.io/pypi/v/flask-apispec.svg\n    :target: http://badge.fury.io/py/flask-apispec\n    :alt: latest version\n\n.. image:: https://readthedocs.org/projects/flask-apispec/badge/?version=latest\n    :target: https://flask-apispec.readthedocs.io/en/latest/?badge=latest\n    :alt: documentation status\n\n.. image:: https://img.shields.io/travis/jmcarp/flask-apispec/master.svg\n    :target: https://travis-ci.org/jmcarp/flask-apispec\n    :alt: travis-ci\n\n.. image:: https://img.shields.io/codecov/c/github/jmcarp/flask-apispec/master.svg\n    :target: https://codecov.io/github/jmcarp/flask-apispec\n    :alt: code coverage\n\n**flask-apispec** is a lightweight tool for building rest apis in flask. **flask-apispec** uses webargs_ for request parsing, marshmallow_ for response formatting, and apispec_ to automatically generate swagger markup. you can use **flask-apispec** with vanilla flask or a fuller-featured framework like flask-restful_.\n\ninstall\n-------\n\n::\n\n    pip install flask-apispec\n\nquickstart\n----------\n\n.. code-block:: python\n\n    from flask import flask\n    from flask_apispec import use_kwargs, marshal_with\n\n    from marshmallow import schema\n    from webargs import fields\n\n    from .models import pet\n\n    app = flask(__name__)\n\n    class petschema(schema):\n        class meta:\n            fields = ('name', 'category', 'size')\n\n    @app.route('/pets')\n    @use_kwargs({'category': fields.str(), 'size': fields.str()})\n    @marshal_with(petschema(many=true))\n    def get_pets(**kwargs):\n        return pet.query.filter_by(**kwargs)\n\n**flask-apispec** works with function- and class-based views:\n\n.. code-block:: python\n\n    from flask import make_response\n    from flask_apispec.views import methodresource\n\n    class petresource(methodresource):\n\n        @marshal_with(petschema)\n        def get(self, pet_id):\n            return pet.query.filter(pet.id == pet_id).one()\n\n        @use_kwargs(petschema)\n        @marshal_with(petschema, code=201)\n        def post(self, **kwargs):\n            return pet(**kwargs)\n\n        @use_kwargs(petschema)\n        @marshal_with(petschema)\n        def put(self, pet_id, **kwargs):\n            pet = pet.query.filter(pet.id == pet_id).one()\n            pet.__dict__.update(**kwargs)\n            return pet\n\n        @marshal_with(none, code=204)\n        def delete(self, pet_id):\n            pet = pet.query.filter(pet.id == pet_id).one()\n            pet.delete()\n            return make_response('', 204)\n\n**flask-apispec** generates swagger markup for your view functions and classes. by default, swagger json is served at `/swagger/`, and swagger-ui at `/swagger-ui/`.\n\n.. code-block:: python\n\n    from apispec import apispec\n    from apispec.ext.marshmallow import marshmallowplugin\n    from flask_apispec.extension import flaskapispec\n\n    app.config.update({\n        'apispec_spec': apispec(\n            title='pets',\n            version='v1',\n            plugins=[marshmallowplugin()],\n        ),\n        'apispec_swagger_url': '/swagger/',\n    })\n    docs = flaskapispec(app)\n\n    docs.register(get_pets)\n    docs.register(petresource)\n\ndocumentation\n-------------\n\nhttps://flask-apispec.readthedocs.io/\n\nnotes\n-----\n\n**flask-apispec** is strongly inspired by flask-restful_ and flask-restplus_, but attempts to provide similar functionality with greater flexibility and less code.\n\n.. _webargs: https://webargs.readthedocs.io/\n.. _marshmallow: https://marshmallow.readthedocs.io/\n.. _apispec: https://apispec.readthedocs.io/\n.. _flask-restful: https://flask-restful.readthedocs.io/\n.. _flask-restplus: https://flask-restplus.readthedocs.io/\n",
+  "docs_url": null,
+  "keywords": "flask marshmallow webargs apispec",
+  "license": "mit",
+  "name": "flask-apispec",
+  "package_url": "https://pypi.org/project/flask-apispec/",
+  "project_url": "https://pypi.org/project/flask-apispec/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/jmcarp/flask-apispec/issues",
+    "Changelog": "https://flask-apispec.readthedocs.io/en/latest/changelog.html",
+    "Homepage": "https://github.com/jmcarp/flask-apispec"
+  },
+  "release_url": "https://pypi.org/project/flask-apispec/0.11.4/",
+  "requires_dist": [
+    "flask (>=0.10.1)",
+    "marshmallow (>=3.0.0)",
+    "webargs (>=6.0.0)",
+    "apispec (>=4.0.0)"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "build and document rest apis with flask and apispec",
+  "version": "0.11.4",
+  "releases": [],
+  "developers": [
+    "jm.carp@gmail.com",
+    "joshua_carp"
+  ],
+  "kwds": "flask_apispec flaskapispec flask _flask apispec_swagger_url",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flask_apispec",
+  "homepage": "https://github.com/jmcarp/flask-apispec",
+  "release_count": 30,
+  "dependency_ids": [
+    "pypi_apispec",
+    "pypi_flask",
+    "pypi_marshmallow",
+    "pypi_webargs"
+  ]
+}

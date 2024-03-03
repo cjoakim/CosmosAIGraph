@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: documentation"
+  ],
+  "description": "[![pypi version](https://badge.fury.io/py/json-schema-for-humans.svg)](https://badge.fury.io/py/json-schema-for-humans)\n\n# json schema for humans\n\nquickly generate a beautiful static html or markdown page documenting a json schema\n\n[documentation (with visual examples)](https://coveooss.github.io/json-schema-for-humans)\n\n## features\n\n- support for json schema draft-07\n- since the result is static, it is easier to host and faster to load\n- html and markdown output support\n- different templates to choose from. more details: [html version](https://coveooss.github.io/json-schema-for-humans/examples/examples_js_default/configuration.html#template_name) - [markdown version](https://github.com/coveooss/json-schema-for-humans/blob/main/docs/examples/examples_md_default/configuration.md#template_name)\n- anchor links, allow to send a user to a specific section of the documentation\n- support for references (even circular!)\n\n## installation\n```\npip install json-schema-for-humans\n```\n\n## usage\n\noptions for generation of the doc are documented using the library itself: [html version](https://coveooss.github.io/json-schema-for-humans/examples/examples_js_default/configuration.html) - [markdown version](https://github.com/coveooss/json-schema-for-humans/blob/main/docs/examples/examples_md_default/configuration.md)\n\nthey can be supplied in various ways:\n- using a json or yaml configuration file with the cli option `--config-file`\n- using the cli option `--config`\n- using the `configurationoption` object from code\n\nmore details are available in the appropriate sections below.\n\n### from cli\n\n```\ngenerate-schema-doc [options] schema_files_or_dir [result_file_or_dir]\n```\n\n`schema_files_or_dir` can be:\n- a path to a single schema file;\n- a path to a directory, in this case all files with extensions json, yaml, or yml will be used; \n- a [glob pattern](https://docs.python.org/3/library/pathlib.html#pathlib.path.glob) (starts from the current working directory); or\n- a comma-separated list of the above\n\nall schemas provided must be a valid json schema (in json or yaml format)\n\nexamples:\n- `my_schema.json`\n- `my_folder`\n- `my_folder/my_schema.yaml,another_schema.json`\n- `**/*.yaml.*`\n\nthe default value for `result_file_or_dir` depends on the context:\n- the current working directory if more than one schema as been provided as input\n- `schema_doc.html` if rendering a single schema as html\n- `schema_doc.md` if rendering a single schema as markdown\n\nin a case where more than one schema is provided as input, `result_file_or_dir` must be a directory. the output documentation will have the same name as the input schema, but with a different extension (`html` or `md`).\n\n#### choosing a template\n\nto choose a template on the cli, use `--config template_name=[template_name]`.\nfor example `--config template_name=js` (html) or `--config template_name=md` (markdown).\nthe list of available templates is [documented here](https://coveooss.github.io/json-schema-for-humans/examples/examples_js_default/configuration.html#template_name)\n\n#### cli options\n\n#### --config\nsupply generation config parameters. the parameters are documented in the json schema `config_schema.json` at the root of the repo or see the generated doc: [html version](https://coveooss.github.io/json-schema-for-humans/examples/examples_js_default/configuration.html) - [markdown version](https://github.com/coveooss/json-schema-for-humans/blob/main/docs/examples/examples_md_default/configuration.md).\n\neach parameter is in the format `--config parameter_name=parameter_value`. example: `--config expand_buttons=true`. the parameter value must be valid json.\n\nfor flags, you can also omit the value for `true` or prefix the parameter name with `no_` for `false`. example: `--config expand_buttons` or `--config no_expand_buttons`.\n\n#### --config-file\npath to a json or yaml configuration file respecting the schema `config_schema.json`.\n\nexample: `--config-file jsfh-conf.yaml` where `jsfh-conf.yaml` is in the current directory and contains the following:\n\n```yaml\ndescription_is_markdown: false\nexpand_buttons: true\ncopy_js: false\n```\n\n### from code\n\nthe following methods are available to import from `json_schema_for_humans.generate`\n\nmethod name | schema input | output | css and js copied?\n--- | --- | --- | ---\ngenerate_from_schema | `schema_file` as str or `pathlib.path` | rendered doc as a str | no\ngenerate_from_filename | `schema_file_name` as str or `pathlib.path` | rendered doc written to the file at path `result_file_name` | yes\ngenerate_from_file_object | `schema_file` as an open file object (read mode) | rendered doc written to the file at `result_file`, which must be an open file object (in write mode) | yes\n\nnotes:\n- when using file objects, it is assumed that files are opened with encoding \"utf-8\"\n- css and js files are copied to the current working directory with names \"schema_doc.css\" and \"schema_doc.min.js\" respectively, if necessary\n- other parameters of these methods are analogous to the cli parameters documented above.\n\n#### the generationconfiguration object\nto reduce the number of parameters to pass from function to function in the code, there is a `generationconfiguration` object that should be used for providing options.\n\nexample:\n\n```python\nfrom json_schema_for_humans.generate import generate_from_filename\nfrom json_schema_for_humans.generation_configuration import generationconfiguration\n\nconfig = generationconfiguration(copy_css=false, expand_buttons=true)\n\ngenerate_from_filename(\"my_schema.json\", \"schema_doc.html\", config=config)\n\n# your doc is now in a file named \"schema_doc.html\". next to it, \"schema_doc.min.js\" was copied, but not \"schema_doc.css\"\n# your doc will contain a \"expand all\" and a \"collapse all\" button at the top\n\n```\n\n#### pre-load schemas\n`generate_from_schema` has a `loaded_schemas` parameter that can be used to pre-load schemas. this must be a dict with the key being the real path of the schema file and the value being the result of loading the schema (with `json.load` or `yaml.safe_load`, for example).\n\nthis should not be necessary in normal scenarios.\n\n## what's supported\n\nsee the excellent [understanding json schema](https://json-schema.org/understanding-json-schema/index.html) to understand what are those checks\n\nthe following are supported:\n- types\n- regular expressions\n- string length\n- string format\n- numeric types multiples and range\n- constant and enumerated values\n- required properties\n- pattern properties\n- default values\n- array `minitems`, `maxitems`, `uniqueitems`, `items`, `prefixitems`, `additionalitems`, and `contains`\n- combining schema with `oneof`, `allof`, `anyof`, and `not`\n- examples\n- conditional subschemas\n\nthese are **not** supported at the moment (prs welcome!):\n- property names and size\n- property dependencies\n- media\n\n## references\n\nreferences are supported:\n\n- to another part of the schema, e.g. `{ $ref: \"#/definitions/something\" }`\n- to a local file, `{\"$ref\": \"references.json\"}`, `{\"$ref\": \"references.json#/definitions/something\"}`, `{\"$ref\": \"file:references.json\"}`, `{\"$ref\": \"file:references.json#/definitions/something}`\n- to a url, `{\"$ref\": \"http://example.com/schema.json\"}`, `{\"$ref\": \"http://example.com/schema.json#/definitions/something\"}`\n\n\nyou _can_ have a `description` next to a `$ref`, it will be displayed in priority to the description from the referenced element.\n\nif you have several attributes using the same definition, the definition will only be rendered once.\nall other usages of the same definition will be replaced with an anchor link to the first render of the definition.\nthis can be turned off using `--config no_link_to_reused_ref`. see `with references` in the examples.\n\n## templates\n\ntemplates control the style of the generated documentation.\n\n### js\n\nthis is the default template. it uses bootstrap along with minimal javascript to allow for the following:\n\n- properties are in expandable dynamic sections. you can include a button to expand or collapse all. (see doc: [html version](https://coveooss.github.io/json-schema-for-humans/examples/examples_js_default/configuration.html#expand_buttons) - [markdown version](https://github.com/coveooss/json-schema-for-humans/blob/main/docs/examples/examples_md_default/configuration.md#expand_buttons))\n- conditional subschemas (`anyof`, `oneof`, `allof`) are in tabbed sections\n- anchor links will scroll to, expand, and animate the target section \n- long descriptions are collapsed by default\n\nwhen using this template, you need to include the javascript file (`schema_doc.min.js`) that is automatically copied next to the output html file (`schema_doc.html` by default).\n\n### js_offline\n\nthis schema is identical to the js template, but all css and javascript resources are bundled so that the generated documentation can be used in an offline setting.\n\n### flat\n\n*note*: this template is a work in progress\n\nit is sometimes not possible or desirable to include custom javascript in documentation. this template addresses this issue by removing interactive elements in favor of simpler html.\n\nat the moment, this means the whole documentation is generated without any collapsible sections, which may make it hard to understand the schema structure. contributions are welcomed to improve it!\n\n### md (markdown)\n\n*note*: this template is a work in progress\n\nthis template allows users to publish the generated documentation without hosting an http server.\n\non github, this format is rendered directly when browsing code.\n\na table of content is provided at the beginning of the file for easy navigation.\n\nyou can display some important information as badge using an option.\nsee doc: [html version](https://coveooss.github.io/json-schema-for-humans/examples/examples_js_default/configuration.html#template_md_options_badge_as_image) - [markdown version](https://github.com/coveooss/json-schema-for-humans/blob/main/docs/examples/examples_md_default/configuration.md#template_md_options_badge_as_image)\n\ncontributions are welcomed to improve it!\n\n\n## contributing\n[see contributing.md](contributing.md)\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "json-schema-for-humans",
+  "package_url": "https://pypi.org/project/json-schema-for-humans/",
+  "project_url": "https://pypi.org/project/json-schema-for-humans/",
+  "project_urls": {
+    "Homepage": "https://github.com/coveooss/json-schema-for-humans",
+    "Repository": "https://github.com/coveooss/json-schema-for-humans"
+  },
+  "release_url": "https://pypi.org/project/json-schema-for-humans/0.47/",
+  "requires_dist": [
+    "click (>=8.0.1,<9.0.0)",
+    "dataclasses-json (>=0.5.6,<0.6.0)",
+    "htmlmin (>=0.1.12,<0.2.0)",
+    "Jinja2 (>3)",
+    "markdown2 (>=2.4.1,<3.0.0)",
+    "Pygments (>=2.10.0,<3.0.0)",
+    "pytz",
+    "PyYAML (>=5.4.1,<7)",
+    "requests (>=2.31.0,<3.0.0)",
+    "MarkupSafe (>=2.0,<3.0)"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "generate static html documentation from json schemas",
+  "version": "0.47",
+  "releases": [],
+  "developers": [
+    "denis_blanchette",
+    "tools@coveo.com"
+  ],
+  "kwds": "json_schema_for_humans description_is_markdown markdown loaded_schemas schema_doc",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_json_schema_for_humans",
+  "homepage": "https://github.com/coveooss/json-schema-for-humans",
+  "release_count": 135,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_dataclasses_json",
+    "pypi_htmlmin",
+    "pypi_jinja2",
+    "pypi_markdown2",
+    "pypi_markupsafe",
+    "pypi_pygments",
+    "pypi_pytz",
+    "pypi_pyyaml",
+    "pypi_requests"
+  ]
+}

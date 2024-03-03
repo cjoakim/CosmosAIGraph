@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: libraries",
+    "topic :: software development :: testing",
+    "topic :: software development :: testing :: unit",
+    "typing :: typed"
+  ],
+  "description": "[![ci](https://github.com/mrmrrobat/parametrize/workflows/ci/badge.svg?event=push)](https://github.com/mrmrrobat/parametrize/actions?query=event%3apush+branch%3amaster+workflow%3aci)\n[![pypi](https://img.shields.io/pypi/v/parametrize.svg)](https://pypi.python.org/pypi/parametrize)\n[![python versions](https://img.shields.io/pypi/pyversions/parametrize.svg)](https://github.com/mrmrrobat/parametrize)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n\n## drop-in `@pytest.mark.parametrize` replacement working with `unittest.testcase`\n\n### why?\nyou want to start using `@pytest.mark.parametrize`, but can't simply drop `unittest.testcase` because you have tons of `self.assert`'s, `setup`'s `teardown`'s to rewrite?\n\nwith `@parametrize` you can start parameterizing your tests now, and get rid of `unittest.testcase` later if needed.\n\n## usage\n### simple example from [pytest docs](https://docs.pytest.org/en/6.2.x/parametrize.html) adapted to unittest\n```python\nimport unittest\nfrom parametrize import parametrize\n\nclass testsomething(unittest.testcase):\n\n    @parametrize('test_input,expected', [(\"3+5\", 8), (\"2+4\", 6)])\n    def test_eval(self, test_input, expected):\n        self.assertequal(expected, eval(test_input))\n```\n```py\n$ python -m unittest test.py -v\ntest_eval[2+4-6] (test.testsomething) ... ok\ntest_eval[3+5-8] (test.testsomething) ... ok\ntest_eval[6*9-42] (test.testsomething) ... fail\n\n======================================================================\nfail: test_eval[6*9-42] (test.testsomething)\n----------------------------------------------------------------------\ntraceback (most recent call last):\n  file \"parametrize/parametrize.py\", line 261, in parametrized_method\n    return parametrized_func(*args, **kwargs)\n  file \"test.py\", line 8, in test_eval\n    self.assertequal(expected, eval(test_input))\nassertionerror: 42 != 54\n\n----------------------------------------------------------------------\nran 3 tests in 0.001s\n\nfailed (failures=1)\n```\n##### you don't need to use additional decorators, custom base classes or metaclasses.\n\n### stacking parametrize decorators:\n```python\nimport unittest\nfrom parametrize import parametrize\n\nclass testsomething(unittest.testcase):\n    \n    @parametrize(\"x\", [0, 1])\n    @parametrize(\"y\", [2, 3])\n    def test_foo(self, x, y):\n        pass\n```\n`test_foo` will be called with: `(x=0, y=2)`, `(x=1, y=2)`, `(x=0, y=3)`, and `(x=1, y=3)`:\n```python\n$ python -m unittest test.py -v\ntest_foo[2-0] (test.testsomething) ... ok\ntest_foo[2-1] (test.testsomething) ... ok\ntest_foo[3-0] (test.testsomething) ... ok\ntest_foo[3-1] (test.testsomething) ... ok\n\n----------------------------------------------------------------------\nran 4 tests in 0.000s\n\nok\n```\n##### note: even though the tests are always generated in the same order, the execution order is not guaranteed\n\n\n## compatibility \nany `@parametrize` decorator can be converted to `@pytest.mark.parametrize` just by changing its name. \n`@pytest.mark.parametrize` decorator can be converted to `@parametrize` as long as `pytest.param`, `indirect`, `ids` and `scope` are not used.\n\n`@parametrize` works with both `unittest` and `pytest`. however, `pytest` is recommended due to [limitations when using unittest in cli](#parametrized-method-can-be-ran-from-command-line-only-via-pytest). \n\nparametrized tests are properly detected and handled by pycharm. they are displayed as if they were parametrized with `@pytest.mark.parametrize`.\n\n\n## limitations\nsince `@parametrize` does some kind of magic under the hood, there are some limitations you need to consider.\nit's likely you will never face most of them, but if you will, `@parametrize` will let you know with an error:\n\n- ### all parametrization must be done via decorators\n    :white_check_mark: ok\n    ```python\n    @parametrize('a', (1, 2))\n    def f(a):\n        ...\n    ```   \n    :x: won't work:\n    ```python\n    def f(a):\n        ...\n  \n    parametrize('a', (1, 2))(func)\n    ```\n    ```py\n    runtimeerror: unable to find any parametrizes in decorators, please rewrite decorator name to match any of detected names @{'parametrize'}\n    ```\n    \n- ### all other decorators must be defined before parametrize decorators\n    :white_check_mark: ok:\n    ```py\n    @parametrize(\"a\", (1, 2))\n    @parametrize(\"b\", (2, 3))\n    @mock.patch(f\"{__name__}.bar\", \"foo\")\n    def f(a, b):\n        return a, b\n    ```\n    :x: won't work:\n    ```python\n    @mock.patch(f\"{__name__}.bar\", \"foo\")\n    @parametrize(\"a\", (1, 2))\n    @parametrize(\"b\", (2, 3))\n    def f(a, b):\n        return a, b\n    ```\n    ```py\n    typeerror: @mock.patch(f\"{__name__}.bar\", \"foo\") must be defined before any of @{'parametrize'} decorators\n    ```\n\n- ### if you assign parametrized decorator to variable, it must be accessible from `locals()` or `globals()` namespaces:\n    :white_check_mark: ok:\n    ```py\n    a_parameters = parametrize(\"a\", (4, 5))  # defined in module\n    def func():  \n        class testsomething:\n            b_parameters = parametrize(\"b\", (1, 2, 3))\n  \n            @b_parameters  # b_parameters found in locals()\n            @a_parameters  # a_parameters found in globals()\n            def test_method(self, a, b):\n                ...\n    ```\n    :x: won't work:\n    ```py\n    def func():\n        # defined in function scope\n        a_parameters = parametrize(\"a\", (4, 5))\n    \n        class testsomething:\n            print('a_parameters' in {**globals(), **locals()})  # false\n    \n            @a_parameters  # accessed in class body scope\n            def test_method(self, a, b):\n                ...\n    ```\n    ```py\n    runtimeerror: unable to find any parametrizes in decorators, please rewrite decorator name to match any of detected names @{'parametrize'}  \n    ```\n\n- ### parametrized method can be ran from command line only via pytest:\n    `$ cat test.py`\n    ```py\n    import unittest\n    from parametrize import parametrize\n    \n    class testsomething(unittest.testcase):\n        @parametrize('a', (1, 2))\n        def test_something(self, a):\n            self.assertisinstance(a, int)\n    ```\n    :white_check_mark: ok:\n    \n    `$ pytest test.py::testsomething::test_something -v`\n    ```py\n     ...    \n     test.py::testsomething.test_something[1] \u2713                                       50% \u2588\u2588\u2588\u2588\u2588     \n     test.py::testsomething.test_something[2] \u2713                                      100% \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\n    \n    results (0.07s):\n           2 passed\n    ```\n    :x: won't work:\n    \n    `$ python -m unittest test.testsomething.test_something`\n    ```py\n    traceback (most recent call last):\n      ...\n    typeerror: don't know how to make test from: test_something[...]\n    ```\n- ### `@parametrize` cannot be used in interactive environments like repl (it works in ipython though)\n- ### `@parametrize` cannot be used in cythonized code  \n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "parametrize",
+  "package_url": "https://pypi.org/project/parametrize/",
+  "project_url": "https://pypi.org/project/parametrize/",
+  "project_urls": {
+    "Homepage": "https://github.com/MrMrRobat/parametrize/",
+    "Repository": "https://github.com/MrMrRobat/parametrize/"
+  },
+  "release_url": "https://pypi.org/project/parametrize/0.1.1/",
+  "requires_dist": [],
+  "requires_python": ">=3.6.2,<4.0.0",
+  "summary": "drop-in @pytest.mark.parametrize replacement working with unittest.testcase",
+  "version": "0.1.1",
+  "releases": [],
+  "developers": [
+    "appkiller16@gmail.com",
+    "mrmrrobat"
+  ],
+  "kwds": "svg pytest badge parametrizes parametrize",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_parametrize",
+  "homepage": "https://github.com/mrmrrobat/parametrize/",
+  "release_count": 3,
+  "dependency_ids": []
+}

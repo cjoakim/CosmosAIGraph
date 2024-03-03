@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: tox",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: testing"
+  ],
+  "description": "tox-conda\n=========\n\n.. image:: https://www.repostatus.org/badges/latest/wip.svg\n   :alt: project status: wip \u2013 initial development is in progress, but there has not yet been a stable, usable release suitable for the public.\n   :target: https://www.repostatus.org/#wip\n\n.. image:: https://img.shields.io/pypi/v/tox-conda.svg\n    :target: https://pypi.org/project/tox-conda\n    :alt: pypi version\n\n.. image:: https://img.shields.io/pypi/pyversions/tox-conda.svg\n    :target: https://pypi.org/project/tox-conda\n    :alt: python versions\n\n.. image:: https://github.com/tox-dev/tox-conda/workflows/check/badge.svg\n    :target: https://github.com/tox-dev/tox-conda/actions?query=workflow%3acheck+branch%3amaster\n    :alt: ci\n\n.. image:: https://codecov.io/gh/tox-dev/tox-conda/branch/master/graph/badge.svg?token=yybhref4mn\n    :target: https://codecov.io/gh/tox-dev/tox-conda\n    :alt: code coverage\n\n``tox-conda`` is a plugin that provides integration with the `conda\n<https://conda.io>`_ package and environment manager for the `tox\n<https://tox.readthedocs.io>`__ automation tool. it's like having your cake and\neating it, too!\n\nby default, ``tox`` creates isolated environments using `virtualenv\n<https://virtualenv.pypa.io>`_ and installs dependencies from ``pip``.\n\nin contrast, when using the ``tox-conda`` plugin ``tox`` will use ``conda`` to create\nenvironments, and will install specified dependencies from ``conda``. this is\nuseful for developers who rely on ``conda`` for environment management and\npackage distribution but want to take advantage of the features provided by\n``tox`` for test automation.\n\n``tox-conda`` has not been tested with ``conda`` version below 4.5.\n\ngetting started\n---------------\n\n``tox-conda`` can be used in one of two ways: by installing it globally and by\nenabling it on a per-project basis. when the plugin is installed globally, the\ndefault behavior of ``tox`` will be to use ``conda`` to create environments. to\nuse it on a per-project basis instead, use ``tox``'s auto-provisioning feature\nto selectively enable the plugin.\n\nto enable the use of ``tox-conda`` by default, follow the `installation`_\ninstructions. to use the plugin selectively, do not manually install it, but\ninstead enable it by adding ``tox-conda`` as a provisioning requirement to a\nproject's ``tox`` config:\n\n::\n\n    [tox]\n    requires = tox-conda\n\nmore information on auto-provisioning can be found in the `tox documentation\n<https://tox.readthedocs.io/en/latest/example/basic.html#tox-auto-provisioning>`__.\n\ninstallation\n------------\n\nthe ``tox-conda`` package is available on ``pypi``. to install, simply use the\nfollowing command:\n\n::\n\n   $ pip install tox-conda\n\nto install from source, first clone the project from `github\n<https://github.com/tox-dev/tox-conda>`_:\n\n::\n\n   $ git clone https://github.com/tox-dev/tox-conda\n\nthen install it in your environment:\n\n::\n\n   $ cd tox-conda\n   $ pip install .\n\nto install in `development\nmode <https://packaging.python.org/tutorials/distributing-packages/#working-in-development-mode>`__::\n\n   $ pip install -e .\n\nthe ``tox-conda`` plugin expects that ``tox`` and ``conda`` are already installed and\navailable in your working environment.\n\nusage\n-----\n\ndetails on ``tox`` usage can be found in the `tox documentation\n<https://tox.readthedocs.io>`_.\n\nwith the plugin enabled and no other changes, the ``tox-conda`` plugin will use\n``conda`` to create environments and use ``pip`` to install dependencies that are\ngiven in the ``tox.ini`` configuration file.\n\n``tox-conda`` adds four additional (and optional) settings to the ``[testenv]``\nsection of configuration files:\n\n* ``conda_deps``, which is used to configure which dependencies are installed\n  from ``conda`` instead of from ``pip``. all dependencies in ``conda_deps`` are\n  installed before all dependencies in ``deps``. if not given, no dependencies\n  will be installed using ``conda``.\n\n* ``conda_channels``, which specifies which channel(s) should be used for\n  resolving ``conda`` dependencies. if not given, only the ``default`` channel will\n  be used.\n\n* ``conda_spec``, which specifies a ``conda-spec.txt`` file that lists conda\n  dependencies to install and will be combined with ``conda_deps`` (if given). these\n  dependencies can be in a general from (e.g., ``numpy>=1.17.5``) or an explicit\n  form (eg., https://conda.anaconda.org/conda-forge/linux-64/numpy-1.17.5-py38h95a1406_0.tar.bz2),\n  *however*, if the ``@explicit`` header is in ``conda-spec.txt``, *all* general\n  dependencies will be ignored, including those given in ``conda_deps``.\n\n* ``conda_env``, which specifies a ``conda-env.yml`` file to create a base conda\n  environment for the test. the ``conda-env.yml`` file is self-contained and\n  if the desired conda channels to use are not given, the default channels will be used.\n  if the ``conda-env.yml`` specifies a python version it must be compatible with the ``basepython``\n  set for the tox env. a ``conda-env.yml`` specifying ``python>=3.8`` could for example be\n  used with ``basepython`` set to ``py38``, ``py39`` or ``py310``.\n  the above ``conda_deps``, ``conda_channels``, and ``conda_spec`` arguments, if used in\n  conjunction with a ``conda-env.yml`` file, will be used to *update* the environment *after* the\n  initial environment creation.\n\n* ``conda_create_args``, which is used to pass arguments to the command ``conda create``.\n  the passed arguments are inserted in the command line before the python package.\n  for instance, passing ``--override-channels`` will create more reproducible environments\n  because the channels defined in the user's ``.condarc`` will not interfer.\n\n* ``conda_install_args``, which is used to pass arguments to the command ``conda install``.\n  the passed arguments are inserted in the command line before the dependencies.\n  for instance, passing ``--override-channels`` will create more reproducible environments\n  because the channels defined in the user's ``.condarc`` will not interfer.\n\n* if `mamba <https://mamba.readthedocs.io>`_ is installed in the same environment as tox,\n  you may use it instead of the ``conda`` executable by setting the environment variable\n  ``conda_exe=mamba`` in the shell where ``tox`` is called.\n\nan example configuration file is given below:\n\n::\n\n   [tox]\n   envlist =\n       {py35,py36,py37}-{stable,dev}\n\n   [testenv]\n   deps=\n       pytest-sugar\n       py35,py36: importlib_resources\n       dev: git+git://github.com/numpy/numpy\n   conda_deps=\n       pytest<=3.8\n       stable: numpy=1.15\n   conda_channels=\n       conda-forge\n   conda_install_args=\n       --override-channels\n   commands=\n       pytest {posargs}\n\nmore information on ``tox`` configuration files can be found in the\n`documentation <https://tox.readthedocs.io/en/latest/config.html>`_.\n\ncontributing\n------------\ncontributions are very welcome. tests can be run with `tox`_, please ensure\nthe coverage at least stays the same before you submit a pull request.\n\nlicense\n-------\n\ndistributed under the terms of the `mit`_ license, \"tox-conda\" is free and open source software\n\nissues\n------\n\nif you encounter any problems, please `file an issue`_ along with a detailed description.\n\n.. _`cookiecutter`: https://github.com/audreyr/cookiecutter\n.. _`@obestwalter`: https://github.com/tox-dev\n.. _`mit`: http://opensource.org/licenses/mit\n.. _`bsd-3`: http://opensource.org/licenses/bsd-3-clause\n.. _`gnu gpl v3.0`: http://www.gnu.org/licenses/gpl-3.0.txt\n.. _`apache software license 2.0`: http://www.apache.org/licenses/license-2.0\n.. _`cookiecutter-tox-plugin`: https://github.com/tox-dev/cookiecutter-tox-plugin\n.. _`file an issue`: https://github.com/tox-dev/tox-conda/issues\n.. _`pytest`: https://github.com/pytest-dev/pytest\n.. _`tox`: https://tox.readthedocs.io/en/latest/\n.. _`pip`: https://pypi.org/project/pip/\n.. _`pypi`: https://pypi.org\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "tox-conda",
+  "package_url": "https://pypi.org/project/tox-conda/",
+  "project_url": "https://pypi.org/project/tox-conda/",
+  "project_urls": {
+    "Homepage": "https://github.com/tox-dev/tox-conda"
+  },
+  "release_url": "https://pypi.org/project/tox-conda/0.10.2/",
+  "requires_dist": [
+    "ruamel.yaml (<0.18,>=0.15.0)",
+    "tox (<4,>=3.8.1)"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "tox plugin that provides integration with conda",
+  "version": "0.10.2",
+  "releases": [],
+  "developers": [
+    "bernat_gabor",
+    "daniel_r",
+    "ddavella@stsci.edu",
+    "gaborjbernat@gmail.com"
+  ],
+  "kwds": "tox svg pyversions conda_env env",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_tox_conda",
+  "homepage": "https://github.com/tox-dev/tox-conda",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_ruamel.yaml",
+    "pypi_tox"
+  ]
+}

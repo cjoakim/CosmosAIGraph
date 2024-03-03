@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "django rest framework orjson renderer\n=====================================\n\n[![drf orjson renderer tests](https://github.com/brianjbuck/drf_orjson_renderer/actions/workflows/main.yml/badge.svg)](https://github.com/brianjbuck/drf_orjson_renderer/actions/workflows/main.yml)\n\n`drf_orjson_renderer` is json renderer and parser for django rest framework\nusing the [orjson](https://github.com/ijl/orjson) library. backed by\n[rust](https://www.rust-lang.org/), orjson is safe, correct and _fast_. \u26a1\ufe0f\n\nin addition, unlike some performance optimized drf renderers, it also renders\npretty printed json when requests are made via restframework's browsableapi.\n\nyou get:\n- the safety of rust\n- the speed of orjson when requests are made with `accept: appliation/json` http\n  header or when requests are made with an unspecified `accept` header.\n- the convenience of formatted output when requested with `accept: text/html`.\n- the ability to pass your own `default` function definition.\n\n\n## installation\n\n`pip install drf_orjson_renderer`\n\nyou can then set the `orjsonrenderer` class as your default renderer in your `settings.py`\n\n```python\nrest_framework = {\n    \"default_renderer_classes\": (\n        \"drf_orjson_renderer.renderers.orjsonrenderer\",\n        \"rest_framework.renderers.browsableapirenderer\",\n    ),\n}\n```\nto modify how data is serialized, specify options in your `settings.py`\n```python\nrest_framework = {\n    \"orjson_renderer_options\": (\n        orjson.opt_non_str_keys,\n        orjson.opt_serialize_dataclass,\n        orjson.opt_serialize_numpy,\n    ),\n}\n```\n\nalso you can set the `orjsonparser` class as your default parser in your `settings.py`\n\n```python\nrest_framework = {\n    \"default_parser_classes\": (\n        \"drf_orjson_renderer.parsers.orjsonparser\",\n    ),\n}\n```\n\n## passing your own `default` function\n\nby default, the `orjsonrenderer` will pass a `default` function as a helper for\nserializing objects that orjson doesn't recognize. that should cover the most\ncommon cases found in a django web application. if you find you have an object\nit doesn't recognize you can pass your own default function by overriding the\n`get_renderer_context()` method of your view:\n\n```python\nfrom rest_framework.views import apiview\nfrom rest_framework.response import response\n\n\nclass myview(apiview):\n    def default(self, obj):\n        if isinstance(obj, mycomplexdata):\n            return dict(obj)\n\n    def get_renderer_context(self):\n        renderer_context = super().get_renderer_context()\n        renderer_context[\"default_function\"] = self.default\n        return renderer_context\n\n    def get(self, request, *args, **kwargs):\n        my_complex_data = mycomplexdata()\n        return response(data=my_complex_data)\n```\n\nif you know your data is already in a format orjson natively\n[recognizes](https://github.com/ijl/orjson/#types) you can get a small\nperformance boost by passing `none` to the `renderer_context`:\n\n```python\ndef get_renderer_context(self):\n    renderer_context = super().get_renderer_context()\n    renderer_context[\"default_function\"] = none\n    return renderer_context\n```\n\nas of orjson version 3, 2-space indenting is supported in serialization. in\norder to take advantage of the restframework browsable api, when the\nrequested media type is not `application/json`, the orjson renderer will add\n`orjson.opt_indent_2` to the options mask to pretty print your output.\n\n## numpy\n\nwhen this package was originally written orjson did not natively support\nserializing numpy types. this package provided an encoder class that\noverrides the djangojsonencoder with support for numpy types. this encoder\nis no longer necessary but included for backwards compatibility.\n\n```python\nfrom drf_orjson_renderer.encoders import djangonumpyjsonencoder\nfrom rest_framework.views import apiview\n\nclass myview(apiview):\n\n\n    def get_renderer_context(self):\n        renderer_context = super().get_renderer_context()\n        renderer_context[\"django_encoder_class\"] = djangonumpyjsonencoder\n        return renderer_context\n```\n\n## benchmarks\nsee the [orjson benchmarks](https://github.com/ijl/orjson#performance) for more information\n",
+  "docs_url": null,
+  "keywords": "drf_orjson_renderer,rest_framework,orjson",
+  "license": "mit",
+  "name": "drf-orjson-renderer",
+  "package_url": "https://pypi.org/project/drf-orjson-renderer/",
+  "project_url": "https://pypi.org/project/drf-orjson-renderer/",
+  "project_urls": {
+    "Homepage": "https://github.com/brianjbuck/drf_orjson_renderer"
+  },
+  "release_url": "https://pypi.org/project/drf-orjson-renderer/1.7.2/",
+  "requires_dist": [
+    "django >=3.2",
+    "djangorestframework",
+    "orjson >=3.3.0"
+  ],
+  "requires_python": ">=3.6.0",
+  "summary": "django restframework json renderer backed by orjson",
+  "version": "1.7.2",
+  "releases": [],
+  "developers": [
+    "brian@thebuckpasser.com",
+    "brianjbuck"
+  ],
+  "kwds": "drf_orjson_renderer orjson_renderer_options orjsonparser orjson orjsonrenderer",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_drf_orjson_renderer",
+  "homepage": "https://github.com/brianjbuck/drf_orjson_renderer",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_djangorestframework",
+    "pypi_orjson"
+  ]
+}

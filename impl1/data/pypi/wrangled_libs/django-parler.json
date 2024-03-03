@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 2.2",
+    "framework :: django :: 3.0",
+    "framework :: django :: 3.1",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development :: libraries :: application frameworks",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": ".. image:: https://github.com/django-parler/django-parler/actions/workflows/tests.yaml/badge.svg\n    :target: https://github.com/django-parler/django-parler/actions/workflows/tests.yaml\n.. image:: https://readthedocs.org/projects/django-parler/badge/?version=stable\n    :target: https://django-parler.readthedocs.io/en/stable/\n.. image:: https://img.shields.io/pypi/v/django-parler.svg\n    :target: https://pypi.python.org/pypi/django-parler/\n.. image:: https://img.shields.io/pypi/l/django-parler.svg\n    :target: https://pypi.python.org/pypi/django-parler/\n.. image:: https://img.shields.io/codecov/c/github/django-parler/django-parler/master.svg\n    :target: https://codecov.io/github/django-parler/django-parler?branch=master\n\n\ndjango-parler\n=============\n\nsimple django model translations without nasty hacks.\n\nfeatures:\n\n* nice admin integration.\n* access translated attributes like regular attributes.\n* automatic fallback to the default language.\n* separate table for translated fields, compatible with django-hvad_.\n* plays nice with others, compatible with django-polymorphic_, django-mptt_ and such:\n\n  * no orm query hacks.\n  * easy to combine with custom manager or queryset classes.\n  * easy to construct the translations model manually when needed.\n\nsee the documentation_ for more details.\n\n\na brief overview\n================\n\ninstalling django-parler\n------------------------\n\nthe package can be installed using:\n\n.. code-block:: bash\n\n    pip install django-parler\n\nadd the following settings:\n\n.. code-block:: python\n\n    installed_apps += (\n        'parler',\n    )\n\noptionally, the admin tabs can be configured too:\n\n.. code-block:: python\n\n    parler_languages = {\n        none: (\n            {'code': 'en',},\n            {'code': 'en-us',},\n            {'code': 'it',},\n            {'code': 'nl',},\n        ),\n        'default': {\n            'fallback': 'en',             # defaults to parler_default_language_code\n            'hide_untranslated': false,   # the default; let .active_translations() return fallbacks too.\n        }\n    }\n\nreplace ``none`` with the ``site_id`` when you run a multi-site project with the sites framework.\neach ``site_id`` can be added as additional entry in the dictionary.\n\nmake sure your project is configured for multiple languages.\nit might be useful to limit the ``languages`` setting. for example:\n\n.. code-block:: python\n\n    from django.utils.translation import gettext_lazy as _\n\n    language_code = 'en'\n\n    languages = (\n        ('en', _(\"english\")),\n        ('en-us', _(\"us english\")),\n        ('it', _('italian')),\n        ('nl', _('dutch')),\n        ('fr', _('french')),\n        ('es', _('spanish')),\n    )\n\nby default, the fallback language is the same as ``language_code``.\nthe fallback language can be changed in the settings:\n\n.. code-block:: python\n\n    parler_default_language_code = 'en'\n\n\ncreating models\n---------------\n\nusing the ``translatedfields`` wrapper, model fields can be marked as translatable:\n\n.. code-block:: python\n\n    from django.db import models\n    from parler.models import translatablemodel, translatedfields\n\n    class mymodel(translatablemodel):\n        translations = translatedfields(\n            title = models.charfield(_(\"title\"), max_length=200)\n        )\n\n        def __unicode__(self):\n            return self.title\n\naccessing fields\n----------------\n\ntranslatable fields can be used like regular fields:\n\n.. code-block:: python\n\n    >>> object = mymodel.objects.all()[0]\n    >>> object.get_current_language()\n    'en'\n    >>> object.title\n    u'cheese omelet'\n\n    >>> object.set_current_language('fr')       # only switches\n    >>> object.title = \"omelette du fromage\"    # translation is created on demand.\n    >>> object.save()\n\ninternally, django-parler stores the translated fields in a separate model, with one row per language.\n\nfiltering translations\n----------------------\n\nto query translated fields, use the ``.translated()`` method:\n\n.. code-block:: python\n\n    myobject.objects.translated(title='cheese omelet')\n\nto access objects in both the current and possibly the fallback language, use:\n\n.. code-block:: python\n\n    myobject.objects.active_translations(title='cheese omelet')\n\nthis returns objects in the languages which are considered \"active\", which are:\n\n* the current language\n* the fallback language when ``hide_untranslated=false`` in the ``parler_languages`` setting.\n\n\nchanging the language\n---------------------\n\nthe queryset can be instructed to return objects in a specific language:\n\n.. code-block:: python\n\n    >>> objects = mymodel.objects.language('fr').all()\n    >>> objects[0].title\n    u'omelette du fromage'\n\nthis only sets the language of the object.\nby default, the current django language is used.\n\nuse ``object.get_current_language()`` and ``object.set_current_language()``\nto change the language on individual objects.\nthere is a context manager to do this temporary:\n\n.. code-block:: python\n\n    from parler.utils.context import switch_language\n\n    with switch_language(model, 'fr'):\n        print model.title\n\nand a function to query just a specific field:\n\n.. code-block:: python\n\n    model.safe_translation_getter('title', language_code='fr')\n\n\nadvanced features\n-----------------\n\nthis package also includes:\n\n* creating the ``translatedfieldsmodel`` manually!\n* form classes for inline support.\n* view classes for switching languages, creating/updating translatable objects.\n* template tags for language switching-buttons.\n* orm methods to handle the translated fields.\n* admin inlines support.\n\nsee the documentation_ for more details.\n\n\nspecial notes\n=============\n\n* using ``modeladmin.prepopulated_fields`` doesn't work, but you can use ``get_prepopulated_fields()`` as workaround.\n* due to `orm restrictions <https://docs.djangoproject.com/en/dev/topics/db/queries/#spanning-multi-valued-relationships>`_\n  queries for translated fields should be performed in a single ``.translated(..)`` or ``.active_translations(..)`` call.\n* the ``.active_translations(..)`` method typically needs to ``.distinct()`` call to avoid duplicate results of the same object.\n\n\ntodo\n====\n\n* the list code currently performs one query per object. this needs to be reduced.\n* preferably, the ``translatedfield`` proxy on the model should behave like a ``relatedfield``,\n  if that would nicely with the orm too.\n\nplease contribute your improvements or work on these area's!\n\n\ncontributing\n============\n\nthis module is designed to be generic. in case there is anything you didn't like about it,\nor think it's not flexible enough, please let us know. we'd love to improve it!\n\nif you have any other valuable contribution, suggestion or idea,\nplease let us know as well because we will look into it.\npull requests are welcome too. :-)\n\n\n.. _django-hvad: https://github.com/kristianoellegaard/django-hvad\n.. _django-mptt: https://github.com/django-mptt/django-mptt\n.. _django-fluent-pages: https://github.com/edoburu/django-fluent-pages\n.. _django-polymorphic: https://github.com/django-polymorphic/django-polymorphic\n.. _documentation: https://django-parler.readthedocs.io/\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2.0",
+  "name": "django-parler",
+  "package_url": "https://pypi.org/project/django-parler/",
+  "project_url": "https://pypi.org/project/django-parler/",
+  "project_urls": {
+    "Download": "https://github.com/edoburu/django-parler/zipball/master",
+    "Homepage": "https://github.com/edoburu/django-parler"
+  },
+  "release_url": "https://pypi.org/project/django-parler/2.3/",
+  "requires_dist": [
+    "Django (>=2.2)"
+  ],
+  "requires_python": "",
+  "summary": "simple django model translations without nasty hacks, featuring nice admin integration.",
+  "version": "2.3",
+  "releases": [],
+  "developers": [
+    "diederik_van_der_boor",
+    "opensource@edoburu.nl"
+  ],
+  "kwds": "parler _django django parler_languages djangoproject",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_django_parler",
+  "homepage": "https://github.com/edoburu/django-parler",
+  "release_count": 37,
+  "dependency_ids": [
+    "pypi_django"
+  ]
+}

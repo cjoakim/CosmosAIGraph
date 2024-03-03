@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: os independent",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: testing"
+  ],
+  "description": "flaky\n=====\n\n.. image:: http://opensource.box.com/badges/stable.svg\n    :target: http://opensource.box.com/badges\n\n.. image:: https://travis-ci.org/box/flaky.svg?branch=master\n    :target: https://travis-ci.org/box/flaky\n\n.. image:: https://img.shields.io/pypi/v/flaky.svg\n    :target: https://pypi.python.org/pypi/flaky\n\nabout\n-----\n\nflaky is a plugin for nose or pytest that automatically reruns flaky tests.\n\nideally, tests reliably pass or fail, but sometimes test fixtures must rely on components that aren't 100%\nreliable. with flaky, instead of removing those tests or marking them to @skip, they can be automatically\nretried.\n\nfor more information about flaky, see `this presentation <http://opensource.box.com/flaky/>`_.\n\nmarking tests flaky\n~~~~~~~~~~~~~~~~~~~\n\nto mark a test as flaky, simply import flaky and decorate the test with @flaky:\n\n.. code-block:: python\n\n    from flaky import flaky\n\n.. code-block:: python\n\n    @flaky\n    def test_something_that_usually_passes(self):\n        value_to_double = 21\n        result = get_result_from_flaky_doubler(value_to_double)\n        self.assertequal(result, value_to_double * 2, 'result doubled incorrectly.')\n\nby default, flaky will retry a failing test once, but that behavior can be overridden by passing values to the\nflaky decorator. it accepts two parameters: max_runs, and min_passes; flaky will run tests up to max_runs times, until\nit has succeeded min_passes times. once a test passes min_passes times, it's considered a success; once it has been\nrun max_runs times without passing min_passes times, it's considered a failure.\n\n.. code-block:: python\n\n    @flaky(max_runs=3, min_passes=2)\n    def test_something_that_usually_passes(self):\n        \"\"\"this test must pass twice, and it can be run up to three times.\"\"\"\n        value_to_double = 21\n        result = get_result_from_flaky_doubler(value_to_double)\n        self.assertequal(result, value_to_double * 2, 'result doubled incorrectly.')\n\nmarking a class flaky\n+++++++++++++++++++++\n\nin addition to marking a single test flaky, entire test cases can be marked flaky:\n\n.. code-block:: python\n\n    @flaky\n    class testmultipliers(testcase):\n        def test_flaky_doubler(self):\n            value_to_double = 21\n            result = get_result_from_flaky_doubler(value_to_double)\n            self.assertequal(result, value_to_double * 2, 'result doubled incorrectly.')\n\n        @flaky(max_runs=3)\n        def test_flaky_tripler(self):\n            value_to_triple = 14\n            result = get_result_from_flaky_tripler(value_to_triple)\n            self.assertequal(result, value_to_triple * 3, 'result tripled incorrectly.')\n\nthe @flaky class decorator will mark test_flaky_doubler as flaky, but it won't override the 3 max_runs\nfor test_flaky_tripler (from the decorator on that test method).\n\npytest marker\n+++++++++++++\n\nwhen using ``pytest``, ``@pytest.mark.flaky`` can be used in place of ``@flaky``.\n\ndon't rerun certain types of failures\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\ndepending on your tests, some failures are obviously not due to flakiness. instead of rerunning\nafter those failures, you can specify a filter function that can tell flaky to fail the test right away.\n\n.. code-block:: python\n\n    def is_not_crash(err, *args):\n        return not issubclass(err[0], productcrashederror)\n\n    @flaky\n    def test_something():\n        raise productcrashederror\n\n    @flaky(rerun_filter=is_not_crash)\n    def test_something_else():\n        raise productcrashederror\n\nflaky will run ``test_something`` twice, but will only run ``test_something_else`` once.\n\nit can also be used to incur a delay between test retries:\n\n.. code-block:: python\n\n    import time\n\n    def delay_rerun(*args):\n        time.sleep(1)\n        return true\n\n    @flaky(rerun_filter=delay_rerun)\n    def test_something_else():\n        ...\n\nactivating the plugin\n~~~~~~~~~~~~~~~~~~~~~\n\nlike any nose plugin, flaky can be activated via the command line:\n\n.. code-block:: console\n\n    nosetests --with-flaky\n\nwith pytest, flaky will automatically run. it can, however be disabled via the command line:\n\n.. code-block:: console\n\n    pytest -p no:flaky\n\ncommand line arguments\n~~~~~~~~~~~~~~~~~~~~~~\n\nno flaky report\n+++++++++++++++\n\npass ``--no-flaky-report`` to suppress the report at the end of the run detailing flaky test results.\n\nshorter flaky report\n++++++++++++++++++++\n\npass ``--no-success-flaky-report`` to suppress information about successful flaky tests.\n\nforce flaky\n+++++++++++\n\npass ``--force-flaky`` to treat all tests as flaky.\n\npass ``--max-runs=max_runs`` and/or ``--min-passes=min_passes`` to control the behavior of flaky if ``--force-flaky``\nis specified. flaky decorators on individual tests will override these defaults.\n\n\n*additional usage examples are in the code - see test/test_nose/test_nose_example.py and test/test_pytest/test_pytest_example.py*\n\ninstallation\n------------\n\nto install, simply:\n\n.. code-block:: console\n\n    pip install flaky\n\n\ncompatibility\n-------------\n\nflaky is tested with the following test runners and options:\n\n- nosetests. doctests cannot be marked flaky.\n\n- py.test. works with ``pytest-xdist`` but not with the ``--boxed`` option. doctests cannot be marked flaky.\n\n\ncontributing\n------------\n\nsee `contributing.rst <https://github.com/box/flaky/blob/master/contributing.rst>`_.\n\n\nsetup\n~~~~~\n\ncreate a virtual environment and install packages -\n\n.. code-block:: console\n\n    mkvirtualenv flaky\n    pip install -r requirements-dev.txt\n\n\ntesting\n~~~~~~~\n\nrun all tests using -\n\n.. code-block:: console\n\n    tox\n\nthe tox tests include code style checks via pycodestyle and pylint.\n\n\ncopyright and license\n---------------------\n\n::\n\n copyright 2015 box, inc. all rights reserved.\n\n licensed under the apache license, version 2.0 (the \"license\");\n you may not use this file except in compliance with the license.\n you may obtain a copy of the license at\n\n    http://www.apache.org/licenses/license-2.0\n\n unless required by applicable law or agreed to in writing, software\n distributed under the license is distributed on an \"as is\" basis,\n without warranties or conditions of any kind, either express or implied.\n see the license for the specific language governing permissions and\n limitations under the license.\n\n\n",
+  "docs_url": null,
+  "keywords": "nose pytest plugin flaky tests rerun retry",
+  "license": "apache software license, version 2.0, http://www.apache.org/licenses/license-2.0",
+  "name": "flaky",
+  "package_url": "https://pypi.org/project/flaky/",
+  "project_url": "https://pypi.org/project/flaky/",
+  "project_urls": {
+    "Homepage": "https://github.com/box/flaky"
+  },
+  "release_url": "https://pypi.org/project/flaky/3.7.0/",
+  "requires_dist": [],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+  "summary": "plugin for nose or pytest that automatically reruns flaky tests.",
+  "version": "3.7.0",
+  "releases": [],
+  "developers": [
+    "box",
+    "oss@box.com"
+  ],
+  "kwds": "test_pytest test_pytest_example pytest test_something_that_usually_passes test_nose_example",
+  "license_kwds": "apache software license, version 2.0, http://www.apache.org/licenses/license-2.0",
+  "libtype": "pypi",
+  "id": "pypi_flaky",
+  "homepage": "https://github.com/box/flaky",
+  "release_count": 36,
+  "dependency_ids": []
+}

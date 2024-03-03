@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: microsoft :: windows",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "[![version](https://img.shields.io/pypi/v/java-access-bridge-wrapper.svg?label=version)](https://pypi.org/project/java-access-bridge-wrapper/)\n[![license](https://img.shields.io/pypi/l/java-access-bridge-wrapper.svg)](http://www.apache.org/licenses/license-2.0.html)\n\n# introduction\n\npython wrapper around the java access bridge / windows access bridge.\n\n# requirements\n\n* 64-bit windows\n* java >= 8 (https://docs.aws.amazon.com/corretto/latest/corretto-8-ug/downloads-list.html)\n  * if you are doing development install jdk, otherwise jre is enough\n* python >= 3.8 (https://www.python.org/downloads/release/python-375/)\n\nenable the java access bridge in windows\n\n    c:\\path\\to\\java\\bin\\jabswitch -enable\n\n# install\n\n    pip install java-access-bridge-wrapper\n\n# how to use\n\nimport the java access bridge (jab) wrapper and optionally the context tree\n\n    from jabwrapper.jab_wrapper import javaaccessbridgewrapper\n    from jabwrapper.context_tree import contextnode, contexttree, searchelement\n\nthe jab creates an virtual gui window when it is opened. for the jab to operate and receive events from the gui, the calling code needs to implement the windows\nmessage pump and call it in a loop. the jabwrapper object needs to be in the same thread.\n\nthis can be achieved for example by starting the message pump in a separate thread, where the jab object is also initialized.\n\n    getmessage = ctypes.windll.user32.getmessagew\n    translatemessage = ctypes.windll.user32.translatemessage\n    dispatchmessage = ctypes.windll.user32.dispatchmessagew\n\n    def pump_background(pipe: queue.queue):\n        try:\n            jab_wrapper = javaaccessbridgewrapper()\n            pipe.put(jab_wrapper)\n            message = byref(wintypes.msg())\n            while getmessage(message, 0, 0, 0) > 0:\n                translatemessage(message)\n                logging.debug(\"dispatching msg={}\".format(repr(message)))\n                dispatchmessage(message)\n        except exception as err:\n            pipe.put(none)\n\n    def main():\n        pipe = queue.queue()\n            thread = threading.thread(target=pump_background, daemon=true, args=[pipe])\n            thread.start()\n            jab_wrapper = pipe.get()\n            if not jab_wrapper:\n                raise exception(\"failed to initialize java access bridge wrapper\")\n            time.sleep(0.1) # wait until the initial messages are parsed, before accessing frames\n\n    if __name__ == \"__main__\":\n        main()\n\nonce the jabwrapper object is initialized, attach to some frame and optionally create the context tree to get the element tree of the application.\n\n    jab_wrapper.switch_window_by_title(\"frame title\")\n    context_tree = contexttree(jab_wrapper)\n\n# development\n\n## prerequisites\n\n1. install invoke, poetry and the other required dependencies in order to be able to develop and package the library:\n   `pip install -ur requirements.txt`.\n   - if you want to isolate these from the other projects and not rely on the os\n     python, enable a (_pyenv_) virtual environment first by following these\n     [instructions](https://github.com/robocorp/rpaframework/blob/master/docs/source/contributing/development.md#virtual-environments).\n2. now you're ready to set-up poetry for the first time with `inv setup`.\n   - check with `-h` on how to pass credentials for ensuring that both your production  pypi and ci devpi are\n     configured. you'll find these in our **robocorp** > **shared** 1password by searching for keywords like \"pypi\"\n     (where we recommend a personal _token_ instead) and \"devpi\".\n3. run `inv update` so the library gets ready for development.\n\n## testing\n\nrun test script against a simple swing application.\n\nset environment variable\n\n    set rc_java_access_bridge_dll=\"c:\\path\\to\\java\\bin\\windowsaccessbridge-64.dll\"\n\nupdate requirements and install the library in development mode\n\n    inv update\n\nrun tests\n\n    inv test  # runs all the tests in all scenarios\n    inv test -s -t test_jab_wrapper.py  # runs all the tests from a file in one simple common scenario\n    inv test -s -c -t test_jab_wrapper.py::test_depth  # as above, but specific test and captures output\n\n## packaging\n\ncheck linting\n\n    inv lint  # apply with '-a'\n\nbuilding and publishing\n\n    inv publish  # '-c' for devpi\n\n## todo:\n\n* support for 32-bit java access bridge version\n* implement rest of the utility functions to the jabwrapper\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "java-access-bridge-wrapper",
+  "package_url": "https://pypi.org/project/java-access-bridge-wrapper/",
+  "project_url": "https://pypi.org/project/java-access-bridge-wrapper/",
+  "project_urls": {
+    "Homepage": "https://github.com/robocorp/java-access-bridge-wrapper.git",
+    "Repository": "https://github.com/robocorp/java-access-bridge-wrapper.git"
+  },
+  "release_url": "https://pypi.org/project/java-access-bridge-wrapper/1.1.0/",
+  "requires_dist": [
+    "pywin32 (>=300,<307) ; python_full_version != \"3.8.1\" and sys_platform == \"win32\""
+  ],
+  "requires_python": ">=3.8.1,<4.0.0",
+  "summary": "python wrapper for the windows java access bridge",
+  "version": "1.1.0",
+  "releases": [],
+  "developers": [
+    "robocorp",
+    "support@robocorp.com"
+  ],
+  "kwds": "rc_java_access_bridge_dll javaaccessbridgewrapper bridge java jdk",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_java_access_bridge_wrapper",
+  "homepage": "https://github.com/robocorp/java-access-bridge-wrapper.git",
+  "release_count": 36,
+  "dependency_ids": [
+    "pypi_pywin32"
+  ]
+}

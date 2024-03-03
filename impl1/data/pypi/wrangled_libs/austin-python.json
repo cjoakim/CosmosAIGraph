@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu general public license v3 or later (gplv3+)",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "<p align=\"center\">\n  <br/>\n  <img src=\"docs/source/images/logo.png\"\n       alt=\"austin\"\n       height=\"256px\" />\n  <br/>\n</p>\n\n<h3 align=\"center\">python wrapper for austin</h3>\n\n<p align=\"center\">\n  <a href=\"https://github.com/p403n1x87/austin-python/actions?workflow=tests\">\n    <img src=\"https://github.com/p403n1x87/austin-python/workflows/tests/badge.svg\"\n         alt=\"github actions: tests\">\n  </a>\n  <a href=\"https://github.com/p403n1x87/austin-python/actions?workflow=checks\">\n    <img src=\"https://github.com/p403n1x87/austin-python/workflows/checks/badge.svg\"\n         alt=\"github actions: checks\">\n  </a>  <a href=\"https://codecov.io/gh/p403n1x87/austin-python\">\n    <img src=\"https://codecov.io/gh/p403n1x87/austin-python/branch/main/graph/badge.svg\"\n         alt=\"codecov\">\n  </a>\n  <a href=\"https://austin-python.readthedocs.io/\">\n    <img src=\"https://readthedocs.org/projects/austin-python/badge/\"\n         alt=\"documentation\">\n  </a>\n  <br/>\n  <a href=\"https://pypi.org/project/austin-python/\">\n    <img src=\"https://img.shields.io/pypi/v/austin-python.svg\"\n         alt=\"pypi\">\n  </a>\n  <a href=\"https://pepy.tech/project/austin-python\">\n    <img src=\"https://static.pepy.tech/personalized-badge/austin-python?period=total&units=international_system&left_color=grey&right_color=blue&left_text=downloads\"\n         alt=\"downloads\" />\n  <a/>\n  <br/>\n  <a href=\"https://github.com/p403n1x87/austin-python/blob/main/license.md\">\n    <img src=\"https://img.shields.io/badge/license-gplv3-ff69b4.svg\"\n         alt=\"license\">\n  </a>\n</p>\n\n<p align=\"center\">\n  <a href=\"#synopsis\"><b>synopsis</b></a>&nbsp;&bull;\n  <a href=\"#installation\"><b>installation</b></a>&nbsp;&bull;\n  <a href=\"#usage\"><b>usage</b></a>&nbsp;&bull;\n  <a href=\"#compatibility\"><b>compatibility</b></a>&nbsp;&bull;\n  <a href=\"#documentation\"><b>documentation</b></a>&nbsp;&bull;\n  <a href=\"#contribute\"><b>contribute</b></a>\n</p>\n\n<p align=\"center\">\n  <a href=\"https://www.buymeacoffee.com/q9c1hnm28\" target=\"_blank\">\n    <img src=\"https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png\" alt=\"buy me a coffee\" />\n  </a>\n</p>\n\n\n# synopsis\n\nthe `austin-python` package is a python wrapper around the [austin] binary that\nprovides convenience classes to quickly develop your statistical profiling\ntools. whether your code is thread-based or asynchronous, `austin-python` has\nyou covered. this is, for instance, how you would turn austin into a python\napplication:\n\n~~~ python\nfrom austin.aio import asyncaustin\n\n\n# make your sub-class of asyncaustin\nclass echoasyncaustin(asyncaustin):\n    def on_ready(self, process, child_process, command_line):\n        print(f\"austin pid: {process.pid}\")\n        print(f\"python pid: {child_process.pid}\")\n        print(f\"command line: {command_line}\")\n\n    def on_sample_received(self, line):\n        print(line)\n\n    def on_terminate(self, data):\n        print(data)\n\n\n# use the proactor event loop on windows\nif sys.platform == \"win32\":\n    asyncio.set_event_loop(asyncio.proactoreventloop())\n\ntry:\n    # start the austin application with some command line arguments\n    austin = echoasyncaustin()\n    asyncio.get_event_loop().run_until_complete(\n        austin.start([\"-i\", \"10000\", \"python3\", \"myscript.py\"])\n    )\nexcept (keyboardinterrupt, asyncio.cancellederror):\n    pass\n~~~\n\nthe `austin-python` package is at the heart of the [austin\ntui](https://github.com/p403n1x87/austin-tui) and the [austin\nweb](https://github.com/p403n1x87/austin-web) python applications. go check them\nout if you are looking for full-fledged usage examples.\n\nincluded with the package come two applications for the conversion of austin\ncollected output, which is in the form of [collapsed\nstacks](https://github.com/brendangregg/flamegraph), to either the\n[speedscope](https://speedscope.app/) json format or the [google pprof\nformat](https://github.com/google/pprof). note, however, that the speedscope web\napplication supports austin native format directly.\n\n\n# installation\n\nthis package can be installed from pypi with\n\n~~~ bash\npip install --user austin-python --upgrade\n~~~\n\nplease note that `austin-python` requires the [austin] binary. the default\nlookup locations are, in order,\n\n- current working directory;\n- the `austinpath` environment variable which gives the path to the folder that\n  contains the austin binary;\n- the `.austinrc` toml configuration file in the user's home folder, e.g.\n  `~/.austinrc` on linux (see below for a sample `.austinrc` file);\n- the `path` environment variable.\n\na sample `.austinrc` file would look like so\n\n~~~ toml\nbinary = \"/path/to/austin\"\n~~~\n\n\n# usage\n\na simple example of an echo application was shown above. other examples using,\ne.g., threads, can be found in the official documentation. you can also browse\nthrough the code of the [austin tui](https://github.com/p403n1x87/austin-tui)\nand the [austin web](https://github.com/p403n1x87/austin-web) python\napplications to see how they leverage `austin-python`.\n\n## format conversion\n\nas it was mentioned before, this package also comes with two scripts for format\nconversion, namely `austin2speedscope` and `austin2pprof`. they both take two\nmandatory arguments, that is, the input and output file. for example, to convert\nthe austin profile data file `myscript.aprof` to the google pprof data file\n`myscript.pprof`, you can run\n\n~~~ bash\naustin2pprof myscript.aprof myscript.pprof\n~~~\n\nthe package also provide the `austin-compress` utility to compress the austin\nraw samples by aggregation.\n\n# compatibility\n\nthe latest `austin-python` package is tested on linux, macos and windows with\npython 3.8-3.12.\n\n\n# documentation\n\nthe official documentation is hosted on readthedocs.io at\n[austin-python.readthedocs.io](https://austin-python.readthedocs.io/).\n\n\n# contribute\n\nif you want to help with the development, then have a look at the open issues\nand have a look at the [contributing guidelines](contributing.md) before you\nopen a pull request.\n\nyou can also contribute to the development by either [becoming a\npatron](https://www.patreon.com/bepatron?u=19221563) on patreon, by [buying me a\ncoffee](https://www.buymeacoffee.com/q9c1hnm28) on bmc or by chipping in a few\npennies on [paypal.me](https://www.paypal.me/gtornetta/1).\n\n<p align=\"center\">\n  <a href=\"https://www.buymeacoffee.com/q9c1hnm28\" target=\"_blank\">\n    <img src=\"https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png\"\n         alt=\"buy me a coffee\" />\n  </a>\n</p>\n\n\n[austin]: https://github.com/p403n1x87/austin\n",
+  "docs_url": null,
+  "keywords": "development,performance,profiling,testing",
+  "license": "",
+  "name": "austin-python",
+  "package_url": "https://pypi.org/project/austin-python/",
+  "project_url": "https://pypi.org/project/austin-python/",
+  "project_urls": {
+    "documentation": "https://austin-python.readthedocs.io",
+    "homepage": "https://github.com/P403n1x87/austin-python",
+    "issues": "https://github.com/P403n1x87/austin-python/issues",
+    "repository": "https://github.com/P403n1x87/austin-python"
+  },
+  "release_url": "https://pypi.org/project/austin-python/1.7.1/",
+  "requires_dist": [
+    "protobuf~=3.12",
+    "psutil>=5.7.0",
+    "toml~=0.10"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "python wrapper for austin, the cpython frame stack sampler.",
+  "version": "1.7.1",
+  "releases": [],
+  "developers": [
+    "phoenix1987@gmail.com"
+  ],
+  "kwds": "workflows python3 workflow py python",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_austin_python",
+  "homepage": "",
+  "release_count": 24,
+  "dependency_ids": [
+    "pypi_protobuf",
+    "pypi_psutil",
+    "pypi_toml"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license"
+  ],
+  "description": "<h1 align=\"center\">torchcrepe</h1>\n<div align=\"center\">\n\n[![pypi](https://img.shields.io/pypi/v/torchcrepe.svg)](https://pypi.python.org/pypi/torchcrepe)\n[![license](https://img.shields.io/badge/license-mit-blue.svg)](https://opensource.org/licenses/mit)\n[![downloads](https://static.pepy.tech/badge/torchcrepe)](https://pepy.tech/project/torchcrepe)\n\n</div>\n\npytorch implementation of the crepe [1] pitch tracker. the original tensorflow\nimplementation can be found [here](https://github.com/marl/crepe/). the\nprovided model weights were obtained by converting the \"tiny\" and \"full\" models\nusing [mmdnn](https://github.com/microsoft/mmdnn), an open-source model\nmanagement framework.\n\n\n## installation\nperform the system-dependent pytorch install using the instructions found\n[here](https://pytorch.org/).\n\n`pip install torchcrepe`\n\n\n## usage\n\n### computing pitch and periodicity from audio\n\n\n```python\nimport torchcrepe\n\n\n# load audio\naudio, sr = torchcrepe.load.audio( ... )\n\n# here we'll use a 5 millisecond hop length\nhop_length = int(sr / 200.)\n\n# provide a sensible frequency range for your domain (upper limit is 2006 hz)\n# this would be a reasonable range for speech\nfmin = 50\nfmax = 550\n\n# select a model capacity--one of \"tiny\" or \"full\"\nmodel = 'tiny'\n\n# choose a device to use for inference\ndevice = 'cuda:0'\n\n# pick a batch size that doesn't cause memory errors on your gpu\nbatch_size = 2048\n\n# compute pitch using first gpu\npitch = torchcrepe.predict(audio,\n                           sr,\n                           hop_length,\n                           fmin,\n                           fmax,\n                           model,\n                           batch_size=batch_size,\n                           device=device)\n```\n\na periodicity metric similar to the crepe confidence score can also be\nextracted by passing `return_periodicity=true` to `torchcrepe.predict`.\n\n\n### decoding\n\nby default, `torchcrepe` uses viterbi decoding on the softmax of the network\noutput. this is different than the original implementation, which uses a\nweighted average near the argmax of binary cross-entropy probabilities.\nthe argmax operation can cause double/half frequency errors. these can be\nremoved by penalizing large pitch jumps via viterbi decoding. the `decode`\nsubmodule provides some options for decoding.\n\n```python\n# decode using viterbi decoding (default)\ntorchcrepe.predict(..., decoder=torchcrepe.decode.viterbi)\n\n# decode using weighted argmax (as in the original implementation)\ntorchcrepe.predict(..., decoder=torchcrepe.decode.weighted_argmax)\n\n# decode using argmax\ntorchcrepe.predict(..., decoder=torchcrepe.decode.argmax)\n```\n\n\n### filtering and thresholding\n\nwhen periodicity is low, the pitch is less reliable. for some problems, it\nmakes sense to mask these less reliable pitch values. however, the periodicity\ncan be noisy and the pitch has quantization artifacts. `torchcrepe` provides\nsubmodules `filter` and `threshold` for this purpose. the filter and threshold\nparameters should be tuned to your data. for clean speech, a 10-20 millisecond\nwindow with a threshold of 0.21 has worked.\n\n```python\n# we'll use a 15 millisecond window assuming a hop length of 5 milliseconds\nwin_length = 3\n\n# median filter noisy confidence value\nperiodicity = torchcrepe.filter.median(periodicity, win_length)\n\n# remove inharmonic regions\npitch = torchcrepe.threshold.at(.21)(pitch, periodicity)\n\n# optionally smooth pitch to remove quantization artifacts\npitch = torchcrepe.filter.mean(pitch, win_length)\n```\n\nfor more fine-grained control over pitch thresholding, see\n`torchcrepe.threshold.hysteresis`. this is especially useful for removing\nspurious voiced regions caused by noise in the periodicity values, but\nhas more parameters and may require more manual tuning to your data.\n\ncrepe was not trained on silent audio. therefore, it sometimes assigns high\nconfidence to pitch bins in silent regions. you can use\n`torchcrepe.threshold.silence` to manually set the periodicity in silent\nregions to zero.\n\n```python\nperiodicity = torchcrepe.threshold.silence(-60.)(periodicity,\n                                                 audio,\n                                                 sr,\n                                                 hop_length)\n```\n\n\n### computing the crepe model output activations\n\n```python\nbatch = next(torchcrepe.preprocess(audio, sr, hop_length))\nprobabilities = torchcrepe.infer(batch)\n```\n\n\n### computing the crepe embedding space\n\nas in differentiable digital signal processing [2], this uses the output of the\nfifth max-pooling layer as a pretrained pitch embedding\n\n```python\nembeddings = torchcrepe.embed(audio, sr, hop_length)\n```\n\n### computing from files\n\n`torchcrepe` defines the following functions convenient for predicting\ndirectly from audio files on disk. each of these functions also takes\na `device` argument that can be used for device placement (e.g.,\n`device='cuda:0'`).\n\n```python\ntorchcrepe.predict_from_file(audio_file, ...)\ntorchcrepe.predict_from_file_to_file(\n    audio_file, output_pitch_file, output_periodicity_file, ...)\ntorchcrepe.predict_from_files_to_files(\n    audio_files, output_pitch_files, output_periodicity_files, ...)\n\ntorchcrepe.embed_from_file(audio_file, ...)\ntorchcrepe.embed_from_file_to_file(audio_file, output_file, ...)\ntorchcrepe.embed_from_files_to_files(audio_files, output_files, ...)\n```\n\n### command-line interface\n\n```bash\nusage: python -m torchcrepe\n    [-h]\n    --audio_files audio_files [audio_files ...]\n    --output_files output_files [output_files ...]\n    [--hop_length hop_length]\n    [--output_periodicity_files output_periodicity_files [output_periodicity_files ...]]\n    [--embed]\n    [--fmin fmin]\n    [--fmax fmax]\n    [--model model]\n    [--decoder decoder]\n    [--gpu gpu]\n    [--no_pad]\n\noptional arguments:\n  -h, --help            show this help message and exit\n  --audio_files audio_files [audio_files ...]\n                        the audio file to process\n  --output_files output_files [output_files ...]\n                        the file to save pitch or embedding\n  --hop_length hop_length\n                        the hop length of the analysis window\n  --output_periodicity_files output_periodicity_files [output_periodicity_files ...]\n                        the file to save periodicity\n  --embed               performs embedding instead of pitch prediction\n  --fmin fmin           the minimum frequency allowed\n  --fmax fmax           the maximum frequency allowed\n  --model model         the model capacity. one of \"tiny\" or \"full\"\n  --decoder decoder     the decoder to use. one of \"argmax\", \"viterbi\", or\n                        \"weighted_argmax\"\n  --gpu gpu             the gpu to perform inference on\n  --no_pad              whether to pad the audio\n```\n\n\n## tests\n\nthe module tests can be run as follows.\n\n```bash\npip install pytest\npytest\n```\n\n\n## references\n[1] j. w. kim, j. salamon, p. li, and j. p. bello, \u201ccrepe: a\nconvolutional representation for pitch estimation,\u201d in 2018 ieee\ninternational conference on acoustics, speech and signal\nprocessing (icassp).\n\n[2] j. h. engel, l. hantrakul, c. gu, and a. roberts,\n\u201cddsp: differentiable digital signal processing,\u201d in\n2020 international conference on learning\nrepresentations (iclr).\n",
+  "docs_url": null,
+  "keywords": "pitch,audio,speech,music,pytorch,crepe",
+  "license": "mit",
+  "name": "torchcrepe",
+  "package_url": "https://pypi.org/project/torchcrepe/",
+  "project_url": "https://pypi.org/project/torchcrepe/",
+  "project_urls": {
+    "Homepage": "https://github.com/maxrmorrison/torchcrepe"
+  },
+  "release_url": "https://pypi.org/project/torchcrepe/0.0.22/",
+  "requires_dist": [
+    "librosa >=0.9.1",
+    "resampy",
+    "scipy",
+    "torch",
+    "tqdm"
+  ],
+  "requires_python": "",
+  "summary": "pytorch implementation of crepe pitch tracker",
+  "version": "0.0.22",
+  "releases": [],
+  "developers": [
+    "max_morrison",
+    "maxrmorrison@gmail.com"
+  ],
+  "kwds": "tensorflow pytorch output_pitch_files output_pitch_file audio_file",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_torchcrepe",
+  "homepage": "https://github.com/maxrmorrison/torchcrepe",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_librosa",
+    "pypi_resampy",
+    "pypi_scipy",
+    "pypi_torch",
+    "pypi_tqdm"
+  ]
+}

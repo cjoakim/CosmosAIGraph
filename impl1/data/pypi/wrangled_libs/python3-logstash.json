@@ -1,0 +1,30 @@
+{
+  "classifiers": [],
+  "description": "# python-logstash\n\n## python logging handler for logstash.\n<https://www.elastic.co/products/logstash>\n\n### notes:\nthis is a copy of python-logstash: <https://pypi.python.org/pypi/python-logstash>\nthat has been update to work with python 3.\n\n### installation\n\n\nusing pip:\n`pip install python3-logstash`\n\n### usage\n\n`logstashhandler` is a custom logging handler which sends logstash messages using udp, or tcp.\n\n#### for example:\n\n```\nimport logging\nimport logstash\nimport sys\n\nhost = 'localhost'\n\ntest_logger = logging.getlogger('python-logstash-logger')\ntest_logger.setlevel(logging.info)\ntest_logger.addhandler(logstash.logstashhandler(host, 5959, version=1))\n# test_logger.addhandler(logstash.tcplogstashhandler(host, 5959, version=1))\n\ntest_logger.error('python-logstash: test logstash error message.')\ntest_logger.info('python-logstash: test logstash info message.')\ntest_logger.warning('python-logstash: test logstash warning message.')\n\n# add extra field to logstash message\nextra = {\n    'test_string': 'python version: ' + repr(sys.version_info),\n    'test_boolean': true,\n    'test_dict': {'a': 1, 'b': 'c'},\n    'test_float': 1.23,\n    'test_integer': 123,\n    'test_list': [1, 2, '3'],\n}\ntest_logger.info('python-logstash: test extra fields', extra=extra)\n```\n\nwhen using `extra` field make sure you don't use reserved names. from `python documentation <https://docs.python.org/2/library/logging.html>`_.\n     | \"the keys in the dictionary passed in extra should not clash with the keys used by the logging system. (see the `formatter <https://docs.python.org/2/library/logging.html#logging.formatter>`_ documentation for more information on which keys are used by the logging system.)\"\n\nto use the amqplogstashhandler you will need to install pika first.\n```\n   pip install pika\n```\n\nfor example::\n```\n  import logging\n  import logstash\n\n  test_logger = logging.getlogger('python-logstash-logger')\n  test_logger.setlevel(logging.info)\n  test_logger.addhandler(logstash.amqplogstashhandler(host='localhost', version=1))\n\n  test_logger.info('python-logstash: test logstash info message.')\n  try:\n      1/0\n  except:\n      test_logger.exception('python-logstash-logger: exception with stack trace!')\n```\n\n\n### using with django\n\nmodify your `settings.py` to integrate `python3-logstash` with django's logging::\n```\n  logging = {\n    ...\n    'handlers': {\n        'logstash': {\n            'level': 'debug',\n            'class': 'logstash.logstashhandler',\n            'host': 'localhost',\n            'port': 5959, # default value: 5959\n            'version': 1, # version of logstash event schema. default value: 0 (for backward compatibility of the library)\n            'message_type': 'logstash',  # 'type' field in logstash message. default value: 'logstash'.\n            'fqdn': false, # fully qualified domain name. default value: false.\n            'tags': ['tag1', 'tag2'], # list of tags. default: none.\n        },\n    },\n    'loggers': {\n        'django.request': {\n            'handlers': ['logstash'],\n            'level': 'debug',\n            'propagate': true,\n        },\n    },\n    ...\n  }\n```\n\n### using with gunicorn\ncreate a logging.conf similar to this:\n```\n[loggers]\nkeys=root, logstash.error, logstash.access\n\n[handlers]\nkeys=console , logstash\n\n[formatters]\nkeys=generic, access, json\n\n[logger_root]\nlevel=info\nhandlers=console\n\n[logger_logstash.error]\nlevel=info\nhandlers=logstash\npropagate=1\nqualname=gunicorn.error\n\n[logger_logstash.access]\nlevel=info\nhandlers=logstash\npropagate=0\nqualname=gunicorn.access\n\n[handler_console]\nclass=logging.streamhandler\nformatter=generic\nargs=(sys.stdout, )\n\n[handler_logstash]\nclass=logstash.tcplogstashhandler\nformatter=json\nargs=('localhost',5959)\n\n[formatter_generic]\nformat=%(asctime)s [%(process)d] [%(levelname)s] %(message)s\ndatefmt=%y-%m-%d %h:%m:%s\nclass=logging.formatter\n\n[formatter_access]\nformat=%(message)s\nclass=logging.formatter\n\n[formatter_json]\nclass=jsonlogging.jsonformatter\n```\n#### note that i am using the jsonlogging module to parse the gunicorn logs\n\n### sample logstash configuration\n\n(``logstash.conf``) for receiving events from python3-logstash is::\n```\n  input {\n    tcp {\n      port => 5000\n      codec => json\n    }\n  }\n  output {\n    stdout {\n      codec => rubydebug\n    }\n  }\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "python3-logstash",
+  "package_url": "https://pypi.org/project/python3-logstash/",
+  "project_url": "https://pypi.org/project/python3-logstash/",
+  "project_urls": {
+    "Homepage": "https://github.com/israel-fl/python3-logstash"
+  },
+  "release_url": "https://pypi.org/project/python3-logstash/0.4.80/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python logging handler for logstash.",
+  "version": "0.4.80",
+  "releases": [],
+  "developers": [
+    "israel_flores",
+    "jobs@israelfl.com"
+  ],
+  "kwds": "handler_logstash logger_logstash logstash logstashhandler test_logger",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python3_logstash",
+  "homepage": "https://github.com/israel-fl/python3-logstash",
+  "release_count": 3,
+  "dependency_ids": []
+}

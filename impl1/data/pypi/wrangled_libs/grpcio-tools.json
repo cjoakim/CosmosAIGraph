@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 3"
+  ],
+  "description": "grpc python tools\n=================\n\npackage for grpc python tools.\n\nsupported python versions\n-------------------------\npython >= 3.6\n\ninstallation\n------------\n\nthe grpc python tools package is available for linux, mac os x, and windows.\n\ninstalling from pypi\n~~~~~~~~~~~~~~~~~~~~\n\nif you are installing locally...\n\n::\n\n  $ pip install grpcio-tools\n\nelse system wide (on ubuntu)...\n\n::\n\n  $ sudo pip install grpcio-tools\n\nif you're on windows make sure that you installed the :code:`pip.exe` component\nwhen you installed python (if not go back and install it!) then invoke:\n\n::\n\n  $ pip.exe install grpcio-tools\n\nwindows users may need to invoke :code:`pip.exe` from a command line ran as\nadministrator.\n\nn.b. on windows and on mac os x one *must* have a recent release of :code:`pip`\nto retrieve the proper wheel from pypi. be sure to upgrade to the latest\nversion!\n\nyou might also need to install cython to handle installation via the source\ndistribution if grpc python's system coverage with wheels does not happen to\ninclude your system.\n\ninstalling from source\n~~~~~~~~~~~~~~~~~~~~~~\n\nbuilding from source requires that you have the python headers (usually a\npackage named :code:`python-dev`) and cython installed. it further requires a\ngcc-like compiler to go smoothly; you can probably get it to work without\ngcc-like stuff, but you may end up having a bad time.\n\n::\n\n  $ export repo_root=grpc  # repo_root can be any directory of your choice\n  $ git clone -b release_tag_here https://github.com/grpc/grpc $repo_root\n  $ cd $repo_root\n  $ git submodule update --init\n\n  $ cd tools/distrib/python/grpcio_tools\n  $ python ../make_grpcio_tools.py\n\n  # for the next command do `sudo pip install` if you get permission-denied errors\n  $ grpc_python_build_with_cython=1 pip install .\n\nyou cannot currently install python from source on windows. things might work\nout for you in msys2 (follow the linux instructions), but it isn't officially\nsupported at the moment.\n\ntroubleshooting\n~~~~~~~~~~~~~~~\n\nhelp, i ...\n\n* **... see a** :code:`pkg_resources.versionconflict` **when i try to install\n  grpc**\n\n  this is likely because :code:`pip` doesn't own the offending dependency,\n  which in turn is likely because your operating system's package manager owns\n  it. you'll need to force the installation of the dependency:\n\n  :code:`pip install --ignore-installed $offending_dependency`\n\n  for example, if you get an error like the following:\n\n  ::\n\n    traceback (most recent call last):\n    file \"<string>\", line 17, in <module>\n     ...\n    file \"/usr/lib/python2.7/dist-packages/pkg_resources.py\", line 509, in find\n      raise versionconflict(dist, req)\n    pkg_resources.versionconflict: (six 1.8.0 (/usr/lib/python2.7/dist-packages), requirement.parse('six>=1.10'))\n\n  you can fix it by doing:\n\n  ::\n\n    sudo pip install --ignore-installed six\n\n* **... see compiler errors on some platforms when either installing from source or from the source distribution**\n\n  if you see\n\n  ::\n\n    /tmp/pip-build-u8pssr/cython/cython/plex/scanners.c:4:20: fatal error: python.h: no such file or directory\n    #include \"python.h\"\n                    ^\n    compilation terminated.\n\n  you can fix it by installing `python-dev` package. i.e\n\n  ::\n\n    sudo apt-get install python-dev\n\n  if you see something similar to:\n\n  ::\n\n    third_party/protobuf/src/google/protobuf/stubs/mathlimits.h:173:31: note: in expansion of macro 'signed_int_max'\n    static const type kposmax = signed_int_max(type); \\\\\n                               ^\n\n  and your toolchain is gcc (at the time of this writing, up through at least\n  gcc 6.0), this is probably a bug where gcc chokes on constant expressions\n  when the :code:`-fwrapv` flag is specified. you should consider setting your\n  environment with :code:`cflags=-fno-wrapv` or using clang (:code:`cc=clang`).\n\nusage\n-----\n\ngiven protobuf include directories :code:`$include`, an output directory\n:code:`$output`, and proto files :code:`$proto_files`, invoke as:\n\n::\n\n  $ python -m grpc_tools.protoc -i$include --python_out=$output --grpc_python_out=$output $proto_files\n\nto use as a build step in setuptools-based projects, you may use the provided\ncommand class in your :code:`setup.py`:\n\n::\n\n  setuptools.setup(\n    # ...\n    cmdclass={\n      'build_proto_modules': grpc_tools.command.buildpackageprotos,\n    }\n    # ...\n  )\n\ninvocation of the command will walk the project tree and transpile every\n:code:`.proto` file into a :code:`_pb2.py` file in the same directory.\n\nnote that this particular approach requires :code:`grpcio-tools` to be\ninstalled on the machine before the setup script is invoked (i.e. no\ncombination of :code:`setup_requires` or :code:`install_requires` will provide\naccess to :code:`grpc_tools.command.buildpackageprotos` if it isn't already\ninstalled). one way to work around this can be found in our\n:code:`grpcio-health-checking`\n`package <https://pypi.python.org/pypi/grpcio-health-checking>`_:\n\n::\n\n  class buildpackageprotos(setuptools.command):\n    \"\"\"command to generate project *_pb2.py modules from proto files.\"\"\"\n    # ...\n    def run(self):\n      from grpc_tools import command\n      command.build_package_protos(self.distribution.package_dir[''])\n\nnow including :code:`grpcio-tools` in :code:`setup_requires` will provide the\ncommand on-setup as desired.\n\nfor more information on command classes, consult :code:`setuptools` documentation.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "grpcio-tools",
+  "package_url": "https://pypi.org/project/grpcio-tools/",
+  "project_url": "https://pypi.org/project/grpcio-tools/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/grpc/grpc/issues",
+    "Homepage": "https://grpc.io",
+    "Source Code": "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools"
+  },
+  "release_url": "https://pypi.org/project/grpcio-tools/1.60.0/",
+  "requires_dist": [
+    "protobuf <5.0dev,>=4.21.6",
+    "grpcio >=1.60.0",
+    "setuptools"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "protobuf code generator for grpc",
+  "version": "1.60.0",
+  "releases": [],
+  "developers": [
+    "grpc-io@googlegroups.com",
+    "the_grpc_authors"
+  ],
+  "kwds": "grpcio_tools make_grpcio_tools grpc_tools grpc_python_out grpc_python_build_with_cython",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_grpcio_tools",
+  "homepage": "https://grpc.io",
+  "release_count": 190,
+  "dependency_ids": [
+    "pypi_grpcio",
+    "pypi_protobuf",
+    "pypi_setuptools"
+  ]
+}

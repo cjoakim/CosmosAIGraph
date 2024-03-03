@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "[![ci](https://github.com/leocalm/avro_validator/actions/workflows/ci.yaml/badge.svg)](https://github.com/leocalm/avro_validator/actions/workflows/ci.yaml)\n[![documentation status](https://readthedocs.org/projects/avro-validator/badge/?version=latest)](https://avro-validator.readthedocs.io/en/latest/?badge=latest)\n[![pypi version](https://badge.fury.io/py/avro-validator.svg)](https://badge.fury.io/py/avro-validator)\n[![downloads](https://pepy.tech/badge/avro-validator)](https://pepy.tech/project/avro-validator)\n[![coverage status](https://coveralls.io/repos/github/leocalm/avro_validator/badge.svg?branch=main)](https://coveralls.io/github/leocalm/avro_validator?branch=main)\n\n# avro validator\na pure python avro schema validator.\n\nthe default avro library for python provide validation of data against the schema, the problem is that the output of \nthis validation doesn't provide information about the error. \nall you get is the `the datum is not an example of the schema` error message.\n\nwhen working with bigger avro schemas, sometimes is not easy to visually find the field that has an issue.\n\nthis library provide clearer exceptions when validating data against the avro schema, in order to be easier to \nidentify the field that is not compliant with the schema and the problem with that field.\n\n## installing\ninstall using pip:\n```bash\n$ pip install -u avro_validator\n```\n\n## validating data against avro schema\nthe validator can be used as a console application. it receives a schema file, and a data file, validating the data\nand returning the error message in case of failure.\n\nthe avro_validator can also be used as a library in python code.\n\n### console usage\nin order to validate the `data_to_validate.json` file against the `schema.avsc` using the `avro_validator` callable, just type:\n```bash\n$ avro_validator schema.avsc data_to_valdate.json\nok\n```\nsince the data is valid according to the schema, the return message is `ok`.\n\n#### error validating the data\nif the data is not valid, the program returns an error message:\n```bash\n$ avro_validator schema.avsc data_to_valdate.json\nerror validating value for field [data,my_boolean_value]: the value [123] is not from one of the following types: [[nulltype, booleantype]]\n```\nthis message indicates that the field `my_boolean_value` inside the `data` dictionary has value `123`, which is not \ncompatible with the `bool` type.\n\n#### command usage\nit is possible to get information about usage of the `avro_validator` using the help:\n```bash\n$ avro_validator -h\n```\n\n### library usage\n#### using schema file\nwhen using the avr_validator as a library, it is possible to pass the schema as a file:\n```python\nfrom avro_validator.schema import schema\n\nschema_file = 'schema.avsc'\n\nschema = schema(schema_file)\nparsed_schema = schema.parse()\n\ndata_to_validate = {\n    'name': 'my name'\n}\n\nparsed_schema.validate(data_to_validate)\n```\nin this example, if the `data_to_validate` is valid according to the schema, then the\n `parsed_schema.validate(data_to_validate)` call will return `true`.\n\n#### using a dict as schema\nit is also possible to provide the schema as a json string:\n```python\nimport json\nfrom avro_validator.schema import schema\n\nschema = json.dumps({\n    'name': 'test schema',\n    'type': 'record',\n    'doc': 'schema for testing avro_validator',\n    'fields': [\n        {\n            'name': 'name',\n            'type': 'string'\n        }\n    ]\n})\n\nschema = schema(schema)\nparsed_schema = schema.parse()\n\ndata_to_validate = {\n    'name': 'my name'\n}\n\nparsed_schema.validate(data_to_validate)\n```\nin this example, the `parsed_schema.validate(data_to_validate)` call will return `true`, since the data is valid according to the schema.\n\n#### invalid data\nif the data is not valid, the `parsed_schema.validate` will raise a `valueerror`, with the message containing the error description.\n```python\nimport json\nfrom avro_validator.schema import schema\n\nschema = json.dumps({\n    'name': 'test schema',\n    'type': 'record',\n    'doc': 'schema for testing avro_validator',\n    'fields': [\n        {\n            'name': 'name',\n            'type': 'string',\n            'doc': 'field that stores the name'\n        }\n    ]\n})\n\nschema = schema(schema)\nparsed_schema = schema.parse()\n\ndata_to_validate = {\n    'my_name': 'my name'\n}\n\nparsed_schema.validate(data_to_validate)\n```\nthe schema defined expects only one field, named `name`, but the data contains only the field `name_2`, \nmaking it invalid according to the schema. in this case, the `validate` method will return the following error:\n```\ntraceback (most recent call last):\n  file \"/users/leonardo.almeida/.pyenv/versions/avro_validator_venv/lib/python3.7/site-packages/ipython/core/interactiveshell.py\", line 3326, in run_code\n    exec(code_obj, self.user_global_ns, self.user_ns)\n  file \"<ipython-input-3-a5e8ce95d21c>\", line 23, in <module>\n    parsed_schema.validate(data_to_validate)\n  file \"/opt/dwh/avro_validator/avro_validator/avro_types.py\", line 563, in validate\n    raise valueerror(f'the fields from value [{value}] differs from the fields '\nvalueerror: the fields from value [{'my_name': 'my name'}] differs from the fields of the record type [{'name': recordtypefield <name: name, type: stringtype, doc: field that stores the name, default: none, order: none, aliases: none>}]\n```\nthe message detailed enough to enable the developer to pinpoint the error in the data.\n\n#### invalid schema\nif the schema is not valid according to avro specifications, the `parse` method will also return a `valueerror`.\n```python\nimport json\nfrom avro_validator.schema import schema\n\nschema = json.dumps({\n    'name': 'test schema',\n    'type': 'record',\n    'doc': 'schema for testing avro_validator',\n    'fields': [\n        {\n            'name': 'name',\n            'type': 'invalid_type',\n            'doc': 'field that stores the name'\n        }\n    ]\n})\n\nschema = schema(schema)\nparsed_schema = schema.parse()\n```\nsince the schema tries to define the `name` field as `invalid_type`, the schema declaration is invalid, \nthus the following exception will be raised:\n```\ntraceback (most recent call last):\n  file \"/users/leonardo.almeida/.pyenv/versions/avro_validator_venv/lib/python3.7/site-packages/ipython/core/interactiveshell.py\", line 3326, in run_code\n    exec(code_obj, self.user_global_ns, self.user_ns)\n  file \"<ipython-input-2-7f3f77000f08>\", line 18, in <module>\n    parsed_schema = schema.parse()\n  file \"/opt/dwh/avro_validator/avro_validator/schema.py\", line 28, in parse\n    return recordtype.build(schema)\n  file \"/opt/dwh/avro_validator/avro_validator/avro_types.py\", line 588, in build\n    record_type.__fields = {field['name']: recordtypefield.build(field) for field in json_repr['fields']}\n  file \"/opt/dwh/avro_validator/avro_validator/avro_types.py\", line 588, in <dictcomp>\n    record_type.__fields = {field['name']: recordtypefield.build(field) for field in json_repr['fields']}\n  file \"/opt/dwh/avro_validator/avro_validator/avro_types.py\", line 419, in build\n    field.__type = cls.__build_field_type(json_repr)\n  file \"/opt/dwh/avro_validator/avro_validator/avro_types.py\", line 401, in __build_field_type\n    raise valueerror(f'error parsing the field [{fields}]: {actual_error}')\nvalueerror: error parsing the field [name]: the type [invalid_type] is not recognized by avro\n```\nthe message is clearly indicating that the the `invalid_type` is not recognized by avro.\n",
+  "docs_url": null,
+  "keywords": "avro schema",
+  "license": "",
+  "name": "avro-validator",
+  "package_url": "https://pypi.org/project/avro-validator/",
+  "project_url": "https://pypi.org/project/avro-validator/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/leocalm/avro_validator/issues",
+    "Documentation": "https://avro-validator.readthedocs.io/",
+    "Homepage": "https://github.com/leocalm/avro_validator",
+    "Repository": "https://github.com/leocalm/avro_validator"
+  },
+  "release_url": "https://pypi.org/project/avro-validator/1.2.1/",
+  "requires_dist": [
+    "pytest ; extra == 'dev'",
+    "coverage ; extra == 'dev'",
+    "tox ; extra == 'dev'",
+    "flake8 ; extra == 'dev'",
+    "hypothesis ; extra == 'dev'",
+    "pytest-cov ; extra == 'dev'",
+    "python-coveralls ; extra == 'dev'",
+    "sphinx ; extra == 'docs'",
+    "pallets-sphinx-themes ; extra == 'docs'",
+    "sphinxcontrib-log-cabinet ; extra == 'docs'",
+    "sphinx-issues ; extra == 'docs'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "pure python avro schema validator",
+  "version": "1.2.1",
+  "releases": [],
+  "developers": [
+    "leocalm@gmail.com",
+    "leonardo_de_campos_almeida"
+  ],
+  "kwds": "avro_validator avro_validator_venv avr_validator avro_types avro",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_avro_validator",
+  "homepage": "https://github.com/leocalm/avro_validator",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_flake8",
+    "pypi_hypothesis",
+    "pypi_pallets_sphinx_themes",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_python_coveralls",
+    "pypi_sphinx",
+    "pypi_sphinx_issues",
+    "pypi_sphinxcontrib_log_cabinet",
+    "pypi_tox"
+  ]
+}

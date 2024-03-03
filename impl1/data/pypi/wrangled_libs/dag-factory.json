@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "\n# dag-factory\n\n[![github actions](https://github.com/ajbosco/dag-factory/workflows/build/badge.svg?branch=master&event=push)](https://github.com/ajbosco/dag-factory/actions?workflow=build)\n[![coverage](https://codecov.io/github/ajbosco/dag-factory/coverage.svg?branch=master)](https://codecov.io/github/ajbosco/dag-factory?branch=master)\n[![pypi](https://img.shields.io/pypi/v/dag-factory.svg)](https://pypi.org/project/dag-factory/)\n[![code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)\n[![downloads](https://pepy.tech/badge/dag-factory)](https://pepy.tech/project/dag-factory)\n\n*dag-factory* is a library for dynamically generating [apache airflow](https://github.com/apache/incubator-airflow) dags from yaml configuration files.\n- [installation](#installation)\n- [usage](#usage)\n- [benefits](#benefits)\n- [contributing](#contributing)\n\n## installation\n\nto install *dag-factory* run `pip install dag-factory`. it requires python 3.6.0+ and apache airflow 2.0+.\n\n## usage\n\nafter installing *dag-factory* in your airflow environment, there are two steps to creating dags. first, we need to create a yaml configuration file. for example:\n\n```yaml\nexample_dag1:\n  default_args:\n    owner: 'example_owner'\n    start_date: 2018-01-01  # or '2 days'\n    end_date: 2018-01-05\n    retries: 1\n    retry_delay_sec: 300\n  schedule_interval: '0 3 * * *'\n  concurrency: 1\n  max_active_runs: 1\n  dagrun_timeout_sec: 60\n  default_view: 'tree'  # or 'graph', 'duration', 'gantt', 'landing_times'\n  orientation: 'lr'  # or 'tb', 'rl', 'bt'\n  description: 'this is an example dag!'\n  on_success_callback_name: print_hello\n  on_success_callback_file: /usr/local/airflow/dags/print_hello.py\n  on_failure_callback_name: print_hello\n  on_failure_callback_file: /usr/local/airflow/dags/print_hello.py\n  tasks:\n    task_1:\n      operator: airflow.operators.bash_operator.bashoperator\n      bash_command: 'echo 1'\n    task_2:\n      operator: airflow.operators.bash_operator.bashoperator\n      bash_command: 'echo 2'\n      dependencies: [task_1]\n    task_3:\n      operator: airflow.operators.bash_operator.bashoperator\n      bash_command: 'echo 3'\n      dependencies: [task_1]\n```\n\nthen in the dags folder in your airflow environment you need to create a python file like this:\n\n```python\nfrom airflow import dag\nimport dagfactory\n\ndag_factory = dagfactory.dagfactory(\"/path/to/dags/config_file.yml\")\n\ndag_factory.clean_dags(globals())\ndag_factory.generate_dags(globals())\n```\n\nand this dag will be generated and ready to run in airflow!\n\nif you have several configuration files you can import them like this:\n\n```python\n# 'airflow' word is required for the dagbag to parse this file\nfrom dagfactory import load_yaml_dags\n\nload_yaml_dags(globals_dict=globals(), suffix=['dag.yaml'])\n```\n\n![screenshot](/img/example_dag.png)\n\n## notes\n\n### httpsensor (since 0.10.0)\n\nthe package `airflow.sensors.http_sensor` works with all supported versions of airflow. in airflow 2.0+, the new package name can be used in the operator value: `airflow.providers.http.sensors.http`\n\nthe following example shows `response_check` logic in a python file:\n\n```yaml\ntask_2:\n      operator: airflow.sensors.http_sensor.httpsensor\n      http_conn_id: 'test-http'\n      method: 'get'\n      response_check_name: check_sensor\n      response_check_file: /path/to/example1/http_conn.py\n      dependencies: [task_1]\n```\n\nthe `response_check` logic can also be provided as a lambda:\n\n```yaml\ntask_2:\n      operator: airflow.sensors.http_sensor.httpsensor\n      http_conn_id: 'test-http'\n      method: 'get'\n      response_check_lambda: 'lambda response: \"ok\" in reponse.text'\n      dependencies: [task_1]\n```\n\n## benefits\n\n* construct dags without knowing python\n* construct dags without learning airflow primitives\n* avoid duplicative code\n* everyone loves yaml! ;)\n\n## contributing\n\ncontributions are welcome! just submit a pull request or github issue.\n\n\n",
+  "docs_url": null,
+  "keywords": "airflow",
+  "license": "mit",
+  "name": "dag-factory",
+  "package_url": "https://pypi.org/project/dag-factory/",
+  "project_url": "https://pypi.org/project/dag-factory/",
+  "project_urls": {
+    "Homepage": "https://github.com/ajbosco/dag-factory"
+  },
+  "release_url": "https://pypi.org/project/dag-factory/0.19.0/",
+  "requires_dist": [
+    "apache-airflow[http,kubernetes] (>=1.10.0)",
+    "pyyaml",
+    "packaging",
+    "black ; extra == 'dev'",
+    "pytest ; extra == 'dev'",
+    "pylint ; extra == 'dev'",
+    "pytest-cov ; extra == 'dev'",
+    "tox ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.7.0",
+  "summary": "dynamically build airflow dags from yaml files",
+  "version": "0.19.0",
+  "releases": [],
+  "developers": [
+    "adam@boscarino.me",
+    "adam_boscarino"
+  ],
+  "kwds": "dag_factory example_dag clean_dags example_dag1 generate_dags",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_dag_factory",
+  "homepage": "https://github.com/ajbosco/dag-factory",
+  "release_count": 36,
+  "dependency_ids": [
+    "pypi_apache_airflow",
+    "pypi_black",
+    "pypi_packaging",
+    "pypi_pylint",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pyyaml",
+    "pypi_tox"
+  ]
+}

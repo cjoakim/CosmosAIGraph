@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: office/business :: scheduling"
+  ],
+  "description": "# businesstimedelta\npython's timedelta for business time. this module helps you calculate the exact working time between two datetimes. it supports common scenarios such as custom schedules, holidays, and time zones.\n\n[![build status](https://travis-ci.org/seppemans/businesstimedelta.svg?branch=master)](https://travis-ci.org/seppemans/businesstimedelta)\n\n## installation\nuse pip to install businesstimedelta.\n\n```shell\npip install businesstimedelta\n```\n\n## example use\ndefine your business hours\n\n```python\nimport datetime\nimport pytz\nimport businesstimedelta\n\n# define a working day\nworkday = businesstimedelta.workdayrule(\n    start_time=datetime.time(9),\n    end_time=datetime.time(18),\n    working_days=[0, 1, 2, 3, 4])\n\n# take out the lunch break\nlunchbreak = businesstimedelta.lunchtimerule(\n    start_time=datetime.time(12),\n    end_time=datetime.time(13),\n    working_days=[0, 1, 2, 3, 4])\n\n# combine the two\nbusinesshrs = businesstimedelta.rules([workday, lunchbreak])\n```\n\ncalculate the business time between two datetimes\n\n```python\nstart = datetime.datetime(2016, 1, 18, 9, 0, 0)\nend = datetime.datetime(2016, 1, 22, 18, 0, 0)\nbdiff = businesshrs.difference(start, end)\n\nprint bdiff\n# <businesstimedelta 40 hours 0 seconds>\n\nprint \"%s hours and %s seconds\" % (bdiff.hours, bdiff.seconds)\n# 40 hours and 0 seconds\n```\n\nbusiness time arithmetic\n\n```python\nprint start + businesstimedelta.businesstimedelta(businesshrs, hours=40)\n# 2016-01-22 18:00:00+00:00\n\nprint end - businesstimedelta.businesstimedelta(businesshrs, hours=40)\n# 2016-01-18 09:00:00+00:00\n```\n\nto define holidays, simply use the [holidays](https://pypi.python.org/pypi/holidays) package\n\n```python\nimport holidays as pyholidays\n\nca_holidays = pyholidays.us(state='ca')\nholidays = businesstimedelta.holidayrule(ca_holidays)\nbusinesshrs = businesstimedelta.rules([workday, lunchbreak, holidays])\n\n# christmas is on friday 2015/12/25\nstart = datetime.datetime(2015, 12, 21, 9, 0, 0)\nend = datetime.datetime(2015, 12, 28, 9, 0, 0)\nprint businesshrs.difference(start, end)\n# <businesstimedelta 32 hours 0 seconds>\n```\n\n## timezones\nif your datetimes are not timezone aware, they will be localized to utc (see example above).\n\nlet's say you want to calculate the business time overlap between a working day in san francisco and in santiago, chile:\n```python\nsantiago_workday = businesstimedelta.workdayrule(\n    start_time=datetime.time(9),\n    end_time=datetime.time(18),\n    working_days=[0, 1, 2, 3, 4],\n    tz=pytz.timezone('america/santiago'))\n\nsantiago_lunchbreak = businesstimedelta.lunchtimerule(\n    start_time=datetime.time(12),\n    end_time=datetime.time(13),\n    working_days=[0, 1, 2, 3, 4],\n    tz=pytz.timezone('america/santiago'))\n\nsantiago_businesshrs = businesstimedelta.rules([santiago_workday, santiago_lunchbreak])\n\nsf_tz = pytz.timezone('america/los_angeles')\nsf_start = sf_tz.localize(datetime.datetime(2016, 1, 18, 9, 0, 0))\nsf_end = sf_tz.localize(datetime.datetime(2016, 1, 18, 18, 0, 0))\n\nprint santiago_businesshrs.difference(sf_start, sf_end)\n# <businesstimedelta 4 hours 0 seconds>\n```\n\n## overnight shifts\n```python\n# day shift\nworkday = workdayrule(\n    start_time=datetime.time(9),\n    end_time=datetime.time(17),\n    working_days=[0, 1, 2, 3, 4],\n    tz=pytz.utc)\n\n# night shift\nnightshift = businesstimedelta.workdayrule(\n    start_time=datetime.time(23),\n    end_time=datetime.time(7),\n    working_days=[0, 1, 2, 3, 4])\n\nbusinesshrs = businesstimedelta.rules([workday, nightshift])\n\nstart = datetime.datetime(2016, 1, 18, 9, 0, 0)\nend = datetime.datetime(2016, 1, 22, 18, 0, 0)\nbdiff = businesshrs.difference(start, end)\n\nprint bdiff\n# <businesstimedelta 80 hours 0 seconds>\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "business working time timedelta hours businesstime businesshours",
+  "license": "mit",
+  "name": "businesstimedelta",
+  "package_url": "https://pypi.org/project/businesstimedelta/",
+  "project_url": "https://pypi.org/project/businesstimedelta/",
+  "project_urls": {
+    "Homepage": "http://github.com/seppemans/businesstimedelta"
+  },
+  "release_url": "https://pypi.org/project/businesstimedelta/1.0.1/",
+  "requires_dist": [
+    "pytz",
+    "holidays"
+  ],
+  "requires_python": "",
+  "summary": "timedelta for business time. supports exact amounts of time (hours, seconds), custom schedules, holidays, and time zones.",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "seppemans"
+  ],
+  "kwds": "businesstime workdayrule businesstimedelta lunchtimerule working_days",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_businesstimedelta",
+  "homepage": "http://github.com/seppemans/businesstimedelta",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_holidays",
+    "pypi_pytz"
+  ]
+}

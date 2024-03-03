@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon eventbridge construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\namazon eventbridge delivers a near real-time stream of system events that\ndescribe changes in aws resources. for example, an aws codepipeline emits the\n[state\nchange](https://docs.aws.amazon.com/eventbridge/latest/userguide/event-types.html#codepipeline-event-type)\nevent when the pipeline changes its state.\n\n* **events**: an event indicates a change in your aws environment. aws resources\n  can generate events when their state changes. for example, amazon ec2\n  generates an event when the state of an ec2 instance changes from pending to\n  running, and amazon ec2 auto scaling generates events when it launches or\n  terminates instances. aws cloudtrail publishes events when you make api calls.\n  you can generate custom application-level events and publish them to\n  eventbridge. you can also set up scheduled events that are generated on\n  a periodic basis. for a list of services that generate events, and sample\n  events from each service, see [eventbridge event examples from each\n  supported\n  service](https://docs.aws.amazon.com/eventbridge/latest/userguide/event-types.html).\n* **targets**: a target processes events. targets can include amazon ec2\n  instances, aws lambda functions, kinesis streams, amazon ecs tasks, step\n  functions state machines, amazon sns topics, amazon sqs queues, amazon cloudwatch loggroups, and built-in\n  targets. a target receives events in json format.\n* **rules**: a rule matches incoming events and routes them to targets for\n  processing. a single rule can route to multiple targets, all of which are\n  processed in parallel. rules are not processed in a particular order. this\n  enables different parts of an organization to look for and process the events\n  that are of interest to them. a rule can customize the json sent to the\n  target, by passing only certain parts or by overwriting it with a constant.\n* **eventbuses**: an event bus can receive events from your own custom applications\n  or it can receive events from applications and services created by aws saas partners.\n  see [creating an event bus](https://docs.aws.amazon.com/eventbridge/latest/userguide/create-event-bus.html).\n\n## rule\n\nthe `rule` construct defines an eventbridge rule which monitors an\nevent based on an [event\npattern](https://docs.aws.amazon.com/eventbridge/latest/userguide/filtering-examples-structure.html)\nand invoke **event targets** when the pattern is matched against a triggered\nevent. event targets are objects that implement the `iruletarget` interface.\n\nnormally, you will use one of the `source.onxxx(name[, target[, options]]) -> rule` methods on the event source to define an event rule associated with\nthe specific activity. you can targets either via props, or add targets using\n`rule.addtarget`.\n\nfor example, to define an rule that triggers a codebuild project build when a\ncommit is pushed to the \"master\" branch of a codecommit repository:\n\n```python\n# repo: codecommit.repository\n# project: codebuild.project\n\n\non_commit_rule = repo.on_commit(\"oncommit\",\n    target=targets.codebuildproject(project),\n    branches=[\"master\"]\n)\n```\n\nyou can add additional targets, with optional [input\ntransformer](https://docs.aws.amazon.com/eventbridge/latest/apireference/api_inputtransformer.html)\nusing `eventrule.addtarget(target[, input])`. for example, we can add a sns\ntopic target which formats a human-readable message for the commit.\n\nfor example, this adds an sns topic as a target:\n\n```python\n# on_commit_rule: events.rule\n# topic: sns.topic\n\n\non_commit_rule.add_target(targets.snstopic(topic,\n    message=events.ruletargetinput.from_text(f\"a commit was pushed to the repository {codecommit.referenceevent.repositoryname} on branch {codecommit.referenceevent.referencename}\")\n))\n```\n\nor using an object:\n\n```python\n# on_commit_rule: events.rule\n# topic: sns.topic\n\n\non_commit_rule.add_target(targets.snstopic(topic,\n    message=events.ruletargetinput.from_object({\n        \"datatype\": f\"custom_{events.eventfield.frompath('$.detail-type')}\"\n    })\n))\n```\n\n## scheduling\n\nyou can configure a rule to run on a schedule (cron or rate).\nrate must be specified in minutes, hours or days.\n\nthe following example runs a task every day at 4am:\n\n```python\nfrom aws_cdk.aws_events import rule, schedule\nfrom aws_cdk.aws_events_targets import ecstask\nfrom aws_cdk.aws_ecs import cluster, taskdefinition\nfrom aws_cdk.aws_iam import role\n\n# cluster: cluster\n# task_definition: taskdefinition\n# role: role\n\n\necs_task_target = ecstask(cluster=cluster, task_definition=task_definition, role=role)\n\nrule(self, \"schedulerule\",\n    schedule=schedule.cron(minute=\"0\", hour=\"4\"),\n    targets=[ecs_task_target]\n)\n```\n\nif you want to specify fargate platform version, set `platformversion` in ecstask's props like the following example:\n\n```python\n# cluster: ecs.cluster\n# task_definition: ecs.taskdefinition\n# role: iam.role\n\n\nplatform_version = ecs.fargateplatformversion.version1_4\necs_task_target = targets.ecstask(cluster=cluster, task_definition=task_definition, role=role, platform_version=platform_version)\n```\n\n## event targets\n\nthe `@aws-cdk/aws-events-targets` module includes classes that implement the `iruletarget`\ninterface for various aws services.\n\nthe following targets are supported:\n\n* `targets.codebuildproject`: start an aws codebuild build\n* `targets.codepipeline`: start an aws codepipeline pipeline execution\n* `targets.ecstask`: start a task on an amazon ecs cluster\n* `targets.lambdafunction`: invoke an aws lambda function\n* `targets.snstopic`: publish into an sns topic\n* `targets.sqsqueue`: send a message to an amazon sqs queue\n* `targets.sfnstatemachine`: trigger an aws step functions state machine\n* `targets.batchjob`: queue an aws batch job\n* `targets.awsapi`: make an aws api call\n* `targets.apigateway`: invoke an aws api gateway\n* `targets.apidestination`: make an call to an external destination\n\n### cross-account and cross-region targets\n\nit's possible to have the source of the event and a target in separate aws accounts and regions:\n\n```python\nfrom aws_cdk.core import environment, environment\nfrom aws_cdk.core import app, stack\nimport aws_cdk.aws_codebuild as codebuild\nimport aws_cdk.aws_codecommit as codecommit\nimport aws_cdk.aws_events_targets as targets\n\napp = app()\n\naccount1 = \"11111111111\"\naccount2 = \"22222222222\"\n\nstack1 = stack(app, \"stack1\", env=environment(account=account1, region=\"us-west-1\"))\nrepo = codecommit.repository(stack1, \"repository\",\n    repository_name=\"myrepository\"\n)\n\nstack2 = stack(app, \"stack2\", env=environment(account=account2, region=\"us-east-1\"))\nproject = codebuild.project(stack2, \"project\")\n\nrepo.on_commit(\"oncommit\",\n    target=targets.codebuildproject(project)\n)\n```\n\nin this situation, the cdk will wire the 2 accounts together:\n\n* it will generate a rule in the source stack with the event bus of the target account as the target\n* it will generate a rule in the target stack, with the provided target\n* it will generate a separate stack that gives the source account permissions to publish events\n  to the event bus of the target account in the given region,\n  and make sure its deployed before the source stack\n\nfor more information, see the\n[aws documentation on cross-account events](https://docs.aws.amazon.com/eventbridge/latest/userguide/eventbridge-cross-account-event-delivery.html).\n\n## archiving\n\nit is possible to archive all or some events sent to an event bus. it is then possible to [replay these events](https://aws.amazon.com/blogs/aws/new-archive-and-replay-events-with-amazon-eventbridge/).\n\n```python\nbus = events.eventbus(self, \"bus\",\n    event_bus_name=\"mycustomeventbus\"\n)\n\nbus.archive(\"myarchive\",\n    archive_name=\"mycustomeventbusarchive\",\n    description=\"mycustomereventbus archive\",\n    event_pattern=events.eventpattern(\n        account=[stack.of(self).account]\n    ),\n    retention=duration.days(365)\n)\n```\n\n## granting putevents to an existing eventbus\n\nto import an existing eventbus into your cdk application, use `eventbus.fromeventbusarn`, `eventbus.fromeventbusattributes`\nor `eventbus.fromeventbusname` factory method.\n\nthen, you can use the `grantputeventsto` method to grant `event:putevents` to the eventbus.\n\n```python\n# lambda_function: lambda.function\n\n\nevent_bus = events.eventbus.from_event_bus_arn(self, \"importedeventbus\", \"arn:aws:events:us-east-1:111111111:event-bus/my-event-bus\")\n\n# now you can just call methods on the eventbus\nevent_bus.grant_put_events_to(lambda_function)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-events",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-events/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-events/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-events/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "amazon eventbridge construct library",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk aws_events aws_events_targets aws_codebuild aws_ecs",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_events",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

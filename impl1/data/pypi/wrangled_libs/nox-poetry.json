@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# nox-poetry\n\n[![pypi](https://img.shields.io/pypi/v/nox-poetry.svg)][pypi_]\n[![python version](https://img.shields.io/pypi/pyversions/nox-poetry)][python version]\n[![license](https://img.shields.io/pypi/l/nox-poetry)][license]\n\n[![read the documentation at https://nox-poetry.readthedocs.io/](https://img.shields.io/readthedocs/nox-poetry/latest.svg?label=read%20the%20docs)][read the docs]\n[![tests](https://github.com/cjolowicz/nox-poetry/workflows/tests/badge.svg)][tests]\n[![codecov](https://codecov.io/gh/cjolowicz/nox-poetry/branch/main/graph/badge.svg)][codecov]\n\n[pypi_]: https://pypi.org/project/nox-poetry/\n[python version]: https://pypi.org/project/nox-poetry\n[read the docs]: https://nox-poetry.readthedocs.io/\n[tests]: https://github.com/cjolowicz/nox-poetry/actions?workflow=tests\n[codecov]: https://app.codecov.io/gh/cjolowicz/nox-poetry\n\nuse [poetry] inside [nox] sessions\n\nthis package provides a drop-in replacement for the `nox.session` decorator,\nand for the `nox.session` object passed to user-defined session functions.\nthis enables `session.install` to install packages at the versions specified in the poetry lock file.\n\n```python\nfrom nox_poetry import session\n\n@session(python=[\"3.10\", \"3.9\"])\ndef tests(session):\n    session.install(\"pytest\", \".\")\n    session.run(\"pytest\")\n```\n\n**disclaimer:** _this project is not affiliated with nox, and not an official nox plugin._\n\n## installation\n\ninstall `nox-poetry` from the python package index:\n\n```console\n$ pip install nox-poetry\n```\n\n**important:**\nthis package must be installed into the same environment that nox is run from.\nif you installed nox using [pipx],\nuse the following command to install this package into the same environment:\n\n```console\n$ pipx inject nox nox-poetry\n```\n\n## requirements\n\n- python 3.7+\n- poetry >= 1.0.0\n\nyou need to have a poetry installation on your system.\n`nox-poetry` uses poetry via its command-line interface.\n\n## usage\n\nimport the `@session` decorator from `nox_poetry` instead of `nox`.\nthere is nothing else you need to do.\nthe `session.install` method automatically honors the poetry lock file when installing dependencies.\nthis allows you to manage packages used in nox sessions as development dependencies in poetry.\n\nthis works because session functions are passed instances of `nox_poetry.session`,\na proxy for `nox.session` adding poetry-related functionality.\nbehind the scenes, nox-poetry uses poetry to export a [constraints file] and build the package.\n\nfor more fine-grained control, additional utilities are available under the `session.poetry` attribute:\n\n- `session.poetry.installroot(distribution_format=[\"wheel\"|\"sdist\"])`\n- `session.poetry.build_package(distribution_format=[\"wheel\"|\"sdist\"])`\n- `session.poetry.export_requirements()`\n\nnote that `distribution_format` is a [keyword-only parameter].\n\nhere is a comparison of the different installation methods:\n\n- use `session.install(...)` to install specific development dependencies, e.g. `session.install(\"pytest\")`.\n- use `session.install(\".\")` (or `session.poetry.installroot()`) to install your own package.\n- use `session.run_always(\"poetry\", \"install\", external=true)` to install your package with _all_ development dependencies.\n\nplease read the next section for the tradeoffs of each method.\n\n## why?\n\nlet's look at an example:\n\n```python\nfrom nox_poetry import session\n\n@session(python=[\"3.10\", \"3.9\"])\ndef tests(session):\n    session.install(\"pytest\", \".\")\n    session.run(\"pytest\")\n```\n\nthis session performs the following steps:\n\n- build a wheel from the local package.\n- install the wheel as well as the `pytest` package.\n- invoke `pytest` to run the test suite against the installation.\n\nconsider what would happen in this session\nif we had imported `@session` from `nox` instead of `nox_poetry`:\n\n- package dependencies would only be constrained by the wheel metadata, not by the lock file.\n  in other words, their versions would not be _pinned_.\n- the `pytest` dependency would not be constrained at all.\n- poetry would be installed as a build backend every time.\n\nunpinned dependencies mean that your checks are not reproducible and deterministic,\nwhich can lead to surprises in continuous integration and when collaborating with others.\nyou can solve these issues by declaring `pytest` as a development dependency,\nand installing your package and its dependencies using `poetry install`:\n\n```python\n@nox.session\ndef tests(session: session) -> none:\n    \"\"\"run the test suite.\"\"\"\n    session.run_always(\"poetry\", \"install\", external=true)\n    session.run(\"pytest\")\n```\n\nunfortunately, this approach comes with its own set of problems:\n\n- checks run against an editable installation of your package,\n  i.e. your local copy of the code, instead of the installed wheel your users see.\n  in the best case, any mistakes will still be caught during continuous integration.\n  in the worst case, you publish a buggy release because you forgot to commit some changes.\n- the package is installed, as well as all of its core and development dependencies,\n  no matter which tools a session actually runs.\n  code formatters or linters, for example, don't need your package installed at all.\n  besides being wasteful, it goes against the idea of running checks in isolated environments.\n\n`nox-poetry` uses a third approach:\n\n- installations are performed by pip, via the `session.install` method.\n- when installing your own package, poetry is used to build a wheel, which is passed to pip.\n- when installing third-party packages, poetry is used to export a [constraints file],\n  which is passed to pip along with the packages.\n  the constraints file ensures that package versions are pinned by the lock file,\n  without forcing an installation of every listed dependency and sub-dependency.\n\nin summary, this approach brings the following advantages:\n\n- you can manage tools like `pytest` as development dependencies in poetry.\n- dependencies are pinned by poetry's lock file, making checks predictable and deterministic.\n- you can run checks against an installed wheel, instead of your local copy of the code.\n- every tool can run in an isolated environment with minimal dependencies.\n- no need to install your package with all its dependencies if all you need is some linter.\n\n## contributing\n\ncontributions are very welcome.\nto learn more, see the [contributor guide].\n\n## license\n\ndistributed under the terms of the [mit license][license],\n_nox-poetry_ is free and open source software.\n\n## issues\n\nif you encounter any problems,\nplease [file an issue] along with a detailed description.\n\n## credits\n\nthis project was generated from [@cjolowicz]'s [hypermodern python cookiecutter] template.\n\n[@cjolowicz]: https://github.com/cjolowicz\n[hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python\n[nox]: https://nox.thea.codes/\n[poetry]: https://python-poetry.org/\n[constraints file]: https://pip.pypa.io/en/stable/user_guide/#constraints-files\n[file an issue]: https://github.com/cjolowicz/nox-poetry/issues\n[keyword-only parameter]: https://docs.python.org/3/glossary.html#keyword-only-parameter\n[nox.sessions.session.install]: https://nox.thea.codes/en/stable/config.html#nox.sessions.session.install\n[nox.sessions.session.run]: https://nox.thea.codes/en/stable/config.html#nox.sessions.session.run\n[pip install]: https://pip.pypa.io/en/stable/reference/pip_install/\n[pip]: https://pip.pypa.io/\n[pipx]: https://pipxproject.github.io/pipx/\n\n<!-- github-only -->\n\n[license]: https://github.com/cjolowicz/nox-poetry/blob/main/license\n[contributor guide]: https://github.com/cjolowicz/nox-poetry/blob/main/contributing.md\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "nox-poetry",
+  "package_url": "https://pypi.org/project/nox-poetry/",
+  "project_url": "https://pypi.org/project/nox-poetry/",
+  "project_urls": {
+    "Changelog": "https://github.com/cjolowicz/nox-poetry/releases",
+    "Documentation": "https://nox-poetry.readthedocs.io",
+    "Homepage": "https://github.com/cjolowicz/nox-poetry",
+    "Repository": "https://github.com/cjolowicz/nox-poetry"
+  },
+  "release_url": "https://pypi.org/project/nox-poetry/1.0.3/",
+  "requires_dist": [
+    "nox (>=2020.8.22)",
+    "packaging (>=20.9)",
+    "tomlkit (>=0.7)"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "nox-poetry",
+  "version": "1.0.3",
+  "releases": [],
+  "developers": [
+    "claudio_jolowicz",
+    "mail@claudiojolowicz.com"
+  ],
+  "kwds": "nox_poetry poetry nox poetry_ pipx",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_nox_poetry",
+  "homepage": "https://github.com/cjolowicz/nox-poetry",
+  "release_count": 20,
+  "dependency_ids": [
+    "pypi_nox",
+    "pypi_packaging",
+    "pypi_tomlkit"
+  ]
+}

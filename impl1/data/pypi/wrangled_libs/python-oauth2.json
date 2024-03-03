@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6"
+  ],
+  "description": "this project is not maintained anymore.\nif you are looking for a oauth 2.0 library to integrate into your python application, i recommend `oauthlib <https://pypi.org/project/oauthlib/>`_.\n\npython-oauth2\n#############\n\npython-oauth2 is a framework that aims at making it easy to provide authentication\nvia `oauth 2.0 <http://tools.ietf.org/html/rfc6749>`_ within an application stack.\n\n`documentation <http://python-oauth2.readthedocs.org/en/latest/index.html>`_\n\nstatus\n******\n\n.. image:: https://travis-ci.org/wndhydrnt/python-oauth2.png?branch=master\n   :target: https://travis-ci.org/wndhydrnt/python-oauth2\n\npython-oauth2 has reached its beta phase. all main parts of the `oauth 2.0 rfc <http://tools.ietf.org/html/rfc6749>`_ such as the various types of grants, refresh token and scopes have been implemented. however, bugs might occur or implementation details might be wrong.\n\ninstallation\n************\n\npython-oauth2 is available on\n`pypi <http://pypi.python.org/pypi/python-oauth2/>`_.\n\n    pip install python-oauth2\n\nusage\n*****\n\nexample authorization server\n\n.. code-block:: python\n\n    from wsgiref.simple_server import make_server\n    import oauth2\n    import oauth2.grant\n    import oauth2.error\n    import oauth2.store.memory\n    import oauth2.tokengenerator\n    import oauth2.web.wsgi\n\n\n    # create a siteadapter to interact with the user.\n    # this can be used to display confirmation dialogs and the like.\n    class examplesiteadapter(oauth2.web.authorizationcodegrantsiteadapter,\n                             oauth2.web.implicitgrantsiteadapter):\n        template = '''\n    <html>\n        <body>\n            <p>\n                <a href=\"{url}&confirm=confirm\">confirm</a>\n            </p>\n            <p>\n                <a href=\"{url}&deny=deny\">deny</a>\n            </p>\n        </body>\n    </html>'''\n\n        def authenticate(self, request, environ, scopes, client):\n            # check if the user has granted access\n            if request.post_param(\"confirm\") == \"confirm\":\n                return {}\n\n            raise oauth2.error.usernotauthenticated\n\n        def render_auth_page(self, request, response, environ, scopes,\n                             client):\n            url = request.path + \"?\" + request.query_string\n            response.body = self.template.format(url=url)\n            return response\n\n        def user_has_denied_access(self, request):\n            # check if the user has denied access\n            if request.post_param(\"deny\") == \"deny\":\n                return true\n            return false\n\n    # create an in-memory storage to store your client apps.\n    client_store = oauth2.store.memory.clientstore()\n    # add a client\n    client_store.add_client(client_id=\"abc\", client_secret=\"xyz\",\n                            redirect_uris=[\"http://localhost/callback\"])\n\n    site_adapter = examplesiteadapter()\n\n    # create an in-memory storage to store issued tokens.\n    # localtokenstore can store access and auth tokens\n    token_store = oauth2.store.memory.tokenstore()\n\n    # create the controller.\n    provider = oauth2.provider(\n        access_token_store=token_store,\n        auth_code_store=token_store,\n        client_store=client_store,\n        token_generator=oauth2.tokengenerator.uuid4()\n    )\n\n    # add grants you want to support\n    provider.add_grant(oauth2.grant.authorizationcodegrant(site_adapter=site_adapter))\n    provider.add_grant(oauth2.grant.implicitgrant(site_adapter=site_adapter))\n\n    # add refresh token capability and set expiration time of access tokens\n    # to 30 days\n    provider.add_grant(oauth2.grant.refreshtoken(expires_in=2592000))\n\n    # wrap the controller with the wsgi adapter\n    app = oauth2.web.wsgi.application(provider=provider)\n\n    if __name__ == \"__main__\":\n        httpd = make_server('', 8080, app)\n        httpd.serve_forever()\n\n\nthis example only shows how to instantiate the server.\nit is not a working example as a client app is missing. take a look at the\n`examples <docs/examples/>`_ directory.\n\nsupported storage backends\n**************************\n\npython-oauth2 does not force you to use a specific database.\nit currently supports these storage backends out-of-the-box:\n\n- mongodb\n- mysql\n- redis\n- memcached\n\nhowever, you are not not bound to these implementations.\nby adhering to the interface defined by the base classes in ``oauth2.store``,\nyou can easily add an implementation of your backend.\nit also is possible to mix different backends and e.g. read data of a client\nfrom mongodb while saving all tokens in memcached for fast access.\n\ntake a look at the examples in the *examples* directory of the project.\n\nsite adapter\n************\n\nlike for storage, python-oauth2 does not define how you identify a user or\nshow a confirmation dialogue.\ninstead your application should use the api defined by\n``oauth2.web.siteadapter``.",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "python-oauth2",
+  "package_url": "https://pypi.org/project/python-oauth2/",
+  "project_url": "https://pypi.org/project/python-oauth2/",
+  "project_urls": {
+    "Homepage": "https://github.com/wndhydrnt/python-oauth2"
+  },
+  "release_url": "https://pypi.org/project/python-oauth2/1.1.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "oauth 2.0 provider for python",
+  "version": "1.1.1",
+  "releases": [],
+  "developers": [
+    "hydrantanderwand@gmail.com",
+    "markus_meyer"
+  ],
+  "kwds": "oauthlib oauth2 oauth authorizationcodegrant auth",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_python_oauth2",
+  "homepage": "https://github.com/wndhydrnt/python-oauth2",
+  "release_count": 13,
+  "dependency_ids": []
+}

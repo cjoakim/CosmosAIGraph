@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3"
+  ],
+  "description": "# web-compile\n\n[![pypi][pypi-badge]][pypi-link]\n\na cli to compile/minify scss & js, and associated pre-commit hook.\n\nthis cli is a small wrapper around [libsass-python](https://github.com/sass/libsass-python),\n[rjsmin](http://opensource.perlig.de/rjsmin/) and [jinja2](https://jinja.palletsprojects.com),\nwhich also aims to be compatible with [pre-commit](https://pre-commit.com/),\nand provide a pre-commit hook.\n\n**note**: the package in on alpha release, but looks to be working as intended,\nand will be trialled in [sphinx-panels](https://github.com/executablebooks/sphinx-panels),\nand then [sphinx-book-theme](https://github.com/executablebooks/sphinx-book-theme).\n\n[pypi-badge]: https://img.shields.io/pypi/v/web-compile.svg\n[pypi-link]: https://pypi.org/project/web-compile\n\n## installation\n\nto use directly as a cli:\n\n```console\npip install web-compile\nweb-compile --help\n```\n\nto use *via* pre-commit:\n\nadd to your `.pre-commit-config.yaml`\n\n```yaml\n-   repo: https://github.com/executablebooks/web-compile\n    rev: v0.2.0\n    hooks:\n      - id: web-compile\n        # optional\n        args: [--config=config.yml]\n        files: >-\n            (?x)^(\n                web-compile-config.yml|\n                src/.*|\n                dist/.*\n            )$\n```\n\nby default, the hook will be initiated for all text file changes.\nbut it is advisable to constrain this to the known configuration file, and input/output folders.\n\n## configuration\n\nyou can can configure the compilation directly *via* the cli or using a configuration file;\nsimply replace `-` with `_`, cli takes priority over the file:\n\n```console\n$ web-compile --help\nusage: web-compile [options]\n\n  compile web assets.\n\noptions:\n  --version                       show the version and exit.\n  -c, --config file               allowed extensions: json, toml, yml, yaml\n                                  [default: web-compile-config.yml]\n\n  --sass-files dict               file mapping (config only)\n  --sass-format [nested|expanded|compact|compressed]\n                                  [default: compressed]\n  --sass-precision integer        precision for numbers.  [default: 5]\n  --sass-sourcemap                output source map.\n  --sass-encoding text            [default: utf8]\n  --js-files dict                 file mapping (config only)\n  --js-comments                   keep comments starting with '/*!'.\n  --js-encoding text              [default: utf8]\n  --jinja-files dict              file mapping (config only)\n  --jinja-variables dict          global variable mapping (config only)\n  --jinja-encoding text           [default: utf8]\n  --git-add / --no-git-add        add new files to git index.  [default: true]\n  --continue-on-error             do not stop on the first error.\n  --exit-code integer             exit code when files changed.  [default: 3]\n  --test-run                      do not delete/create any files.\n  -q, --quiet                     remove stdout logging.\n  -v, --verbose                   increase stdout logging.\n  --help                          show this message and exit.\n```\n\n`--config` can point to any of three file-formats:\n\n`config.yml`/`config.yaml`:\n\n```yaml\nweb-compile:\n  sass:\n    encoding: utf8\n    files:\n      tests/example_src/example1.scss: tests/example_dist/example1.[hash].css\n      tests/example_src/example2.scss: tests/example_dist/example2.[hash].css\n    format: compressed\n    precision: 5\n    sourcemap: true\n  js:\n    comments: false\n    encoding: utf8\n    files:\n      tests/example_src/example1.js: tests/example_dist/example1.[hash].js\n  jinja:\n    files:\n      tests/example_src/example1.j2: tests/example_dist/example1.txt\n      tests/example_src/example3.j2: tests/example_dist/example3.txt\n    variables:\n      a: b\n  continue_on_error: true\n  exit_code: 2\n  test_run: false\n  verbose: false\n  quiet: false\n```\n\n`config.toml`:\n\n```toml\n[web-compile]\nexit_code = 2\nverbose = false\ntest_run = false\ncontinue_on_error = true\nquiet = false\n\n[web-compile.sass]\nprecision = 5\nsourcemap = true\nformat = \"compressed\"\nencoding = \"utf8\"\n\n[web-compile.js]\ncomments = false\nencoding = \"utf8\"\n\n[web-compile.sass.files]\n\"tests/example_src/example1.scss\" = \"tests/example_dist/example1.[hash].css\"\n\"tests/example_src/example2.scss\" = \"tests/example_dist/example2.[hash].css\"\n\n[web-compile.js.files]\n\"tests/example_src/example1.js\" = \"tests/example_dist/example1.[hash].js\"\n\n[web-compile.jinja.files]\n\"tests/example_src/example1.j2\" = \"tests/example_dist/example1.txt\"\n\"tests/example_src/example3.j2\" = \"tests/example_dist/example3.txt\"\n\n[web-compile.jinja.variables]\na = \"b\"\n```\n\n`config.json`:\n\n```json\n{\n  \"web-compile\": {\n    \"sass\": {\n      \"files\": {\n        \"tests/example_src/example1.scss\": \"tests/example_dist/example1.[hash].css\",\n        \"tests/example_src/example2.scss\": \"tests/example_dist/example2.[hash].css\"\n      },\n      \"precision\": 5,\n      \"sourcemap\": true,\n      \"format\": \"compressed\",\n      \"encoding\": \"utf8\"\n    },\n    \"js\": {\n      \"files\": {\n        \"tests/example_src/example1.js\": \"tests/example_dist/example1.[hash].js\"\n      },\n      \"comments\": false,\n      \"encoding\": \"utf8\"\n    },\n    \"jinja\": {\n      \"files\": {\n        \"tests/example_src/example1.j2\": \"tests/example_dist/example1.txt\",\n        \"tests/example_src/example3.j2\": \"tests/example_dist/example3.txt\"\n      },\n      \"variables\": {\n        \"a\": \"b\"\n      }\n    },\n    \"exit_code\": 2,\n    \"verbose\": false,\n    \"test_run\": false,\n    \"continue_on_error\": true,\n    \"quiet\": false\n  }\n}\n```\n\n## usage\n\n### scss compilation\n\nsimply map a source scss file to an output css filename.paths should be relative to the configuration files and `@import` \\ `@use`ed partial files will also be read:\n\n```yaml\nweb-compile:\n  sass:\n    files:\n      src/file.scss: dist/file.css\n```\n\n```console\n$ web-compile\n```\n\n```\nsrc/\n    _partial.scss\n    file.scss\ndist/\n    file.css\n```\n\nif you use the `sourcemap` option, then a sourcemap will also be output,\nand a `sourcemappingurl` comment added to the css:\n\n```yaml\nweb-compile:\n  sass:\n    files:\n      src/file.scss: dist/file.css\n    sourcemap: true\n```\n\n```console\n$ web-compile\n```\n\n```\ndist/\n    file.css\n    file.scss.map.json\n```\n\nif you add `[hash]` to the css filename, then it will be replaced with the content hash.\nalso, any existing files, matching the pattern, with a different hash will be removed:\n\n```yaml\nweb-compile:\n  sass:\n    files:\n      src/file.scss: dist/file.[hash].css\n```\n\n```console\n$ web-compile\n```\n\n```\ndist/\n    file.beabd761a3703567b4ce06c9a6adde55.css\n```\n\n### javascript\n\njavascript files are minified and are configured similarly to scss.\n\n```yaml\nweb-compile:\n  js:\n    files:\n      src/file.js: dist/file.[hash].js\n```\n\n```console\n$ web-compile\n```\n\n```\ndist/\n    file.beabd761a3703567b4ce06c9a6adde55.js\n```\n\n### jinja templates\n\nfiles can be created from jinja templates.\nthese are created after the scss and js files are compiled.\nin addition, they may be combined with two jinja filters designed for this tool:\n\n- `compiled_name` will convert an input file path to the compiled file name.\n- `hash` will return the hash for a filename that can be inserted wherever you wish.\n\n`src/file.j2`:\n```jinja\n{{ \"src/file.scss\" | compiled_name }}\n{{ \"src/file.scss\" | compiled_name }}?digest={{ \"src/file.scss\" | hash }}\n{{ var1 }}\n```\n\n```yaml\nweb-compile:\n  sass:\n    files:\n      src/file.scss: dist/file.[hash].css\n  jinja:\n    files:\n      src/file.j2: dist/file.txt\n    variables:\n      var1: other\n```\n\n```console\n$ web-compile\n```\n\n`dist/file.txt`:\n```\nfile.beabd761a3703567b4ce06c9a6adde55.css\nfile.beabd761a3703567b4ce06c9a6adde55.css?digest=beabd761a3703567b4ce06c9a6adde55\nother\n```\n\n## development\n\nto run the tests:\n\n```console\npip install tox\ntox -e py37\n```\n\nto test out the cli:\n\n```console\ntox -e py37-cli\n```\n\nto test the pre-commit hook:\n\n```console\ntox -e try-repo\n```\n\nfor code style:\n\n```console\npip install pre-commit\npre-commit run --all\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "sass scss js jinja compile pre-commit",
+  "license": "mit",
+  "name": "web-compile",
+  "package_url": "https://pypi.org/project/web-compile/",
+  "project_url": "https://pypi.org/project/web-compile/",
+  "project_urls": {
+    "Homepage": "https://github.com/executablebooks/web-compile"
+  },
+  "release_url": "https://pypi.org/project/web-compile/0.2.3/",
+  "requires_dist": [
+    "click (<10.0.0,>=7.1.2)",
+    "jinja2 (~=3.0.3)",
+    "libsass (~=0.20.1)",
+    "gitpython (~=3.1.8)",
+    "pyyaml",
+    "rjsmin (~=1.1.0)",
+    "toml",
+    "pytest (~=6.0.1) ; extra == 'testing'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "a cli to compile/minify scss & js, and associated pre-commit hook.",
+  "version": "0.2.3",
+  "releases": [],
+  "developers": [
+    "chris_sewell",
+    "chrisj_sewell@hotmail.com"
+  ],
+  "kwds": "scss sass jinja2 jinja src",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_web_compile",
+  "homepage": "https://github.com/executablebooks/web-compile",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_gitpython",
+    "pypi_jinja2",
+    "pypi_libsass",
+    "pypi_pytest",
+    "pypi_pyyaml",
+    "pypi_rjsmin",
+    "pypi_toml"
+  ]
+}

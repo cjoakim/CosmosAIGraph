@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: end users/desktop",
+    "intended audience :: financial and insurance industry",
+    "intended audience :: science/research",
+    "license :: osi approved :: university of illinois/ncsa open source license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering"
+  ],
+  "description": "# linear models\r\n\r\n| metric                     |                                                                                                                                                                                                                                                          |\r\n| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\r\n| **latest release**         | [![pypi version](https://badge.fury.io/py/linearmodels.svg)](https://badge.fury.io/py/linearmodels)                                                                                                                                                      |\r\n| **continuous integration** | [![build status](https://dev.azure.com/kevinksheppard/kevinksheppard/_apis/build/status/bashtage.linearmodels?branchname=main)](https://dev.azure.com/kevinksheppard/kevinksheppard/_build/latest?definitionid=2&branchname=main)                        |\r\n|                            | [![build status](https://ci.appveyor.com/api/projects/status/7768doy6wrdunmdt/branch/main?svg=true)](https://ci.appveyor.com/project/bashtage/linearmodels/branch/main)                                                                                  |\r\n| **coverage**               | [![codecov](https://codecov.io/gh/bashtage/linearmodels/branch/main/graph/badge.svg)](https://codecov.io/gh/bashtage/linearmodels)                                                                                                                       |\r\n| **code quality**           | [![codacy badge](https://api.codacy.com/project/badge/grade/745a24a69cb2466b95df6a53c83892de)](https://www.codacy.com/manual/bashtage/linearmodels?utm_source=github.com&utm_medium=referral&utm_content=bashtage/linearmodels&utm_campaign=badge_grade) |\r\n|                            | [![codebeat badge](https://codebeat.co/badges/aaae2fb4-72b5-4a66-97cd-77b93488f243)](https://codebeat.co/projects/github-com-bashtage-linearmodels-main)                                                                                                 |\r\n| **citation**               | [![doi](https://zenodo.org/badge/82291672.svg)](https://zenodo.org/badge/latestdoi/82291672)                                                                                                                                                             |\r\n\r\nlinear (regression) models for python. extends\r\n[statsmodels](http://www.statsmodels.org) with panel regression,\r\ninstrumental variable estimators, system estimators and models for\r\nestimating asset prices:\r\n\r\n-   **panel models**:\r\n    -   fixed effects (maximum two-way)\r\n    -   first difference regression\r\n    -   between estimator for panel data\r\n    -   pooled regression for panel data\r\n    -   fama-macbeth estimation of panel models\r\n\r\n-   **high-dimensional regresssion**:\r\n    -   absorbing least squares\r\n\r\n-   **instrumental variable estimators**\r\n    -   two-stage least squares\r\n    -   limited information maximum likelihood\r\n    -   k-class estimators\r\n    -   generalized method of moments, also with continuously updating\r\n\r\n-   **factor asset pricing models**:\r\n    -   2- and 3-step estimation\r\n    -   time-series estimation\r\n    -   gmm estimation\r\n\r\n-   **system regression**:\r\n    -   seemingly unrelated regression (sur/sure)\r\n    -   three-stage least squares (3sls)\r\n    -   generalized method of moments (gmm) system estimation\r\n\r\ndesigned to work equally well with numpy, pandas or xarray data.\r\n\r\n## panel models\r\n\r\nlike [statsmodels](http://www.statsmodels.org) to include, supports\r\nformulas for specifying models. for example, the classic grunfeld regression can be\r\nspecified\r\n\r\n```python\r\nimport numpy as np\r\nfrom statsmodels.datasets import grunfeld\r\ndata = grunfeld.load_pandas().data\r\ndata.year = data.year.astype(np.int64)\r\n# multiindex, entity - time\r\ndata = data.set_index(['firm','year'])\r\nfrom linearmodels import panelols\r\nmod = panelols(data.invest, data[['value','capital']], entity_effects=true)\r\nres = mod.fit(cov_type='clustered', cluster_entity=true)\r\n```\r\n\r\nmodels can also be specified using the formula interface.\r\n\r\n```python\r\nfrom linearmodels import panelols\r\nmod = panelols.from_formula('invest ~ value + capital + entityeffects', data)\r\nres = mod.fit(cov_type='clustered', cluster_entity=true)\r\n```\r\n\r\nthe formula interface for `panelols` supports the special values\r\n`entityeffects` and `timeeffects` which add entity (fixed) and time\r\neffects, respectively.\r\n\r\nformula support comes from the [formulaic](https://github.com/matthewwardrop/formulaic/)\r\npackage which is a replacement for [patsy](https://patsy.readthedocs.io/en/latest/).\r\n\r\n## instrumental variable models\r\n\r\niv regression models can be similarly specified.\r\n\r\n```python\r\nimport numpy as np\r\nfrom linearmodels.iv import iv2sls\r\nfrom linearmodels.datasets import mroz\r\ndata = mroz.load()\r\nmod = iv2sls.from_formula('np.log(wage) ~ 1 + exper + exper ** 2 + [educ ~ motheduc + fatheduc]', data)\r\n```\r\n\r\nthe expressions in the `[ ]` indicate endogenous regressors (before `~`)\r\nand the instruments.\r\n\r\n## installing\r\n\r\nthe latest release can be installed using pip\r\n\r\n```bash\r\npip install linearmodels\r\n```\r\n\r\nthe main branch can be installed by cloning the repo and running setup\r\n\r\n```bash\r\ngit clone https://github.com/bashtage/linearmodels\r\ncd linearmodels\r\npip install .\r\n```\r\n\r\n## documentation\r\n\r\n[stable documentation](https://bashtage.github.io/linearmodels/) is\r\nbuilt on every tagged version using\r\n[doctr](https://github.com/drdoctr/doctr).\r\n[development documentation](https://bashtage.github.io/linearmodels/devel)\r\nis automatically built on every successful build of main.\r\n\r\n## plan and status\r\n\r\nshould eventually add some useful linear model estimators such as panel\r\nregression. currently only the single variable iv estimators are polished.\r\n\r\n-   linear instrumental variable estimation - **complete**\r\n-   linear panel model estimation - **complete**\r\n-   fama-macbeth regression - **complete**\r\n-   linear factor asset pricing - **complete**\r\n-   system regression - **complete**\r\n-   linear iv panel model estimation - _not started_\r\n-   dynamic panel model estimation - _not started_\r\n\r\n## requirements\r\n\r\n### running\r\n\r\n-   python 3.9+\r\n-   numpy (1.19+)\r\n-   scipy (1.5+)\r\n-   pandas (1.1+)\r\n-   statsmodels (0.12+)\r\n-   xarray (0.16+, optional)\r\n-   cython (0.29.34+, optional)\r\n\r\n### testing\r\n\r\n-   py.test\r\n\r\n### documentation\r\n\r\n-   sphinx\r\n-   sphinx-immaterial\r\n-   nbsphinx\r\n-   nbconvert\r\n-   nbformat\r\n-   ipython\r\n-   jupyter\r\n",
+  "docs_url": null,
+  "keywords": "linear models,regression,instrumental variables,iv,panel,fixed effects,clustered,heteroskedasticity,endogeneity,instruments,statistics,statistical inference,econometrics",
+  "license": "ncsa",
+  "name": "linearmodels",
+  "package_url": "https://pypi.org/project/linearmodels/",
+  "project_url": "https://pypi.org/project/linearmodels/",
+  "project_urls": {
+    "Homepage": "http://github.com/bashtage/linearmodels"
+  },
+  "release_url": "https://pypi.org/project/linearmodels/5.3/",
+  "requires_dist": [
+    "numpy >=1.19.0",
+    "pandas >=1.1.0",
+    "scipy >=1.5.0",
+    "statsmodels >=0.12.0",
+    "mypy-extensions >=0.4",
+    "Cython >=0.29.34",
+    "pyhdfe >=0.1",
+    "formulaic >=0.6.5",
+    "setuptools-scm[toml] <8.0.0,>=7.0.0"
+  ],
+  "requires_python": ">=3.9",
+  "summary": "linear panel, instrumental variable, asset pricing, and system regression models for python",
+  "version": "5.3",
+  "releases": [],
+  "developers": [
+    "kevin.k.sheppard@gmail.com",
+    "kevin_sheppard"
+  ],
+  "kwds": "econometrics endogeneity heteroskedasticity endogenous regression",
+  "license_kwds": "ncsa",
+  "libtype": "pypi",
+  "id": "pypi_linearmodels",
+  "homepage": "http://github.com/bashtage/linearmodels",
+  "release_count": 41,
+  "dependency_ids": [
+    "pypi_cython",
+    "pypi_formulaic",
+    "pypi_mypy_extensions",
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_pyhdfe",
+    "pypi_scipy",
+    "pypi_setuptools_scm",
+    "pypi_statsmodels"
+  ]
+}

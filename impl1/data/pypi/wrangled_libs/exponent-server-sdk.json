@@ -1,0 +1,36 @@
+{
+  "classifiers": [],
+  "description": "# exponent-server-sdk-python\n\nthis repo is maintained by expo's awesome community :heart_eyes:! so, if you have problems with the code in this repository, please feel free to open an issue, and make a pr. thanks!\n\n## installation\n\n```\npip install exponent_server_sdk\n```\n\n## usage\n\nuse to send push notifications to exponent experiences from a python server.\n\n[full documentation](https://docs.expo.io/versions/latest/guides/push-notifications#http2-api) on the api is available if you want to dive into the details.\n\nhere's an example on how to use this with retries and reporting via [pyrollbar](https://github.com/rollbar/pyrollbar).\n```python\nfrom exponent_server_sdk import (\n    devicenotregisterederror,\n    pushclient,\n    pushmessage,\n    pushresponseerror,\n    pushservererror,\n) \nfrom requests.exceptions import connectionerror, httperror\n\n\n# basic arguments. you should extend this function with the push features you\n# want to use, or simply pass in a `pushmessage` object.\ndef send_push_message(token, message, extra=none):\n    try:\n        response = pushclient().publish(\n            pushmessage(to=token,\n                        body=message,\n                        data=extra))\n    except pushservererror as exc:\n        # encountered some likely formatting/validation error.\n        rollbar.report_exc_info(\n            extra_data={\n                'token': token,\n                'message': message,\n                'extra': extra,\n                'errors': exc.errors,\n                'response_data': exc.response_data,\n            })\n        raise\n    except (connectionerror, httperror) as exc:\n        # encountered some connection or http error - retry a few times in\n        # case it is transient.\n        rollbar.report_exc_info(\n            extra_data={'token': token, 'message': message, 'extra': extra})\n        raise self.retry(exc=exc)\n\n    try:\n        # we got a response back, but we don't know whether it's an error yet.\n        # this call raises errors so we can handle them with normal exception\n        # flows.\n        response.validate_response()\n    except devicenotregisterederror:\n        # mark the push token as inactive\n        from notifications.models import pushtoken\n        pushtoken.objects.filter(token=token).update(active=false)\n    except pushticketerror as exc:\n        # encountered some other per-notification error.\n        rollbar.report_exc_info(\n            extra_data={\n                'token': token,\n                'message': message,\n                'extra': extra,\n                'push_response': exc.push_response._asdict(),\n            })\n        raise self.retry(exc=exc)\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "exponent-server-sdk",
+  "package_url": "https://pypi.org/project/exponent-server-sdk/",
+  "project_url": "https://pypi.org/project/exponent-server-sdk/",
+  "project_urls": {
+    "Homepage": "https://github.com/expo/exponent-server-sdk-python"
+  },
+  "release_url": "https://pypi.org/project/exponent-server-sdk/2.0.0/",
+  "requires_dist": [
+    "requests",
+    "six"
+  ],
+  "requires_python": "",
+  "summary": "expo server sdk for python",
+  "version": "2.0.0",
+  "releases": [],
+  "developers": [
+    "expo_team",
+    "exponent.team@gmail.com"
+  ],
+  "kwds": "exponent_server_sdk send_push_message expo push_response pushclient",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_exponent_server_sdk",
+  "homepage": "https://github.com/expo/exponent-server-sdk-python",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_requests",
+    "pypi_six"
+  ]
+}

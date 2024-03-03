@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: quality assurance",
+    "topic :: software development :: testing",
+    "topic :: system",
+    "topic :: system :: installation/setup",
+    "topic :: system :: shells",
+    "topic :: system :: software distribution",
+    "topic :: terminals"
+  ],
+  "description": "=======\njumpssh\n=======\n\n.. image:: https://secure.travis-ci.org/amadeusitgroup/jumpssh.svg?branch=master\n    :target: http://travis-ci.org/amadeusitgroup/jumpssh\n\n.. image:: https://coveralls.io/repos/amadeusitgroup/jumpssh/badge.svg?branch=master\n    :target: https://coveralls.io/r/amadeusitgroup/jumpssh?branch=master\n\n.. image:: https://badge.fury.io/py/jumpssh.svg\n    :target: https://badge.fury.io/py/jumpssh\n\n.. image:: https://readthedocs.org/projects/jumpssh/badge?version=latest\n    :target: https://jumpssh.readthedocs.io?badge=latest\n\n.. image:: https://sonarcloud.io/api/project_badges/measure?project=amadeusitgroup_jumpssh&metric=bugs\n    :target: https://sonarcloud.io/dashboard?id=amadeusitgroup_jumpssh\n\n.. image:: https://sonarcloud.io/api/project_badges/measure?project=amadeusitgroup_jumpssh&metric=vulnerabilities\n    :target: https://sonarcloud.io/dashboard?id=amadeusitgroup_jumpssh\n\n\n:jumpssh:          python module to run commands on remote servers\n:copyright:        copyright (c) 2017 amadeus sas\n:license:          `mit <https://github.com/amadeusitgroup/jumpssh/blob/master/license>`_\n:documentation:    https://jumpssh.readthedocs.io\n:development:      https://github.com/amadeusitgroup/jumpssh\n\nwhat\n----\n`jumpssh` is a module for python 2.7+/3.5+ that can be used to run commands on remote servers through a gateway.\n\nit is based on `paramiko library <http://www.paramiko.org>`_.\nit provides the ability to execute commands on hosts that are not directly accessible but only through one or\nmore servers.\nscript does not need to be uploaded on a remote server and can be run locally.\n\nseveral authentication methods are supported (password, ssh key).\n\ncommands can be run through several jump servers before reaching the remote server.\nno need to establish a session for each command, a single ssh session can run as many command as you want,\nincluding parallel queries, and you will get result for each command independently.\n\nso, why another python library to setup remote server through ssh ? here is a quick comparison with the most known existing python libraries\n - paramiko: provide very good implementation of sshv2 protocol in python but with a low level api a bit complex\n - ansible: require more configuration and understanding to start.\n   moreover, support of bastion host is done with modification of local ssh config to use proxycommand, and this is\n   needed for each bastion host.\n - fabric: use of jump server is much easier than ansible thanks to 'env.gateway' parameter, but does not allow jump through several servers.\n\ninstallation\n------------\nto install jumpssh, simply:\n\n.. code:: bash\n\n    $ pip install jumpssh\n\n\nexamples\n--------\nestablish ssh session with a remote host through a gateway:\n\n.. code:: python\n\n    >>> from jumpssh import sshsession\n\n    # establish ssh connection between your local machine and the jump server\n    >>> gateway_session = sshsession('gateway.example.com',\n    ...                              'my_user', password='my_password').open()\n\n    # from jump server, establish connection with a remote server\n    >>> remote_session = gateway_session.get_remote_session('remote.example.com',\n    ...                                                     password='my_password2')\n\n\nrun commands on remote host:\n\n.. code:: python\n\n    # command will be executed remotely and output will be returned locally and printed\n    >>> print(remote_session.get_cmd_output('ls -lta'))\n    total 28\n    drwxr-xr-x. 412 root    root    12288 mar 21 14:25 ..\n    drwx------.   2 my_user my_user    28 mar  6 19:25 .ssh\n    drwx------.   3 my_user my_user    70 mar  6 19:25 .\n    -rw-r--r--.   1 my_user my_user    18 jul 12  2016 .bash_logout\n    -rw-r--r--.   1 my_user my_user   193 jul 12  2016 .bash_profile\n    -rw-r--r--.   1 my_user my_user   231 jul 12  2016 .bashrc\n\n    # get exit code of the remotely executed command (here to check if a package is installed)\n    >>> remote_session.get_exit_code('yum list installed package_name')\n    0\n\nremote rest api usage:\n\n.. code:: python\n\n    # calling rest api on remote host that is only accessible from the gateway\n    >>> from jumpssh import restsshclient\n    >>> rest_client = restsshclient(gateway_session)\n\n    # syntax is similar to requests library (http://docs.python-requests.org)\n    >>> http_response = rest_client.get('http://remote.example.com/helloworld')\n    >>> http_response.status_code\n    200\n    >>> http_response.text\n    u'hello, world!'\n\nremote files operations:\n\n.. code:: python\n\n    # check if remote path exists\n    >>> remote_session.exists('/path/to/a/file')\n    true\n\n    # copy file from local machine to remote host through gateway\n    >>> remote_session.put('/local/path/to/a/file', '/remote/path/to/the/file')\n\n    # create file on remote host from local content\n    >>> remote_session.file('/remote/path/to/the/file',\n    ...                     content='remote file content', permissions='600')\n\n    # download remote file on local machine from remote host through gateway\n    >>> remote_session.get('/remote/path/to/the/file', '/local/path/')\n\n\ntests\n-----\njumpssh tests require docker, check `docker documentation <https://docs.docker.com>`_ for how to install it\ndepending on your os.\nit also requires few python packages. to install them, run:\n\n.. code:: bash\n\n    $ pip install -r requirements_dev.txt\n\nto run the test suite, clone the repository and run:\n\n.. code:: bash\n\n    $ pytest -sv tests/\n\nor simply:\n\n.. code:: bash\n\n    $ tox\n\n\ncontributing\n------------\n\nbug reports\n^^^^^^^^^^^\nbug reports are hugely important! before you raise one, though,\nplease check through the `github issues <https://github.com/amadeusitgroup/jumpssh/issues>`_,\nboth open and closed, to confirm that the bug hasn't been reported before.\n\nfeature requests\n^^^^^^^^^^^^^^^^\nif you think a feature is missing and could be useful in this module, feel free to raise a feature request through the\n`github issues <https://github.com/amadeusitgroup/jumpssh/issues>`_\n\ncode contributions\n^^^^^^^^^^^^^^^^^^\nwhen contributing code, please follow `this project-agnostic contribution guide <http://contribution-guide.org/>`_.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "jumpssh",
+  "package_url": "https://pypi.org/project/jumpssh/",
+  "project_url": "https://pypi.org/project/jumpssh/",
+  "project_urls": {
+    "Download": "https://pypi.python.org/pypi/jumpssh",
+    "Homepage": "https://github.com/AmadeusITGroup/JumpSSH"
+  },
+  "release_url": "https://pypi.org/project/jumpssh/1.6.5/",
+  "requires_dist": [
+    "paramiko"
+  ],
+  "requires_python": "",
+  "summary": "python library for remote ssh calls through a gateway.",
+  "version": "1.6.5",
+  "releases": [],
+  "developers": [
+    "amadeus_it_group",
+    "opensource@amadeus.com"
+  ],
+  "kwds": "amadeusitgroup_jumpssh project_badges jumpssh badge sonarcloud",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_jumpssh",
+  "homepage": "https://github.com/amadeusitgroup/jumpssh",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_paramiko"
+  ]
+}

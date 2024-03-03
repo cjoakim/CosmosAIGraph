@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: flake8",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: quality assurance"
+  ],
+  "description": "flake8-sfs - python string formatting style plugin\n==================================================\n\n.. image:: https://img.shields.io/pypi/v/flake8-sfs.svg\n   :alt: released on the python package index (pypi)\n   :target: https://pypi.org/project/flake8-sfs/\n.. image:: https://img.shields.io/conda/vn/conda-forge/flake8-sfs.svg\n   :alt: released on conda\n   :target: https://anaconda.org/conda-forge/flake8-sfs\n.. image:: https://results.pre-commit.ci/badge/github/peterjc/flake8-sfs/master.svg\n   :target: https://results.pre-commit.ci/latest/github/peterjc/flake8-sfs/master\n   :alt: pre-commit.ci status\n.. image:: https://img.shields.io/github/actions/workflow/status/peterjc/flake8-sfs/test.yml?logo=github-actions\n   :alt: github workflow status\n   :target: https://github.com/peterjc/flake8-sfs/actions\n.. image:: https://img.shields.io/pypi/dm/flake8-sfs.svg\n   :alt: pypi downloads\n   :target: https://pypistats.org/packages/flake8-sfs\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg\n   :alt: code style: black\n   :target: https://github.com/python/black\n\nintroduction\n------------\n\nthis is an mit licensed flake8 plugin for enforcing a python string formatting\npreference. it is available to install from the `python package index (pypi)\n<https://pypi.org/project/flake8-sfs/>`_.\n\nfor historical reasons, the python programming language has accumulated\nmultiple ways to do string formatting. the three main ones are:\n\n* percent operator (violation codes ``sfs1##``), as in this example:\n\n.. code :: pycon\n\n    >>> name = \"peter\"\n    >>> price = 1.2\n    >>> print(\"hello %s, do you have $%0.2f?\" % (name, price))\n    hello peter, do you have $1.20?\n\n* format method (violation codes ``sfs2##``), available since python 2.6,\n\n.. code :: pycon\n\n    >>> name = \"peter\"\n    >>> price = 1.2\n    >>> print(\"hello {}, do you have ${:0.2f}?\".format(name, price))\n    hello peter, do you have $1.20?\n\n* f-strings (violation codes ``sfs3##``), available since python 3.6,\n\n.. code :: pycon\n\n    >>> name = \"peter\"\n    >>> price = 1.2\n    >>> print(f\"hello {name}, do you have ${price:0.2f}?\")\n\nwe are spoilt for choice, but quoting the `zen of python\n<https://www.python.org/dev/peps/pep-0020/>`_, *there should be one - and\npreferably only one - obvious way to do it*. this flake8 plugin exists to let\nyou define which of these styles your project allows.\n\nby default this plugin complains about all three styles - we expect you to make\nan explicit choice and configure which codes to ignore. see uses cases below.\n\nflake8 validation codes\n-----------------------\n\nearly versions of flake8 assumed a single character prefix for the validation\ncodes, which became problematic with collisions in the plugin ecosystem. since\nv3.0, flake8 has supported longer prefixes therefore this plugin uses ``sfs``\nas its prefix (short for string format style).\n\nprefix ``sfs1`` - percent operator:\n\n====== =======================================================================\ncode   description\n------ -----------------------------------------------------------------------\nsfs101 string literal formatting using percent operator.\nsfs102 bytes literal formatting using percent operator.\n====== =======================================================================\n\nprefix ``sfs2`` - format method:\n\n====== =======================================================================\ncode   description\n------ -----------------------------------------------------------------------\nsfs201 string literal formatting using .format method.\nsfs202 string formatting with str.format('...', ...) directly.\n====== =======================================================================\n\nprefix ``sfs3`` - f-strings:\n\n====== =======================================================================\ncode   description\n------ -----------------------------------------------------------------------\nsfs301 string literal formatting using f-string.\n====== =======================================================================\n\nyou can use a partial code like ``sfs1`` in flake8 to ignore all the ``sfs1##``\npercent formatting codes.\n\nuse cases\n=========\n\nif you accept that f-strings are best, you could run a tool like `flynt\n<https://github.com/ikamensh/flynt>`_ to automatically convert all your code -\nand then use this flake8 plugin to enforce the style by configuring it to\nignore the ``sfs301`` violation.\n\nyou might be maintaining a project which still supports python 2, where you\nhave a mix of percent and format method string formatting. here tell flake8 to\nignore the ``sfs1`` and ``sfs2`` prefixes, and complain only about f-strings\nwhich would be a syntax error on python 2 (i.e. enforce only prefix ``sfs3``).\n\nalternatively, you might have a large legacy codebase with lots of the percent\nformatting - yet want to move any format methods to f-strings. here you could\nignore the ``sfs1`` and ``sfs3`` prefixes and enforce only the format method\nchecks (``sfs2`` prefix).\n\nor you might say the old ways are the best, and configure flake8 to ignore the\npercent formatting but treat either the format method or f-strings as errors\n(by ignoring the ``sfs1`` prefix).\n\ninstallation and usage\n----------------------\n\npython 3.7 or later is required.\n\nwe recommend installing the plugin using pip, which handles the dependencies::\n\n    $ pip install flake8-sfs\n\nalternatively, if you are using the anaconda packaging system, the following\ncommand will install the plugin with its dependencies::\n\n    $ conda install -c conda-forge flake8-sfs\n\nthe new validator should be automatically included when using ``flake8`` which\nmay now report additional validation codes starting with ``sfs`` (as defined\nabove). for example::\n\n    $ flake8 example.py\n\nyou can request only the ``sfs`` codes be shown using::\n\n    $ flake8 --select sfs example.py\n\nyou should add at least some sfs validation codes to your flake8 configuration\nfile's select or ignore list.\n\nconfiguration\n-------------\n\nwe assume you are familiar with `flake8 configuration\n<http://flake8.pycqa.org/en/latest/user/configuration.html>`_.\n\nunless your code performs no string formatting at all (which would be unusual),\nyou should tell flake8 to ignore at least one of this plugin's violation codes.\nfor example::\n\n    [flake8]\n    extend-ignore =\n        # ignore f-strings, we like them:\n        sfs301,\n\nnote that flake8 allows splitting comma separated lists over multiple lines,\nand allows including of hash comment lines.\n\n\nversion history\n---------------\n\n======= ========== ===========================================================\nversion released   changes\n------- ---------- -----------------------------------------------------------\nv1.0.0  2023-11-01 - calling this version 1.0.0 as has been stable for years.\n                   - updates to documentation and pypi metadata.\nv0.0.4  2022-11-01 - requires at least python 3.7.\n                   - replaces ``setup.py`` with ``pyproject.toml``\n                     (contribution from\n                     `sergey b kirpichev <https://github.com/skirpichev>`_).\nv0.0.3  2020-01-22 - updates to documentation and pypi metadata.\nv0.0.2  2020-01-12 - codes now have a hierarchy (so can ignore whole groups).\n                   - added ``str.format(\"...\", ...)`` check.\nv0.0.1  2020-01-11 - initial public release (initial codes later reallocated).\n======= ========== ===========================================================\n\n\ndevelopers\n----------\n\nthis plugin is on github at https://github.com/peterjc/flake8-sfs\n\ndevelopers may install the plugin from the git repository with optional build\ndependencies::\n\n    $ pip install -e .[develop]\n\nto make a new release once tested locally and online::\n\n    $ git tag vx.y.z\n    $ python -m build\n    $ git push origin master --tags\n    $ twine upload dist/flake8?sfs-x.y.z*\n\nthe pypi upload should trigger an automated pull request updating the\n`flake8-sfs conda-forge recipe\n<https://github.com/conda-forge/flake8-sfs-feedstock/blob/master/recipe/meta.yaml>`_.\n",
+  "docs_url": null,
+  "keywords": "strings,formatting,style,f-string",
+  "license": "mit",
+  "name": "flake8-sfs",
+  "package_url": "https://pypi.org/project/flake8-sfs/",
+  "project_url": "https://pypi.org/project/flake8-sfs/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/peterjc/flake8-sfs/issues",
+    "Documentation": "https://github.com/peterjc/flake8-sfs/blob/master/README.rst",
+    "Homepage": "https://github.com/peterjc/flake8-sfs",
+    "Source Code": "https://github.com/peterjc/flake8-sfs/"
+  },
+  "release_url": "https://pypi.org/project/flake8-sfs/1.0.0/",
+  "requires_dist": [
+    "flake8 >=3",
+    "build ; extra == 'develop'",
+    "twine ; extra == 'develop'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "python string formatting style (sfs) plugin for flake8",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "p.j.a.cock@googlemail.com",
+    "peter_j"
+  ],
+  "kwds": "flake8 svg pypistats styles strings",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flake8_sfs",
+  "homepage": "",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_build",
+    "pypi_flake8",
+    "pypi_twine"
+  ]
+}

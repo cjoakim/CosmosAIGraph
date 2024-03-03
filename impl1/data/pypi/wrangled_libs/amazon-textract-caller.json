@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: utilities"
+  ],
+  "description": "# textract-caller\n\namazon-textract-caller provides a collection of ready to use functions and sample implementations to speed up the evaluation and development for any project using amazon textract.\n\nmaking it easy to call amazon textract regardless of file type and location.\n\n## install\n\n```bash\n> python -m pip install amazon-textract-caller\n```\n\n## functions\n\n```python\nfrom textractcaller import call_textract\ndef call_textract(input_document: union[str, bytes],\n                  features: optional[list[textract_features]] = none,\n                  queries_config: optional[queriesconfig] = none,\n                  output_config: optional[outputconfig] = none,\n                  adapters_config: optional[adaptersconfig] = none,\n                  kms_key_id: str = \"\",\n                  job_tag: str = \"\",\n                  notification_channel: optional[notificationchannel] = none,\n                  client_request_token: str = \"\",\n                  return_job_id: bool = false,\n                  force_async_api: bool = false,\n                  call_mode: textract_call_mode = textract_call_mode.default,\n                  boto3_textract_client=none,\n                  job_done_polling_interval=1) -> dict:\n```\n\nalso useful when receiving the json response from an asynchronous job (start_document_text_detection or start_document_analysis)\n\n```python\nfrom textractcaller import get_full_json\ndef get_full_json(job_id: str = none,\n                  textract_api: textract_api = textract_api.detect,\n                  boto3_textract_client=none)->dict:\n```\n\nand when receiving the json from the outputconfig location, this method is useful as well.\n\n```python\nfrom textractcaller import get_full_json_from_output_config\ndef get_full_json_from_output_config(output_config: outputconfig = none,\n                                     job_id: str = none,\n                                     s3_client = none)->dict:\n```\n\n## samples\n\n### calling with file from local filesystem only with detect_text\n\n```python\ntextract_json = call_textract(input_document=\"/folder/local-filesystem-file.png\")\n```\n\n### calling with file from local filesystem only detect_text and using in textract response parser\n\n(needs trp dependency through ```python -m pip install amazon-textract-response-parser```)\n\n```python\nimport json\nfrom trp import document\nfrom textractcaller import call_textract\n\ntextract_json = call_textract(input_document=\"/folder/local-filesystem-file.png\")\nd = document(textract_json)\n```\n\n### calling with queries for a multi-page document and extract the answers\n\nsample also uses the amazon-textract-response-parser\n\n```\npython -m pip install amazon-textract-caller amazon-textract-response-parser\n```\n\n```python\nimport textractcaller as tc\nimport trp.trp2 as t2\nimport boto3\n\ntextract = boto3.client('textract', region_name=\"us-east-2\")\nq1 = tc.query(text=\"what is the employee ssn?\", alias=\"ssn\", pages=[\"1\"])\nq2 = tc.query(text=\"what is ytd gross pay?\", alias=\"gross_pay\", pages=[\"2\"])\ntextract_json = tc.call_textract(\n    input_document=\"s3://amazon-textract-public-content/blogs/2-pager.pdf\",\n    queries_config=tc.queriesconfig(queries=[q1, q2]),\n    features=[tc.textract_features.queries],\n    force_async_api=true,\n    boto3_textract_client=textract)\nt_doc: t2.tdocument = t2.tdocumentschema().load(textract_json)  # type: ignore\nfor page in t_doc.pages:\n    query_answers = t_doc.get_query_answers(page=page)\n    for x in query_answers:\n        print(f\"{x[1]},{x[2]}\")\n```\n\n### calling with custom queries for a multi-page document using an adapter\n\nsample also uses the amazon-textract-response-parser\n\n```\npython -m pip install amazon-textract-caller amazon-textract-response-parser\n```\n\n```python\nimport textractcaller as tc\nimport trp.trp2 as t2\nimport boto3\n\ntextract = boto3.client('textract', region_name=\"us-east-2\")\nq1 = tc.query(text=\"what is the employee ssn?\", alias=\"ssn\", pages=[\"1\"])\nq2 = tc.query(text=\"what is ytd gross pay?\", alias=\"gross_pay\", pages=[\"2\"])\nadapter1 = tc.adapter(adapter_id=\"2e9bf1c4aa31\", version=\"1\", pages=[\"1\"])\ntextract_json = tc.call_textract(\n    input_document=\"s3://amazon-textract-public-content/blogs/2-pager.pdf\",\n    queries_config=tc.queriesconfig(queries=[q1, q2]),\n    adapters_config=tc.adaptersconfig(adapters=[adapter1])\n    features=[tc.textract_features.queries],\n    force_async_api=true,\n    boto3_textract_client=textract)\nt_doc: t2.tdocument = t2.tdocumentschema().load(textract_json)  # type: ignore\nfor page in t_doc.pages:\n    query_answers = t_doc.get_query_answers(page=page)\n    for x in query_answers:\n        print(f\"{x[1]},{x[2]}\")\n```\n\n\n### calling with file from local filesystem with tables features\n\n```python\nfrom textractcaller import call_textract, textract_features\nfeatures = [textract_features.tables]\nresponse = call_textract(\n    input_document=\"/folder/local-filesystem-file.png\", features=features)\n```\n\n### call with images located on s3 but force asynchronous api\n\n```python\nfrom textractcaller import call_textract\nresponse = call_textract(input_document=\"s3://some-bucket/w2-example.png\", force_async_api=true)\n```\n\n### call with outputconfig, customer-managed-key\n\n```python\nfrom textractcaller import call_textract\nfrom textractcaller import outputconfig, textract_features\noutput_config = outputconfig(s3_bucket=\"somebucket-encrypted\", s3_prefix=\"output/\")\nresponse = call_textract(input_document=\"s3://someprefix/somefile.png\",\n                          force_async_api=true,\n                          output_config=output_config,\n                          kms_key_id=\"arn:aws:kms:us-east-1:12345678901:key/some-key-id-ref-erence\",\n                          return_job_id=false,\n                          job_tag=\"sometag\",\n                          client_request_token=\"sometoken\")\n\n```\n\n### call with pdf located on s3 and force return of jobid instead of json response\n\n```python\nfrom textractcaller import call_textract\nresponse = call_textract(input_document=\"s3://some-bucket/some-document.pdf\", return_job_id=true)\njob_id = response['jobid']\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "amazon-textract-textractor amazon textract textractor helper caller",
+  "license": "apache license version 2.0",
+  "name": "amazon-textract-caller",
+  "package_url": "https://pypi.org/project/amazon-textract-caller/",
+  "project_url": "https://pypi.org/project/amazon-textract-caller/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws-samples/amazon-textract-textractor/tree/master/caller"
+  },
+  "release_url": "https://pypi.org/project/amazon-textract-caller/0.2.1/",
+  "requires_dist": [
+    "boto3 (>=1.26.35)",
+    "botocore",
+    "amazon-textract-response-parser (>=0.1.39)",
+    "amazon-textract-response-parser ; extra == 'testing'",
+    "pytest ; extra == 'testing'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "amazon textract caller tools",
+  "version": "0.2.1",
+  "releases": [],
+  "developers": [
+    "amazon_rekognition_textract_demoes",
+    "rekognition-textract-demos@amazon.com"
+  ],
+  "kwds": "call_textract textract_api textract_call_mode textract textract_features",
+  "license_kwds": "apache license version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_amazon_textract_caller",
+  "homepage": "https://github.com/aws-samples/amazon-textract-textractor/tree/master/caller",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_amazon_textract_response_parser",
+    "pypi_boto3",
+    "pypi_botocore",
+    "pypi_pytest"
+  ]
+}

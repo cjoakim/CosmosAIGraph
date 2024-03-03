@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "funcparserlib\n=============\n\nrecursive descent parsing library for python based on functional combinators.\n\n[![pypi](https://img.shields.io/pypi/v/funcparserlib)](https://pypi.org/project/funcparserlib/)\n[![pypi - downloads](https://img.shields.io/pypi/dm/funcparserlib)](https://pypi.org/project/funcparserlib/)\n\n\ndescription\n-----------\n\nthe primary focus of `funcparserlib` is **parsing little languages** or **external dsls** (domain specific languages).\n\nparsers made with `funcparserlib` are pure-python ll(\\*) parsers. it means that it's **very easy to write parsers** without thinking about lookaheads and other hardcore parsing stuff. however, recursive descent parsing is a rather slow method compared to ll(k) or lr(k) algorithms. still, parsing with `funcparserlib` is **at least twice faster than pyparsing**, a very popular library for python.\n\nthe source code of `funcparserlib` is only 1.2k lines of code, with lots of comments. its api is fully type hinted. it features the longest parsed prefix error reporting, as well as a tiny lexer generator for token position tracking.\n\nthe idea of parser combinators used in `funcparserlib` comes from the [introduction to functional programming](https://www.cl.cam.ac.uk/teaching/lectures/funprog-jrh-1996/) course. we have converted it from ml into python.\n\n\ninstallation\n------------\n\nyou can install `funcparserlib` from [pypi](https://pypi.org/project/funcparserlib/):\n\n```shell\n$ pip install funcparserlib\n```\n\nthere are no dependencies on other libraries.\n\n\ndocumentation\n-------------\n\n* [getting started](https://funcparserlib.pirx.ru/getting-started/)\n    * your **starting point** with `funcparserlib`\n* [api reference](https://funcparserlib.pirx.ru/api/)\n    * learn the details of the api\n\nthere are several examples available in the `tests/` directory:\n\n* [graphviz dot parser](https://github.com/vlasovskikh/funcparserlib/blob/master/tests/dot.py)\n* [json parser](https://github.com/vlasovskikh/funcparserlib/blob/master/tests/json.py)\n\nsee also [the changelog](https://funcparserlib.pirx.ru/changes/).\n\n\nexample\n-------\n\nlet's consider a little language of **numeric expressions** with a syntax similar to python expressions. here are some expression strings in this language:\n\n```\n0\n1 + 2 + 3\n-1 + 2 ** 32\n3.1415926 * (2 + 7.18281828e-1) * 42\n```\n\n\nhere is **the complete source code** of the tokenizer and the parser for this language written using `funcparserlib`:\n\n```python\nfrom typing import list, tuple, union\nfrom dataclasses import dataclass\n\nfrom funcparserlib.lexer import make_tokenizer, tokenspec, token\nfrom funcparserlib.parser import tok, parser, many, forward_decl, finished\n\n\n@dataclass\nclass binaryexpr:\n    op: str\n    left: \"expr\"\n    right: \"expr\"\n\n\nexpr = union[binaryexpr, int, float]\n\n\ndef tokenize(s: str) -> list[token]:\n    specs = [\n        tokenspec(\"whitespace\", r\"\\s+\"),\n        tokenspec(\"float\", r\"[+\\-]?\\d+\\.\\d*([ee][+\\-]?\\d+)*\"),\n        tokenspec(\"int\", r\"[+\\-]?\\d+\"),\n        tokenspec(\"op\", r\"(\\*\\*)|[+\\-*/()]\"),\n    ]\n    tokenizer = make_tokenizer(specs)\n    return [t for t in tokenizer(s) if t.type != \"whitespace\"]\n\n\ndef parse(tokens: list[token]) -> expr:\n    int_num = tok(\"int\") >> int\n    float_num = tok(\"float\") >> float\n    number = int_num | float_num\n\n    expr: parser[token, expr] = forward_decl()\n    parenthesized = -op(\"(\") + expr + -op(\")\")\n    primary = number | parenthesized\n    power = primary + many(op(\"**\") + primary) >> to_expr\n    term = power + many((op(\"*\") | op(\"/\")) + power) >> to_expr\n    sum = term + many((op(\"+\") | op(\"-\")) + term) >> to_expr\n    expr.define(sum)\n\n    document = expr + -finished\n\n    return document.parse(tokens)\n\n\ndef op(name: str) -> parser[token, str]:\n    return tok(\"op\", name)\n\n\ndef to_expr(args: tuple[expr, list[tuple[str, expr]]]) -> expr:\n    first, rest = args\n    result = first\n    for op, expr in rest:\n        result = binaryexpr(op, result, expr)\n    return result\n```\n\nnow, consider this numeric expression: `3.1415926 * (2 + 7.18281828e-1) * 42`.\n\nlet's `tokenize()` it using the tokenizer we've created with `funcparserlib.lexer`:\n\n```\n[\n    token('float', '3.1415926'),\n    token('op', '*'),\n    token('op', '('),\n    token('int', '2'),\n    token('op', '+'),\n    token('float', '7.18281828e-1'),\n    token('op', ')'),\n    token('op', '*'),\n    token('int', '42'),\n]\n```\n\nlet's `parse()` these tokens into an expression tree using our parser created with `funcparserlib.parser`:\n\n```\nbinaryexpr(\n    op='*',\n    left=binaryexpr(\n        op='*',\n        left=3.1415926,\n        right=binaryexpr(op='+', left=2, right=0.718281828),\n    ),\n    right=42,\n)\n```\n\nlearn how to write this parser using `funcparserlib` in the [getting started](https://funcparserlib.pirx.ru/getting-started/) guide!\n\n\nused by\n-------\n\nsome open-source projects that use `funcparserlib` as an explicit dependency:\n\n* [hy](https://github.com/hylang/hy), a lisp dialect that's embedded in python\n    * 4.2k stars, version `>= 1.0.0a0`, python 3.7+\n* [splash](https://github.com/scrapinghub/splash), a javascript rendering service with http api, by scrapinghub\n    * 3.6k stars, version `*`. python 3 in docker\n* [graphite-beacon](https://github.com/klen/graphite-beacon), a simple alerting system for graphite metrics\n    * 459 stars, version `==0.3.6`, python 2 and 3\n* [blockdiag](https://github.com/blockdiag/blockdiag), generates block-diagram image file from spec-text file\n    * 148 stars, version `>= 1.0.0a0`, python 3.7+\n* [kll](https://github.com/kiibohd/kll), keyboard layout language (kll) compiler\n    * 109 stars, copied source code, python 3.5+\n\n\nnext\n----\n\nread the [getting started](https://funcparserlib.pirx.ru/getting-started/) guide to start learning `funcparserlib`.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "funcparserlib",
+  "package_url": "https://pypi.org/project/funcparserlib/",
+  "project_url": "https://pypi.org/project/funcparserlib/",
+  "project_urls": {
+    "Homepage": "https://funcparserlib.pirx.ru",
+    "Repository": "https://github.com/vlasovskikh/funcparserlib"
+  },
+  "release_url": "https://pypi.org/project/funcparserlib/1.0.1/",
+  "requires_dist": [],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*",
+  "summary": "recursive descent parsing library based on functional combinators",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "andrey.vlasovskikh@gmail.com",
+    "andrey_vlasovskikh"
+  ],
+  "kwds": "funcparserlib parsers pyparsing parser parsing",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_funcparserlib",
+  "homepage": "https://funcparserlib.pirx.ru",
+  "release_count": 12,
+  "dependency_ids": []
+}

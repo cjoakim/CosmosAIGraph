@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: macos :: macos x",
+    "operating system :: posix",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: security",
+    "topic :: software development"
+  ],
+  "description": "# in-toto ![build](https://github.com/in-toto/in-toto/workflows/run%20in-toto%20tests%20and%20linter/badge.svg) [![cii best practices](https://bestpractices.coreinfrastructure.org/projects/1523/badge)](https://bestpractices.coreinfrastructure.org/projects/1523) [![documentation status](https://readthedocs.org/projects/in-toto/badge/?version=latest)](https://in-toto.readthedocs.io/en/latest/?badge=latest)\n\nin-toto provides a framework to protect the integrity of the software supply chain. it does so by verifying that each task in the chain is carried out as planned, by authorized personnel only, and that the product is not tampered with in transit.\n\nin-toto requires a **project owner** to create a **layout**. a layout lists the sequence of **steps** of the software supply chain, and the **functionaries** authorized to perform these steps.\nwhen a functionary performs a step in-toto gathers information about the used command and the related files and stores it in a **link** metadata file. as a consequence link files provide the required evidence to establish a continuous chain that can be validated against the steps defined in the layout.\n\nthe layout, signed by the project owners, together with the links, signed by the designated functionaries, are released as part of the final product, and can be validated manually or via automated tooling in, e.g. a package manager.\n\n\n## getting started\n\n### installation\n\nin-toto is available on [pypi](https://pypi.org/project/in-toto/) and can be\ninstalled via [`pip`](https://pypi.org/project/pip/). see\n[in-toto.readthedocs.io](https://in-toto.readthedocs.io/en/latest/installing.html)\nto learn about system dependencies and installation alternatives and\nrecommendations.\n\n```shell\npip install in-toto\n```\n### create layout, run supply chain steps and verify final product\n\n#### layout\n\nthe in-toto software supply chain layout consists of the following parts:\n - **expiration date**\n - **readme** (an optional description of the supply chain)\n - **functionary keys** (public keys, used to verify link metadata signatures)\n - **signatures** (one or more layout signatures created with the project owner key(s))\n - **software supply chain steps**\n   correspond to steps carried out by a functionary as part of the software supply chain. the steps defined in the layout list the functionaries who are authorized to carry out the step (by key id). steps require a unique name to associate them (upon verification) with link metadata that is created when a functionary carries out the step using the `in-toto` tools. additionally, steps must have material and product rules which define the files a step is supposed to operate on. material and product rules are described in the section below.\n - **inspections** define commands to be run during the verification process and can also list material and product rules.\n\ntake a look at the [demo layout creation example](https://in-toto.readthedocs.io/en/latest/layout-creation-example.html)\nfor further information on how to create an in-toto layout. or try our\nexperimental [layout creation web tool](https://in-toto.engineering.nyu.edu/).\n\n\n\n#### artifact rules\na software supply chain usually operates on a set of files, such as source code, executables, packages, or the like. in-toto calls these files artifacts. a material is an artifact that will be used when a step or inspection is carried out. likewise, a product is an artifact that results from carrying out a step.\n\nthe in-toto layout provides a simple rule language to authorize or enforce the artifacts of a step and to chain them together. this adds the following guarantees for any given step or inspection:\n- only artifacts **authorized** by the project owner are created, modified or deleted,\n- each defined creation, modification or deletion is **enforced**, and also\n- restricted to the scope of its definition, which **chains** subsequent steps and inspections together.\n\nnote that it is up to you to properly secure your supply chain, by authorizing, enforcing and chaining materials and products using any and usually multiple of the following rules:\n- `create <pattern>`\n- `delete <pattern>`\n- `modify <pattern>`\n- `allow <pattern>`\n- `disallow <pattern>`\n- `require <file>`\n- `match <pattern> [in <source-path-prefix>] with (materials|products) [in <destination-path-prefix>] from <step>`\n\n*rule arguments specified as `<pattern>` allow for unix shell-style wildcards as implemented by python's [`fnmatch`](https://docs.python.org/3/library/fnmatch.html).*\n\nin-toto's artifact rules, by default, allow artifacts to exist if they are not explicitly disallowed. as such, a `disallow *` invocation is recommended as the final rule for most step definitions. to learn more about the different rule types, their guarantees and how they are applied, take a look at the [artifact rules](https://github.com/in-toto/docs/blob/master/in-toto-spec.md#433-artifact-rules) section of the in-toto specification.\n\n#### carrying out software supply chain steps\n\n##### in-toto-run\n`in-toto-run` is used to execute a step in the software supply chain. this can\nbe anything relevant to the project such as tagging a release with `git`,\nrunning a test, or building a binary. the relevant step name and command are\npassed as arguments, along with materials, which are files required for that\nstep's command to execute, and products which are files expected as a result\nof the execution of that command. these, and other relevant details\npertaining to the step are stored in a link file, which is signed using the\nfunctionary's key.\n\nif materials are not passed to the command, the link file generated just\ndoesn't record them. similarly, if the execution of a command via\n`in-toto-run` doesn't result in any products, they're not recorded in the link\nfile. any files that are modified or used in any way during the execution of\nthe command are not recorded in the link file unless explicitly passed as\nartifacts. conversely, any materials or products passed to the command are\nrecorded in the link file even if they're not part of the execution\nof the command.\n\nsee [this simple usage example from the demo application\nfor more details](https://github.com/in-toto/demo).\nfor a detailed list of all the command line arguments, run `in-toto-run --help`\nor look at the [online\ndocumentation](https://in-toto.readthedocs.io/en/latest/command-line-tools/in-toto-run.html).\n\n##### in-toto-record\n`in-toto-record` works similar to `in-toto-run` but can be used for\nmulti-part software supply chain steps, i.e. steps that are not carried out\nby a single command. use `in-toto-record start ...` to create a\npreliminary link file that only records the *materials*, then run the\ncommands of that step or edit files manually and finally use\n`in-toto-record stop ...` to record the *products* and generate the actual\nlink metadata file. for a detailed list of all command line arguments and their usage,\nrun `in-toto-record start --help` or `in-toto-record stop --help`, or look at\nthe [online\ndocumentation](https://in-toto.readthedocs.io/en/latest/command-line-tools/in-toto-record.html).\n\n#### release final product\n\nin order to verify the final product with in-toto, the verifier must have access to the layout, the `*.link` files,\nand the project owner's public key(s).\n\n#### verification\nuse `in-toto-verify` on the final product to verify that\n- the layout was signed with the project owner's private key(s),\n- has not expired,\n- each step was performed and signed by the authorized functionary,\n- the functionaries used the commands, they were supposed to use,\n- materials and products of each step were in place as defined by the rules, and\n- run the defined inspections\n\nfor a detailed list of all command line arguments and their usage, run\n`in-toto-verify --help` or look at the\n[online\ndocumentation](https://in-toto.readthedocs.io/en/latest/command-line-tools/in-toto-verify.html).\n\n#### signatures\n`in-toto-sign` is a metadata signature helper tool to add, replace, and\nverify signatures within in-toto link or layout metadata, with options to:\n- replace (default) or add signature(s), with layout metadata able to be\nsigned by multiple keys at once while link metadata can only be signed by one key at a time\n- write signed metadata to a specified path (if no output path is specified,\nlayout metadata is written to the path of the input file while link metadata\nis written to `<name>.<keyid prefix>.link`)\n- verify signatures\n\nthis tool is intended to sign layouts created by the\n[layout web wizard](https://in-toto.engineering.nyu.edu/), but also serves\nwell to re-sign test and demo data. for example, it can be used if metadata\nformats or signing routines change.\n\nfor a detailed list of all command line arguments and their usage, run\n`in-toto-sign --help` or look at the\n[online\ndocumentation](https://in-toto.readthedocs.io/en/latest/command-line-tools/in-toto-sign.html).\n\n\n## in-toto demo\nyou can try in-toto by running the [demo application](https://github.com/in-toto/demo).\nthe demo basically outlines three users viz., alice (project owner), bob (functionary) and carl (functionary) and how in-toto helps to specify a project layout and verify that the layout has been followed in a correct manner.\n\n## specification\nyou can read more about how in-toto works by taking a look at the\n[specification](https://github.com/in-toto/docs/blob/master/in-toto-spec.md).\n\n\n## security issues and bugs\nsee [security.md](security.md).\n\n\n## governance and contributing\n\nfor information about in-toto's governance and contributing guidelines, see\n[governance.md](governance.md).\n\n## acknowledgments\nthis project is managed by prof. santiago torres-arias at purdue university.\nit is worked on by many folks in academia and industry, including members of\nthe [secure systems lab](https://ssl.engineering.nyu.edu/) at nyu and the\n[njit cybersecurity research center](https://centers.njit.edu/cybersecurity).\n\nthis research was supported by the defense advanced research projects agency\n(darpa), the air force research laboratory (afrl), and the us national science\nfoundation (nsf). any opinions, findings, and conclusions or recommendations\nexpressed in this material are those of the authors and do not necessarily\nreflect the views of darpa, afrl, and nsf. the united states government is\nauthorized to reproduce and distribute reprints notwithstanding any copyright\nnotice herein.\n",
+  "docs_url": null,
+  "keywords": "security,software,supply chain",
+  "license": "",
+  "name": "in-toto",
+  "package_url": "https://pypi.org/project/in-toto/",
+  "project_url": "https://pypi.org/project/in-toto/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/in-toto/in-toto/issues",
+    "Homepage": "https://in-toto.io",
+    "Source": "https://github.com/in-toto/in-toto"
+  },
+  "release_url": "https://pypi.org/project/in-toto/2.1.1/",
+  "requires_dist": [
+    "attrs",
+    "iso8601",
+    "pathspec",
+    "python-dateutil",
+    "securesystemslib[crypto]>=0.28.0",
+    "pynacl>1.2.0; extra == 'pynacl'"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "a framework to define and secure the integrity of software supply chains",
+  "version": "2.1.1",
+  "releases": [],
+  "developers": [
+    "in-toto-dev@googlegroups.com"
+  ],
+  "kwds": "workflows toto enforcing inspections badge",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_in_toto",
+  "homepage": "",
+  "release_count": 27,
+  "dependency_ids": [
+    "pypi_attrs",
+    "pypi_iso8601",
+    "pypi_pathspec",
+    "pypi_pynacl",
+    "pypi_python_dateutil",
+    "pypi_securesystemslib"
+  ]
+}

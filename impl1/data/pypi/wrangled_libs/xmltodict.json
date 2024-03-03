@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: text processing :: markup :: xml"
+  ],
+  "description": "# xmltodict\n\n`xmltodict` is a python module that makes working with xml feel like you are working with [json](http://docs.python.org/library/json.html), as in this [\"spec\"](http://www.xml.com/pub/a/2006/05/31/converting-between-xml-and-json.html):\n\n[![build status](https://travis-ci.com/martinblech/xmltodict.svg?branch=master)](https://travis-ci.com/martinblech/xmltodict)\n\n```python\n>>> print(json.dumps(xmltodict.parse(\"\"\"\n...  <mydocument has=\"an attribute\">\n...    <and>\n...      <many>elements</many>\n...      <many>more elements</many>\n...    </and>\n...    <plus a=\"complex\">\n...      element as well\n...    </plus>\n...  </mydocument>\n...  \"\"\"), indent=4))\n{\n    \"mydocument\": {\n        \"@has\": \"an attribute\", \n        \"and\": {\n            \"many\": [\n                \"elements\", \n                \"more elements\"\n            ]\n        }, \n        \"plus\": {\n            \"@a\": \"complex\", \n            \"#text\": \"element as well\"\n        }\n    }\n}\n```\n\n## namespace support\n\nby default, `xmltodict` does no xml namespace processing (it just treats namespace declarations as regular node attributes), but passing `process_namespaces=true` will make it expand namespaces for you:\n\n```python\n>>> xml = \"\"\"\n... <root xmlns=\"http://defaultns.com/\"\n...       xmlns:a=\"http://a.com/\"\n...       xmlns:b=\"http://b.com/\">\n...   <x>1</x>\n...   <a:y>2</a:y>\n...   <b:z>3</b:z>\n... </root>\n... \"\"\"\n>>> xmltodict.parse(xml, process_namespaces=true) == {\n...     'http://defaultns.com/:root': {\n...         'http://defaultns.com/:x': '1',\n...         'http://a.com/:y': '2',\n...         'http://b.com/:z': '3',\n...     }\n... }\ntrue\n```\n\nit also lets you collapse certain namespaces to shorthand prefixes, or skip them altogether:\n\n```python\n>>> namespaces = {\n...     'http://defaultns.com/': none, # skip this namespace\n...     'http://a.com/': 'ns_a', # collapse \"http://a.com/\" -> \"ns_a\"\n... }\n>>> xmltodict.parse(xml, process_namespaces=true, namespaces=namespaces) == {\n...     'root': {\n...         'x': '1',\n...         'ns_a:y': '2',\n...         'http://b.com/:z': '3',\n...     },\n... }\ntrue\n```\n\n## streaming mode\n\n`xmltodict` is very fast ([expat](http://docs.python.org/library/pyexpat.html)-based) and has a streaming mode with a small memory footprint, suitable for big xml dumps like [discogs](http://discogs.com/data/) or [wikipedia](http://dumps.wikimedia.org/):\n\n```python\n>>> def handle_artist(_, artist):\n...     print(artist['name'])\n...     return true\n>>> \n>>> xmltodict.parse(gzipfile('discogs_artists.xml.gz'),\n...     item_depth=2, item_callback=handle_artist)\na perfect circle\nfant\u00f4mas\nking crimson\nchris potter\n...\n```\n\nit can also be used from the command line to pipe objects to a script like this:\n\n```python\nimport sys, marshal\nwhile true:\n    _, article = marshal.load(sys.stdin)\n    print(article['title'])\n```\n\n```sh\n$ bunzip2 enwiki-pages-articles.xml.bz2 | xmltodict.py 2 | myscript.py\naccessiblecomputing\nanarchism\nafghanistanhistory\nafghanistangeography\nafghanistanpeople\nafghanistancommunications\nautism\n...\n```\n\nor just cache the dicts so you don't have to parse that big xml file again. you do this only once:\n\n```sh\n$ bunzip2 enwiki-pages-articles.xml.bz2 | xmltodict.py 2 | gzip > enwiki.dicts.gz\n```\n\nand you reuse the dicts with every script that needs them:\n\n```sh\n$ gunzip enwiki.dicts.gz | script1.py\n$ gunzip enwiki.dicts.gz | script2.py\n...\n```\n\n## roundtripping\n\nyou can also convert in the other direction, using the `unparse()` method:\n\n```python\n>>> mydict = {\n...     'response': {\n...             'status': 'good',\n...             'last_updated': '2014-02-16t23:10:12z',\n...     }\n... }\n>>> print(unparse(mydict, pretty=true))\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<response>\n\t<status>good</status>\n\t<last_updated>2014-02-16t23:10:12z</last_updated>\n</response>\n```\n\ntext values for nodes can be specified with the `cdata_key` key in the python dict, while node properties can be specified with the `attr_prefix` prefixed to the key name in the python dict. the default value for `attr_prefix` is `@` and the default value for `cdata_key` is `#text`.\n\n```python\n>>> import xmltodict\n>>> \n>>> mydict = {\n...     'text': {\n...         '@color':'red',\n...         '@stroke':'2',\n...         '#text':'this is a test'\n...     }\n... }\n>>> print(xmltodict.unparse(mydict, pretty=true))\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<text stroke=\"2\" color=\"red\">this is a test</text>\n```\n\nlists that are specified under a key in a dictionary use the key as a tag for each item. but if a list does have a parent key, for example if a list exists inside another list, it does not have a tag to use and the items are converted to a string as shown in the example below.  to give tags to nested lists, use the `expand_iter` keyword argument to provide a tag as demonstrated below. note that using `expand_iter` will break roundtripping.\n\n```python\n>>> mydict = {\n...     \"line\": {\n...         \"points\": [\n...             [1, 5],\n...             [2, 6],\n...         ]\n...     }\n... }\n>>> print(xmltodict.unparse(mydict, pretty=true))\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<line>\n        <points>[1, 5]</points>\n        <points>[2, 6]</points>\n</line>\n>>> print(xmltodict.unparse(mydict, pretty=true, expand_iter=\"coord\"))\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<line>\n        <points>\n                <coord>1</coord>\n                <coord>5</coord>\n        </points>\n        <points>\n                <coord>2</coord>\n                <coord>6</coord>\n        </points>\n</line>\n```\n\n## ok, how do i get it?\n\n### using pypi\n\nyou just need to\n\n```sh\n$ pip install xmltodict\n```\n\n### rpm-based distro (fedora, rhel, \u2026)\n\nthere is an [official fedora package for xmltodict](https://apps.fedoraproject.org/packages/python-xmltodict).\n\n```sh\n$ sudo yum install python-xmltodict\n```\n\n### arch linux\n\nthere is an [official arch linux package for xmltodict](https://www.archlinux.org/packages/community/any/python-xmltodict/).\n\n```sh\n$ sudo pacman -s python-xmltodict\n```\n\n### debian-based distro (debian, ubuntu, \u2026)\n\nthere is an [official debian package for xmltodict](https://tracker.debian.org/pkg/python-xmltodict).\n\n```sh\n$ sudo apt install python-xmltodict\n```\n\n### freebsd\n\nthere is an [official freebsd port for xmltodict](https://svnweb.freebsd.org/ports/head/devel/py-xmltodict/).\n\n```sh\n$ pkg install py36-xmltodict\n```\n\n### opensuse/sle (sle 15, leap 15, tumbleweed)\n\nthere is an [official opensuse package for xmltodict](https://software.opensuse.org/package/python-xmltodict).\n\n```sh\n# python2\n$ zypper in python2-xmltodict\n\n# python3\n$ zypper in python3-xmltodict\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "xmltodict",
+  "package_url": "https://pypi.org/project/xmltodict/",
+  "project_url": "https://pypi.org/project/xmltodict/",
+  "project_urls": {
+    "Homepage": "https://github.com/martinblech/xmltodict"
+  },
+  "release_url": "https://pypi.org/project/xmltodict/0.13.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.4",
+  "summary": "makes working with xml feel like you are working with json",
+  "version": "0.13.0",
+  "releases": [],
+  "developers": [
+    "martin_blech",
+    "martinblech@gmail.com"
+  ],
+  "kwds": "xmltodict xml xmlns json dict",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_xmltodict",
+  "homepage": "https://github.com/martinblech/xmltodict",
+  "release_count": 28,
+  "dependency_ids": []
+}

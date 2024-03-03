@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "typing :: typed"
+  ],
+  "description": "fast fisher-jenks breaks for python\n===================================\n\ncompute \"natural breaks\" (*fisher-jenks algorithm*) on list / tuple / array / numpy.ndarray of integers/floats.\n\nthe algorithm implemented by this library is also sometimes referred to as *fisher-jenks algorithm*, *jenks optimisation method* or *fisher exact optimization method*. this is a deterministic method to calculate the optimal class boundaries.\n\nintended compatibility: cpython 3.6+\n\nwheels are provided via pypi for windows / macos / linux users - also available on conda-forge channel for anaconda users.\n\n|version| |anaconda-server badge| |build status gh| |pypi download month|\n\nusage\n-----\n\ntwo ways of using `jenkspy` are available:\n\n- by using the ``jenks_breaks`` function which takes as input a `list <https://docs.python.org/3/library/stdtypes.html#list>`_ / `tuple <https://docs.python.org/3/library/stdtypes.html#tuple>`_ / `array.array <https://docs.python.org/3/library/array.html#array.array>`_ / `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ of integers or floats and returns a list of values that correspond to the limits of the classes (starting with the minimum value of the series - the lower bound of the first class - and ending with its maximum value - the upper bound of the last class).\n\n.. code:: python\n\n    >>> import jenkspy\n    >>> import json\n\n    >>> with open('tests/test.json', 'r') as f:\n    ...     # read some data from a json file\n    ...     data = json.loads(f.read())\n    ...\n    >>> jenkspy.jenks_breaks(data, n_classes=5) # asking for 5 classes\n    [0.0028109620325267315, 2.0935479691252112, 4.205495140049607, 6.178148351609707, 8.09175917180255, 9.997982932254672]\n    # ^                      ^                    ^                 ^                  ^                 ^\n    # lower bound            upper bound          upper bound       upper bound        upper bound       upper bound\n    # 1st class              1st class            2nd class         3rd class          4th class         5th class\n    # (minimum value)                                                                                    (maximum value)\n\n\n- by using the ``jenksnaturalbreaks`` class that is inspired by ``scikit-learn`` classes.\n\nthe ``.fit`` and ``.group`` behavior is slightly different from ``jenks_breaks``, by accepting value outside the range of the minimum and maximum value of ``breaks_``, retaining the input size. it means that fit and group will use only the ``inner_breaks_``. all value below the min bound will be included in the first group and all value higher than the max bound will be included in the last group.\n\n.. code:: python\n\n    >>> from jenkspy import jenksnaturalbreaks\n\n    >>> x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]\n\n    >>> jnb = jenksnaturalbreaks(4) # asking for 4 clusters\n\n    >>> jnb.fit(x) # create the clusters according to values in 'x'\n    >>> print(jnb.labels_) # labels for fitted data\n    ... print(jnb.groups_) # content of each group\n    ... print(jnb.breaks_) # break values (including min and max)\n    ... print(jnb.inner_breaks_) # inner breaks (ie breaks_[1:-1])\n    [0 0 0 1 1 1 2 2 2 3 3 3]\n    [array([0, 1, 2]), array([3, 4, 5]), array([6, 7, 8]), array([ 9, 10, 11])]\n    [0.0, 2.0, 5.0, 8.0, 11.0]\n    [2.0, 5.0, 8.0]\n\n    >>> print(jnb.predict(15)) # predict the group of a value\n    3\n\n    >>> print(jnb.predict([2.5, 3.5, 6.5])) # predict the group of several values\n    [1 1 2]\n\n    >>> print(jnb.group([2.5, 3.5, 6.5])) # group the elements into there groups\n    [array([], dtype=float64), array([2.5, 3.5]), array([6.5]), array([], dtype=float64)]\n\n\ninstallation\n------------\n\n+ **from pypi**\n\n.. code:: shell\n\n    pip install jenkspy\n\n\n+ **from source**\n\n.. code:: shell\n\n    git clone http://github.com/mthh/jenkspy\n    cd jenkspy/\n    python setup.py install\n\n+ **for anaconda users**\n\n.. code:: shell\n\n    conda install -c conda-forge jenkspy\n\n\nrequirements :\n--------------\n\n- `numpy <https://numpy.org>`_\n\n-  only for building from source: c compiler, python c headers, setuptools and cython.\n\n\nmotivation :\n------------\n\n-  making a painless installing c extension so it could be used more easily\n   as a dependency in an other package (and so learning how to build wheels\n   using *appveyor* / *travis* at first - now it uses *github actions*).\n-  getting the break values! (and fast!). no fancy functionality provided,\n   but contributions/forks/etc are welcome.\n-  other python implementations are currently existing but not as fast or not available on pypi.\n\n.. |build status gh| image:: https://github.com/mthh/jenkspy/actions/workflows/wheel.yml/badge.svg\n   :target: https://github.com/mthh/jenkspy/actions/workflows/wheel.yml\n\n.. |version| image:: https://img.shields.io/pypi/v/jenkspy.svg?color=007ec6\n   :target: https://pypi.python.org/pypi/jenkspy\n\n.. |anaconda-server badge| image:: https://anaconda.org/conda-forge/jenkspy/badges/version.svg\n   :target: https://anaconda.org/conda-forge/jenkspy\n\n.. |pypi download month| image:: https://img.shields.io/pypi/dm/jenkspy.svg\n   :target: https://pypi.python.org/pypi/jenkspy\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "jenkspy",
+  "package_url": "https://pypi.org/project/jenkspy/",
+  "project_url": "https://pypi.org/project/jenkspy/",
+  "project_urls": {
+    "Homepage": "https://github.com/mthh/jenkspy"
+  },
+  "release_url": "https://pypi.org/project/jenkspy/0.4.0/",
+  "requires_dist": [
+    "numpy"
+  ],
+  "requires_python": "",
+  "summary": "compute natural breaks (fisher-jenks algorithm)",
+  "version": "0.4.0",
+  "releases": [],
+  "developers": [
+    "matthieu.viry@cnrs.fr",
+    "matthieu_viry"
+  ],
+  "kwds": "jenks_breaks jenksnaturalbreaks jenkspy cpython python",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_jenkspy",
+  "homepage": "https://github.com/mthh/jenkspy",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_numpy"
+  ]
+}

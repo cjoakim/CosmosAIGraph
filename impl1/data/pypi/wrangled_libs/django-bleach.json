@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "framework :: django :: 4.1",
+    "framework :: django :: 4.2",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "django-bleach - bleach and sanitise user html\n=============================================\n\n.. image:: https://readthedocs.org/projects/django-bleach/badge/?version=latest\n   :target: https://django-bleach.readthedocs.io/en/latest/?badge=latest\n   :alt: documentation status\n\n.. image:: http://img.shields.io/pypi/v/django-bleach.svg?style=flat-square\n    :target: https://pypi.python.org/pypi/django-bleach/\n    :alt: latest version\n\n.. image:: http://img.shields.io/pypi/l/django-bleach.svg?style=flat-square\n    :target: https://pypi.python.org/pypi/django-bleach/\n    :alt: license\n\n.. image:: http://img.shields.io/pypi/dm/django-bleach.svg?style=flat-square\n    :target: https://pypi.python.org/pypi/django-bleach/\n    :alt: downloads\n\n|\n\n.. image:: https://codecov.io/gh/marksweb/django-bleach/branch/master/graph/badge.svg\n  :target: https://codecov.io/gh/marksweb/django-bleach\n\n.. image:: https://api.codacy.com/project/badge/grade/c34f923ab0a84a6f96728866c749d511\n   :alt: codacy badge\n   :target: https://app.codacy.com/app/marksweb/django-bleach?utm_source=github.com&utm_medium=referral&utm_content=marksweb/django-bleach&utm_campaign=badge_grade_dashboard\n\n.. image:: https://results.pre-commit.ci/badge/github/marksweb/django-bleach/master.svg\n   :target: https://results.pre-commit.ci/latest/github/marksweb/django-bleach/master\n   :alt: pre-commit.ci status\n\n.. image:: https://img.shields.io/lgtm/grade/python/g/marksweb/django-bleach.svg?logo=lgtm&logowidth=18\n   :target: https://lgtm.com/projects/g/marksweb/django-bleach/context:python\n   :alt: language grade: python\n\n.. image:: https://img.shields.io/lgtm/alerts/g/marksweb/django-bleach.svg?logo=lgtm&logowidth=18\n   :target: https://lgtm.com/projects/g/marksweb/django-bleach/alerts/\n   :alt: total alerts\n\n|\n\nbleach_ is a python module that takes any html input, and returns\nvalid, sanitised html that contains only an allowed subset of html tags,\nattributes and styles. ``django-bleach`` is a django app that makes using\n``bleach`` extremely easy.\n\n`read the documentation here`_.\n\nsetup\n-----\n\n1. install ``django-bleach`` via ``pip``::\n\n    pip install django-bleach\n\n2. add ``django-bleach`` to your ``installed_apps``:\n\n   .. code-block:: python\n\n        installed_apps = [\n            # ...\n            'django_bleach',\n            # ...\n        ]\n\n3. select some sensible defaults for the allowed tags, attributes and styles;\n   and the behaviour when unknown tags are encountered. each of these are\n   optional, and default to using the ``bleach`` defaults. see the\n   `bleach documentation`_:\n\n   .. code-block:: python\n\n        # which html tags are allowed\n        bleach_allowed_tags = ['p', 'b', 'i', 'u', 'em', 'strong', 'a']\n\n        # which html attributes are allowed\n        bleach_allowed_attributes = ['href', 'title', 'style']\n\n        # which css properties are allowed in 'style' attributes (assuming\n        # style is an allowed attribute)\n        bleach_allowed_styles = [\n            'font-family', 'font-weight', 'text-decoration', 'font-variant']\n\n        # strip unknown tags if true, replace with html escaped characters if\n        # false\n        bleach_strip_tags = true\n\n        # strip comments, or leave them in.\n        bleach_strip_comments = false\n\n4. select the default widget for bleach fields. this defaults to\n   ``django.forms.textarea``, but you will probably want to replace it with a\n   wysiwyg editor, or something similar:\n\n   .. code-block:: python\n\n        # use the ckeditorwidget for bleached html fields\n        bleach_default_widget = 'wysiwyg.widgets.wysiwygwidget'\n\n   i use `django-ckeditor`_ in my projects, but what you use is up to you.\n\nusage\n-----\n\nin your models\n**************\n\n``django-bleach`` provides three ways of creating bleached output. the simplest\nway of including user-editable html content that is automatically sanitised is\nby using the ``bleachfield`` model field:\n\n.. code-block:: python\n\n    # in app/models.py\n\n    from django import models\n    from django_bleach.models import bleachfield\n\n    class post(models.model):\n\n        title = models.charfield()\n        content = bleachfield()\n\n        # ...\n\n``bleachfield`` takes the following arguments, to customise the output of\n``bleach``. see the `bleach documentation`_ for their use:\n\n* ``allowed_tags``\n* ``allowed_attributes``\n* ``strip_tags``\n* ``strip_comments``\n* ``css_sanitizer``\n\nthe following argument will be deprecated in the near future:\n\n* ``allowed_styles``\n\nin addition to the ``bleach``-specific arguments, the ``bleachfield`` model field\naccepts all of the normal field attributes. behind the scenes, it is a\n``textfield``, and accepts all the same arguments as the default ``textfield`` does.\n\nthe ``bleachfield`` model field sanitises its value before it is saved to the\ndatabase and is marked safe so it can be immediately rendered in a template\nwithout further intervention.\n\nin model forms, ``bleachfield`` model field are represented with the\n``bleachfield`` form field by default.\n\nin your forms\n*************\n\na ``bleachfield`` form field is provided. this field sanitises html input from\nthe user, and presents safe, clean html to your django application and the\nreturned value is marked safe for immediate rendering.\n\nin your templates\n*****************\n\nif you have a piece of content from somewhere that needs to be printed in a\ntemplate, you can use the ``bleach`` filter:\n\n.. code-block:: django\n\n    {% load bleach_tags %}\n\n    {{ some_unsafe_content|bleach }}\n\nif filter has no arguments it uses default settings defined in your\napplication settings. you can override allowed tags by specifying them\nas a parameter to the filter:\n\n.. code-block:: django\n\n    {{ some_unsafe_content|bleach:\"p,span\" }}\n\nthere is also ``bleach_linkify`` which uses the linkify_ function of bleach\nwhich converts url-like strings in an html fragment to links\n\nthis function converts strings that look like urls, domain names and email\naddresses in text that may be an html fragment to links, while preserving:\n\n1. links already in the string\n2. urls found in attributes\n3. email addresses\n\n\n.. _bleach: https://github.com/mozilla/bleach\n.. _read the documentation here: https://django-bleach.readthedocs.io/\n.. _bleach documentation: https://bleach.readthedocs.io/en/latest/clean.html\n.. _django-ckeditor: https://github.com/shaunsephton/django-ckeditor\n.. _linkify: https://bleach.readthedocs.io/en/latest/linkify.html?highlight=linkify#bleach.linkify \"linkify\"\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "django-bleach",
+  "package_url": "https://pypi.org/project/django-bleach/",
+  "project_url": "https://pypi.org/project/django-bleach/",
+  "project_urls": {
+    "Documentation": "https://django-bleach.readthedocs.io/",
+    "Homepage": "https://github.com/marksweb/django-bleach",
+    "Issues": "https://github.com/marksweb/django-bleach/issues",
+    "Release notes": "https://github.com/marksweb/django-bleach/blob/main/CHANGELOG.md",
+    "Source": "https://github.com/marksweb/django-bleach"
+  },
+  "release_url": "https://pypi.org/project/django-bleach/3.1.0/",
+  "requires_dist": [
+    "bleach[css] (<6,>=5)",
+    "Django (>=3.2)"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "easily use bleach with django models and templates",
+  "version": "3.1.0",
+  "releases": [],
+  "developers": [
+    "mark_walker",
+    "theshow+django-bleach@gmail.com",
+    "tim_heap"
+  ],
+  "kwds": "django_bleach bleach_allowed_styles bleach_linkify bleach_tags bleach_allowed_attributes",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_django_bleach",
+  "homepage": "https://github.com/marksweb/django-bleach",
+  "release_count": 27,
+  "dependency_ids": [
+    "pypi_bleach",
+    "pypi_django"
+  ]
+}

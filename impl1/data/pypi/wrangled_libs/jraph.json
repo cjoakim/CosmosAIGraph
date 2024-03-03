@@ -1,0 +1,66 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "\n![logo](images/logo.png)\n# jraph - a library for graph neural networks in jax.\n\n\n## new! pmap examples and data loading.\n\nwe have added a pmap [example](https://github.com/deepmind/jraph/tree/master/jraph/ogb_examples/train_pmap.py).\n\nour friends at instadeep, jama hussein mohamud and tom makkink\nhave put together a nice guide to using pytorch data loading. find it [here](https://colab.research.google.com/drive/1_x2su92_ns52rnl4m-wyvmkvusrfe4xq).\n\n\n## new! support for large distributed mpnns\n\nwe have released a distributed graph network implementation that allows you to\ndistribute a very large (millions of edges) graph network with explicit edge\nmessages across multiple devices. [**check it out!**](https://github.com/deepmind/jraph/tree/master/jraph/experimental)\n\n## new! interactive jraph colabs\n\nwe have two new colabs to help you get to grips with jraph.\n\nthe first is an educational colab with an amazing introduction to graph neural networks, graph theory,shows you how to use jraph to solve a number of problems. check it out [**here**.](https://github.com/deepmind/educational/blob/master/colabs/summer_schools/intro_to_graph_nets_tutorial_with_jraph.ipynb)\n\nthe second is a fully working example with best practices of using jraph with ogbg-molpcba with some great visualizations. check it out [**here**.](https://github.com/google/flax/tree/main/examples/ogbg_molpcba) \n\nthank you to lisa wang, nikola jovanovi\u0107 & ameya daigavane.\n\n## quick start\n\n[**quick start** ](#quick-start)|[ **documentation** ](https://jraph.readthedocs.io/en/latest/)\n\njraph (pronounced \"giraffe\") is a lightweight library for working with graph\nneural networks in jax. it provides a data structure for graphs, a set of\nutilities for working with graphs, and a 'zoo' of forkable graph neural network\nmodels.\n\n## installation\n\n```pip install jraph```\n\nor jraph can be installed directly from github using the following command:\n\n```pip install git+git://github.com/deepmind/jraph.git```\n\nthe examples require additional dependencies. to install them please run:\n\n```pip install \"jraph[examples, ogb_examples] @ git+git://github.com/deepmind/jraph.git\"```\n\n## overview\n\njraph is designed to provide utilities for working with graphs in jax, but\ndoesn't prescribe a way to write or develop graph neural networks.\n\n*   `graph.py` provides a lightweight data structure, `graphstuple`, for working\n    with graphs.\n*   `utils.py` provides utilities for working with `graphstuples` in jax.\n    *   utilities for batching datasets of `graphstuples`.\n    *   utilities to support jit compilation of variable shaped graphs via\n        padding and masking.\n    *   utilities for defining losses on partitions of inputs.\n*   `models.py` provides examples of different types of graph neural network\n    message passing. these are designed to be lightweight, easy to fork and\n    adapt. they do not manage parameters for you - for that, consider using\n    `haiku` or `flax`. see the examples for more details.\n\n\n## quick start\n\njraph takes inspiration from the tensorflow [graph_nets library](https://github.com/deepmind/graph_nets) in defining a `graphstuple`\ndata structure, which is a namedtuple that contains one or more directed graphs.\n\n### representing graphs - the `graphstuple`\n\n```python\nimport jraph\nimport jax.numpy as jnp\n\n# define a three node graph, each node has an integer as its feature.\nnode_features = jnp.array([[0.], [1.], [2.]])\n\n# we will construct a graph for which there is a directed edge between each node\n# and its successor. we define this with `senders` (source nodes) and `receivers`\n# (destination nodes).\nsenders = jnp.array([0, 1, 2])\nreceivers = jnp.array([1, 2, 0])\n\n# you can optionally add edge attributes.\nedges = jnp.array([[5.], [6.], [7.]])\n\n# we then save the number of nodes and the number of edges.\n# this information is used to make running gnns over multiple graphs\n# in a graphstuple possible.\nn_node = jnp.array([3])\nn_edge = jnp.array([3])\n\n# optionally you can add `global` information, such as a graph label.\n\nglobal_context = jnp.array([[1]])\ngraph = jraph.graphstuple(nodes=node_features, senders=senders, receivers=receivers,\nedges=edges, n_node=n_node, n_edge=n_edge, globals=global_context)\n```\n\na `graphstuple` can have more than one graph.\n\n```python\ntwo_graph_graphstuple = jraph.batch([graph, graph])\n```\n\nthe node and edge features are stacked on the leading axis.\n\n```python\njraph.batch([graph, graph]).nodes\n>>> devicearray([[0.],\n             [1.],\n             [2.],\n             [0.],\n             [1.],\n             [2.]], dtype=float32)\n```\n\nyou can tell which nodes are from which graph by looking at `n_node`.\n\n```python\njraph.batch([graph, graph]).n_node\n>>> devicearray([3, 3], dtype=int32)\n```\n\nyou can store nests of features in `nodes`, `edges` and `globals`. this makes\nit possible to store multiple sets of features for each node, edge or graph, with\npotentially different types and semantically different meanings (for example\n'training' and 'testing' nodes). the only requirement if that all arrays within\neach nest must have a common leading dimensions size, matching the total number\nof nodes, edges or graphs within the `graphstuple` respectively.\n\n```python\nnode_targets = jnp.array([[true], [false], [true]])\ngraph = graph._replace(nodes={'inputs': graph.nodes, 'targets': node_targets})\n```\n\n### using the model zoo\n\njraph provides a set of implemented reference models for you to use.\n\na jraph model defines a message passing algorithm between the nodes, edges and\nglobal attributes of a graph. the user defines `update` functions that update graph features, which are typically neural networks but can be arbitrary jax functions.\n\nlet's go through a `graphnetwork` [(paper)](https://arxiv.org/abs/1806.01261) example.\na graphnet's first update function updates the edges using `edge` features,\nthe node features of the `sender` and `receiver` and the `global` features.\n\n\n```python\n# as one example, we just pass the edge features straight through.\ndef update_edge_fn(edge, sender, receiver, globals_):\n  return edge\n```\n\noften we use the concatenation of these features, and `jraph` provides an easy\nway of doing this with the `concatenated_args` decorator.\n\n```python\n@jraph.concatenated_args\ndef update_edge_fn(concatenated_features):\n  return concatenated_features\n```\ntypically, a learned model such as a multi-layer perceptron is used within an\nupdate function.\n\nthe user similarly defines functions that update the nodes and globals. these\nare then used to configure a `graphnetwork`. to see the arguments to the node\nand global `update_fns` please take a look at the model zoo.\n\n```python\nnet = jraph.graphnetwork(update_edge_fn=update_edge_fn,\n                         update_node_fn=update_node_fn,\n                         update_global_fn=update_global_fn)\n```\n\n`net` is a function that sends messages according to the `graphnetwork` algorithm\nand applies the `update_fn`. it takes a graph, and returns a graph.\n\n```python\nupdated_graph = net(graph)\n```\n\n\n## examples\n\nfor a deeper dive best place to start are the examples. in particular:\n\n*  `examples/basic.py` provides an introduction to the features of the library.\n*  `ogb_examples/train.py` provides an end to\nend example of training a `graphnet` on `molhiv` open graph benchmark dataset.\nplease note, you need to have downloaded the dataset to run this example.\n\nthe rest of the examples are short scripts demonstrating how to use various\nmodels from our model zoo, as well as making models go fast with `jax.jit`, and\nhow to deal with jax's static shape requirement.\n\n\n## citing jraph\n\nto cite this repository:\n\n```\n@software{jraph2020github,\n  author = {jonathan godwin* and thomas keck* and peter battaglia and victor bapst and thomas kipf and yujia li and kimberly stachenfeld and petar veli\\v{c}kovi\\'{c} and alvaro sanchez-gonzalez},\n  title = {{j}raph: {a} library for graph neural networks in jax.},\n  url = {http://github.com/deepmind/jraph},\n  version = {0.0.1.dev},\n  year = {2020},\n}\n```\n",
+  "docs_url": null,
+  "keywords": "jax graph neural networks python machine learning",
+  "license": "apache 2.0",
+  "name": "jraph",
+  "package_url": "https://pypi.org/project/jraph/",
+  "project_url": "https://pypi.org/project/jraph/",
+  "project_urls": {
+    "Homepage": "https://github.com/deepmind/jraph"
+  },
+  "release_url": "https://pypi.org/project/jraph/0.0.6.dev0/",
+  "requires_dist": [
+    "jax (>=0.1.55)",
+    "jaxlib (>=0.1.37)",
+    "numpy (>=1.18.0)",
+    "dm-haiku (>=0.0.2) ; extra == 'examples'",
+    "absl-py (>=0.9) ; extra == 'examples'",
+    "frozendict (>=2.0.2) ; extra == 'examples'",
+    "optax (>=0.0.1) ; extra == 'examples'",
+    "scipy (>=1.2.1) ; extra == 'examples'",
+    "dm-haiku (>=0.0.2) ; extra == 'ogb_examples'",
+    "absl-py (>=0.9) ; extra == 'ogb_examples'",
+    "optax (>=0.0.1) ; extra == 'ogb_examples'",
+    "pandas (>=1.0.5) ; extra == 'ogb_examples'",
+    "dm-tree (>=0.1.5) ; extra == 'ogb_examples'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "jraph: a library for graph neural networks in jax",
+  "version": "0.0.6.dev0",
+  "releases": [],
+  "developers": [
+    "deepmind",
+    "jax_graph_nets@google.com"
+  ],
+  "kwds": "graphnet graphnetwork intro_to_graph_nets_tutorial_with_jraph graph_nets networks",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_jraph",
+  "homepage": "https://github.com/deepmind/jraph",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_absl_py",
+    "pypi_dm_haiku",
+    "pypi_dm_tree",
+    "pypi_frozendict",
+    "pypi_jax",
+    "pypi_jaxlib",
+    "pypi_numpy",
+    "pypi_optax",
+    "pypi_pandas",
+    "pypi_scipy"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: utilities"
+  ],
+  "description": "<p>\n    <a href=\"./license\" alt=\"license\">\n        <img src=\"https://img.shields.io/github/license/yakdriver/oschmod.svg\" /></a>\n    <a href=\"http://travis-ci.org/yakdriver/oschmod\" alt=\"build status\">\n        <img src=\"https://travis-ci.org/yakdriver/oschmod.svg?branch=main\" /></a>\n    <a href=\"https://pypi.python.org/pypi/oschmod\" alt=\"python versions\">\n        <img src=\"https://img.shields.io/pypi/pyversions/oschmod.svg\" /></a>\n    <a href=\"https://pypi.python.org/pypi/oschmod\" alt=\"version\">\n        <img src=\"https://img.shields.io/pypi/v/oschmod.svg\" /></a>\n    <img src=\"https://img.shields.io/endpoint.svg?url=https://gh.mergify.io/badges/yakdriver/oschmod\" alt=\"mergify\"/>\n</p>\n\n# oschmod\n\n***oschmod*** sets consistent file permissions across windows, linux and macos.\n\n## oschmod tl;dr\n\n***oschmod*** brings `chmod` functionality to **windows**, macos, and linux! if you're not familiar, `chmod` is a handy macos and linux-only tool for setting file permissions. \n\nprior to ***oschmod***, windows file permissions couldn't be set in the familiar `chmod` way. tools did not translate `chmod`-style permissions into windows-style file permissions. even though python's `os.chmod()` sets read, write, and execute file permissions, on windows, `os.chmod()` basically has no effect. even worse, python on windows gives no warnings or errors. if you think you set file permissions on windows with `os.chmod()`, you're wrong!\n\n***oschmod*** allows you to set consistent file permissions in a consistent way across platforms.\n\n* read more about [oschmod](https://medium.com/@dirk.avery/securing-files-on-windows-macos-and-linux-7b2b9899992) on medium\n* for more background, have a look at the [oschmod wiki](https://github.com/yakdriver/oschmod/wiki).\n\n## installation\n\n```console\n$ pip install oschmod\n```\n\n## gnu documentation\n\n***oschmod*** changes the file mode bits of each given file according to mode, which can be either a symbolic representation of changes to make, or an octal number representing the bit pattern for the new mode bits.\n\nthe format of a symbolic mode is `[ugoa...][+-=][perms...]` where perms is zero or more letters from the set `rwx`. multiple symbolic modes can be given, separated by commas.\n\na combination of the letters `ugoa` controls which users' access to the file will be changed: the user who owns it (`u`), other users in the file's group (`g`), other users not in the file's group (`o`), or all users (`a`). if none of these are given, the effect is as if `a` were given.\n\n*(modified from the gnu manpage for chmod.)*\n\n## command line interface\n\n***oschmod*** brings the ability to set consistent file permissions using the command line to windows, macos, and linux platforms. if you are familiar with `chmod`, ***oschmod*** works similarly, albeit with fewer options.\n\n```console\n$ oschmod -h\nusage: oschmod [-h] [-r] mode object\n\nchange the mode (permissions) of a file or directory\n\npositional arguments:\n  mode        octal or symbolic mode of the object\n  object      file or directory\n\noptional arguments:\n  -h, --help  show this help message and exit\n  -r          apply mode recursively\n```\n\n## command line examples\n\nyou can use symbolic (e.g., \"u+rw\") or octal (e.g., \"600) representations of modes. multiple mode modifications can be made in a single call by separating modifiers with commas.\n\n### symbolic representation examples\n\nsymbolic representation mode modifiers have three parts:\n\n1. **whom:** to whom does the modification apply? you can include zero or more of `[ugoa]*` where `a` is for all, `u` is for the file owner (i.e., \"**u**ser\"), `g` is for the file group, and `o` is for others. in other words, `ugo` is equivalent to `a`. also, if you do not provide a \"whom,\" ***oschmod*** assumes you mean `a` (everyone).\n2. **operation:** which operation should be applied? you must include one and only one operation, `[+-=]{1}`, per modifier (although you can have multiple modifiers). `+` adds permissions, `-` removes permissions, and `=` sets permissions regardless of previous permissions. `+` and `-` modifications often depend on the current permissions.\n3. **permission:** which permission or permissions will be affected? you can include zero or more of `[rwx]*` where `r` is for read, `w` is for write, and `x` is for execute. if you do not include a permission with `+` or `-` (e.g., `u-`), the modifier has no effect. however, if you use no permissions with `=` (e.g., `o=`), all permissions are removed.\n\n**example 1:** to give everyone execute permissions on a file (all of these are equivalent):\n\n```console\n$ oschmod +x <file name>\n$ oschmod a+x <file name>\n$ oschmod ugo+x <file name>\n```\n\n**example 2:** to remove read, write, and execute permissions from the file group and all others (these are equivalent):\n\n```console\n$ oschmod go-rwx <file name>\n$ oschmod go= <file name>\n```\n\n**example 3:** to give the file owner read and execute permissions, and remove execute permissions from the group and all others:\n\n```console\n$ oschmod u+rx,go-x <file name>\n```\n\n**example 4:** to give everyone all permissions, and then remove execute write from the group, and execute from all others:\n\n```console\n$ oschmod a+rwx,g-w,o-x <file name>\n```\n\n### octal representation examples\n\nfor more about what octal representations mean, see [this article](https://medium.com/@dirk.avery/securing-files-on-windows-macos-and-linux-7b2b9899992) on medium.\n\n**example 5:** to give everyone read, write, and execute permissions on a file:\n\n```console\n$ oschmod 777 <file name>\n```\n\n**example 6:** to lock down a file to just give the file owner read, write, and execute permissions and deny all permissions to everyone else:\n\n```console\n$ oschmod 700 <file name>\n```\n\n## python usage\n\nyou can use ***oschmod*** from python code. any of the command line examples above will work very similarly. for example, *example 4* above, in python code, would look like this:\n\n```python\nimport oschmod\noschmod.set_mode(\"myfile\", \"a+rwx,g-w,o-x\")\n```\n\n*example 5* above, in python code, could be done in two ways:\n\n```python\nimport oschmod\noschmod.set_mode(\"myfile\", \"777\")\noschmod.set_mode(\"myfile\", 0o777)\n```\n\n***oschmod*** is compatible with bitwise permissions as defined in the `stat` module. to give a file's owner read, write, and execute permissions and deny the group and others any permissions (i.e., equivalent of `700`):\n\n```python\nimport oschmod\nimport stat\noschmod.set_mode('myfile', stat.s_irusr | stat.s_iwusr | stat.s_ixusr)\n```\n\nreplacing `os.chmod()` with ***oschmod*** should usually be an easy drop-in replacement. replacement will allow you to get consistent file permission settings on windows, macos, and linux:\n\nif this is your python code using `os.chmod()`:\n\n```python\nimport os\nos.chmod('myfile1', 'u+x')\nos.chmod('myfile2', 0o777)\n```\n\nthe replacement using ***oschmod*** is very similar:\n\n```python\nimport oschmod\noschmod.set_mode('myfile1', 'u+x')\noschmod.set_mode('myfile2', 0o777)\n```\n\n## changelog\n\n### 0.3.0\n\n**commit delta**: [change from 0.2.4 release](https://github.com/yakdriver/oschmod/compare/0.2.4...0.3.0)\n\n**released**: 2020.05.27\n\n**summary**:\n\n*   adds symbolic representation for mode changes (e.g., `+x`, `u+rwx`, `ugo-x`).\n\n### 0.2.4\n\n**commit delta**: [change from 0.2.2 release](https://github.com/yakdriver/oschmod/compare/0.2.2...0.2.4)\n\n**released**: 2020.04.21\n\n**summary**:\n\n*   add command line interface (cli).\n\n### 0.2.2\n\n**commit delta**: [change from 0.2.0 release](https://github.com/yakdriver/oschmod/compare/0.2.0...0.2.2)\n\n**released**: 2020.04.21\n\n**summary**:\n\n*   fix issue with account lookup failing with error (`no mapping between account names and security ids was done.`).\n\n### 0.2.0\n\n**commit delta**: [change from 0.1.5 release](https://github.com/yakdriver/oschmod/compare/0.1.5...0.2.0)\n\n**released**: 2020.04.20\n\n**summary**:\n\n*   add recursive version of `oschmod.set_mode()`: `oschmod.set_mode_recursive()`\n\n### 0.1.5\n\n**commit delta**: [change from 0.1.4 release](https://github.com/yakdriver/oschmod/compare/0.1.4...0.1.5)\n\n**released**: 2020.04.17\n\n**summary**:\n\n*   create linux version of permissions test (`oschmod.perm_test()`)\n\n### 0.1.4\n\n**commit delta**: [change from 0.1.0 release](https://github.com/yakdriver/oschmod/compare/0.1.0...0.1.4)\n\n**released**: 2020.04.17\n\n**summary**:\n\n*   revise windows to keep permissions an object already has for system/nt authority and don't include those permissions in mode calculation.\n*   fix various minor cosmetic issues.\n\n### 0.1.0\n\n**commit delta**: [change from 0.0.0 release](https://github.com/yakdriver/oschmod/compare/0.0.0...0.1.0)\n\n**released**: 2020.04.15\n\n**summary**:\n\n*   initial release\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache software license 2.0",
+  "name": "oschmod",
+  "package_url": "https://pypi.org/project/oschmod/",
+  "project_url": "https://pypi.org/project/oschmod/",
+  "project_urls": {
+    "Homepage": "https://github.com/yakdriver/oschmod"
+  },
+  "release_url": "https://pypi.org/project/oschmod/0.3.12/",
+  "requires_dist": [
+    "pywin32 ; platform_system == \"Windows\""
+  ],
+  "requires_python": "",
+  "summary": "windows and linux compatible chmod",
+  "version": "0.3.12",
+  "releases": [],
+  "developers": [
+    "dirk.avery@geemail.com",
+    "yakdriver"
+  ],
+  "kwds": "yakdriver pyversions travis href oschmod",
+  "license_kwds": "apache software license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_oschmod",
+  "homepage": "https://github.com/yakdriver/oschmod",
+  "release_count": 27,
+  "dependency_ids": [
+    "pypi_pywin32"
+  ]
+}

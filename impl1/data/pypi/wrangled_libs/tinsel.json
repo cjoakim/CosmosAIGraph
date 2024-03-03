@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7"
+  ],
+  "description": "tinsel\n======\n\n*your data is your schema*\n\n.. image:: https://img.shields.io/pypi/pyversions/tinsel.svg\n    :target: https://pypi.python.org/pypi/tinsel\n.. image:: https://img.shields.io/pypi/v/tinsel.svg\n    :target: https://pypi.python.org/pypi/tinsel\n.. image:: https://coveralls.io/repos/github/orhideous/tinsel/badge.svg?branch=master\n    :target: https://coveralls.io/github/orhideous/tinsel?branch=master\n.. image:: https://img.shields.io/travis/orhideous/tinsel.svg\n    :target: https://travis-ci.org/orhideous/tinsel\n.. image:: https://pyup.io/repos/github/orhideous/tinsel/shield.svg\n    :target: https://pyup.io/repos/github/orhideous/tinsel/\n\nthis tiny library helps to overcome excessive complexity in hand-written pyspark\ndataframe schemas.\n\nhow?\n----\n\nshape your data as ``namedtuple`` or dataclasses - they can freely mix::\n\n    from dataclasses import dataclass\n    from tinsel import struct, transform\n    from typing import namedtuple, optional, dict, list\n\n    @struct\n    @dataclass\n    class userinfo:\n        hobby: list[str]\n        last_seen: optional[int]\n        pet_ages: dict[str, int]\n\n\n    @struct\n    class user(namedtuple):\n        login: str\n        age: int\n        active: bool\n        info: optional[userinfo]\n\n\ntransform root node (``user`` in our case) into schema::\n\n    schema = transform(user)\n\n\ncreate some data, if necessary::\n\n    data = [\n        user(\n            login=\"ben\",\n            age=18,\n            active=false,\n            info=none\n        ),\n        user(\n            login=\"tom\",\n            age=32,\n            active=true,\n            info=userinfo(\n                hobby=[\"pets\", \"flowers\"],\n                last_seen=16,\n                pet_ages={\"jack\": 2, \"sunshine\": 6}\n            )\n        )\n    ]\n\nand\u2026 voil\u00e0!::\n\n    from pyspark.sql import sparksession\n\n    sc = sparksession.builder.master('local').getorcreate()\n\n    df = sc.createdataframe(data=data, schema=schema)\n    df.printschema()\n    df.show(truncate=false)\n\nthis will output::\n\n    root\n     |-- login: string (nullable = false)\n     |-- age: integer (nullable = false)\n     |-- active: boolean (nullable = false)\n     |-- info: struct (nullable = true)\n     |    |-- hobby: array (nullable = false)\n     |    |    |-- element: string (containsnull = false)\n     |    |-- last_seen: integer (nullable = true)\n     |    |-- pet_ages: map (nullable = false)\n     |    |    |-- key: string\n     |    |    |-- value: integer (valuecontainsnull = false)\n\n\n    +-----+---+------+----------------------------------------------+\n    |login|age|active|info                                          |\n    +-----+---+------+----------------------------------------------+\n    |ben  |18 |false |null                                          |\n    |tom  |32 |true  |[[pets, flowers],, [jack -> 2, sunshine -> 6]]|\n    +-----+---+------+----------------------------------------------+\n\nfeatures\n--------\n* use native python types; no extra dsl, no cryptic api \u2014 just plain python;\n* small and fast;\n* provide type shims for some types absent in python, like ``long`` or ``short``;\n* nullable fields naturally fits into schema definition;\n\ncredits\n-------\n\nthis package was created with cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.\n\n.. _cookiecutter: https://github.com/audreyr/cookiecutter\n.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage\n\n\n=======\nhistory\n=======\n\n0.2.0 (2018-08-28)\n------------------\n\n* added dataclasses support\n\n0.1.0 (2018-08-28)\n------------------\n\n* first release on pypi.\n\n\n",
+  "docs_url": null,
+  "keywords": "tinsel,pyspark,spark,schema,struct",
+  "license": "mit license",
+  "name": "tinsel",
+  "package_url": "https://pypi.org/project/tinsel/",
+  "project_url": "https://pypi.org/project/tinsel/",
+  "project_urls": {
+    "Homepage": "https://github.com/Orhideous/tinsel"
+  },
+  "release_url": "https://pypi.org/project/tinsel/0.3.0/",
+  "requires_dist": [
+    "pyspark (>=2.3)"
+  ],
+  "requires_python": "",
+  "summary": "pyspark schema generator",
+  "version": "0.3.0",
+  "releases": [],
+  "developers": [
+    "andriy_kushnir",
+    "me@orhideous.name"
+  ],
+  "kwds": "pyspark tinsel spark coveralls schema",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_tinsel",
+  "homepage": "https://github.com/orhideous/tinsel",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_pyspark"
+  ]
+}

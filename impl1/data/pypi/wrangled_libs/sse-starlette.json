@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http"
+  ],
+  "description": "# server sent events for [starlette](https://github.com/encode/starlette) and [fastapi](https://fastapi.tiangolo.com/)\n\n[![pypi version][pypi-image]][pypi-url]\n[![build status][build-image]][build-url]\n[![code coverage][coverage-image]][coverage-url]\n\n> implements the [server-sent events](https://developer.mozilla.org/en-us/docs/web/api/server-sent_events) specification.\n\nbackground: https://sysid.github.io/server-sent-events/\n\ninstallation:\n\n```shell\npip install sse-starlette\n```\n\nusage:\n\n```python\nimport asyncio\nimport uvicorn\nfrom starlette.applications import starlette\nfrom starlette.routing import route\nfrom sse_starlette.sse import eventsourceresponse\n\nasync def numbers(minimum, maximum):\n    for i in range(minimum, maximum + 1):\n        await asyncio.sleep(0.9)\n        yield dict(data=i)\n\nasync def sse(request):\n    generator = numbers(1, 5)\n    return eventsourceresponse(generator)\n\nroutes = [\n    route(\"/\", endpoint=sse)\n]\n\napp = starlette(debug=true, routes=routes)\n\nif __name__ == \"__main__\":\n    uvicorn.run(app, host=\"0.0.0.0\", port=8000, log_level='info')\n```\n\noutput:\n![output](output.png)\n\n**caveat:** sse streaming does not work in combination with [gzipmiddleware](https://github.com/encode/starlette/issues/20#issuecomment-704106436).\n\nbe aware that for proper server shutdown your application must stop all\nrunning tasks (generators). otherwise you might experience the following warnings\nat shutdown: `waiting for background tasks to complete. (ctrl+c to force quit)`.\n\nclient disconnects need to be handled in your request handler (see example.py):\n```python\nasync def endless(req: request):\n    async def event_publisher():\n        i = 0\n        try:\n          while true:\n              i += 1\n              yield dict(data=i)\n              await asyncio.sleep(0.2)\n        except asyncio.cancellederror as e:\n          _log.info(f\"disconnected from client (via refresh/close) {req.client}\")\n          # do any other cleanup, if any\n          raise e\n    return eventsourceresponse(event_publisher())\n```\n\n## special use cases\n### customize ping\nby default, the server sends a ping every 15 seconds. you can customize this by:\n1. setting the `ping` parameter\n2. by changing the `ping` event to a comment event so that it is not visible to the client\n```python\n@router.get(\"\")\nasync def handle():\n    generator = numbers(1, 100)\n    return eventsourceresponse(\n        generator,\n        headers={\"server\": \"nini\"},\n        ping=5,\n        ping_message_factory=lambda: serversentevent(**{\"comment\": \"you can't see\\r\\nthis ping\"}),\n    )\n```\n\n### fan out proxies\nfan out proxies usually rely on response being cacheable. to support that, you can set the value of `cache-control`.\nfor example:\n```python\nreturn eventsourceresponse(\n        generator(), headers={\"cache-control\": \"public, max-age=29\"}\n    )\n```\n### error handling\nsee example: `examples/error_handling.py`\n\n\n### sending responses without async generators\nasync generators can expose tricky error and cleanup behavior especially when they are interrupted.\n\n[background: cleanup in async generators](https://vorpus.org/blog/some-thoughts-on-asynchronous-api-design-in-a-post-asyncawait-world/#cleanup-in-generators-and-async-generators).\n\nexample [`no_async_generators.py`](https://github.com/sysid/sse-starlette/pull/56#issue-1704495339) shows an alternative implementation\nthat does not rely on async generators but instead uses memory channels (`examples/no_async_generators.py`).\n\n\n## development, contributing\n1. install pipenv: `pip install pipenv`\n2. install dependencies using pipenv: `pipenv install --dev -e .`\n3. to run tests, either:\n   - `pipenv run pytest`\n \n### makefile\n- make sure your virtualenv is active: `pipenv shell`\n- check `makefile` for available commands and development support, e.g. run the unit tests:\n```python\nmake test\n```\n\nfor integration testing you can use the provided examples in `tests` and `examples`.\n\nif you are using postman, please see: https://github.com/sysid/sse-starlette/issues/47#issuecomment-1445953826\n\n\n<!-- badges -->\n\n[pypi-image]: https://badge.fury.io/py/sse-starlette.svg\n[pypi-url]: https://pypi.org/project/sse-starlette/\n[build-image]: https://github.com/sysid/sse-starlette/actions/workflows/build.yml/badge.svg\n[build-url]: https://github.com/sysid/sse-starlette/actions/workflows/build.yml\n[coverage-image]: https://codecov.io/gh/sysid/sse-starlette/branch/master/graph/badge.svg\n[coverage-url]: https://codecov.io/gh/sysid/sse-starlette\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-3-clause",
+  "name": "sse-starlette",
+  "package_url": "https://pypi.org/project/sse-starlette/",
+  "project_url": "https://pypi.org/project/sse-starlette/",
+  "project_urls": {
+    "Source": "https://github.com/sysid/sse-starlette"
+  },
+  "release_url": "https://pypi.org/project/sse-starlette/1.8.2/",
+  "requires_dist": [
+    "starlette",
+    "uvicorn",
+    "fastapi",
+    "anyio"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "sse plugin for starlette",
+  "version": "1.8.2",
+  "releases": [],
+  "developers": [
+    "sysid@gmx.de"
+  ],
+  "kwds": "sent_events sse_starlette starlette sends await",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_sse_starlette",
+  "homepage": "",
+  "release_count": 41,
+  "dependency_ids": [
+    "pypi_anyio",
+    "pypi_fastapi",
+    "pypi_starlette",
+    "pypi_uvicorn"
+  ]
+}

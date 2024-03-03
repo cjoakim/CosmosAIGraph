@@ -1,0 +1,32 @@
+{
+  "classifiers": [],
+  "description": "rply\n====\n\n.. image:: https://secure.travis-ci.org/alex/rply.png\n    :target: https://travis-ci.org/alex/rply\n\nwelcome to rply! a pure python parser generator, that also works with rpython.\nit is a more-or-less direct port of david beazley's awesome ply, with a new\npublic api, and rpython support.\n\nyou can find the documentation `online`_.\n\nbasic api:\n\n.. code:: python\n\n    from rply import parsergenerator, lexergenerator\n    from rply.token import basebox\n\n    lg = lexergenerator()\n    # add takes a rule name, and a regular expression that defines the rule.\n    lg.add(\"plus\", r\"\\+\")\n    lg.add(\"minus\", r\"-\")\n    lg.add(\"number\", r\"\\d+\")\n\n    lg.ignore(r\"\\s+\")\n\n    # this is a list of the token names. precedence is an optional list of\n    # tuples which specifies order of operation for avoiding ambiguity.\n    # precedence must be one of \"left\", \"right\", \"nonassoc\".\n    # cache_id is an optional string which specifies an id to use for\n    # caching. it should *always* be safe to use caching,\n    # rply will automatically detect when your grammar is\n    # changed and refresh the cache for you.\n    pg = parsergenerator([\"number\", \"plus\", \"minus\"],\n            precedence=[(\"left\", ['plus', 'minus'])], cache_id=\"myparser\")\n\n    @pg.production(\"main : expr\")\n    def main(p):\n        # p is a list, of each of the pieces on the right hand side of the\n        # grammar rule\n        return p[0]\n\n    @pg.production(\"expr : expr plus expr\")\n    @pg.production(\"expr : expr minus expr\")\n    def expr_op(p):\n        lhs = p[0].getint()\n        rhs = p[2].getint()\n        if p[1].gettokentype() == \"plus\":\n            return boxint(lhs + rhs)\n        elif p[1].gettokentype() == \"minus\":\n            return boxint(lhs - rhs)\n        else:\n            raise assertionerror(\"this is impossible, abort the time machine!\")\n\n    @pg.production(\"expr : number\")\n    def expr_num(p):\n        return boxint(int(p[0].getstr()))\n\n    lexer = lg.build()\n    parser = pg.build()\n\n    class boxint(basebox):\n        def __init__(self, value):\n            self.value = value\n\n        def getint(self):\n            return self.value\n\nthen you can do:\n\n.. code:: python\n\n    parser.parse(lexer.lex(\"1 + 3 - 2+12-32\"))\n\nyou can also substitute your own lexer. a lexer is an object with a ``next()``\nmethod that returns either the next token in sequence, or ``none`` if the token\nstream has been exhausted.\n\nwhy do we have the boxes?\n-------------------------\n\nin rpython, like other statically typed languages, a variable must have a\nspecific type, we take advantage of polymorphism to keep values in a box so\nthat everything is statically typed. you can write whatever boxes you need for\nyour project.\n\nif you don't intend to use your parser from rpython, and just want a cool pure\npython parser you can ignore all the box stuff and just return whatever you\nlike from each production method.\n\nerror handling\n--------------\n\nby default, when a parsing error is encountered, an ``rply.parsingerror`` is\nraised, it has a method ``getsourcepos()``, which returns an\n``rply.token.sourceposition`` object.\n\nyou may also provide an error handler, which, at the moment, must raise an\nexception. it receives the ``token`` object that the parser errored on.\n\n.. code:: python\n\n    pg = parsergenerator(...)\n\n    @pg.error\n    def error_handler(token):\n        raise valueerror(\"ran into a %s where it wasn't expected\" % token.gettokentype())\n\npython compatibility\n--------------------\n\nrply is tested and known to work under python 2.7, 3.4+, and pypy. it is\nalso valid rpython for pypy checkouts from ``6c642ae7a0ea`` onwards.\n\nlinks\n-----\n\n* `source code and issue tracker <https://github.com/alex/rply/>`_\n* `pypi releases <https://pypi.python.org/pypi/rply>`_\n* `talk at pycon us 2013: so you want to write an interpreter? <http://pyvideo.org/video/1694/so-you-want-to-write-an-interpreter>`_\n\n.. _`online`: https://rply.readthedocs.io/\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd 3-clause license",
+  "name": "rply",
+  "package_url": "https://pypi.org/project/rply/",
+  "project_url": "https://pypi.org/project/rply/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/rply/0.7.8/",
+  "requires_dist": [
+    "appdirs"
+  ],
+  "requires_python": "",
+  "summary": "a pure python lex/yacc that works with rpython",
+  "version": "0.7.8",
+  "releases": [],
+  "developers": [
+    "alex.gaynor@gmail.com",
+    "alex_gaynor"
+  ],
+  "kwds": "rply rpython parse parser parsergenerator",
+  "license_kwds": "bsd 3-clause license",
+  "libtype": "pypi",
+  "id": "pypi_rply",
+  "homepage": "",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_appdirs"
+  ]
+}

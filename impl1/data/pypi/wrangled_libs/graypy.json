@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.2",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: system :: logging"
+  ],
+  "description": "######\ngraypy\n######\n\n.. image:: https://img.shields.io/pypi/v/graypy.svg\n    :target: https://pypi.python.org/pypi/graypy\n    :alt: pypi status\n\n.. image:: https://travis-ci.org/severb/graypy.svg?branch=master\n    :target: https://travis-ci.org/severb/graypy\n    :alt: build status\n\n.. image:: https://readthedocs.org/projects/graypy/badge/?version=stable\n    :target: https://graypy.readthedocs.io/en/stable/?badge=stable\n    :alt: documentation status\n\n.. image:: https://codecov.io/gh/severb/graypy/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/severb/graypy\n    :alt: coverage status\n\ndescription\n===========\n\npython logging handlers that send log messages in the\ngraylog extended log format (gelf_).\n\ngraypy supports sending gelf logs to both graylog2 and graylog3 servers.\n\ninstalling\n==========\n\nusing pip\n---------\n\ninstall the basic graypy python logging handlers:\n\n.. code-block:: console\n\n    pip install graypy\n\ninstall with requirements for ``gelfrabbithandler``:\n\n.. code-block:: console\n\n    pip install graypy[amqp]\n\nusing easy_install\n------------------\n\ninstall the basic graypy python logging handlers:\n\n.. code-block:: console\n\n    easy_install graypy\n\ninstall with requirements for ``gelfrabbithandler``:\n\n.. code-block:: console\n\n    easy_install graypy[amqp]\n\nusage\n=====\n\ngraypy sends gelf logs to a graylog server via subclasses of the python\n`logging.handler`_ class.\n\nbelow is the list of ready to run gelf logging handlers defined by graypy:\n\n* ``gelfudphandler`` - udp log forwarding\n* ``gelftcphandler`` - tcp log forwarding\n* ``gelftlshandler`` - tcp log forwarding with tls support\n* ``gelfhttphandler`` - http log forwarding\n* ``gelfrabbithandler`` - rabbitmq log forwarding\n\nudp logging\n-----------\n\nudp log forwarding to a locally hosted graylog server can be easily done with\nthe ``gelfudphandler``:\n\n.. code-block:: python\n\n    import logging\n    import graypy\n\n    my_logger = logging.getlogger('test_logger')\n    my_logger.setlevel(logging.debug)\n\n    handler = graypy.gelfudphandler('localhost', 12201)\n    my_logger.addhandler(handler)\n\n    my_logger.debug('hello graylog.')\n\n\nudp gelf chunkers\n^^^^^^^^^^^^^^^^^\n\n`gelf udp chunking`_ is supported by the ``gelfudphandler`` and is defined by\nthe ``gelf_chunker`` argument within its constructor. by default the\n``gelfwarningchunker`` is used, thus, gelf messages that chunk overflow\n(i.e. consisting of more than 128 chunks) will issue a\n``gelfchunkoverflowwarning`` and **will be dropped**.\n\nother ``gelf_chunker`` options are also available:\n\n* ``basegelfchunker`` silently drops gelf messages that chunk overflow\n* ``gelftruncatingchunker`` issues a ``gelfchunkoverflowwarning`` and\n  simplifies and truncates gelf messages that chunk overflow in a attempt\n  to send some content to graylog. if this process fails to prevent\n  another chunk overflow a ``gelftruncationfailurewarning`` is issued.\n\nrabbitmq logging\n----------------\n\nalternately, use ``gelfrabbithandler`` to send messages to rabbitmq and\nconfigure your graylog server to consume messages via amqp. this prevents log\nmessages from being lost due to dropped udp packets (``gelfudphandler`` sends\nmessages to graylog using udp). you will need to configure rabbitmq with a\n``gelf_log`` queue and bind it to the ``logging.gelf`` exchange so messages\nare properly routed to a queue that can be consumed by graylog (the queue and\nexchange names may be customized to your liking).\n\n.. code-block:: python\n\n    import logging\n    import graypy\n\n    my_logger = logging.getlogger('test_logger')\n    my_logger.setlevel(logging.debug)\n\n    handler = graypy.gelfrabbithandler('amqp://guest:guest@localhost/', exchange='logging.gelf')\n    my_logger.addhandler(handler)\n\n    my_logger.debug('hello graylog.')\n\ndjango logging\n--------------\n\nit's easy to integrate ``graypy`` with django's logging settings. just add a\nnew handler in your ``settings.py``:\n\n.. code-block:: python\n\n    logging = {\n        'version': 1,\n        # other dictconfig keys here...\n        'handlers': {\n            'graypy': {\n                'level': 'warning',\n                'class': 'graypy.gelfudphandler',\n                'host': 'localhost',\n                'port': 12201,\n            },\n        },\n        'loggers': {\n            'django.request': {\n                'handlers': ['graypy'],\n                'level': 'error',\n                'propagate': true,\n            },\n        },\n    }\n\ntraceback logging\n-----------------\n\nby default log captured exception tracebacks are added to the gelf log as\n``full_message`` fields:\n\n.. code-block:: python\n\n    import logging\n    import graypy\n\n    my_logger = logging.getlogger('test_logger')\n    my_logger.setlevel(logging.debug)\n\n    handler = graypy.gelfudphandler('localhost', 12201)\n    my_logger.addhandler(handler)\n\n    try:\n        puff_the_magic_dragon()\n    except nameerror:\n        my_logger.debug('no dragons here.', exc_info=1)\n\ndefault logging fields\n----------------------\n\nby default a number of debugging logging fields are automatically added to the\ngelf log if available:\n\n    * function\n    * pid\n    * process_name\n    * thread_name\n\nyou can disable automatically adding these debugging logging fields by\nspecifying ``debugging_fields=false`` in the handler's constructor:\n\n.. code-block:: python\n\n    handler = graypy.gelfudphandler('localhost', 12201, debugging_fields=false)\n\nadding custom logging fields\n----------------------------\n\ngraypy also supports including custom fields in the gelf logs sent to graylog.\nthis can be done by using python's loggeradapter_ and filter_ classes.\n\nusing loggeradapter\n^^^^^^^^^^^^^^^^^^^\n\nloggeradapter_ makes it easy to add static information to your gelf log\nmessages:\n\n.. code-block:: python\n\n    import logging\n    import graypy\n\n    my_logger = logging.getlogger('test_logger')\n    my_logger.setlevel(logging.debug)\n\n    handler = graypy.gelfudphandler('localhost', 12201)\n    my_logger.addhandler(handler)\n\n    my_adapter = logging.loggeradapter(logging.getlogger('test_logger'),\n                                       {'username': 'john'})\n\n    my_adapter.debug('hello graylog from john.')\n\nusing filter\n^^^^^^^^^^^^\n\nfilter_ gives more flexibility and allows for dynamic information to be\nadded to your gelf logs:\n\n.. code-block:: python\n\n    import logging\n    import graypy\n\n    class usernamefilter(logging.filter):\n        def __init__(self):\n            # in an actual use case would dynamically get this\n            # (e.g. from memcache)\n            self.username = 'john'\n\n        def filter(self, record):\n            record.username = self.username\n            return true\n\n    my_logger = logging.getlogger('test_logger')\n    my_logger.setlevel(logging.debug)\n\n    handler = graypy.gelfudphandler('localhost', 12201)\n    my_logger.addhandler(handler)\n\n    my_logger.addfilter(usernamefilter())\n\n    my_logger.debug('hello graylog from john.')\n\ncontributors\n============\n\n  * sever banesiu\n  * daniel miller\n  * tushar makkar\n  * nathan klapstein\n\n.. _gelf: https://docs.graylog.org/en/latest/pages/gelf.html\n.. _logging.handler: https://docs.python.org/3/library/logging.html#logging.handler\n.. _gelf udp chunking: https://docs.graylog.org/en/latest/pages/gelf.html#chunking\n.. _loggeradapter: https://docs.python.org/howto/logging-cookbook.html#using-loggeradapters-to-impart-contextual-information\n.. _filter: https://docs.python.org/howto/logging-cookbook.html#using-filters-to-impart-contextual-information\n\n\n",
+  "docs_url": null,
+  "keywords": "logging gelf graylog2 graylog udp amqp",
+  "license": "bsd license",
+  "name": "graypy",
+  "package_url": "https://pypi.org/project/graypy/",
+  "project_url": "https://pypi.org/project/graypy/",
+  "project_urls": {
+    "Homepage": "https://github.com/severb/graypy"
+  },
+  "release_url": "https://pypi.org/project/graypy/2.1.0/",
+  "requires_dist": [
+    "amqplib (==1.0.2) ; extra == 'amqp'",
+    "sphinx (<3.0.0,>=2.1.2) ; extra == 'docs'",
+    "sphinx-rtd-theme (<1.0.0,>=0.4.3) ; extra == 'docs'",
+    "sphinx-autodoc-typehints (<2.0.0,>=1.6.0) ; extra == 'docs'"
+  ],
+  "requires_python": "",
+  "summary": "python logging handlers that send messages in the graylog extended log format (gelf).",
+  "version": "2.1.0",
+  "releases": [],
+  "developers": [
+    "banesiu.sever@gmail.com",
+    "sever_banesiu"
+  ],
+  "kwds": "graylog graylog3 graylog2 graypy gelf_log",
+  "license_kwds": "bsd license",
+  "libtype": "pypi",
+  "id": "pypi_graypy",
+  "homepage": "https://github.com/severb/graypy",
+  "release_count": 24,
+  "dependency_ids": [
+    "pypi_amqplib",
+    "pypi_sphinx",
+    "pypi_sphinx_autodoc_typehints",
+    "pypi_sphinx_rtd_theme"
+  ]
+}

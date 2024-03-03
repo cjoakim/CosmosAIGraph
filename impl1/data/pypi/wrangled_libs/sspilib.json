@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# python sspi library\n\n[![test workflow](https://github.com/jborean93/sspilib/actions/workflows/ci.yml/badge.svg)](https://github.com/jborean93/sspilib/actions/workflows/ci.yml)\n[![pypi version](https://badge.fury.io/py/sspilib.svg)](https://badge.fury.io/py/sspilib)\n[![license](https://img.shields.io/badge/license-mit-blue.svg)](https://github.com/jborean93/sspilib/blob/main/license)\n\nthis library provides python functions that wraps the windows sspi api.\nit is designed to be both a high and low level interface that other libraries can easily leverage to use with sspi integration.\nthe high level interface is under the `sspilib` namespace whereas the low-level interface is under the `sspilib.raw` interface.\n\n## requirements\n\n* python 3.8+\n\nmore requires are needed to compile the code from scratch but this library is shipped as a wheel so it isn't mandatory for installation.\n\n## installation\n\nsimply run:\n\n```bash\npip install sspilib\n```\n\nto install from source run the following:\n\n```bash\ngit clone https://github.com/jborean93/sspilib.git\npython -m pip install build\npython -m build\npip install dist/sspilib-*.whl\n```\n\n## development\n\nto run the tests or make changes to this repo run the following:\n\n```bash\ngit clone https://github.com/jborean93/sspilib.git\npip install -r requirements-dev.txt\npre-commit install\n\npython -m pip install -e .\n\n# can compile the sspi extensions on an adhoc basis\n# python setup.py build_ext --inplace\n```\n\nfrom there an editor like vscode can be used to make changes and run the test suite.\nto recompile the cython files after a change run the `build_ext --inplace` command.\n\nif building on linux or macos, a version of `libsspi` from [sspi-rs](https://github.com/devolutions/sspi-rs) must be compiled with rust.\na copy of `libicuuc` alongside its headers must be present during compile time.\nto compile `sspi-rs`, download the git repository and run the following.\n\n```bash\ncargo build \\\n    --package sspi-ffi \\\n    --release\n\nexport ld_library_path=\"${pwd}/target/release\"\nexport library_path=\"${pwd}/target/release\"\n```\n\n## structure\n\nthis library is merely a wrapper around the sspi apis.\nthe high level api under `sspilib` exposes an easier to use python api for sspi.\nthe functions under the `sspilib.raw` namespace expose the various sspi functions under a more pythonic snake_case format.\nfor example the [acquirecredentialshandle](https://learn.microsoft.com/en-us/windows/win32/secauthn/acquirecredentialshandle--general) function is exposed as `sspilib.raw.acquire_credentials_handle`.\n\nerrors are raised as a `windowserror` which contains the error message as formatted by windows and the error code.\nfor non-windows hosts there is a compatible `sspilib.windowserror` class that is structured like the windows only `windowserror` builtin.\nsome of the objects and constants are exposed as python classes/dataclasses/enums for ease of use.\nplease read through the docstring of the function that will be used to learn more about how to use them.\n\n### client authentication example\n\nhere is a basic example of how to use this library for client authentication:\n\n```python\nimport sspilib\n\ncred = sspilib.usercredential(\n    \"username@domain.com\",\n    \"password\",\n)\n\nctx = sspilib.clientsecuritycontext(\n    \"host/server.domain.com\",\n    credential=cred,\n)\n\nin_token = none\nwhile not ctx.complete:\n    out_token = ctx.step(in_token)\n    if not out_token:\n        break\n\n    # exchange_with_server() is a function that sends the out_token to the\n    # server we are authenticating with. how this works depends on the app\n    # protocol being used, e.g. http, sockets, ldap, etc.\n    in_token = exchange_with_server(out_token)\n\n# once authenticated we can wrap messages when talking to the server. the final\n# message being sent is dependent on the application protocol\nsecret = b\"secret data\"\n\nwrapped_secret = ctx.wrap(secret)\nserver_enc_resp = exchange_with_server(wrapped_secret)\nserver_resp = ctx.unwrap(server_enc_resp).data\n```\n\nthe `usercredential` supports more options, like selecting the authentication protocol used.\nthe `clientsecuritycontext` requires the service principal name (spn) of the target server and optional credentials.\nother options can be used to control the context requested attributes, channel bindings, etc as needed.\nhow the tokens and wrapped data is sent is dependent on the underlying protocols used, this example just shows when to exchange the data.\n\n## non-windows support\n\nwhile sspi is a windows only api, this package ships with `manylinux2014_x86_64`, `macosx_x86_64`, and `macosx_arm64` compatible wheels that use [sspi-rs](https://github.com/devolutions/sspi-rs).\nsupport for this is experimental as all the authentication logic is contained in that external api.\nthe interface for `sspi-rs` is exactly the same as sspi on windows so the same code should theoretically be possible.\nin saying this, compatibility with sspi actual is not 100% there so use at your own risk.\n\nit is recommended to use a library that wraps gssapi on non-windows platforms like [python-gssapi](https://github.com/pythongssapi/python-gssapi).\nthere is no support for any other architectures on linux except `x86_64` and as `sspi-rs` only supports glibc it cannot be used with musl based distributions like alpine.\n",
+  "docs_url": null,
+  "keywords": "sspi,kerberos,negotiate",
+  "license": "mit license  copyright (c) 2023 jordan borean, red hat  permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"software\"), to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, subject to the following conditions:  the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software. ",
+  "name": "sspilib",
+  "package_url": "https://pypi.org/project/sspilib/",
+  "project_url": "https://pypi.org/project/sspilib/",
+  "project_urls": {
+    "homepage": "https://github.com/jborean93/sspilib"
+  },
+  "release_url": "https://pypi.org/project/sspilib/0.1.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "sspi api bindings for python",
+  "version": "0.1.0",
+  "releases": [],
+  "developers": [
+    "jborean93@gmail.com"
+  ],
+  "kwds": "sspilib sspi pythongssapi badge gssapi",
+  "license_kwds": "copyright license liable liability mit",
+  "libtype": "pypi",
+  "id": "pypi_sspilib",
+  "homepage": "",
+  "release_count": 1,
+  "dependency_ids": []
+}

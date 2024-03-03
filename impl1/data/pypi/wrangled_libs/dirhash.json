@@ -1,0 +1,34 @@
+{
+  "classifiers": [],
+  "description": "\n[![build status](https://travis-ci.com/andhus/dirhash-python.svg?branch=master)](https://travis-ci.com/andhus/dirhash-python)\n[![codecov](https://codecov.io/gh/andhus/dirhash-python/branch/master/graph/badge.svg)](https://codecov.io/gh/andhus/dirhash-python)\n\n# dirhash\na lightweight python module and cli for computing the hash of any\ndirectory based on its files' structure and content.\n- supports all hashing algorithms of python's built-in `hashlib` module.\n- glob/wildcard (\".gitignore style\") path matching for expressive filtering of files to include/exclude.\n- multiprocessing for up to [6x speed-up](#performance)\n\nthe hash is computed according to the [dirhash standard](https://github.com/andhus/dirhash), which is designed to allow for consistent and collision resistant generation/verification of directory hashes across implementations.\n\n## installation\nfrom pypi:\n```commandline\npip install dirhash\n```\nor directly from source:\n```commandline\ngit clone git@github.com:andhus/dirhash-python.git\npip install dirhash/\n```\n\n## usage\npython module:\n```python\nfrom dirhash import dirhash\n\ndirpath = \"path/to/directory\"\ndir_md5 = dirhash(dirpath, \"md5\")\npyfiles_md5 = dirhash(dirpath, \"md5\", match=[\"*.py\"])\nno_hidden_sha1 = dirhash(dirpath, \"sha1\", ignore=[\".*\", \".*/\"])\n```\ncli:\n```commandline\ndirhash path/to/directory -a md5\ndirhash path/to/directory -a md5 --match \"*.py\"\ndirhash path/to/directory -a sha1 --ignore \".*\"  \".*/\"\n```\n\n## why?\nif you (or your application) need to verify the integrity of a set of files as well\nas their name and location, you might find this useful. use-cases range from \nverification of your image classification dataset (before spending gpu-$$$ on \ntraining your fancy deep learning model) to validation of generated files in\nregression-testing.\n\nthere isn't really a standard way of doing this. there are plenty of recipes out \nthere (see e.g. these so-questions for [linux](https://stackoverflow.com/questions/545387/linux-compute-a-single-hash-for-a-given-folder-contents)\nand [python](https://stackoverflow.com/questions/24937495/how-can-i-calculate-a-hash-for-a-filesystem-directory-using-python))\nbut i couldn't find one that is properly tested (there are some gotcha:s to cover!) \nand documented with a compelling user interface. `dirhash` was created with this as \nthe goal.\n\n[checksumdir](https://github.com/cakepietoast/checksumdir) is another python \nmodule/tool with similar intent (that inspired this project) but it lacks much of the\nfunctionality offered here (most notably including file names/structure in the hash)\nand lacks tests.\n\n## performance\nthe python `hashlib` implementation of common hashing algorithms are highly\noptimised. `dirhash` mainly parses the file tree, pipes data to `hashlib` and \ncombines the output. reasonable measures have been taken to minimize the overhead \nand for common use-cases, the majority of time is spent reading data from disk \nand executing `hashlib` code.\n\nthe main effort to boost performance is support for multiprocessing, where the\nreading and hashing is parallelized over individual files.\n\nas a reference, let's compare the performance of the `dirhash` [cli](https://github.com/andhus/dirhash-python/blob/master/src/dirhash/cli.py) \nwith the shell command:\n\n`find path/to/folder -type f -print0 | sort -z | xargs -0 md5 | md5` \n\nwhich is the top answer for the so-question: \n[linux: compute a single hash for a given folder & contents?](https://stackoverflow.com/questions/545387/linux-compute-a-single-hash-for-a-given-folder-contents)\nresults for two test cases are shown below. both have 1 gib of random data: in \n\"flat_1k_1mb\", split into 1k files (1 mib each) in a flat structure, and in \n\"nested_32k_32kb\", into 32k files (32 kib each) spread over the 256 leaf directories \nin a binary tree of depth 8.\n\nimplementation      | test case       | time (s) | speed up\n------------------- | --------------- | -------: | -------:\nshell reference     | flat_1k_1mb     | 2.29     | -> 1.0\n`dirhash`           | flat_1k_1mb     | 1.67     | 1.36\n`dirhash`(8 workers)| flat_1k_1mb     | 0.48     | **4.73**\nshell reference     | nested_32k_32kb | 6.82     | -> 1.0\n`dirhash`           | nested_32k_32kb | 3.43     | 2.00\n`dirhash`(8 workers)| nested_32k_32kb | 1.14     | **6.00**\n\nthe benchmark was run a macbook pro (2018), further details and source code [here](https://github.com/andhus/dirhash-python/tree/master/benchmark).\n\n## documentation\nplease refer to `dirhash -h`, the python [source code](https://github.com/andhus/dirhash-python/blob/master/src/dirhash/__init__.py) and the [dirhash standard](https://github.com/andhus/dirhash).\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "dirhash",
+  "package_url": "https://pypi.org/project/dirhash/",
+  "project_url": "https://pypi.org/project/dirhash/",
+  "project_urls": {
+    "Homepage": "https://github.com/andhus/dirhash-python"
+  },
+  "release_url": "https://pypi.org/project/dirhash/0.2.1/",
+  "requires_dist": [
+    "scantree (>=0.0.1)"
+  ],
+  "requires_python": "",
+  "summary": "python module and cli for hashing of file system directories.",
+  "version": "0.2.1",
+  "releases": [],
+  "developers": [
+    "anders_huss",
+    "andhus@kth.se"
+  ],
+  "kwds": "dirhash hashlib hashing hashes hash",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_dirhash",
+  "homepage": "https://github.com/andhus/dirhash-python",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_scantree"
+  ]
+}

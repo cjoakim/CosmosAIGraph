@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# pyct\n\na utility package that includes:\n\n  1. **pyct.cmd**: makes various commands available to other\n     packages. (currently no sophisticated plugin system, just a try\n     import/except in the other packages.) the same commands are\n     available from within python. can either add new subcommands to\n     an existing argparse based command if the module has an existing\n     command, or create the entire command if the module has no\n     existing command. currently, there are commands for copying\n     examples and fetching data. see\n\n  2. **pyct.build**: provides various commands to help package\n     building, primarily as a convenience for project maintainers.\n\n## pyct.cmd\n\nto install pyct with the dependencies required for pyct.cmd: `pip\ninstall pyct[cmd]` or `conda install -c pyviz pyct`.\n\nan example of how to use in a project:\nhttps://github.com/holoviz/geoviews/blob/main/geoviews/__main__.py\n\nonce added, users can copy the examples of a package and download the\nrequired data with the `examples` command:\n\n```\n$ datashader examples --help\nusage: datashader examples [-h] [--path path] [-v] [--force] [--use-test-data]\n\noptional arguments:\n  -h, --help       show this help message and exit\n  --path path      location to place examples and data\n  -v, --verbose\n  --force          if path already exists, force overwrite existing examples\n                   if older than source examples. also force any existing data\n                   files to be replaced\n  --use-test-data  use data's test files, if any, instead of fetching full\n                   data. if test file not in '.data_stubs', fall back to\n                   fetching full data.\n```\n\nto copy the examples of e.g. datashader but not download the data,\nthere's a `copy-examples` command:\n\n```\nusage: datashader copy-examples [-h] [--path path] [-v] [--force]\n\noptional arguments:\n  -h, --help     show this help message and exit\n  --path path    where to copy examples\n  -v, --verbose\n  --force        if path already exists, force overwrite existing files if\n                 older than source files\n```\n\nand to download the data only, the `fetch-data` command:\n\n```\nusage: datashader fetch-data [-h] [--path path] [--datasets datasets] [-v]\n                        [--force] [--use-test-data]\n\noptional arguments:\n  -h, --help           show this help message and exit\n  --path path          where to put data\n  --datasets datasets  *name* of datasets file; must exist either in path\n                       specified by --path or in package/examples/\n  -v, --verbose\n  --force              force any existing data files to be replaced\n  --use-test-data      use data's test files, if any, instead of fetching full\n                       data. if test file not in '.data_stubs', fall back to\n                       fetching full data.\n```\n\ncan specify different 'datasets' file:\n\n```\n$ cat earthsim-examples/test.yml\n---\n\ndata:\n\n  - url: http://s3.amazonaws.com/datashader-data/chesapeake_and_delaware_bays.zip\n    title: 'depth data for the chesapeake and delaware bay region of the usa'\n    files:\n      - chesapeake_and_delaware_bays.3dm\n\n$ earthsim fetch-data --path earthsim-examples --datasets-filename test.yml\ndownloading data defined in /tmp/earthsim-examples/test.yml to /tmp/earthsim-examples/data\nskipping depth data for the chesapeake and delaware bay region of the usa\n```\n\ncan use smaller files instead of large ones by using the `--use-test-data` flag\nand placing a small file with the same name in `examples/data/.data_stubs`:\n\n```\n$ tree examples/data -a\nexamples/data\n\u251c\u2500\u2500 .data_stubs\n\u2502\u00a0\u00a0 \u2514\u2500\u2500 nyc_taxi_wide.parq\n\u2514\u2500\u2500 diamonds.csv\n\n$ cat examples/dataset.yml\ndata:\n\n  - url: http://s3.amazonaws.com/datashader-data/nyc_taxi_wide.parq\n    title: 'nyc taxi data'\n    files:\n      - nyc_taxi_wide.parq\n\n  - url: http://s3.amazonaws.com/datashader-data/maccdc2012_graph.zip\n    title: 'national cyberwatch mid-atlantic collegiate cyber defense competition'\n    files:\n      - maccdc2012_nodes.parq\n      - maccdc2012_edges.parq\n      - maccdc2012_full_nodes.parq\n      - maccdc2012_full_edges.parq\n\n$ pyviz fetch-data --path=examples --use-test-data\nfetching data defined in /tmp/pyviz/examples/datasets.yml and placing in /tmp/pyviz/examples/data\ncopying test data file '/tmp/pyviz/examples/data/.data_stubs/nyc_taxi_wide.parq' to '/tmp/pyviz/examples/data/nyc_taxi_wide.parq'\nno test file found for: /tmp/pyviz/examples/data/.data_stubs/maccdc2012_nodes.parq. using regular file instead\ndownloading national cyberwatch mid-atlantic collegiate cyber defense competition 1 of 1\n[################################] 59/59 - 00:00:00\n```\n\nto clean up any potential test files masquerading as real data use `clean-data`:\n\n```\nusage: pyviz clean-data [-h] [--path path]\n\noptional arguments:\n  -h, --help   show this help message and exit\n  --path path  where to clean data\n```\n\n## pyct.build\n\ncurrently provides a way to package examples with a project, by\ncopying an examples folder into the package directory whenever\nsetup.py is run. the way this works is likely to change in the near\nfuture, but is provided here as the first step towards\nunifying/simplifying the maintenance of a number of pyviz projects.\n\n## pyct report\n\nprovides a way to check the package versions in the current environment using:\n  1. a console script (entry point): `pyct report [packages]`, or\n  2. a python function: `import pyct; pyct.report(packages)`\n\nthe python function can be particularly useful for e.g. jupyter notebook users, since it is the packages in the current kernel that we usually care about (not those in the environment from which jupyter notebook server/lab was launched).\n\nnote that `packages` above can include the name of any python package (returning the `__version__`), along with the special cases `python` or `conda` (returning the version of the command-line tool) or `system` (returning the os version).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd 3-clause license",
+  "name": "pyct",
+  "package_url": "https://pypi.org/project/pyct/",
+  "project_url": "https://pypi.org/project/pyct/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/pyviz-dev/pyct/issues",
+    "Homepage": "https://github.com/pyviz-dev/pyct",
+    "Source Code": "https://github.com/pyviz-dev/pyct"
+  },
+  "release_url": "https://pypi.org/project/pyct/0.5.0/",
+  "requires_dist": [
+    "param (>=1.7.0)",
+    "setuptools ; extra == 'build'",
+    "param (>=1.7.0) ; extra == 'build'",
+    "pyyaml ; extra == 'cmd'",
+    "requests ; extra == 'cmd'",
+    "nbsite ; extra == 'doc'",
+    "sphinx-ioam-theme ; extra == 'doc'",
+    "flake8 ; extra == 'tests'",
+    "pytest ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "python package common tasks for users (e.g. copy examples, fetch data, ...)",
+  "version": "0.5.0",
+  "releases": [],
+  "developers": [
+    "developers@holoviz.org",
+    "holoviz"
+  ],
+  "kwds": "pyct argparse commands python command",
+  "license_kwds": "bsd 3-clause license",
+  "libtype": "pypi",
+  "id": "pypi_pyct",
+  "homepage": "https://github.com/pyviz-dev/pyct",
+  "release_count": 43,
+  "dependency_ids": [
+    "pypi_flake8",
+    "pypi_nbsite",
+    "pypi_param",
+    "pypi_pytest",
+    "pypi_pyyaml",
+    "pypi_requests",
+    "pypi_setuptools",
+    "pypi_sphinx_ioam_theme"
+  ]
+}

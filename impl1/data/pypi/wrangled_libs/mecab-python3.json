@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 6 - mature",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "natural language :: japanese",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: text processing :: linguistic"
+  ],
+  "description": "this is a python wrapper for the [mecab][] morphological analyzer for japanese\ntext. it works with python 3.6 and greater; if you need to use python 2.7, use\nv1.0.2. \n\n**note:** if using macos big sur, you'll need to upgrade pip to version 20.3 or\nhigher to use wheels due to a pip issue.\n\n**issue\u3092\u82f1\u8a9e\u3067\u66f8\u304f\u5fc5\u8981\u306f\u3042\u308a\u307e\u305b\u3093\u3002**\n\n[mecab]: https://taku910.github.io/mecab/\n\nnote that windows wheels require a [microsoft visual c++\nredistributable][msvc], so be sure to install that.\n\n[msvc]: https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads\n\n# basic usage\n\n```py\n>>> import mecab\n>>> wakati = mecab.tagger(\"-owakati\")\n>>> wakati.parse(\"python\u304c\u5927\u597d\u304d\u3067\u3059\").split()\n['python', '\u304c', '\u5927\u597d\u304d', '\u3067\u3059']\n\n>>> tagger = mecab.tagger()\n>>> print(tagger.parse(\"python\u304c\u5927\u597d\u304d\u3067\u3059\"))\npython  python  python  python  \u540d\u8a5e-\u666e\u901a\u540d\u8a5e-\u4e00\u822c\n\u304c      \u30ac      \u30ac      \u304c      \u52a9\u8a5e-\u683c\u52a9\u8a5e\n\u5927\u597d\u304d  \u30c0\u30a4\u30b9\u30ad        \u30c0\u30a4\u30b9\u30ad        \u5927\u597d\u304d  \u5f62\u72b6\u8a5e-\u4e00\u822c\n\u3067\u3059    \u30c7\u30b9    \u30c7\u30b9    \u3067\u3059    \u52a9\u52d5\u8a5e  \u52a9\u52d5\u8a5e-\u30c7\u30b9     \u7d42\u6b62\u5f62-\u4e00\u822c\neos\n```\n\nthe api for `mecab-python3` closely follows the api for mecab itself,\neven when this makes it not very \u201cpythonic.\u201d  please consult the [official mecab\ndocumentation][mecab-docs] for more information.\n\n[mecab-docs]: https://taku910.github.io/mecab/\n\n# installation\n\nbinary wheels are available for macos x, linux, and windows (64bit) are\ninstalled by default when you use `pip`:\n\n```sh\npip install mecab-python3\n```\n\nthese wheels include a copy of the mecab library, but not a dictionary. in\norder to use mecab you'll need to install a dictionary. `unidic-lite` is a good\none to start with:\n\n```sh\npip install unidic-lite\n```\n\nto build from source using pip,\n\n```sh\npip install --no-binary :all: mecab-python3\n```\n\n## dictionaries\n\nin order to use mecab, you must install a dictionary. there are many different dictionaries available for mecab. these unidic packages, which include slight modifications for ease of use, are recommended:\n\n- [unidic](https://github.com/polm/unidic-py): the latest full unidic.\n- [unidic-lite](https://github.com/polm/unidic-lite): a slightly modified unidic 2.1.2, chosen for its small size.\n\nthe dictionaries below are not recommended due to being unmaintained for many years, but they are available for use with legacy applications.\n\n- [ipadic](https://github.com/polm/ipadic-py)\n- [jumandic](https://github.com/polm/jumandic-py)\n\nfor more details on the differences between dictionaries see [here](https://www.dampfkraft.com/nlp/japanese-tokenizer-dictionaries.html). \n\n# common issues\n\nif you get a `runtimeerror` when you try to run mecab, here are some things to check:\n\n## windows redistributable\n\nyou have to install [this][msvc] to use this package on windows.\n\n## installing a dictionary\n\nrun `pip install unidic-lite` and confirm that works. if that fixes your\nproblem, you either don't have a dictionary installed, or you need to specify\nyour dictionary path like this:\n\n    tagger = mecab.tagger('-r /dev/null -d /usr/local/lib/mecab/dic/mydic')\n\nnote: on windows, use `nul` instead of `/dev/null`. alternately, if you have a\n`mecabrc` you can use the path after `-r`.\n\n## specifying a mecabrc\n\nif you get this error:\n\n    error message: [ifs] no such file or directory: /usr/local/etc/mecabrc\n\nyou need to specify a `mecabrc` file. it's ok to specify an empty file, it just\nhas to exist. you can specify a `mecabrc` with `-r`. this may be necessary on\ndebian or ubuntu, where the `mecabrc` is in `/etc/mecabrc`.\n\nyou can specify an empty `mecabrc` like this:\n\n    tagger = mecab.tagger('-r/dev/null -d/home/hoge/mydic')\n\n## using unsupported output modes like `-ochasen`\n\nchasen output is not a built-in feature of mecab, you must specify it in your\n`dicrc` or `mecabrc`. notably, unidic does not include chasen output format.\nplease see [the mecab documentation](https://taku910.github.io/mecab/#format).\n\n# alternatives\n\n- [fugashi](https://github.com/polm/fugashi) is a cython wrapper for mecab with a pythonic interface, by the current maintainer of this library\n- [sudachipy](https://github.com/worksapplications/sudachi.rs) is a modern tokenizer with an actively maintained dictionary\n- [pymecab-ko](https://github.com/nounique/pymecab-ko) is a wrapper of the korean mecab fork [mecab-ko](https://bitbucket.org/eunjeon/mecab-ko/src/master/) based on mecab-python3\n- [konlpy](https://konlpy.org/en/latest/) is a library for korean nlp that includes a mecab wrapper\n\n# licensing\n\nlike mecab itself, `mecab-python3` is copyrighted free software by\ntaku kudo <taku@chasen.org> and nippon telegraph and telephone corporation,\nand is distributed under a 3-clause bsd license (see the file `bsd`).\nalternatively, it may be redistributed under the terms of the\ngnu general public license, version 2 (see the file `gpl`) or the\ngnu lesser general public license, version 2.1 (see the file `lgpl`). \n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "mecab-python3",
+  "package_url": "https://pypi.org/project/mecab-python3/",
+  "project_url": "https://pypi.org/project/mecab-python3/",
+  "project_urls": {
+    "Homepage": "https://github.com/SamuraiT/mecab-python3"
+  },
+  "release_url": "https://pypi.org/project/mecab-python3/1.0.8/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python wrapper for the mecab morphological analyzer for japanese",
+  "version": "1.0.8",
+  "releases": [],
+  "developers": [
+    "paul_o",
+    "polm@dampfkraft.com"
+  ],
+  "kwds": "issue\u3092\u82f1\u8a9e\u3067\u66f8\u304f\u5fc5\u8981\u306f\u3042\u308a\u307e\u305b\u3093 morphological dictionaries python wheels",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_mecab_python3",
+  "homepage": "https://github.com/samurait/mecab-python3",
+  "release_count": 39,
+  "dependency_ids": []
+}

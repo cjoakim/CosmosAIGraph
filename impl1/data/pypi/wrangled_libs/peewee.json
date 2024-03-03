@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: database",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": ".. image:: https://media.charlesleifer.com/blog/photos/peewee3-logo.png\n\npeewee\n======\n\npeewee is a simple and small orm. it has few (but expressive) concepts, making it easy to learn and intuitive to use.\n\n* a small, expressive orm\n* python 2.7+ and 3.4+\n* supports sqlite, mysql, postgresql and cockroachdb\n* tons of `extensions <http://docs.peewee-orm.com/en/latest/peewee/playhouse.html>`_\n\nnew to peewee? these may help:\n\n* `quickstart <http://docs.peewee-orm.com/en/latest/peewee/quickstart.html#quickstart>`_\n* `example twitter app <http://docs.peewee-orm.com/en/latest/peewee/example.html>`_\n* `using peewee interactively <http://docs.peewee-orm.com/en/latest/peewee/interactive.html>`_\n* `models and fields <http://docs.peewee-orm.com/en/latest/peewee/models.html>`_\n* `querying <http://docs.peewee-orm.com/en/latest/peewee/querying.html>`_\n* `relationships and joins <http://docs.peewee-orm.com/en/latest/peewee/relationships.html>`_\n\nexamples\n--------\n\ndefining models is similar to django or sqlalchemy:\n\n.. code-block:: python\n\n    from peewee import *\n    import datetime\n\n\n    db = sqlitedatabase('my_database.db')\n\n    class basemodel(model):\n        class meta:\n            database = db\n\n    class user(basemodel):\n        username = charfield(unique=true)\n\n    class tweet(basemodel):\n        user = foreignkeyfield(user, backref='tweets')\n        message = textfield()\n        created_date = datetimefield(default=datetime.datetime.now)\n        is_published = booleanfield(default=true)\n\nconnect to the database and create tables:\n\n.. code-block:: python\n\n    db.connect()\n    db.create_tables([user, tweet])\n\ncreate a few rows:\n\n.. code-block:: python\n\n    charlie = user.create(username='charlie')\n    huey = user(username='huey')\n    huey.save()\n\n    # no need to set `is_published` or `created_date` since they\n    # will just use the default values we specified.\n    tweet.create(user=charlie, message='my first tweet')\n\nqueries are expressive and composable:\n\n.. code-block:: python\n\n    # a simple query selecting a user.\n    user.get(user.username == 'charlie')\n\n    # get tweets created by one of several users.\n    usernames = ['charlie', 'huey', 'mickey']\n    users = user.select().where(user.username.in_(usernames))\n    tweets = tweet.select().where(tweet.user.in_(users))\n\n    # we could accomplish the same using a join:\n    tweets = (tweet\n              .select()\n              .join(user)\n              .where(user.username.in_(usernames)))\n\n    # how many tweets were published today?\n    tweets_today = (tweet\n                    .select()\n                    .where(\n                        (tweet.created_date >= datetime.date.today()) &\n                        (tweet.is_published == true))\n                    .count())\n\n    # paginate the user table and show me page 3 (users 41-60).\n    user.select().order_by(user.username).paginate(3, 20)\n\n    # order users by the number of tweets they've created:\n    tweet_ct = fn.count(tweet.id)\n    users = (user\n             .select(user, tweet_ct.alias('ct'))\n             .join(tweet, join.left_outer)\n             .group_by(user)\n             .order_by(tweet_ct.desc()))\n\n    # do an atomic update (for illustrative purposes only, imagine a simple\n    # table for tracking a \"count\" associated with each url). we don't want to\n    # naively get the save in two separate steps since this is prone to race\n    # conditions.\n    counter.update(count=counter.count + 1).where(counter.url == request.url)\n\ncheck out the `example twitter app <http://docs.peewee-orm.com/en/latest/peewee/example.html>`_.\n\nlearning more\n-------------\n\ncheck the `documentation <http://docs.peewee-orm.com/>`_ for more examples.\n\nspecific question? come hang out in the #peewee channel on irc.libera.chat, or post to the mailing list, http://groups.google.com/group/peewee-orm . if you would like to report a bug, `create a new issue <https://github.com/coleifer/peewee/issues/new>`_ on github.\n\nstill want more info?\n---------------------\n\n.. image:: https://media.charlesleifer.com/blog/photos/wat.jpg\n\ni've written a number of blog posts about building applications and web-services with peewee (and usually flask). if you'd like to see some real-life applications that use peewee, the following resources may be useful:\n\n* `building a note-taking app with flask and peewee <https://charlesleifer.com/blog/saturday-morning-hack-a-little-note-taking-app-with-flask/>`_ as well as `part 2 <https://charlesleifer.com/blog/saturday-morning-hacks-revisiting-the-notes-app/>`_ and `part 3 <https://charlesleifer.com/blog/saturday-morning-hacks-adding-full-text-search-to-the-flask-note-taking-app/>`_.\n* `analytics web service built with flask and peewee <https://charlesleifer.com/blog/saturday-morning-hacks-building-an-analytics-app-with-flask/>`_.\n* `personalized news digest (with a boolean query parser!) <https://charlesleifer.com/blog/saturday-morning-hack-personalized-news-digest-with-boolean-query-parser/>`_.\n* `structuring flask apps with peewee <https://charlesleifer.com/blog/structuring-flask-apps-a-how-to-for-those-coming-from-django/>`_.\n* `creating a lastpass clone with flask and peewee <https://charlesleifer.com/blog/creating-a-personal-password-manager/>`_.\n* `creating a bookmarking web-service that takes screenshots of your bookmarks <https://charlesleifer.com/blog/building-bookmarking-service-python-and-phantomjs/>`_.\n* `building a pastebin, wiki and a bookmarking service using flask and peewee <https://charlesleifer.com/blog/dont-sweat-small-stuff-use-flask-blueprints/>`_.\n* `encrypted databases with python and sqlcipher <https://charlesleifer.com/blog/encrypted-sqlite-databases-with-python-and-sqlcipher/>`_.\n* `dear diary: an encrypted, command-line diary with peewee <https://charlesleifer.com/blog/dear-diary-an-encrypted-command-line-diary-with-python/>`_.\n* `query tree structures in sqlite using peewee and the transitive closure extension <https://charlesleifer.com/blog/querying-tree-structures-in-sqlite-using-python-and-the-transitive-closure-extension/>`_.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "peewee",
+  "package_url": "https://pypi.org/project/peewee/",
+  "project_url": "https://pypi.org/project/peewee/",
+  "project_urls": {
+    "Homepage": "https://github.com/coleifer/peewee/"
+  },
+  "release_url": "https://pypi.org/project/peewee/3.17.0/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "a little orm",
+  "version": "3.17.0",
+  "releases": [],
+  "developers": [
+    "charles_leifer",
+    "coleifer@gmail.com"
+  ],
+  "kwds": "peewee peewee3 interactively interactive quickstart",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_peewee",
+  "homepage": "https://github.com/coleifer/peewee/",
+  "release_count": 183,
+  "dependency_ids": []
+}

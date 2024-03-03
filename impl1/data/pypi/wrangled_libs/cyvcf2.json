@@ -1,0 +1,38 @@
+{
+  "classifiers": [],
+  "description": "cyvcf2\n======\n\nnote: cyvcf2 versions < 0.20.0 require htslib < 1.10. cyvcf2 versions >= 0.20.0 require htslib >= 1.10\n\n<!-- ghp-import -p docs/build/html/ -->\nthe latest documentation for cyvcf2 can be found here:\n\n[![docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://brentp.github.io/cyvcf2/)\n\nif you use cyvcf2, please cite the [paper](https://academic.oup.com/bioinformatics/article/2971439/cyvcf2)\n\n\nfast python **(2 and 3)** parsing of vcf and bcf including region-queries.\n\n\n[![build status](https://github.com/brentp/cyvcf2/workflows/build/badge.svg)](https://github.com/brentp/cyvcf2/actions?query=workflow%3abuild)\n\ncyvcf2 is a cython wrapper around [htslib](https://github.com/samtools/htslib) built for fast parsing of [variant call format](https://en.m.wikipedia.org/wiki/variant_call_format) (vcf) files.\n\nattributes like `variant.gt_ref_depths` work for diploid samples and return a numpy array directly so they are immediately ready for downstream use.\n**note** that the array is backed by the underlying c data, so, once `variant` goes out of scope. the array will contain nonsense.\nto persist a copy, use: `cpy = np.array(variant.gt_ref_depths)` instead of just `arr = variant.gt_ref_depths`.\n\nexample\n=======\n\nthe example below shows much of the use of cyvcf2.\n\n```python\nfrom cyvcf2 import vcf\n\nfor variant in vcf('some.vcf.gz'): # or vcf('some.bcf')\n    variant.ref, variant.alt # e.g. ref='a', alt=['c', 't']\n\n    variant.chrom, variant.start, variant.end, variant.id, \\\n                variant.filter, variant.qual\n\n    # numpy arrays of specific things we pull from the sample fields.\n    # gt_types is array of 0,1,2,3==hom_ref, het, unknown, hom_alt\n    variant.gt_types, variant.gt_ref_depths, variant.gt_alt_depths # numpy arrays\n    variant.gt_phases, variant.gt_quals, variant.gt_bases # numpy array\n\n    ## info field.\n    ## extract from the info field by it's name:\n    variant.info.get('dp') # int\n    variant.info.get('fs') # float\n    variant.info.get('ac') # float\n\n    # convert back to a string.\n    str(variant)\n\n\n    ## sample info...\n\n    # get a numpy array of the depth per sample:\n    dp = variant.format('dp')\n    # or of any other format field:\n    sb = variant.format('sb')\n    assert sb.shape == (n_samples, 4) # 4-values per\n\n# to do a region-query:\n\nvcf = vcf('some.vcf.gz')\nfor v in vcf('11:435345-556565'):\n    if v.info[\"af\"] > 0.1: continue\n    print(str(v))\n```\n\ninstallation\n============\n\n## pip (assuming you have htslib < 1.10 installed)\n```\npip install cyvcf2\n```\n\n## github (building htslib and cyvcf2 from source)\n\n```\ngit clone --recursive https://github.com/brentp/cyvcf2\ncd cyvcf2/htslib\nautoheader\nautoconf\n./configure --enable-libcurl\nmake\n\ncd ..\npip install -r requirements.txt\ncythonize=1 pip install -e .\n```\n\non **osx**, using brew, you may have to set the following as indicated by the brew install:\n\n```\nfor compilers to find openssl you may need to set:\n  export ldflags=\"-l/usr/local/opt/openssl/lib\"\n  export cppflags=\"-i/usr/local/opt/openssl/include\"\n\nfor pkg-config to find openssl you may need to set:\n  export pkg_config_path=\"/usr/local/opt/openssl/lib/pkgconfig\"\n```\n\ntesting\n=======\n\ninstall `pytest`, then tests can be run with:\n\n```\npytest\n```\n\ncli\n=======\nrun with `cyvcf2 path_to_vcf`\n\n```\n$ cyvcf2 --help\nusage: cyvcf2 [options] <vcf_file> or -\n\n  fast vcf parsing with cython + htslib\n\noptions:\n  -c, --chrom text                specify what chromosome to include.\n  -s, --start integer             specify the start of region.\n  -e, --end integer               specify the end of the region.\n  --include text                  specify what info field to include.\n  --exclude text                  specify what info field to exclude.\n  --loglevel [debug|info|warning|error|critical]\n                                  set the level of log output.  [default:\n                                  info]\n  --silent                        skip printing of vcf.\n  --help                          show this message and exit.\n```\n\n\nsee also\n========\n\npysam also [has a cython wrapper to htslib](https://github.com/pysam-developers/pysam/blob/master/pysam/libcbcf.pyx) and one block of code here is taken directly from that library. but, the optimizations that we want for gemini are very specific so we have chosen to create a separate project.\n\nperformance\n===========\n\nfor the performance comparison in the paper, we used [thousand genomes chromosome 22](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/all.chr22.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz)\nwith the full comparison runner [here](https://github.com/brentp/cyvcf2/blob/main/scripts/compare.sh).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "cyvcf2",
+  "package_url": "https://pypi.org/project/cyvcf2/",
+  "project_url": "https://pypi.org/project/cyvcf2/",
+  "project_urls": {
+    "Homepage": "https://github.com/brentp/cyvcf2/"
+  },
+  "release_url": "https://pypi.org/project/cyvcf2/0.30.25/",
+  "requires_dist": [
+    "numpy",
+    "coloredlogs",
+    "click"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "fast vcf parsing with cython + htslib",
+  "version": "0.30.25",
+  "releases": [],
+  "developers": [
+    "bpederse@gmail.com",
+    "brent_pedersen"
+  ],
+  "kwds": "cyvcf2 path_to_vcf cython vcf vcf_file",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_cyvcf2",
+  "homepage": "https://github.com/brentp/cyvcf2/",
+  "release_count": 90,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_coloredlogs",
+    "pypi_numpy"
+  ]
+}

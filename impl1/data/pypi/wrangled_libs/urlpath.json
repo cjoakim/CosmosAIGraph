@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: python software foundation license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "urlpath provides url manipulator class that extends `pathlib.purepath <https://docs.python.org/3/library/pathlib.html#pure-paths>`_.\n====================================================================================================================================\n\n.. image:: https://img.shields.io/travis/chrono-meter/urlpath.svg\n    :target: https://travis-ci.org/chrono-meter/urlpath\n\n.. image:: https://img.shields.io/pypi/v/urlpath.svg\n    :target: https://pypi.python.org/pypi/urlpath\n\n.. image:: https://img.shields.io/pypi/l/urlpath.svg\n    :target: http://python.org/psf/license\n\ndependencies\n------------\n\n* python 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10\n* `requests <http://docs.python-requests.org/>`_\n* `jmespath <https://pypi.org/project/jmespath/>`_ (optional)\n* `webob <http://webob.org/>`_ (optional)\n\ninstall\n-------\n\n``pip install urlpath``\n\nexamples\n--------\n\nimport::\n\n    >>> from urlpath import url\n\ncreate object::\n\n    >>> url = url(\n    ...     'https://username:password@secure.example.com:1234/path/to/file.ext?field1=1&field2=2&field1=3#fragment')\n\nrepresentation::\n\n    >>> url\n    url('https://username:password@secure.example.com:1234/path/to/file.ext?field1=1&field2=2&field1=3#fragment')\n    >>> print(url)\n    https://username:password@secure.example.com:1234/path/to/file.ext?field1=1&field2=2&field1=3#fragment\n    >>> url.as_uri()\n    'https://username:password@secure.example.com:1234/path/to/file.ext?field1=1&field2=2&field1=3#fragment'\n    >>> url.as_posix()\n    'https://username:password@secure.example.com:1234/path/to/file.ext?field1=1&field2=2&field1=3#fragment'\n\naccess `pathlib.purepath` compatible properties::\n\n    >>> url.drive\n    'https://username:password@secure.example.com:1234'\n    >>> url.root\n    '/'\n    >>> url.anchor\n    'https://username:password@secure.example.com:1234/'\n    >>> url.path\n    '/path/to/file.ext'\n    >>> url.name\n    'file.ext'\n    >>> url.suffix\n    '.ext'\n    >>> url.suffixes\n    ['.ext']\n    >>> url.stem\n    'file'\n    >>> url.parts\n    ('https://username:password@secure.example.com:1234/', 'path', 'to', 'file.ext')\n    >>> url.parent\n    url('https://username:password@secure.example.com:1234/path/to')\n\naccess scheme::\n\n    >>> url.scheme\n    'https'\n\naccess netloc::\n\n    >>> url.netloc\n    'username:password@secure.example.com:1234'\n    >>> url.username\n    'username'\n    >>> url.password\n    'password'\n    >>> url.hostname\n    'secure.example.com'\n    >>> url.port\n    1234\n\naccess query::\n\n    >>> url.query\n    'field1=1&field2=2&field1=3'\n    >>> url.form_fields\n    (('field1', '1'), ('field2', '2'), ('field1', '3'))\n    >>> url.form\n    <frozenmultidict {'field1': ('1', '3'), 'field2': ('2',)}>\n    >>> url.form.get_one('field1')\n    '1'\n    >>> url.form.get_one('field3') is none\n    true\n\naccess fragment::\n\n    >>> url.fragment\n    'fragment'\n\npath operation::\n\n    >>> url / 'suffix'\n    url('https://username:password@secure.example.com:1234/path/to/file.ext/suffix')\n    >>> url / '../../rel'\n    url('https://username:password@secure.example.com:1234/path/to/file.ext/../../rel')\n    >>> (url / '../../rel').resolve()\n    url('https://username:password@secure.example.com:1234/path/rel')\n    >>> url / '/'\n    url('https://username:password@secure.example.com:1234/')\n    >>> url / 'http://example.com/'\n    url('http://example.com/')\n\nreplace components::\n\n    >>> url.with_scheme('http')\n    url('http://username:password@secure.example.com:1234/path/to/file.ext?field1=1&field2=2&field1=3#fragment')\n    >>> url.with_netloc('www.example.com')\n    url('https://www.example.com/path/to/file.ext?field1=1&field2=2&field1=3#fragment')\n    >>> url.with_userinfo('joe', 'pa33')\n    url('https://joe:pa33@secure.example.com:1234/path/to/file.ext?field1=1&field2=2&field1=3#fragment')\n    >>> url.with_hostinfo('example.com', 8080)\n    url('https://username:password@example.com:8080/path/to/file.ext?field1=1&field2=2&field1=3#fragment')\n    >>> url.with_fragment('new fragment')\n    url('https://username:password@secure.example.com:1234/path/to/file.ext?field1=1&field2=2&field1=3#new fragment')\n    >>> url.with_components(username=none, password=none, query='query', fragment='frag')\n    url('https://secure.example.com:1234/path/to/file.ext?query#frag')\n\nreplace query::\n\n    >>> url.with_query({'field3': '3', 'field4': [1, 2, 3]})\n    url('https://username:password@secure.example.com:1234/path/to/file.ext?field3=3&field4=1&field4=2&field4=3#fragment')\n    >>> url.with_query(field3='3', field4=[1, 2, 3])\n    url('https://username:password@secure.example.com:1234/path/to/file.ext?field3=3&field4=1&field4=2&field4=3#fragment')\n    >>> url.with_query('query')\n    url('https://username:password@secure.example.com:1234/path/to/file.ext?query#fragment')\n    >>> url.with_query(none)\n    url('https://username:password@secure.example.com:1234/path/to/file.ext#fragment')\n\nammend query::\n\n    >>> url.with_query(field1='1').add_query(field2=2)\n    url('https://username:password@secure.example.com:1234/path/to/file.ext?field1=1&field2=2#fragment')\n \ndo http requests::\n\n    >>> url = url('https://httpbin.org/get')\n    >>> url.get()\n    <response [200]>\n\n    >>> url = url('https://httpbin.org/post')\n    >>> url.post(data={'key': 'value'})\n    <response [200]>\n\n    >>> url = url('https://httpbin.org/delete')\n    >>> url.delete()\n    <response [200]>\n\n    >>> url = url('https://httpbin.org/patch')\n    >>> url.patch(data={'key': 'value'})\n    <response [200]>\n\n    >>> url = url('https://httpbin.org/put')\n    >>> url.put(data={'key': 'value'})\n    <response [200]>\n\njail::\n\n    >>> root = 'http://www.example.com/app/'\n    >>> current = 'http://www.example.com/app/path/to/content'\n    >>> url = url(root).jailed / current\n    >>> url / '/root'\n    jailedurl('http://www.example.com/app/root')\n    >>> (url / '../../../../../../root').resolve()\n    jailedurl('http://www.example.com/app/root')\n    >>> url / 'http://localhost/'\n    jailedurl('http://www.example.com/app/')\n    >>> url / 'http://www.example.com/app/file'\n    jailedurl('http://www.example.com/app/file')\n\ntrailing separator will be remained::\n\n    >>> url = url('http://www.example.com/path/with/trailing/sep/')\n    >>> str(url).endswith('/')\n    true\n    >>> url.trailing_sep\n    '/'\n    >>> url.name\n    'sep'\n    >>> url.path\n    '/path/with/trailing/sep/'\n    >>> url.parts[-1]\n    'sep'\n\n    >>> url = url('http://www.example.com/path/without/trailing/sep')\n    >>> str(url).endswith('/')\n    false\n    >>> url.trailing_sep\n    ''\n    >>> url.name\n    'sep'\n    >>> url.path\n    '/path/without/trailing/sep'\n    >>> url.parts[-1]\n    'sep'\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "psf",
+  "name": "urlpath",
+  "package_url": "https://pypi.org/project/urlpath/",
+  "project_url": "https://pypi.org/project/urlpath/",
+  "project_urls": {
+    "Download": "http://pypi.python.org/pypi/urlpath",
+    "Homepage": "https://github.com/brandonschabell/urlpath"
+  },
+  "release_url": "https://pypi.org/project/urlpath/1.2.0/",
+  "requires_dist": [
+    "requests",
+    "jmespath ; extra == 'json'",
+    "WebOb ; extra == 'test'",
+    "jmespath ; extra == 'test'"
+  ],
+  "requires_python": "~=3.4",
+  "summary": "object-oriented url from `urllib.parse` and `pathlib`",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "brandonschabell@gmail.com"
+  ],
+  "kwds": "pathlib urlpath path paths urllib",
+  "license_kwds": "psf",
+  "libtype": "pypi",
+  "id": "pypi_urlpath",
+  "homepage": "https://github.com/brandonschabell/urlpath",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_jmespath",
+    "pypi_requests",
+    "pypi_webob"
+  ]
+}

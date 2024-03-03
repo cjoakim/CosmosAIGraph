@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 6 - mature",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: system :: logging"
+  ],
+  "description": "![build status](https://github.com/madzak/python-json-logger/actions/workflows/build.yml/badge.svg)\n[![license](https://img.shields.io/pypi/l/python-json-logger.svg)](https://pypi.python.org/pypi/python-json-logger/)\n[![version](https://img.shields.io/pypi/v/python-json-logger.svg)](https://pypi.python.org/pypi/python-json-logger/)\n\noverview\n=======\nthis library is provided to allow standard python logging to output log data as json objects. with json we can make our logs more readable by machines and we can stop writing custom parsers for syslog type records.\n\nnews\n=======\nhi, i see this package is quiet alive and i am sorry for ignoring it so long. i will be stepping up my maintenance of this package so please allow me a week to get things back in order (and most likely a new minor version) and i'll post and update here once i am caught up.\n\ninstalling\n==========\npip:\n\n    pip install python-json-logger\n\npypi:\n\n   https://pypi.python.org/pypi/python-json-logger\n\nmanual:\n\n    python setup.py install\n\nusage\n=====\n\n## integrating with python's logging framework\n\njson outputs are provided by the jsonformatter logging formatter. you can add the custom formatter like below:\n\n**please note: version 0.1.0 has changed the import structure, please update to the following example for proper importing**\n\n```python\n    import logging\n    from pythonjsonlogger import jsonlogger\n\n    logger = logging.getlogger()\n\n    loghandler = logging.streamhandler()\n    formatter = jsonlogger.jsonformatter()\n    loghandler.setformatter(formatter)\n    logger.addhandler(loghandler)\n```\n\n## customizing fields\n\nthe fmt parser can also be overidden if you want to have required fields that differ from the default of just `message`.\n\nthese two invocations are equivalent:\n\n```python\nclass customjsonformatter(jsonlogger.jsonformatter):\n    def parse(self):\n        return self._fmt.split(';')\n\nformatter = customjsonformatter('one;two')\n\n# is equivalent to:\n\nformatter = jsonlogger.jsonformatter('%(one)s %(two)s')\n```\n\nyou can also add extra fields to your json output by specifying a dict in place of message, as well as by specifying an `extra={}` argument.\n\ncontents of these dictionaries will be added at the root level of the entry and may override basic fields.\n\nyou can also use the `add_fields` method to add to or generally normalize the set of default set of fields, it is called for every log event. for example, to unify default fields with those provided by [structlog](http://www.structlog.org/) you could do something like this:\n\n```python\nclass customjsonformatter(jsonlogger.jsonformatter):\n    def add_fields(self, log_record, record, message_dict):\n        super(customjsonformatter, self).add_fields(log_record, record, message_dict)\n        if not log_record.get('timestamp'):\n            # this doesn't use record.created, so it is slightly off\n            now = datetime.utcnow().strftime('%y-%m-%dt%h:%m:%s.%fz')\n            log_record['timestamp'] = now\n        if log_record.get('level'):\n            log_record['level'] = log_record['level'].upper()\n        else:\n            log_record['level'] = record.levelname\n\nformatter = customjsonformatter('%(timestamp)s %(level)s %(name)s %(message)s')\n```\n\nitems added to the log record will be included in *every* log message, no matter what the format requires.\n\n## adding custom object serialization\n\nfor custom handling of object serialization you can specify default json object translator or provide a custom encoder\n\n```python\ndef json_translate(obj):\n    if isinstance(obj, myclass):\n        return {\"special\": obj.special}\n\nformatter = jsonlogger.jsonformatter(json_default=json_translate,\n                                     json_encoder=json.jsonencoder)\nloghandler.setformatter(formatter)\n\nlogger.info({\"special\": \"value\", \"run\": 12})\nlogger.info(\"classic message\", extra={\"special\": \"value\", \"run\": 12})\n```\n\n## using a config file\n\nto use the module with a config file using the [`fileconfig` function](https://docs.python.org/3/library/logging.config.html#logging.config.fileconfig), use the class `pythonjsonlogger.jsonlogger.jsonformatter`. here is a sample config file.\n\n```ini\n[loggers]\nkeys = root,custom\n\n[logger_root]\nhandlers =\n\n[logger_custom]\nlevel = info\nhandlers = custom\nqualname = custom\n\n[handlers]\nkeys = custom\n\n[handler_custom]\nclass = streamhandler\nlevel = info\nformatter = json\nargs = (sys.stdout,)\n\n[formatters]\nkeys = json\n\n[formatter_json]\nformat = %(message)s\nclass = pythonjsonlogger.jsonlogger.jsonformatter\n```\n\nexample output\n==============\n\nsample json with a full formatter (basically the log message from the unit test). every log message will appear on 1 line like a typical logger.\n\n```json\n{\n    \"threadname\": \"mainthread\",\n    \"name\": \"root\",\n    \"thread\": 140735202359648,\n    \"created\": 1336281068.506248,\n    \"process\": 41937,\n    \"processname\": \"mainprocess\",\n    \"relativecreated\": 9.100914001464844,\n    \"module\": \"tests\",\n    \"funcname\": \"testformatkeys\",\n    \"levelno\": 20,\n    \"msecs\": 506.24799728393555,\n    \"pathname\": \"tests/tests.py\",\n    \"lineno\": 60,\n    \"asctime\": [\"12-05-05 22:11:08,506248\"],\n    \"message\": \"testing logging format\",\n    \"filename\": \"tests.py\",\n    \"levelname\": \"info\",\n    \"special\": \"value\",\n    \"run\": 12\n}\n```\n\nexternal examples\n=================\n\n- [wesley tanaka - structured log files in python using python-json-logger](http://web.archive.org/web/20201130054012/https://wtanaka.com/node/8201)\n\n- [archive](https://web.archive.org/web/20201130054012/https://wtanaka.com/node/8201)\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "python-json-logger",
+  "package_url": "https://pypi.org/project/python-json-logger/",
+  "project_url": "https://pypi.org/project/python-json-logger/",
+  "project_urls": {
+    "Homepage": "http://github.com/madzak/python-json-logger"
+  },
+  "release_url": "https://pypi.org/project/python-json-logger/2.0.7/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "a python library adding a json log formatter",
+  "version": "2.0.7",
+  "releases": [],
+  "developers": [
+    "zak@madzak.com",
+    "zakaria_zajac"
+  ],
+  "kwds": "pythonjsonlogger jsonlogger syslog logging message_dict",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_python_json_logger",
+  "homepage": "http://github.com/madzak/python-json-logger",
+  "release_count": 27,
+  "dependency_ids": []
+}

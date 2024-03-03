@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "topic :: software development"
+  ],
+  "description": "## the breakingpoint restv2 api python wrapper \n[![pypi](https://img.shields.io/pypi/v/bps-restpy.svg)](https://pypi.org/project/bps-restpy)\n[![python](https://img.shields.io/pypi/pyversions/bps-restpy.svg)](https://pypi.python.org/pypi/bps-restpy)\n[![license](https://img.shields.io/badge/license-mit-green.svg)](https://en.wikipedia.org/wiki/mit_license)\n[![downloads](https://pepy.tech/badge/bps-restpy)](https://pepy.tech/project/bps-restpy)\n\n## breakingpoint detail\nnetwork testing with  [breakingpoint\u00e2\u00ae](https://www.ixiacom.com/products/network-security-testing-breakingpoint). by simulating real-world legitimate traffic, distributed denial of service (ddos), exploits, malware, and fuzzing, breakingpoint validates an organization\u00e2\u20ac\u2122s security infrastructure, reduces the risk of network degradation by almost 80%, and increases attack readiness by nearly 70%. and with our new trafficrewind solution, you'll get even more realistic and high-fidelity validation by adding production network insight into breakingpoint test traffic configuration\nmore details:\n\n## install the package\n```\npip install --upgrade bps-restpy\n```\n\n## start scripting\n```python\n\"\"\"this script demonstrates how to get started with bps_restpy scripting.\n\n# title:  python script sample to run a canned test.\n# actions:\n#   1. login to bps box\n#   2. reserve ports\n#   3. load a test from the box and start the run\n#   4. wait for the test to finish\n#   5. get test result\n#   6. get and print the synopsis page from report\n#   7. unreserve ports\n#   8. logout\n\n\n#================\n\n########################################\nimport time, sys, os\n# import corresponding bps restv2 python2.7/ 3 library from outside the folder with samples.\nsys.path.insert(1, os.path.dirname(os.getcwd()))\n\nfrom bps_restpy.bps import bps, pp\n\n########################################\n\n\n########################################\n# demo script global variables\n########################################\n# demo script global variables\ncanned_test_name = 'appsim'\n#bps system info\nbps_system  = '<bps_box_ip/hostname>'\nbpsuser     = 'bps user'\nbpspass     = 'bps pass'\n\n\nslot_number = 2\nport_list   = [0, 1]\n\n########################################\n\n\n########################################\n# login to bps box\nbps = bps(bps_system, bpsuser, bpspass)\nbps.login()\n\n\n########################################\nprint(\"load a canned test: \")\nbps.testmodel.load(canned_test_name)\n\n########################################\nprint(\"reserve ports\")\nfor p in port_list:\n    bps.topology.reserve([{'slot': slot_number, 'port': p, 'group': 2}])\n\n\n########################################\nprint(\"run test and get stats:\")\ntest_id_json = bps.testmodel.run(modelname=canned_test_name, group=2)\ntestid = str( test_id_json[\"runid\"] )\nrun_id = 'test-' + testid\nprint(\"test run id: %s\"%run_id)\n\n#get the ids for all tests running on the chassis\nrunningtests_ids = [test['id'] for  test in bps.topology.runningtest.get()] \n#wait while the test is still running\nwhile run_id in runningtests_ids:\n     run_state =  bps.topology.runningtest[run_id].get()\n     #print progress if test started\n     try: print ('progress: %s%% , runtime %ss' % (run_state['progress'], run_state['runtime'] ))\n     except: print (\"starting...\")\n     time.sleep(2)\n     #update the current running tests\n     runningtests_ids = [test['id'] for  test in bps.topology.runningtest.get()] \n\nprint(\"~the test finished the execution.\")\nresults = bps.reports.search(searchstring=canned_test_name, limit=10, sort=\"endtime\", sortorder=\"descending\")\nresult  = results[0]\nprint (\"%s execution duration %s ended with status: %s \" % (result['name'], result['duration'], result['result']) )\n\n#getting 3.4 section: synopsys summary of results from the report\ntabledata = bps.reports.getreporttable(runid=testid, sectionid=\"3.4\")\npp(tabledata)\n\nprint (\"unreserving the ports\")\nfor p in port_list:\n    bps.topology.unreserve([{'slot': slot_number, 'port': p, 'group': 2}])\n\nbps.logout()\n```\nwew\n## documentation\ndocumentation\u00e2\u00a0is available using the following methods:\n* [online web based documentation and samples](https://github.com/openixia/breakingpoint)\n* on your breakingpoint system restapi found near the breakingpoint app  \n* documentation available in the online doc browser is also inlined in each class, property and method and can be viewed using the python help command\n  ```python\n  from bps_restpy.bps import bps, pp\n\n  #login to your breaking point system\n  help(bps)\n  bps = bps('your_bps_ip_or_fqdn', 'admin', 'admin')\n\n  help(bps.testmodel.importmodel)\n\n  ```\n\n## additional samples\nvisit the [openixia\u00e2\u00a0breakingpoint-restpy\u00e2\u00a0sample site maintained by solution architects](https://github.com/openixia/breakingpoint) for\u00e2\u00a0in\u00e2\u00a0depth\u00e2\u00a0end-to-end\u00e2\u00a0samples\u00e2\u00a0that\u00e2\u00a0demonstrate\u00e2\u00a0the\u00e2\u00a0following:\n* building\u00e2\u00a0a\u00e2\u00a0configuration\n  * from\u00e2\u00a0scratch\n  * from\u00e2\u00a0an\u00e2\u00a0existing\u00e2\u00a0breakingpoint\u00e2\u00a0configuration\n* running\u00e2\u00a0the\u00e2\u00a0configuration\n  * connecting\u00e2\u00a0ports\u00e2\u00a0to\u00e2\u00a0hardware\n  * starting\u00e2\u00a0protocols\n  * starting\u00e2\u00a0traffic\n* getting\u00e2\u00a0statistics\n  * port\u00e2\u00a0stats\n  * traffic\u00e2\u00a0stats\n\n\n\n\n",
+  "docs_url": null,
+  "keywords": "bps breakingpoint security network test tool ixia keysight automation",
+  "license": "mit",
+  "name": "bps-restpy",
+  "package_url": "https://pypi.org/project/bps-restpy/",
+  "project_url": "https://pypi.org/project/bps-restpy/",
+  "project_urls": {
+    "Homepage": "https://github.com/OpenIxia/bps_restpy"
+  },
+  "release_url": "https://pypi.org/project/bps-restpy/9.0.2/",
+  "requires_dist": [
+    "requests"
+  ],
+  "requires_python": ">=2.7, <4",
+  "summary": "breakingpoint rest api python wraper",
+  "version": "9.0.2",
+  "releases": [],
+  "developers": [
+    "constantin.cretu@keysight.com",
+    "keysight_isg_breakingpoint_team"
+  ],
+  "kwds": "bps_restpy restpy restpy\u00e2 restv2 restapi",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_bps_restpy",
+  "homepage": "https://github.com/openixia/bps_restpy",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

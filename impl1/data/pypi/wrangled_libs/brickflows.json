@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# brickflow\n\n[//]: # ([![codeql]&#40;https://github.com/nike-inc/brickflow/actions/workflows/codeql-analysis.yml/badge.svg&#41;]&#40;https://github.com/nike-inc/brickflow/actions/workflows/codeql-analysis.yml&#41;)\n[![build](https://github.com/nike-inc/brickflow/actions/workflows/onpush.yml/badge.svg)](https://github.com/nike-inc/brickflow/actions/workflows/onpush.yml)\n[![codecov](https://codecov.io/gh/nike-inc/brickflow/branch/main/graph/badge.svg)](https://codecov.io/gh/nike-inc/brickflow)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n[![checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)\n[![license](https://img.shields.io/badge/license-apache_2.0-blue.svg)](https://opensource.org/licenses/apache-2.0)\n![pypi version](https://img.shields.io/pypi/v/brickflows.svg)\n![pypi - downloads](https://static.pepy.tech/badge/brickflows)\n![pypi - python version](https://img.shields.io/pypi/pyversions/brickflows.svg)\n\n<p align=\"center\">\nbrickflow is specifically designed to enable the development of databricks workflows using python, streamlining the \nprocess through a command-line interface (cli) tool.</p>\n\n<p align=\"center\">\n<img src=https://raw.githubusercontent.com/nike-inc/brickflow/master/docs/img/bf_logo_1.png width=\"400\" height=\"400\"></p>\n\n---\n\n### contributors\n\nthanks to all the [contributors](https://github.com/nike-inc/brickflow/blob/main/contributors.md) who have helped ideate, develop and bring brickflow to its current state. \n\n### contributing\n\nwe're delighted that you're interested in contributing to our project! to get started, \nplease carefully read and follow the guidelines provided in our [contributing](https://github.com/nike-inc/brickflow/blob/main/contributing.md) document.\n\n### documentation\n\nbrickflow documentation can be found [here](https://engineering.nike.com/brickflow/).\n\n### getting started\n\n#### prerequisites\n1. install brickflows\n\n```shell\npip install brickflows\n```\n\n2. install [databricks cli](https://docs.databricks.com/en/dev-tools/cli/databricks-cli.html)\n\n```shell\ncurl -fssl https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sudo sh\n```\n\n3. configure databricks cli with workspace token. this configures your `~/.databrickscfg` file.\n\n```shell\ndatabricks configure --token\n```\n\n#### hello world workflow\n1. create your first workflow using brickflow\n```shell\nmkdir hello-world-brickflow\ncd hello-world-brickflow\nbrickflow projects add\n```\n\n2. provide the following inputs\n```shell\nproject name: hello-world-brickflow\npath from repo root to project root (optional) [.]: .\npath from project root to workflows dir: workflows\ngit https url: https://github.com/nike-inc/brickflow.git\nbrickflow version [auto]:<hit enter>\nspark expectations version [0.5.0]: 0.8.0\nskip entrypoint [y/n]: n\n```\n_note: you can provide your own github repo url._\n\n3. create a new file hello_world_wf.py in the workflows directory\n```shell\ntouch workflows/hello_world_wf.py\n```\n\n4. copy the following code in hello_world_wf.py file\n```python\nfrom brickflow import (\n    ctx,\n    cluster,\n    workflow,\n    notebooktask,\n)\nfrom airflow.operators.bash import bashoperator\n\n\ncluster = cluster(\n    name=\"job_cluster\",\n    node_type_id=\"m6gd.xlarge\",\n    spark_version=\"13.3.x-scala2.12\",\n    min_workers=1,\n    max_workers=2,\n)\n\nwf = workflow(\n    \"hello_world_workflow\",\n    default_cluster=cluster,\n    tags={\n        \"product_id\": \"brickflow_demo\",\n    },\n    common_task_parameters={\n        \"catalog\": \"<uc-catalog-name>\",\n        \"database\": \"<uc-schema-name>\",\n    },\n)\n\n@wf.task\n# this task does nothing but explains the use of context object\ndef start():\n    print(f\"environment: {ctx.env}\")\n\n@wf.notebook_task\n# this task runs a databricks notebook\ndef example_notebook():\n    return notebooktask(\n        notebook_path=\"notebooks/example_notebook.py\",\n        base_parameters={\n            \"some_parameter\": \"some_value\",  # in the notebook access these via dbutils.widgets.get(\"some_parameter\")\n        },\n    )\n\n\n@wf.task(depends_on=[start, example_notebook])\n# this task runs a bash command\ndef list_lending_club_data_files():\n    return bashoperator(\n        task_id=list_lending_club_data_files.__name__,\n        bash_command=\"ls -lrt /dbfs/databricks-datasets/samples/lending_club/parquet/\",\n    )\n\n@wf.task(depends_on=list_lending_club_data_files)\n# this task runs the pyspark code\ndef lending_data_ingest():\n    ctx.spark.sql(\n        f\"\"\"\n        create table if not exists\n        {ctx.dbutils_widget_get_or_else(key=\"catalog\", debug=\"development\")}.\\\n        {ctx.dbutils_widget_get_or_else(key=\"database\", debug=\"dummy_database\")}.\\\n        {ctx.dbutils_widget_get_or_else(key=\"brickflow_env\", debug=\"local\")}_lending_data_ingest\n        using delta -- this is default just for explicit purpose\n        select * from parquet.`dbfs:/databricks-datasets/samples/lending_club/parquet/`\n    \"\"\"\n    )\n```\n_note: modify the values of catalog/database for common_task_parameters._\n\n\n5. create a new file example_notebook.py in the notebooks directory\n```shell\nmkdir notebooks\ntouch notebooks/example_notebook.py\n```\n6. copy the following code in the example_notebook.py file\n```python\n# databricks notebook source\n\nprint(\"hello world\")\n```\n\n#### deploy the workflow to databricks\n```shell\nbrickflow projects deploy --project hello-world-brickflow -e local\n```\n\n### run the demo workflow\n1. login to databricks workspace\n2. go to the workflows and select the workflow\n<p align=\"center\">\n<img src=https://raw.githubusercontent.com/nike-inc/brickflow/master/docs/img/workflow.png?raw=true width=1000></p>\n4. click on the run button\n\n### examples\nrefer to the [examples](https://github.com/nike-inc/brickflow/tree/main/examples/brickflow_examples) for more examples.\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "brickflows",
+  "package_url": "https://pypi.org/project/brickflows/",
+  "project_url": "https://pypi.org/project/brickflows/",
+  "project_urls": {
+    "Homepage": "https://github.com/Nike-Inc/brickflow",
+    "Repository": "https://github.com/Nike-Inc/brickflow"
+  },
+  "release_url": "https://pypi.org/project/brickflows/0.11.0/",
+  "requires_dist": [
+    "Jinja2 (==3.1.2)",
+    "click (>=8.1.3,<9.0.0)",
+    "databricks-sdk (>=0.1.8,<1.0.0)",
+    "networkx (==3.1)",
+    "pendulum (==2.1.2)",
+    "pluggy (>=1.0.0,<2.0.0)",
+    "pydantic (>=1.10.0,<3.0.0)",
+    "python-decouple (==3.8)",
+    "pyyaml (>=6.0,<7.0)",
+    "requests (>=2.28.2,<3.0.0)"
+  ],
+  "requires_python": ">=3.8,<3.11",
+  "summary": "deploy scalable workflows to databricks using python",
+  "version": "0.11.0",
+  "releases": [],
+  "developers": [
+    "ashok_singamaneni"
+  ],
+  "kwds": "brickflow_examples brickflow_demo brickflow brickflow_env badge",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_brickflows",
+  "homepage": "https://github.com/nike-inc/brickflow",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_databricks_sdk",
+    "pypi_jinja2",
+    "pypi_networkx",
+    "pypi_pendulum",
+    "pypi_pluggy",
+    "pypi_pydantic",
+    "pypi_python_decouple",
+    "pypi_pyyaml",
+    "pypi_requests"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: multimedia :: sound/audio",
+    "topic :: software development :: libraries",
+    "topic :: system :: networking"
+  ],
+  "description": "### oscpy\n\n[![coverage status](https://coveralls.io/repos/github/kivy/oscpy/badge.svg?branch=master)](https://coveralls.io/github/kivy/oscpy?branch=master)\nci is done by github checks, see the current commit for build status.\n\n\na modern implementation of osc for python2/3.\n\n#### what is osc.\n\nopensoundcontrol is an udp based network protocol, that is designed for fast\ndispatching of time-sensitive messages, as the name suggests, it was designed\nas a replacement for midi, but applies well to other situations. the protocol is\nsimple to use, osc addresses look like http urls, and accept various basic\ntypes, such as string, float, int, etc. you can think of it basically as an\nhttp post, with less overhead.\n\nyou can learn more about osc on [opensoundcontrol.org](http://opensoundcontrol.org/introduction-osc)\n\n#### goals\n\n- python2.7/3.6+ compatibility (can be relaxed more on the python3 side\n  if needed, but nothing before 2.7 will be supported)\n- fast\n- easy to use\n- robust (returns meaningful errors in case of malformed messages,\n  always do the right thing on correct messages, and by default intercept+log \n  the exceptions raised by callbacks)\n- separation of concerns (message parsing vs communication)\n- sync and async compatibility (threads, asyncio, trio\u2026)\n- clean and easy to read code\n\n#### features\n\n- serialize and parse osc data types/messages/bundles\n- a thread based udp server to open sockets (inet or unix) and bind callbacks on osc addresses on them\n- a simple client\n\n#### install\n```sh\npip install oscpy\n```\n\n#### usage\n\nserver (thread)\n\n```python\nfrom oscpy.server import oscthreadserver\nfrom time import sleep\n\ndef callback(*values):\n    print(\"got values: {}\".format(values))\n\nosc = oscthreadserver()  # see sources for all the arguments\n\n# you can also use an \\*nix socket path here\nsock = osc.listen(address='0.0.0.0', port=8000, default=true)\nosc.bind(b'/address', callback)\nsleep(1000)\nosc.stop()  # stop the default socket\n\nosc.stop_all()  # stop all sockets\n\n# here the server is still alive, one might call osc.listen() again\n\nosc.terminate_server()  # request the handler thread to stop looping\n\nosc.join_server()  # wait for the handler thread to finish pending tasks and exit\n```\n\nor you can use the decorator api.\n\nserver (thread)\n\n```python\nfrom oscpy.server import oscthreadserver\nfrom time import sleep\n\nosc = oscthreadserver()\nsock = osc.listen(address='0.0.0.0', port=8000, default=true)\n\n@osc.address(b'/address')\ndef callback(*values):\n    print(\"got values: {}\".format(values))\n\nsleep(1000)\nosc.stop()\n```\n\nservers are also client, in the sense they can send messages and answer to\nmessages from other servers\n\n```python\nfrom oscpy.server import oscthreadserver\nfrom time import sleep\n\nosc_1 = oscthreadserver()\nosc_1.listen(default=true)\n\n@osc_1.address(b'/ping')\ndef ping(*values):\n    print(\"ping called\")\n    if true in values:\n        cont.append(true)\n    else:\n        osc_1.answer(b'/pong')\n\nosc_2 = oscthreadserver()\nosc_2.listen(default=true)\n\n@osc_2.address(b'/pong')\ndef pong(*values):\n    print(\"pong called\")\n    osc_2.answer(b'/ping', [true])\n\nosc_2.send_message(b'/ping', [], *osc_1.getaddress())\n\ntimeout = time() + 1\nwhile not cont:\n    if time() > timeout:\n        raise oserror('timeout while waiting for success message.')\n```\n\n\nserver (async) (todo!)\n\n```python\nfrom oscpy.server import oscthreadserver\n\nwith oscasyncserver(port=8000) as osc:\n    for address, values in osc.listen():\n       if address == b'/example':\n            print(\"got {} on /example\".format(values))\n       else:\n            print(\"unknown address {}\".format(address))\n```\n\nclient\n\n```python\nfrom oscpy.client import oscclient\n\naddress = \"127.0.0.1\"\nport = 8000\n\nosc = oscclient(address, port)\nfor i in range(10):\n    osc.send_message(b'/ping', [i])\n```\n\n#### unicode\n\nby default, the server and client take bytes (encoded strings), not unicode\nstrings, for osc addresses as well as osc strings. however, you can pass an\n`encoding` parameter to have your strings automatically encoded and decoded by\nthem, so your callbacks will get unicode strings (unicode in python2, str in\npython3).\n\n```python\nosc = oscthreadserver(encoding='utf8')\nosc.listen(default=true)\n\nvalues = []\n\n@osc.address(u'/encoded')\ndef encoded(*val):\n    for v in val:\n        assert not isinstance(v, bytes)\n    values.append(val)\n\nsend_message(\n    u'/encoded',\n    [u'hello world', u'\u00e9\u00e9\u00e9\u00e9\u00e9 \u00e0\u00e0\u00e0\u00e0\u00e0'],\n    *osc.getaddress(), encoding='utf8')\n```\n\n(`u` literals added here for clarity).\n\n#### cli\n\noscpy provides an \"oscli\" util, to help with debugging:\n- `oscli dump` to listen for messages and dump them\n- `oscli send` to send messages or bundles to a server\n\nsee `oscli -h` for more information.\n\n#### gotchas\n\n- `none` values are not allowed in serialization\n- unix-type sockets must not already exist when you listen() on them\n\n#### todo\n\n- real support for timetag (currently only supports optionally\n  dropping late bundles, not delaying those with timetags in the future)\n- support for additional argument types\n- an asyncio-oriented server implementation\n- examples & documentation\n\n#### contributing\n\ncheck out our [contribution guide](contributing.md) and feel free to improve oscpy.\n\n#### license\n\noscpy is released under the terms of the mit license.\nplease see the [license.txt](license.txt) file.\n\n\n",
+  "docs_url": null,
+  "keywords": "osc network udp",
+  "license": "",
+  "name": "oscpy",
+  "package_url": "https://pypi.org/project/oscpy/",
+  "project_url": "https://pypi.org/project/oscpy/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/kivy/oscpy/issues",
+    "Homepage": "https://github.com/kivy/oscpy",
+    "Source": "https://github.com/kivy/oscpy"
+  },
+  "release_url": "https://pypi.org/project/oscpy/0.6.0/",
+  "requires_dist": [
+    "coveralls ; extra == 'ci'",
+    "pytest-rerunfailures ; extra == 'ci'",
+    "pytest (>=3.6) ; extra == 'dev'",
+    "wheel ; extra == 'dev'",
+    "pytest-cov ; extra == 'dev'",
+    "pycodestyle ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "a modern and efficient osc client/server implementation",
+  "version": "0.6.0",
+  "releases": [],
+  "developers": [
+    "gabriel@kivy.org",
+    "gabriel_pettier"
+  ],
+  "kwds": "osc oscpy osc_2 opensoundcontrol osc_1",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_oscpy",
+  "homepage": "https://github.com/kivy/oscpy",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_coveralls",
+    "pypi_pycodestyle",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_rerunfailures",
+    "pypi_wheel"
+  ]
+}

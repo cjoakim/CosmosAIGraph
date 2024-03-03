@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws::apprunner construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\nthis module is part of the [aws cloud development kit](https://github.com/aws/aws-cdk) project.\n\n```python\nimport aws_cdk.aws_apprunner as apprunner\n```\n\n## introduction\n\naws app runner is a fully managed service that makes it easy for developers to quickly deploy containerized web applications and apis, at scale and with no prior infrastructure experience required. start with your source code or a container image. app runner automatically builds and deploys the web application and load balances traffic with encryption. app runner also scales up or down automatically to meet your traffic needs. with app runner, rather than thinking about servers or scaling, you have more time to focus on your applications.\n\n## service\n\nthe `service` construct allows you to create aws app runner services with `ecr public`, `ecr` or `github` with the `source` property in the following scenarios:\n\n* `source.fromecr()` - to define the source repository from `ecr`.\n* `source.fromecrpublic()` - to define the source repository from `ecr public`.\n* `source.fromgithub()` - to define the source repository from the `github repository`.\n* `source.fromasset()` - to define the source from local asset directory.\n\n## ecr public\n\nto create a `service` with ecr public:\n\n```python\napprunner.service(self, \"service\",\n    source=apprunner.source.from_ecr_public(\n        image_configuration=apprunner.imageconfiguration(port=8000),\n        image_identifier=\"public.ecr.aws/aws-containers/hello-app-runner:latest\"\n    )\n)\n```\n\n## ecr\n\nto create a `service` from an existing ecr repository:\n\n```python\nimport aws_cdk.aws_ecr as ecr\n\n\napprunner.service(self, \"service\",\n    source=apprunner.source.from_ecr(\n        image_configuration=apprunner.imageconfiguration(port=80),\n        repository=ecr.repository.from_repository_name(self, \"nginxrepository\", \"nginx\"),\n        tag_or_digest=\"latest\"\n    )\n)\n```\n\nto create a `service` from local docker image asset directory  built and pushed to amazon ecr:\n\n```python\nimport aws_cdk.aws_ecr_assets as assets\n\n\nimage_asset = assets.dockerimageasset(self, \"imageassets\",\n    directory=path.join(__dirname, \"./docker.assets\")\n)\napprunner.service(self, \"service\",\n    source=apprunner.source.from_asset(\n        image_configuration=apprunner.imageconfiguration(port=8000),\n        asset=image_asset\n    )\n)\n```\n\n## github\n\nto create a `service` from the github repository, you need to specify an existing app runner `connection`.\n\nsee [managing app runner connections](https://docs.aws.amazon.com/apprunner/latest/dg/manage-connections.html) for more details.\n\n```python\napprunner.service(self, \"service\",\n    source=apprunner.source.from_git_hub(\n        repository_url=\"https://github.com/aws-containers/hello-app-runner\",\n        branch=\"main\",\n        configuration_source=apprunner.configurationsourcetype.repository,\n        connection=apprunner.githubconnection.from_connection_arn(\"connection_arn\")\n    )\n)\n```\n\nuse `codeconfigurationvalues` to override configuration values with the `api` configuration source type.\n\n```python\napprunner.service(self, \"service\",\n    source=apprunner.source.from_git_hub(\n        repository_url=\"https://github.com/aws-containers/hello-app-runner\",\n        branch=\"main\",\n        configuration_source=apprunner.configurationsourcetype.api,\n        code_configuration_values=apprunner.codeconfigurationvalues(\n            runtime=apprunner.runtime.python_3,\n            port=\"8000\",\n            start_command=\"python app.py\",\n            build_command=\"yum install -y pycairo && pip install -r requirements.txt\"\n        ),\n        connection=apprunner.githubconnection.from_connection_arn(\"connection_arn\")\n    )\n)\n```\n\n## iam roles\n\nyou are allowed to define `instancerole` and `accessrole` for the `service`.\n\n`instancerole` - the iam role that provides permissions to your app runner service. these are permissions that\nyour code needs when it calls any aws apis.\n\n`accessrole` - the iam role that grants the app runner service access to a source repository. it's required for\necr image repositories (but not for ecr public repositories). if not defined, a new access role will be generated\nwhen required.\n\nsee [app runner iam roles](https://docs.aws.amazon.com/apprunner/latest/dg/security_iam_service-with-iam.html#security_iam_service-with-iam-roles) for more details.\n\n## vpc connector\n\nto associate an app runner service with a custom vpc, define `vpcconnector` for the service.\n\n```python\nimport aws_cdk.aws_ec2 as ec2\n\n\nvpc = ec2.vpc(self, \"vpc\",\n    cidr=\"10.0.0.0/16\"\n)\n\nvpc_connector = apprunner.vpcconnector(self, \"vpcconnector\",\n    vpc=vpc,\n    vpc_subnets=vpc.select_subnets(subnet_type=ec2.subnettype.public),\n    vpc_connector_name=\"myvpcconnector\"\n)\n\napprunner.service(self, \"service\",\n    source=apprunner.source.from_ecr_public(\n        image_configuration=apprunner.imageconfiguration(port=8000),\n        image_identifier=\"public.ecr.aws/aws-containers/hello-app-runner:latest\"\n    ),\n    vpc_connector=vpc_connector\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-apprunner",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-apprunner/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-apprunner/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-apprunner/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-ec2 (==1.204.0)",
+    "aws-cdk.aws-ecr-assets (==1.204.0)",
+    "aws-cdk.aws-ecr (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::apprunner",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_apprunner aws_cdk aws_ec2 apprunner aws_ecr",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_apprunner",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 111,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_ec2",
+    "pypi_aws_cdk.aws_ecr",
+    "pypi_aws_cdk.aws_ecr_assets",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# interfacemeta\n\n[![pypi - version](https://img.shields.io/pypi/v/interface_meta.svg)](https://pypi.org/project/interface_meta/)\n![pypi - python version](https://img.shields.io/pypi/pyversions/interface_meta.svg)\n![pypi - status](https://img.shields.io/pypi/status/interface_meta.svg)\n[![build](https://img.shields.io/github/workflow/status/matthewwardrop/interface_meta/run%20tox%20tests)](https://github.com/matthewwardrop/interface_meta/actions?query=workflow%3a%22run+tox+tests%22)\n[![codecov](https://codecov.io/gh/matthewwardrop/interface_meta/branch/master/graph/badge.svg?token=w4ld72eqmm)](https://codecov.io/gh/matthewwardrop/interface_meta)\n[![code style](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)\n\n`interface_meta` provides a convenient way to expose an extensible api with\nenforced method signatures and consistent documentation.\n\n- **documentation:** see below (full documentation will come at some point).\n- **source:** https://github.com/matthewwardrop/interface_meta\n- **bug reports:** https://github.com/matthewwardrop/interface_meta/issues\n\n## overview\n\nthis library has been extracted (with some modifications) from\n[`omniduct`](https://github.com/airbnb/omniduct), a library also principally\nwritten by this author, where it was central to the extensible plugin\narchitecture. it places an emphasis on the functionality required to create a\nwell-documented extensible plugin system, whereby the act of subclassing is\nsufficient to register the plugin and ensure compliance to the parent api. as\nsuch, this library boasts the following features:\n\n- all subclasses of an interface must conform to the parent's api.\n- hierarchical runtime property existence and method signature checking. methods\n  are permitted to add additional *optional* arguments, but otherwise must\n  conform to the api of their parent class (which themselves may have extended\n  the api of the interface).\n- subclass definition time hooks (e.g. for registration of subclasses into a\n  library of plugins, etc).\n- optional requirement for methods in subclasses to explicity decorate methods\n  with an `override` decorator when replacing methods on an interface, making\n  it clearer as to when a class is introducing new methods versus replacing\n  those that form the part of the interface api.\n- generation of clear docstrings on implementations that stitches together the\n  base interface documentation with any downstream extensions and quirks.\n- support for extracting the quirks documentation for a method from other method\n  docstrings, in the event that subclass implementations are done in an internal\n  method.\n- compatibility with abcmeta from the standard library.\n\n## example code\n\n```python\nfrom abc import abstractmethod, abstractproperty\nfrom interface_meta import interfacemeta, override, quirk_docs\n\nclass myinterface(metaclass=interfacemeta):\n    \"\"\"\n    an example interface.\n    \"\"\"\n\n    interface_explicit_overrides = true\n    interface_raise_on_violation = false\n    interface_skipped_names = {'__init__'}\n\n    def __init__(self):\n        \"\"\"\n        myinterface constructor.\n        \"\"\"\n        pass\n\n    @abstractproperty\n    def name(self):\n        \"\"\"\n        the name of this interface.\n        \"\"\"\n        pass\n\n    @quirk_docs(method='_do_stuff')\n    def do_stuff(self, a, b, c=1):\n        \"\"\"\n        do things with the parameters.\n        \"\"\"\n        return self._do_stuff(a, b, c)\n\n    @abstractmethod\n    def _do_stuff(self, a, b, c):\n        pass\n\nclass myimplementation(myinterface):\n    \"\"\"\n    this implementation of the example interface works nicely.\n    \"\"\"\n\n    @quirk_docs(method='_init', mro=false)\n    def __init__(self, a):\n        \"\"\"\n        myimplementation constructor.\n        \"\"\"\n        self._init(a)\n\n    def _init(self, a):\n        \"\"\"\n        in this instance, we do nothing with a.\n        \"\"\"\n        pass\n\n    @property\n    @override\n    def name(self):\n        return \"peter\"\n\n    @override\n    def _do_stuff(self, a, b, c):\n        \"\"\"\n        in this implementation, we sum the parameters.\n        \"\"\"\n        return a + b + c\n```\n\nrunning `help(myimplementation)` reveals how the documentation is generated:\n\n```python\nclass myimplementation(myinterface)\n |  this implementation of the example interface works nicely.\n |\n |  method resolution order:\n |      myimplementation\n |      myinterface\n |      builtins.object\n |\n |  methods defined here:\n |\n |  __init__(self, a)\n |      myimplementation constructor.\n |\n |      in this instance, we do nothing with a.\n |\n |  do_stuff(self, a, b, c=1)\n |      do things with the parameters.\n |\n |      myimplementation quirks:\n |          in this implementation, we sum the parameters.\n ...\n```\n\n## related projects and prior art\n\nthis library is released into an already crowded space, and the author would\nlike to recognise some of the already wonderful work done by others. the primary\ndifference between this and other libraries is typically these other libraries\nfocus more on abstracting interface definitions and compliance, and less on the\ndocumentation and plugin registration work. while this work overlaps with these\nprojects, its approach is sufficiently different (in the author's opinion)\nto warrant a separate library.\n\n- [`pure_interface`](https://github.com/seequent/pure_interface)\n- [`python-interface`](https://github.com/ssanderson/interface)\n\n`python-interface` has an emphasis on ensuring that implementations of various\ninterfaces *strictly* adhere to the methods and properties associated with\nthe interface, and that helpful errors are raised when this is violated.\n\nby\ncomparison this library focusses on functional comformance to parent classes,\nwhereby methods on subclasses are allowed to include additional parameters. it\nalso focusses on ensuring that documentation for such quirks in method signatures are correctly composed into the final documentation rendered for that method.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "interface-meta",
+  "package_url": "https://pypi.org/project/interface-meta/",
+  "project_url": "https://pypi.org/project/interface-meta/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/interface-meta/1.3.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "`interface_meta` provides a convenient way to expose an extensible api with enforced method signatures and consistent documentation.",
+  "version": "1.3.0",
+  "releases": [],
+  "developers": [
+    "matthew_wardrop",
+    "mpwardrop@gmail.com"
+  ],
+  "kwds": "interface_meta pypi interfacemeta pure_interface interface",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_interface_meta",
+  "homepage": "",
+  "release_count": 14,
+  "dependency_ids": []
+}

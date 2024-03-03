@@ -1,0 +1,31 @@
+{
+  "classifiers": [],
+  "description": "=============\npreconditions\n=============\n\n``preconditions`` - a precondition decorator utility which relies on\n`parameter-name equivalence` for conciseness and consistency.\n\nexamples\n========\n\nfirst let's take a tour of examples. all examples assume the\n``preconditions`` decorator has been imported:\n\n.. code:: python\n\n   from preconditions import preconditions\n\nbasic type checking\n-------------------\n\nthe ``double`` `application function` requires that the ``i`` parameter\nis an ``int``, which is verified by a single `predicate` (the ``lambda``\nexpression):\n\n.. code:: python\n\n   @preconditions(lambda i: isinstance(i, int))\n   def double(i):\n       return 2*i\n\nmultiple predicates\n-------------------\n\nmultiple predicates may be specified:\n\n.. code:: python\n\n   @preconditions(\n       lambda i: isinstance(i, int),\n       lambda i: i > 0,\n       )\n   def double(i):\n       return 2*i\n\nnote that this is functionally equivalent to this single predicate\nversion:\n\n.. code:: python\n\n   @preconditions(\n       lambda i: isinstance(i, int) and i > 0,\n       )\n   def double(i):\n       return 2*i\n\nthe multi-predicate version should (eventually) have more specific\nerror reporting for a failure, while the single predicate version may\nbe more efficient.\n\nmultiple arguments\n------------------\n\nmultiple predicates can express preconditions for multiple arguments:\n\n.. code:: python\n\n   @preconditions(\n       lambda s: isinstance(s, unicode),\n       lambda n: isinstance(n, int) and n >= 0,\n       )\n   def repeat(s, n):\n       return s*n\n\nhowever, a *single predicate* can express preconditions for multiple\narguments. this allows `relational preconditions`:\n\n.. code:: python\n\n   @preconditions(\n       lambda a, b: a <= b\n       )\n   def strict_range(a, b):\n       return range(a, b)\n\nmethod preconditions\n--------------------\n\npredicates can be expressed for methods, including relations to\n``self``. for example, a ``monotonic`` instance ensures that each call to\n``.set`` must pass a value larger than any previous call:\n\n.. code:: python\n\n   class monotonic (object):\n       def __init__(self):\n           self.v = 0\n\n       @preconditions(lambda self, v: v > self.v)\n       def set(self, v):\n           self.v = v\n\npreconditions can be applied to special methods, such as ``__new__``,\n``__init__``, ``__call__``, etc...\n\n.. code:: python\n\n   class linearrange (tuple):\n       @preconditions(\n              lambda a: isinstance(a, float),\n              lambda b: isinstance(b, float),\n              lambda a, b: a < b,\n              )\n       def __new__(cls, a, b):\n           return super(orderedtuple, cls).__new__(cls, (a, b))\n\n       @preconditions(lambda w: 0 <= w < 1.0)\n       def __call__(self, w):\n           lo, hi = self\n           return w * (hi - lo) + lo\n\n       @preconditions(lambda x: self[0] <= x < self[1])\n       def invert(self, x):\n           lo, hi = self\n           return (x - lo) / (hi - lo)\n\nconcepts\n========\n\nan `application function` may be guarded with `precondition\npredicates`. these `predicates` are callables passed to the\n``preconditions`` decorator. consider this code:\n\n.. code:: python\n\n   @preconditions(\n       lambda a: isinstance(a, float) and a >= 0,\n       lambda b: isinstance(b, float) and b >= 0,\n       )\n   def area(a, b):\n       return a*b\n\nthe application function is ``area``, and it has two predicates defined\nwith ``lambda``, each of which ensures one of the arguments is a\nnon-negative float.\n\nparameter name equivalence\n--------------------------\n\nthe parameter names in a predicate must match parameter names in\nthe application function. this is known as `parameter name equivalence`\n[#]_.\n\n.. [#] this is a bit magical, relying on function introspection. the\n       design assumes the conciseness and consistency benefits outweigh\n       the potential confusion of \"magic\".\n\none exception to this rule is for default parameters within\npredicates. default parameters may be used to associate some state at\npredicate definition time. for example:\n\n.. code:: python\n\n   scores = {}\n\n   @preconditions(\n       lambda color, _colors=['red', 'green', 'blue']: color in _colors\n       )\n   def get_color_score(color):\n       return scores[color]\n\nthis feature may be most convenient when there's a need to remember a\nlocal loop variable.\n\n.. fixme: create an example.\n\nsimilar projects\n================\n\n`covenant`_ - code contracts for python 3.\n\n.. _`covenant`: https://github.com/kisielk/covenant\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "preconditions",
+  "package_url": "https://pypi.org/project/preconditions/",
+  "project_url": "https://pypi.org/project/preconditions/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "https://github.com/nejucomo/preconditions"
+  },
+  "release_url": "https://pypi.org/project/preconditions/0.1/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "flexible, concise preconditions.",
+  "version": "0.1",
+  "releases": [],
+  "developers": [
+    "nathan_wilcox",
+    "nejucomo@gmail.com"
+  ],
+  "kwds": "preconditions predicates predicate precondition decorator",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_preconditions",
+  "homepage": "https://github.com/nejucomo/preconditions",
+  "release_count": 1,
+  "dependency_ids": []
+}

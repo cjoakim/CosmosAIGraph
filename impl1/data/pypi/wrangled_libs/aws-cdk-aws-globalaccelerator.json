@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws::globalaccelerator construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\n## introduction\n\naws global accelerator (aga) is a service that improves the availability and\nperformance of your applications with local or global users.\n\nit intercepts your user's network connection at an edge location close to\nthem, and routes it to one of potentially multiple, redundant backends across\nthe more reliable and less congested aws global network.\n\naga can be used to route traffic to application load balancers, network load\nbalancers, ec2 instances and elastic ip addresses.\n\nfor more information, see the [aws global\naccelerator developer guide](https://docs.aws.amazon.com/awscloudformation/latest/userguide/aws_globalaccelerator.html).\n\n## example\n\nhere's an example that sets up a global accelerator for two application load\nbalancers in two different aws regions:\n\n```python\n# create an accelerator\naccelerator = globalaccelerator.accelerator(self, \"accelerator\")\n\n# create a listener\nlistener = accelerator.add_listener(\"listener\",\n    port_ranges=[globalaccelerator.portrange(from_port=80), globalaccelerator.portrange(from_port=443)\n    ]\n)\n\n# import the load balancers\nnlb1 = elbv2.networkloadbalancer.from_network_load_balancer_attributes(self, \"nlb1\",\n    load_balancer_arn=\"arn:aws:elasticloadbalancing:us-west-2:111111111111:loadbalancer/app/my-load-balancer1/e16bef66805b\"\n)\nnlb2 = elbv2.networkloadbalancer.from_network_load_balancer_attributes(self, \"nlb2\",\n    load_balancer_arn=\"arn:aws:elasticloadbalancing:ap-south-1:111111111111:loadbalancer/app/my-load-balancer2/5513dc2ea8a1\"\n)\n\n# add one endpointgroup for each region we are targeting\nlistener.add_endpoint_group(\"group1\",\n    endpoints=[ga_endpoints.networkloadbalancerendpoint(nlb1)]\n)\nlistener.add_endpoint_group(\"group2\",\n    # imported load balancers automatically calculate their region from the arn.\n    # if you are load balancing to other resources, you must also pass a `region`\n    # parameter here.\n    endpoints=[ga_endpoints.networkloadbalancerendpoint(nlb2)]\n)\n```\n\n## concepts\n\nthe **accelerator** construct defines a global accelerator resource.\n\nan accelerator includes one or more **listeners** that accepts inbound\nconnections on one or more ports.\n\neach listener has one or more **endpoint groups**, representing multiple\ngeographically distributed copies of your application. there is one endpoint\ngroup per region, and user traffic is routed to the closest region by default.\n\nan endpoint group consists of one or more **endpoints**, which is where the\nuser traffic coming in on the listener is ultimately sent. the endpoint port\nused is the same as the traffic came in on at the listener, unless overridden.\n\n## types of endpoints\n\nthere are 4 types of endpoints, and they can be found in the\n`@aws-cdk/aws-globalaccelerator-endpoints` package:\n\n* application load balancers\n* network load balancers\n* ec2 instances\n* elastic ip addresses\n\n### application load balancers\n\n```python\n# alb: elbv2.applicationloadbalancer\n# listener: globalaccelerator.listener\n\n\nlistener.add_endpoint_group(\"group\",\n    endpoints=[\n        ga_endpoints.applicationloadbalancerendpoint(alb,\n            weight=128,\n            preserve_client_ip=true\n        )\n    ]\n)\n```\n\n### network load balancers\n\n```python\n# nlb: elbv2.networkloadbalancer\n# listener: globalaccelerator.listener\n\n\nlistener.add_endpoint_group(\"group\",\n    endpoints=[\n        ga_endpoints.networkloadbalancerendpoint(nlb,\n            weight=128\n        )\n    ]\n)\n```\n\n### ec2 instances\n\n```python\n# listener: globalaccelerator.listener\n# instance: ec2.instance\n\n\nlistener.add_endpoint_group(\"group\",\n    endpoints=[\n        ga_endpoints.instanceendpoint(instance,\n            weight=128,\n            preserve_client_ip=true\n        )\n    ]\n)\n```\n\n### elastic ip addresses\n\n```python\n# listener: globalaccelerator.listener\n# eip: ec2.cfneip\n\n\nlistener.add_endpoint_group(\"group\",\n    endpoints=[\n        ga_endpoints.cfneipendpoint(eip,\n            weight=128\n        )\n    ]\n)\n```\n\n## client ip address preservation and security groups\n\nwhen using the `preserveclientip` feature, aga creates\n**elastic network interfaces** (enis) in your aws account, that are\nassociated with a security group aga creates for you. you can use the\nsecurity group created by aga as a source group in other security groups\n(such as those for ec2 instances or elastic load balancers), if you want to\nrestrict incoming traffic to the aga security group rules.\n\naga creates a specific security group called `globalaccelerator` for each vpc\nit has an eni in (this behavior can not be changed). cloudformation doesn't\nsupport referencing the security group created by aga, but this construct\nlibrary comes with a custom resource that enables you to reference the aga\nsecurity group.\n\ncall `endpointgroup.connectionspeer()` to obtain a reference to the security group\nwhich you can use in connection rules. you must pass a reference to the vpc in whose\ncontext the security group will be looked up. example:\n\n```python\n# listener: globalaccelerator.listener\n\n# non-open alb\n# alb: elbv2.applicationloadbalancer\n\n# remember that there is only one aga security group per vpc.\n# vpc: ec2.vpc\n\n\nendpoint_group = listener.add_endpoint_group(\"group\",\n    endpoints=[\n        ga_endpoints.applicationloadbalancerendpoint(alb,\n            preserve_client_ip=true\n        )\n    ]\n)\naga_sg = endpoint_group.connections_peer(\"globalacceleratorsg\", vpc)\n\n# allow connections from the aga to the alb\nalb.connections.allow_from(aga_sg, ec2.port.tcp(443))\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-globalaccelerator",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-globalaccelerator/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-globalaccelerator/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-globalaccelerator/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-ec2 (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "aws-cdk.custom-resources (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::globalaccelerator",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_globalaccelerator aws globalacceleratorsg cdk globalaccelerator",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_globalaccelerator",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 187,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_ec2",
+    "pypi_aws_cdk.core",
+    "pypi_aws_cdk.custom_resources",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

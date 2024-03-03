@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "natural language :: thai",
+    "topic :: text processing :: linguistic"
+  ],
+  "description": "# sefr cut (stacked ensemble filter and refine for word segmentation) \ndomain adaptation of thai word segmentation models using stacked ensemble (emnlp 2020) <br>\ncrf as stacked model and deepcut as baseline model<br>\n\n## read more:\n- paper: [domain adaptation of thai word segmentation models using stacked ensemble]()\n- blog: [domain adaptation \u0e01\u0e31\u0e1a\u0e15\u0e31\u0e27\u0e15\u0e31\u0e14\u0e04\u0e33 \u0e21\u0e31\u0e19\u0e14\u0e35\u0e22\u0e4c\u0e08\u0e23\u0e34\u0e07\u0e46](https://medium.com/@pingloaf)\n\n## install\n> pip install sefr_cut\n\n## how to use\n### requirements\n- python >= 3.6\n- python-crfsuite >= 0.9.7\n- pyahocorasick == 1.4.0\n\n## example\n- example files are on [sefr example notebook](https://github.com/mrpeerat/sefr_cut/blob/master/notebooks/1.sefr_cut%20example.ipynb)\n- [try it on colab](https://colab.research.google.com/drive/1xa2rzyvnvwwxy6ofkisig63x-5u1gwa1?usp=sharing)\n### load engine & engine mode\n- ws1000, tnhc\n  - ws1000: model trained on wisesight-1000 and test on wisesight-160\n  - tnhc: model trained on tnhc (80:20 train&test split with random seed 42)\n  - best: trained on best-2010 corpus (nectec)\n  ```\n  sefr_cut.load_model(engine='ws1000')\n  # or\n  sefr_cut.load_model(engine='tnhc')\n  # or\n  sefr_cut.load_model(engine='best')\n  ```\n- tl-deepcut-xxxx\n  - we also provide transfer learning of deepcut on 'wisesight' as tl-deepcut-ws1000 and 'tnhc' as tl-deepcut-tnhc\n  ```\n  sefr_cut.load_model(engine='tl-deepcut-ws1000')\n  # or\n  sefr_cut.load_model(engine='tl-deepcut-tnhc')\n  ```\n- deepcut\n  - we also provide the original deepcut\n  ```\n  sefr_cut.load_model(engine='deepcut')\n  ```\n### segment example\n- segment with default k\n  ```\n  sefr_cut.load_model(engine='ws1000')\n  print(sefr_cut.tokenize(['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28\u0e44\u0e17\u0e22','\u0e25\u0e38\u0e07\u0e15\u0e39\u0e48\u0e2a\u0e39\u0e49\u0e46']))\n  print(sefr_cut.tokenize(['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28\u0e44\u0e17\u0e22']))\n  print(sefr_cut.tokenize('\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28\u0e44\u0e17\u0e22'))\n\n  [['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35', '\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28', '\u0e44\u0e17\u0e22'], ['\u0e25\u0e38\u0e07', '\u0e15\u0e39\u0e48', '\u0e2a\u0e39\u0e49', '\u0e46']]\n  [['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35', '\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28', '\u0e44\u0e17\u0e22']]\n  [['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35', '\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28', '\u0e44\u0e17\u0e22']]\n  ```\n- segment with different k\n  ```\n  sefr_cut.load_model(engine='ws1000')\n  print(sefr_cut.tokenize(['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28\u0e44\u0e17\u0e22','\u0e25\u0e38\u0e07\u0e15\u0e39\u0e48\u0e2a\u0e39\u0e49\u0e46'],k=5)) # refine only 5% of character number\n  print(sefr_cut.tokenize(['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28\u0e44\u0e17\u0e22','\u0e25\u0e38\u0e07\u0e15\u0e39\u0e48\u0e2a\u0e39\u0e49\u0e46'],k=100)) # refine 100% of character number\n\n  [['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35', '\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28\u0e44\u0e17\u0e22'], ['\u0e25\u0e38\u0e07\u0e15\u0e39\u0e48', '\u0e2a\u0e39\u0e49', '\u0e46']]\n  [['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35', '\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28', '\u0e44\u0e17\u0e22'], ['\u0e25\u0e38\u0e07', '\u0e15\u0e39\u0e48', '\u0e2a\u0e39\u0e49', '\u0e46']]\n  ```\n\n## evaluation\n- character & word evaluation is provided by call fuction ```evaluation()``` \n  - for example\n  ```\n  answer = '\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35|\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28\u0e44\u0e17\u0e22'\n  pred = '\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35|\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28|\u0e44\u0e17\u0e22'\n  char_score,word_score = sefr_cut.evaluation(answer,pred)\n  print(f'word score: {word_score} char score: {char_score}')\n\n  word score: 0.4 char score: 0.8\n\n  answer = ['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35|\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28\u0e44\u0e17\u0e22']\n  pred = ['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35|\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28|\u0e44\u0e17\u0e22']\n  char_score,word_score = sefr_cut.evaluation(answer,pred)\n  print(f'word score: {word_score} char score: {char_score}')\n\n  word score: 0.4 char score: 0.8\n\n\n  answer = [['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35|'],['\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28\u0e44\u0e17\u0e22']]\n  pred = [['\u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35|'],['\u0e1b\u0e23\u0e30\u0e40\u0e17\u0e28|\u0e44\u0e17\u0e22']]\n  char_score,word_score = sefr_cut.evaluation(answer,pred)\n  print(f'word score: {word_score} char score: {char_score}')\n\n  word score: 0.4 char score: 0.8\n  ```\n\n## performance\n<img src=\"https://user-images.githubusercontent.com/21156980/94525454-4d2e6680-025e-11eb-929f-7bcbb76e92fd.png\" width=\"600\" height=\"386\" />\n<img src=\"https://user-images.githubusercontent.com/21156980/94525459-4e5f9380-025e-11eb-9ce6-fd1598b902eb.png\" width=\"600\" height=\"386\" />\n<img src=\"https://user-images.githubusercontent.com/21156980/94525741-b9a96580-025e-11eb-81f1-1016e59e25cf.png\" width=\"600\" height=\"306\" />\n\n## how to re-train?\n- you can re-train model in folder [notebooks](https://github.com/mrpeerat/sefr_cut/tree/master/notebooks) we provided everything for you!!\n  ### re-train model\n  - you can run the notebook file #2, the corpus inside 'notebooks/corpus/' is wisesight-1000, you can try with best, tnhc, and lst20 !\n  - rename variable name ```crf_model_name``` \n  - link:[here](https://github.com/mrpeerat/sefr_cut/blob/master/notebooks/2.train_ds_model.ipynb)\n  ### filter and refine example\n  - set variable name ```crf_model_name``` same as file#2 \n  - if you want to know why we use filter-and-refine you can try to uncomment 3 lines in ```score_()``` function\n  ```\n  #answer = scoring_function(y_true,cp.deepcopy(y_pred),entropy_index_og)\n  #f1_hypothesis.append(eval_function(y_true,answer))\n  #ax.plot(range(start,k_num,step),f1_hypothesis,c=\"r\",marker='o',label='best case')\n  ```\n  - link:[here](https://github.com/mrpeerat/sefr_cut/blob/master/notebooks/3.stacked%20model%20example.ipynb)\n  ### use your own model?\n  - just move your model inside 'notebooks/model/' to 'seft_cut/model/' and call model in one line.\n  ```\n  sefr_cut.load_model(engine='my_model')\n  ```\n\n## citation\n- wait our paper shown in acl anthology\n\nthank you many code from\n\n- [deepcut](https://github.com/rkcosmos/deepcut) (baseline model) : we used some of code from deepcut to perform transfer learning \n- [@bact](https://github.com/bact) (crf training code) : we used some from https://github.com/bact/nlp-thai in training crf model\n\n\n\n\n",
+  "docs_url": null,
+  "keywords": "thai word segmentation,word segmentation,thainlp",
+  "license": "mit",
+  "name": "sefr-cut",
+  "package_url": "https://pypi.org/project/SEFR-CUT/",
+  "project_url": "https://pypi.org/project/SEFR-CUT/",
+  "project_urls": {
+    "Homepage": "https://github.com/mrpeerat/SEFR_CUT"
+  },
+  "release_url": "https://pypi.org/project/SEFR-CUT/1.1/",
+  "requires_dist": [
+    "tensorflow (>=2.0.0)",
+    "pandas",
+    "scipy",
+    "numpy",
+    "scikit-learn",
+    "python-crfsuite",
+    "pyahocorasick"
+  ],
+  "requires_python": "",
+  "summary": "domain adaptation of thai word segmentation models using stacked ensemble (emnlp2020)",
+  "version": "1.1",
+  "releases": [],
+  "developers": [
+    "mrpeerat",
+    "peerat.l_s19@vistec.ac.th"
+  ],
+  "kwds": "sefr_cut seft_cut thainlp sefr corpus",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_sefr_cut",
+  "homepage": "https://github.com/mrpeerat/sefr_cut",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_pyahocorasick",
+    "pypi_python_crfsuite",
+    "pypi_scikit_learn",
+    "pypi_scipy",
+    "pypi_tensorflow"
+  ]
+}

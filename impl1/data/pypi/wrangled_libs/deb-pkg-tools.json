@@ -1,0 +1,71 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: system administrators",
+    "license :: osi approved :: mit license",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development",
+    "topic :: software development :: build tools",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: archiving :: packaging",
+    "topic :: system :: installation/setup",
+    "topic :: system :: software distribution",
+    "topic :: system :: systems administration",
+    "topic :: terminals",
+    "topic :: utilities"
+  ],
+  "description": "deb-pkg-tools: debian packaging tools\n=====================================\n\n.. image:: https://travis-ci.org/xolox/python-deb-pkg-tools.svg?branch=master\n   :target: https://travis-ci.org/xolox/python-deb-pkg-tools\n\n.. image:: https://coveralls.io/repos/xolox/python-deb-pkg-tools/badge.png?branch=master\n   :target: https://coveralls.io/r/xolox/python-deb-pkg-tools?branch=master\n\nthe python package `deb-pkg-tools` is a collection of functions to build and\ninspect `debian binary packages`_ and repositories of binary packages. its\nprimary use case is to automate builds.\n\nsome of the functionality is exposed in the command line interface (documented below)\nbecause it's very convenient to use in shell scripts, while other functionality\nis meant to be used as a python api. the package is currently tested on cpython\n2.7, 3.5+ and pypy (2.7).\n\nplease note that `deb-pkg-tools` is quite opinionated about how debian binary\npackages should be built and it enforces some of these opinions on its users.\nmost of this can be avoided with optional function arguments and/or environment\nvariables. if you find something that doesn't work to your liking and you can't\nwork around it, feel free to ask for an additional configuration option; i try\nto keep an open mind about the possible use cases of my projects.\n\n.. contents::\n\nstatus\n------\n\non the one hand the `deb-pkg-tools` package is based on my experiences with\ndebian packages and repositories over the past couple of years, on the other\nhand `deb-pkg-tools` itself is quite young. then again most functionality is\ncovered by automated tests; at the time of writing coverage is around 90% (some\nof the error handling is quite tricky to test if we also want to test the\nnon-error case, which is of course the main focus :-)\n\ninstallation\n------------\n\nthe `deb-pkg-tools` package is available on pypi_ which means installation\nshould be as simple as:\n\n.. code-block:: console\n\n   $ pip install deb-pkg-tools\n\nthere's actually a multitude of ways to install python packages (e.g. the `per\nuser site-packages directory`_, `virtual environments`_ or just installing\nsystem wide) and i have no intention of getting into that discussion here, so\nif this intimidates you then read up on your options before returning to these\ninstructions ;-).\n\nwhen `deb-pkg-tools` is being used to scan thousands of ``*.deb`` archives a\nsignificant speedup may be achieved using memcached:\n\n.. code-block:: console\n\n   $ pip install \"deb-pkg-tools[memcached]\"\n\nunder the hood `deb-pkg-tools` uses several programs provided by debian, the\ndetails are available in the dependencies_ section. to install these programs:\n\n.. code-block:: console\n\n  $ sudo apt-get install dpkg-dev fakeroot lintian\n\nusage\n-----\n\nthere are two ways to use the `deb-pkg-tools` package: as a command line\nprogram and as a python api. for details about the python api please refer to\nthe api documentation available on `read the docs`_. the command line interface\nis described below.\n\n.. a dry solution to avoid duplication of the `deb-pkg-tools --help' text:\n..\n.. [[[cog\n.. from humanfriendly.usage import inject_usage\n.. inject_usage('deb_pkg_tools.cli')\n.. ]]]\n\n**usage:** `deb-pkg-tools [options] ...`\n\nwrapper for the deb-pkg-tools python project that implements various tools to\ninspect, build and manipulate debian binary package archives and related\nentities like trivial repositories.\n\n**supported options:**\n\n.. csv-table::\n   :header: option, description\n   :widths: 30, 70\n\n\n   \"``-i``, ``--inspect=file``\",\"inspect the metadata in the debian binary package archive given by ``file``\n   (similar to \"\"dpkg ``--info``\"\").\"\n   \"``-c``, ``--collect=dir``\",\"copy the package archive(s) given as positional arguments (and all package\n   archives required by the given package archives) into the directory given\n   by ``dir``.\"\n   \"``-c``, ``--check=file``\",\"perform static analysis on a package archive and its dependencies in order\n   to recognize common errors as soon as possible.\"\n   \"``-p``, ``--patch=file``\",\"patch fields into the existing control file given by ``file``. to be used\n   together with the ``-s``, ``--set`` option.\"\n   \"``-s``, ``--set=line``\",\"a line to patch into the control file (syntax: \"\"name: value\"\"). to be used\n   together with the ``-p``, ``--patch`` option.\"\n   \"``-b``, ``--build=dir``\",\"build a debian binary package with \"\"dpkg-deb ``--build``\"\" (and lots of\n   intermediate python magic, refer to the api documentation of the project\n   for full details) based on the binary package template in the directory\n   given by ``dir``. the resulting archive is located in the system wide\n   temporary directory (usually /tmp).\"\n   \"``-u``, ``--update-repo=dir``\",\"create or update the trivial debian binary package repository in the\n   directory given by ``dir``.\"\n   \"``-a``, ``--activate-repo=dir``\",\"enable \"\"apt-get\"\" to install packages from the trivial repository (requires\n   root/sudo privilege) in the directory given by ``dir``. alternatively you can\n   use the ``-w``, ``--with-repo`` option.\"\n   \"``-d``, ``--deactivate-repo=dir``\",\"cleans up after ``--activate-repo`` (requires root/sudo privilege).\n   alternatively you can use the ``-w``, ``--with-repo`` option.\"\n   \"``-w``, ``--with-repo=dir``\",\"create or update a trivial package repository, activate the repository, run\n   the positional arguments as an external command (usually \"\"apt-get install\"\")\n   and finally deactivate the repository.\"\n   \"``--gc``, ``--garbage-collect``\",\"force removal of stale entries from the persistent (on disk) package\n   metadata cache. garbage collection is performed automatically by the\n   deb-pkg-tools command line interface when the last garbage collection\n   cycle was more than 24 hours ago, so you only need to do it manually\n   when you want to control when it happens (for example by a daily\n   cron job scheduled during idle hours :-).\"\n   \"``-y``, ``--yes``\",assume the answer to interactive questions is yes.\n   \"``-v``, ``--verbose``\",make more noise! (useful during debugging)\n   \"``-h``, ``--help``\",show this message and exit.\n\n.. [[[end]]]\n\none thing to note is that the operation of ``deb-pkg-tools --update-repo`` can\nbe influenced by a configuration file. for details about this, please refer to\nthe documentation on `deb_pkg_tools.repo.select_gpg_key()`_.\n\n.. _dependencies:\n\ndependencies\n------------\n\nthe following external programs are required by `deb-pkg-tools` (depending on\nwhich functionality you want to use of course):\n\n=====================  =============\nprogram                package\n=====================  =============\n``apt-ftparchive``     ``apt-utils``\n``apt-get``            ``apt``\n``cp``                 ``coreutils``\n``dpkg-deb``           ``dpkg``\n``dpkg-architecture``  ``dpkg-dev``\n``du``                 ``coreutils``\n``fakeroot``           ``fakeroot``\n``gpg``                ``gnupg``\n``gzip``               ``gzip``\n``lintian``            ``lintian``\n=====================  =============\n\nthe majority of these programs/packages will already be installed on most\ndebian based systems so you should only need the following to get started:\n\n.. code-block:: console\n\n    $ sudo apt-get install dpkg-dev fakeroot lintian\n\nplatform compatibility\n----------------------\n\nseveral things can be tweaked via environment variables if they don't work for\nyour system or platform. for example on mac os x the ``cp`` command doesn't\nhave an ``-l`` parameter and the ``root`` user and group may not exist, but\ndespite these things it can still be useful to test package builds on mac os\nx. the following environment variables can be used to adjust such factors:\n\n.. csv-table::\n   :header-rows: 1\n\n   environment variable,default value\n   `$dpt_allow_fakeroot_or_sudo`_,true\n   `$dpt_chown_files`_,true\n   `$dpt_force_entropy`_,false\n   `$dpt_hard_links`_,true\n   `$dpt_parse_strict`_,true\n   `$dpt_reset_setgid`_,true\n   `$dpt_root_group`_,root\n   `$dpt_root_user`_,root\n   `$dpt_sudo`_,true\n\nenvironment variables for boolean options support the strings ``yes``,\n``true``, ``1``, ``no``, ``false`` and ``0`` (case is ignored).\n\ndisabling sudo usage\n~~~~~~~~~~~~~~~~~~~~\n\nto disable any use of ``sudo`` you can use the following:\n\n.. code-block:: bash\n\n   export dpt_allow_fakeroot_or_sudo=false\n   export dpt_chown_files=false\n   export dpt_reset_setgid=false\n   export dpt_sudo=false\n\ncontact\n-------\n\nthe latest version of `deb-pkg-tools` is available on pypi_ and github_. the\ndocumentation is hosted on `read the docs`_. for bug reports please create an\nissue on github_. if you have questions, suggestions, etc. feel free to send me\nan e-mail at `peter@peterodding.com`_.\n\nlicense\n-------\n\nthis software is licensed under the `mit license`_.\n\n\u00a9 2020 peter odding.\n\n.. external references:\n.. _deb_pkg_tools.repo.select_gpg_key(): https://deb-pkg-tools.readthedocs.io/en/latest/#deb_pkg_tools.repo.select_gpg_key\n.. _debian binary packages: https://www.debian.org/doc/debian-policy/ch-binary.html\n.. _$dpt_allow_fakeroot_or_sudo: https://deb-pkg-tools.readthedocs.io/en/latest/#deb_pkg_tools.package.allow_fakeroot_or_sudo\n.. _$dpt_chown_files: https://deb-pkg-tools.readthedocs.io/en/latest/#deb_pkg_tools.package.allow_chown\n.. _$dpt_force_entropy: https://deb-pkg-tools.readthedocs.io/en/latest/#deb_pkg_tools.gpg.force_entropy\n.. _$dpt_hard_links: https://deb-pkg-tools.readthedocs.io/en/latest/#deb_pkg_tools.package.allow_hard_links\n.. _$dpt_parse_strict: https://deb-pkg-tools.readthedocs.io/en/latest/#deb_pkg_tools.package.parse_strict\n.. _$dpt_reset_setgid: https://deb-pkg-tools.readthedocs.io/en/latest/#deb_pkg_tools.package.allow_reset_setgid\n.. _$dpt_root_group: https://deb-pkg-tools.readthedocs.io/en/latest/#deb_pkg_tools.package.root_group\n.. _$dpt_root_user: https://deb-pkg-tools.readthedocs.io/en/latest/#deb_pkg_tools.package.root_user\n.. _$dpt_sudo: https://deb-pkg-tools.readthedocs.io/en/latest/#deb_pkg_tools.repo.allow_sudo\n.. _github: https://github.com/xolox/python-deb-pkg-tools\n.. _mit license: http://en.wikipedia.org/wiki/mit_license\n.. _per user site-packages directory: https://www.python.org/dev/peps/pep-0370/\n.. _peter@peterodding.com: peter@peterodding.com\n.. _pypi: https://pypi.python.org/pypi/deb-pkg-tools\n.. _read the docs: https://deb-pkg-tools.readthedocs.io\n.. _virtual environments: http://docs.python-guide.org/en/latest/dev/virtualenvs/\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "deb-pkg-tools",
+  "package_url": "https://pypi.org/project/deb-pkg-tools/",
+  "project_url": "https://pypi.org/project/deb-pkg-tools/",
+  "project_urls": {
+    "Homepage": "https://deb-pkg-tools.readthedocs.io"
+  },
+  "release_url": "https://pypi.org/project/deb-pkg-tools/8.4/",
+  "requires_dist": [
+    "executor (>=22.0)",
+    "coloredlogs (>=14.0)",
+    "humanfriendly (>=8.2)",
+    "property-manager (>=3.0)",
+    "six (>=1.10.0)",
+    "python-memcached (>=1.58) ; extra == 'memcached'"
+  ],
+  "requires_python": "",
+  "summary": "debian packaging tools",
+  "version": "8.4",
+  "releases": [],
+  "developers": [
+    "peter@peterodding.com",
+    "peter_odding"
+  ],
+  "kwds": "deb_pkg_tools _deb_pkg_tools xolox pkg dpkg",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_deb_pkg_tools",
+  "homepage": "https://deb-pkg-tools.readthedocs.io",
+  "release_count": 100,
+  "dependency_ids": [
+    "pypi_coloredlogs",
+    "pypi_executor",
+    "pypi_humanfriendly",
+    "pypi_property_manager",
+    "pypi_python_memcached",
+    "pypi_six"
+  ]
+}

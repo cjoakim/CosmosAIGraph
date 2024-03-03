@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "wrapt\n=====\n\n|actions| |pypi|\n\nthe aim of the **wrapt** module is to provide a transparent object proxy\nfor python, which can be used as the basis for the construction of function\nwrappers and decorator functions.\n\nthe **wrapt** module focuses very much on correctness. it therefore goes\nway beyond existing mechanisms such as ``functools.wraps()`` to ensure that\ndecorators preserve introspectability, signatures, type checking abilities\netc. the decorators that can be constructed using this module will work in\nfar more scenarios than typical decorators and provide more predictable and\nconsistent behaviour.\n\nto ensure that the overhead is as minimal as possible, a c extension module\nis used for performance critical components. an automatic fallback to a\npure python implementation is also provided where a target system does not\nhave a compiler to allow the c extension to be compiled.\n\ndocumentation\n-------------\n\nfor further information on the **wrapt** module see:\n\n* http://wrapt.readthedocs.org/\n\nquick start\n-----------\n\nto implement your decorator you need to first define a wrapper function.\nthis will be called each time a decorated function is called. the wrapper\nfunction needs to take four positional arguments:\n\n* ``wrapped`` - the wrapped function which in turns needs to be called by your wrapper function.\n* ``instance`` - the object to which the wrapped function was bound when it was called.\n* ``args`` - the list of positional arguments supplied when the decorated function was called.\n* ``kwargs`` - the dictionary of keyword arguments supplied when the decorated function was called.\n\nthe wrapper function would do whatever it needs to, but would usually in\nturn call the wrapped function that is passed in via the ``wrapped``\nargument.\n\nthe decorator ``@wrapt.decorator`` then needs to be applied to the wrapper\nfunction to convert it into a decorator which can in turn be applied to\nother functions.\n\n.. code-block:: python\n\n    import wrapt\n    \n    @wrapt.decorator\n    def pass_through(wrapped, instance, args, kwargs):\n        return wrapped(*args, **kwargs)\n\n    @pass_through\n    def function():\n        pass\n\nif you wish to implement a decorator which accepts arguments, then wrap the\ndefinition of the decorator in a function closure. any arguments supplied\nto the outer function when the decorator is applied, will be available to\nthe inner wrapper when the wrapped function is called.\n\n.. code-block:: python\n\n    import wrapt\n\n    def with_arguments(myarg1, myarg2):\n        @wrapt.decorator\n        def wrapper(wrapped, instance, args, kwargs):\n            return wrapped(*args, **kwargs)\n        return wrapper\n\n    @with_arguments(1, 2)\n    def function():\n        pass\n\nwhen applied to a normal function or static method, the wrapper function\nwhen called will be passed ``none`` as the ``instance`` argument.\n\nwhen applied to an instance method, the wrapper function when called will\nbe passed the instance of the class the method is being called on as the\n``instance`` argument. this will be the case even when the instance method\nwas called explicitly via the class and the instance passed as the first\nargument. that is, the instance will never be passed as part of ``args``.\n\nwhen applied to a class method, the wrapper function when called will be\npassed the class type as the ``instance`` argument.\n\nwhen applied to a class, the wrapper function when called will be passed\n``none`` as the ``instance`` argument. the ``wrapped`` argument in this\ncase will be the class.\n\nthe above rules can be summarised with the following example.\n\n.. code-block:: python\n\n    import inspect\n    \n    @wrapt.decorator\n    def universal(wrapped, instance, args, kwargs):\n        if instance is none:\n            if inspect.isclass(wrapped):\n                # decorator was applied to a class.\n                return wrapped(*args, **kwargs)\n            else:\n                # decorator was applied to a function or staticmethod.\n                return wrapped(*args, **kwargs)\n        else:\n            if inspect.isclass(instance):\n                # decorator was applied to a classmethod.\n                return wrapped(*args, **kwargs)\n            else:\n                # decorator was applied to an instancemethod.\n                return wrapped(*args, **kwargs)\n\nusing these checks it is therefore possible to create a universal decorator\nthat can be applied in all situations. it is no longer necessary to create\ndifferent variants of decorators for normal functions and instance methods,\nor use additional wrappers to convert a function decorator into one that\nwill work for instance methods.\n\nin all cases, the wrapped function passed to the wrapper function is called\nin the same way, with ``args`` and ``kwargs`` being passed. the\n``instance`` argument doesn't need to be used in calling the wrapped\nfunction.\n\nrepository\n----------\n\nfull source code for the **wrapt** module, including documentation files\nand unit tests, can be obtained from github.\n\n* https://github.com/grahamdumpleton/wrapt\n\n.. |actions| image:: https://img.shields.io/github/workflow/status/grahamdumpleton/wrapt/test/develop?logo=github&cacheseconds=600\n   :target: https://github.com/grahamdumpleton/wrapt/actions\n.. |pypi| image:: https://img.shields.io/pypi/v/wrapt.svg?logo=python&cacheseconds=3600\n   :target: https://pypi.python.org/pypi/wrapt\n",
+  "docs_url": null,
+  "keywords": "wrapper,proxy,decorator",
+  "license": "bsd",
+  "name": "wrapt",
+  "package_url": "https://pypi.org/project/wrapt/",
+  "project_url": "https://pypi.org/project/wrapt/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/GrahamDumpleton/wrapt/issues/",
+    "Changelog": "https://wrapt.readthedocs.io/en/latest/changes.html",
+    "Documentation": "https://wrapt.readthedocs.io/",
+    "Homepage": "https://github.com/GrahamDumpleton/wrapt"
+  },
+  "release_url": "https://pypi.org/project/wrapt/1.16.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "module for decorators, wrappers and monkey patching.",
+  "version": "1.16.0",
+  "releases": [],
+  "developers": [
+    "graham.dumpleton@gmail.com",
+    "graham_dumpleton"
+  ],
+  "kwds": "decorators decorator functools wrappers wrap",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_wrapt",
+  "homepage": "https://github.com/grahamdumpleton/wrapt",
+  "release_count": 55,
+  "dependency_ids": []
+}

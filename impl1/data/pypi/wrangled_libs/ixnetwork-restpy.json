@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "topic :: software development"
+  ],
+  "description": "## the ixnetwork python client \r\n\r\n[![pypi](https://img.shields.io/pypi/v/ixnetwork-restpy.svg)](https://pypi.org/project/ixnetwork-restpy)\r\n[![python](https://img.shields.io/pypi/pyversions/ixnetwork-restpy.svg)](https://pypi.python.org/pypi/ixnetwork-restpy)\r\n[![license](https://img.shields.io/badge/license-mit-green.svg)](https://en.wikipedia.org/wiki/mit_license)\r\n[![downloads](https://pepy.tech/badge/ixnetwork-restpy)](https://pepy.tech/project/ixnetwork-restpy)\r\n\r\n\r\n## install the client\r\n```\r\npip install --upgrade ixnetwork-restpy\r\n```\r\n\r\n\r\n## import the package\r\nimport a package based on your product:\r\n```python\r\n# the ixnetwork_restpy package is the superset of all ixnetwork products\r\nfrom ixnetwork_restpy import sessionassistant\r\n```\r\n```python\r\n# the uhd_restpy package is a subset of the ixnetwork_restpy package for the uhd appliance\r\nfrom uhd_restpy import sessionassistant\r\n```\r\n\r\n\r\n## start scripting\r\n```python\r\n\"\"\"this script demonstrates how to get started with ixnetwork_restpy scripting.\r\n\r\nthe script demonstrates the following:\r\n    - connect to an ixnetwork test platform, authenticate, add a new session and clear the config\r\n    - create 1 tx port and 1 rx port\r\n    - create traffic from the tx port to the rx port\r\n    - start traffic\r\n    - print statistics\r\n    - stop traffic\r\n\"\"\"\r\nfrom ixnetwork_restpy import sessionassistant\r\n\r\n\r\n# create a test tool session\r\nsession_assistant = sessionassistant(ipaddress='127.0.0.1', \r\n    loglevel=sessionassistant.loglevel_info, \r\n    clearconfig=true)\r\nixnetwork = session_assistant.ixnetwork\r\n\r\n# create tx and rx port resources\r\nport_map = session_assistant.portmapassistant()\r\nport_map.map('10.36.74.26', 2, 13, name='tx')\r\nport_map.map('10.36.74.26', 2, 14, name='rx')\r\n\r\n# create a trafficitem resource\r\n# trafficitem acts a a high level container for configelement resources\r\n# configelement is a high level container for individual highlevelstream resources\r\ntraffic_item = ixnetwork.traffic.trafficitem.add(name='traffic test', traffictype='raw')\r\ntraffic_item.endpointset.add(\r\n    sources=ixnetwork.vport.find(name='^tx').protocols.find(), \r\n    destinations=ixnetwork.vport.find(name='^rx').protocols.find())\r\n\r\n# using the traffic configelement resource\r\n# update the frame rate\r\n# update the transmission control\r\ntraffic_config = traffic_item.configelement.find()\r\ntraffic_config.framerate.update(type='percentlinerate', rate='100')\r\ntraffic_config.transmissioncontrol.update(type='continuous')\r\n\r\n# adjust ethernet stack fields\r\ndestination_mac = traffic_config.stack.find(stacktypeid='ethernet').field.find(fieldtypeid='ethernet.header.destinationaddress')\r\ndestination_mac.update(valuetype='valuelist', valuelist=['00:00:fa:ce:fa:ce', '00:00:de:ad:be:ef'], trackingenabled=true)\r\n\r\n# push configelement settings down to highlevelstream resources\r\ntraffic_item.generate()\r\n\r\n# connect ports to hardware test ports\r\n# apply traffic to hardware\r\n# start traffic\r\nport_map.connect(forceownership=true)\r\nixnetwork.traffic.apply()\r\nixnetwork.traffic.startstatelesstrafficblocking()\r\n\r\n# print statistics\r\nprint(session_assistant.statviewassistant('port statistics'))\r\nprint(session_assistant.statviewassistant('traffic item statistics'))\r\nprint(session_assistant.statviewassistant('flow statistics'))\r\n\r\n# stop traffic\r\nixnetwork.traffic.stopstatelesstrafficblocking()\r\n```\r\n\r\n## supported server versions\r\nthis client package supports versions 8.52 and up of the following servers:\r\n* linux ixnetwork api server\r\n* windows ixnetwork gui\r\n* windows ixnetwork connection manager\r\n\r\n## documentation\r\ndocumentation is available using the following methods:\r\n* [online web based documentation](https://openixia.github.io/ixnetwork_restpy/#/overview)\r\n  * [samples](https://openixia.github.io/ixnetwork_restpy/#/samples)\r\n  * [api reference](https://openixia.github.io/ixnetwork_restpy/#/reference)\r\n\r\n* documentation available in the online doc browser is also inlined in each class, property and method and can be viewed using the python help command\r\n  ```python\r\n  from ixnetwork_restpy import sessionassistant\r\n  \r\n  help(sessionassistant)\r\n  ```\r\n\r\n## additional samples\r\nvisit the [openixia ixnetwork-restpy sample site maintained by solution architects](https://github.com/openixia/ixnetwork/tree/master/restpy) for in-depth end-to-end samples that demonstrate the following:\r\n* building a configuration\r\n  * from scratch\r\n  * from an existing ixnetwork configuration\r\n* running the configuration\r\n  * connecting ports to hardware\r\n  * starting protocols\r\n  * starting traffic\r\n* getting statistics\r\n  * port stats\r\n  * traffic stats\r\n\r\n## contributing\r\nthe purpose of this repository is to allow users to clone the auto generated code. we do not accept pull requests in this repository.\r\n\r\nfeedback such as bugs/enhancements/questions regarding the ixnetwork-restpy package is welcomed by opening a [github issue](https://github.com/openixia/ixnetwork_restpy/issues).\r\n",
+  "docs_url": null,
+  "keywords": "ixnetwork performance traffic generator real world ixia automation",
+  "license": "mit",
+  "name": "ixnetwork-restpy",
+  "package_url": "https://pypi.org/project/ixnetwork-restpy/",
+  "project_url": "https://pypi.org/project/ixnetwork-restpy/",
+  "project_urls": {
+    "Homepage": "https://github.com/OpenIxia/ixnetwork_restpy"
+  },
+  "release_url": "https://pypi.org/project/ixnetwork-restpy/1.1.11/",
+  "requires_dist": [
+    "requests",
+    "websocket-client"
+  ],
+  "requires_python": ">=2.7, <4",
+  "summary": "the ixnetwork python client",
+  "version": "1.1.11",
+  "releases": [],
+  "developers": [
+    "andy.balogh@keysight.com",
+    "keysight_isg_ixnetwork_team"
+  ],
+  "kwds": "ixnetwork_restpy ixnetwork restpy ixia uhd_restpy",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_ixnetwork_restpy",
+  "homepage": "https://github.com/openixia/ixnetwork_restpy",
+  "release_count": 108,
+  "dependency_ids": [
+    "pypi_requests",
+    "pypi_websocket_client"
+  ]
+}

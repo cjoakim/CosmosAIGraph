@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu library or lesser general public license (lgpl)",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "programming language :: sql",
+    "topic :: database",
+    "topic :: database :: front-ends"
+  ],
+  "description": ".. image:: https://travis-ci.org/chtd/psycopg2cffi.svg?branch=master\n    :target: https://travis-ci.org/chtd/psycopg2cffi\n\n.. contents::\n\nan implementation of the psycopg2 module using cffi.\nthe module is currently compatible with psycopg 2.5.\n\ninstallation\n------------\n\nyou can  install ``psycopg2cffi`` from pypi::\n\n    pip install psycopg2cffi\n\nor from source::\n\n    python setup.py install\n\ninstallation requirements are the same as for ``psycopg2`` - you must\nhave ``libpq`` headers, ``pg_config`` somewhere on your ``$path``,\npython development headers (``python-dev`` or similar), and ``ffi-dev``\nfor ``cffi``.\ninstallation was tested on ubuntu 12.04, ubuntu 14.04, centos (rhel 5.0),\nos x 10.8 - 10.10.\nit should be possible to make it work on windows, but i did not test it.\n\nthis module works under cpython 2.7+, cpython 3.5+, pypy 2 and pypy 3\n(pypy version should be at least 2.0, which is ancient history now).\n\nto use this package with django or sqlalchemy invoke a compatibility\nhook (for example, from ``settings.py`` in case of django, or\nfrom a ``psycopg2.py`` file in site-packages of your virtual env)::\n\n    from psycopg2cffi import compat\n    compat.register()\n\nthis will map ``psycopg2cffi`` to ``psycopg2``, so now any code that\ndoes ``import psycopg2`` will use ``psycopg2cffi``.\n\nsubmit issues to https://github.com/chtd/psycopg2cffi/issues\n\nif you notice that ``psycopg2cffi`` under pypy is noticeably slower than\n``psycopg2`` under cpython, submit this to the issues too - it should\nnot be the case.\n\nthis is a port of (michael van tellingen port\nhttps://github.com/mvantellingen/psycopg2-ctypes\nof alex gaynor's rpython port\n(https://bitbucket.org/alex_gaynor/pypy-postgresql/overview) of psycopg2 to\npython + ctypes) to cffi.\n\nthe main motivation for a port was speed - the writeup with benchmarks\nis here: http://chtd.ru/blog/bystraya-rabota-s-postgres-pod-pypy/?lang=en\n\ndevelopment\n-----------\n\nto run tests, install ``pytest`` and run them with::\n\n    py.test psycopg2cffi\n\nnote that for ``cffi>=1.0`` you need to run ``python setup.py develop``\nto rebuild ``_libpq.so`` (if you changed bindings).\nand for ``cffi<1.0`` (only pypy 2.5 and below) you need to run\n``python setup.py install`` once to generate ``psycopg2cffi/_config.py``,\notherwise each import will run config and notify tests will fail.\n\nyou can also run django tests. you need to checkout django source, add\npsycopg2 compat as described above, and, from the root of the django checkout::\n\n    pythonpath=`pwd` ./tests/runtests.py \\\n        --settings=psycopg2cffi.tests.psycopg2_tests.testconfig\n\nin case of problems with django tests, see official django docs\nhttps://docs.djangoproject.com/en/dev/internals/contributing/writing-code/unit-tests/#running-the-unit-tests\n\nrelease notes\n-------------\n\n2.9.0 (27 jan 2021)\n+++++++++++++++++++\n\nnew features:\n\n- add execute_batch and execute_values to psycopg2cffi.extras by @fake-name in #98\n- psycopg2cffi.extras: add fetch argument to execute_values() by @intelfx in #119\n\nbug fixes:\n\n- fix for async keyword argument when creating a connection by @donalm in #104\n- allow adapters to be passed as arguments of cursor's execute() by @amigrave in #107\n- fix installation with old cffi by dand-oss in #116\n\ntest changes:\n\n- dropped support for python 2.6, 3.3, 3.4 by @thedrow in #109\n- added support for python 3.8 by @thedrow in #108\n\n2.8.1 (31 july 2018)\n++++++++++++++++++++\n\nrelease date added\n\n2.8.0 (31 july 2018)\n++++++++++++++++++++\n\npython 3.7 support by unimarijo (#92) and farrokhi (#101).\n``async_`` should be used instead of ``async`` in public apis\n(but the change is backwards compatible,\n``async`` is still supported as an alias).\n\n\n2.7.7 (13 november 2017)\n++++++++++++++++++++++++\n\nbugfixes:\n\n- support installation under postgres 10 by jimbattin (#90)\n\n\n2.7.6 (11 august 2017)\n++++++++++++++++++++++\n\nbugfixes:\n\n- named cursors fix (affects newer django) by danchr (#81)\n- python 3 fixes in extras by avanov (#83)\n- null check added in fast parser utils by malthe (#79)\n\n\n2.7.5 (31 october 2016)\n+++++++++++++++++++++++\n\nwindows wheels support added by ryoyoko (#69).\n\nbugfixes:\n\n- non-ascii notice messages fixed by asterite3 (#72)\n- asis with non-text/bytes fixed by jinty (#64)\n- silent failures in copy_from and copy_to fixed by gobbledygook88 (#62)\n- infinite recursion error fixed in errorcodes.lookup (#68)\n- typos in readme fixed by pavlokapyshin (#66)\n\n\n2.7.4 (01 april 2016)\n+++++++++++++++++++++\n\nfix a regression with error handling when establishing the connection (#61)\n\n\n2.7.3 (29 february 2016)\n++++++++++++++++++++++++\n\nfix a bug with non-ascii error messages (#56)\n\n\n2.7.2 (06 august 2015)\n++++++++++++++++++++++\n\nfixes for freebsd support by andrew coleman\n\n\n2.7.1 (20 june 2015)\n++++++++++++++++++++\n\njsonb support\n\n\n2.7.0 (21 may 2015)\n+++++++++++++++++++\n\nuse cffi 1.0, which makes installation more robust, and import is faster.\ncffi<1.0 is used now only for pypy 2.5 or below.\n\n\n2.6.1 (08 feb 2015)\n+++++++++++++++++++\n\nfixing things that were broken in 2.6.0:\n\n- fix issue #31 - bigint on 32-bit\n- fix issue #32 - register_type and unicode\n\n\n2.6.0 (24 jan 2015)\n+++++++++++++++++++\n\n- python 3 support\n- a bit faster reading of int, long, float, double fields\n\n2.5.1 (14 may 2014)\n+++++++++++++++++++\n\n- small bugfixes\n\n2.5.0 (3 sep 2013)\n++++++++++++++++++\n\n- bugfixes and a lot of compatibility work by daniele varrazzo\n\n\nolder releases lack release notes, first release of psycopg2cffi around nov 2012.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "lgpl",
+  "name": "psycopg2cffi",
+  "package_url": "https://pypi.org/project/psycopg2cffi/",
+  "project_url": "https://pypi.org/project/psycopg2cffi/",
+  "project_urls": {
+    "Homepage": "http://github.com/chtd/psycopg2cffi"
+  },
+  "release_url": "https://pypi.org/project/psycopg2cffi/2.9.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": ".. image:: https://travis-ci.org/chtd/psycopg2cffi.svg?branch=master",
+  "version": "2.9.0",
+  "releases": [],
+  "developers": [
+    "konstantin.lopuhin@chtd.ru",
+    "konstantin_lopuhin"
+  ],
+  "kwds": "psycopg2cffi psycopg2_tests psycopg2 psycopg pg_config",
+  "license_kwds": "lgpl",
+  "libtype": "pypi",
+  "id": "pypi_psycopg2cffi",
+  "homepage": "http://github.com/chtd/psycopg2cffi",
+  "release_count": 23,
+  "dependency_ids": []
+}

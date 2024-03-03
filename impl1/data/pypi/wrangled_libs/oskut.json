@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "natural language :: thai",
+    "programming language :: python :: 3",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: text processing :: linguistic"
+  ],
+  "description": "# oskut (out-of-domain stacked cut for word segmentation) \n\n[![](https://img.shields.io/badge/license-mit-green)](https://github.com/mrpeerat/oskut/blob/main/license)\n[![open in collab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mrpeerat/oskut/blob/main/notebooks/oskut_how1.ipynb)\n\nhandling cross- and out-of-domain samples in thai word segmentation (acl 2021 findings) <br>\nstacked ensemble framework and deepcut as baseline model<br>\n\n## read more:\n- paper: [handling cross- and out-of-domain samples in thai word segmentation](https://aclanthology.org/2021.findings-acl.86.pdf)\n- related work (emnlp2020): [domain adaptation of thai word segmentation models using stacked ensemble](https://github.com/mrpeerat/sefr_cut)\n- blog: [domain adaptation \u0e01\u0e31\u0e1a\u0e15\u0e31\u0e27\u0e15\u0e31\u0e14\u0e04\u0e33 \u0e21\u0e31\u0e19\u0e14\u0e35\u0e22\u0e4c\u0e08\u0e23\u0e34\u0e07\u0e46](https://medium.com/@pingloaf)\n\n## citation\n```\n@inproceedings{limkonchotiwat-etal-2021-handling,\n    title = \"handling cross- and out-of-domain samples in {t}hai word segmentation\",\n    author = \"limkonchotiwat, peerat  and\n      phatthiyaphaibun, wannaphong  and\n      sarwar, raheem  and\n      chuangsuwanich, ekapol  and\n      nutanong, sarana\",\n    booktitle = \"findings of the association for computational linguistics: acl-ijcnlp 2021\",\n    month = aug,\n    year = \"2021\",\n    address = \"online\",\n    publisher = \"association for computational linguistics\",\n    url = \"https://aclanthology.org/2021.findings-acl.86\",\n    doi = \"10.18653/v1/2021.findings-acl.86\",\n    pages = \"1003--1016\",\n}\n```\n\n## install\n> pip install oskut\n\n## how to use\n### requirements\n- python >= 3.6\n- tensorflow >= 2.0\n\n## example\n- example files are on [oskut example notebook](https://github.com/mrpeerat/oskut/blob/main/notebooks/oskut_how1.ipynb)\n- [try it on colab](https://colab.research.google.com/github/mrpeerat/oskut/blob/main/notebooks/oskut_how1.ipynb)\n### load engine & engine mode\n- ws, tnhc, and best !!\n  - ws: the model trained on wisesight-1000 and test on wisesight-160\n  - ws-augment-60p: the model trained on wisesight-1000 augmented with top-60% entropy\n  - tnhc: the model trained on tnhc (80:20 train&test split with random seed 42)\n  - best: the model trained on best-2010 corpus (nectec)\n  - scads: the model trained on vistec-tp-th-2021 corpus (vistec)\n  ```python\n  oskut.load_model(engine='ws')\n  # or\n  oskut.load_model(engine='ws-augment-60p')\n  # or\n  oskut.load_model(engine='tnhc')\n  # or\n  oskut.load_model(engine='best')\n  # or\n  oskut.load_model(engine='scads')\n  # or\n  ```\n- tl-deepcut-xxxx\n  - we also provide transfer learning of deepcut on 'wisesight' as tl-deepcut-ws, 'tnhc' as tl-deepcut-tnhc, and 'lst20' as tl-deepcut-lst20\n  ```python\n  oskut.load_model(engine='tl-deepcut-ws')\n  # or\n  oskut.load_model(engine='tl-deepcut-tnhc')\n  ```\n- deepcut\n  - we also provide the original deepcut\n  ```python\n  oskut.load_model(engine='deepcut')\n  ```\n### segment example\nyou need to read the paper to understand why we have $k$ value!\n- tokenize with default k-value\n  ```python\n  oskut.load_model(engine='ws')\n  print(oskut.oskut(['\u0e40\u0e1a\u0e35\u0e22\u0e23\u0e4c\u0e22\u0e39\u0e44\u0e21\u0e48\u0e2d\u0e23\u0e48\u0e2d\u0e22\u0e2a\u0e31\u0e14\u0e46\u0e46\u0e46\u0e46\u0e46\u0e1f\u0e46']))\n  print(oskut.oskut('\u0e40\u0e1a\u0e35\u0e22\u0e23\u0e4c\u0e22\u0e39\u0e44\u0e21\u0e48\u0e2d\u0e23\u0e48\u0e2d\u0e22\u0e2a\u0e31\u0e14\u0e46\u0e46\u0e46\u0e46\u0e46\u0e1f\u0e46'))\n\n  ['\u0e40\u0e1a\u0e35\u0e22\u0e23\u0e4c', '\u0e22\u0e39', '\u0e44\u0e21\u0e48', '\u0e2d\u0e23\u0e48\u0e2d\u0e22', '\u0e2a\u0e31\u0e14', '\u0e46', '\u0e46', '\u0e46', '\u0e46', '\u0e46\u0e1f', '\u0e46']\n  ['\u0e40\u0e1a\u0e35\u0e22\u0e23\u0e4c', '\u0e22\u0e39', '\u0e44\u0e21\u0e48', '\u0e2d\u0e23\u0e48\u0e2d\u0e22', '\u0e2a\u0e31\u0e14', '\u0e46', '\u0e46', '\u0e46', '\u0e46', '\u0e46\u0e1f', '\u0e46']\n  ```\n- tokenize with a various k-value\n  ```python\n  oskut.load_model(engine='ws')\n  print(oskut.oskut('\u0e40\u0e1a\u0e35\u0e22\u0e23\u0e4c\u0e22\u0e39\u0e44\u0e21\u0e48\u0e2d\u0e23\u0e48\u0e2d\u0e22\u0e2a\u0e31\u0e14\u0e46\u0e46\u0e46\u0e46\u0e46\u0e1f\u0e46',k=5)) # refine only 5% of character number\n  print(oskut.oskut('\u0e40\u0e1a\u0e35\u0e22\u0e23\u0e4c\u0e22\u0e39\u0e44\u0e21\u0e48\u0e2d\u0e23\u0e48\u0e2d\u0e22\u0e2a\u0e31\u0e14\u0e46\u0e46\u0e46\u0e46\u0e46\u0e1f\u0e46',k=100)) # refine 100% of character number\n\n  ['\u0e40\u0e1a\u0e35\u0e22\u0e23\u0e4c', '\u0e22\u0e39', '\u0e44\u0e21\u0e48', '\u0e2d\u0e23\u0e48\u0e2d\u0e22', '\u0e2a\u0e31\u0e14', '\u0e46', '\u0e46', '\u0e46', '\u0e46', '\u0e46\u0e1f\u0e46']\n  ['\u0e40\u0e1a\u0e35\u0e22\u0e23\u0e4c', '\u0e22\u0e39', '\u0e44\u0e21\u0e48', '\u0e2d\u0e23\u0e48\u0e2d\u0e22', '\u0e2a\u0e31\u0e14', '\u0e46', '\u0e46', '\u0e46', '\u0e46', '\u0e46\u0e1f', '\u0e46']\n  ```\n\n## new datasets!!\nvistec-tp-th-2021 (vistec), which consists of 49,997 text samples from twitter (2017-2019). \\\nvistec corpus contains 49,997 sentences with 3.39m words where the collection was manually annotated by linguists on four tasks, namely word segmentation, misspelling detection and correction, and named entity recognition. \\\nfor more information and download [click here](https://github.com/mrpeerat/oskut/tree/main/vistec-tp-th-2021)\n\n## performance\n### model\n<img src=\"https://user-images.githubusercontent.com/21156980/117925237-24f10500-b321-11eb-8e69-8efee577e1d7.png\" width=\"600\"/>\n\n### without data augmentation\n<img src=\"https://user-images.githubusercontent.com/21156980/117925463-75686280-b321-11eb-8e39-fcdae3c569ea.png\" width=\"600\"/>\n\n### with data augmentation\n<img src=\"https://user-images.githubusercontent.com/21156980/117925342-4d78ff00-b321-11eb-80fa-59d71ce46a5a.png\" width=\"600\"/>\n<img src=\"https://user-images.githubusercontent.com/21156980/117925347-4f42c280-b321-11eb-86a3-475b876b8851.png\" width=\"600\"/>\n\n\nthank you many code from\n\n- [deepcut](https://github.com/rkcosmos/deepcut) (baseline model) : we used some of code from deepcut to perform transfer learning \n\n\n\n",
+  "docs_url": null,
+  "keywords": "thai,word segmentation,deep learning",
+  "license": "mit",
+  "name": "oskut",
+  "package_url": "https://pypi.org/project/OSKut/",
+  "project_url": "https://pypi.org/project/OSKut/",
+  "project_urls": {
+    "Homepage": "https://github.com/mrpeerat/OSKut"
+  },
+  "release_url": "https://pypi.org/project/OSKut/1.3/",
+  "requires_dist": [
+    "tensorflow (>=2.0.0)",
+    "pandas",
+    "scipy",
+    "numpy",
+    "scikit-learn",
+    "pyahocorasick (<=1.4.0)"
+  ],
+  "requires_python": "",
+  "summary": "handling cross- and out-of-domain samples in thai word segmentation (acl 2020 findings) stacked ensemble framework and deepcut as baseline model",
+  "version": "1.3",
+  "releases": [],
+  "developers": [
+    "peerat.limkonchotiwat@gmail.com",
+    "peerat_limkonchotiwat"
+  ],
+  "kwds": "deepcut corpus segmentation thai annotated",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_oskut",
+  "homepage": "https://github.com/mrpeerat/oskut",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_pyahocorasick",
+    "pypi_scikit_learn",
+    "pypi_scipy",
+    "pypi_tensorflow"
+  ]
+}

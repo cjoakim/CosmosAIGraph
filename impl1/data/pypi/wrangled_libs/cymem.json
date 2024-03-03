@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: cython",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering"
+  ],
+  "description": "<a href=\"https://explosion.ai\"><img src=\"https://explosion.ai/assets/img/logo.svg\" width=\"125\" height=\"125\" align=\"right\" /></a>\n\n# cymem: a cython memory helper\n\ncymem provides two small memory-management helpers for cython. they make it easy\nto tie memory to a python object's life-cycle, so that the memory is freed when\nthe object is garbage collected.\n\n[![tests](https://github.com/explosion/cymem/actions/workflows/tests.yml/badge.svg)](https://github.com/explosion/cymem/actions/workflows/tests.yml)\n[![pypi version](https://img.shields.io/pypi/v/cymem.svg?style=flat-square&logo=pypi&logocolor=white)](https://pypi.python.org/pypi/cymem)\n[![conda version](https://img.shields.io/conda/vn/conda-forge/cymem.svg?style=flat-square&logo=conda-forge&logocolor=white)](https://anaconda.org/conda-forge/cymem)\n[![python wheels](https://img.shields.io/badge/wheels-%e2%9c%93-4c1.svg?longcache=true&style=flat-square&logo=python&logocolor=white)](https://github.com/explosion/wheelwright/releases)\n\n## overview\n\nthe most useful is `cymem.pool`, which acts as a thin wrapper around the calloc\nfunction:\n\n```python\nfrom cymem.cymem cimport pool\ncdef pool mem = pool()\ndata1 = <int*>mem.alloc(10, sizeof(int))\ndata2 = <float*>mem.alloc(12, sizeof(float))\n```\n\nthe `pool` object saves the memory addresses internally, and frees them when the\nobject is garbage collected. typically you'll attach the `pool` to some cdef'd\nclass. this is particularly handy for deeply nested structs, which have\ncomplicated initialization functions. just pass the `pool` object into the\ninitializer, and you don't have to worry about freeing your struct at all \u2014 all\nof the calls to `pool.alloc` will be automatically freed when the `pool`\nexpires.\n\n## installation\n\ninstallation is via [pip](https://pypi.python.org/pypi/pip), and requires\n[cython](http://cython.org). before installing, make sure that your `pip`,\n`setuptools` and `wheel` are up to date.\n\n```bash\npip install -u pip setuptools wheel\npip install cymem\n```\n\n## example use case: an array of structs\n\nlet's say we want a sequence of sparse matrices. we need fast access, and a\npython list isn't performing well enough. so, we want a c-array or c++ vector,\nwhich means we need the sparse matrix to be a c-level struct \u2014 it can't be a\npython class. we can write this easily enough in cython:\n\n```python\n\"\"\"example without cymem\n\nto use an array of structs, we must carefully walk the data structure when\nwe deallocate it.\n\"\"\"\n\nfrom libc.stdlib cimport calloc, free\n\ncdef struct sparserow:\n    size_t length\n    size_t* indices\n    double* values\n\ncdef struct sparsematrix:\n    size_t length\n    sparserow* rows\n\ncdef class matrixarray:\n    cdef size_t length\n    cdef sparsematrix** matrices\n\n    def __cinit__(self, list py_matrices):\n        self.length = 0\n        self.matrices = null\n\n    def __init__(self, list py_matrices):\n        self.length = len(py_matrices)\n        self.matrices = <sparsematrix**>calloc(len(py_matrices), sizeof(sparsematrix*))\n\n        for i, py_matrix in enumerate(py_matrices):\n            self.matrices[i] = sparse_matrix_init(py_matrix)\n\n    def __dealloc__(self):\n        for i in range(self.length):\n            sparse_matrix_free(self.matrices[i])\n        free(self.matrices)\n\n\ncdef sparsematrix* sparse_matrix_init(list py_matrix) except null:\n    sm = <sparsematrix*>calloc(1, sizeof(sparsematrix))\n    sm.length = len(py_matrix)\n    sm.rows = <sparserow*>calloc(sm.length, sizeof(sparserow))\n    cdef size_t i, j\n    cdef dict py_row\n    cdef size_t idx\n    cdef double value\n    for i, py_row in enumerate(py_matrix):\n        sm.rows[i].length = len(py_row)\n        sm.rows[i].indices = <size_t*>calloc(sm.rows[i].length, sizeof(size_t))\n        sm.rows[i].values = <double*>calloc(sm.rows[i].length, sizeof(double))\n        for j, (idx, value) in enumerate(py_row.items()):\n            sm.rows[i].indices[j] = idx\n            sm.rows[i].values[j] = value\n    return sm\n\n\ncdef void* sparse_matrix_free(sparsematrix* sm) except *:\n    cdef size_t i\n    for i in range(sm.length):\n        free(sm.rows[i].indices)\n        free(sm.rows[i].values)\n    free(sm.rows)\n    free(sm)\n```\n\nwe wrap the data structure in a python ref-counted class at as low a level as we\ncan, given our performance constraints. this allows us to allocate and free the\nmemory in the `__cinit__` and `__dealloc__` cython special methods.\n\nhowever, it's very easy to make mistakes when writing the `__dealloc__` and\n`sparse_matrix_free` functions, leading to memory leaks. cymem prevents you from\nwriting these deallocators at all. instead, you write as follows:\n\n```python\n\"\"\"example with cymem.\n\nmemory allocation is hidden behind the pool class, which remembers the\naddresses it gives out.  when the pool object is garbage collected, all of\nits addresses are freed.\n\nwe don't need to write matrixarray.__dealloc__ or sparse_matrix_free,\neliminating a common class of bugs.\n\"\"\"\nfrom cymem.cymem cimport pool\n\ncdef struct sparserow:\n    size_t length\n    size_t* indices\n    double* values\n\ncdef struct sparsematrix:\n    size_t length\n    sparserow* rows\n\n\ncdef class matrixarray:\n    cdef size_t length\n    cdef sparsematrix** matrices\n    cdef pool mem\n\n    def __cinit__(self, list py_matrices):\n        self.mem = none\n        self.length = 0\n        self.matrices = null\n\n    def __init__(self, list py_matrices):\n        self.mem = pool()\n        self.length = len(py_matrices)\n        self.matrices = <sparsematrix**>self.mem.alloc(self.length, sizeof(sparsematrix*))\n        for i, py_matrix in enumerate(py_matrices):\n            self.matrices[i] = sparse_matrix_init(self.mem, py_matrix)\n\ncdef sparsematrix* sparse_matrix_init_cymem(pool mem, list py_matrix) except null:\n    sm = <sparsematrix*>mem.alloc(1, sizeof(sparsematrix))\n    sm.length = len(py_matrix)\n    sm.rows = <sparserow*>mem.alloc(sm.length, sizeof(sparserow))\n    cdef size_t i, j\n    cdef dict py_row\n    cdef size_t idx\n    cdef double value\n    for i, py_row in enumerate(py_matrix):\n        sm.rows[i].length = len(py_row)\n        sm.rows[i].indices = <size_t*>mem.alloc(sm.rows[i].length, sizeof(size_t))\n        sm.rows[i].values = <double*>mem.alloc(sm.rows[i].length, sizeof(double))\n        for j, (idx, value) in enumerate(py_row.items()):\n            sm.rows[i].indices[j] = idx\n            sm.rows[i].values[j] = value\n    return sm\n```\n\nall that the `pool` class does is remember the addresses it gives out. when the\n`matrixarray` object is garbage-collected, the `pool` object will also be\ngarbage collected, which triggers a call to `pool.__dealloc__`. the `pool` then\nfrees all of its addresses. this saves you from walking back over your nested\ndata structures to free them, eliminating a common class of errors.\n\n## custom allocators\n\nsometimes external c libraries use private functions to allocate and free\nobjects, but we'd still like the laziness of the `pool`.\n\n```python\nfrom cymem.cymem cimport pool, wrapmalloc, wrapfree\ncdef pool mem = pool(wrapmalloc(priv_malloc), wrapfree(priv_free))\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "cymem",
+  "package_url": "https://pypi.org/project/cymem/",
+  "project_url": "https://pypi.org/project/cymem/",
+  "project_urls": {
+    "Homepage": "https://github.com/explosion/cymem"
+  },
+  "release_url": "https://pypi.org/project/cymem/2.0.8/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "manage calls to calloc/free through cython",
+  "version": "2.0.8",
+  "releases": [],
+  "developers": [
+    "matt@explosion.ai",
+    "matthew_honnibal"
+  ],
+  "kwds": "cymem cython sparse_matrix_init_cymem memory remembers",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_cymem",
+  "homepage": "https://github.com/explosion/cymem",
+  "release_count": 19,
+  "dependency_ids": []
+}

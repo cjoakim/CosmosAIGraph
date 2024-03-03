@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries"
+  ],
+  "description": "linode_api4\n===========\n\nthe official python library for the `linode api v4`_ in python.\n\n.. _linode api v4: https://developers.linode.com/api/v4/\n\n.. image:: https://img.shields.io/github/actions/workflow/status/linode/linode_api4-python/main.yml?label=tests\n    :target: https://img.shields.io/github/actions/workflow/status/linode/linode_api4-python/main.yml?label=tests\n\n.. image:: https://badge.fury.io/py/linode-api4.svg\n   :target: https://badge.fury.io/py/linode-api4\n\n.. image:: https://readthedocs.org/projects/linode-api4/badge/?version=latest\n   :target: https://linode-api4.readthedocs.io/en/latest/?badge=latest\n   :alt: documentation status\n\ninstallation\n------------\n::\n\n    pip install linode_api4\n\nbuilding from source\n--------------------\n\nto build and install this package:\n\n- clone this repository\n- ``python3 -m pip install .``\n\nusage\n=====\n\nquick start\n-----------\n\nin order to authenticate with the linode api, you will first need to create a\n`linode personal access token`_ with your desired account permissions.\n\nthe following code sample can help you quickly get started using this package.\n\n.. code-block:: python\n\n    from linode_api4 import linodeclient, instance\n\n    # create a linode api client\n    client = linodeclient(\"my_personal_access_token\")\n\n    # create a new linode\n    new_linode, root_pass = client.linode.instance_create(\n        ltype=\"g6-nanode-1\",\n        region=\"us-southeast\",\n        image=\"linode/ubuntu22.04\",\n        label=\"my-ubuntu-linode\"\n    )\n\n    # print info about the linode\n    print(\"linode ip:\", new_linode.ipv4[0])\n    print(\"linode root password:\", root_pass)\n\n    # list all linodes on the account\n    my_linodes = client.linode.instances()\n\n    # print the label of every linode on the account\n    print(\"all instances:\")\n    for instance in my_linodes:\n        print(instance.label)\n\n    # list linodes in the us-southeast region\n    specific_linodes = client.linode.instances(\n        instance.region == \"us-southeast\"\n    )\n\n    # print the label of each linode in us-southeast\n    print(\"instances in us-southeast:\")\n    for instance in specific_linodes:\n        print(instance.label)\n\n    # delete the new instance\n    new_linode.delete()\n\ncheck out the `getting started guide`_ for more details on getting started\nwith this library, or read `the docs`_ for more extensive documentation.\n\n.. _linode personal access token: https://www.linode.com/docs/products/tools/api/guides/manage-api-tokens/\n.. _getting started guide: https://linode-api4.readthedocs.io/en/latest/guides/getting_started.html\n.. _the docs: https://linode-api4.readthedocs.io/en/latest/index.html\n\nexamples\n--------\n\nsee the `install on a linode`_ example project for a simple use case demonstrating\nmany of the features of this library.\n\n.. _install on a linode: https://github.com/linode/linode_api4-python/tree/master/examples/install-on-linode\n\ncontributing\n============\n\ntests\n-----\n\ntests live in the ``test`` directory.  when invoking tests, make sure you are\nin the root directory of this project.  to run the full suite across all\nsupported python versions, use tox_:\n\n.. code-block:: shell\n\n   tox\n\nrunning tox also runs pylint and coverage reports.\n\nthe test suite uses fixtures stored as json in ``test/fixtures``.  these files\ncontain sanitized json responses from the api - the file name is the url called\nto produce the response, replacing any slashes with underscores.\n\ntest classes should extend ``test.base.clientbasecase``.  this provides them\nwith ``self.client``, a ``linodeclient`` object that is set up to work with\ntests.  importantly, any get request made by this object will be mocked to\nretrieve data from the test fixtures.  this includes lazy-loaded objects using\nthis client (and by extension related models).\n\nwhen testing against requests other than get requests, ``self.mock_post`` (and\nequivalent methods for other http verbs) can be used in a ``with`` block to\nmock out the intended request type.  these functions accept the relative path\nfrom the api base url that should be returned, for example::\n\n   # this should return the result of get /linode/instances/123\n   with self.mock_post('/linode/instances/123'):\n     linode = self.client.linode.instance_create('g6-standard-2', 'us-east')\n     self.assertequal(linode.id, 123) # passes\n\n.. _tox: http://tox.readthedocs.io\n\n\nintegration tests\n-----------------\nintegration tests live in the ``test/integration`` directory.\n\npre-requisite\n^^^^^^^^^^^^^^^^^\nexport linode api token as `linode_token` before running integration tests::\n\n    export linode_token = $(your_token)\n\nrunning the tests\n^^^^^^^^^^^^^^^^^\nrun the tests locally using the make command. run the entire test suite using command below::\n\n    make testint\n\nto run a specific package, use environment variable `integration_test_path` with `testint` command::\n\n    make integration_test_path=\"linode_client\" testint\n\nto run a specific model test suite, set the environment variable `test_model` using file name in `integration/models`::\n\n    make test_model=\"test_account.py\" testint\n\nlastly to run a specific test case use environment variable `test_case` with `testint` command::\n\n    make test_case=test_get_domain_record testint\n\ndocumentation\n-------------\n\nthis library is documented with sphinx_.  docs live in the ``docs`` directory.\nthe easiest way to build the docs is to run ``sphinx-autobuild`` in that\nfolder::\n\n    sphinx-autobuild docs docs/build\n\nafter running this command, ``sphinx-autobuild`` will host a local web server\nwith the rendered documentation.\n\nclasses and functions inside the library should be annotated with sphinx-compliant\ndocstrings which will be used to automatically generate documentation for the\nlibrary.  when contributing, be sure to update documentation or include new\ndocstrings where applicable to keep the library's documentation up to date\nand useful.\n\n**missing or inaccurate documentation is a bug**.  if you notice that the\ndocumentation for this library is out of date or unclear, please\n`open an issue`_ to make us aware of the problem.\n\n.. _sphinx: http://www.sphinx-doc.org/en/master/index.html\n.. _open an issue: https://github.com/linode/linode_api4-python/issues/new\n\ncontributing\n------------\n\nplease follow the `contributing guidelines`_ when making a contribution.\n\n.. _contributing guidelines: https://github.com/linode/linode_api4-python/blob/master/contributing.md\n",
+  "docs_url": null,
+  "keywords": "linode cloud hosting infrastructure",
+  "license": "bsd 3-clause license",
+  "name": "linode-api4",
+  "package_url": "https://pypi.org/project/linode-api4/",
+  "project_url": "https://pypi.org/project/linode-api4/",
+  "project_urls": {
+    "Homepage": "https://github.com/linode/linode_api4-python"
+  },
+  "release_url": "https://pypi.org/project/linode-api4/5.11.0/",
+  "requires_dist": [
+    "requests",
+    "polling",
+    "tox ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "the official python sdk for linode api v4",
+  "version": "5.11.0",
+  "releases": [],
+  "developers": [
+    "developers@linode.com",
+    "linode"
+  ],
+  "kwds": "linode_api4 linode_token specific_linodes linode_client linodes",
+  "license_kwds": "bsd 3-clause license",
+  "libtype": "pypi",
+  "id": "pypi_linode_api4",
+  "homepage": "https://github.com/linode/linode_api4-python",
+  "release_count": 43,
+  "dependency_ids": [
+    "pypi_polling",
+    "pypi_requests",
+    "pypi_tox"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "environment :: web environment :: mozilla",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: macos :: macos x",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: build tools",
+    "topic :: software development :: compilers",
+    "topic :: software development :: debuggers"
+  ],
+  "description": "livereload\n==========\n\nthis is a brand new livereload in version 2.0.0.\n\n`download on pypi <https://pypi.python.org/pypi/livereload>`_\n\ninstallation\n------------\n\npython livereload is designed for web developers who know python.\n\ninstall python livereload with pip::\n\n    $ pip install livereload\n\nif you don't have pip installed, try easy_install::\n\n    $ easy_install livereload\n\ncommand line interface\n----------------------\n\npython livereload provides a command line utility, ``livereload``, for starting a server in a directory.\n\nby default, it will listen to port 35729, the common port for `livereload browser extensions`_. ::\n\n    $ livereload --help\n    usage: livereload [-h] [-p port] [-w wait] [directory]\n\n    start a `livereload` server\n\n    positional arguments:\n      directory             directory to watch for changes\n\n    optional arguments:\n      -h, --help            show this help message and exit\n      -p port, --port port  port to run `livereload` server on\n      -w wait, --wait wait  time delay before reloading\n\n.. _`livereload browser extensions`: http://feedback.livereload.com/knowledgebase/articles/86242-how-do-i-install-and-use-the-browser-extensions-\n\nolder versions of python livereload used a ``guardfile`` to describe optional additional rules for files to watch and build commands to run on changes.  this conflicted with other tools that used the same file for their configuration and is no longer supported since python livereload version 2.0.0.  instead of a ``guardfile`` you can now write a python script using very similar syntax and run it instead of the command line application.\n\nscript example: sphinx\n----------------------\n\nhere's a simple example script that rebuilds sphinx documentation:\n\n.. code:: python\n\n    #!/usr/bin/env python\n    from livereload import server, shell\n    server = server()\n    server.watch('docs/*.rst', shell('make html', cwd='docs'))\n    server.serve(root='docs/_build/html')\n\nrun it, then open http://localhost:5500/ and you can see the documentation changes in real time.\n\ndeveloper guide\n---------------\n\nthe new livereload server is designed for developers. it can power a\nwsgi application now:\n\n.. code:: python\n\n    from livereload import server, shell\n\n    server = server(wsgi_app)\n\n    # run a shell command\n    server.watch('static/*.stylus', 'make static')\n\n    # run a function\n    def alert():\n        print('foo')\n    server.watch('foo.txt', alert)\n\n    # output stdout into a file\n    server.watch('style.less', shell('lessc style.less', output='style.css'))\n\n    server.serve()\n\nthe ``server`` class accepts parameters:\n\n- app: a wsgi application\n- watcher: a watcher instance, you don't have to create one\n\nserver.watch\n~~~~~~~~~~~~\n\n``server.watch`` can watch a filepath, a directory and a glob pattern::\n\n    server.watch('path/to/file.txt')\n    server.watch('directory/path/')\n    server.watch('glob/*.pattern')\n\nyou can also use other library (for example: formic) for more powerful\nfile adding::\n\n    for filepath in formic.fileset(include=\"**.css\"):\n        server.watch(filepath, 'make css')\n\nyou can delay a certain seconds to send the reload signal::\n\n    # delay 2 seconds for reloading\n    server.watch('path/to/file', delay=2)\n\nserver.setheader\n~~~~~~~~~~~~~~~~\n\n```server.setheader``` can be used to add one or more headers to the http \nresponse::\n\n    server.setheader('access-control-allow-origin', '*')\n    server.setheader('access-control-allow-methods', '*')\n\n\nserver.serve\n~~~~~~~~~~~~\n\nsetup a server with ``server.serve`` method. it can create a static server\nand a livereload server::\n\n    # use default settings\n    server.serve()\n\n    # livereload on another port\n    server.serve(liveport=35729)\n\n    # use custom host and port\n    server.serve(port=8080, host='localhost')\n\n    # open the web browser on startup, based on $browser environment variable\n    server.serve(open_url_delay=5, debug=false)\n\n    # set a custom default file to open\n    server.serve(default_filename='example.html')\n\n\nshell\n~~~~~\n\nthe powerful ``shell`` function will help you to execute shell commands. you\ncan use it with ``server.watch``::\n\n    # you can redirect command output to a file\n    server.watch('style.less', shell('lessc style.less', output='style.css'))\n\n    # commands can be a list\n    server.watch('style.less', shell(['lessc', 'style.less'], output='style.css'))\n\n    # working with makefile\n    server.watch('assets/*.styl', shell('make assets', cwd='assets'))\n\n\nframeworks integration\n----------------------\n\nlivereload can work seamlessly with your favorite framework.\n\ndjango\n~~~~~~\n\nfor django there is a management command included.\n\nto use simply\n\n- add ``'livereload'`` to your ``installed_apps`` and\n- then run ``./manage.py livereload``.\n\nfor available options like host and ports please refer to ``./manage.py livereload -h``.\n\nto automagically serve static files like the native ``runserver`` command you have to use `dj-static <https://github.com/kennethreitz/dj-static>`_. (follow the simple instructions there).\n\nflask\n~~~~~\n\nwrap flask with livereload is much simpler:\n\n.. code:: python\n\n    # app is a flask object\n    app = create_app()\n\n    # remember to use debug mode for templates auto reload\n    # https://github.com/lepture/python-livereload/issues/144\n    app.debug = true\n\n    server = server(app.wsgi_app)\n    # server.watch\n    server.serve()\n\n\nbottle\n~~~~~~\n\nwrap the ``bottle`` app with livereload server:\n\n.. code:: python\n\n    # without this line templates won't auto reload because of caching.\n    # http://bottlepy.org/docs/dev/tutorial.html#templates\n    bottle.debug(true)\n\n    app = bottle()\n    server = server(app)\n    # server.watch\n    server.serve()\n\nsecurity report\n---------------\n\nto report a security vulnerability, please use the\n`tidelift security contact <https://tidelift.com/security>`_.\ntidelift will coordinate the fix and disclosure.",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "livereload",
+  "package_url": "https://pypi.org/project/livereload/",
+  "project_url": "https://pypi.org/project/livereload/",
+  "project_urls": {
+    "Homepage": "https://github.com/lepture/python-livereload"
+  },
+  "release_url": "https://pypi.org/project/livereload/2.6.3/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python livereload is an awesome tool for web developers",
+  "version": "2.6.3",
+  "releases": [],
+  "developers": [
+    "hsiaoming_yang",
+    "me@lepture.com"
+  ],
+  "kwds": "livereload wsgi_app pip localhost easy_install",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_livereload",
+  "homepage": "https://github.com/lepture/python-livereload",
+  "release_count": 31,
+  "dependency_ids": []
+}

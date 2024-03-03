@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "license :: osi approved :: bsd license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: security",
+    "topic :: software development :: quality assurance"
+  ],
+  "description": "# dlint\n\n[![ci](https://github.com/dlint-py/dlint/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/dlint-py/dlint/actions/workflows/ci.yml)\n[![coverage status](https://coveralls.io/repos/github/dlint-py/dlint/badge.svg?branch=master)](https://coveralls.io/github/dlint-py/dlint?branch=master)\n[![python versions](https://img.shields.io/pypi/pyversions/dlint.svg)](https://pypi.org/project/dlint/)\n[![pypi version](https://img.shields.io/pypi/v/dlint.svg)](https://pypi.org/project/dlint/)\n\ndlint is a tool for encouraging best coding practices and helping ensure python code is secure.\n\n> the most important thing i have done as a programmer in recent years is to\n> aggressively pursue static code analysis. even more valuable than the\n> hundreds of serious bugs i have prevented with it is the change in mindset\n> about the way i view software reliability and code quality.\n>\n> - [john carmack, 2011](https://www.gamasutra.com/view/news/128836/indepth_static_code_analysis.php)\n\n> for a static analysis project to succeed, developers must feel they benefit\n> from and enjoy using it.\n>\n> - [lessons from building static analysis tools at google](https://cacm.acm.org/magazines/2018/4/226371-lessons-from-building-static-analysis-tools-at-google/fulltext)\n\nfor documentation and a list of rules see [docs](https://github.com/dlint-py/dlint/tree/master/docs).\n\n# installing\n\n```bash\n$ python -m pip install dlint\n```\n\nand double check that it was installed correctly:\n\n```bash\n$ python -m flake8 -h\nusage: flake8 [options] file file ...\n\n...\n\ninstalled plugins: dlint: 0.14.1, mccabe: 0.5.3, pycodestyle: 2.2.0, pyflakes: 1.3.0\n```\n\nnote the `dlint: 0.14.1`.\n\n# using\n\ndlint builds on `flake8` to perform its linting. this provides many\nuseful features without re-inventing the wheel.\n\n## cli\n\nlet's run a simple check:\n\n```bash\n$ cat << eof > test.py\nprint(\"test1\")\nexec('print(\"test2\")')\neof\n```\n\n```bash\n$ python test.py\ntest1\ntest2\n```\n\n```bash\n$ python -m flake8 --select=duo test.py\ntest.py:2:1: duo105 use of \"exec\" is insecure\n```\n\n- _why is this insecure? to learn more visit [`/docs/linters/duo105.md`](https://github.com/dlint-py/dlint/blob/master/docs/linters/duo105.md)._\n- _why `duo`? dlint was originally developed by the [duo labs](https://duo.com/blog/introducing-dlint-robust-static-analysis-for-python) team._\n\nthe `--select=duo` flag tells `flake8` to only run dlint lint rules.\n\nfrom here, we can easily run dlint against a directory of python code:\n\n```bash\n$ python -m flake8 --select=duo /path/to/code\n```\n\nto fine-tune your linting, check out the `flake8` help:\n\n```bash\n$ python -m flake8 --help\n```\n\n## inline editor\n\ndlint results can also be included inline in your editor for fast feedback.\nthis typically requires an editor plugin or extension. here are some starting\npoints for common editors:\n\n- vim: [https://github.com/vim-syntastic/syntastic](https://github.com/vim-syntastic/syntastic)\n- emacs: [https://github.com/flycheck/flycheck](https://github.com/flycheck/flycheck)\n- sublime: [https://github.com/sublimelinter/sublimelinter-flake8](https://github.com/sublimelinter/sublimelinter-flake8)\n- pycharm: [https://foxmask.net/post/2016/02/17/pycharm-running-flake8/](https://foxmask.net/post/2016/02/17/pycharm-running-flake8/)\n- atom: [https://atom.io/packages/linter-flake8](https://atom.io/packages/linter-flake8)\n- visual studio code: [https://code.visualstudio.com/docs/python/linting#\\_flake8](https://code.visualstudio.com/docs/python/linting#_flake8)\n\n# integrating\n\ndlint can easily be integrated into ci pipelines, or anything really.\n\nfor more information and examples see ['how can i integrate dlint into xyz?'](https://github.com/dlint-py/dlint/tree/master/docs#how-can-i-integrate-dlint-into-xyz).\n\n# custom plugins\n\ndlint's custom plugins are built on a [simple naming convention](https://packaging.python.org/guides/creating-and-discovering-plugins/#using-naming-convention),\nand rely on [python modules](https://docs.python.org/3/distutils/examples.html#pure-python-distribution-by-module).\nto make a dlint custom plugin use the following conventions:\n\n- the python module name **must** start with `dlint_plugin_`.\n- the linter class name **must** start with `dlint`.\n- the linter class **should** inherit from `dlint.linters.base.baselinter`.\n  - if for some reason you'd like to avoid this, then you **must** implement\n    the `get_results` function appropriately and inherit from `ast.nodevisitor`.\n\nsee an [example plugin](https://github.com/dlint-py/dlint-plugin-example) for further details.\n\n# developing\n\nfirst, install development packages:\n\n```bash\n$ python -m pip install -r requirements.txt\n$ python -m pip install -r requirements-dev.txt\n$ python -m pip install -e .\n```\n\n## testing\n\n```bash\n$ pytest\n```\n\n## linting\n\n```bash\n$ flake8\n```\n\n## coverage\n\n```bash\n$ pytest --cov\n```\n\n## benchmarking\n\n```bash\n$ pytest -k test_benchmark_run --benchmark-py-file /path/to/file.py tests/test_benchmark/\n```\n\nor get benchmark results for linters individually:\n\n```bash\n$ pytest -k test_benchmark_individual --benchmark-py-file /path/to/file.py tests/test_benchmark/\n```\n\nor run against a single linter:\n\n```bash\n$ pytest -k test_benchmark_individual[duo138-badrecatastrophicuselinter] --benchmark-py-file /path/to/file.py tests/test_benchmark/\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-3-clause",
+  "name": "dlint",
+  "package_url": "https://pypi.org/project/dlint/",
+  "project_url": "https://pypi.org/project/dlint/",
+  "project_urls": {
+    "Homepage": "https://github.com/dlint-py/dlint"
+  },
+  "release_url": "https://pypi.org/project/dlint/0.14.1/",
+  "requires_dist": [
+    "flake8 (>=3.6.0)"
+  ],
+  "requires_python": "",
+  "summary": "dlint is a tool for encouraging best coding practices and helping ensure python code is secure.",
+  "version": "0.14.1",
+  "releases": [],
+  "developers": [],
+  "kwds": "dlint dlint_plugin_ pyversions pytest pip",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_dlint",
+  "homepage": "https://github.com/dlint-py/dlint",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_flake8"
+  ]
+}

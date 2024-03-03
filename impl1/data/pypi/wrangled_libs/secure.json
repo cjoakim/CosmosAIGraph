@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "\n# secure.py\n\n[![image](https://img.shields.io/pypi/v/secure.svg)](https://pypi.org/project/secure/)\n[![python 3](https://img.shields.io/badge/python-3-blue.svg)](https://www.python.org/downloads/)\n[![image](https://img.shields.io/pypi/l/secure.svg)](https://pypi.org/project/secure/)\n[![image](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n[![build status](https://travis-ci.org/typeerror/secure.svg?branch=master)](https://travis-ci.org/typeerror/secure)\n\nsecure.py \ud83d\udd12 is a lightweight package that adds optional security headers for python web frameworks.\n\n## supported python web frameworks\n\n[aiohttp](https://docs.aiohttp.org), [bottle](https://bottlepy.org), [cherrypy](https://cherrypy.org), [django](https://www.djangoproject.com), [falcon](https://falconframework.org), [fastapi](https://fastapi.tiangolo.com), [flask](http://flask.pocoo.org), [hug](http://www.hug.rest), [masonite](https://docs.masoniteproject.com), [pyramid](https://trypyramid.com), [quart](https://pgjones.gitlab.io/quart/), [responder](https://python-responder.org), [sanic](https://sanicframework.org), [starlette](https://www.starlette.io/), [tornado](https://www.tornadoweb.org/)\n\n## install\n\n**pip**:\n\n```console\npip install secure\n```\n\n**pipenv**:\n\n```console\npipenv install secure\n```\n\nafter installing secure:\n\n```python\nimport secure\n\nsecure_headers = secure.secure()\n```\n\n## secure headers\n\n### example\n\n`secure_headers.framework(response)`\n\n**default http response headers:**\n\n```http\nstrict-transport-security: max-age=63072000; includesubdomains\nx-frame-options: sameorigin\nx-xss-protection: 0\nx-content-type-options: nosniff\nreferrer-policy: no-referrer, strict-origin-when-cross-origin\ncache-control: no-store\n```\n\n## policy builders\n\n### policy builder example\n\n**content security policy builder:**\n\n```python\ncsp = (\n        secure.contentsecuritypolicy()\n        .default_src(\"'none'\")\n        .base_uri(\"'self'\")\n        .connect_src(\"'self'\", \"api.spam.com\")\n        .frame_src(\"'none'\")\n        .img_src(\"'self'\", \"static.spam.com\")\n    )\nsecure_headers = secure.secure(csp=csp)\n```\n\n**http response headers:**\n\n```http\nstrict-transport-security: max-age=63072000; includesubdomains\nx-frame-options: sameorigin\nx-xss-protection: 0\nx-content-type-options: nosniff\nreferrer-policy: no-referrer, strict-origin-when-cross-origin\ncache-control: no-store\ncontent-security-policy: default-src 'none'; base-uri 'self'; connect-src 'self' api.spam.com; frame-src 'none'; img-src 'self' static.spam.com\"\n```\n\n## documentation\n\nplease see the full set of documentation at [https://secure.readthedocs.io](https://secure.readthedocs.io)\n\n## fastapi example\n\n```python\nimport uvicorn\nfrom fastapi import fastapi\nimport secure\n\napp = fastapi()\n\nserver = secure.server().set(\"secure\")\n\ncsp = (\n    secure.contentsecuritypolicy()\n    .default_src(\"'none'\")\n    .base_uri(\"'self'\")\n    .connect_src(\"'self'\" \"api.spam.com\")\n    .frame_src(\"'none'\")\n    .img_src(\"'self'\", \"static.spam.com\")\n)\n\nhsts = secure.stricttransportsecurity().include_subdomains().preload().max_age(2592000)\n\nreferrer = secure.referrerpolicy().no_referrer()\n\npermissions_value = (\n    secure.permissionspolicy().geolocation(\"self\", \"'spam.com'\").vibrate()\n)\n\ncache_value = secure.cachecontrol().must_revalidate()\n\nsecure_headers = secure.secure(\n    server=server,\n    csp=csp,\n    hsts=hsts,\n    referrer=referrer,\n    permissions=permissions_value,\n    cache=cache_value,\n)\n\n\n@app.middleware(\"http\")\nasync def set_secure_headers(request, call_next):\n    response = await call_next(request)\n    secure_headers.framework.fastapi(response)\n    return response\n\n\n@app.get(\"/\")\nasync def root():\n    return {\"message\": \"secure\"}\n\n\nif __name__ == \"__main__\":\n    uvicorn.run(app, port=8081, host=\"localhost\")\n```\n\n**http response headers:**\n\n```http\nserver: secure\nstrict-transport-security: includesubdomains; preload; max-age=2592000\nx-frame-options: sameorigin\nx-xss-protection: 0\nx-content-type-options: nosniff\ncontent-security-policy: default-src 'none'; base-uri 'self'; connect-src 'self'api.spam.com; frame-src 'none'; img-src 'self' static.spam.com\nreferrer-policy: no-referrer\ncache-control: must-revalidate\npermissions-policy: geolocation=(self 'spam.com'), vibrate=()\n```\n\n## resources\n\n- [kennethreitz/setup.py: \ud83d\udce6 a human\u2019s ultimate guide to setup.py.](https://github.com/kennethreitz/setup.py)\n- [owasp - secure headers project](https://www.owasp.org/index.php/owasp_secure_headers_project)\n- [mozilla web security](https://infosec.mozilla.org/guidelines/web_security)\n- [securityheaders.com](https://securityheaders.com)\n- [mdn web docs](https://developer.mozilla.org/en-us/docs/web/http/headers#security)\n- [web.dev](https://web.dev)\n- [the world wide web consortium (w3c)](https://www.w3.org)\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "secure",
+  "package_url": "https://pypi.org/project/secure/",
+  "project_url": "https://pypi.org/project/secure/",
+  "project_urls": {
+    "Homepage": "https://github.com/TypeError/secure"
+  },
+  "release_url": "https://pypi.org/project/secure/0.3.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "a lightweight package that adds security headers for python web frameworks.",
+  "version": "0.3.0",
+  "releases": [],
+  "developers": [
+    "caleb@derail.io",
+    "caleb_kinney"
+  ],
+  "kwds": "secure_headers set_secure_headers py pypi owasp_secure_headers_project",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_secure",
+  "homepage": "https://github.com/typeerror/secure",
+  "release_count": 12,
+  "dependency_ids": []
+}

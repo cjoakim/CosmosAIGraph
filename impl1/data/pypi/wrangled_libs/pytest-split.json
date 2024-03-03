@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "typing :: typed"
+  ],
+  "description": "# pytest-split\n\n[![pypi](https://img.shields.io/pypi/v/pytest-split?style=flat-square)](https://pypi.python.org/pypi/pytest-split/)\n[![pypi - python version](https://img.shields.io/pypi/pyversions/pytest-split?style=flat-square)](https://pypi.python.org/pypi/pytest-split/)\n[![pypi - license](https://img.shields.io/pypi/l/pytest-split?style=flat-square)](https://pypi.python.org/pypi/pytest-split/)\n[![coookiecutter - wolt](https://img.shields.io/badge/cookiecutter-wolt-00c2e8?style=flat-square&logo=cookiecutter&logocolor=d4aa00&link=https://github.com/woltapp/wolt-python-package-cookiecutter)](https://github.com/woltapp/wolt-python-package-cookiecutter)\n\n\n---\n\n**documentation**: [https://jerry-git.github.io/pytest-split](https://jerry-git.github.io/pytest-split)\n\n**source code**: [https://github.com/jerry-git/pytest-split](https://github.com/jerry-git/pytest-split)\n\n**pypi**: [https://pypi.org/project/pytest-split/](https://pypi.org/project/pytest-split/)\n\n---\n\npytest plugin which splits the test suite to equally sized \"sub suites\" based on test execution time.\n\n## motivation\n* splitting the test suite is a prerequisite for parallelization (who does not want faster ci builds?). it's valuable to have sub suites which execution time is around the same.\n* [`pytest-test-groups`](https://pypi.org/project/pytest-test-groups/) is great but it does not take into account the execution time of sub suites which can lead to notably unbalanced execution times between the sub suites.\n* [`pytest-xdist`](https://pypi.org/project/pytest-xdist/) is great but it's not suitable for all use cases.\nfor example, some test suites may be fragile considering the order in which the tests are executed.\nthis is of course a fundamental problem in the suite itself but sometimes it's not worth the effort to refactor, especially if the suite is huge (and smells a bit like legacy).\nadditionally, `pytest-split` may be a better fit in some use cases considering distributed execution.\n\n## installation\n```sh\npip install pytest-split\n```\n\n## usage\nfirst we have to store test durations from a complete test suite run.\nthis produces .test_durations file which should be stored in the repo in order to have it available during future test runs.\nthe file path is configurable via `--durations-path` cli option.\n```sh\npytest --store-durations\n```\n\nthen we can have as many splits as we want:\n```sh\npytest --splits 3 --group 1\npytest --splits 3 --group 2\npytest --splits 3 --group 3\n```\n\ntime goes by, new tests are added and old ones are removed/renamed during development. no worries!\n`pytest-split` assumes average test execution time (calculated based on the stored information) for every test which does not have duration information stored.\nthus, there's no need to store durations after changing the test suite.\nhowever, when there are major changes in the suite compared to what's stored in .test_durations, it's recommended to update the duration information with `--store-durations` to ensure that the splitting is in balance.\n\nthe splitting algorithm can be controlled with the `--splitting-algorithm` cli option and defaults to `duration_based_chunks`. for more information about the different algorithms and their tradeoffs, please see the section below.\n\n### cli commands\n#### slowest-tests\nlists the slowest tests based on the information stored in the test durations file. see `slowest-tests --help` for more\n information.\n\n## interactions with other pytest plugins\n* [`pytest-random-order`](https://github.com/jbasko/pytest-random-order) and [`pytest-randomly`](https://github.com/pytest-dev/pytest-randomly):\n   \u26a0\ufe0f `pytest-split` running with the `duration_based_chunks` algorithm is **incompatible** with test-order-randomization plugins.\n  test selection in the groups happens after randomization, potentially causing some tests to be selected in several groups and others not at all.\n  instead, a global random seed needs to be computed before running the tests (for example using `$random` from the shell) and that single seed then needs to be used for all groups by setting the `--random-order-seed` option.\n\n* [`nbval`](https://github.com/computationalmodelling/nbval): `pytest-split` could, in principle, break up a single ipython notebook into different test groups. this most likely causes broken up pieces to fail (for the very least, package `import`s are usually done at cell 1, and so, any broken up piece that doesn't contain cell 1 will certainly fail). to avoid this, after splitting step is done, test groups are reorganized based on a simple algorithm illustrated in the following cartoon:\n\n![image](https://user-images.githubusercontent.com/14086031/145830494-07afcaf0-5a0f-4817-b9ee-f84a459652a8.png)\n\nwhere the letters (a to e) refer to individual ipython notebooks, and the numbers refer to the corresponding cell number.\n\n## splitting algorithms\nthe plugin supports multiple algorithms to split tests into groups.\neach algorithm makes different tradeoffs, but generally `least_duration` should give more balanced groups.\n\n| algorithm      | maintains absolute order | maintains relative order | split quality | works with random ordering |\n|----------------|--------------------------|--------------------------|---------------|----------------------------|\n| duration_based_chunks | \u2705                | \u2705                       | good          | \u274c                         |\n| least_duration | \u274c                       | \u2705                       | better        | \u2705                         |\n\nexplanation of the terms in the table:\n* absolute order: whether each group contains all tests between first and last element in the same order as the original list of tests\n* relative order: whether each test in each group has the same relative order to its neighbours in the group as in the original list of tests\n* works with random ordering: whether the algorithm works with test-shuffling tools such as [`pytest-randomly`](https://github.com/pytest-dev/pytest-randomly)\n\nthe `duration_based_chunks` algorithm aims to find optimal boundaries for the list of tests and every test group contains all tests between the start and end boundary.\nthe `least_duration` algorithm walks the list of tests and assigns each test to the group with the smallest current duration.\n\n\n[**demo with github actions**](https://github.com/jerry-git/pytest-split-gh-actions-demo)\n\n\n## development\n\n* clone this repository\n* requirements:\n  * [poetry](https://python-poetry.org/)\n  * python 3.7+\n* create a virtual environment and install the dependencies\n\n```sh\npoetry install\n```\n\n* activate the virtual environment\n\n```sh\npoetry shell\n```\n\n### testing\n\n```sh\npytest\n```\n\n### documentation\n\nthe documentation is automatically generated from the content of the [docs directory](./docs) and from the docstrings\n of the public signatures of the source code. the documentation is updated and published as a [github project page\n ](https://pages.github.com/) automatically as part each release.\n\n### releasing\n\ntrigger the [draft release workflow](https://github.com/jerry-git/pytest-split/actions/workflows/draft_release.yml)\n(press _run workflow_). this will update the changelog & version and create a github release which is in _draft_ state.\n\nfind the draft release from the\n[github releases](https://github.com/jerry-git/pytest-split/releases) and publish it. when\n a release is published, it'll trigger [release](https://github.com/jerry-git/pytest-split/blob/master/.github/workflows/release.yml) workflow which creates pypi\n release and deploys updated documentation.\n\n### pre-commit\n\npre-commit hooks run all the auto-formatters (e.g. `black`), linters (e.g. `mypy`, `ruff`), and other quality\n checks to make sure the changeset is in good shape before a commit/push happens.\n\nyou can install the hooks with (runs for each commit):\n\n```sh\npre-commit install\n```\n\nor if you want them to run only for each push:\n\n```sh\npre-commit install -t pre-push\n```\n\nor if you want e.g. want to run all checks manually for all files:\n\n```sh\npre-commit run --all-files\n```\n\n---\n\nthis project was generated using the [wolt-python-package-cookiecutter](https://github.com/woltapp/wolt-python-package-cookiecutter) template.\n",
+  "docs_url": null,
+  "keywords": "pytest,plugin,split,tests",
+  "license": "mit",
+  "name": "pytest-split",
+  "package_url": "https://pypi.org/project/pytest-split/",
+  "project_url": "https://pypi.org/project/pytest-split/",
+  "project_urls": {
+    "Documentation": "https://jerry-git.github.io/pytest-split",
+    "Homepage": "https://jerry-git.github.io/pytest-split",
+    "Repository": "https://github.com/jerry-git/pytest-split"
+  },
+  "release_url": "https://pypi.org/project/pytest-split/0.8.1/",
+  "requires_dist": [
+    "pytest (>=5,<8)"
+  ],
+  "requires_python": ">=3.7.1,<4.0",
+  "summary": "pytest plugin which splits the test suite to equally sized sub suites based on test execution time.",
+  "version": "0.8.1",
+  "releases": [],
+  "developers": [
+    "jerry.pussinen@gmail.com",
+    "jerry_pussinen"
+  ],
+  "kwds": "pytest pyversions split splitting pypi",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_split",
+  "homepage": "https://jerry-git.github.io/pytest-split",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_pytest"
+  ]
+}

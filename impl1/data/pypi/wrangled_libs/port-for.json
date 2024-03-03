@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: mit license",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http :: site management",
+    "topic :: system :: installation/setup",
+    "topic :: system :: systems administration"
+  ],
+  "description": "========\nport-for\n========\n\n.. image:: https://img.shields.io/pypi/v/port-for.svg\n   :target: https://pypi.python.org/pypi/port-for\n   :alt: pypi version\n\n.. image:: http://codecov.io/github/kmike/port-for/coverage.svg?branch=master\n   :target: http://codecov.io/github/kmike/port-for?branch=master\n   :alt: code coverage\n\n\n``port-for`` is a command-line utility and a python library that\nhelps with local tcp ports management.\n\nit can find an unused tcp localhost port and remember the association::\n\n    $ sudo port-for foo\n    37987\n\nthis can be useful when you are installing a stack of software\nwith multiple parts needing port numbers.\n\n.. note::\n\n    if you're looking for a temporary port then ``socket.bind((host, 0))``\n    is your best bet::\n\n        >>> import socket\n        >>> s = socket.socket()\n        >>> s.bind((\"\", 0))\n        >>> s.getsockname()\n        ('0.0.0.0', 54485)\n\n    ``port-for`` is necessary when you need *persistent* free local port number.\n\n    ``port-for`` is the exact opposite of ``s.bind((host, 0))``\n    in the sense that it shouldn't return ports that ``s.bind((host, 0))``\n    may return (because such ports are likely to be temporary used by os).\n\n\nthere are several rules ``port-for`` is trying to follow to find and\nreturn a new unused port:\n\n1) port must be unused: ``port-for`` checks this by trying to connect\n   to the port and to bind to it.\n\n2) port must be iana unassigned and otherwise not well-known:\n   this is acheived by maintaining unassigned ports list\n   (parsed from iana and wikipedia).\n\n3) port shouldn't be inside ephemeral port range.\n   this is important because ports from ephemeral port range can\n   be assigned temporary by os (e.g. by machine's ip stack) and\n   this may prevent service restart in some circumstances.\n   ``port-for`` doesn't return ports from ephemeral port ranges\n   configured at the current machine.\n\n4) other heuristics are also applied: ``port-for`` tries to return\n   a port from larger port ranges; it also doesn't return ports that are\n   too close to well-known ports.\n\ninstallation\n============\n\nsystem-wide using easy_install (something like ``python-setuptools``\nshould be installed)::\n\n    sudo pip install port-for\n\nor::\n\n    sudo easy_install port-for\n\nor inside a virtualenv::\n\n    pip install port-for\n\nscript usage\n============\n\n``port-for <foo>`` script finds an unused port and associates\nit with ``<foo>``. subsequent calls return the same port number.\n\nthis utility doesn't actually bind the port or otherwise prevents the\nport from being taken by another software. it tries to select\na port that is less likely to be used by another software\n(and that is unused at the time of calling of course). utility also makes\nsure that ``port-for bar`` won't return the same port as ``port-for foo``\non the same machine.\n\n::\n\n    $ sudo port-for foo\n    37987\n\n    $ port-for foo\n    37987\n\nyou may want to develop some naming conventions (e.g. prefix your app names)\nin order to enable multiple sites on the same server::\n\n    $ sudo port-for example.com/apache\n    35456\n\nplease note that ``port-for`` script requires read and write access\nto ``/etc/port-for.conf``. this usually means regular users can read\nport values but sudo is required to associate a new port.\n\nlist all associated ports::\n\n    $ port-for --list\n    foo: 37987\n    example.com/apache: 35456\n\nremove an association::\n\n    $ sudo port-for --unbind foo\n    $ port-for --list\n    example.com/apache: 35456\n\n\nlibrary usage\n=============\n\n::\n\n    >>> import port_for\n    >>> port_for.select_random()\n    37774\n\n    >>> port_for.select_random()\n    48324\n\n    >>> 80 in port_for.available_good_ports()\n    false\n\n    >>> port_for.get_port()\n    34455\n\n    >>> port_for.get_port(\"1234\")\n    1234\n\n    >>> port_for.get_port((2000, 3000))\n    2345\n\n    >>> port_for.get_port({4001, 4003, 4005})\n    4005\n\n    >>> port_for.get_port([{4000, 4001}, (4100, 4200)])\n    4111\n\ndig into source code for more.\n\ncontributing\n============\n\ndevelopment happens at github: https://github.com/kmike/port-for/\n\nissue tracker: https://github.com/kmike/port-for/issues/new\n\nrelease\n=======\n\ninstall pipenv and --dev dependencies first, then run:\n\n.. code-block::\n\n    pipenv run tbump [new_version]\n",
+  "docs_url": null,
+  "keywords": "port,posix",
+  "license": "copyright (c) 2012 mikhail korobov  permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"software\"), to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, subject to the following conditions:  the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software. ",
+  "name": "port-for",
+  "package_url": "https://pypi.org/project/port-for/",
+  "project_url": "https://pypi.org/project/port-for/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/kmike/port-for/issues",
+    "Changelog": "https://github.com/kmike/port-for/blob/v0.7.2/CHANGES.rst",
+    "Source": "https://github.com/kmike/port-for/"
+  },
+  "release_url": "https://pypi.org/project/port-for/0.7.2/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "utility that helps with local tcp ports management. it can find an unused tcp localhost port and remember the association.",
+  "version": "0.7.2",
+  "releases": [],
+  "developers": [
+    "fizyk+pypi@fizyk.dev",
+    "kmike84@gmail.com"
+  ],
+  "kwds": "port_for get_port available_good_ports port ports",
+  "license_kwds": "copyright liable liability copies noninfringement",
+  "libtype": "pypi",
+  "id": "pypi_port_for",
+  "homepage": "",
+  "release_count": 13,
+  "dependency_ids": []
+}

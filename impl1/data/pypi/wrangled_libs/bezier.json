@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: scientific/engineering :: mathematics"
+  ],
+  "description": "``bezier``\n==========\n\n    helper for b |eacute| zier curves, triangles, and higher order objects\n\n|linux-build| |macos-build| |windows-build| |coverage|\n\n|docs| |zenodo| |joss|\n\n.. |eacute| unicode:: u+000e9 .. latin small letter e with acute\n   :trim:\n\nthis library provides:\n\n* support for b |eacute| zier `curves`_\n* support for b |eacute| zier `triangles`_\n\ndive in and take a look!\n\n.. image:: https://raw.githubusercontent.com/dhermes/bezier/2023.7.28/docs/images/triangles6q_and_7q.png\n   :align: center\n\nwhy b |eacute| zier?\n--------------------\n\na b |eacute| zier curve (and triangle, etc.) is a parametric curve\nthat uses the `bernstein basis`_:\n\n.. image:: https://raw.githubusercontent.com/dhermes/bezier/2023.7.28/docs/images/bernstein_basis.png\n   :align: center\n\nto define a curve as a linear combination:\n\n.. image:: https://raw.githubusercontent.com/dhermes/bezier/2023.7.28/docs/images/bezier_defn.png\n   :align: center\n\nthis comes from the fact that the weights sum to one:\n\n.. image:: https://raw.githubusercontent.com/dhermes/bezier/2023.7.28/docs/images/sum_to_unity.png\n   :align: center\n\nthis can be generalized to higher order by considering three, four, etc.\nnon-negative weights that sum to one (in the above we have the two\nnon-negative weights ``s`` and ``1 - s``).\n\ndue to their simple form, b |eacute| zier curves:\n\n* can easily model geometric objects as parametric curves, triangles, etc.\n* can be computed in an efficient and numerically stable way via\n  `de casteljau's algorithm`_\n* can utilize convex optimization techniques for many algorithms (such as\n  curve-curve intersection), since curves (and triangles, etc.)\n  are convex combinations of the basis\n\nmany applications -- as well as the history of their development --\nare described in\n\"the bernstein polynomial basis: a centennial `retrospective`_\",\nfor example;\n\n* aids physical analysis using finite element methods (`fem`_) on\n  isogeometric models by using geometric shape functions called\n  `nurbs`_ to represent data\n* used in robust control of dynamic systems; utilizes convexity to\n  create a hull of curves\n\n.. _retrospective: https://dx.doi.org/10.1016/j.cagd.2012.03.001\n.. _bernstein basis: https://en.wikipedia.org/wiki/bernstein_polynomial\n.. _de casteljau's algorithm: https://en.wikipedia.org/wiki/de_casteljau%27s_algorithm\n.. _fem: https://en.wikipedia.org/wiki/finite_element_method\n.. _nurbs: https://en.wikipedia.org/wiki/non-uniform_rational_b-spline\n\ninstalling\n----------\n\nthe ``bezier`` python package can be installed with `pip`_:\n\n.. code-block:: console\n\n   $ python     -m pip install --upgrade bezier\n   $ python3.11 -m pip install --upgrade bezier\n   $ # to install optional dependencies, e.g. sympy\n   $ python     -m pip install --upgrade bezier[full]\n\nto install a pure python version (i.e. with no binary extension):\n\n.. code-block:: console\n\n   $ bezier_no_extension=true \\\n   >   python   -m pip install --upgrade bezier --no-binary=bezier\n\n``bezier`` is open-source, so you can alternatively grab the source\ncode from `github`_ and install from source.\n\n.. _pip: https://pip.pypa.io\n.. _github: https://github.com/dhermes/bezier/\n\ngetting started\n---------------\n\nfor example, to create a curve:\n\n.. code-block:: python\n\n   >>> import bezier\n   >>> import numpy as np\n   >>> nodes1 = np.asfortranarray([\n   ...     [0.0, 0.5, 1.0],\n   ...     [0.0, 1.0, 0.0],\n   ... ])\n   >>> curve1 = bezier.curve(nodes1, degree=2)\n\nthe intersection (points) between two curves can\nalso be determined:\n\n.. code-block:: python\n\n   >>> nodes2 = np.asfortranarray([\n   ...     [0.0, 0.25,  0.5, 0.75, 1.0],\n   ...     [0.0, 2.0 , -2.0, 2.0 , 0.0],\n   ... ])\n   >>> curve2 = bezier.curve.from_nodes(nodes2)\n   >>> intersections = curve1.intersect(curve2)\n   >>> intersections\n   array([[0.31101776, 0.68898224, 0. , 1. ],\n          [0.31101776, 0.68898224, 0. , 1. ]])\n   >>> s_vals = np.asfortranarray(intersections[0, :])\n   >>> points = curve1.evaluate_multi(s_vals)\n   >>> points\n   array([[0.31101776, 0.68898224, 0. , 1. ],\n          [0.42857143, 0.42857143, 0. , 0. ]])\n\nand then we can plot these curves (along with their\nintersections):\n\n.. code-block:: python\n\n   >>> import seaborn\n   >>> seaborn.set()\n   >>>\n   >>> ax = curve1.plot(num_pts=256)\n   >>> _ = curve2.plot(num_pts=256, ax=ax)\n   >>> lines = ax.plot(\n   ...     points[0, :], points[1, :],\n   ...     marker=\"o\", linestyle=\"none\", color=\"black\")\n   >>> _ = ax.axis(\"scaled\")\n   >>> _ = ax.set_xlim(-0.125, 1.125)\n   >>> _ = ax.set_ylim(-0.0625, 0.625)\n\n.. image:: https://raw.githubusercontent.com/dhermes/bezier/2023.7.28/docs/images/curves1_and_13.png\n   :align: center\n\nfor api-level documentation, check out the b |eacute| zier python\n`package`_ documentation.\n\ndevelopment\n-----------\n\nto work on adding a feature or to run the functional tests, see the\n`development doc`_ for more information on how to get\nstarted.\n\ncitation\n--------\n\nfor publications that use ``bezier``, there is a `joss paper`_ that can be\ncited. the following bibtex entry can be used:\n\n.. code-block:: rest\n\n   @article{hermes2017,\n     doi = {10.21105/joss.00267},\n     url = {https://doi.org/10.21105%2fjoss.00267},\n     year = {2017},\n     month = {aug},\n     publisher = {the open journal},\n     volume = {2},\n     number = {16},\n     pages = {267},\n     author = {danny hermes},\n     title = {helper for b{\\'{e}}zier curves, triangles, and higher order objects},\n     journal = {the journal of open source software}\n   }\n\na **particular** version of this library can be cited via a zenodo doi; see\na full `list by version`_.\n\n.. _joss paper: https://joss.theoj.org/papers/10.21105/joss.00267\n.. _list by version: https://zenodo.org/search?page=1&size=20&q=conceptrecid:%22838307%22&sort=-version&all_versions=true\n\nlicense\n-------\n\n``bezier`` is made available under the apache 2.0 license. for more\ndetails, see `the license`_.\n\n.. _curves: https://bezier.readthedocs.io/en/2023.7.28/python/reference/bezier.curve.html\n.. _triangles: https://bezier.readthedocs.io/en/2023.7.28/python/reference/bezier.triangle.html\n.. _package: https://bezier.readthedocs.io/en/2023.7.28/python/reference/bezier.html\n.. _development doc: https://github.com/dhermes/bezier/blob/2023.7.28/development.rst\n.. _the license: https://github.com/dhermes/bezier/blob/2023.7.28/license\n\n.. |docs| image:: https://readthedocs.org/projects/bezier/badge/?version=2023.7.28\n   :target: https://bezier.readthedocs.io/en/2023.7.28/\n   :alt: documentation status\n.. |linux-build| image:: https://raw.githubusercontent.com/dhermes/bezier/2023.7.28/docs/linux-passing.svg?sanitize=true\n   :target: https://github.com/dhermes/bezier/actions/runs/5698156661\n   :alt: linux build (github actions)\n.. |macos-build| image:: https://raw.githubusercontent.com/dhermes/bezier/2023.7.28/docs/macos-passing.svg?sanitize=true\n   :target: https://github.com/dhermes/bezier/actions/runs/5698156663\n   :alt: macos build (github actions)\n.. |windows-build| image:: https://raw.githubusercontent.com/dhermes/bezier/2023.7.28/docs/windows-passing.svg?sanitize=true\n   :target: https://github.com/dhermes/bezier/actions/run/5698156662\n   :alt: windows build (github actions)\n.. |coverage| image:: https://s3.amazonaws.com/assets.coveralls.io/badges/coveralls_100.svg\n   :target: https://coveralls.io/builds/61654285\n   :alt: code coverage\n.. |zenodo| image:: https://zenodo.org/badge/73047402.svg\n   :target: https://zenodo.org/badge/latestdoi/73047402\n   :alt: zenodo doi for ``bezier``\n.. |joss| image:: https://joss.theoj.org/papers/10.21105/joss.00267/status.svg\n   :target: https://dx.doi.org/10.21105/joss.00267\n   :alt: \"journal of open source science\" doi for ``bezier``\n",
+  "docs_url": null,
+  "keywords": "geometry,curve,bezier,intersection,python",
+  "license": "apache 2.0",
+  "name": "bezier",
+  "package_url": "https://pypi.org/project/bezier/",
+  "project_url": "https://pypi.org/project/bezier/",
+  "project_urls": {
+    "Changelog": "https://bezier.readthedocs.io/en/latest/releases/index.html",
+    "Documentation": "https://bezier.readthedocs.io/",
+    "Homepage": "https://github.com/dhermes/bezier",
+    "Issue Tracker": "https://github.com/dhermes/bezier/issues"
+  },
+  "release_url": "https://pypi.org/project/bezier/2023.7.28/",
+  "requires_dist": [
+    "numpy (>=1.24.2)",
+    "matplotlib (>=3.4.3) ; extra == 'full'",
+    "scipy (>=1.10.1) ; extra == 'full'",
+    "sympy (>=1.11.1) ; extra == 'full'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "helper for b\u00e9zier curves, triangles, and higher order objects",
+  "version": "2023.7.28",
+  "releases": [],
+  "developers": [
+    "daniel.j.hermes@gmail.com",
+    "danny_hermes"
+  ],
+  "kwds": "curves curve1 curve bezier_no_extension curve2",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_bezier",
+  "homepage": "https://github.com/dhermes/bezier",
+  "release_count": 23,
+  "dependency_ids": [
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_scipy",
+    "pypi_sympy"
+  ]
+}

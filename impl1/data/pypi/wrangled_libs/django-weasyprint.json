@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.2",
+    "framework :: django :: 5.0",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "django-weasyprint\n=================\n\n|build| |coverage| |pypi download| |pypi python versions| |pypi license|\n\n.. |build| image:: https://github.com/fdemmer/django-weasyprint/workflows/ci/badge.svg?branch=main\n    :target: https://github.com/fdemmer/django-weasyprint/actions?workflow=ci\n\n.. |coverage| image:: https://codecov.io/gh/fdemmer/django-weasyprint/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/fdemmer/django-weasyprint\n\n.. |pypi download| image:: https://img.shields.io/pypi/v/django-weasyprint.svg\n   :target: https://pypi.python.org/pypi/django-weasyprint/\n\n.. |pypi python versions| image:: https://img.shields.io/pypi/pyversions/django-weasyprint.svg\n   :target: https://pypi.python.org/pypi/django-weasyprint/\n\n.. |pypi license| image:: https://img.shields.io/pypi/l/django-weasyprint.svg\n   :target: https://pypi.python.org/pypi/django-weasyprint/\n\n\na `django`_ class-based view generating pdf responses using `weasyprint`_.\n\n\ninstallation\n------------\n\ninstall and update using `pip`_:\n\n.. code-block:: text\n\n    pip install -u django-weasyprint\n\n`weasyprint`_ is automatically installed as a dependency of this package.\nif you run into any problems be sure to check their `install instructions\n<https://weasyprint.readthedocs.io/en/latest/install.html>`_ for help!\n\n.. tip::\n\n   in version 53 weasyprint switched to `pydyf`_ as pdf generator instead of cairo.\n   with that change png output was dropped and you might encounter other\n   changes in the generated pdf.\n\n   you can continue using weasyprint/cairo by installing django-weasyprint 1.x!\n\n\nusage\n-----\n\nuse ``weasytemplateview`` as class based view base class or the\nmixin ``weasytemplateresponsemixin`` on a ``templateview`` (or subclass\nthereof).\n\n\nexample\n-------\n\n.. code:: python\n\n    # views.py\n    import functools\n\n    from django.conf import settings\n    from django.views.generic import detailview\n\n    from django_weasyprint import weasytemplateresponsemixin\n    from django_weasyprint.views import weasytemplateresponse\n    from django_weasyprint.utils import django_url_fetcher\n\n\n    class mydetailview(detailview):\n        # vanilla django detailview\n        template_name = 'mymodel.html'\n\n    def custom_url_fetcher(url, *args, **kwargs):\n        # rewrite requests for cdn urls to file path in static_root to use local file\n        cloud_storage_url = 'https://s3.amazonaws.com/django-weasyprint/static/'\n        if url.startswith(cloud_storage_url):\n            url = 'file://' + url.replace(cloud_storage_url, settings.static_url)\n        return django_url_fetcher(url, *args, **kwargs)\n\n    class customweasytemplateresponse(weasytemplateresponse):\n        # customized response class to pass a kwarg to url fetcher\n        def get_url_fetcher(self):\n            # disable host and certificate check\n            context = ssl.create_default_context()\n            context.check_hostname = false\n            context.verify_mode = ssl.cert_none\n            return functools.partial(custom_url_fetcher, ssl_context=context)\n\n    class printview(weasytemplateresponsemixin, mydetailview):\n        # output of mydetailview rendered as pdf with hardcoded css\n        pdf_stylesheets = [\n            settings.static_root + 'css/app.css',\n        ]\n        # show pdf in-line (default: true, show download dialog)\n        pdf_attachment = false\n        # custom response class to configure url-fetcher\n        response_class = customweasytemplateresponse\n\n    class downloadview(weasytemplateresponsemixin, mydetailview):\n        # suggested filename (is required for attachment/download!)\n        pdf_filename = 'foo.pdf'\n\n    class dynamicnameview(weasytemplateresponsemixin, mydetailview):\n        # dynamically generate filename\n        def get_pdf_filename(self):\n            return 'foo-{at}.pdf'.format(\n                at=timezone.now().strftime('%y%m%d-%h%m'),\n            )\n\n.. code:: html\n\n    <!-- mymodel.html -->\n    <!doctype html>\n    <html>\n        <head>\n            <!-- use \"static\" template tag and configure static_url as usual. -->\n            <link rel=\"stylesheet\" href=\"{% static 'css/app.css' %}\" />\n        </head>\n        <body>\n            hello pdf-world!\n        </body>\n    </html>\n\n\nsettings\n--------\n\nby default ``weasytemplateresponse`` determines the ``base_url`` for\n`weasyprint.html`_ and `weasyprint.css`_ automatically using django's\n``request.build_absolute_uri()``.\n\nto disable that set ``weasyprint_baseurl`` to a fixed value, e.g.:\n\n.. code:: python\n\n    # disable prefixing relative urls with request.build_absolute_uri().\n    # instead, handle them as absolute file paths.\n    weasyprint_baseurl = '/'\n\n\nchangelog\n---------\n\nsee `changelog.md`_\n\n\nlinks\n-----\n\n* releases: https://pypi.python.org/pypi/django-weasyprint\n* issue tracker: https://github.com/fdemmer/django-weasyprint/issues\n* code: https://github.com/fdemmer/django-weasyprint\n\n\n.. _pip: https://pip.pypa.io/en/stable/quickstart\n.. _django: https://www.djangoproject.com\n.. _weasyprint: http://weasyprint.org\n.. _pydyf: https://doc.courtbouillon.org/pydyf/stable/\n\n.. _weasyprint.html: https://doc.courtbouillon.org/weasyprint/stable/api_reference.html?highlight=base_url#weasyprint.html\n.. _weasyprint.css: https://doc.courtbouillon.org/weasyprint/stable/api_reference.html?#weasyprint.css\n\n.. _changelog.md: https://github.com/fdemmer/django-weasyprint/blob/main/changelog.md\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "django-weasyprint",
+  "package_url": "https://pypi.org/project/django-weasyprint/",
+  "project_url": "https://pypi.org/project/django-weasyprint/",
+  "project_urls": {
+    "Changelog": "https://github.com/fdemmer/django-weasyprint/blob/v2.2.2/CHANGELOG.md",
+    "Download": "https://github.com/fdemmer/django-weasyprint/archive/v2.2.2.tar.gz",
+    "Homepage": "https://github.com/fdemmer/django-weasyprint"
+  },
+  "release_url": "https://pypi.org/project/django-weasyprint/2.2.2/",
+  "requires_dist": [
+    "Django >=3.2",
+    "WeasyPrint >=53"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "django weasyprint cbv",
+  "version": "2.2.2",
+  "releases": [],
+  "developers": [
+    "fdemmer@gmail.com",
+    "florian_demmer"
+  ],
+  "kwds": "django_weasyprint _django django djangoproject pyversions",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_django_weasyprint",
+  "homepage": "https://github.com/fdemmer/django-weasyprint",
+  "release_count": 20,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_weasyprint"
+  ]
+}

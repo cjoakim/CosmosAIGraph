@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# dbt-trino\n\n<picture>\n  <source media=\"(prefers-color-scheme: dark)\" srcset=\"https://raw.githubusercontent.com/starburstdata/dbt-trino/master/assets/images/starburst_logo_white%2bblue.svg\" width=\"98%\">\n  <source media=\"(prefers-color-scheme: light)\" srcset=\"https://raw.githubusercontent.com/starburstdata/dbt-trino/master/assets/images/starburst_logo_black%2bblue.svg\" width=\"98%\">\n  <img alt=\"starburst\" src=\"https://raw.githubusercontent.com/starburstdata/dbt-trino/master/assets/images/starburst_logo_black%2bblue.svg\">\n</picture>\n<picture>\n  <source media=\"(prefers-color-scheme: dark)\" srcset=\"https://raw.githubusercontent.com/starburstdata/dbt-trino/master/assets/images/dbt-signature_tm_light.svg\" width=\"45%\">\n  <source media=\"(prefers-color-scheme: light)\" srcset=\"https://raw.githubusercontent.com/starburstdata/dbt-trino/master/assets/images/dbt-signature_tm.svg\" width=\"45%\">\n  <img alt=\"dbt\" src=\"https://raw.githubusercontent.com/starburstdata/dbt-trino/master/assets/images/dbt-signature_tm.svg\">\n</picture>\n&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp\n<picture>\n  <source media=\"(prefers-color-scheme: dark)\" srcset=\"https://raw.githubusercontent.com/starburstdata/dbt-trino/master/assets/images/trino-logo-dk-bg.svg\" width=\"50%\">\n  <source media=\"(prefers-color-scheme: light)\" srcset=\"https://raw.githubusercontent.com/starburstdata/dbt-trino/master/assets/images/trino-logo-w-bk.svg\" width=\"50%\">\n  <img alt=\"trino\" src=\"https://raw.githubusercontent.com/starburstdata/dbt-trino/master/assets/images/trino-logo-w-bk.svg\">\n</picture>\n\n[![build status](https://github.com/starburstdata/dbt-trino/actions/workflows/ci.yml/badge.svg)](https://github.com/starburstdata/dbt-trino/actions/workflows/ci.yml?query=workflow%3a%22dbt-trino+tests%22+branch%3amaster+event%3apush) [![db-presto-trino slack](https://img.shields.io/static/v1?logo=slack&logocolor=959da5&label=slack&labelcolor=333a41&message=join%20conversation&color=3ac358)](https://getdbt.slack.com/channels/db-presto-trino)\n\n## introduction\n\n[dbt](https://docs.getdbt.com/docs/introduction) is a data transformation workflow tool that lets teams quickly and collaboratively deploy analytics code, following software engineering best practices like modularity, ci/cd, testing, and documentation. it enables anyone who knows sql to build production-grade data pipelines.\n\none frequently asked question in the context of using `dbt` tool is:\n\n> can i connect my dbt project to two databases?\n\n(see the answered [question](https://docs.getdbt.com/faqs/connecting-to-two-dbs-not-allowed) on the dbt website).\n\n**tl;dr** `dbt` stands for transformation as in `t` within `elt` pipelines, it doesn't move data from source to a warehouse.\n\n`dbt-trino` adapter uses [trino](https://trino.io/) as a underlying query engine to perform query federation across disperse data sources. trino connects to multiple and diverse data sources ([available connectors](https://trino.io/docs/current/connector.html)) via one dbt connection and process sql queries at scale. transformations defined in dbt are passed to trino which handles these sql transformation queries and translates them to queries specific to the systems it connects to create tables or views and manipulate data.\n\nthis repository represents a fork of the [dbt-presto](https://github.com/dbt-labs/dbt-presto) with adaptations to make it work with trino.\n\n## compatibility\n\nthis dbt plugin has been tested against `trino` version `435`, `starburst enterprise` version `429-e.0` and `starburst galaxy`.\n\n## setup & configuration\n\nfor information on installing and configuring your profile to authenticate to trino or starburst, please refer to [starburst and trino setup](https://docs.getdbt.com/reference/warehouse-setups/trino-setup) in the dbt docs.\n\n### trino- and starburst-specific configuration\n\nfor trino- and starburst-specific configuration, you can refer to [starburst (trino) configurations](https://docs.getdbt.com/reference/resource-configs/trino-configs) on the dbt docs site.\n\n## contributing\n\n- want to report a bug or request a feature? let us know on [slack](http://community.getdbt.com/) in the [#db-presto-trino](https://getdbt.slack.com/channels/db-presto-trino) channel, or open [an issue](https://github.com/starburstdata/dbt-trino/issues/new)\n- want to help us build dbt-trino? check out the [contributing guide](https://github.com/starburstdata/dbt-trino/blob/head/contributing.md)\n\n### release process\nfirst 5 steps are only relevant for bumping __minor__ version:\n1. create `1.x.latest` branch from the latest tag corresponding to current minor version, e.g. `git checkout -b 1.6.latest v1.6.2` (when bumping to 1.7). push branch to remote. this branch will be used for potential backports.\n2. create new branch (do not push below commits to `1.x.latest`). add a new entry in `.changes/0.0.0.md` that points to the newly created latest branch.\n3. run `changie merge` to update `readme.md`. commit.\n4. bump version of `dbt-tests-adapter`. commit.\n5. merge these 2 commits into the master branch. add a `skip changlelog` label to the pr.\n\ncontinue with the next steps for a __minor__ version bump. start from this point for a __patch__ version bump:\n1. run `version bump` workflow. the major and minor part of the dbt version are used to associate dbt-trino's version with the dbt version.\n2. merge the bump pr. make sure that test suite pass.\n3. run `dbt-trino release` workflow to release `dbt-trino` to pypi and github.\n\n### backport process\n\nsometimes it is necessary to backport some changes to some older versions. in that case, create branch from `x.x.latest` branch. there is a `x.x.latest` for each minor version, e.g. `1.3.latest`. make a fix and open pr back to `x.x.latest`. create changelog by `changie new` as ususal, as separate changlog for each minor version is kept on every `x.x.latest` branch.\nafter merging, to make a release of that version, just follow instructions from **release process** section, but run every workflow on `x.x.latest` branch.\n\n## code of conduct\n\neveryone interacting in the dbt project's codebases, issue trackers, chat rooms, and mailing lists is expected\nto follow the [pypa code of conduct](https://www.pypa.io/en/latest/code-of-conduct/).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "dbt-trino",
+  "package_url": "https://pypi.org/project/dbt-trino/",
+  "project_url": "https://pypi.org/project/dbt-trino/",
+  "project_urls": {
+    "Homepage": "https://github.com/starburstdata/dbt-trino"
+  },
+  "release_url": "https://pypi.org/project/dbt-trino/1.7.1/",
+  "requires_dist": [
+    "dbt-core ~=1.7.0",
+    "trino ~=0.326"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "the trino adapter plugin for dbt (data build tool)",
+  "version": "1.7.1",
+  "releases": [],
+  "developers": [
+    "info@starburstdata.com",
+    "starburst_data"
+  ],
+  "kwds": "starburst_logo_black starburst_logo_white logocolor trino starburst",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_dbt_trino",
+  "homepage": "https://github.com/starburstdata/dbt-trino",
+  "release_count": 30,
+  "dependency_ids": [
+    "pypi_dbt_core",
+    "pypi_trino"
+  ]
+}

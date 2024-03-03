@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: rust"
+  ],
+  "description": "[![pypi version](https://badge.fury.io/py/y-py.svg)](https://badge.fury.io/py/y-py)\n\n# ypy\n\nypy is a python binding for y-crdt. it provides distributed data types that enable real-time collaboration between devices. ypy can sync data with any other platform that has a y-crdt binding, allowing for seamless cross-domain communication. the library is a thin wrapper around yrs, taking advantage of the safety and performance of rust.\n\n> \ud83e\uddea project is still experimental. expect the api to change before a version 1.0 stable release.\n\n## installation\n\n```\npip install y-py\n```\n\n## getting started\n\nypy provides many of the same shared data types as [yjs](https://docs.yjs.dev/). all objects are shared within a `ydoc` and get modified within a transaction block.\n\n```python\nimport y_py as y\n\nd1 = y.ydoc()\n# create a new ytext object in the ydoc\ntext = d1.get_text('test')\n# start a transaction in order to update the text\nwith d1.begin_transaction() as txn:\n    # add text contents\n    text.extend(txn, \"hello world!\")\n\n# create another document\nd2 = y.ydoc()\n# share state with the original document\nstate_vector = y.encode_state_vector(d2)\ndiff = y.encode_state_as_update(d1, state_vector)\ny.apply_update(d2, diff)\n\nvalue = str(d2.get_text('test'))\n\nassert value == \"hello world!\"\n```\n\n## development setup\n\n0. install [rust](https://www.rust-lang.org/tools/install) and [python](https://www.python.org/downloads/)\n1. install `maturin` in order to build ypy: `pip install maturin`\n2. create a development build of the library: `maturin develop`\n\n## tests\n\nall tests are located in `/tests`. to run the tests, install `pytest` and run the command line tool from the project root:\n\n```\npip install pytest\npytest\n```\n\n## using hatch\n\nif you are using `hatch`, there is a `test` environment matrix defined in `pyproject.toml` that will run commands in virtual environments for `py37` through `py312`.\n\n```\nhatch run test:maturin develop\nhatch run test:pytest\n```\n\n## build ypy \n\nbuild the library as a wheel and store them in `target/wheels`:\n\n```\nmaturin build\n```\n\n## ypy in wasm (pyodide)\n\nas a rust-based library, ypy cannot build \"pure python\" wheels. ci processes build and upload a number of wheels to pypi, but pypi does not support hosting `emscripten` / `wasm32` wheels necessary to import in pyodide (see https://github.com/pypi/warehouse/issues/10416 for more info and updates). for now, ypy will build `emscripten` wheels and attach the binaries as assets in the appropriate [releases](https://github.com/y-crdt/ypy/releases) entry. unfortunately, trying to install directly from the github download link will result in a cors error, so you'll need to use a proxy to pull in the binary and write / install from emscripten file system or host the binary somewhere that is cors accessible for your application.\n\nyou can try out ypy in pyodide using the [terminal emulator at pyodide.org](https://pyodide.org/en/stable/console.html):\n\n```\nwelcome to the pyodide terminal emulator \ud83d\udc0d\npython 3.10.2 (main, sep 15 2022 23:28:12) on webassembly/emscripten\ntype \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>> wheel_url = 'https://github.com/y-crdt/ypy/releases/download/v0.5.5/y_py-0.5.5-cp310-cp310-emscripten_3_1_14_wasm32.whl'\n>>> wheel_name = wheel_url.split('/')[-1]\n>>> wheel_name\n'y_py-0.5.5-cp310-cp310-emscripten_3_1_14_wasm32.whl'\n>>> \n>>> proxy_url = f'https://api.allorigins.win/raw?url={wheel_url}'\n>>> proxy_url\n'https://api.allorigins.win/raw?url=https://github.com/y-crdt/ypy/releases/download/v0.5.5/y_py-0.5.5-cp310-cp310-emscripten_3_1_14_wasm32.whl'\n>>> \n>>> import pyodide\n>>> resp = await pyodide.http.pyfetch(proxy_url)\n>>> resp.status\n200\n>>> \n>>> content = await resp.bytes()\n>>> len(content)\n360133\n>>> content[:50]\nb'pk\\x03\\x04\\x14\\x00\\x00\\x00\\x08\\x00\\xae\\xb2}u\\x92l\\xa7e\\xe6\\x04\\x00\\x00u\\t\\x00\\x00\\x1d\\x00\\x00\\x00y_py-0.5.5.dist-info'\n>>>\n>>> with open(wheel_name, 'wb') as f:\n...   f.write(content)\n... \n360133\n>>> \n>>> import micropip\n>>> await micropip.install(f'emfs:./{wheel_name}')\n>>> \n>>> import y_py as y\n>>> y\n<module 'y_py' from '/lib/python3.10/site-packages/y_py/__init__.py'>\n>>> \n>>> d1 = y.ydoc()\n>>> text = d1.get_text('test')\n>>> with d1.begin_transaction() as txn:\n    text.extend(txn, \"hello world!\")\n... \n>>> d2 = y.ydoc()\n>>> state_vector = y.encode_state_vector(d2)\n>>> diff = y.encode_state_as_update(d1, state_vector)\n>>> y.apply_update(d2, diff)\n>>> d2.get_text('test')\nytext(hello world!)\n```\n",
+  "docs_url": null,
+  "keywords": "crdt",
+  "license": "",
+  "name": "y-py",
+  "package_url": "https://pypi.org/project/y-py/",
+  "project_url": "https://pypi.org/project/y-py/",
+  "project_urls": {
+    "Homepage": "https://github.com/y-crdt/ypy",
+    "Issues": "https://github.com/y-crdt/ypy/issues",
+    "Pypi": "https://pypi.org/project/y-py",
+    "Source": "https://github.com/y-crdt/ypy"
+  },
+  "release_url": "https://pypi.org/project/y-py/0.6.2/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python bindings for the y-crdt built from yrs (rust)",
+  "version": "0.6.2",
+  "releases": [],
+  "developers": [
+    "kevin.jahns@protonmail.com",
+    "pierre.olivier.simonard@gmail.com",
+    "waidhoferj@gmail.com"
+  ],
+  "kwds": "y_py yjs ypy ytext python3",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_y_py",
+  "homepage": "",
+  "release_count": 21,
+  "dependency_ids": []
+}

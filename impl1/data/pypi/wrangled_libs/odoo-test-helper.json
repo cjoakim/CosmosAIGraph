@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: odoo",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu lesser general public license v3 or later (lgplv3+)",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "odoo-test-helper\n================\n\n.. image:: https://img.shields.io/badge/licence-lgpl--3-blue.png\n    :target: http://www.gnu.org/licenses/lgpl-3.0-standalone.html\n    :alt: license: lgpl-3\n.. image:: https://badge.fury.io/py/odoo-test-helper.svg\n    :target: http://badge.fury.io/py/odoo-test-helper\n\nodoo-test-helper is toolbox for writing odoo test\n\n\nloading fake models\n~~~~~~~~~~~~~~~~~~~\n\nsometime you build an abstract module that can be use by many modules.\nin such case, if you want to test it with real records you need to register real models.\n\none solution is to create a `module_test` module\nwith a little implementation that use your abstract model.\n\none other solution is define test only models and load them in tests.\nthis lib makes this possible and easy.\n\nexample\n~~~~~~~\n\nthere is an example of test here:\n\n* `test_example.py <https://github.com/akretion/odoo-test-helper/blob/master/tests/test_helper/tests/test_example.py>`_.\n\nthis example load the class respartner from the file:\n\n* `models.py <https://github.com/akretion/odoo-test-helper/blob/master/tests/test_helper/tests/models.py>`_.\n\n\nreal implementation case can be found in the following module\n\n* `connector_search_engine <https://github.com/oca/search-engine/tree/12.0/connector_search_engine>`_.\n* `base_url <https://github.com/shopinvader/odoo-shopinvader/tree/12.0/base_url>`_.\n\n\nhow to import\n~~~~~~~~~~~~~~~\n\nbe carefull importing fake class must be done in the right way.\nimporting a file will automatically add all the class in the \"module_to_models\"\nvariable. the import **must** be done after the backup !\n\n\n\n\n\n\nwrong way\n----------\n\n\n.. code-block:: python\n\n   from odoo.tests import savepointcase\n\n   from odoo_test_helper import fakemodelloader\n\n   # the fake class is imported here !! it's wrong\n   # and be carefull even if you only import respartner\n   # all class in the file models will be proceded by odoo\n   # so no **direct import** of a file that contain fake model\n   from .models import respartner\n\n\n\n\n\n   class testmixin(savepointcase):\n       @classmethod\n       def setupclass(cls):\n           super(testmixin, cls).setupclass()\n           cls.loader = fakemodelloader(cls.env, cls.__module__)\n           cls.loader.backup_registry()\n\n           cls.loader.update_registry((respartner,))\n\n       @classmethod\n       def teardownclass(cls):\n           cls.loader.restore_registry()\n           super(testmixin, cls).teardownclass()\n\n       def test_create(self):\n           partner = self.env[\"res.partner\"].create({\"name\": \"bar\", \"test_char\": \"youhou\"})\n           self.assertequal(partner.name, \"foo-bar\")\n           self.assertequal(partner.test_char, \"youhou\")\n\n\nright way\n----------\n\n.. code-block:: python\n\n    from odoo.tests import savepointcase\n\n    from odoo_test_helper import fakemodelloader\n\n\n    class testmixin(savepointcase):\n        @classmethod\n        def setupclass(cls):\n            super(testmixin, cls).setupclass()\n            cls.loader = fakemodelloader(cls.env, cls.__module__)\n            cls.loader.backup_registry()\n\n            # the fake class is imported here !! after the backup_registry\n            from .models import respartner\n\n            cls.loader.update_registry((respartner,))\n\n        @classmethod\n        def teardownclass(cls):\n            cls.loader.restore_registry()\n            super(testmixin, cls).teardownclass()\n\n        def test_create(self):\n            partner = self.env[\"res.partner\"].create({\"name\": \"bar\", \"test_char\": \"youhou\"})\n            self.assertequal(partner.name, \"foo-bar\")\n            self.assertequal(partner.test_char, \"youhou\")\n\n\n\n\ncontributor\n~~~~~~~~~~~~\n\n* s\u00e9bastien beau <sebastien.beau@akretion.com>\n* laurent mignon <laurent.mignon@acsone.eu>\n* simone orsi <simone.orsi@camptocamp.com>\n\n\nhistory\n~~~~~~~~\n\nthis module is inspired of the following mixin code that can be found in oca and shopinvader repository\n\n* mixin in oca: https://github.com/oca/search-engine/blob/7fd85a74180cfff30e212fca01ebeba6c54ee294/connector_search_engine/tests/models_mixin.py\n\n* mixin in shopinvader: https://github.com/shopinvader/odoo-shopinvader/blob/b81b921ea52c911e5b33afac88adb8f9a1c02626/base_url/tests/models_mixin.py\n\nintial authors are\n\n* laurent mignon <laurent.mignon@acsone.eu>\n* simone orsi <simone.orsi@camptocamp.com>\n\nrefactor/extraction have been done by\n\n* s\u00e9bastien beau <sebastien.beau@akretion.com>\n\nthis refactor try to load all class correctly like odoo does with the exact same syntax\n\nnote this refactor/extraction have been done to fix the test of the following issue\n\nhttps://github.com/shopinvader/odoo-shopinvader/pull/607\n\nchanges\n~~~~~~~\n\n.. future (?)\n.. ----------\n.. - ...\n\n2.1.1\n-----\n\n[fix] fakemodelloader: avoid loading module again on restore_registry() for odoo 15.0+\n[fix] ensures registy is cleaned up in addons without models\n\n\n2.1.0\n-----\n\n- [imp] allow to ignore odoo core modules to avoid warning\n\n2.0.5\n-----\n\n- .gitignore added\n\n2.0.4\n-----\n\n- [fix] attributeerror in odoo 15+, regression introduced in 2.0.3\n\n2.0.3\n-----\n\n- [fix] restore_registry in odoo 16\n\n    see odoo/odoo@cd12293\n\n    this new attribute is the source of truth for the base classes\n    and in setup_models (called further down in the modified code in this pr),\n    the model's base classes are reset from it:\n\n    https://github.com/odoo/odoo/blob/e1f06479a526c703ccabc441b1e194646206b966/odoo/models.py#l2728-l2730.\n\n    the test failure fixed by this pr can be inspected in\n    https://app.travis-ci.com/github/oca/odoo-test-helper/builds/258453331\n\n\n2.0.2\n-----\n\n- fix ``mock`` import for v15\n\n2.0.1\n-----\n\n- fix support for odoo 15.0\n\n\n2.0.0\n-----\n\n- move to oca\n- re-license to lgpl\n\n\n1.1.0\n-----\n\n- refactoring (misc imp/fix)\n\n\n1.0.0\n-----\n\n- initial release\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "lgplv3+",
+  "name": "odoo-test-helper",
+  "package_url": "https://pypi.org/project/odoo-test-helper/",
+  "project_url": "https://pypi.org/project/odoo-test-helper/",
+  "project_urls": {
+    "Homepage": "http://github.com/OCA/odoo-test-helper"
+  },
+  "release_url": "https://pypi.org/project/odoo-test-helper/2.1.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "odoo test helper",
+  "version": "2.1.1",
+  "releases": [],
+  "developers": [
+    "odoo_community_association",
+    "support@odoo-community.org"
+  ],
+  "kwds": "odoo_test_helper test_example setup_models module_to_models module_test",
+  "license_kwds": "lgplv3+",
+  "libtype": "pypi",
+  "id": "pypi_odoo_test_helper",
+  "homepage": "http://github.com/oca/odoo-test-helper",
+  "release_count": 10,
+  "dependency_ids": []
+}

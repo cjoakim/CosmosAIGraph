@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only"
+  ],
+  "description": "api to call pep 517 hooks\n=========================\n\n.. warning::\n\n   the core of this package has been renamed to\n   `pyproject-hooks <https://pyproject-hooks.readthedocs.io/>`_. please use that\n   package (low level) or `build <https://pypa-build.readthedocs.io/en/stable/>`_\n   (higher level) in place of ``pep517``.\n\n`pep 517 <https://www.python.org/dev/peps/pep-0517/>`_ specifies a standard\napi for systems which build python packages.\n\n`pep 660 <https://www.python.org/dev/peps/pep-0660/>`_ extends it with a build\nmode that leads to editable installs.\n\nthis package contains wrappers around the hooks specified by pep 517 and\npep 660. it provides:\n\n- a mechanism to call the hooks in a subprocess, so they are isolated from\n  the current process.\n- fallbacks for the optional hooks, so that frontends can call the hooks without\n  checking which are defined.\n\nrun the tests with ``pytest`` or `tox <https://pypi.org/project/tox>`_.\n\nusage\u2014you are responsible for ensuring build requirements are available:\n\n.. code-block:: python\n\n    import os\n    import tomli\n    from pep517.wrappers import pep517hookcaller\n\n    src = 'path/to/source'  # folder containing 'pyproject.toml'\n    with open(os.path.join(src, 'pyproject.toml'), 'rb') as f:\n        build_sys = tomli.load(f)['build-system']\n\n    print(build_sys['requires'])  # list of static requirements\n    # the caller is responsible for installing these and running the hooks in\n    # an environment where they are available.\n\n    hooks = pep517hookcaller(\n        src,\n        build_backend=build_sys['build-backend'],\n        backend_path=build_sys.get('backend-path'),\n    )\n\n    config_options = {}   # optional parameters for backend\n    # list of dynamic requirements:\n    print(hooks.get_requires_for_build_wheel(config_options))\n    # again, the caller is responsible for installing these build requirements\n\n    destination = 'also/a/folder'\n    whl_filename = hooks.build_wheel(destination, config_options)\n    assert os.path.isfile(os.path.join(destination, whl_filename))\n\ndeprecated high-level\n---------------------\n\nfor now, ``pep517`` also contains higher-level functions which install the build\ndependencies into a temporary environment and build a wheel/sdist using them.\nthis is a rough implementation, e.g. it does not do proper build isolation.\nthe `pypa build project <https://github.com/pypa/build>`_ is recommended as an\nalternative, although it's still quite young in october 2020.\nthis layer of functionality in ``pep517`` is now deprecated, but won't be\nremoved for some time, as there is code relying on it.\n\nhigh level usage, with build requirements handled:\n\n.. code-block:: python\n\n    import os\n    from pep517.envbuild import build_wheel, build_sdist\n\n    src = 'path/to/source'  # folder containing 'pyproject.toml'\n    destination = 'also/a/folder'\n    whl_filename = build_wheel(src, destination)\n    assert os.path.isfile(os.path.join(destination, whl_filename))\n\n    targz_filename = build_sdist(src, destination)\n    assert os.path.isfile(os.path.join(destination, targz_filename))\n\nto test the build backend for a project, run in a system shell:\n\n.. code-block:: shell\n\n    python3 -m pep517.check path/to/source  # source dir containing pyproject.toml\n\nto build a backend into source and/or binary distributions, run in a shell:\n\n.. code-block:: shell\n\n    python -m pep517.build path/to/source  # source dir containing pyproject.toml\n\nall of this high-level functionality is deprecated.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pep517",
+  "package_url": "https://pypi.org/project/pep517/",
+  "project_url": "https://pypi.org/project/pep517/",
+  "project_urls": {
+    "Homepage": "https://github.com/pypa/pep517"
+  },
+  "release_url": "https://pypi.org/project/pep517/0.13.1/",
+  "requires_dist": [
+    "tomli >=1.1.0;python_version<'3.11'",
+    "importlib_metadata;python_version<'3.8'",
+    "zipp;python_version<'3.8'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "wrappers to build python packages using pep 517 hooks",
+  "version": "0.13.1",
+  "releases": [],
+  "developers": [
+    "thomas@kluyver.me.uk",
+    "thomas_kluyver"
+  ],
+  "kwds": "pyproject pypa pypi subprocess build_sys",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pep517",
+  "homepage": "https://github.com/pypa/pep517",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_importlib_metadata",
+    "pypi_tomli",
+    "pypi_zipp"
+  ]
+}

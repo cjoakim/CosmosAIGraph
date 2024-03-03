@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only"
+  ],
+  "description": ".. image:: https://img.shields.io/pypi/v/configparser.svg\n   :target: https://pypi.org/project/configparser\n\n.. image:: https://img.shields.io/pypi/pyversions/configparser.svg\n\n.. image:: https://github.com/jaraco/configparser/workflows/tests/badge.svg\n   :target: https://github.com/jaraco/configparser/actions?query=workflow%3a%22tests%22\n   :alt: tests\n\n.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json\n    :target: https://github.com/astral-sh/ruff\n    :alt: ruff\n\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg\n   :target: https://github.com/psf/black\n   :alt: code style: black\n\n.. image:: https://readthedocs.org/projects/configparser/badge/?version=latest\n   :target: https://configparser.readthedocs.io/en/latest/?badge=latest\n\n.. image:: https://img.shields.io/badge/skeleton-2023-informational\n   :target: https://blog.jaraco.com/skeleton\n\n.. image:: https://tidelift.com/badges/package/pypi/configparser\n   :target: https://tidelift.com/subscription/pkg/pypi-configparser?utm_source=pypi-configparser&utm_medium=readme\n\n\nthis package is a backport of the refreshed and enhanced configparser from\nlater python versions. to use the backport instead of the built-in version,\nsimply import it explicitly as a backport::\n\n  from backports import configparser\n\nto use the backport on python 2 and the built-in version on\npython 3, use the standard invocation::\n\n  import configparser\n\nfor detailed documentation consult the vanilla version at\nhttp://docs.python.org/3/library/configparser.html.\n\nwhy you'll love ``configparser``\n================================\n\nwhereas almost completely compatible with its older brother, ``configparser``\nsports a bunch of interesting new features:\n\n* full mapping protocol access (`more info\n  <http://docs.python.org/3/library/configparser.html#mapping-protocol-access>`_)::\n\n    >>> parser = configparser()\n    >>> parser.read_string(\"\"\"\n    [default]\n    location = upper left\n    visible = yes\n    editable = no\n    color = blue\n\n    [main]\n    title = main menu\n    color = green\n\n    [options]\n    title = options\n    \"\"\")\n    >>> parser['main']['color']\n    'green'\n    >>> parser['main']['editable']\n    'no'\n    >>> section = parser['options']\n    >>> section['title']\n    'options'\n    >>> section['title'] = 'options (editable: %(editable)s)'\n    >>> section['title']\n    'options (editable: no)'\n\n* there's now one default ``configparser`` class, which basically is the old\n  ``safeconfigparser`` with a bunch of tweaks which make it more predictable for\n  users. don't need interpolation? simply use\n  ``configparser(interpolation=none)``, no need to use a distinct\n  ``rawconfigparser`` anymore.\n\n* the parser is highly `customizable upon instantiation\n  <http://docs.python.org/3/library/configparser.html#customizing-parser-behaviour>`__\n  supporting things like changing option delimiters, comment characters, the\n  name of the default section, the interpolation syntax, etc.\n\n* you can easily create your own interpolation syntax but there are two powerful\n  implementations built-in (`more info\n  <http://docs.python.org/3/library/configparser.html#interpolation-of-values>`__):\n\n  * the classic ``%(string-like)s`` syntax (called ``basicinterpolation``)\n\n  * a new ``${buildout:like}`` syntax (called ``extendedinterpolation``)\n\n* fallback values may be specified in getters (`more info\n  <http://docs.python.org/3/library/configparser.html#fallback-values>`__)::\n\n    >>> config.get('closet', 'monster',\n    ...            fallback='no such things as monsters')\n    'no such things as monsters'\n\n* ``configparser`` objects can now read data directly `from strings\n  <http://docs.python.org/3/library/configparser.html#configparser.configparser.read_string>`__\n  and `from dictionaries\n  <http://docs.python.org/3/library/configparser.html#configparser.configparser.read_dict>`__.\n  that means importing configuration from json or specifying default values for\n  the whole configuration (multiple sections) is now a single line of code. same\n  goes for copying data from another ``configparser`` instance, thanks to its\n  mapping protocol support.\n\n* many smaller tweaks, updates and fixes\n\na few words about unicode\n=========================\n\n``configparser`` comes from python 3 and as such it works well with unicode.\nthe library is generally cleaned up in terms of internal data storage and\nreading/writing files.  there are a couple of incompatibilities with the old\n``configparser`` due to that. however, the work required to migrate is well\nworth it as it shows the issues that would likely come up during migration of\nyour project to python 3.\n\nthe design assumes that unicode strings are used whenever possible [1]_.  that\ngives you the certainty that what's stored in a configuration object is text.\nonce your configuration is read, the rest of your application doesn't have to\ndeal with encoding issues. all you have is text [2]_. the only two phases when\nyou should explicitly state encoding is when you either read from an external\nsource (e.g. a file) or write back.\n\nversioning\n==========\n\nthis project uses `semver <https://semver.org/spec/v2.0.0.html>`_ to\ncommunicate the impact of various releases while periodically syncing\nwith the upstream implementation in cpython.\nthe `history <https://configparser.readthedocs.io/en/latest/history.html>`_\nserves as a reference indicating which versions incorporate\nwhich upstream functionality.\n\nprior to the ``4.0.0`` release, `another scheme\n<https://github.com/jaraco/configparser/blob/3.8.1/readme.rst#versioning>`_\nwas used to associate the cpython and backports releases.\n\nmaintenance\n===========\n\nthis backport was originally authored by \u0142ukasz langa, the current vanilla\n``configparser`` maintainer for cpython and is currently maintained by\njason r. coombs:\n\n* `configparser repository <https://github.com/jaraco/configparser>`_\n\n* `configparser issue tracker <https://github.com/jaraco/configparser/issues>`_\n\nconversion process\n==================\n\nthis section is technical and should bother you only if you are wondering how\nthis backport is produced. if the implementation details of this backport are\nnot important for you, feel free to ignore the following content.\n\nthe project takes the following branching approach:\n\n* the ``3.x`` branch holds unchanged files synchronized from the upstream\n  cpython repository. the synchronization is currently done by manually copying\n  the required files and stating from which cpython changeset they come.\n\n* the ``main`` branch holds a version of the ``3.x`` code with some tweaks\n  that make it compatible with older pythons. code on this branch must work\n  on all supported python versions. test with ``tox`` or in ci.\n\nthe process works like this:\n\n1. in the ``3.x`` branch, run ``pip-run -- sync-upstream.py``, which\n   downloads the latest stable release of python and copies the relevant\n   files from there into their new locations and then commits those\n   changes with a nice reference to the relevant upstream commit hash.\n\n2. check for new names in ``__all__`` and update imports in\n   ``configparser.py`` accordingly. commit.\n\n3. merge the new commit to ``main``. run tests. commit.\n\n4. make any compatibility changes on ``main``. run tests. commit.\n\n5. update the docs and release the new version.\n\n\nfootnotes\n=========\n\n.. [1] to somewhat ease migration, passing bytestrings is still supported but\n       they are converted to unicode for internal storage anyway. this means\n       that for the vast majority of strings used in configuration files, it\n       won't matter if you pass them as bytestrings or unicode. however, if you\n       pass a bytestring that cannot be converted to unicode using the naive\n       ascii codec, a ``unicodedecodeerror`` will be raised. this is purposeful\n       and helps you manage proper encoding for all content you store in\n       memory, read from various sources and write back.\n\n.. [2] life gets much easier when you understand that you basically manage\n       **text** in your application.  you don't care about bytes but about\n       letters.  in that regard the concept of content encoding is meaningless.\n       the only time when you deal with raw bytes is when you write the data to\n       a file.  then you have to specify how your text should be encoded.  on\n       the other end, to get meaningful text from a file, the application\n       reading it has to know which encoding was used during its creation.  but\n       once the bytes are read and properly decoded, all you have is text.  this\n       is especially powerful when you start interacting with multiple data\n       sources.  even if each of them uses a different encoding, inside your\n       application data is held in abstract text form.  you can program your\n       business logic without worrying about which data came from which source.\n       you can freely exchange the data you store between sources.  only\n       reading/writing files requires encoding your text to bytes.\n\nfor enterprise\n==============\n\navailable as part of the tidelift subscription.\n\nthis project and the maintainers of thousands of other packages are working with tidelift to deliver one enterprise subscription that covers all of the open source you use.\n\n`learn more <https://tidelift.com/subscription/pkg/pypi-configparser?utm_source=pypi-configparser&utm_medium=referral&utm_campaign=github>`_.\n",
+  "docs_url": null,
+  "keywords": "configparser ini parsing conf cfg configuration file",
+  "license": "",
+  "name": "configparser",
+  "package_url": "https://pypi.org/project/configparser/",
+  "project_url": "https://pypi.org/project/configparser/",
+  "project_urls": {
+    "Homepage": "https://github.com/jaraco/configparser/"
+  },
+  "release_url": "https://pypi.org/project/configparser/6.0.0/",
+  "requires_dist": [
+    "sphinx (>=3.5) ; extra == 'docs'",
+    "jaraco.packaging (>=9.3) ; extra == 'docs'",
+    "rst.linker (>=1.9) ; extra == 'docs'",
+    "furo ; extra == 'docs'",
+    "sphinx-lint ; extra == 'docs'",
+    "jaraco.tidelift (>=1.4) ; extra == 'docs'",
+    "pytest (>=6) ; extra == 'testing'",
+    "pytest-checkdocs (>=2.4) ; extra == 'testing'",
+    "pytest-cov ; extra == 'testing'",
+    "pytest-enabler (>=2.2) ; extra == 'testing'",
+    "pytest-ruff ; extra == 'testing'",
+    "types-backports ; extra == 'testing'",
+    "pytest-black (>=0.3.7) ; (platform_python_implementation != \"PyPy\") and extra == 'testing'",
+    "pytest-mypy (>=0.9.1) ; (platform_python_implementation != \"PyPy\") and extra == 'testing'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "updated configparser from stdlib for earlier pythons.",
+  "version": "6.0.0",
+  "releases": [],
+  "developers": [
+    "jaraco@jaraco.com",
+    "jason_r",
+    "lukasz@langa.pl"
+  ],
+  "kwds": "configparser rawconfigparser config safeconfigparser cfg",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_configparser",
+  "homepage": "https://github.com/jaraco/configparser/",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_furo",
+    "pypi_jaraco.packaging",
+    "pypi_jaraco.tidelift",
+    "pypi_pytest",
+    "pypi_pytest_black",
+    "pypi_pytest_checkdocs",
+    "pypi_pytest_cov",
+    "pypi_pytest_enabler",
+    "pypi_pytest_mypy",
+    "pypi_pytest_ruff",
+    "pypi_rst.linker",
+    "pypi_sphinx",
+    "pypi_sphinx_lint",
+    "pypi_types_backports"
+  ]
+}

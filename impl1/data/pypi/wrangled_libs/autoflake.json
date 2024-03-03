@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "topic :: software development :: quality assurance"
+  ],
+  "description": "# autoflake\n\n[![build status](https://github.com/pycqa/autoflake/actions/workflows/main.yaml/badge.svg?branch=main)](https://github.com/pycqa/autoflake/actions/workflows/main.yaml)\n\n## introduction\n\n_autoflake_ removes unused imports and unused variables from python code. it\nmakes use of [pyflakes](https://pypi.org/pypi/pyflakes) to do this.\n\nby default, autoflake only removes unused imports for modules that are part of\nthe standard library. (other modules may have side effects that make them\nunsafe to remove automatically.) removal of unused variables is also disabled\nby default.\n\nautoflake also removes useless ``pass`` statements by default.\n\n## example\n\nrunning autoflake on the below example\n\n```\n$ autoflake --in-place --remove-unused-variables example.py\n```\n\n```python\nimport math\nimport re\nimport os\nimport random\nimport multiprocessing\nimport grp, pwd, platform\nimport subprocess, sys\n\n\ndef foo():\n    from abc import abcmeta, weakset\n    try:\n        import multiprocessing\n        print(multiprocessing.cpu_count())\n    except importerror as exception:\n        print(sys.version)\n    return math.pi\n```\n\nresults in\n\n```python\nimport math\nimport sys\n\n\ndef foo():\n    try:\n        import multiprocessing\n        print(multiprocessing.cpu_count())\n    except importerror:\n        print(sys.version)\n    return math.pi\n```\n\n\n## installation\n\n```\n$ pip install --upgrade autoflake\n```\n\n\n## advanced usage\n\nto allow autoflake to remove additional unused imports (other than\nthan those from the standard library), use the ``--imports`` option. it\naccepts a comma-separated list of names:\n\n```\n$ autoflake --imports=django,requests,urllib3 <filename>\n```\n\nto remove all unused imports (whether or not they are from the standard\nlibrary), use the ``--remove-all-unused-imports`` option.\n\nto remove unused variables, use the ``--remove-unused-variables`` option.\n\nbelow is the full listing of options:\n\n```\nusage: autoflake [-h] [-c | -cd] [-r] [-j n] [--exclude globs] [--imports imports] [--expand-star-imports] [--remove-all-unused-imports] [--ignore-init-module-imports] [--remove-duplicate-keys] [--remove-unused-variables]\n                 [--remove-rhs-for-unused-variables] [--ignore-pass-statements] [--ignore-pass-after-docstring] [--version] [--quiet] [-v] [--stdin-display-name stdin_display_name] [--config config_file] [-i | -s]\n                 files [files ...]\n\nremoves unused imports and unused variables as reported by pyflakes.\n\npositional arguments:\n  files                 files to format\n\noptions:\n  -h, --help            show this help message and exit\n  -c, --check           return error code if changes are needed\n  -cd, --check-diff     return error code if changes are needed, also display file diffs\n  -r, --recursive       drill down directories recursively\n  -j n, --jobs n        number of parallel jobs; match cpu count if value is 0 (default: 0)\n  --exclude globs       exclude file/directory names that match these comma-separated globs\n  --imports imports     by default, only unused standard library imports are removed; specify a comma-separated list of additional modules/packages\n  --expand-star-imports\n                        expand wildcard star imports with undefined names; this only triggers if there is only one star import in the file; this is skipped if there are any uses of `__all__` or `del` in the file\n  --remove-all-unused-imports\n                        remove all unused imports (not just those from the standard library)\n  --ignore-init-module-imports\n                        exclude __init__.py when removing unused imports\n  --remove-duplicate-keys\n                        remove all duplicate keys in objects\n  --remove-unused-variables\n                        remove unused variables\n  --remove-rhs-for-unused-variables\n                        remove rhs of statements when removing unused variables (unsafe)\n  --ignore-pass-statements\n                        ignore all pass statements\n  --ignore-pass-after-docstring\n                        ignore pass statements after a newline ending on '\"\"\"'\n  --version             show program's version number and exit\n  --quiet               suppress output if there are no issues\n  -v, --verbose         print more verbose logs (you can repeat `-v` to make it more verbose)\n  --stdin-display-name stdin_display_name\n                        the name used when processing input from stdin\n  --config config_file  explicitly set the config file instead of auto determining based on file location\n  -i, --in-place        make changes to files instead of printing diffs\n  -s, --stdout          print changed text to stdout. defaults to true when formatting stdin, or to false otherwise\n```\n\n\n## configuration\n\nconfigure default arguments using a `pyproject.toml` file:\n\n```toml\n[tool.autoflake]\ncheck = true\nimports = [\"django\", \"requests\", \"urllib3\"]\n```\n\nor a `setup.cfg` file:\n\n```ini\n[autoflake]\ncheck=true\nimports=django,requests,urllib3\n```\n\nthe name of the configuration parameters match the flags (e.g. use the\nparameter `expand-star-imports` for the flag `--expand-star-imports`).\n\n## tests\n\nto run the unit tests::\n\n```\n$ ./test_autoflake.py\n```\n\nthere is also a fuzz test, which runs against any collection of given python\nfiles. it tests autoflake against the files and checks how well it does by\nrunning pyflakes on the file before and after. the test fails if the pyflakes\nresults change for the worse. (this is done in memory. the actual files are\nleft untouched.)::\n\n```\n$ ./test_fuzz.py --verbose\n```\n\n## excluding specific lines\n\nit might be the case that you have some imports for their side effects, even\nif you are not using them directly in that file.\n\nthat is common, for example, in flask based applications. in where you import\npython modules (files) that imported a main ``app``, to have them included in\nthe routes.\n\nfor example:\n\n```python\nfrom .endpoints import role, token, user, utils\n```\n\nas those imports are not being used directly, if you are using the option\n``--remove-all-unused-imports``, they would be removed.\n\nto prevent that, without having to exclude the entire file, you can add a\n``# noqa`` comment at the end of the line, like:\n\n```python\nfrom .endpoints import role, token, user, utils  # noqa\n```\n\nthat line will instruct ``autoflake`` to let that specific line as is.\n\n\n## using [pre-commit](https://pre-commit.com) hooks\n\nadd the following to your `.pre-commit-config.yaml`\n\n```yaml\n-   repo: https://github.com/pycqa/autoflake\n    rev: v2.2.1\n    hooks:\n    -   id: autoflake\n```\n",
+  "docs_url": null,
+  "keywords": "automatic,clean,fix,import,unused",
+  "license": "mit",
+  "name": "autoflake",
+  "package_url": "https://pypi.org/project/autoflake/",
+  "project_url": "https://pypi.org/project/autoflake/",
+  "project_urls": {
+    "Homepage": "https://www.github.com/PyCQA/autoflake"
+  },
+  "release_url": "https://pypi.org/project/autoflake/2.2.1/",
+  "requires_dist": [
+    "pyflakes>=3.0.0",
+    "tomli>=2.0.1; python_version < '3.11'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "removes unused imports and unused variables",
+  "version": "2.2.1",
+  "releases": [],
+  "developers": [],
+  "kwds": "_autoflake_ test_autoflake autoflake pyflakes automatically",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_autoflake",
+  "homepage": "",
+  "release_count": 59,
+  "dependency_ids": [
+    "pypi_pyflakes",
+    "pypi_tomli"
+  ]
+}

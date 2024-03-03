@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "typing :: typed"
+  ],
+  "description": "[![image](https://img.shields.io/pypi/v/multimethod.svg)](https://pypi.org/project/multimethod/)\n![image](https://img.shields.io/pypi/pyversions/multimethod.svg)\n[![image](https://pepy.tech/badge/multimethod)](https://pepy.tech/project/multimethod)\n![image](https://img.shields.io/pypi/status/multimethod.svg)\n[![image](https://github.com/coady/multimethod/workflows/build/badge.svg)](https://github.com/coady/multimethod/actions)\n[![image](https://codecov.io/gh/coady/multimethod/branch/main/graph/badge.svg)](https://codecov.io/gh/coady/multimethod/)\n[![image](https://github.com/coady/multimethod/workflows/codeql/badge.svg)](https://github.com/coady/multimethod/security/code-scanning)\n[![image](https://img.shields.io/badge/code%20style-black-000000.svg)](https://pypi.org/project/black/)\n[![image](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)\n\nmultimethod provides a decorator for adding multiple argument dispatching to functions. the decorator creates a multimethod object as needed, and registers the function with its annotations.\n\nthere are several multiple dispatch libraries on pypi. this one aims for simplicity and speed. with caching of argument types, it should be the fastest pure python implementation possible.\n\n## usage\nthere are a few options which trade-off dispatch speed for flexibility.\n\ndecorator | speed | dispatch | arguments\n--------- | ----- | -------- | ---------\n[multimethod](#multimethod) | fastest | cached lookup | positional only\n[multidispatch](#multidispatch) | - | binds to first signature + cached lookup | + keywords\n[overload](#overload) | slowest | checks all signatures serially | + keywords & predicates\n\n### multimethod\n```python\nfrom multimethod import multimethod\n\n@multimethod\ndef func(x: int, y: float):\n    ...\n```\n\n`func` is now a `multimethod` which will delegate to the above function, when called with arguments of the specified types. subsequent usage will register new types and functions to the existing multimethod of the same name.\n\n```python\n@multimethod\ndef func(x: float, y: int):\n    ...\n```\n\nalternatively, functions can be explicitly registered in the same style as [functools.singledispatch](https://docs.python.org/3/library/functools.html#functools.singledispatch). this syntax is also compatible with [mypy](https://mypy-lang.org), which by default checks that [each name is defined once](https://mypy.readthedocs.io/en/stable/error_code_list.html#check-that-each-name-is-defined-once-no-redef).\n\n```python\n@func.register\ndef _(x: bool, y: bool):\n    ...\n\n\n@func.register(object, bool)\n@func.register(bool, object)\ndef _(x, y):  # stackable without annotations\n    ...\n```\n\nmultimethods are implemented as mappings from signatures to functions, and can be introspected as such.\n\n```python\nmethod[type, ...]           # get registered function\nmethod[type, ...] = func    # register function by explicit types\n```\n\nmultimethods support any types that satisfy the `issubclass` relation, including abstract base classes in `collections.abc` and `typing`. subscripted generics are supported:\n* `union[...]` or `... | ...`\n* `mapping[...]` - the first key-value pair is checked\n* `tuple[...]` - all args are checked\n* `iterable[...]` - the first arg is checked\n* `type[...]`\n* `literal[...]`\n* `callable[[...], ...]` - parameter types are contravariant, return type is covariant\n\nnaturally checking subscripts is slower, but the implementation is optimized, cached, and bypassed if no subscripts are in use in the parameter. empty iterables match any subscript, but don't special-case how the types are normally resolved.\n\ndispatch resolution details:\n* if an exact match isn't registered, the next closest method is called (and cached).\n* if the `issubclass` relation is ambiguous,\n[mro](https://docs.python.org/3/library/stdtypes.html?highlight=mro#class.mro) position is used as a tie-breaker.\n* if there are still ambiguous methods - or none - a custom `typeerror` is raised.\n* keyword-only parameters may be annotated, but won't affect dispatching.\n* a skipped annotation is equivalent to `: object`.\n* if no types are specified, it will inherently match all arguments.\n\n`classmethod` and `staticmethod` may be used with a multimethod, but must be applied _last_, i.e., wrapping the final multimethod definition after all functions are registered. for class and instance methods, `cls` and `self` participate in the dispatch as usual. they may be left blank when using annotations, otherwise use `object` as a placeholder.\n\n```python\nclass foo:\n    # @classmethod: only works here if there are no more functions\n    @multimethod\n    def bar(cls, x: str):\n        ...\n\n    # @classmethod: can not be used with `register` because `_` is not the multimethod\n    @bar.register\n    def _(cls, x: int):\n        ...\n\n    bar = classmethod(bar)  # done with registering\n```\n\n### multidispatch\n`multidispatch` is a wrapper to provide compatibility with `functools.singledispatch`. it requires a base implementation and use of the `register` method instead of namespace lookup. it also supports dispatching on keyword arguments.\n\n### overload\noverloads dispatch on annotated predicates. each predicate is checked in the reverse order of registration.\n\nthe implementation is separate from `multimethod` due to the different performance characteristics. if an annotation is a type instead of a predicate, it will be converted into an `isinstance` check. provisionally supports generics as well.\n\n```python\nfrom multimethod import overload\n\n@overload\ndef func(obj: str):\n    ...\n\n@overload\ndef func(obj: str.isalnum):\n    ...\n\n@overload\ndef func(obj: str.isdigit):\n    ...\n```\n\n### multimeta\n\nuse `metaclass=multimeta` to create a class with a special namespace which converts callables to multimethods, and registers duplicate callables with the original.\n\n```python\nfrom multimethod import multimeta\n\nclass foo(metaclass=multimeta):\n    def bar(self, x: str):\n        ...\n        \n    def bar(self, x: int):\n        ...\n```\n\nequivalent to:\n\n```python\nfrom multimethod import multimethod\n\nclass foo:\n    @multimethod\n    def bar(self, x: str):\n        ...\n        \n    @bar.register\n    def bar(self, x: int):\n        ...\n```\n\n## installation\n\n```console\n% pip install multimethod\n```\n\n## tests\n100% branch coverage.\n\n```console\n% pytest [--cov]\n```\n",
+  "docs_url": null,
+  "keywords": "multiple,dispatch,multidispatch,generic,functions,methods,overload",
+  "license": "copyright 2022 aric coady  licensed under the apache license, version 2.0 (the \"license\"); you may not use this file except in compliance with the license. you may obtain a copy of the license at  http://www.apache.org/licenses/license-2.0  unless required by applicable law or agreed to in writing, software distributed under the license is distributed on an \"as is\" basis, without warranties or conditions of any kind, either express or implied. see the license for the specific language governing permissions and limitations under the license. ",
+  "name": "multimethod",
+  "package_url": "https://pypi.org/project/multimethod/",
+  "project_url": "https://pypi.org/project/multimethod/",
+  "project_urls": {
+    "Changelog": "https://github.com/coady/multimethod/blob/main/CHANGELOG.md",
+    "Documentation": "https://coady.github.io/multimethod",
+    "Homepage": "https://github.com/coady/multimethod",
+    "Issues": "https://github.com/coady/multimethod/issues"
+  },
+  "release_url": "https://pypi.org/project/multimethod/1.10/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "multiple argument dispatching.",
+  "version": "1.10",
+  "releases": [],
+  "developers": [
+    "aric.coady@gmail.com"
+  ],
+  "kwds": "multimethod multimethods multimeta multidispatch multiple",
+  "license_kwds": "copyright license licensed licenses apache",
+  "libtype": "pypi",
+  "id": "pypi_multimethod",
+  "homepage": "",
+  "release_count": 17,
+  "dependency_ids": []
+}

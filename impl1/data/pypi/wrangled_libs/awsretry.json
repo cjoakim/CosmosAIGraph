@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "topic :: software development :: build tools"
+  ],
+  "description": "========================================\nawsretry - boto3 retry/backoff decorator\n========================================\n\nawsretry is a python decorator that can be used to wrap boto3 function calls.\nthis function was built out of the need to get around a couple of common issues\nwhen working with aws api's.\n\n* query api request rate\n* eventual consistency model.\n\n\nexceptions that will get retried when encountered\n-------------------------------------------------\n* requestlimitexceeded\n* unavailable\n* serviceunavailable\n* internalfailure\n* internalerror\n* ^\\w+.notfound\n\nthis list can be extended. (http://docs.aws.amazon.com/awsec2/latest/apireference/errors-overview.html)\n\nquick start\n-----------\ninstall awsretry.\n\n.. code-block:: sh\n\n  $ pip install awsretry\n\ni will assume you know about setting up boto3 credentials, if not you can read\nthe instructions here http://boto3.readthedocs.io/en/latest/guide/configuration.html\n\n\nkeyword arguments that awsretry.backoff accepts\n-----------------------------------------------\n\n* tries = the number of times to try before giving up. default = 10\n* delay = the initial delay between retries in seconds. default = 3\n* backoff = backoff multiplier e.g. value of 2 will double the delay each retry. default = 1.1\n* added_exceptions = other exceptions to retry on, beyond the defaults. default = list()\n\nexamples\n--------\nwrite a quick function that implements awsretry.backoff()\n\n.. code-block:: python\n\n    #!/usr/bin/env python\n\n    import botocore\n    import boto3\n    from awsretry import awsretry\n\n\n    @awsretry.backoff()\n    def get_instances():\n        client = boto3.client('ec2')\n        try:\n            instances = client.describe_instances()\n            return instances\n        except botocore.exceptions.clienterror as e:\n            raise e:\n\n    instances = get_instances()\n\nwrite a quick function that will overwrite the default arguments.\n\n.. code-block:: python\n\n  #!/usr/bin/env python\n\n  import botocore\n  import boto3\n  from awsretry import awsretry\n\n\n  @awsretry.backoff(tries=20, delay=2, backoff=1.5, added_exceptions=['concurrenttagaccess'])\n  def create_tags():\n      client = boto3.client('ec2')\n      try:\n          resources = ['1-12345678891234']\n          tags = [{'key': 'service'}, {'value': 'web-app'}]\n          instances = client.create_tags(resources=resources)\n      except botocore.exceptions.clienterror as e:\n          raise e:\n\n  create_tags()\n\ndevelopment\n-----------\nassuming that you have python and ``virtualenv`` installed, set up your\nenvironment and install the required dependencies like this instead of\nthe ``pip install awsretry`` defined above:\n\n.. code-block:: sh\n\n    $ git clone https://github.com/linuxdynasty/awsretry.git\n    $ cd awsretry\n    $ virtualenv venv\n    ...\n    $ . venv/bin/activate\n    $ pip install -r requirements.txt\n    $ pip install -e .\n\nrunning tests\n-------------\n\nyou can run the tests by using tox which implements nosetest or run them\ndirectly using nosetest.\n\n.. code-block:: sh\n\n    $ tox\n    $ tox tests/test_awsretry.py\n    $ tox -e py27,py36 tests/\n    $ nosetest",
+  "docs_url": null,
+  "keywords": "boto3 aws retry awsretry backoff",
+  "license": "mit",
+  "name": "awsretry",
+  "package_url": "https://pypi.org/project/awsretry/",
+  "project_url": "https://pypi.org/project/awsretry/",
+  "project_urls": {
+    "Homepage": "https://github.com/linuxdynasty/awsretry"
+  },
+  "release_url": "https://pypi.org/project/awsretry/1.0.2/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "decorate your aws boto3 calls with awsretry.backoff(). this will allows your calls to get around the aws eventual consistency errors.",
+  "version": "1.0.2",
+  "releases": [],
+  "developers": [
+    "allen_sanabria",
+    "asanabria@linuxdynasty.org"
+  ],
+  "kwds": "boto3 retry test_awsretry awsretry added_exceptions",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_awsretry",
+  "homepage": "https://github.com/linuxdynasty/awsretry",
+  "release_count": 2,
+  "dependency_ids": []
+}

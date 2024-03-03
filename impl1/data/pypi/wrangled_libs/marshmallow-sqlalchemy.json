@@ -1,0 +1,72 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "**********************\nmarshmallow-sqlalchemy\n**********************\n\n|pypi-package| |build-status| |docs| |marshmallow3| |black|\n\nhomepage: https://marshmallow-sqlalchemy.readthedocs.io/\n\n`sqlalchemy <http://www.sqlalchemy.org/>`_ integration with the  `marshmallow <https://marshmallow.readthedocs.io/en/latest/>`_ (de)serialization library.\n\ndeclare your models\n===================\n\n.. code-block:: python\n\n    import sqlalchemy as sa\n    from sqlalchemy.ext.declarative import declarative_base\n    from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref\n\n    engine = sa.create_engine(\"sqlite:///:memory:\")\n    session = scoped_session(sessionmaker(bind=engine))\n    base = declarative_base()\n\n\n    class author(base):\n        __tablename__ = \"authors\"\n        id = sa.column(sa.integer, primary_key=true)\n        name = sa.column(sa.string, nullable=false)\n\n        def __repr__(self):\n            return \"<author(name={self.name!r})>\".format(self=self)\n\n\n    class book(base):\n        __tablename__ = \"books\"\n        id = sa.column(sa.integer, primary_key=true)\n        title = sa.column(sa.string)\n        author_id = sa.column(sa.integer, sa.foreignkey(\"authors.id\"))\n        author = relationship(\"author\", backref=backref(\"books\"))\n\n\n    base.metadata.create_all(engine)\n\ngenerate marshmallow schemas\n============================\n\n.. code-block:: python\n\n    from marshmallow_sqlalchemy import sqlalchemyschema, auto_field\n\n\n    class authorschema(sqlalchemyschema):\n        class meta:\n            model = author\n            load_instance = true  # optional: deserialize to model instances\n\n        id = auto_field()\n        name = auto_field()\n        books = auto_field()\n\n\n    class bookschema(sqlalchemyschema):\n        class meta:\n            model = book\n            load_instance = true\n\n        id = auto_field()\n        title = auto_field()\n        author_id = auto_field()\n\nyou can automatically generate fields for a model's columns using `sqlalchemyautoschema`.\nthe following schema classes are equivalent to the above.\n\n.. code-block:: python\n\n    from marshmallow_sqlalchemy import sqlalchemyautoschema\n\n\n    class authorschema(sqlalchemyautoschema):\n        class meta:\n            model = author\n            include_relationships = true\n            load_instance = true\n\n\n    class bookschema(sqlalchemyautoschema):\n        class meta:\n            model = book\n            include_fk = true\n            load_instance = true\n\n\nmake sure to declare `models` before instantiating `schemas`. otherwise `sqlalchemy.orm.configure_mappers() <https://docs.sqlalchemy.org/en/latest/orm/mapping_api.html>`_ will run too soon and fail.\n\n(de)serialize your data\n=======================\n\n.. code-block:: python\n\n    author = author(name=\"chuck paluhniuk\")\n    author_schema = authorschema()\n    book = book(title=\"fight club\", author=author)\n    session.add(author)\n    session.add(book)\n    session.commit()\n\n    dump_data = author_schema.dump(author)\n    print(dump_data)\n    # {'id': 1, 'name': 'chuck paluhniuk', 'books': [1]}\n\n    load_data = author_schema.load(dump_data, session=session)\n    print(load_data)\n    # <author(name='chuck paluhniuk')>\n\nget it now\n==========\n::\n\n   pip install -u marshmallow-sqlalchemy\n\n\nrequires python >= 3.7, marshmallow >= 3.0.0, and sqlalchemy >= 1.3.0.\n\ndocumentation\n=============\n\ndocumentation is available at https://marshmallow-sqlalchemy.readthedocs.io/ .\n\nproject links\n=============\n\n- docs: https://marshmallow-sqlalchemy.readthedocs.io/\n- changelog: https://marshmallow-sqlalchemy.readthedocs.io/en/latest/changelog.html\n- contributing guidelines: https://marshmallow-sqlalchemy.readthedocs.io/en/latest/contributing.html\n- pypi: https://pypi.python.org/pypi/marshmallow-sqlalchemy\n- issues: https://github.com/marshmallow-code/marshmallow-sqlalchemy/issues\n\nlicense\n=======\n\nmit licensed. see the bundled `license <https://github.com/marshmallow-code/marshmallow-sqlalchemy/blob/dev/license>`_ file for more details.\n\n\n.. |pypi-package| image:: https://badgen.net/pypi/v/marshmallow-sqlalchemy\n    :target: https://pypi.org/project/marshmallow-sqlalchemy/\n    :alt: latest version\n.. |build-status| image:: https://github.com/marshmallow-code/marshmallow-sqlalchemy/actions/workflows/build-release.yml/badge.svg\n    :target: https://github.com/marshmallow-code/marshmallow-sqlalchemy/actions/workflows/build-release.yml\n    :alt: build status\n.. |docs| image:: https://readthedocs.org/projects/marshmallow-sqlalchemy/badge/\n   :target: http://marshmallow-sqlalchemy.readthedocs.io/\n   :alt: documentation\n.. |marshmallow3| image:: https://badgen.net/badge/marshmallow/3\n    :target: https://marshmallow.readthedocs.io/en/latest/upgrading.html\n    :alt: marshmallow 3 compatible\n.. |black| image:: https://badgen.net/badge/code%20style/black/000\n    :target: https://github.com/ambv/black\n    :alt: code style: black\n",
+  "docs_url": null,
+  "keywords": "sqlalchemy marshmallow",
+  "license": "mit",
+  "name": "marshmallow-sqlalchemy",
+  "package_url": "https://pypi.org/project/marshmallow-sqlalchemy/",
+  "project_url": "https://pypi.org/project/marshmallow-sqlalchemy/",
+  "project_urls": {
+    "Changelog": "https://marshmallow-sqlalchemy.readthedocs.io/en/latest/changelog.html",
+    "Funding": "https://opencollective.com/marshmallow",
+    "Homepage": "https://github.com/marshmallow-code/marshmallow-sqlalchemy",
+    "Issues": "https://github.com/marshmallow-code/marshmallow-sqlalchemy/issues"
+  },
+  "release_url": "https://pypi.org/project/marshmallow-sqlalchemy/0.29.0/",
+  "requires_dist": [
+    "marshmallow (>=3.0.0)",
+    "SQLAlchemy (<3.0,>=1.4.40)",
+    "packaging (>=21.3)",
+    "pytest ; extra == 'dev'",
+    "pytest-lazy-fixture (>=0.6.2) ; extra == 'dev'",
+    "flake8 (==6.0.0) ; extra == 'dev'",
+    "flake8-bugbear (==23.2.13) ; extra == 'dev'",
+    "pre-commit (==3.1.0) ; extra == 'dev'",
+    "tox ; extra == 'dev'",
+    "sphinx (==6.1.3) ; extra == 'docs'",
+    "alabaster (==0.7.13) ; extra == 'docs'",
+    "sphinx-issues (==3.0.1) ; extra == 'docs'",
+    "flake8 (==6.0.0) ; extra == 'lint'",
+    "flake8-bugbear (==23.2.13) ; extra == 'lint'",
+    "pre-commit (==3.1.0) ; extra == 'lint'",
+    "pytest ; extra == 'tests'",
+    "pytest-lazy-fixture (>=0.6.2) ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "sqlalchemy integration with the marshmallow (de)serialization library",
+  "version": "0.29.0",
+  "releases": [],
+  "developers": [
+    "sloria1@gmail.com",
+    "steven_loria"
+  ],
+  "kwds": "marshmallow_sqlalchemy sqlalchemy sqlalchemyautoschema sqlalchemyschema create_engine",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_marshmallow_sqlalchemy",
+  "homepage": "https://github.com/marshmallow-code/marshmallow-sqlalchemy",
+  "release_count": 54,
+  "dependency_ids": [
+    "pypi_alabaster",
+    "pypi_flake8",
+    "pypi_flake8_bugbear",
+    "pypi_marshmallow",
+    "pypi_packaging",
+    "pypi_pre_commit",
+    "pypi_pytest",
+    "pypi_pytest_lazy_fixture",
+    "pypi_sphinx",
+    "pypi_sphinx_issues",
+    "pypi_sqlalchemy",
+    "pypi_tox"
+  ]
+}

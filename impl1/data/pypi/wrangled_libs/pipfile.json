@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6"
+  ],
+  "description": "pipfile\n=======\n\n``pipfile`` and its sister ``pipfile.lock`` are a replacement for the existing standard `pip`_'s ``requirements.txt`` file. \n\n    warning: this project is under active design and development. nothing is set in stone at this point of time.\n\nthis repository contains the design specification of the ``pipfile`` format, as well as (soon) an implementation of a parser for the specification which can be used by `pip`_ and any other consumer, once the design (including the form of a ``pipfile`` itself) has been built out and finalized.\n\n.. _`pip`: https://pip.pypa.io/en/stable/\n\n\nthe concept\n-----------\n\n``pipfile`` will be superior to ``requirements.txt`` file in a number of ways:\n\n* `toml <https://github.com/toml-lang/toml>`_ syntax for declaring all types of python dependencies.\n* one pipfile (as opposed to multiple ``requirements.txt`` files).\n\n  * existing requirements files tend to proliferate into multiple files - e.g. ``dev-requirements.txt``, ``test-requirements.txt``, etc. - but a ``pipfile`` will allow seamlessly specifying groups of dependencies in one place.\n  * this will be surfaced as only two built-in groups (*default* &     *development*). (see note below)\n\n* fully specified (and *deterministic*) environments in the form of ``pipfile.lock``.\n  a deployed application can then be completely redeployed with the same exact versions of all recursive dependencies, by referencing the ``pipfile.lock`` file.\n\nthe concrete requirements for a python application would come from ``pipfile``. this would include where the packages should be fetched from and their loose version constraints.\n\nthe details of the environment (all installed packages with pinned versions and other details) would be stored in ``pipfile.lock``, for reproducibility. this file will be automatically generated and should not be modified by the user.\n\n    note: custom groups may be added in the future. remember, it is easier to add features in the future than it is to remove them.\n\n    the composer community has been successful with only *default* and *development* as group options for many years. this model would be tried/followed at first.\n\n\nexamples\n--------\n\n    note: this is an evolving work in progress.\n\n``pipfile``\n+++++++++++\n\n::\n\n    [[source]]\n    url = 'https://pypi.python.org/simple'\n    verify_ssl = true\n\n    [requires]\n    python_version = '2.7'\n\n    [packages]\n    requests = { extras = ['socks'] }\n    django = '>1.10'\n    pinax = { git = 'git://github.com/pinax/pinax.git', ref = '1.4', editable = true }\n\n    [dev-packages]\n    nose = '*'\n\nnotes:\n\n- there will be a default ``source``.\n\n**pep 508 support** \n+++++++++++++++++++\n\n::\n\n    # support for all pep 508 markers\n    [requires]\n    python_full_version = '3.6.0b1'\n\n    platform = 'windows'\n\n``requires`` utilizes  `pep 508`_ ``marker =  'specifier'`` markers. this functionality may not be readily used, as it is only to assert (and therefore abort, if appropriate) installation on certain platforms (e.g. python version, platform version).\n\n.. _`pep 508`: https://www.python.org/dev/peps/pep-0508/#environment-markers\n\n``pipfile.lock``\n++++++++++++++++\n\n::\n\n    {\n        \"_meta\": {\n            \"hash\": {\n                \"sha256\": \"73d81f4fbe42d1da158c5d4435d921121a4a1013b2f0dfed95367f3c742b88c6\",\n            },\n            \"requires\": [\n                {\"marker\": \"python_version\", \"specifier\": \"2.7\"}\n            ],\n            \"sources\": [\n                {\"url\": \"https://pypi.python.org/simple\", \"verify_ssl\": true},\n            ]\n         },\n        \"default\": [\n            {\"name\": \"django\", \"version\": \"1.10.3\", \"hash\": \"...\"},\n            {\"name\": \"requests\", \"version\": \"2.12.1\", \"hash\": \"...\"},\n            {\"name\": \"pinax\", \"git\": \"git://...\", \"ref\": \"1.4\", \"editable\": true},\n            {\"name\": \"pysocks\", \"version\": \"1.5.6\", \"hash\": \"...\"},\n        ],\n        \"development\": [\n            {\"name\": \"nose\", \"version\": \"1.3.7\", \"hash\": \"...\"},\n        ]\n    }\n\n``pipfile.lock`` is always to be generated and is not to be modified or constructed by a user.\n\ndo note how the versions of each dependency are recursively frozen and a hash gets computed so that you can take advantage of `new pip security features`_\n\n.. _`new pip security features`: https://pip.pypa.io/en/stable/reference/pip_install/#hash-checking-mode\n\npip integration (eventual)\n++++++++++++++++++++++++++\n\n`pip`_ will grow a new command line options, ``-p`` / ``--pipfile`` to install the versions as specified in a ``pipfile``, similar to its existing ``-r`` / ``--requirement`` argument for installing ``requirements.txt`` files.\n\ninstall packages from ``pipfile``::\n\n    $ pip install -p\n    ! warning: pipfile.lock (48d35f) is out of date. updating to (73d81f).\n    installing packages from requirements.piplock...\n    [installation output]\n\nto manually update the ``pipfile.lock``::\n\n    $ pip freeze -p different_pipfile\n    different_pipfile.lock (73d81f) written to disk.\n\nnotes::\n\n    # -p accepts a path argument, which defaults to 'pipfile'.\n    # pipfile.lock will be written automatically during `install -p` if it does not exist.\n\nideas::\n\n- recursively look for `pipfile` in parent directories (limit 3/4?) when ``-p`` is bare.\n\n\nuseful links\n------------\n\n- `pypa/pip#1795`_: requirements 2.0\n- `basic concept gist`_ (fork of @dstufft's)\n\n.. _`basic concept gist`: https://gist.github.com/kennethreitz/4745d35e57108f5b766b8f6ff396de85\n.. _`pypa/pip#1795`: https://github.com/pypa/pip/issues/1795\n\ninspirations\n++++++++++++\n\n- `nvie/pip-tools`_: a set of tools to keep your pinned python dependencies fresh.\n- `a better pip workflow`_ by kenneth reitz\n- lessons learned from composer, cargo, yarn, npm, bundler and friends.\n\n.. _`nvie/pip-tools`: https://github.com/nvie/pip-tools\n.. _`a better pip workflow`: https://www.kennethreitz.org/essays/a-better-pip-workflow\n\n\ndocumentation\n-------------\n\nthe `documentation`_ for this project will, eventually, reside at pypi.org.\n\n.. _`documentation`: https://pipfile.pypa.io/\n\n\ndiscussion\n----------\n\nif you run into bugs, you can file them in our `issue tracker`_. you can also join ``#pypa`` on freenode to ask questions or get involved.\n\n.. _`issue tracker`: https://github.com/pypa/pipfile/issues\n\n\ncode of conduct\n---------------\n\neveryone interacting in the pipfile project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the `pypa code of conduct`_.\n\n.. _`pypa code of conduct`: https://www.pypa.io/en/latest/code-of-conduct/\n\nchangelog\n---------\n\n16.0 - `master`_\n~~~~~~~~~~~~~~~~~\n\n.. note:: this version is not yet released and is under active development.\n\n\n* initial release.\n\n\n.. _`master`: https://github.com/pypa/pipfile/\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd or apache license, version 2.0",
+  "name": "pipfile",
+  "package_url": "https://pypi.org/project/pipfile/",
+  "project_url": "https://pypi.org/project/pipfile/",
+  "project_urls": {
+    "Homepage": "https://github.com/pypa/pipfile"
+  },
+  "release_url": "https://pypi.org/project/pipfile/0.0.2/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "",
+  "version": "0.0.2",
+  "releases": [],
+  "developers": [
+    "kenneth_reitz_and_individual_contributors",
+    "me@kennethreitz.org"
+  ],
+  "kwds": "pipfile different_pipfile pip_install pip piplock",
+  "license_kwds": "bsd or apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_pipfile",
+  "homepage": "https://github.com/pypa/pipfile",
+  "release_count": 2,
+  "dependency_ids": []
+}

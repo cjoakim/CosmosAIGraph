@@ -1,0 +1,37 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python",
+    "topic :: software development"
+  ],
+  "description": "ratelimit |build| |maintainability|\n===================================\n\n.. |build| image:: https://travis-ci.org/tomasbasham/ratelimit.svg?branch=master\n    :target: https://travis-ci.org/tomasbasham/ratelimit\n\n.. |maintainability| image:: https://api.codeclimate.com/v1/badges/21dc7c529c35cd7ef732/maintainability\n    :target: https://codeclimate.com/github/tomasbasham/ratelimit/maintainability\n    :alt: maintainability\n\napis are a very common way to interact with web services. as the need to\nconsume data grows, so does the number of api calls necessary to remain up to\ndate with data sources. however many api providers constrain developers from\nmaking too many api calls. this is know as rate limiting and in a worst case\nscenario your application can be banned from making further api calls if it\nabuses these limits.\n\nthis packages introduces a function decorator preventing a function from being\ncalled more often than that allowed by the api provider. this should prevent\napi providers from banning your applications by conforming to their rate\nlimits.\n\ninstallation\n------------\n\npypi\n~~~~\n\nto install ratelimit, simply:\n\n.. code:: bash\n\n    $ pip install ratelimit\n\ngithub\n~~~~~~\n\ninstalling the latest version from github:\n\n.. code:: bash\n\n    $ git clone https://github.com/tomasbasham/ratelimit\n    $ cd ratelimit\n    $ python setup.py install\n\nusage\n-----\n\nto use this package simply decorate any function that makes an api call:\n\n.. code:: python\n\n    from ratelimit import limits\n\n    import requests\n\n    fifteen_minutes = 900\n\n    @limits(calls=15, period=fifteen_minutes)\n    def call_api(url):\n        response = requests.get(url)\n\n        if response.status_code != 200:\n            raise exception('api response: {}'.format(response.status_code))\n        return response\n\nthis function will not be able to make more then 15 api call within a 15 minute\ntime period.\n\nthe arguments passed into the decorator describe the number of function\ninvocation allowed over a specified time period (in seconds). if no time period\nis specified then it defaults to 15 minutes (the time window imposed by\ntwitter).\n\nif a decorated function is called more times than that allowed within the\nspecified time period then a ``ratelimit.ratelimitexception`` is raised. this\nmay be used to implement a retry strategy such as an `expoential backoff\n<https://pypi.org/project/backoff/>`_\n\n.. code:: python\n\n    from ratelimit import limits, ratelimitexception\n    from backoff import on_exception, expo\n\n    import requests\n\n    fifteen_minutes = 900\n\n    @on_exception(expo, ratelimitexception, max_tries=8)\n    @limits(calls=15, period=fifteen_minutes)\n    def call_api(url):\n        response = requests.get(url)\n\n        if response.status_code != 200:\n            raise exception('api response: {}'.format(response.status_code))\n        return response\n\nalternatively to cause the current thread to sleep until the specified time\nperiod has ellapsed and then retry the function use the ``sleep_and_retry``\ndecorator. this ensures that every function invocation is successful at the\ncost of halting the thread.\n\n.. code:: python\n\n    from ratelimit import limits, sleep_and_retry\n\n    import requests\n\n    fifteen_minutes = 900\n\n    @sleep_and_retry\n    @limits(calls=15, period=fifteen_minutes)\n    def call_api(url):\n        response = requests.get(url)\n\n        if response.status_code != 200:\n            raise exception('api response: {}'.format(response.status_code))\n        return response\n\ncontributing\n------------\n\n1. fork it (https://github.com/tomasbasham/ratelimit/fork)\n2. create your feature branch (`git checkout -b my-new-feature`)\n3. commit your changes (`git commit -am 'add some feature'`)\n4. push to the branch (`git push origin my-new-feature`)\n5. create a new pull request",
+  "docs_url": null,
+  "keywords": "ratelimit,api,decorator",
+  "license": "mit",
+  "name": "ratelimit",
+  "package_url": "https://pypi.org/project/ratelimit/",
+  "project_url": "https://pypi.org/project/ratelimit/",
+  "project_urls": {
+    "Homepage": "https://github.com/tomasbasham/ratelimit"
+  },
+  "release_url": "https://pypi.org/project/ratelimit/2.2.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "api rate limit decorator",
+  "version": "2.2.1",
+  "releases": [],
+  "developers": [
+    "me@tomasbasham.co.uk",
+    "tomas_basham"
+  ],
+  "kwds": "ratelimit apis api ratelimitexception limiting",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_ratelimit",
+  "homepage": "https://github.com/tomasbasham/ratelimit",
+  "release_count": 11,
+  "dependency_ids": []
+}

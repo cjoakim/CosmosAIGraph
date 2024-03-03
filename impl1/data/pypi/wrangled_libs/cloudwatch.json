@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "topic :: utilities"
+  ],
+  "description": "# aws cloudwatch lightweight handler\n\nthis small log handler is designed to send events to aws cloudwatch. it is useful when operating infrastructure outside of the aws, when aws does not log automatically (ec2) or when you want to separate logs. if you are logging on serverless infrastructure (e.g. lambdas or ecs) you might find it easier to just let aws handle the logs automatically.\n\nwe originally developed this to be used on dedicated servers (on and off ec2) and chose to create something new because we wanted to:\n\n* be able to provide your own aws programmatic access credentials\n* have a lightweight solution (only the handler is included and you need only one file)\n\nif you already have a codebase that is using python's logger, you only need minor modifications to send your logs to aws. in fact, you only need to change code at the logger creation. if you haven't done any logging before, i recommend you look at a basic tutorial on python's logging module. there are plenty of resources out there.\n\n# installing it\n\nwe are on pypi, so you can install via pip\n\n```bash\npip install cloudwatch\n```\n\nor if you prefer to customise and (hopefully) feedback on improvements and bugs\n\n```bash\ngit clone https://github.com/labrixdigital/cloudwatch\n```\n\n# usage\n\nthis module is designed to fit right into your existing logging code, so you only need to replace (or add) a handler and the same logger will send events to cloudwatch.\n\n```python\nimport logging\n#create the logger\nlogger = logging.getlogger('my_logger')\n#create the formatter\nformatter = logging.formatter('%(asctime)s : %(levelname)s - %(message)s')\n\n#import cloudwath and create the new handler\nfrom cloudwatch import cloudwatch\nhandler = cloudwatch.cloudwatchhandler(log_group = 'my_log_group')\n\n#pass the formater to the handler\nhandler.setformatter(formatter)\n#set the level\nlogger.setlevel(logging.warning)\n#add the handler to the logger\nlogger.addhandler(handler)\n\n#use it!\nlogger.warning(\"watch out! something happened!\")\n```\n\n# credentials\n\n## specifying credentials and region\n\nif you dont add credentials when creating the handler, it uses the default aws credentials that you set-up on the cli, or that you passed on the invokation (if using on ec2, lambda, ecs), this is in line with the boto3 configuration [expained here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html). however, you can also specify the credentials like this:\n\n```python\nhandler = cloudwatch.cloudwatchhandler(\n log_group = 'my_log_group',\n access_id = 'aws_access_key_id', \n access_key = 'aws_secret_access_key'\n)\n```\n\nlikewise, you can specify a region where the logger will be with the parameter: `region = 'us-east-1'`\n\n## specifying log stream\n\nif you dont add a log stream, the logger will create one for you with the timestamp and a random number. this is useful when you have multiple processes logging to the same log group without colliding. if you want, you can specify the log stream like this:\n\n```python\nhandler = cloudwatch.cloudwatchhandler(\n log_group = 'my_log_group',\n log_stream = 'my_log_stream'\n)\n```\n\n# overflow\n\naws cloudwatch logs takes a maximum event size of 256 kb ([reference](https://docs.aws.amazon.com/amazoncloudwatchlogs/latest/apireference/api_putlogevents.html)). this means that large messages can result in an error if not handled correctly. we have included 3 options in the parameters:\n* __error__: this is the default, and will simply raise a value exception\n* __truncate__: this will truncate the original message to the maximum possible size and log it\n* __split__: this will divide the original message into multiple parts of the maximum size and send them separately\n\none caveat is that because the truncate and split options are based on bytes and not characters (because its size limited), its possible that non-ascii characters will end up being split or truncated.\n\n```python\n#specify truncate\nhandler = cloudwatch.cloudwatchhandler(\n log_group = 'my_log_group',\n overflow = 'truncate'\n)\n\n#specify split\n```python\nhandler = cloudwatch.cloudwatchhandler(\n log_group = 'my_log_group',\n overflow = 'split'\n)\n```\n\n# parameters\n\n|positional order|keyword argument|required|default|description|\n|---|---|---|---|---|\n|0|`access_id`|no|taken from the aws configuration file or role|the aws access key id that you want to use to interact with your aws account. usually a 20 character alphanumeric.|\n|1|`access_key`|no|taken from the aws configuration file or role|the corresponding aws secret to the above parameter|\n|2|`region`|no|taken from the aws configuration file or role|the aws region name (e.g. `us-east-1`)|\n|3|`log_group`|yes||the name of the log group. if it already exists, it writes to it, otherwise it creates it.|\n|4|`log_stream`|no|datetime in the format `%y%m%d%h%m%s%f` and 3 random digits|the name of the log stream. if it already exists, it writes to it, otherwise it creates it.|\n|5|`overflow`|no|defines the behaviour when a message is too large to send in one api call. either `'error'`, `'truncate'` or `'split'`. default is `'error'`|\n\n# legacy initialisation\n\nwe much prefer keyword arguments, and encourage you to use them. however, if you really want to avoid some typing, the order of the positional arguments work as follows:\n\n```python\nhandler = cloudwatch.cloudwatchhandler(\n 'aws_access_key_id',\n 'aws_secret_access_key',\n 'region',\n 'log_group',\n 'log_stream',\n 'overflow'\n)\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "cloudwatch,aws,boto3,logging,logger",
+  "license": "",
+  "name": "cloudwatch",
+  "package_url": "https://pypi.org/project/cloudwatch/",
+  "project_url": "https://pypi.org/project/cloudwatch/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/labrixdigital/cloudwatch/issues",
+    "Homepage": "https://github.com/labrixdigital/cloudwatch"
+  },
+  "release_url": "https://pypi.org/project/cloudwatch/1.2.1/",
+  "requires_dist": [
+    "boto3"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "a small handler for aws cloudwatch",
+  "version": "1.2.1",
+  "releases": [],
+  "developers": [
+    "ernesto_monroy"
+  ],
+  "kwds": "amazoncloudwatchlogs cloudwatchhandler cloudwatch logging aws",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_cloudwatch",
+  "homepage": "",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_boto3"
+  ]
+}

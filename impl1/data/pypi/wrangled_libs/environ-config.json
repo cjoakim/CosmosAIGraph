@@ -1,0 +1,71 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# *environ-config*: application configuration with env variables\n\n[![documentation](https://img.shields.io/badge/docs-read%20the%20docs-black)](https://environ-config.readthedocs.io/)\n[![license: apache 2.0](https://img.shields.io/badge/license-apache--2.0-c06524)](https://github.com/hynek/environ-config/blob/main/license)\n[![pypi version](https://img.shields.io/pypi/v/environ-config)](https://pypi.org/project/environ-config/)\n[![downloads / month](https://static.pepy.tech/personalized-badge/environ-config?period=month&units=international_system&left_color=grey&right_color=blue&left_text=downloads%20/%20month)](https://pepy.tech/project/environ-config)\n\n<!-- teaser-begin -->\n\n*environ-config* allows you to configure your applications using environment variables \u2013 as recommended in [*the twelve-factor app*](https://12factor.net/config) methodology \u2013 with elegant, boilerplate-free, and declarative code:\n\n```pycon\n>>> import environ\n>>> # extracts secrets from vault-via-envconsul: 'secret/your-app':\n>>> vault = environ.secrets.vaultenvsecrets(vault_prefix=\"secret_your_app\")\n>>> @environ.config(prefix=\"app\")\n... class appconfig:\n...    @environ.config\n...    class db:\n...        name = environ.var(\"default_db\")\n...        host = environ.var(\"default.host\")\n...        port = environ.var(5432, converter=int)  # use attrs's converters and validators!\n...        user = environ.var(\"default_user\")\n...        password = vault.secret()\n...\n...    env = environ.var()\n...    lang = environ.var(name=\"lang\")  # it's possible to overwrite the names of variables.\n...    db = environ.group(db)\n...    awesome = environ.bool_var()\n>>> cfg = environ.to_config(\n...     appconfig,\n...     environ={\n...         \"app_env\": \"dev\",\n...         \"app_db_host\": \"localhost\",\n...         \"lang\": \"c\",\n...         \"app_awesome\": \"yes\",  # true and 1 work too, everything else is false\n...         # vault-via-envconsul-style var name:\n...         \"secret_your_app_db_password\": \"s3kr3t\",\n... })  # uses os.environ by default.\n>>> cfg\nappconfig(env='dev', lang='c', db=appconfig.db(name='default_db', host='localhost', port=5432, user='default_user', password=<secret>), awesome=true)\n>>> cfg.db.password\n's3kr3t'\n\n```\n\n`appconfig.from_environ({...})` is equivalent to the code above, depending on your taste.\n\n\n## features\n\n- declarative & boilerplate-free.\n\n- nested configuration from flat environment variable names.\n\n- default & mandatory values: enforce configuration structure without writing a line of code.\n\n- built on top of [*attrs*](https://www.attrs.org/) which gives you data validation and conversion for free.\n\n- pluggable secrets extraction.\n  ships with:\n\n  - [hashicorp vault](https://www.vaultproject.io) support via [*envconsul*](https://github.com/hashicorp/envconsul).\n  - [aws secrets manager](https://aws.amazon.com/secrets-manager/) (needs [*boto3*](https://pypi.org/project/boto3/))\n  - ini files, because secrets in env variables are icky.\n\n- helpful debug logging that will tell you which variables are present and what *environ-config* is looking for.\n\n- built-in dynamic help documentation generation.\n\n<!-- teaser-end -->\n\nyou can find the full documentation including a step-by-step tutorial on [read the docs](https://environ-config.readthedocs.io/).\n\n\n## project information\n\n*environ-config* is maintained by [hynek schlawack](https://hynek.me/) and is released under the [apache license 2.0](https://github.com/hynek/environ-config/blob/main/license) license.\nit targets python 3.7 and newer, and pypy.\ndevelopment takes place on [github](https://github.com/hynek/environ-config).\n\nthe development is kindly supported by [variomedia ag](https://www.variomedia.de/).\n\n*environ-config* wouldn't be possible without the [*attrs* project](https://www.attrs.org).\n\n\n## *environ-config* for enterprise\n\navailable as part of the tidelift subscription.\n\nthe maintainers of *structlog* and thousands of other packages are working with tidelift to deliver commercial support and maintenance for the open source packages you use to build your applications. save time, reduce risk, and improve code health, while paying the maintainers of the exact packages you use. [learn more.](https://tidelift.com/subscription/pkg/pypi-environ-config?utm_source=pypi-environ-config&utm_medium=pypi)\n\n\n## release information\n\n### fixed\n\n- type hints for `environ.config()` now allow for arguments (e.g. `@environ.config(prefix=\"\")`).\n  [#56](https://github.com/hynek/environ-config/issues/56)\n\n\n ---\n\n [**full changelog**](https://www.structlog.org/en/stable/changelog.html)\n ",
+  "docs_url": null,
+  "keywords": "app,cfg,config,env",
+  "license": "",
+  "name": "environ-config",
+  "package_url": "https://pypi.org/project/environ-config/",
+  "project_url": "https://pypi.org/project/environ-config/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/hynek/environ-config/issues",
+    "Changelog": "https://environ-config.rtfd.io/en/stable/changelog.html",
+    "Documentation": "https://environ-config.readthedocs.io/",
+    "Funding": "https://github.com/sponsors/hynek",
+    "Source Code": "https://github.com/hynek/environ-config",
+    "Tidelift": "https://tidelift.com/subscription/pkg/pypi-environ-config?utm_source=pypi-environ-config&utm_medium=pypi"
+  },
+  "release_url": "https://pypi.org/project/environ-config/23.2.0/",
+  "requires_dist": [
+    "attrs>=17.4.0",
+    "importlib-metadata; python_version < '3.8'",
+    "boto3; extra == 'aws'",
+    "environ-config[docs,tests]; extra == 'dev'",
+    "environ-config[aws]; extra == 'docs'",
+    "furo; extra == 'docs'",
+    "myst-parser; extra == 'docs'",
+    "sphinx; extra == 'docs'",
+    "sphinx-notfound-page; extra == 'docs'",
+    "coverage[toml]; extra == 'tests'",
+    "moto; extra == 'tests'",
+    "pytest; extra == 'tests'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "boilerplate-free configuration with env variables.",
+  "version": "23.2.0",
+  "releases": [],
+  "developers": [
+    "hs@ox.cx"
+  ],
+  "kwds": "from_environ app_env environ config badge",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_environ_config",
+  "homepage": "",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_attrs",
+    "pypi_boto3",
+    "pypi_coverage",
+    "pypi_environ_config",
+    "pypi_furo",
+    "pypi_importlib_metadata",
+    "pypi_moto",
+    "pypi_myst_parser",
+    "pypi_pytest",
+    "pypi_sphinx",
+    "pypi_sphinx_notfound_page"
+  ]
+}

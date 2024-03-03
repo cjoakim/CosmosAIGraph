@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: asyncio",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "typing :: typed"
+  ],
+  "description": "# throttler\n\n[![python](https://img.shields.io/badge/python-3.6%20%7c%203.7%20%7c%203.8%20%7c%203.9%20%7c%203.10%20%7c%203.11-blue.svg?longcache=true)]()\n[![pypi](https://img.shields.io/pypi/v/throttler.svg)](https://pypi.python.org/pypi/throttler)\n[![license: mit](https://img.shields.io/badge/license-mit-green.svg)](https://github.com/uburuntu/throttler/blob/master/license)\n\n[![python tests](https://github.com/uburuntu/throttler/actions/workflows/tests.yml/badge.svg)](https://github.com/uburuntu/throttler/actions/workflows/tests.yml)\n[![codecov](https://codecov.io/gh/uburuntu/throttler/branch/master/graph/badge.svg)](https://codecov.io/gh/uburuntu/throttler)\n\nzero-dependency python package for easy throttling with asyncio support.\n\n> ![demo](https://i.imgur.com/myaalzt.gif)\n\n## \ud83d\udcdd table of contents\n\n- \ud83c\udf92 [install](#-install)\n- \ud83d\udee0 [usage examples](#-usage-examples)\n  - [throttler and throttlersimultaneous](#throttler-and-throttlersimultaneous)\n    - [simple example](#simple-example)\n    - [api example](#api-example)\n  - [executiontimer](#executiontimer)\n  - [timer](#timer)\n- \ud83d\udc68\ud83c\udffb\u200d\ud83d\udcbb [author](#-author)\n- \ud83d\udcac [contributing](#-contributing)\n- \ud83d\udcdd [license](#-license)\n\n## \ud83c\udf92 install\n\njust\n```sh\npip install throttler\n```\n\n## \ud83d\udee0 usage examples\nall run-ready examples are [here](examples).\n\n### throttler and throttlersimultaneous\n**throttler**:\n> context manager for limiting rate of accessing to context block.\n\n```python\nfrom throttler import throttler\n\n# limit to three calls per second\nt = throttler(rate_limit=3, period=1.0)\nasync with t:\n    pass\n```\nor\n```python\nimport asyncio\n\nfrom throttler import throttle\n\n# limit to three calls per second\n@throttle(rate_limit=3, period=1.0)\nasync def task():\n    return await asyncio.sleep(0.1)\n```\n\n**throttlersimultaneous**:\n> context manager for limiting simultaneous count of accessing to context block.\n\n```python\nfrom throttler import throttlersimultaneous\n\n# limit to five simultaneous calls\nt = throttlersimultaneous(count=5)\nasync with t:\n    pass\n```\nor\n```python\nimport asyncio\n\nfrom throttler import throttle_simultaneous\n\n# limit to five simultaneous calls\n@throttle_simultaneous(count=5)\nasync def task():\n    return await asyncio.sleep(0.1)\n```\n\n#### simple example\n```python\nimport asyncio\nimport time\n\nfrom throttler import throttle\n\n\n# limit to two calls per second\n@throttle(rate_limit=2, period=1.0)\nasync def task():\n    return await asyncio.sleep(0.1)\n\n\nasync def many_tasks(count: int):\n    coros = [task() for _ in range(count)]\n    for coro in asyncio.as_completed(coros):\n        _ = await coro\n        print(f'timestamp: {time.time()}')\n\nasyncio.run(many_tasks(10))\n```\n\nresult output:\n```text\ntimestamp: 1585183394.8141203\ntimestamp: 1585183394.8141203\ntimestamp: 1585183395.830335\ntimestamp: 1585183395.830335\ntimestamp: 1585183396.8460555\ntimestamp: 1585183396.8460555\n...\n```\n\n#### api example\n\n```python\nimport asyncio\nimport time\n\nimport aiohttp\n\nfrom throttler import throttler, throttlersimultaneous\n\n\nclass someapi:\n    api_url = 'https://example.com'\n\n    def __init__(self, throttler):\n        self.throttler = throttler\n\n    async def request(self, session: aiohttp.clientsession):\n        async with self.throttler:\n            async with session.get(self.api_url) as resp:\n                return resp\n\n    async def many_requests(self, count: int):\n        async with aiohttp.clientsession() as session:\n            coros = [self.request(session) for _ in range(count)]\n            for coro in asyncio.as_completed(coros):\n                response = await coro\n                print(f'{int(time.time())} | result: {response.status}')\n\n\nasync def run():\n    # throttler can be of any type\n    t = throttlersimultaneous(count=5)        # five simultaneous requests\n    t = throttler(rate_limit=10, period=3.0)  # ten requests in three seconds\n\n    api = someapi(t)\n    await api.many_requests(100)\n\nasyncio.run(run())\n```\n\nresult output:\n```text\n1585182908 | result: 200\n1585182908 | result: 200\n1585182908 | result: 200\n1585182909 | result: 200\n1585182909 | result: 200\n1585182909 | result: 200\n1585182910 | result: 200\n1585182910 | result: 200\n1585182910 | result: 200\n...\n```\n\n### executiontimer\n> context manager for time limiting of accessing to context block. simply sleep `period` secs before next accessing, not analog of `throttler`. also it can align to start of minutes.\n\n```python\nimport time\n\nfrom throttler import executiontimer\n\net = executiontimer(60, align_sleep=true)\n\nwhile true:\n    with et:\n        print(time.asctime(), '|', time.time())\n```\n\nor\n```python\nimport time\n\nfrom throttler import execution_timer\n\n@execution_timer(60, align_sleep=true)\ndef f():\n    print(time.asctime(), '|', time.time())\n\nwhile true:\n    f()\n```\n\nresult output:\n```text\nthu mar 26 00:56:17 2020 | 1585173377.1203406\nthu mar 26 00:57:00 2020 | 1585173420.0006166\nthu mar 26 00:58:00 2020 | 1585173480.002517\nthu mar 26 00:59:00 2020 | 1585173540.001494\n```\n\n### timer\n> context manager for pretty printing start, end, elapsed and average times.\n\n```python\nimport random\nimport time\n\nfrom throttler import timer\n\ntimer = timer('my timer', verbose=true)\n\nfor _ in range(3):\n    with timer:\n        time.sleep(random.random())\n```\n\nor\n```python\nimport random\nimport time\n\nfrom throttler import timer\n\n@timer('my timer', verbose=true)\ndef f():\n    time.sleep(random.random())\n\nfor _ in range(3):\n    f()\n```\n\nresult output:\n```text\n#1 | my timer | begin: 2020-03-26 01:46:07.648661\n#1 | my timer |   end: 2020-03-26 01:46:08.382135, elapsed: 0.73 sec, average: 0.73 sec\n#2 | my timer | begin: 2020-03-26 01:46:08.382135\n#2 | my timer |   end: 2020-03-26 01:46:08.599919, elapsed: 0.22 sec, average: 0.48 sec\n#3 | my timer | begin: 2020-03-26 01:46:08.599919\n#3 | my timer |   end: 2020-03-26 01:46:09.083370, elapsed: 0.48 sec, average: 0.48 sec\n```\n\n## \ud83d\udc68\ud83c\udffb\u200d\ud83d\udcbb author\n\n**ramzan bekbulatov**:\n- telegram: [@rm_bk](https://t.me/rm_bk)\n- github: [@uburuntu](https://github.com/uburuntu)\n\n## \ud83d\udcac contributing\n\ncontributions, issues and feature requests are welcome! \n\n## \ud83d\udcdd license\n\nthis project is [mit](https://github.com/uburuntu/throttler/blob/master/license) licensed.\n",
+  "docs_url": null,
+  "keywords": "asyncio,aio-throttle,aiothrottle,aiothrottler,aiothrottling,asyncio-throttle,rate-limit,rate-limiter,throttling,throttle,throttler",
+  "license": "mit",
+  "name": "throttler",
+  "package_url": "https://pypi.org/project/throttler/",
+  "project_url": "https://pypi.org/project/throttler/",
+  "project_urls": {
+    "Download": "https://github.com/uburuntu/throttler/archive/master.zip",
+    "Homepage": "https://github.com/uburuntu/throttler"
+  },
+  "release_url": "https://pypi.org/project/throttler/1.2.2/",
+  "requires_dist": [
+    "aiohttp (>=3.8) ; extra == 'dev'",
+    "codecov (>=2.1) ; extra == 'dev'",
+    "flake8 (>=4.0) ; extra == 'dev'",
+    "pytest (>=7.0) ; extra == 'dev'",
+    "pytest-asyncio (>=0.16) ; extra == 'dev'",
+    "pytest-cov (>=3.0) ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "zero-dependency python package for easy throttling with asyncio support",
+  "version": "1.2.2",
+  "releases": [],
+  "developers": [
+    "github@rmbk.me",
+    "uburuntu"
+  ],
+  "kwds": "throttler throttle aiothrottling throttlersimultaneous throttling",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_throttler",
+  "homepage": "https://github.com/uburuntu/throttler",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_codecov",
+    "pypi_flake8",
+    "pypi_pytest",
+    "pypi_pytest_asyncio",
+    "pypi_pytest_cov"
+  ]
+}

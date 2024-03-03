@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet"
+  ],
+  "description": "python client for google cloud pub / sub\n========================================\n\n|ga| |pypi| |versions| \n\n`google cloud pub / sub`_ is a fully-managed real-time messaging service that\nallows you to send and receive messages between independent applications. you\ncan leverage cloud pub/sub\u2019s flexibility to decouple systems and components\nhosted on google cloud platform or elsewhere on the internet. by building on\nthe same technology google uses, cloud pub / sub is designed to provide \u201cat\nleast once\u201d delivery at low latency with on-demand scalability to 1 million\nmessages per second (and beyond).\n\npublisher applications can send messages to a ``topic`` and other applications\ncan subscribe to that topic to receive the messages. by decoupling senders and\nreceivers, google cloud pub/sub allows developers to communicate between\nindependently written applications.\n\n- `product documentation`_\n- `client library documentation`_\n\n.. |ga| image:: https://img.shields.io/badge/support-ga-gold.svg\n   :target: https://github.com/googleapis/google-cloud-python/blob/main/readme.rst#general-availability\n.. |pypi| image:: https://img.shields.io/pypi/v/google-cloud-pubsub.svg\n   :target: https://pypi.org/project/google-cloud-pubsub/\n.. |versions| image:: https://img.shields.io/pypi/pyversions/google-cloud-pubsub.svg\n   :target: https://pypi.org/project/google-cloud-pubsub/\n.. _google cloud pub / sub: https://cloud.google.com/pubsub/\n.. _product documentation: https://cloud.google.com/pubsub/docs\n.. _client library documentation: https://cloud.google.com/python/docs/reference/pubsub/latest\n\nquick start\n-----------\n\nin order to use this library, you first need to go through the following steps:\n\n1. `select or create a cloud platform project.`_\n2. `enable billing for your project.`_\n3. `enable the google cloud pub / sub api.`_\n4. `setup authentication.`_\n\n.. _select or create a cloud platform project.: https://console.cloud.google.com/project\n.. _enable billing for your project.: https://cloud.google.com/billing/docs/how-to/modify-project#enable_billing_for_a_project\n.. _enable the google cloud pub / sub api.:  https://cloud.google.com/pubsub\n.. _setup authentication.: https://googleapis.dev/python/google-api-core/latest/auth.html\n\ninstallation\n~~~~~~~~~~~~\n\ninstall this library in a `virtualenv`_ using pip. `virtualenv`_ is a tool to\ncreate isolated python environments. the basic problem it addresses is one of\ndependencies and versions, and indirectly permissions.\n\nwith `virtualenv`_, it's possible to install this library without needing system\ninstall permissions, and without clashing with the installed system\ndependencies.\n\n.. _`virtualenv`: https://virtualenv.pypa.io/en/latest/\n\n\nsupported python versions\n^^^^^^^^^^^^^^^^^^^^^^^^^\npython >= 3.7\n\ndeprecated python versions\n^^^^^^^^^^^^^^^^^^^^^^^^^^\npython <= 3.6.\n\nthe last version of this library compatible with python 2.7 is google-cloud-pubsub==1.7.0.\n\n\nmac/linux\n^^^^^^^^^\n\n.. code-block:: console\n\n    pip install virtualenv\n    virtualenv <your-env>\n    source <your-env>/bin/activate\n    <your-env>/bin/pip install google-cloud-pubsub\n\n\nwindows\n^^^^^^^\n\n.. code-block:: console\n\n    pip install virtualenv\n    virtualenv <your-env>\n    <your-env>\\scripts\\activate\n    <your-env>\\scripts\\pip.exe install google-cloud-pubsub\n\n\nexample usage\n~~~~~~~~~~~~~\n\npublishing\n^^^^^^^^^^\n\nto publish data to cloud pub/sub you must create a topic, and then publish\nmessages to it\n\n.. code-block:: python\n\n    import os\n    from google.cloud import pubsub_v1\n\n    publisher = pubsub_v1.publisherclient()\n    topic_name = 'projects/{project_id}/topics/{topic}'.format(\n        project_id=os.getenv('google_cloud_project'),\n        topic='my_topic_name',  # set this to something appropriate.\n    )\n    publisher.create_topic(name=topic_name)\n    future = publisher.publish(topic_name, b'my first message!', spam='eggs')\n    future.result()\n\nto learn more, consult the `publishing documentation`_.\n\n.. _publishing documentation: https://cloud.google.com/python/docs/reference/pubsub/latest\n\n\nsubscribing\n^^^^^^^^^^^\n\nto subscribe to data in cloud pub/sub, you create a subscription based on\nthe topic, and subscribe to that, passing a callback function.\n\n.. code-block:: python\n\n    import os\n    from google.cloud import pubsub_v1\n\n    topic_name = 'projects/{project_id}/topics/{topic}'.format(\n        project_id=os.getenv('google_cloud_project'),\n        topic='my_topic_name',  # set this to something appropriate.\n    )\n\n    subscription_name = 'projects/{project_id}/subscriptions/{sub}'.format(\n        project_id=os.getenv('google_cloud_project'),\n        sub='my_subscription_name',  # set this to something appropriate.\n    )\n\n    def callback(message):\n        print(message.data)\n        message.ack()\n\n    with pubsub_v1.subscriberclient() as subscriber:\n        subscriber.create_subscription(\n            name=subscription_name, topic=topic_name)  \n        future = subscriber.subscribe(subscription_name, callback)\n\nthe future returned by the call to ``subscriber.subscribe`` can be used to\nblock the current thread until a given condition obtains:\n\n.. code-block:: python\n\n    try:\n        future.result()\n    except keyboardinterrupt:\n        future.cancel()\n\nit is also possible to pull messages in a synchronous (blocking) fashion. to\nlearn more about subscribing, consult the `subscriber documentation`_.\n\n.. _subscriber documentation: https://cloud.google.com/python/docs/reference/pubsub/latest\n\n\nauthentication\n^^^^^^^^^^^^^^\n\nit is possible to specify the authentication method to use with the pub/sub\nclients. this can be done by providing an explicit `credentials`_ instance. support\nfor various authentication methods is available from the `google-auth`_ library.\n\nfor example, to use json web tokens, provide a `google.auth.jwt.credentials`_ instance:\n\n.. code-block:: python\n\n    import json\n    from google.auth import jwt\n\n    service_account_info = json.load(open(\"service-account-info.json\"))\n    audience = \"https://pubsub.googleapis.com/google.pubsub.v1.subscriber\"\n\n    credentials = jwt.credentials.from_service_account_info(\n        service_account_info, audience=audience\n    )\n\n    subscriber = pubsub_v1.subscriberclient(credentials=credentials)\n\n    # the same for the publisher, except that the \"audience\" claim needs to be adjusted\n    publisher_audience = \"https://pubsub.googleapis.com/google.pubsub.v1.publisher\"\n    credentials_pub = credentials.with_claims(audience=publisher_audience) \n    publisher = pubsub_v1.publisherclient(credentials=credentials_pub)\n\n.. _credentials: https://google-auth.readthedocs.io/en/latest/reference/google.auth.credentials.html#google.auth.credentials.credentials\n.. _google-auth: https://google-auth.readthedocs.io/en/latest/index.html\n.. _google.auth.jwt.credentials: https://google-auth.readthedocs.io/en/latest/reference/google.auth.jwt.html#google.auth.jwt.credentials\n\n\nversioning\n----------\n\nthis library follows `semantic versioning`_.\n\nit is currently in major version one (1.y.z), which means that the public api should be considered stable.\n\n.. _semantic versioning: http://semver.org/\n\ncontributing\n------------\n\ncontributions to this library are always welcome and highly encouraged.\n\nsee the `contributing doc`_ for more information on how to get started.\n\n.. _contributing doc: https://github.com/googleapis/google-cloud-python/blob/main/contributing.rst\n\ncommunity\n---------\n\nthe best place to ask questions is via stackoverflow: https://stackoverflow.com/questions/tagged/google-cloud-pubsub\n\n\nlicense\n-------\n\napache 2.0 - see `the license`_ for more information.\n\n.. _the license: https://github.com/googleapis/google-cloud-python/blob/main/license\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2.0",
+  "name": "google-cloud-pubsub",
+  "package_url": "https://pypi.org/project/google-cloud-pubsub/",
+  "project_url": "https://pypi.org/project/google-cloud-pubsub/",
+  "project_urls": {
+    "Homepage": "https://github.com/googleapis/python-pubsub"
+  },
+  "release_url": "https://pypi.org/project/google-cloud-pubsub/2.19.0/",
+  "requires_dist": [
+    "grpcio <2.0dev,>=1.51.3",
+    "google-api-core[grpc] !=2.0.*,!=2.1.*,!=2.10.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,!=2.8.*,!=2.9.*,<3.0.0dev,>=1.34.0",
+    "proto-plus <2.0.0dev,>=1.22.0",
+    "protobuf !=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0dev,>=3.19.5",
+    "grpc-google-iam-v1 <1.0.0dev,>=0.12.4",
+    "grpcio-status >=1.33.2",
+    "proto-plus <2.0.0dev,>=1.22.2 ; python_version >= \"3.11\"",
+    "libcst >=0.3.10 ; extra == 'libcst'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "google cloud pub/sub api client library",
+  "version": "2.19.0",
+  "releases": [],
+  "developers": [
+    "google_llc",
+    "googleapis-packages@google.com"
+  ],
+  "kwds": "cloud google_cloud_project googleapis messaging pip",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_google_cloud_pubsub",
+  "homepage": "https://github.com/googleapis/python-pubsub",
+  "release_count": 110,
+  "dependency_ids": [
+    "pypi_google_api_core",
+    "pypi_grpc_google_iam_v1",
+    "pypi_grpcio",
+    "pypi_grpcio_status",
+    "pypi_libcst",
+    "pypi_proto_plus",
+    "pypi_protobuf"
+  ]
+}

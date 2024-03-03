@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: code generators",
+    "typing :: typed"
+  ],
+  "description": "![run checks](https://github.com/openapi-generators/openapi-python-client/workflows/run%20checks/badge.svg)\n[![codecov](https://codecov.io/gh/openapi-generators/openapi-python-client/branch/main/graph/badge.svg)](https://codecov.io/gh/triaxtec/openapi-python-client)\n[![mit license](https://img.shields.io/badge/license-mit-blue.svg)](https://lbesson.mit-license.org/)\n[![generic badge](https://img.shields.io/badge/type_checked-mypy-informational.svg)](https://mypy.readthedocs.io/en/stable/introduction.html)\n[![pypi version shields.io](https://img.shields.io/pypi/v/openapi-python-client.svg)](https://pypi.python.org/pypi/openapi-python-client/)\n[![downloads](https://static.pepy.tech/personalized-badge/openapi-python-client?period=total&units=international_system&left_color=blue&right_color=green&left_text=downloads)](https://pepy.tech/project/openapi-python-client)\n\n# openapi-python-client\n\ngenerate modern python clients from openapi 3.x documents.\n\n_this generator does not support openapi 2.x fka swagger. if you need to use an older document, try upgrading it to\nversion 3 first with one of many available converters._\n\n**this project is still in development and does not support all openapi features**\n\n## why this?\n\nthis tool focuses on creating the best developer experience for python developers by:\n\n1. using all the latest and greatest python features like type annotations and dataclasses.\n2. having documentation and usage instructions specific to this one generator.\n3. being written in python with jinja2 templates, making it easier to improve and extend for python developers. it's also much easier to install and use if you already have python.\n\n## sponsors\n\n<a href=\"https://www.devmark.ai/fern/?utm_source=openapi-python-client&utm_loc=readme&utm_type=logo\" target=\"_blank\" title=\"fern | sdks and api docs\"><img src=\"https://raw.githubusercontent.com/openapi-generators/openapi-python-client/main/.github/sponsors/fern.png\"></a>\n\n## installation\n\ni recommend you install with [pipx](https://pipxproject.github.io/pipx/) so you don't conflict with any other packages you might have: `pipx install openapi-python-client --include-deps`.\n\n> note the `--include-deps` option which will also make `black` and `ruff` available in your path so that `openapi-python-client` can use them to clean up the generated code.\n\n**if you use `pipx run` then the post-generation hooks will not be available unless you install them manually.**\n\nyou can also install with normal pip: `pip install openapi-python-client`\n\nthen, if you want tab completion: `openapi-python-client --install-completion`\n\n## usage\n\n### create a new client\n\n`openapi-python-client generate --url https://my.api.com/openapi.json`\n\nthis will generate a new client library named based on the title in your openapi spec. for example, if the title\nof your api is \"my api\", the expected output will be \"my-api-client\". if a folder already exists by that name, you'll\nget an error.\n\nif you have an `openapi.json` file available on disk, in any cli invocation you can build off that instead by replacing `--url` with a `--path`:\n\n`openapi-python-client generate --path location/on/disk/openapi.json`\n\n### update an existing client\n\n`openapi-python-client update --url https://my.api.com/openapi.json`\n\n> for more usage details run `openapi-python-client --help` or read [usage](usage.md)\n\n### using custom templates\n\nthis feature leverages jinja2's [choiceloader](https://jinja.palletsprojects.com/en/2.11.x/api/#jinja2.choiceloader) and [filesystemloader](https://jinja.palletsprojects.com/en/2.11.x/api/#jinja2.filesystemloader). this means you do _not_ need to customize every template. simply copy the template(s) you want to customize from [the default template directory](openapi_python_client/templates) to your own custom template directory (file names _must_ match exactly) and pass the template directory through the `custom-template-path` flag to the `generate` and `update` commands. for instance,\n\n```\nopenapi-python-client update \\\n  --url https://my.api.com/openapi.json \\\n  --custom-template-path=relative/path/to/mytemplates\n```\n\n_be forewarned, this is a beta-level feature in the sense that the api exposed in the templates is undocumented and unstable._\n\n## what you get\n\n1. a `pyproject.toml` file with some basic metadata intended to be used with [poetry].\n1. a `readme.md` you'll most definitely need to update with your project's details\n1. a python module named just like the auto-generated project name (e.g. \"my_api_client\") which contains:\n   1. a `client` module which will have both a `client` class and an `authenticatedclient` class. you'll need these\n      for calling the functions in the `api` module.\n   1. an `api` module which will contain one module for each tag in your openapi spec, as well as a `default` module\n      for endpoints without a tag. each of these modules in turn contains one function for calling each endpoint.\n   1. a `models` module which has all the classes defined by the various schemas in your openapi spec\n\nfor a full example you can look at the `end_to_end_tests` directory which has an `openapi.json` file.\n\"golden-record\" in that same directory is the generated client from that openapi document.\n\n## openapi features supported\n\n1. all http methods\n1. json and form bodies, path and query parameters\n1. file uploads with multipart/form-data bodies\n1. float, string, int, date, datetime, string enums, and custom schemas or lists containing any of those\n1. html/text or application/json responses containing any of the previous types\n1. bearer token security\n\n## configuration\n\nyou can pass a yaml (or json) file to openapi-python-client with the `--config` option in order to change some behavior.\nthe following parameters are supported:\n\n### class_overrides\n\nused to change the name of generated model classes. this param should be a mapping of existing class name\n(usually a key in the \"schemas\" section of your openapi document) to class_name and module_name. as an example, if the\nname of the a model in openapi (and therefore the generated class name) was something like \"\\_privateinternallongname\"\nand you want the generated client's model to be called \"shortname\" in a module called \"short_name\" you could do this:\n\nexample:\n\n```yaml\nclass_overrides:\n  _privateinternallongname:\n    class_name: shortname\n    module_name: short_name\n```\n\nthe easiest way to find what needs to be overridden is probably to generate your client and go look at everything in the models folder.\n\n### project_name_override and package_name_override\n\nused to change the name of generated client library project/package. if the project name is changed but an override for the package name\nisn't provided, the package name will be converted from the project name using the standard convention (replacing `-`'s with `_`'s).\n\nexample:\n\n```yaml\nproject_name_override: my-special-project-name\npackage_name_override: my_extra_special_package_name\n```\n\n### field_prefix\n\nwhen generating properties, the `name` attribute of the openapi schema will be used. when the `name` is not a valid python identifier (e.g. begins with a number) this string will be prepended. defaults to \"field\\_\". it will also be used to prefix fields in schema starting with \"_\" in order to avoid ambiguous semantics.\n\nexample:\n\n```yaml\nfield_prefix: attr_\n```\n\n### package_version_override\n\nspecify the package version of the generated client. if unset, the client will use the version of the openapi spec.\n\nexample:\n\n```yaml\npackage_version_override: 1.2.3\n```\n\n### post_hooks\n\nin the config file, there's an easy way to tell `openapi-python-client` to run additional commands after generation. here's an example showing the default commands that will run if you don't override them in config:\n\n```yaml\npost_hooks:\n   - \"ruff check . --fix\"\n   - \"ruff format .\"\n```\n\n### use_path_prefixes_for_title_model_names\n\nby default, `openapi-python-client` generates class names which include the full path to the schema, including any parent-types. this can result in very long class names like `myroutesomeclassanotherclassresponse`\u2014which is very unique and unlikely to cause conflicts with future api additions, but also super verbose.\n\nif you are carefully curating your `title` properties already to ensure no duplicate class names, you can turn off this prefixing feature by setting `use_path_prefixes_for_title_model_names` to `false` in your config file. this will use the `title` property of any object that has it set _without_ prefixing.\n\nif this option results in conflicts, you will need to manually override class names instead via the `class_overrides` option.\n\n### http_timeout\n\nby default, the timeout for retrieving the schema file via http is 5 seconds. in case there is an error when retrieving the schema, you might try and increase this setting to a higher value.\n\n[changelog.md]: changelog.md\n[poetry]: https://python-poetry.org/\n",
+  "docs_url": null,
+  "keywords": "openapi,client,generator",
+  "license": "mit",
+  "name": "openapi-python-client",
+  "package_url": "https://pypi.org/project/openapi-python-client/",
+  "project_url": "https://pypi.org/project/openapi-python-client/",
+  "project_urls": {
+    "Homepage": "https://github.com/triaxtec/openapi-python-client",
+    "Repository": "https://github.com/triaxtec/openapi-python-client"
+  },
+  "release_url": "https://pypi.org/project/openapi-python-client/0.16.1/",
+  "requires_dist": [
+    "jinja2 (>=3.0.0,<4.0.0)",
+    "typer (>0.6,<0.10)",
+    "colorama (>=0.4.3,<0.5.0) ; sys_platform == \"win32\"",
+    "shellingham (>=1.3.2,<2.0.0)",
+    "pydantic (>=2.1.1,<3.0.0)",
+    "attrs (>=21.3.0)",
+    "python-dateutil (>=2.8.1,<3.0.0)",
+    "httpx (>=0.20.0,<0.27.0)",
+    "PyYAML (>=6.0,<7.0)",
+    "ruff (>=0.1.2,<0.2.0)",
+    "typing-extensions (>=4.8.0,<5.0.0)"
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "generate modern python clients from openapi",
+  "version": "0.16.1",
+  "releases": [],
+  "developers": [
+    "danthony@triaxtec.com",
+    "dylan_anthony"
+  ],
+  "kwds": "openapi_python_client openapi badge cli pipx",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_openapi_python_client",
+  "homepage": "https://github.com/triaxtec/openapi-python-client",
+  "release_count": 67,
+  "dependency_ids": [
+    "pypi_attrs",
+    "pypi_colorama",
+    "pypi_httpx",
+    "pypi_jinja2",
+    "pypi_pydantic",
+    "pypi_python_dateutil",
+    "pypi_pyyaml",
+    "pypi_ruff",
+    "pypi_shellingham",
+    "pypi_typer",
+    "pypi_typing_extensions"
+  ]
+}

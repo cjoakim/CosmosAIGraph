@@ -1,0 +1,43 @@
+{
+  "classifiers": [],
+  "description": "# cramjam-python\n\n[![code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)\n[![ci](https://github.com/milesgranger/pyrus-cramjam/workflows/ci/badge.svg?branch=master)](https://github.com/milesgranger/pyrus-cramjam/actions?query=branch=master)\n[![pypi](https://img.shields.io/pypi/v/cramjam.svg)](https://pypi.org/project/cramjam)\n[![anaconda-server badge](https://anaconda.org/conda-forge/cramjam/badges/version.svg)](https://anaconda.org/conda-forge/cramjam)\n[![downloads](https://pepy.tech/badge/cramjam/month)](https://pepy.tech/project/cramjam)\n\n[api documentation](https://docs.rs/cramjam)\n\n### install\n```commandline\npip install --upgrade cramjam  # requires no python or system dependencies!\n```\n\n### cli\n\na cli interface is available as [`cramjam-cli`](./../cramjam-cli)\n\n---\n\nextremely thin python bindings to de/compression algorithms in rust.\nallows for using algorithms such as snappy, without any system dependencies.\n\nthis is handy when being used in environments like aws lambda, where installing\npackages like `python-snappy` becomes difficult because of system level dependencies.\n\n---\n\n##### benchmarks\n\nsome basic benchmarks are available [in the benchmarks directory](./benchmarks/readme.md)\n\n---\n\navailable algorithms:\n\n- [x] snappy\n- [x] brotli\n- [x] bzip2\n- [x] lz4\n- [x] gzip\n- [x] deflate\n- [x] zstd\n\nall available for use as:\n\n```python\n>>> import cramjam\n>>> import numpy as np\n>>> compressed = cramjam.snappy.compress(b\"bytes here\")\n>>> decompressed = cramjam.snappy.decompress(compressed)\n>>> decompressed\ncramjam.buffer(len=10)  # an object which implements the buffer protocol\n>>> bytes(decompressed)\nb\"bytes here\"\n>>> np.frombuffer(decompressed, dtype=np.uint8)\narray([ 98, 121, 116, 101, 115,  32, 104, 101, 114, 101], dtype=uint8)\n```\n\nwhere the api is `cramjam.<compression-variant>.compress/decompress` and accepts \n`bytes`/`bytearray`/`numpy.array`/`cramjam.file`/`cramjam.buffer` objects.\n\n**de/compress_into**\nadditionally, all variants support `decompress_into` and `compress_into`. \nex.\n```python\n>>> import numpy as np\n>>> from cramjam import snappy, buffer\n>>>\n>>> data = np.frombuffer(b'some bytes here', dtype=np.uint8)\n>>> data\narray([115, 111, 109, 101,  32,  98, 121, 116, 101, 115,  32, 104, 101,\n       114, 101], dtype=uint8)\n>>>\n>>> compressed = buffer()\n>>> snappy.compress_into(data, compressed)\n33  # 33 bytes written to compressed buffer\n>>>\n>>> compressed.tell()  # where is the buffer position?\n33  # goodie!\n>>>\n>>> compressed.seek(0)  # go back to the start of the buffer so we can prepare to decompress\n>>> decompressed = b'0' * len(data)  # let's write to `bytes` as output\n>>> decompressed\nb'000000000000000'\n>>>\n>>> snappy.decompress_into(compressed, decompressed)\n15  # 15 bytes written to decompressed\n>>> decompressed\nb'some bytes here'\n```\n\n**special note!**  \nif you know the length of the de/compress output, you\ncan provide `output_len=<<some int>>` to any `de/compress`\nto get ~1.5-3x performance increase as this allows single \nbuffer allocation; doesn't really apply if you're using `cramjam.buffer`\nor `cramjam.file` objects.\n\n",
+  "docs_url": null,
+  "keywords": "compression,decompression,snappy,zstd,bz2,gzip,lz4,brotli,deflate",
+  "license": "mit",
+  "name": "cramjam",
+  "package_url": "https://pypi.org/project/cramjam/",
+  "project_url": "https://pypi.org/project/cramjam/",
+  "project_urls": {
+    "documentation": "https://docs.rs/cramjam/latest/cramjam",
+    "homepage": "https://github.com/milesgranger/pyrus-cramjam",
+    "repository": "https://github.com/milesgranger/pyrus-cramjam"
+  },
+  "release_url": "https://pypi.org/project/cramjam/2.7.0/",
+  "requires_dist": [
+    "black ==22.3.0 ; extra == 'dev'",
+    "numpy ; extra == 'dev'",
+    "pytest >=5.30 ; extra == 'dev'",
+    "pytest-xdist ; extra == 'dev'",
+    "hypothesis ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "thin python bindings to de/compression algorithms in rust",
+  "version": "2.7.0",
+  "releases": [],
+  "developers": [
+    "miles59923@gmail.com"
+  ],
+  "kwds": "bzip2 cramjam gzip badge badges",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_cramjam",
+  "homepage": "",
+  "release_count": 27,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_hypothesis",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_pytest_xdist"
+  ]
+}

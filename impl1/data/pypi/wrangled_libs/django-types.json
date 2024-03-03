@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# django-types [![pypi](https://img.shields.io/pypi/v/django-types.svg)](https://pypi.org/project/django-types/)\n\ntype stubs for [django](https://www.djangoproject.com).\n\n> note: this project was forked from\n> <https://github.com/typeddjango/django-stubs> with the goal of removing the\n> [`mypy`](https://github.com/python/mypy) plugin dependency so that `mypy`\n> can't [crash due to django\n> config](https://github.com/typeddjango/django-stubs/issues/318), and that\n> non-`mypy` type checkers like\n> [`pyright`](https://github.com/microsoft/pyright) will work better with\n> django.\n\n## install\n\n```bash\npip install django-types\n```\n\nyou can get a `typeerror: 'type' object is not subscriptable`\nwhen you will try to use `queryset[mymodel]`, `manager[mymodel]` or some other django-based generic types.\n\nthis happens because these django classes do not support [`__class_getitem__`](https://www.python.org/dev/peps/pep-0560/#class-getitem) magic method in runtime.\n\n1. you can go with [`django_stubs_ext`](https://github.com/typeddjango/django-stubs/tree/master/django_stubs_ext) helper, that patches all the types we use as generic in django.\n\n   install it:\n\n   ```bash\n   pip install django-stubs-ext  # as a production dependency\n   ```\n\n   and then place in your top-level settings:\n\n   ```python\n   import django_stubs_ext\n\n   django_stubs_ext.monkeypatch()\n   ```\n\n   you can add extra types to patch with `django_stubs_ext.monkeypatch(extra_classes=[yourdesiredtype])`\n\n2. you can use strings instead: `'queryset[mymodel]'` and `'manager[mymodel]'`, this way it will work as a type for type-checking and as a regular `str` in runtime.\n\n\n## usage\n\n### foreignkey ids and related names as properties in orm models\n\nwhen defining a django orm model with a foreign key, like so:\n\n```python\nclass user(models.model):\n    team = models.foreignkey(\n        \"team\",\n        null=true,\n        on_delete=models.set_null,\n    )\n    role = models.foreignkey(\n        \"role\",\n        null=true,\n        on_delete=models.set_null,\n        related_name=\"users\",\n    )\n```\n\ntwo properties are created, `team` as expected, and `team_id`. also, a related\nmanager called `user_set` is created on `team` for the reverse access.\n\nin order to properly add typing to the foreign key itself and also for the created ids you can do\nsomething like this:\n\n```python\nfrom typing import type_checking\n\nfrom someapp.models import team\nif type_checking:\n    # in this example role cannot be imported due to circular import issues,\n    # but doing so inside type_checking will make sure that the typing below\n    # knows what \"role\" means\n    from anotherapp.models import role\n\n\nclass user(models.model):\n    team_id: optional[int]\n    team = models.foreignkey(\n        team,\n        null=true,\n        on_delete=models.set_null,\n    )\n    role_id: int\n    role = models.foreignkey[\"role\"](\n        \"role\",\n        null=false,\n        on_delete=models.set_null,\n        related_name=\"users\",\n    )\n\n\nreveal_type(user().team)\n# note: revealed type is 'optional[team]'\nreveal_type(user().role)\n# note: revealed type is 'role'\n```\n\nthis will make sure that `team_id` and `role_id` can be accessed. also, `team` and `role`\nwill be typed to their right objects.\n\nto be able to access the related manager `team` and `role` you could do:\n\n```python\nfrom typing import type_checking\n\nif type_checking:\n    # this doesn't really exists on django so it always need to be imported this way\n    from django.db.models.manager import relatedmanager\n    from user.models import user\n\n\nclass team(models.model):\n    if type_checking:\n        user_set = relatedmanager[\"user\"]()\n\n\nclass role(models.model):\n    if type_checking:\n        users = relatedmanager[\"user\"]()\n\nreveal_type(team().user_set)\n# note: revealed type is 'relatedmanager[user]'\nreveal_type(role().users)\n# note: revealed type is 'relatedmanager[user]'\n```\n\nan alternative is using annotations:\n\n\n\n```python\nfrom __future__ import annotations  # or just be in python 3.11\n\nfrom typing import type_checking\n\nif type_checking:\n    from django.db.models import manager\n    from user.models import user\n\n\nclass team(models.model):\n    user_set: manager[user]\n\n\nclass role(models.model):\n    users: manager[user]\n\nreveal_type(team().user_set)\n# note: revealed type is 'manager[user]'\nreveal_type(role().users)\n# note: revealed type is 'manager[user]'\n```\n\n\n### `id field`\n\nby default django will create an `autofield` for you if one doesn't exist.\n\nfor type checkers to know about the `id` field you'll need to declare the\nfield explicitly.\n\n```python\n# before\nclass post(models.model):\n    ...\n\n# after\nclass post(models.model):\n    id = models.autofield(primary_key=true)\n    # or\n    id: int\n```\n\n### `httprequest`'s `user` property\n\nthe `httprequest`'s `user` property has a type of `union[abstractbaseuser, anonymoususer]`,\nbut for most of your views you'll probably want either an authed user or an\n`anonymoususer`.\n\nso we can define a subclass for each case:\n\n```python\nclass authedhttprequest(httprequest):\n    user: user  # type: ignore [assignment]\n```\n\nand then you can use it in your views:\n\n```python\n@auth.login_required\ndef activity(request: authedhttprequest, team_id: str) -> httpresponse:\n    ...\n```\n\nyou can also get more strict with your `login_required` decorator so that the\nfirst argument of the function it is decorating is `authedhttprequest`:\n\n```python\nfrom typing import any, union, typevar, cast\nfrom django.http import httprequest, httpresponse\nfrom typing_extensions import protocol\nfrom functools import wraps\n\nclass requesthandler1(protocol):\n    def __call__(self, request: authedhttprequest) -> httpresponse:\n        ...\n\n\nclass requesthandler2(protocol):\n    def __call__(self, request: authedhttprequest, __arg1: any) -> httpresponse:\n        ...\n\n\nrequesthandler = union[requesthandler1, requesthandler2]\n\n\n# verbose bound arg due to limitations of python typing.\n# see: https://github.com/python/mypy/issues/5876\n_f = typevar(\"_f\", bound=requesthandler)\n\n\ndef login_required(view_func: _f) -> _f:\n    @wraps(view_func)\n    def wrapped_view(\n        request: authedhttprequest, *args: object, **kwargs: object\n    ) -> httpresponse:\n        if request.user.is_authenticated:\n            return view_func(request, *args, **kwargs)  # type: ignore [call-arg]\n        raise authenticationrequired\n\n    return cast(_f, wrapped_view)\n```\n\nthen the following will type error:\n\n```python\n@auth.login_required\ndef activity(request: httprequest, team_id: str) -> httpresponse:\n    ...\n```\n\n## related\n\n- <https://github.com/sbdchd/djangorestframework-types>\n- <https://github.com/sbdchd/celery-types>\n- <https://github.com/sbdchd/mongo-types>\n- <https://github.com/sbdchd/msgpack-types>\n\n",
+  "docs_url": null,
+  "keywords": "django,types,mypy,stubs",
+  "license": "mit",
+  "name": "django-types",
+  "package_url": "https://pypi.org/project/django-types/",
+  "project_url": "https://pypi.org/project/django-types/",
+  "project_urls": {
+    "Homepage": "https://github.com/sbdchd/django-types",
+    "Repository": "https://github.com/sbdchd/django-types"
+  },
+  "release_url": "https://pypi.org/project/django-types/0.19.1/",
+  "requires_dist": [
+    "types-psycopg2 (>=2.9.21.13)"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "type stubs for django",
+  "version": "0.19.1",
+  "releases": [],
+  "developers": [
+    "steve@dignam.xyz",
+    "steve_dignam"
+  ],
+  "kwds": "django_stubs_ext django djangoproject djangorestframework type_checking",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_django_types",
+  "homepage": "https://github.com/sbdchd/django-types",
+  "release_count": 32,
+  "dependency_ids": [
+    "pypi_types_psycopg2"
+  ]
+}

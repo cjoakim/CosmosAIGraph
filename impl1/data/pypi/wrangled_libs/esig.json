@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: mathematics"
+  ],
+  "description": "# esig\nthe python package [esig](https://pypi.org/project/esig/) provides a toolset (previously called sigtools) for transforming vector time series in stream space to signatures in effect space. it is based on the [libalgebra](https://github.com/terrylyons/libalgebra) c++ library.\n\n[![build](https://github.com/datasig-ac-uk/esig/actions/workflows/build.yml/badge.svg?branch=release)](https://github.com/datasig-ac-uk/esig/actions/workflows/build.yml)\n\n## installation\nesig can be installed from a wheel using pip in most cases.\nthe wheels contain all of the dependencies and thus make it easy to use the package.\nfor example, on python 3.8, you can install esig using the following console command:\n```\npython3.8 -m pip install esig\n```\n(you may need to tweak this command based on your platform, python version, and preferences.)\n\nesig can be compiled from source, but this is not advised.\nmore information can be found in the [documentation](https://esig.readthedocs.org/en/latest).\n\n## basic usage\nesig provides a collection of basic functions for computing the signature of a data stream in the form of a numpy array.\nthe `stream2sig` function computes the signature of a data stream up to a specific depth.\nfor example, we can create a very simple data stream and compute its signature as follows.\n```python3\nimport numpy as np\nimport esig\n\nstream = np.array([\n    [1.0, 1.0],\n    [3.0, 4.0],\n    [5.0, 2.0],\n    [8.0, 6.0]\n])\ndepth = 2\n\nsig = esig.stream2sig(stream, depth) # compute the signature\nprint(sig) # prints \"[1.0, 7.0, 5.0, 24.5, 19.0, 16.0, 12.5]\"\n```\nthe signature is returned as a flat numpy array that contains the terms of the signature - which is fundamentally a higher dimensional tensor - in degree order.\nthis first element is always 1.0, which corresponds to the empty tensor key.\nin this case the dimension is 2 (specified by the number of columns in the stream array), and so the next two elements are the signature elements corresponding to the words (1) and (2).\nthese are the depth 1 words.\nthe final 4 elements are the depth 2 words (1,1), (1,2), (2,1), and (2,2).\nesig provides the `sigkeys` function to generate these labels for you based on the parameters of the data.\n```python3\nwidth = 2\nsig_keys = esig.sigkeys(width, depth)\nprint(sig_keys) # prints \" () (1) (2) (1,1) (1,2) (2,1) (2,2)\"\n```\nto compute the log signature of a data stream you use the `stream2logsig` function.\nthis works in a similar manner to the `stream2sig` function in that it takes a numpy array (the data) and a depth and returns a flat numpy array containing the elements of the log signature in degree order.\n```python3\nlog_sig = esig.stream2logsig(stream, depth)\nprint(log_sig) # prints \"[7.  5.  1.5]\"\n```\nhere the first two elements are the depth 1 lie elements (corresponding to the letters 1 and 2) and the third element is the coefficient of the hall basis element \\[1,2\\].\nagain, esig provides a utility function `logsigkeys` for getting the keys that correspond to the coefficients in order for the log signature.\n```python3\nlog_sig_keys = esig.logsigkeys(width, depth)\nprint(log_sig_keys) # prints \" 1 2 [1,2]\"\n```\nthere are two additional utility functions for computing the size of a signature or logsignature with a specified dimension and depth: `sigdim` and `logsigdim`.\nthese functions return an integer that is the dimension of the numpy array returned from the `stream2sig` or `stream2logsig` functions, respectively.\n\nesig also provides another function `recombine`, which performs a reduction of a measure defined on a large ensemble in a way so that the resulting measure has the same total mass, but is supported on a (relatively) small subset of the original ensemble.\nin particuar, the expected value over the ensemble with respect to the new measure agrees with that of the original measure.\n\n### using alternative computation backends\nesig uses libalgebra as a backend for computing signatures and log signatures\n by default.\nhowever, the computation backend can be changed to instead use an alternative\n library for computing signatures and log signatures.\nthis is achieved by using the `set_backend` function in esig and providing\n the name of the backed that you wish to use.\nfor example, we can switch to using the `iisignature` package as a backend by\n first installing the `iisignature` package and then using the command\n```python3\nimport esig\nesig.set_backend(\"iisignature\")\n```\nto make it easier to install and use `iisignature` as a backend, it is\n offered as an optional extra when installing esig:\n```\npython3.8 -m pip install esig[iisignature]\n```\nyou can also define your own backend for performing calculations by creating\n a class derived from `esig.backends.backendbase`, implementing the methods\n `describe_path` (log_signature) and `signature` and related methods.\n\n\n\n##changelog\n0.9.8.3 hotfix 2\n    - fixed the range of configurations available.\n    - fixed manifest.in, now reflects the updated project structure.\n\n0.9.8.1 hotfix\n    - fixed problem caused by reading data in from f-contiugous array\n    - fixed issue with readme on pypi.\n\n0.9.8\n    - added support for python3.10.\n    - updated build system to use cibuildwheel in github actions.\n    - updated libalgebra to benefit from improvements to performance\n    - deprecated tosig submodule. the functions formerly from this module are available\n      via the top-level esig module. the tosig module will be removed in version 1.0.\n    - removed builds on 32-bit linux for python 3.8+. there is no numpy wheels on this\n      architecture for these versions of python.\n\n0.9.0\n    - switched linux support to manylinux2010\n    - support for 32-bit platforms\n\n0.8.2\n    - added builds for python3.9\n    - updated readme\n\n0.8.1\n    - minor fixes to build routine\n\n0.8.0\n    - added python interface in the package root to computation backends\n    - added iisignature backend to allow computation of signatures using the iisignature package\n    - added support for computing depth 1 signatures and logsignatures\n    - added new unit tests.\n    - made some changes to the build script\n    - added python 3.9 build target\n\n0.7.4\n    - fixed message displayed for python versions below 3.8 when importing esig\n\n0.7.3\n    - added recombine function\n",
+  "docs_url": null,
+  "keywords": "data streams rough paths signatures",
+  "license": "gplv3",
+  "name": "esig",
+  "package_url": "https://pypi.org/project/esig/",
+  "project_url": "https://pypi.org/project/esig/",
+  "project_urls": {
+    "Homepage": "http://esig.readthedocs.io/en/latest/"
+  },
+  "release_url": "https://pypi.org/project/esig/0.9.8.3/",
+  "requires_dist": [
+    "numpy (>=1.7)",
+    "iisignature ; extra == 'iisignature'"
+  ],
+  "requires_python": "",
+  "summary": "this package provides \"rough path\" tools for analysing vector time series.",
+  "version": "0.9.8.3",
+  "releases": [],
+  "developers": [
+    "software@lyonstech.net",
+    "terry_lyons"
+  ],
+  "kwds": "esig pip sigtools workflows datasig",
+  "license_kwds": "gplv3",
+  "libtype": "pypi",
+  "id": "pypi_esig",
+  "homepage": "http://esig.readthedocs.io/en/latest/",
+  "release_count": 27,
+  "dependency_ids": [
+    "pypi_iisignature",
+    "pypi_numpy"
+  ]
+}

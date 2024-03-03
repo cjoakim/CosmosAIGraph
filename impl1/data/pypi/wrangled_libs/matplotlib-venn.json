@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "topic :: scientific/engineering :: visualization"
+  ],
+  "description": "====================================================\nvenn diagram plotting routines for python/matplotlib\n====================================================\n\n.. image::  https://travis-ci.org/konstantint/matplotlib-venn.png?branch=master\n   :target: https://travis-ci.org/konstantint/matplotlib-venn\n\nroutines for plotting area-weighted two- and three-circle venn diagrams.\n\ninstallation\n------------\n\nthe simplest way to install the package is via ``easy_install`` or\n``pip``::\n\n    $ easy_install matplotlib-venn\n\ndependencies\n------------\n\n- ``numpy``,\n- ``scipy``,\n- ``matplotlib``.\n\nusage\n-----\nthe package provides four main functions: ``venn2``,\n``venn2_circles``, ``venn3`` and ``venn3_circles``.\n\nthe functions ``venn2`` and ``venn2_circles`` accept as their only\nrequired argument a 3-element list ``(ab, ab, ab)`` of subset sizes,\ne.g.::\n\n    venn2(subsets = (3, 2, 1))\n\nand draw a two-circle venn diagram with respective region areas. in\nthe particular example, the region, corresponding to subset ``a and\nnot b`` will be three times larger in area than the region,\ncorresponding to subset ``a and b``. alternatively, you can simply\nprovide a list of two ``set`` or ``counter`` (i.e. multi-set) objects instead (new in version 0.7),\ne.g.::\n\n    venn2([set(['a', 'b', 'c', 'd']), set(['d', 'e', 'f'])])\n\nsimilarly, the functions ``venn3`` and ``venn3_circles`` take a\n7-element list of subset sizes ``(abc, abc, abc, abc, abc, abc,\nabc)``, and draw a three-circle area-weighted venn\ndiagram. alternatively, you can provide a list of three ``set`` or ``counter`` objects\n(rather than counting sizes for all 7 subsets).\n\nthe functions ``venn2_circles`` and ``venn3_circles`` draw just the\ncircles, whereas the functions ``venn2`` and ``venn3`` draw the\ndiagrams as a collection of colored patches, annotated with text\nlabels. in addition (version 0.7+), functions ``venn2_unweighted`` and\n``venn3_unweighted`` draw the venn diagrams without area-weighting.\n\nnote that for a three-circle venn diagram it is not in general\npossible to achieve exact correspondence between the required set\nsizes and region areas, however in most cases the picture will still\nprovide a decent indication.\n\nthe functions ``venn2_circles`` and ``venn3_circles`` return the list of ``matplotlib.patch.circle`` objects that may be tuned further\nto your liking. the functions ``venn2`` and ``venn3`` return an object of class ``venndiagram``,\nwhich gives access to constituent patches, text elements, and (since\nversion 0.7) the information about the centers and radii of the\ncircles.\n\nbasic example::\n\n    from matplotlib_venn import venn2\n    venn2(subsets = (3, 2, 1))\n\nfor the three-circle case::\n\n    from matplotlib_venn import venn3\n    venn3(subsets = (1, 1, 1, 2, 1, 2, 2), set_labels = ('set1', 'set2', 'set3'))\n\na more elaborate example::\n\n    from matplotlib import pyplot as plt\n    import numpy as np\n    from matplotlib_venn import venn3, venn3_circles\n    plt.figure(figsize=(4,4))\n    v = venn3(subsets=(1, 1, 1, 1, 1, 1, 1), set_labels = ('a', 'b', 'c'))\n    v.get_patch_by_id('100').set_alpha(1.0)\n    v.get_patch_by_id('100').set_color('white')\n    v.get_label_by_id('100').set_text('unknown')\n    v.get_label_by_id('a').set_text('set \"a\"')\n    c = venn3_circles(subsets=(1, 1, 1, 1, 1, 1, 1), linestyle='dashed')\n    c[0].set_lw(1.0)\n    c[0].set_ls('dotted')\n    plt.title(\"sample venn diagram\")\n    plt.annotate('unknown set', xy=v.get_label_by_id('100').get_position() - np.array([0, 0.05]), xytext=(-70,-70),\n                 ha='center', textcoords='offset points', bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),\n                 arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0.5',color='gray'))\n    plt.show()\n\nan example with multiple subplots (new in version 0.6)::\n\n    from matplotlib_venn import venn2, venn2_circles\n    figure, axes = plt.subplots(2, 2)\n    venn2(subsets={'10': 1, '01': 1, '11': 1}, set_labels = ('a', 'b'), ax=axes[0][0])\n    venn2_circles((1, 2, 3), ax=axes[0][1])\n    venn3(subsets=(1, 1, 1, 1, 1, 1, 1), set_labels = ('a', 'b', 'c'), ax=axes[1][0])\n    venn3_circles({'001': 10, '100': 20, '010': 21, '110': 13, '011': 14}, ax=axes[1][1])\n    plt.show()\n\nperhaps the most common use case is generating a venn diagram given\nthree sets of objects::\n\n    set1 = set(['a', 'b', 'c', 'd'])\n    set2 = set(['b', 'c', 'd', 'e'])\n    set3 = set(['c', 'd',' e', 'f', 'g'])\n\n    venn3([set1, set2, set3], ('set1', 'set2', 'set3'))\n    plt.show()\n\n\nquestions\n---------\n* if you ask your questions at `stackoverflow <http://stackoverflow.com/>`_ and tag them `matplotlib-venn <http://stackoverflow.com/questions/tagged/matplotlib-venn>`_, chances are high you'll get an answer from the maintainer of this package.\n\n\nsee also\n--------\n\n* report issues and submit fixes at github:\n  https://github.com/konstantint/matplotlib-venn\n  \n  check out the ``developer-readme.rst`` for development-related notes.\n* some alternative means of plotting a venn diagram (as of\n  october 2012) are reviewed in the blog post:\n  http://fouryears.eu/2012/10/13/venn-diagrams-in-python/\n* the `matplotlib-subsets\n  <https://pypi.python.org/pypi/matplotlib-subsets>`_ package\n  visualizes a hierarchy of sets as a tree of rectangles.\n* the `matplotlib_venn_wordcloud <https://pypi.python.org/pypi/matplotlib_venn_wordcloud>`_ package\n  combines venn diagrams with word clouds for a pretty amazing (and amusing) result.",
+  "docs_url": null,
+  "keywords": "matplotlib plotting charts venn-diagrams",
+  "license": "mit",
+  "name": "matplotlib-venn",
+  "package_url": "https://pypi.org/project/matplotlib-venn/",
+  "project_url": "https://pypi.org/project/matplotlib-venn/",
+  "project_urls": {
+    "Homepage": "https://github.com/konstantint/matplotlib-venn"
+  },
+  "release_url": "https://pypi.org/project/matplotlib-venn/0.11.9/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "functions for plotting area-proportional two- and three-way venn diagrams in matplotlib.",
+  "version": "0.11.9",
+  "releases": [],
+  "developers": [
+    "konstantin_tretyakov",
+    "kt@umn.ee"
+  ],
+  "kwds": "matplotlib_venn matplotlib_venn_wordcloud venn3_circles venn2_circles matplotlib",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_matplotlib_venn",
+  "homepage": "https://github.com/konstantint/matplotlib-venn",
+  "release_count": 19,
+  "dependency_ids": []
+}

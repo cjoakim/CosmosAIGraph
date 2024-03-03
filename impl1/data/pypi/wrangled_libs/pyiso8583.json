@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "iso8583 - a python package for parsing iso8583 data\r\n===================================================\r\n\r\n|pypi| |docs| |coverage|\r\n\r\n``iso8583`` package serializes and deserializes iso8583 data between\r\nraw ``bytes`` iso8583 data and a regular python ``dict``.\r\n\r\n``iso8583`` package supports custom `specifications <https://pyiso8583.readthedocs.io/en/latest/specifications.html>`_\r\nthat can define:\r\n\r\n- field length and data encoding, such as bcd, ascii, ebcdic, etc.\r\n- field length count measured in bytes or nibbles.\r\n- field type, such as fixed, llvar, lllvar, etc.\r\n- maximum length\r\n- optional field description\r\n\r\nmultiple specifications can co-exist to support iso8583 messages for pos, atm,\r\nfile actions, and so on. simply define a new specification dictionary. ``iso8583``\r\npackage includes a starter specification in ``iso8583.specs`` module that can be\r\nused as a base to create own custom/proprietary specifications.\r\n\r\nadditional information is available on `read the docs <http://pyiso8583.readthedocs.org>`_.\r\n\r\ninstallation\r\n------------\r\n\r\n``iso8583`` is published on `pypi`__ as ``pyiso8583`` and can be installed from there:\r\n\r\n.. code-block::\r\n\r\n    pip install pyiso8583\r\n\r\n__ https://pypi.org/project/pyiso8583/\r\n\r\nencoding & decoding\r\n-------------------\r\n\r\nuse `iso8583.decode <https://pyiso8583.readthedocs.io/en/latest/functions.html#iso8583.decode>`_\r\nto decode raw iso8583 message.\r\nit returns two dictionaries: one with decoded data and one with encoded data.\r\n\r\n.. code-block:: python\r\n\r\n    >>> import pprint\r\n    >>> import iso8583\r\n    >>> from iso8583.specs import default_ascii as spec\r\n    >>> encoded_raw = b'02004000000000000000101234567890'\r\n    >>> decoded, encoded = iso8583.decode(encoded_raw, spec)\r\n    >>> pprint.pp(decoded)\r\n    {'t': '0200', 'p': '4000000000000000', '2': '1234567890'}\r\n    >>> pprint.pp(encoded)\r\n    {'t': {'len': b'', 'data': b'0200'},\r\n     'p': {'len': b'', 'data': b'4000000000000000'},\r\n     '2': {'len': b'10', 'data': b'1234567890'}}\r\n\r\nmodify the decoded message to send a response back.\r\nchange message type from '0200' to '0210'.\r\nremove field 2 (pan). and add field 39 (response code).\r\n\r\n.. code-block:: python\r\n\r\n    >>> decoded['t'] = '0210'\r\n    >>> decoded.pop('2', none)\r\n    '1234567890'\r\n    >>> decoded['39'] = '05'\r\n\r\nuse `iso8583.encode <https://pyiso8583.readthedocs.io/en/latest/functions.html#iso8583.encode>`_\r\nto encode updated iso8583 message.\r\nit returns a raw iso8583 message and a dictionary with encoded data.\r\n\r\n.. code-block:: python\r\n\r\n    >>> encoded_raw, encoded = iso8583.encode(decoded, spec)\r\n    >>> encoded_raw\r\n    bytearray(b'0210000000000200000005')\r\n    >>> pprint.pp(decoded)\r\n    {'t': '0210', 'p': '0000000002000000', '39': '05'}\r\n    >>> pprint.pp(encoded)\r\n    {'t': {'len': b'', 'data': b'0210'},\r\n     'p': {'len': b'', 'data': b'0000000002000000'},\r\n     '39': {'len': b'', 'data': b'05'}}\r\n\r\npretty print messages\r\n---------------------\r\n\r\nuse `iso8583.pp <https://pyiso8583.readthedocs.io/en/latest/functions.html#iso8583.pp>`_\r\nto pretty print iso8583 message.\r\n\r\n.. code-block:: python\r\n\r\n    >>> import iso8583\r\n    >>> from iso8583.specs import default_ascii as spec\r\n    >>> encoded_raw = b'02004000000000000000101234567890'\r\n    >>> decoded, encoded = iso8583.decode(encoded_raw, spec)\r\n    >>> iso8583.pp(decoded, spec)\r\n    t   message type                  : '0200'\r\n    p   bitmap, primary               : '4000000000000000'\r\n    2   primary account number (pan)  : '1234567890'\r\n    >>> iso8583.pp(encoded, spec)\r\n    t   message type                  : b'0200'\r\n    p   bitmap, primary               : b'4000000000000000'\r\n    2   primary account number (pan)  : b'10' b'1234567890'\r\n\r\ncontribute\r\n----------\r\n\r\n``iso8583`` package is hosted on `github <https://github.com/knovichikhin/pyiso8583>`_.\r\n\r\nfeel free to fork and send contributions over.\r\n\r\n.. |pypi| image:: https://img.shields.io/pypi/v/pyiso8583.svg\r\n    :alt: pypi\r\n    :target:  https://pypi.org/project/pyiso8583/\r\n\r\n.. |docs| image:: https://readthedocs.org/projects/pyiso8583/badge/?version=latest\r\n    :alt: documentation status\r\n    :target: https://pyiso8583.readthedocs.io/en/latest/?badge=latest\r\n\r\n.. |coverage| image:: https://codecov.io/gh/knovichikhin/pyiso8583/branch/master/graph/badge.svg\r\n    :alt: test coverage\r\n    :target: https://codecov.io/gh/knovichikhin/pyiso8583\r\n",
+  "docs_url": null,
+  "keywords": "iso8583 8583 banking protocol library",
+  "license": "mit",
+  "name": "pyiso8583",
+  "package_url": "https://pypi.org/project/pyiso8583/",
+  "project_url": "https://pypi.org/project/pyiso8583/",
+  "project_urls": {
+    "Homepage": "https://github.com/knovichikhin/pyiso8583"
+  },
+  "release_url": "https://pypi.org/project/pyiso8583/3.0.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.7",
+  "summary": "a serializer and deserializer of iso8583 data.",
+  "version": "3.0.0",
+  "releases": [],
+  "developers": [
+    "konstantin.novichikhin@gmail.com",
+    "konstantin_novichikhin"
+  ],
+  "kwds": "iso8583 specification encoded_raw pyiso8583 encoded",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pyiso8583",
+  "homepage": "https://github.com/knovichikhin/pyiso8583",
+  "release_count": 8,
+  "dependency_ids": []
+}

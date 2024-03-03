@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "sanic-cors\n==========\n\n|build status| |latest version| |supported python versions|\n|license|\n\na sanic extension for handling cross origin resource sharing (cors),\nmaking cross-origin ajax possible. based on\n`flask-cors <https://github.com/corydolphin/flask-cors>`__ by cory dolphin.\n\nthis package has a simple philosophy, when you want to enable cors, you\nwish to enable it for all use cases on a domain. this means no mucking\naround with different allowed headers, methods, etc. by default,\nsubmission of cookies across domains is disabled due to the security\nimplications, please see the documentation for how to enable\ncredential'ed requests, and please make sure you add some sort of\n`csrf <http://en.wikipedia.org/wiki/cross-site_request_forgery>`__\nprotection before doing so!\n\n**sept 2022 notice:**\nif you are having unexpected results in sanic v22.9+, upgrade to sanic-cors v2.2.0\n\n**december 2021 notice:**\nif you need compatibility with sanic v21.12+, upgrade to sanic-cors v2.0\n\n**sept 2021 notice:**\nplease upgrade to sanic-cors v1.0.1 if you need compatibility with sanic v21.9,<21.12\n\ninstallation\n------------\n\ninstall the extension with using pip, or easy\\_install.\n\n.. code:: bash\n\n    $ pip install -u sanic-cors\n\nusage\n-----\n\nthis package exposes a sanic extension which by default enables cors support on\nall routes, for all origins and methods. it allows parameterization of all\ncors headers on a per-resource level. the package also contains a decorator,\nfor those who prefer this approach.\n\nsimple usage\n~~~~~~~~~~~~\n\nin the simplest case, initialize the sanic-cors extension with default\narguments in order to allow cors for all domains on all routes.\n\n.. code:: python\n\n    from sanic import sanic\n    from sanic.response import text\n    from sanic_cors import cors, cross_origin\n\n    app = sanic(__name__)\n    cors(app)\n\n    @app.route(\"/\", methods=['get', 'options'])\n    def hello_world(request):\n      return text(\"hello, cross-origin-world!\")\n\nresource specific cors\n^^^^^^^^^^^^^^^^^^^^^^\n\nalternatively, you can specify cors options on a resource and origin\nlevel of granularity by passing a dictionary as the `resources` option,\nmapping paths to a set of options.\n\n.. code:: python\n\n    app = sanic(__name__)\n    cors = cors(app, resources={r\"/api/*\": {\"origins\": \"*\"}})\n\n    @app.route(\"/api/v1/users\", methods=['get', 'options'])\n    def list_users(request):\n      return text(\"user example\")\n\nroute specific cors via decorator\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nthis extension also exposes a simple decorator to decorate sanic routes\nwith. simply add ``@cross_origin(app)`` below a call to sanic's\n``@app.route(..)`` to allow cors on a given route.\n\n.. code:: python\n\n    @app.route(\"/\", methods=['get', 'options'])\n    @cross_origin(app)\n    def hello_world(request):\n      return text(\"hello, cross-origin-world!\")\n\nsanic-ext usage\n~~~~~~~~~~~~~~~\n\nsanic-cors can use sanic-ext to load the plugin for you.\n(but you need to make sure to disable the built-in sanic-ext cors support too)\n\n.. code:: python\n\n    from sanic import sanic\n    from sanic.response import text\n    from sanic_ext import extend\n    from sanic_cors.extension import cors\n    app = sanic(__name__)\n    cors_options = {\"resources\": r'/*', \"origins\": \"*\", \"methods\": [\"get\", \"post\", \"head\", \"options\"]}\n    # disable sanic-ext built-in cors, and add the sanic-cors plugin\n    extend(app, extensions=[cors], config={\"cors\": false, \"cors_options\": cors_options})\n\n    @app.route(\"/\", methods=['get', 'options'])\n    def hello_world(request):\n      return text(\"hello, cross-origin-world!\")\n\n\ndocumentation\n-------------\n\nfor a full list of options, please see the flask-cors\n`documentation <http://flask-cors.corydolphin.com/en/latest/api.html#extension>`__.\n\npreflight requests\n------------------\ncors requests have to send `pre-flight requests <https://developer.mozilla.org/en-us/docs/web/http/methods/options#preflighted_requests_in_cors>`_\nvia the options method, sanic by default only allows the ``get`` method, in order to\nservice your cors requests you must specify ``options`` in the methods argument to\nyour routes decorator.\n\nsanic-cors includes an ``automatic_options`` configuration parameter to\nallow the plugin handle the ``options`` response automatically for you. this is enabled by default, but you\ncan turn it off if you wish to do your own ``options`` response.\n\n.. code:: python\n\n    cors(app, automatic_options=true)\n\n    @app.delete('/api/auth')\n    @auth.login_required\n    async def auth_logout(request):\n    auth.logout_user(request)\n        return json(none, status=ok)\n\nor with the app config key:\n\n.. code:: python\n\n    app = sanic(__name__)\n    app.config['cors_automatic_options'] = true\n\n    cors(app)\n\n    @app.delete('/api/auth')\n    @auth.login_required\n    async def auth_logout(request):\n        auth.logout_user(request)\n        return json(none, status=ok)\n\nor directly on the route with the ``cross_origin`` decorator:\n\n.. code:: python\n\n    @app.route('/api/auth', methods={'delete','options'})\n    @auth.login_required\n    @cross_origin(app, automatic_options=true)\n    async def auth_logout(request):\n        auth.logout_user(request)\n        return json(none, status=ok)\n\nnote: for the third example, you must use ``@route()``, rather than\n``@delete()`` because you need to enable both ``delete`` and ``options`` to\nwork on that route, even though the decorator is handling the ``options``\nresponse.\n\ntests\n-----\n\na simple set of tests is included in ``test/``. to run, install nose,\nand simply invoke ``nosetests`` or ``python setup.py test`` to exercise\nthe tests.\n\ncontributing\n------------\n\nquestions, comments or improvements? please create an issue on\n`github <https://github.com/ashleysommer/sanic-cors>`__. i do my best to\ninclude every contribution proposed in any way that i can.\n\ncredits\n-------\n\nthis sanic extension is based upon the `decorator for the http access\ncontrol <http://flask.pocoo.org/snippets/56/>`__ written by armin\nronacher.\n\n.. |build status| image:: https://api.travis-ci.org/ashleysommer/sanic-cors.svg?branch=master\n   :target: https://travis-ci.org/ashleysommer/sanic-cors\n.. |latest version| image:: https://img.shields.io/pypi/v/sanic-cors.svg\n   :target: https://pypi.python.org/pypi/sanic-cors/\n.. |supported python versions| image:: https://img.shields.io/pypi/pyversions/sanic-cors.svg\n   :target: https://img.shields.io/pypi/pyversions/sanic-cors.svg\n.. |license| image:: http://img.shields.io/:license-mit-blue.svg\n   :target: https://pypi.python.org/pypi/sanic-cors/\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "sanic-cors",
+  "package_url": "https://pypi.org/project/Sanic-Cors/",
+  "project_url": "https://pypi.org/project/Sanic-Cors/",
+  "project_urls": {
+    "Homepage": "https://github.com/ashleysommer/sanic-cors"
+  },
+  "release_url": "https://pypi.org/project/Sanic-Cors/2.2.0/",
+  "requires_dist": [
+    "sanic (>=21.9.3)",
+    "packaging (>=21.3)"
+  ],
+  "requires_python": "",
+  "summary": "a sanic extension adding a decorator for cors support. based on flask-cors by cory dolphin.",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "ashley_sommer",
+    "ashleysommer@gmail.com"
+  ],
+  "kwds": "sanic_cors preflighted_requests_in_cors cors_options cors_automatic_options cors",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_sanic_cors",
+  "homepage": "https://github.com/ashleysommer/sanic-cors",
+  "release_count": 38,
+  "dependency_ids": [
+    "pypi_packaging",
+    "pypi_sanic"
+  ]
+}

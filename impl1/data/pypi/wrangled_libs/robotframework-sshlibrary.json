@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: robot framework",
+    "framework :: robot framework :: library",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: software development :: testing"
+  ],
+  "description": "sshlibrary\n===============\n\n.. contents::\n\nintroduction\n------------\n\nsshlibrary_ is a `robot framework`_ test\nlibrary for ssh and sftp.  the project is hosted on github_\nand downloads can be found from pypi_.\n\nsshlibrary is operating system independent and supports python 2.7 as well\nas python 3.4 or newer. in addition to the normal python_ interpreter,\nit also works with `jython 2.7`_.\n\nthe library has the following main usages:\n\n- executing commands on the remote machine, either with blocking or\n  non-blocking behavior.\n- writing and reading in an interactive shell.\n- transferring files and directories over sftp.\n- ensuring that files and directories exist on the remote machine.\n\n.. image:: https://img.shields.io/pypi/l/robotframework-sshlibrary.svg\n   :target: http://www.apache.org/licenses/license-2.0\n\n.. image:: https://api.travis-ci.org/robotframework/sshlibrary.png\n   :target: http://travis-ci.org/robotframework/sshlibrary\n\ndocumentation\n-------------\n\nsee `keyword documentation`_ for available keywords and more information\nabout the library in general.\n\nfor general information about using test libraries with robot framework, see\n`robot framework user guide`_.\n\ninstallation\n------------\n\nthe recommended installation method is using pip_::\n\n    pip install --upgrade robotframework-sshlibrary\n\nrunning this command installs also the latest robot framework, paramiko_\nand scp_ versions. the minimum supported paramiko version is ``1.15.3`` and\nminimum supported scp version is ``0.13.0``.\nthe ``--upgrade`` option can be omitted when installing the library for the\nfirst time.\n\nwith recent versions of ``pip`` it is possible to install directly from the\ngithub_ repository. to install latest source from the master branch, use\nthis command::\n\n    pip install git+https://github.com/robotframework/sshlibrary.git\n\nalternatively you can download the source distribution from pypi_, extract\nit, and install it using one of the following depending are you using\npython or jython::\n\n    python setup.py install\n    jython setup.py install\n\na benefit of using pip is that it automatically installs scp, paramiko\nand cryptography_ modules (or pycrypto_ if paramiko version < 2.0)\nthat sshlibrary requires on python.\n\non jython, sshlibrary requires trilead ssh jar distribution. you need to download\n`trilead ssh jar distribution`_ and add it to classpath.\n\non windows operating system, when using python version < 3.0, sshlibrary will\nrequire win_inet_pton_. the minimum supported win_inet_pton version is ``1.1.0``.\n\nfor creating ssh tunnels robotbackgroundlogger_ > 1.2 is also a requirement.\n\ndocker\n~~~~~~\n\nwhen installing sshlibrary in a container (eg. alpine linux) there are more dependencies\nthat must be installed: gcc_, make_, openssl-dev_, musl-dev_ and libffi-dev_. these\npackages can be installed using::\n\n    apk add gcc make openssl-dev musl-dev libffi-dev\n\nusage\n-----\n\nto use sshlibrary in robot framework tests, the library needs to first be\nimported using the library setting as any other library.\n\nwhen using robot framework, it is generally recommended to write as\neasy-to-understand tests as possible. the keywords provided by\nsshlibrary are pretty low level and it is typically a good idea to\nwrite tests using robot framework's higher level keywords that utilize\nsshlibrary keywords internally. this is illustrated by the following example\nwhere sshlibrary keywords like ``open connection`` and ``login`` are grouped\ntogether in a higher level keyword like ``open connection and log in``.\n\n.. code:: robotframework\n\n    *** settings ***\n    documentation          this example demonstrates executing a command on a remote machine\n    ...                    and getting its output.\n    ...\n    ...                    notice how connections are handled as part of the suite setup and\n    ...                    teardown. this saves some time when executing several test cases.\n\n    library                sshlibrary\n    suite setup            open connection and log in\n    suite teardown         close all connections\n\n    *** variables ***\n    ${host}                localhost\n    ${username}            test\n    ${password}            test\n\n    *** test cases ***\n    execute command and verify output\n        [documentation]    execute command can be used to run commands on the remote machine.\n        ...                the keyword returns the standard output by default.\n        ${output}=         execute command    echo hello sshlibrary!\n        should be equal    ${output}          hello sshlibrary!\n\n    *** keywords ***\n    open connection and log in\n       open connection     ${host}\n       login               ${username}        ${password}\n\nsupport\n-------\n\nif the provided documentation is not enough, there are various support forums\navailable:\n\n- `robotframework-users`_ mailing list\n- ``#sshlibrary`` and ``#sshlibrary-dev`` channels in\n  robot framework `slack community`_\n- sshlibrary `issue tracker`_ for bug reports and concrete enhancement\n  requests\n- `other support forums`_ including paid support\n\n.. _robot framework: http://robotframework.org\n.. _robot framework user guide: http://robotframework.org/robotframework/latest/robotframeworkuserguide.html#using-test-libraries\n.. _sshlibrary: https://github.com/robotframework/sshlibrary\n.. _github: https://github.com/robotframework/sshlibrary\n.. _python: http://python.org\n.. _pip: http://pip-installer.org\n.. _pypi: https://pypi.python.org/pypi/robotframework-sshlibrary\n.. _keyword documentation: http://robotframework.org/sshlibrary/sshlibrary.html\n.. _jython 2.7: http://jython.org\n.. _paramiko: http://www.paramiko.org\n.. _scp: https://github.com/jbardin/scp.py\n.. _cryptography: https://cryptography.io\n.. _pycrypto: http://www.pycrypto.org\n.. _trilead ssh jar distribution: http://search.maven.org/remotecontent?filepath=com/trilead/trilead-ssh2/1.0.0-build221/trilead-ssh2-1.0.0-build221.jar\n.. _win_inet_pton: https://github.com/hickeroar/win_inet_pton\n.. _robotbackgroundlogger: https://github.com/robotframework/robotbackgroundlogger\n.. _gcc: https://pkgs.alpinelinux.org/packages?name=gcc&branch=edge\n.. _make: https://pkgs.alpinelinux.org/packages?name=make&branch=edge\n.. _openssl-dev: https://pkgs.alpinelinux.org/packages?name=openssl-dev&branch=edge\n.. _musl-dev: https://pkgs.alpinelinux.org/packages?name=musl-dev&branch=edge\n.. _libffi-dev: https://pkgs.alpinelinux.org/packages?name=libffi-dev&branch=edge\n.. _robotframework-users: http://groups.google.com/group/robotframework-users\n.. _slack community: https://robotframework-slack-invite.herokuapp.com\n.. _issue tracker: https://github.com/robotframework/sshlibrary/issues\n.. _other support forums: http://robotframework.org/#support",
+  "docs_url": null,
+  "keywords": "robotframework testing testautomation ssh sftp",
+  "license": "apache license 2.0",
+  "name": "robotframework-sshlibrary",
+  "package_url": "https://pypi.org/project/robotframework-sshlibrary/",
+  "project_url": "https://pypi.org/project/robotframework-sshlibrary/",
+  "project_urls": {
+    "Homepage": "https://github.com/robotframework/SSHLibrary"
+  },
+  "release_url": "https://pypi.org/project/robotframework-sshlibrary/3.8.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "robot framework test library for ssh and sftp",
+  "version": "3.8.0",
+  "releases": [],
+  "developers": [
+    "robot_framework_developers",
+    "robotframework@gmail.com"
+  ],
+  "kwds": "sftp _robotframework robotframeworkuserguide ssh2 robotframework",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_robotframework_sshlibrary",
+  "homepage": "https://github.com/robotframework/sshlibrary",
+  "release_count": 40,
+  "dependency_ids": []
+}

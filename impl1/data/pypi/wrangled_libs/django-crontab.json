@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "topic :: system :: installation/setup"
+  ],
+  "description": ".. image:: https://img.shields.io/travis/kraiz/django-crontab/master.svg\n    :target: https://travis-ci.org/kraiz/django-crontab\n.. image:: https://img.shields.io/coveralls/kraiz/django-crontab/master.svg\n    :target: https://coveralls.io/r/kraiz/django-crontab\n.. image:: https://img.shields.io/pypi/dw/django-crontab.svg\n    :target: https://pypi.python.org/pypi/django-crontab\n.. image:: https://img.shields.io/pypi/v/django-crontab.svg\n    :target: https://pypi.python.org/pypi/django-crontab\n.. image:: https://img.shields.io/pypi/pyversions/django-crontab.svg\n    :target: https://pypi.python.org/pypi/django-crontab\n.. image:: https://img.shields.io/pypi/l/django-crontab.svg\n    :target: https://pypi.python.org/pypi/django-crontab\n\nabout\n=====\n\ndead simple crontab powered job scheduling for django (1.8+).\n\nsetup\n=====\ninstall via pip::\n\n    pip install django-crontab\n\nadd it to installed apps in django settings.py::\n\n    installed_apps = (\n        'django_crontab',\n        ...\n    )\n\nnow create a new method that should be executed by cron every 5 minutes, f.e. in `myapp/cron.py`::\n\n    def my_scheduled_job():\n      pass\n\nnow add this to your settings.py::\n\n    cronjobs = [\n        ('*/5 * * * *', 'myapp.cron.my_scheduled_job')\n    ]\n\nyou can also define positional and keyword arguments which let you call django management commands::\n\n    cronjobs = [\n        ('*/5 * * * *', 'myapp.cron.other_scheduled_job', ['arg1', 'arg2'], {'verbose': 0}),\n        ('0   4 * * *', 'django.core.management.call_command', ['clearsessions']),\n    ]\n\nfinally run this command to add all defined jobs from `cronjobs` to crontab (of the user which you are running this command with)::\n\n    python manage.py crontab add\n\nshow current active jobs of this project::\n\n    python manage.py crontab show\n\nremoving all defined jobs is straight forward::\n\n    python manage.py crontab remove\n\nconfig\n======\nthere are a bunch of setting vars to customize behavior. each of this comes with default values that should properly fit. if not, feel free to overwrite.\n\ncronjobs\n  - list of jobs, each defined as tuple:\n\n    - format 1:\n\n      1. required: cron timing (in usual format: http://en.wikipedia.org/wiki/cron#format)\n      2. required: the python module path to the method\n      3. optional: a job specific suffix (f.e. to redirect out/err to a file, default: '')\n\n    - format 2:\n\n      1. required: cron timing (in usual format: http://en.wikipedia.org/wiki/cron#format)\n      2. required: the python module path to the method\n      3. optional: list of positional arguments for the method (default: [])\n      4. optional: dict of keyword arguments for the method (default: {})\n      5. optional: a job specific suffix (f.e. to redirect out/err to a file, default: '')\n\n  - note: run \"python manage.py crontab add\" each time you change cronjobs in any way!\n  - default: []\n  - example::\n\n        cronjobs = [\n            ('*/5 * * * *', 'myapp.cron.my_scheduled_job'),\n\n            # format 1\n            ('0   0 1 * *', 'myapp.cron.my_scheduled_job', '>> /tmp/scheduled_job.log'),\n\n            # format 2\n            ('0   0 1 * *', 'myapp.cron.other_scheduled_job', ['myapp']),\n            ('0   0 * * 0', 'django.core.management.call_command', ['dumpdata', 'auth'], {'indent': 4}, '> /home/john/backups/last_sunday_auth_backup.json'),\n        ]\n\ncrontab_lock_jobs\n  - prevent starting a job if an old instance of the same job is still running\n  - default: false\n  - since 0.5.0\n\ncrontab_executable\n  - path to the crontab executable of your os\n  - default: '/usr/bin/crontab'\n\ncrontab_django_project_name\n  - the name of your django project, used to build path path to manage.py and to mark the jobs in contrab via comment for later removing\n  - default is read from django_settings_module environment variable\n\ncrontab_django_manage_path\n  - path to manage.py file (including the manage.py itself, i.e. '/home/john/web/manage.py')\n  - default is build using django_project_name\n\ncrontab_django_settings_module\n  - dotted python path to the settings module to run the command with\n  - default is the common one from the environment variable and will not be overwritten\n  - since 0.6.0\n\ncrontab_python_executable\n  - path to the python interpreter executable used to run the scheduled job\n  - default uses the interpreter executable used to `add` the jobs (via 'python manage.py crontab add')\n\ncrontab_command_prefix\n  - something you wanne do or declare before each job gets executed. a good point for environment variables.\n  - default: '' (empty string)\n  - example: 'stage=production'\n\ncrontab_command_suffix\n  - something you wanne do after each job was executed.\n  - default: '' (empty string)\n  - example: '2>&1'\n\ncrontab_comment\n  - used for marking the added contab-lines for removing, default value includes project name to distinguish multiple projects on the same host and user\n  - default: 'django-crontabs for ' + crontab_django_project_name\n\ncontributors\n============\narski cinghiale meric426 justdoit0823 chamaken\n\nfaq\n===\n* **i'm using this old django version (<1.8) and can't install this package. what should i do?**\n  - yeah, update django of course (!) or - as you seem to be familiar with old, unsupported versions, install the old version of this package too (it support django 1.3-1.7)::\n\n    pip install django-crontab==0.6.0\n\n* **will it work with windows?**\n  - no.\n* **i'm getting \"bad command\"/\"errors in cronfile\" while installing via \"crontab add\". what's wrong?**\n  - maybe it's your cron time format, it can have 5 or 6 fields. check that your system supports 6 or just define 5 in `cronjobs`. (see #23)\n\nlicense\n=======\nmit-license, see license file.",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "django-crontab",
+  "package_url": "https://pypi.org/project/django-crontab/",
+  "project_url": "https://pypi.org/project/django-crontab/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "https://github.com/kraiz/django-crontab"
+  },
+  "release_url": "https://pypi.org/project/django-crontab/0.7.1/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "dead simple crontab powered job scheduling for django",
+  "version": "0.7.1",
+  "releases": [],
+  "developers": [
+    "lars.kreisz@gmail.com",
+    "lars_kreisz"
+  ],
+  "kwds": "django_crontab crontab_django_manage_path crontab_django_project_name crontab_django_settings_module crontab_python_executable",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_django_crontab",
+  "homepage": "https://github.com/kraiz/django-crontab",
+  "release_count": 12,
+  "dependency_ids": []
+}

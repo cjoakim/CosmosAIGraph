@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3"
+  ],
+  "description": "# the `ops` library\n\n![ci status](https://github.com/canonical/operator/actions/workflows/framework-tests.yaml/badge.svg)\n![publish](https://github.com/canonical/operator/actions/workflows/publish.yml/badge.svg)\n\nthe `ops` library is a python framework for developing and testing kubernetes and machine [charms](https://juju.is/docs/sdk/charmed-operators). while charms can be written in any language, `ops` defines the latest standard, and charmers are encouraged to use python with `ops` for all charms. the library is an official component of the charm sdk, itself a part of [the juju universe](https://juju.is/).\n\n> - `ops` is  [available on pypi](https://pypi.org/project/ops/).\n> - the latest version of `ops` requires python 3.8 or above.\n\n||||\n|-|-|- |\n|| [juju](https://juju.is/docs/juju) | learn how to quickly deploy, integrate, and manage charms on any cloud with juju. <br>  _it's as simple as `juju deploy foo`, `juju integrate foo bar`, and so on -- on any cloud._ |\n||||\n|| [charmhub](https://charmhub.io/) | sample our existing charms on charmhub. <br> _a charm can be a cluster ([openstack](https://charmhub.io/openstack-base), [kubernetes](https://charmhub.io/charmed-kubernetes)), a data platform ([postgresql](https://charmhub.io/postgresql-k8s), [mongodb](https://charmhub.io/mongodb), etc.), an observability stack ([canonical observability stack](https://charmhub.io/cos-lite)), an mlops solution ([kubeflow](https://charmhub.io/kubeflow)), and so much more._ |\n||||\n|:point_right:| [charm&nbsp;sdk](https://juju.is/docs/sdk)  | write your own charm! <br> _juju is written in go, but our sdk supports easy charm development in python._  |\n\n## give it a try\n\nlet's use `ops` to build a kubernetes charm:\n\n### set up\n\n> see [charm sdk | set up an ubuntu `charm-dev` vm with multipass](https://juju.is/docs/sdk/dev-setup#heading--automatic-set-up-an-ubuntu-charm-dev-vm-with-multipass). <br> choose the microk8s track.\n\n\n### write your charm\n\non your multipass vm, create a charm directory and use charmcraft to initialise your charm file structure:\n\n```shell-script\nmkdir ops-example\ncd ops-example\ncharmcraft init\n```\nthis has created a standard charm directory structure. poke around. \n\nthings to note:\n\n- the `metadata.yaml` file shows that what we have is an example charm called `ops-example`, which uses an oci image resource `httpbin` from `kennethreitz/httpbin`.\n\n- the `requirements.txt` file lists the version of `ops` to use.\n\n- the `src/charm.py` file imports `ops` and uses `ops` constructs to create a charm class `opsexamplecharm`, observe juju events, and pair them to event handlers:\n\n```python\nimport ops\n\nclass opsexamplecharm(ops.charmbase):\n    \"\"\"charm the service.\"\"\"\n\n    def __init__(self, *args):\n        super().__init__(*args)\n        self.framework.observe(self.on['httpbin'].pebble_ready, self._on_httpbin_pebble_ready)\n        self.framework.observe(self.on.config_changed, self._on_config_changed)\n\n    def _on_httpbin_pebble_ready(self, event: ops.pebblereadyevent):\n        \"\"\"define and start a workload using the pebble api.\n\n        change this example to suit your needs. you'll need to specify the right entrypoint and\n        environment configuration for your specific workload.\n\n        learn more about interacting with pebble at at https://juju.is/docs/sdk/pebble.\n        \"\"\"\n        # get a reference the container attribute on the pebblereadyevent\n        container = event.workload\n        # add initial pebble config layer using the pebble api\n        container.add_layer(\"httpbin\", self._pebble_layer, combine=true)\n        # make pebble reevaluate its plan, ensuring any services are started if enabled.\n        container.replan()\n        # learn more about statuses in the sdk docs:\n        # https://juju.is/docs/sdk/constructs#heading--statuses\n        self.unit.status = ops.activestatus()\n```\n\n> see more: [`ops.pebblereadyevent`](https://ops.readthedocs.io/en/latest/index.html#ops.pebblereadyevent)\n\n- the `tests/unit/test_charm.py` file imports `ops.testing` and uses it to set up a testing harness:\n\n```python\nimport ops.testing\n\nclass testcharm(unittest.testcase):\n    def setup(self):\n        self.harness = ops.testing.harness(opsexamplecharm)\n        self.addcleanup(self.harness.cleanup)\n        self.harness.begin()\n\n    def test_httpbin_pebble_ready(self):\n        # expected plan after pebble ready with default config\n        expected_plan = {\n            \"services\": {\n                \"httpbin\": {\n                    \"override\": \"replace\",\n                    \"summary\": \"httpbin\",\n                    \"command\": \"gunicorn -b 0.0.0.0:80 httpbin:app -k gevent\",\n                    \"startup\": \"enabled\",\n                    \"environment\": {\"gunicorn_cmd_args\": \"--log-level info\"},\n                }\n            },\n        }\n        # simulate the container coming up and emission of pebble-ready event\n        self.harness.container_pebble_ready(\"httpbin\")\n        # get the plan now we've run pebbleready\n        updated_plan = self.harness.get_container_pebble_plan(\"httpbin\").to_dict()\n        # check we've got the plan we expected\n        self.assertequal(expected_plan, updated_plan)\n        # check the service was started\n        service = self.harness.model.unit.get_container(\"httpbin\").get_service(\"httpbin\")\n        self.asserttrue(service.is_running())\n        # ensure we set an activestatus with no message\n        self.assertequal(self.harness.model.unit.status, ops.activestatus())\n```\n\n> see more: [`ops.testing.harness`](https://ops.readthedocs.io/en/latest/#ops.testing.harness)\n\n\nexplore further, start editing the files, or skip ahead and pack the charm:\n\n```shell-script\ncharmcraft pack\n```\n\nif you didn't take any wrong turn or simply left the charm exactly as it was, this has created a file called `ops-example_ubuntu-22.04-amd64.charm` (the architecture bit may be different depending on your system's architecture). use this name and the resource from the `metadata.yaml` to deploy your example charm to your local microk8s cloud:\n\n```shell-script\njuju deploy ./ops-example_ubuntu-22.04-amd64.charm --resource httpbin-image=kennethreitz/httpbin\n```\n\ncongratulations, you\u2019ve just built your first kubernetes charm using `ops`!\n\n### clean up\n\n> see [charm sdk | clean up](https://juju.is/docs/sdk/dev-setup#heading--automatic-set-up-an-ubuntu-charm-dev-vm-with-multipass).\n\n## next steps\n\n### learn more\n- read our [user documentation](https://juju.is/docs/sdk/ops), which includes other guides showing `ops` in action\n- dig into the [`ops` api reference](https://ops.readthedocs.io/en/latest/)\n\n### chat with us\n\nread our [code of conduct](https://ubuntu.com/community/code-of-conduct) and:\n- join our chat: [mattermost](https://chat.charmhub.io/charmhub/channels/ops)\n- join our forum: [discourse](https://discourse.charmhub.io/)\n \n### file an issue\n\n- report an `ops` bug using [github issues](https://github.com/canonical/operator/issues)\n- raise a general https://juju.is/docs documentation issue on [github | juju/docs](https://github.com/juju/docs)\n\n### make your mark\n\n- read our [documentation contributor guidelines](https://discourse.charmhub.io/t/documentation-guidelines-for-contributors/1245) and help improve a doc\n- read our [codebase contributor guidelines](hacking.md) and help improve the codebase\n- write a charm and publish it on [charmhub](https://charmhub.io/)\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "ops",
+  "package_url": "https://pypi.org/project/ops/",
+  "project_url": "https://pypi.org/project/ops/",
+  "project_urls": {
+    "Homepage": "https://github.com/canonical/operator"
+  },
+  "release_url": "https://pypi.org/project/ops/2.9.0/",
+  "requires_dist": [
+    "PyYAML ==6.*",
+    "websocket-client ==1.*"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "the python library behind great charms",
+  "version": "2.9.0",
+  "releases": [],
+  "developers": [
+    "charmcraft@lists.launchpad.net",
+    "the_charmcraft_team_at_canonical_ltd"
+  ],
+  "kwds": "test_charm charmcraft charmbase charms charmers",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_ops",
+  "homepage": "https://github.com/canonical/operator",
+  "release_count": 41,
+  "dependency_ids": [
+    "pypi_pyyaml",
+    "pypi_websocket_client"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "[![pypi](https://img.shields.io/pypi/v/acachecontrol)](https://pypi.org/project/acachecontrol/)\n[![license](https://img.shields.io/badge/license-apache%202.0-blue.svg)](https://opensource.org/licenses/apache-2.0)\n\n# async cachecontrol for aiohttp\n\n> requires python3.6+\n\n### note: library is still under development, there might be a lot of bugs.\n### for contributing see development_notes.md as a starting guide\n\n## what and why\n\nthere is a good and simple library [cachecontrol](https://github.com/ionrock/cachecontrol) written for python requests library. and there is nothing similar for aiohttp. \"async cachecontrol\" project strives to cover this hole.\n\n## usage\n\n```py\nimport asyncio\nfrom acachecontrol import asynccache, asynccachecontrol\n\n\nasync def main():\n    cache = asynccache(config={\"sleep_time\": 0.2})\n    # `asynccache()` with default configuration is used\n    # if `cache` not provided\n    async with asynccachecontrol(cache=cache) as cached_sess:\n        async with cached_sess.get('http://example.com') as resp:\n            resp_text = await resp.text()\n            print(resp_text)\n\n\nasyncio.run(main())\n```\n\n### extending or creating new classes\n\nit is possible to use any cache backend, which should implement ordereddict interfaces: `__contains__`, `__len__`, `__getitem__`, `__setitem__`, `get`, `pop`, `popitem`, `move_to_end`:\n\n```py\nclass customcachebackend():\n    def __init__(self):\n        self.item_order = []\n        self.storage = {}\n\n    def __contains__(self, key):\n        return key in self.storage\n\n    def __len__(self):\n        return len(self.storage)\n\n    def __getitem__(self, key):\n        return self.storage[key]\n\n    def __setitem__(self, key, value):\n        self.storage[key] = value\n        self.item_order.append(key)\n\n    def get(self, key):\n        return self.storage.get(key)\n\n    def pop(self, key):\n        self.item_order.remove(key)\n        return self.storage.pop(key)\n\n    def move_to_end(self, key):\n        last_index = len(self.item_order) - 1\n        key_index = self.item_order.index(key)\n        while key_index < last_index:\n            self.item_order[key_index] = self.item_order[key_index+1]\n            key_index += 1\n        self.item_order[last_index] = key\n\n    def popitem(self, last=true):\n        key = self.item_order.pop() if last else self.item_order.pop(0)\n        value = self.storage.pop(key)\n        return value\n```\n\nthen you can use it in `asynccache`:\n\n```py\nimport asyncio\nfrom acachecontrol import asynccache, asynccachecontrol\n\n\nasync def main():\n    cache = asynccache(cache_backend=customcachebackend())\n    async with asynccachecontrol(cache=cache) as cached_sess:\n        async with cached_sess.get('http://example.com') as resp:\n            resp_text = await resp.text()\n            print(resp_text)\n\n\nasyncio.run(main())\n```\n\nsimilarly, you can replace requestcontextmanager (assume its implementation in module `custom_implementations`):\n\n```py\nimport asyncio\nfrom acachecontrol import asynccache, asynccachecontrol\n\nfrom custom_implementations import customrequestcontextmanager\n\n\nasync def main():\n    async with asynccachecontrol(request_context_manager_cls=customrequestcontextmanager) as cached_sess:\n        async with cached_sess.get('http://example.com') as resp:\n            resp_text = await resp.text()\n            print(resp_text)\n\n\nasyncio.run(main())\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "acachecontrol",
+  "package_url": "https://pypi.org/project/acachecontrol/",
+  "project_url": "https://pypi.org/project/acachecontrol/",
+  "project_urls": {
+    "Changelog": "https://github.com/MasterSergius/acachecontrol/blob/master/CHANGELOG.md",
+    "Homepage": "https://github.com/MasterSergius/acachecontrol",
+    "Issue Tracker": "https://github.com/MasterSergius/acachecontrol/issues"
+  },
+  "release_url": "https://pypi.org/project/acachecontrol/0.3.5/",
+  "requires_dist": [
+    "aiohttp (~=3.7)",
+    "setuptools (>=38.0)"
+  ],
+  "requires_python": ">=3.6,<4.0",
+  "summary": "cache-control for aiohttp",
+  "version": "0.3.5",
+  "releases": [],
+  "developers": [
+    "andrii.ivaniuk@gmail.com",
+    "master.sergius@gmail.com",
+    "serhii_buniak"
+  ],
+  "kwds": "acachecontrol cachecontrol asynccachecontrol cache_backend python3",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_acachecontrol",
+  "homepage": "https://github.com/mastersergius/acachecontrol",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_setuptools"
+  ]
+}

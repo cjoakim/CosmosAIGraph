@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "framework :: asyncio",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# async json-rpc 2.0 protocol + asyncio server\n\n[![python package status](https://github.com/pavlov99/ajsonrpc/workflows/python%20package/badge.svg)](https://github.com/pavlov99/ajsonrpc/actions?query=workflow%3a%22python+package%22)\n[![security status](https://github.com/pavlov99/ajsonrpc/workflows/codeql/badge.svg)](https://github.com/pavlov99/ajsonrpc/actions?query=workflow%3acodeql)\n[![pypi version](https://img.shields.io/pypi/v/ajsonrpc.svg)](https://pypi.org/project/ajsonrpc/)\n\nlightweight json-rpc 2.0 protocol implementation and asynchronous server powered by asyncio. this library is a successor of json-rpc and written by the same team.\n\nfeatures:\n* full json-rpc 2.0 implementation.\n* async request manager that handles the protocol.\n* vanilla python, no dependencies.\n* api server setup in 1 min.\n* same development team as `json-rpc`, largely compatible code.\n\n## installing\n```\n$ pip install ajsonrpc\n```\n\n## quick start\nthis package contains core json-rpc 2.0 primitives (request, response, etc.) and convenient backend-independent abstractions on top of them: dispatcher and request manager. these modules mirror implementation in the original json-rpc package with minor changes and improvements. below is a summary of each module.\n\n#### core module\nconsists of json-rpc 2.0 primitives: request, batch request, response, batch response, error. it also defines base classes for custom errors and exceptions.\n\ndevelopment principles:\n* if python object is created or modified without exceptions, it contains valid data.\n* private state `<object>._body` contains the single source of truth. it is accessible and modifiable via getters (properties) and setters that ensure validation.\n* `body` is always a dictionary with primitive keys and values (the only exception is `response.result` that could hold any value defined by the application).\n* constructor, getters and setters operate with json-rpc defined types, e.g. `response.error` always has `jsonrpc20error` type. most of other types are strings and numbers.\n\nunlike json-rpc package, core module does not deal with serialization/de-serialization, this logic was moved to manager.\n\n#### dispatcher\ndispatcher is a dict-like object that maps method names to executables. one can think of it as an inproved dictionary, in fact it is inherited from `mutablemapping`. some of the ways to add methods to dispatcher:\n\n```python\n# init\nd = dispatcher({\"sum\": lambda a, b: a + b})\n\n# set item\nd[\"max\"] = lambda a, b: max(a, b)\n\n# function decorator\n@d.add_function\ndef add(x, y):\n    return x + y\n\n# add class or object\nclass math:\n    def sum(self, a, b):\n        return a + b\n\n    def diff(self, a, b):\n        return a - b\n\nd.add_class(math)\nd.add_object(math())\nd.add_dict({\"min\": lambda a, b: min(a, b)})\n\n# rename function\nd.add_function(add, name=\"my_add\")\n\n# prefix methos\nd.add_class(math, prefix=\"get_\")\n```\n\n#### manager\nmanager generates a response for a request. it handles common routines: request parsing, exception handling and error generation, parallel request execution for batch requests, serialization/de-serialization. manager is asynchronous and dackend agnostic, it exposes following common methods:\n\n```python\n# get a response object for a single request. used by other methods.\nasync def get_response_for_request(\n    self, request: jsonrpc20request\n    ) -> optional[jsonrpc20response]\n\n# get (batch) response for a string payload. handles de-serialization and parse errors.\nasync def get_response_for_payload(\n    self, payload: str\n    ) -> optional[union[jsonrpc20response, jsonrpc20batchresponse]]\n\n# most high-level method, returns string json for a string payload.\nasync def get_payload_for_payload(self, payload: str) -> str\n```\n\n#### vanilla server (demo)\nthis package comes with an asyncio [protocol-based](https://docs.python.org/3/library/asyncio-protocol.html) minimalistic server script `async-json-rpc-server`. one could think of it as a bottle-py of api servers.\n\nthis was an experiment turned prototype: unlike json-rpc that requires some \"shell\" like django or flask to work, this package relies on asyncio and therefore could build on top of its [tcp server](https://docs.python.org/3/library/asyncio-protocol.html#tcp-echo-server). indeed, json-rpc 2.0 is intentionally simple: server does not require views, has only one endpoint (routing is not required), only deals with json. hence, vanilla code would be not only sufficient but likely faster than any framework.\n\nthis idea of self-sufficient server was extended further: what would be the minimum interface that allows to plug application code? what if zero integration is required? likely, this was possible with runtime method introspection: `async-json-rpc-server` parses given file with methods and exposes all of them. let's consider an example:\n\n```python\n# examples/methods.py\nimport asyncio\n\ndef echo(s='pong'):\n    return s\n\ndef mul2(a, b):\n    return a * b\n\nasync def say_after(delay, what):\n    await asyncio.sleep(delay)\n    return what\n```\n\nto launch a server based on above methods, simply run:\n\n```\n$ async-json-rpc-server examples/methods.py --port=8888\n```\n(ctrl+c stops the server).\n\nsingle request example:\n```\n$ curl -h 'content-type: application/json' \\\n    -d '{\"jsonrpc\": \"2.0\", \"method\": \"echo\", \"id\": 0}' \\\n    http://127.0.0.1:8888\n\n{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\": \"pong\"}\n```\n\nbatch request example:\n![server-example-batch](https://raw.githubusercontent.com/pavlov99/ajsonrpc/master/docs/_static/server-example-postman.png)\n\n#### backends\nbackend support is a syntactic sugar that wraps dispatcher and manager under one api class and provides convenient boilerplate, such as handler generation. currently supported frameworks:\n* tornado\n* sanic\n* quart\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "ajsonrpc",
+  "package_url": "https://pypi.org/project/ajsonrpc/",
+  "project_url": "https://pypi.org/project/ajsonrpc/",
+  "project_urls": {
+    "Code": "https://github.com/pavlov99/ajsonrpc",
+    "Documentation": "https://ajsonrpc.readthedocs.io",
+    "Homepage": "https://github.com/pavlov99/ajsonrpc",
+    "Issue tracker": "https://github.com/pavlov99/ajsonrpc/issues"
+  },
+  "release_url": "https://pypi.org/project/ajsonrpc/1.2.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.5",
+  "summary": "async json-rpc 2.0 protocol + server powered by asyncio",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "k@p99.io",
+    "kirill_pavlov"
+  ],
+  "kwds": "jsonrpc asyncio rpc ajsonrpc async",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_ajsonrpc",
+  "homepage": "https://github.com/pavlov99/ajsonrpc",
+  "release_count": 9,
+  "dependency_ids": []
+}

@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# django-sendgrid-v5\n\n[![latest release](https://img.shields.io/pypi/v/django-sendgrid-v5.svg)](https://pypi.python.org/pypi/django-sendgrid-v5/)\n\nthis package implements an email backend for django that relies on sendgrid's rest api for message delivery.\n\nit is under active development, and pull requests are more than welcome\\!\n\nto use the backend, simply install the package (using pip), set the `email_backend` setting in django, and add a `sendgrid_api_key` key (set to the appropriate value) to your django settings.\n\n## how to install\n\n1. `pip install django-sendgrid-v5`\n2. in your project's settings.py script:\n    1. set `email_backend = \"sendgrid_backend.sendgridbackend\"`\n    2. set the sendgrid\\_api\\_key in settings.py to your api key that was provided to you by sendgrid. `sendgrid_api_key = os.environ[\"sendgrid_api_key\"]`\n\n### other settings\n\n1. to toggle sandbox mode (when django is running in debug mode), set `sendgrid_sandbox_mode_in_debug = true/false`.\n    1. to err on the side of caution, this defaults to true, so emails sent in debug mode will not be delivered, unless this setting is explicitly set to false.\n2. `sendgrid_echo_to_stdout` will echo to stdout or any other file-like\n    object that is passed to the backend via the `stream` kwarg.\n3. `sendgrid_track_email_opens` - defaults to true and tracks email open events via the sendgrid service. these events are logged in the statistics ui, email activity interface, and are reported by the event webhook.\n4. `sendgrid_track_clicks_html` - defaults to true and, if enabled in your sendgrid account, will tracks click events on links found in the html message sent.\n5. `sendgrid_track_clicks_plain` - defaults to true and, if enabled in your sendgrid account, will tracks click events on links found in the plain text message sent.\n\n## usage\n\n### simple\n\n```python\nfrom django.core.mail import send_mail\n\nsend_mail(\n    'subject here',\n    'here is the message.',\n    'from@example.com',\n    ['to@example.com'],\n    fail_silently=false,\n)\n```\n\n### dynamic template with json data\n\nfirst, create a [dynamic template](https://mc.sendgrid.com/dynamic-templates) and copy the id.\n\n```python\nfrom django.core.mail import emailmessage\n\nmsg = emailmessage(\n  from_email='to@example.com',\n  to=['to@example.com'],\n)\nmsg.template_id = \"your-dynamic-template-id\"\nmsg.dynamic_template_data = {\n  \"title\": foo\n}\nmsg.send(fail_silently=false)\n```\n\n### the kitchen sink emailmessage (all of the supported sendgrid-specific properties)\n\n```python\nfrom django.core.mail import emailmessage\n\nmsg = emailmessage(\n  from_email='to@example.com',\n  to=['to@example.com'],\n  cc=['cc@example.com'],\n  bcc=['bcc@example.com'],\n)\n\n# personalization custom args\n# https://sendgrid.com/docs/for-developers/sending-email/personalizations/\nmsg.custom_args = {'arg1': 'value1', 'arg2': 'value2'}\n\n# reply to email address (sendgrid only supports 1 reply-to email address)\nmsg.reply_to = 'reply-to@example.com'\n\n# send at (accepts an integer per the sendgrid docs)\n# https://docs.sendgrid.com/for-developers/sending-email/scheduling-parameters#send-at\nmsg.send_at = 1600188812\n\n# transactional templates\n# https://sendgrid.com/docs/ui/sending-email/how-to-send-an-email-with-dynamic-transactional-templates/\nmsg.template_id = \"your-dynamic-template-id\"\nmsg.dynamic_template_data = {  # sendgrid v6+ only\n  \"title\": foo\n}\nmsg.substitutions = {\n  \"title\": bar\n}\n\n# unsubscribe groups\n# https://sendgrid.com/docs/ui/sending-email/unsubscribe-groups/\nmsg.asm = {'group_id': 123, 'groups_to_display': ['group1', 'group2']}\n\n# categories\n# https://sendgrid.com/docs/glossary/categories/\nmsg.categories = ['category1', 'category2']\n\n# ip pools\n# https://sendgrid.com/docs/ui/account-and-settings/ip-pools/\nmsg.ip_pool_name = 'my-ip-pool'\n\n\nmsg.send(fail_silently=false)\n```\n\n\n### faq\n**how to change a sender's name ?**\n\n\n`from_email=\"john smith <john.smith@example.org>\"`\nyou can just include the name in the from_email field of the _```emailmessage```_ class \n\n```\nmsg = emailmessage(\n  from_email='sender name <from@example.com>',\n  to=['to@example.com'],\n)\n```\n\n**how to make mails to multiple users private (hide all the email addresses to which the mail is sent) to each person (personalization) ?**\n\n\nsetting the `make_private` attribute to `true` will help us achieve it\n```\nmsg = emailmessage(\n  from_email='sender name <from@example.com>',\n  to=['to@example.com','abc@example.com','xyz@example.com'],\n)\nmsg.make_private = true\n```\n\n## examples\n\n- marcelo canina [(@marcanuy)](https://github.com/marcanuy) wrote a great article demonstrating how to integrate `django-sendgrid-v5` into your django application on his site: [https://simpleit.rocks/python/django/adding-email-to-django-the-easiest-way/](https://simpleit.rocks/python/django/adding-email-to-django-the-easiest-way/)\n- rx-36 [(@devwoody856)](https://github.com/devwoody856) demonstrates how to use `django-sendgrid-v5` to make a contact form for your web application: https://rx-36.life/create-a-contact-form-using-sendgrid-with-django/\n\n\n## stargazers over time\n\n[![stargazers over time](https://starchart.cc/sklarsa/django-sendgrid-v5.svg)](https://starchart.cc/sklarsa/django-sendgrid-v5)\n\n",
+  "docs_url": null,
+  "keywords": "django email sendgrid backend",
+  "license": "mit",
+  "name": "django-sendgrid-v5",
+  "package_url": "https://pypi.org/project/django-sendgrid-v5/",
+  "project_url": "https://pypi.org/project/django-sendgrid-v5/",
+  "project_urls": {
+    "Homepage": "https://github.com/sklarsa/django-sendgrid-v5"
+  },
+  "release_url": "https://pypi.org/project/django-sendgrid-v5/1.2.3/",
+  "requires_dist": [
+    "django >=1.8",
+    "sendgrid >=5.0.0",
+    "python-http-client >=3.0.0"
+  ],
+  "requires_python": "",
+  "summary": "an implementation of django's emailbackend compatible with sendgrid-python v5+",
+  "version": "1.2.3",
+  "releases": [],
+  "developers": [
+    "sklarsa@gmail.com",
+    "steven_sklar"
+  ],
+  "kwds": "sendgrid_backend sendgrid sendgrid_api_key sendgrid_track_email_opens sendgridbackend",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_django_sendgrid_v5",
+  "homepage": "https://github.com/sklarsa/django-sendgrid-v5",
+  "release_count": 31,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_python_http_client",
+    "pypi_sendgrid"
+  ]
+}

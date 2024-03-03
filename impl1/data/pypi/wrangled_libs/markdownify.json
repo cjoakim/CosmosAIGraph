@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 2.5",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: utilities"
+  ],
+  "description": "|build| |version| |license| |downloads|\n\n.. |build| image:: https://img.shields.io/github/workflow/status/matthewwithanm/python-markdownify/python%20application/develop\n    :alt: github workflow status\n    :target: https://github.com/matthewwithanm/python-markdownify/actions?query=workflow%3a%22python+application%22\n\n.. |version| image:: https://img.shields.io/pypi/v/markdownify\n    :alt: pypi version\n    :target: https://pypi.org/project/markdownify/\n\n.. |license| image:: https://img.shields.io/pypi/l/markdownify\n    :alt: license\n    :target: https://github.com/matthewwithanm/python-markdownify/blob/develop/license\n\n.. |downloads| image:: https://pepy.tech/badge/markdownify\n    :alt: pypi downloads\n    :target: https://pepy.tech/project/markdownify\n\ninstallation\n============\n\n``pip install markdownify``\n\n\nusage\n=====\n\nconvert some html to markdown:\n\n.. code:: python\n\n    from markdownify import markdownify as md\n    md('<b>yay</b> <a href=\"http://github.com\">github</a>')  # > '**yay** [github](http://github.com)'\n\nspecify tags to exclude:\n\n.. code:: python\n\n    from markdownify import markdownify as md\n    md('<b>yay</b> <a href=\"http://github.com\">github</a>', strip=['a'])  # > '**yay** github'\n\n\\...or specify the tags you want to include:\n\n.. code:: python\n\n    from markdownify import markdownify as md\n    md('<b>yay</b> <a href=\"http://github.com\">github</a>', convert=['b'])  # > '**yay** github'\n\n\noptions\n=======\n\nmarkdownify supports the following options:\n\nstrip\n  a list of tags to strip. this option can't be used with the\n  ``convert`` option.\n\nconvert\n  a list of tags to convert. this option can't be used with the\n  ``strip`` option.\n\nautolinks\n  a boolean indicating whether the \"automatic link\" style should be used when\n  a ``a`` tag's contents match its href. defaults to ``true``.\n\ndefault_title\n  a boolean to enable setting the title of a link to its href, if no title is\n  given. defaults to ``false``.\n\nheading_style\n  defines how headings should be converted. accepted values are ``atx``,\n  ``atx_closed``, ``setext``, and ``underlined`` (which is an alias for\n  ``setext``). defaults to ``underlined``.\n\nbullets\n  an iterable (string, list, or tuple) of bullet styles to be used. if the\n  iterable only contains one item, it will be used regardless of how deeply\n  lists are nested. otherwise, the bullet will alternate based on nesting\n  level. defaults to ``'*+-'``.\n\nstrong_em_symbol\n  in markdown, both ``*`` and ``_`` are used to encode **strong** or\n  *emphasized* texts. either of these symbols can be chosen by the options\n  ``asterisk`` (default) or ``underscore`` respectively.\n\nsub_symbol, sup_symbol\n  define the chars that surround ``<sub>`` and ``<sup>`` text. defaults to an\n  empty string, because this is non-standard behavior. could be something like\n  ``~`` and ``^`` to result in ``~sub~`` and ``^sup^``.\n\nnewline_style\n  defines the style of marking linebreaks (``<br>``) in markdown. the default\n  value ``spaces`` of this option will adopt the usual two spaces and a newline,\n  while ``backslash`` will convert a linebreak to ``\\\\n`` (a backslash and a\n  newline). while the latter convention is non-standard, it is commonly\n  preferred and supported by a lot of interpreters.\n\ncode_language\n  defines the language that should be assumed for all ``<pre>`` sections.\n  useful, if all code on a page is in the same programming language and\n  should be annotated with `````python`` or similar.\n  defaults to ``''`` (empty string) and can be any string.\n\ncode_language_callback\n  when the html code contains ``pre`` tags that in some way provide the code\n  language, for example as class, this callback can be used to extract the\n  language from the tag and prefix it to the converted ``pre`` tag.\n  the callback gets one single argument, an beautifylsoup object, and returns\n  a string containing the code language, or ``none``.\n  an example to use the class name as code language could be::\n\n    def callback(el):\n        return el['class'][0] if el.has_attr('class') else none\n\n  defaults to ``none``.\n\nescape_asterisks\n  if set to ``false``, do not escape ``*`` to ``\\*`` in text.\n  defaults to ``true``.\n\nescape_underscores\n  if set to ``false``, do not escape ``_`` to ``\\_`` in text.\n  defaults to ``true``.\n\nkeep_inline_images_in\n  images are converted to their alt-text when the images are located inside\n  headlines or table cells. if some inline images should be converted to\n  markdown images instead, this option can be set to a list of parent tags\n  that should be allowed to contain inline images, for example ``['td']``.\n  defaults to an empty list.\n\nwrap, wrap_width\n  if ``wrap`` is set to ``true``, all text paragraphs are wrapped at\n  ``wrap_width`` characters. defaults to ``false`` and ``80``.\n  use with ``newline_style=backslash`` to keep line breaks in paragraphs.\n\noptions may be specified as kwargs to the ``markdownify`` function, or as a\nnested ``options`` class in ``markdownconverter`` subclasses.\n\n\nconverting beautifulsoup objects\n================================\n\n.. code:: python\n\n    from markdownify import markdownconverter\n\n    # create shorthand method for conversion\n    def md(soup, **options):\n        return markdownconverter(**options).convert_soup(soup)\n\n\ncreating custom converters\n==========================\n\nif you have a special usecase that calls for a special conversion, you can\nalways inherit from ``markdownconverter`` and override the method you want to\nchange:\n\n.. code:: python\n\n    from markdownify import markdownconverter\n\n    class imageblockconverter(markdownconverter):\n        \"\"\"\n        create a custom markdownconverter that adds two newlines after an image\n        \"\"\"\n        def convert_img(self, el, text, convert_as_inline):\n            return super().convert_img(el, text, convert_as_inline) + '\\n\\n'\n\n    # create shorthand method for conversion\n    def md(html, **options):\n        return imageblockconverter(**options).convert(html)\n\n\ncommand line interface\n======================\n\nuse ``markdownify example.html > example.md`` or pipe input from stdin\n(``cat example.html | markdownify > example.md``).\ncall ``markdownify -h`` to see all available options.\nthey are the same as listed above and take the same arguments.\n\n\ndevelopment\n===========\n\nto run tests and the linter run ``pip install tox`` once, then ``tox``.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "markdownify",
+  "package_url": "https://pypi.org/project/markdownify/",
+  "project_url": "https://pypi.org/project/markdownify/",
+  "project_urls": {
+    "Download": "http://github.com/matthewwithanm/python-markdownify/tarball/master",
+    "Homepage": "http://github.com/matthewwithanm/python-markdownify"
+  },
+  "release_url": "https://pypi.org/project/markdownify/0.11.6/",
+  "requires_dist": [
+    "beautifulsoup4 (<5,>=4.9)",
+    "six (<2,>=1.15)"
+  ],
+  "requires_python": "",
+  "summary": "convert html to markdown.",
+  "version": "0.11.6",
+  "releases": [],
+  "developers": [
+    "m@tthewwithanm.com",
+    "matthew_tretter"
+  ],
+  "kwds": "markdownify markdown markdownconverter pip github",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_markdownify",
+  "homepage": "http://github.com/matthewwithanm/python-markdownify",
+  "release_count": 34,
+  "dependency_ids": [
+    "pypi_beautifulsoup4",
+    "pypi_six"
+  ]
+}

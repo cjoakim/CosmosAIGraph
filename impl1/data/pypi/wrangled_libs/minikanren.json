@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "# `kanren`\n\n[![build status](https://travis-ci.org/pythological/kanren.svg?branch=master)](https://travis-ci.org/pythological/kanren) [![coverage status](https://coveralls.io/repos/github/pythological/kanren/badge.svg?branch=master)](https://coveralls.io/github/pythological/kanren?branch=master) [![pypi](https://img.shields.io/pypi/v/minikanren)](https://pypi.org/project/minikanren/)\n\nlogic/relational programming in python with [minikanren](http://minikanren.org/).\n\n## installation\n\nusing `pip`:\n```bash\npip install minikanren\n```\n\nusing `conda`:\n```bash\nconda install -c conda-forge minikanren\n```\n\n## development\n\nfirst obtain the project source:\n```bash\ngit clone git@github.com:pythological/kanren.git\ncd kanren\n```\n\ninstall the development dependencies:\n\n```bash\n$ pip install -r requirements.txt\n```\n\nset up `pre-commit` hooks:\n\n```bash\n$ pre-commit install --install-hooks\n```\n\ntests can be run with the provided `makefile`:\n```bash\nmake check\n```\n\n## motivation\n\nlogic programming is a general programming paradigm.  this implementation however came about specifically to serve as an algorithmic core for computer algebra systems in python and for the automated generation and optimization of numeric software.  domain specific languages, code generation, and compilers have recently been a hot topic in the scientific python community.  `kanren` aims to be a low-level core for these projects.\n\nthese points&mdash;along with `kanren` examples&mdash;are covered in the paper [\"minikanren as a tool for symbolic computation in python\"](https://arxiv.org/abs/2005.11644).\n\n## examples\n\n`kanren` enables one to express sophisticated relations&mdash;in the form of *goals*&mdash;and generate values that satisfy the relations.  the following code is the \"hello, world!\" of logic programming; it asks for values of the *logic variable* `x` such that `x == 5`:\n\n```python\n>>> from kanren import run, eq, membero, var, lall\n>>> x = var()\n>>> run(1, x, eq(x, 5))\n(5,)\n```\n\nmultiple logic variables and goals can be used simultaneously.  the following code asks for one list containing the values of `x` and `z` such that `x == z` **and** `z == 3`:\n\n```python\n>>> z = var()\n>>> run(1, [x, z], eq(x, z),\n                   eq(z, 3))\n([3, 3],)\n```\n\n`kanren` uses [unification](http://en.wikipedia.org/wiki/unification_%28computer_science%29) to match forms within expression trees.  the following code asks for values of `x` such that `(1, 2) == (1, x)`:\n\n```python\n>>> run(1, x, eq((1, 2), (1, x)))\n(2,)\n```\n\nthe above examples use `eq`: a *goal constructor* that creates a goal for unification between two objects.  other goal constructors, such as `membero(item, coll)`, express more sophisticated relations and are often constructed from simpler ones like `eq`.  more specifically, `membero` states that `item` is a member of the collection `coll`.\n\nthe following example uses `membero` to ask for *all* values of `x`, such that `x` is a member of `(1, 2, 3)` **and** `x` is a member of `(2, 3, 4)`.\n\n```python\n>>> run(0, x, membero(x, (1, 2, 3)),  # x is a member of (1, 2, 3)\n              membero(x, (2, 3, 4)))  # x is a member of (2, 3, 4)\n(2, 3)\n```\n\nthe examples above made implicit use of the goal constructors `lall` and `lany`, which represent goal *conjunction* and *disjunction*, respectively.  many useful relations can be expressed with `lall`, `lany`, and `eq` alone, but in `kanren` it's also easy to leverage the host language and explicitly create any relation expressible in python.\n\n### representing knowledge\n\n`kanren` stores data as facts that state relationships between terms.  the following code creates a parent relationship and uses it to state facts about who is a parent of whom within the simpsons family:\n\n```python\n>>> from kanren import relation, facts\n>>> parent = relation()\n>>> facts(parent, (\"homer\", \"bart\"),\n...               (\"homer\", \"lisa\"),\n...               (\"abe\",  \"homer\"))\n\n>>> run(1, x, parent(x, \"bart\"))\n('homer',)\n\n>>> run(2, x, parent(\"homer\", x))\n('lisa', 'bart')\n```\n\nwe can use intermediate variables for more complex queries.  for instance, who is bart's grandfather?\n\n```python\n>>> grandparent_lv, parent_lv = var(), var()\n>>> run(1, grandparent_lv, parent(grandparent_lv, parent_lv),\n                           parent(parent_lv, 'bart'))\n('abe',)\n```\n\nwe can express the grandfather relationship as a distinct relation by creating a goal constructor:\n```python\n>>> def grandparent(x, z):\n...     y = var()\n...     return lall(parent(x, y), parent(y, z))\n\n>>> run(1, x, grandparent(x, 'bart'))\n('abe,')\n```\n\n## constraints\n\n`kanren` provides a fully functional constraint system that allows one to restrict unification and object types:\n\n```python\n>>> from kanren.constraints import neq, isinstanceo\n\n>>> run(0, x,\n...     neq(x, 1),  # not \"equal\" to 1\n...     neq(x, 3),  # not \"equal\" to 3\n...     membero(x, (1, 2, 3)))\n(2,)\n\n>>> from numbers import integral\n>>> run(0, x,\n...     isinstanceo(x, integral),  # `x` must be of type `integral`\n...     membero(x, (1.1, 2, 3.2, 4)))\n(2, 4)\n```\n\n## graph relations\n\n`kanren` comes with support for relational graph operations suitable for basic symbolic algebra operations.  see the examples in [`doc/graphs.md`](doc/graphs.md).\n\n## extending `kanren`\n\n`kanren` uses [`multipledispatch`](http://github.com/mrocklin/multipledispatch/) and the [`logical-unification` library](https://github.com/pythological/unification) to support pattern matching on user defined types.  essentially, types that can be unified can be used with most `kanren` goals.  see the [`logical-unification` project's examples](https://github.com/pythological/unification#examples) for demonstrations of how arbitrary types can be made unifiable.\n\n## about\n\nthis project is a fork of [`logpy`](https://github.com/logpy/logpy).\n\n## references\n\n* [logic programming on wikipedia](http://en.wikipedia.org/wiki/logic_programming)\n* [minikanren](http://minikanren.org/), a scheme library for relational programming on which this library is based.  more information can be found in the\n[thesis of william\nbyrd](https://scholarworks.iu.edu/dspace/bitstream/handle/2022/8777/byrd_indiana_0093a_10344.pdf).",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "minikanren",
+  "package_url": "https://pypi.org/project/miniKanren/",
+  "project_url": "https://pypi.org/project/miniKanren/",
+  "project_urls": {
+    "Homepage": "http://github.com/pythological/kanren"
+  },
+  "release_url": "https://pypi.org/project/miniKanren/1.0.3/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "relational programming in python",
+  "version": "1.0.3",
+  "releases": [],
+  "developers": [
+    "brandon_t",
+    "brandonwillard+kanren@gmail.com"
+  ],
+  "kwds": "minikanren kanren pip pypi logic_programming",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_minikanren",
+  "homepage": "http://github.com/pythological/kanren",
+  "release_count": 9,
+  "dependency_ids": []
+}

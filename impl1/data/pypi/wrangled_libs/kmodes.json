@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering"
+  ],
+  "description": ".. image:: https://img.shields.io/pypi/v/kmodes.svg\n    :target: https://pypi.python.org/pypi/kmodes/\n    :alt: version\n.. image:: https://anaconda.org/conda-forge/kmodes/badges/installer/conda.svg\n    :target: https://anaconda.org/conda-forge/kmodes\n    :alt: conda forge page\n.. image:: https://github.com/nicodv/kmodes/actions/workflows/python-package.yml/badge.svg?branch=master\n    :target: https://github.com/nicodv/kmodes/actions/workflows/python-package.yml\n    :alt: build status\n.. image:: https://coveralls.io/repos/nicodv/kmodes/badge.svg\n    :target: https://coveralls.io/r/nicodv/kmodes\n    :alt: test coverage\n.. image:: https://api.codacy.com/project/badge/grade/cb19f1f1093a44fa845ebfdaf76975f6\n   :alt: codacy\n   :target: https://app.codacy.com/app/nicodv/kmodes?utm_source=github.com&utm_medium=referral&utm_content=nicodv/kmodes&utm_campaign=badge_grade_dashboard\n.. image:: https://img.shields.io/pypi/dm/kmodes.svg\n    :target: https://pypi.python.org/pypi/kmodes/\n    :alt: monthly downloads\n.. image:: https://img.shields.io/pypi/pyversions/kmodes.svg\n    :target: https://pypi.python.org/pypi/kmodes/\n    :alt: supported python versions\n.. image:: https://img.shields.io/pypi/l/kmodes.svg\n    :target: https://github.com/nicodv/kmodes/blob/master/license\n    :alt: license\n\nkmodes\n======\n\ndescription\n-----------\n\npython implementations of the k-modes and k-prototypes clustering\nalgorithms. relies on numpy for a lot of the heavy lifting.\n\nk-modes is used for clustering categorical variables. it defines clusters\nbased on the number of matching categories between data points. (this is\nin contrast to the more well-known k-means algorithm, which clusters\nnumerical data based on euclidean distance.) the k-prototypes algorithm\ncombines k-modes and k-means and is able to cluster mixed numerical /\ncategorical data.\n\nimplemented are:\n\n- k-modes [huang97]_ [huang98]_\n- k-modes with initialization based on density [cao09]_\n- k-prototypes [huang97]_\n\nthe code is modeled after the clustering algorithms in :code:`scikit-learn`\nand has the same familiar interface.\n\ni would love to have more people play around with this and give me\nfeedback on my implementation. if you come across any issues in running or\ninstalling kmodes,\n`please submit a bug report <https://github.com/nicodv/kmodes/issues>`_.\n\nenjoy!\n\ninstallation\n------------\n\n`kmodes` can be installed using `pip`:\n\n.. code:: bash\n\n    pip install kmodes\n\nto upgrade to the latest version (recommended), run it like this:\n\n.. code:: bash\n\n    pip install --upgrade kmodes\n\n`kmodes` can also conveniently be installed with `conda` from the `conda-forge` channel:\n\n.. code:: bash\n\n    conda install -c conda-forge kmodes\n\nalternatively, you can build the latest development version from source:\n\n.. code:: bash\n\n    git clone https://github.com/nicodv/kmodes.git\n    cd kmodes\n    python setup.py install\n\nusage\n-----\n.. code:: python\n\n    import numpy as np\n    from kmodes.kmodes import kmodes\n\n    # random categorical data\n    data = np.random.choice(20, (100, 10))\n\n    km = kmodes(n_clusters=4, init='huang', n_init=5, verbose=1)\n\n    clusters = km.fit_predict(data)\n\n    # print the cluster centroids\n    print(km.cluster_centroids_)\n\nthe examples directory showcases simple use cases of both k-modes\n('soybean.py') and k-prototypes ('stocks.py').\n\nparallel execution\n------------------\n\nthe k-modes and k-prototypes implementations both offer support for\nmultiprocessing via the \n`joblib library <https://pythonhosted.org/joblib/generated/joblib.parallel.html>`_,\nsimilar to e.g.\u00a0scikit-learn's implementation of k-means, using the\n:code:`n_jobs` parameter. it generally does not make sense to set more jobs\nthan there are processor cores available on your system.\n\nthis potentially speeds up any execution with more than one initialization try,\n:code:`n_init > 1`, which may be helpful to reduce the execution time for\nlarger problems. note that it depends on your problem whether multiprocessing\nactually helps, so be sure to try that out first. you can check out the\nexamples for some benchmarks.\n\nfaq\n---\n\n**q: i'm seeing errors such as \"typeerror: '<' not supported between instances of 'str' and 'float'\"\nwhen using the kprototypes algorithm.**\n\na: one or more of your numerical feature columns have string values in them. make sure that all \ncolumns have consistent data types.\n\n----\n\n**q: how does k-protypes know which of my features are numerical and which are categorical?**\n\na: you tell it which column indices are categorical using the :code:`categorical` argument. all others are assumed numerical. e.g., :code:`clusters = kprototypes().fit_predict(x, categorical=[1, 2])`\n\n----\n\n**q: i'm getting the following error, what gives? \"modulenotfounderror: no module named 'kmodes.kmodes'; 'kmodes' is not a package\".**\n\na: make sure your working file is not called 'kmodes.py', because it might overrule the :code:`kmodes` package.\n\n----\n\n**q: i'm getting the following error: \"valueerror: clustering algorithm could not initialize. consider assigning the initial clusters manually.\"**\n\na: this is a feature, not a bug. :code:`kmodes` is telling you that it can't make sense of the data you are presenting it. at least, not with the parameters you are setting the algorithm with. it is up to you, the data scientist, to figure out why. some hints to possible solutions:\n\n- run with fewer clusters as the data might not support a large number of clusters\n- explore and visualize your data, checking for weird distributions, outliers, etc.\n- clean and normalize the data\n- increase the ratio of rows to columns\n\n----\n\n**q: i'm getting the following error: \"valueerror: input contains nan, infinity, or a value too large for dtype('float64').\"**\n\na: following scikit-learn, the k-modes algorithm does not accept :code:`np.nan` \nvalues in the :code:`x` matrix. users are suggested to fill in the missing \ndata in a way that makes sense for the problem at hand.\n\n----\n\n**q: how would like your library to be cited?**\n\na: something along these lines would do nicely:\n\n.. code-block::\n\n  @misc{devos2015,\n    author = {nelis j. de vos},\n    title = {kmodes categorical clustering library},\n    howpublished = {\\url{https://github.com/nicodv/kmodes}},\n    year = {2015--2021}\n  }\n\n\nreferences\n----------\n\n.. [huang97] huang, z.: clustering large data sets with mixed numeric and\n   categorical values, proceedings of the first pacific asia knowledge\n   discovery and data mining conference, singapore, pp. 21-34, 1997.\n\n.. [huang98] huang, z.: extensions to the k-modes algorithm for clustering\n   large data sets with categorical values, data mining and knowledge\n   discovery 2(3), pp. 283-304, 1998.\n\n.. [cao09] cao, f., liang, j, bai, l.: a new initialization method for\n   categorical data clustering, expert systems with applications 36(7),\n   pp. 10223-10228., 2009.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "kmodes",
+  "package_url": "https://pypi.org/project/kmodes/",
+  "project_url": "https://pypi.org/project/kmodes/",
+  "project_urls": {
+    "Homepage": "https://github.com/nicodv/kmodes"
+  },
+  "release_url": "https://pypi.org/project/kmodes/0.12.2/",
+  "requires_dist": [
+    "pandas ; extra == 'dev'",
+    "numpy (>=1.10.4)",
+    "scikit-learn (>=0.22.0)",
+    "scipy (>=0.13.3)",
+    "joblib (>=0.11)",
+    "pytest ; extra == 'dev'",
+    "pytest-cov ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "python implementations of the k-modes and k-prototypes clustering algorithms for clustering categorical data.",
+  "version": "0.12.2",
+  "releases": [],
+  "developers": [
+    "nelis_j_de_vos",
+    "njdevos@gmail.com"
+  ],
+  "kwds": "kmodes badges badge kprototypes pyversions",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_kmodes",
+  "homepage": "https://github.com/nicodv/kmodes",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_joblib",
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_scikit_learn",
+    "pypi_scipy"
+  ]
+}

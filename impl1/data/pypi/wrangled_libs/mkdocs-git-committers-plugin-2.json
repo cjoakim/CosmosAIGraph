@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# mkdocs-git-committers-plugin-2\n\nmkdocs plugin for displaying a list of committers associated with a file in\nmkdocs. the plugin uses github or gitlab api to fetch the list of contributors\nfor each page.\n\n\ud83e\udd73 new! works with gitlab too!\n\nfor ease of use, this plugin is integrated in the [material for\nmkdocs](https://squidfunk.github.io/mkdocs-material/) theme by [martin\ndonath](https://github.com/squidfunk). see [mkdocs material\ndocumentation](https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/#document-contributors).\n\nother mkdocs plugins that use information to fetch authors:\n\n- [`mkdocs-git-authors-plugin`](https://github.com/timvink/mkdocs-git-authors-plugin) for displaying user names a number of lines contributed (uses local git information)\n- [`mkdocs-git-committers-plugin`](https://github.com/byrnereese/mkdocs-git-committers-plugin) display contributors for a page (uses local git information, completed with rest github api v3)\n\n## setup\n\ninstall the plugin using pip:\n\n`pip install mkdocs-git-committers-plugin-2`\n\nactivate the plugin in `mkdocs.yml`:\n\nfor a repository hosted on github:\n\n```yaml\nplugins:\n  - git-committers:\n      repository: organization/repository\n```\n\nfor a repository hosted on gitlab:\n\n```yaml\nplugins:\n  - git-committers:\n      gitlab_repository: 12345678\n      token: !env [\"gh_token\"]\n```\n\nfor a repository hosted on gitlab, you need to provide a token so that the\nplugin can access the gitlab api. if the token is not set in `mkdocs.yml` it\nwill be read from the `mkdocs_git_committers_apikey` environment variable.\n\nfor a repository hosted on github, you can provide a token to increase the rate\nlimit and go beyond the default 60 requests per hour per ip address. the plugin\nwill make one request per mkdocs document. the token does not need any scope:\nuncheck everything when creating the github token at\n[github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new),\nunless you access private repositories.\n\n## config\n\n- `enabled` - disables plugin if set to `false` for e.g. local builds (default: `true`)\n- `repository` - for github, the name of the repository, e.g. 'ojacques/mkdocs-git-committers-plugin-2'\n- `gitlab_repository` - for gitlab, the project id, e.g. '12345678'\n- `branch` - the name of the branch to get contributors from. example: 'master' (default)\n- `token` - a github or gitlab personal access token for rest api calls. the token does not need any scope: uncheck everything when creating the github token at [github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new), unless you access private repositories. for gitlab, create a token at [gitlab.com/-/profile/personal_access_tokens](https://gitlab.com/-/profile/personal_access_tokens).\n- `enterprise_hostname` - for github enterprise: the github enterprise hostname.\n- `gitlab_hostname` - for gitlab: the gitlab hostname if different from gitlab.com (self-hosted).\n- `docs_path` - the path to the documentation folder. defaults to `docs`.\n- `cache_dir` - the path which holds the authors cache file to speed up documentation builds. defaults to `.cache/plugin/git-committers/`. the cache file is named `page-authors.json`.\n- `exclude` - specify a list of page source paths (one per line) that should not have author(s) or last commit date included (excluded from processing by this plugin). default is empty. examples:\n\n  ```\n  # mkdocs.yml\n  plugins:\n    - git-committers:\n        repository: organization/repository\n        exclude:\n          - readme.md\n          - subfolder/page.md\n          - another_page.md\n          - all_files_inside_folder/*\n          - folder_and_subfolders/**\n  ```\n\n## history\n\nthis is a fork from the original [`mkdocs-git-committers-plugin`](https://github.com/byrnereese/mkdocs-git-committers-plugin) by @byrnereese.\n\ni had to create this fork so that it could be uploaded and distributed through pypi. the package has been renamed to `mkdocs-git-committers-plugin-2`.\n\nthis \"v2\" differs from the original by:\n\n- fetch contributors directly from github\n- eliminate the need to match git commit logs with entries in github, and thus github api calls\n- no more risk of matching the incorrect contributor as the information comes directly from github\n- last_commit_date is now populated with local git info\n- use a cache file to speed up following builds: authors are fetched from github for a page only if that page has changed since the last build\n\nall of the above improves accuracy and performances.\n\nnote: the plugin configuration in `mkdocs.yml` still uses the original `git-committers` sections.\n\n## limitations\n\n- getting the contributors relies on what is available on github. this means that for new files, the build will report no contributors (and informed you with a 404 error which can be ignored)  \n  when the file is merged, the contributors will be added normally.\n- for now, git submodule is not supported and will report no contributors.\n\n## usage\n\nyou have 2 options to use this plugin:\n\n1. use mkdocs material theme (see [mkdocs material\ndocumentation](https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/#document-contributors)).\n1. use the plugin directly in your template. see below.\n\n### display last commit\n\nin addition to displaying a list of committers for a file, you can also access\nthe last commit date for a page if you want to display the date the file was\nlast updated.\n\n#### template code for last commit\n\n```django hljs\n<ul class=\"metadata page-metadata\" data-bi-name=\"page info\" lang=\"en-us\" dir=\"ltr\">\n  <li class=\"last-updated-holder displaydate loading\">\n    <span class=\"last-updated-text\">last updated:</span>\n    <time role=\"presentation\" datetime=\"2018-10-25t00:00:00.000z\" data-article-date-source=\"ms.date\">{% if last_commit_date %}{{ last_commit_date }}{% endif %}</time>\n  </li>\n</ul>\n```\n\n### display list of committers\n\n#### avatar\n\nthe avatar of the contributors is provided by github. it uses maximal resolution.\n\n#### template code for avatars\n\n```django hljs\n{% block footer %}\n<ul class=\"metadata page-metadata\" data-bi-name=\"page info\" lang=\"en-us\" dir=\"ltr\">\n  <li class=\"contributors-holder\">\n    <span class=\"contributors-text\">contributors</span>\n    <ul class=\"contributors\" data-bi-name=\"contributors\">\n      {%- for user in committers -%}\n      <li><a href=\"{{ user.url }}\" title=\"{{ user.name }}\" data-bi-name=\"contributorprofile\" target=\"_blank\"><img src=\"{{ user.avatar }}\" alt=\"{{ user.name }}\"></a></li>\n      {%- endfor -%}\n    </ul>\n  </li>\n</ul>\n{% endblock %}\n```\n\n#### css\n\n```css\n.metadata{\n    list-style:none;\n    padding:0;\n    margin:0;\n    margin-bottom: 15px;\n    color: #999;\n    font-size:0.85em;\n}\n.metadata.page-metadata .contributors-text{\n    margin-right:5px\n}\nbody[dir=rtl] .metadata.page-metadata .contributors-text{\n    margin-right:0;\n    margin-left:5px\n}\n.page-metadata .contributors{\n    display:inline-block;\n    list-style:none;\n    margin:0!important;\n    padding:0!important\n}\n.page-metadata .contributors li{\n    display:inline-block;\n    vertical-align:top;\n    margin:0;\n    padding:0\n}\n```\n\n#### javascript\n\n```javascript\n    $( '.contributors img[data-src]' ).each( function() {\n        src = $(this).attr(\"data-src\");\n        $(this).attr('src',src);\n    });\n```\n\nmore information about templates [here][mkdocs-template].\n\nmore information about blocks [here][mkdocs-block].\n\n[mkdocs-plugins]: http://www.mkdocs.org/user-guide/plugins/\n[mkdocs-template]: https://www.mkdocs.org/user-guide/custom-themes/#template-variables\n[mkdocs-block]: https://www.mkdocs.org/user-guide/styling-your-docs/#overriding-template-blocks\n\n## acknowledgements\n\nthank you to the following contributors:\n\n- byrne reese - original author, maintainer\n- nathan hernandez\n- chris northwood\n- martin donath\n",
+  "docs_url": null,
+  "keywords": "mkdocs,plugin,github,committers",
+  "license": "mit",
+  "name": "mkdocs-git-committers-plugin-2",
+  "package_url": "https://pypi.org/project/mkdocs-git-committers-plugin-2/",
+  "project_url": "https://pypi.org/project/mkdocs-git-committers-plugin-2/",
+  "project_urls": {
+    "Homepage": "https://github.com/ojacques/mkdocs-git-committers-plugin-2/"
+  },
+  "release_url": "https://pypi.org/project/mkdocs-git-committers-plugin-2/2.2.2/",
+  "requires_dist": [
+    "mkdocs >=1.0.3",
+    "requests",
+    "gitpython"
+  ],
+  "requires_python": ">=3.8,<4",
+  "summary": "an mkdocs plugin to create a list of contributors on the page. the git-committers plugin will seed the template context with a list of github or gitlab committers and other useful git info such as last modified date",
+  "version": "2.2.2",
+  "releases": [],
+  "developers": [
+    "byrne@majordojo.com",
+    "byrne_reese",
+    "ojacques2@gmail.com"
+  ],
+  "kwds": "mkdocs_git_committers_apikey committers contributorprofile mkdocs contributors",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_mkdocs_git_committers_plugin_2",
+  "homepage": "https://github.com/ojacques/mkdocs-git-committers-plugin-2/",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_gitpython",
+    "pypi_mkdocs",
+    "pypi_requests"
+  ]
+}

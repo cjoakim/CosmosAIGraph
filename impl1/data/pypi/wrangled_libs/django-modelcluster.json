@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": ".. image:: https://travis-ci.org/wagtail/django-modelcluster.svg?branch=master\n    :target: https://travis-ci.org/wagtail/django-modelcluster\n\ndjango-modelcluster\n===================\n\nif you had a data model like this:\n\n.. code-block:: python\n\n class band(models.model):\n     name = models.charfield(max_length=255)\n\n class bandmember(models.model):\n     band = models.foreignkey('band', related_name='members', on_delete=models.cascade)\n     name = models.charfield(max_length=255)\n\n\nwouldn't it be nice if you could construct bundles of objects like this, independently of the database:\n\n.. code-block:: python\n\n beatles = band(name='the beatles')\n beatles.members = [\n     bandmember(name='john lennon'),\n     bandmember(name='paul mccartney'),\n ]\n\nunfortunately, you can't. objects need to exist in the database for foreign key relations to work:\n\n.. code-block:: python\n\n integrityerror: null value in column \"band_id\" violates not-null constraint\n\nbut what if you could? there are all sorts of scenarios where you might want to work with a 'cluster' of related objects, without necessarily holding them in the database: maybe you want to render a preview of the data the user has just submitted, prior to saving. maybe you need to construct a tree of things, serialize them and hand them off to some external system. maybe you have a workflow where your models exist in an incomplete 'draft' state for an extended time, or you need to handle multiple revisions, and you don't want to redesign your database around that requirement.\n\n**django-modelcluster** extends django's foreign key relations to make this possible. it introduces a new type of relation, *parentalkey*, where the related models are stored locally to the 'parent' model until the parent is explicitly saved. up to that point, the related models can still be accessed through a subset of the queryset api:\n\n.. code-block:: python\n \n from modelcluster.models import clusterablemodel\n from modelcluster.fields import parentalkey\n \n \n class band(clusterablemodel):\n     name = models.charfield(max_length=255)\n\n class bandmember(models.model):\n     band = parentalkey('band', related_name='members', on_delete=models.cascade)\n     name = models.charfield(max_length=255)\n\n\n >>> beatles = band(name='the beatles')\n >>> beatles.members = [\n ...     bandmember(name='john lennon'),\n ...     bandmember(name='paul mccartney'),\n ... ]\n >>> [member.name for member in beatles.members.all()]\n ['john lennon', 'paul mccartney']\n >>> beatles.members.add(bandmember(name='george harrison'))\n >>> beatles.members.count()\n 3\n >>> beatles.save()  # only now are the records written to the database\n\nfor more examples, see the unit tests.\n\n\nmany-to-many relations\n----------------------\n\nfor many-to-many relations, a corresponding *parentalmanytomanyfield* is available:\n\n.. code-block:: python\n\n from modelcluster.models import clusterablemodel\n from modelcluster.fields import parentalmanytomanyfield\n\n class movie(clusterablemodel):\n     title = models.charfield(max_length=255)\n     actors = parentalmanytomanyfield('actor', related_name='movies')\n\n class actor(models.model):\n     name = models.charfield(max_length=255)\n\n\n >>> harrison_ford = actor.objects.create(name='harrison ford')\n >>> carrie_fisher = actor.objects.create(name='carrie fisher')\n >>> star_wars = movie(title='star wars')\n >>> star_wars.actors = [harrison_ford, carrie_fisher]\n >>> blade_runner = movie(title='blade runner')\n >>> blade_runner.actors.add(harrison_ford)\n >>> star_wars.actors.count()\n 2\n >>> [movie.title for movie in harrison_ford.movies.all()]  # the movie records are not in the database yet\n []\n >>> star_wars.save()  # star wars now exists in the database (along with the 'actor' relations)\n >>> [movie.title for movie in harrison_ford.movies.all()]\n ['star wars']\n\nnote that ``parentalmanytomanyfield`` is defined on the parent model rather than the related model, just as a standard ``manytomanyfield`` would be. also note that the related objects - the ``actor`` instances in the above example - must exist in the database before being associated with the parent record. (the ``parentalmanytomanyfield`` allows the relations between movies and actors to be stored in memory without writing to the database, but not the ``actor`` records themselves.)\n\n\nintrospection\n-------------\nif you need to find out which child relations exist on a parent model - to create a deep copy of the model and all its children, say - use the ``modelcluster.models.get_all_child_relations`` function:\n\n.. code-block:: python\n\n >>> from modelcluster.models import get_all_child_relations\n >>> get_all_child_relations(band)\n [<relatedobject: tests:bandmember related to band>, <relatedobject: tests:album related to band>]\n\nthis includes relations that are defined on any superclasses of the parent model.\n\nto retrieve a list of all parentalmanytomanyfields defined on a parent model, use ``modelcluster.models.get_all_child_m2m_relations``:\n\n.. code-block:: python\n\n >>> from modelcluster.models import get_all_child_m2m_relations\n >>> get_all_child_m2m_relations(movie)\n [<modelcluster.fields.parentalmanytomanyfield: actors>]\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "django-modelcluster",
+  "package_url": "https://pypi.org/project/django-modelcluster/",
+  "project_url": "https://pypi.org/project/django-modelcluster/",
+  "project_urls": {
+    "Homepage": "https://github.com/wagtail/django-modelcluster"
+  },
+  "release_url": "https://pypi.org/project/django-modelcluster/6.1/",
+  "requires_dist": [
+    "pytz (>=2022.4)",
+    "django (>=3.2)",
+    "django-taggit (>=2.0) ; extra == 'taggit'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "django extension to allow working with 'clusters' of models as a single unit, independently of the database",
+  "version": "6.1",
+  "releases": [],
+  "developers": [
+    "matthew.westcott@torchbox.com",
+    "matthew_westcott"
+  ],
+  "kwds": "django bundles manytomanyfield clusterablemodel bandmember",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_django_modelcluster",
+  "homepage": "https://github.com/wagtail/django-modelcluster",
+  "release_count": 29,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_django_taggit",
+    "pypi_pytz"
+  ]
+}

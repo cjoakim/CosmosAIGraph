@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: testing"
+  ],
+  "description": "# pytest-schema\n\n![](https://img.shields.io/badge/python-3.6%20%7c%203.7%20%7c%203.8-blue?logo=python) [![pypi version](https://img.shields.io/pypi/v/pytest-schema.svg)](https://pypi.python.org/pypi/pytest-schema/) [![pypi download month](https://img.shields.io/pypi/dm/pytest-schema.svg)](https://pypi.python.org/pypi/pytest-schema/) [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n\n\n\ud83d\udc4d validate return values against a schema-like object in testing\n\n[`keleshev/schema`](https://github.com/keleshev/schema) is a library for validating python data structures, such as\nthose obtained from config-files, forms, external services or\ncommand-line parsing, converted from json/yaml (or something else) to python data-types.\n\n## install\n\n```bash\npip install pytest-schema\n```\n\n## basic example\n\nhere is a quick example of using **`schema`**:\n```python\nfrom pytest_schema import schema, exact, like\n\narticle_v1 = {\n    \"id\": int,\n    \"title\": str,\n    \"completed\": bool,\n    \"engagement\": {\n        \"viewer\": list,\n        \"rating\": float,\n    },\n    \"metadata\": dict\n}\n\ndef test_article_v1_endpoint(test_client):\n    \"\"\"\n    test calling v1 endpoint and validating the response\n    is in the correctly/expected format.\n    \"\"\"\n    response_v1 = test_client.get(\"/api/v1/article/1\")\n    assert exact(article_v1) == response_v1\n    # same as:\n    # assert schema(article_v1) == response_v1\n\narticle_v2 = {\n    **article_v1,\n    \"somenewfield\": int\n}\n\ndef test_article_v2_endpoint(test_client):\n    \"\"\"\n    test calling v2 endpoint is backwards compatible with v1\n    \"\"\"\n    response_v2 = test_client.get(\"/api/v2/article/1\")\n\n    assert like(article_v1) == value\n\n```\n## full example\n\nhere is a more complex example of using **`schema`**:\n\n``` python\nfrom pytest_schema import schema, and, enum, optional, or, regex\n\n# single user schema\nuser = {\n    # id must be int\n    \"id\": int,\n    # name must be type str\n    \"name\": str,\n    # email must be type str or nullable\n    \"description\": or(none, str),\n    # email valid str format\n    \"email\": regex(r\".*?@.*?\\.[a-za-z]{2,6}\"),\n    # age converted to int then validated gt 18 lt 99 and must be type str\n    \"age\": and(int, lambda n: 18 <= n <= 99),\n    # gender key is optional but must be str\n    optional(\"gender\"): str,\n    # role of enum values\n    \"role\": enum([\"user\", \"super-user\", \"admin\"]),\n    # list of ids ref friends\n    \"friends\": [ int ],\n    # nested dict to valid as address\n    \"address\": {\n        \"street\": str,\n        optional(\"street2\"): str,\n        \"city\": str,\n        \"state\": and(str, lambda s: len(s) == 2),\n        \"zipcode\": str,\n    }\n\n}\n\n# multiple users schema\nusers = [ user ]\n\ndef test_users_endpoint():\n    \"\"\"\n    test calling a users endpoint and validating its\n    response of users info is correct format.\n    \"\"\"\n    response = [\n        # \u2705 valid \n        {\n            \"id\": 2,\n            \"name\": \"sue\",\n            \"age\": 28,\n            \"email\": \"sue@gmail.com\",\n            \"gender\": \"female\",\n            \"role\": \"admin\",\n            \"friends\": [5, 6],\n            \"address\": {\n                \"street\": \"123 washington ave.\",\n                \"city\": \"new york\",\n                \"state\": \"ny\",\n                \"zipcode\": \"099012\",\n            }\n        },\n        # \u2705 valid\n        {\n            \"id\": 5\n            \"name\": \"sam\",\n            \"age\": 42,\n            \"email\": \"sam@aol.com\",\n            \"role\": \"user\",\n            \"friends\": [2, 6, 7],\n            \"address\": {\n                \"street\": \"5 sunset st.\",\n                \"street2\": \"apt # 55-b\",\n                \"city\": \"san jose\",\n                \"state\": \"ca\",\n                \"zipcode\": \"054053\",\n            }\n        },\n    ]\n\n    assert schema(users) == response\n\ndef test_users_endpoint_invalid():\n    \"\"\"\n    test calling a users endpoint and validating its\n    response of users info is invalid format.\n    \"\"\"\n    response = [\n        # \u274c invalid\n        {\n            \"id\": \"null\",\n            \"name\": none,\n            \"age\": 0,\n            \"email\": \"unknown@msn\",\n            \"role\": \"unknown\",\n            \"friends\": none,\n            \"address\": \"5 sunset st., san jose, ca, 054053\",\n        },\n    ]\n\n    # option 1:\n    assert schema(users) != response\n    \n    # option 2:\n    with pytest.raises(schemaerror):\n        schema(users) == response\n\n```\n\nif data is **`valid`**, it will return the `true`.\nif data is **`invalid`**, it will raise `schemaerror` exception.\n\n\n## supported validations\n\nsee: [keleshev/schema](https://github.com/keleshev/schema) full documentation.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pytest-schema",
+  "package_url": "https://pypi.org/project/pytest-schema/",
+  "project_url": "https://pypi.org/project/pytest-schema/",
+  "project_urls": {
+    "Homepage": "https://github.com/codedawi/pytest-schema"
+  },
+  "release_url": "https://pypi.org/project/pytest-schema/0.1.1/",
+  "requires_dist": [
+    "pytest (>=3.5.0)",
+    "schema (>=0.7.0)"
+  ],
+  "requires_python": "!=2.7.*, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+  "summary": "\ud83d\udc4d validate return values against a schema-like object in testing",
+  "version": "0.1.1",
+  "releases": [],
+  "developers": [
+    "brett@codedawi.com",
+    "brett_dawidowski"
+  ],
+  "kwds": "pytest_schema pytest schemaerror pypi validating",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_schema",
+  "homepage": "https://github.com/codedawi/pytest-schema",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_pytest",
+    "pypi_schema"
+  ]
+}

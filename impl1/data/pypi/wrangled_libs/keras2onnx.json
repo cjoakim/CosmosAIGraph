@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7"
+  ],
+  "description": "# introduction\nthe keras2onnx model converter enables users to convert keras models into the [onnx](https://onnx.ai) model format.\ninitially, the keras converter was developed in the project [onnxmltools](https://github.com/onnx/onnxmltools). keras2onnx converter development was moved into an [independent repository](https://github.com/onnx/keras-onnx) to support more kinds of keras models and reduce the complexity of mixing multiple converters.\n\nmost of the common keras layers have been supported for conversion. please refer to the [keras documentation](https://keras.io/layers/about-keras-layers/) or [tf.keras docs](https://www.tensorflow.org/api_docs/python/tf/keras/layers) for details on keras layers.\n\nwindows machine learning (winml) users can use [winmltools](https://docs.microsoft.com/en-us/windows/ai/windows-ml/convert-model-winmltools) which wrap its call on keras2onnx to convert the keras models. if you want to use the keras2onnx converter, please refer to the [winml release notes](https://docs.microsoft.com/en-us/windows/ai/windows-ml/release-notes) to identify the corresponding onnx opset number for your winml version.\n\nkeras2onnx has been tested on **python 3.5, 3.6, and 3.7**, with **tensorflow 1.x/2.0/2.1**  (ci build). it does not support **python 2.x**.\n\n# install\nyou can install latest release of keras2onnx from pypi: **due to some reason, the package release paused, please install it from the source, and the support of keras or tf.keras over tensorflow 2.x is only available in the source.**\n\n```\npip install keras2onnx\n```\nor install from source:\n\n```\npip install -u git+https://github.com/microsoft/onnxconverter-common\npip install -u git+https://github.com/onnx/keras-onnx\n```\nbefore running the converter, please notice that tensorflow has to be installed in your python environment,\nyou can choose **tensorflow**/**tensorflow-cpu** package(cpu version) or **tensorflow-gpu**(gpu version)\n\n# notes\nkeras2onnx supports the new keras subclassing model which was introduced in tensorflow 2.0 since the version **1.6.5**. some typical subclassing models like [huggingface/transformers](https://github.com/huggingface/transformers) have been converted into onnx and validated by onnxruntime.<br>\n\nsince its version 2.3, the [multi-backend keras (keras.io)](https://keras.io/#multi-backend-keras-and-tfkeras) stops the support of the tensorflow version above 2.0. the auther suggests to switch to tf.keras for the new features.\n## multi-backend keras and tf.keras:\nboth keras model types are now supported in the keras2onnx converter. if in the user python env, keras package was installed from [keras.io](https://keras.io/) and tensorflow package version is 1.x, the converter converts the model as it was created by the keras.io package. otherwise, it will convert it through [tf.keras](https://www.tensorflow.org/guide/keras).<br>\n\nif you want to override this behaviour, please specify the environment variable tf_keras=1 before invoking the converter python api.\n# development\nkeras2onnx depends on [onnxconverter-common](https://github.com/microsoft/onnxconverter-common). in practice, the latest code of this converter requires the latest version of onnxconverter-common, so if you install this converter from its source code, please install the onnxconverter-common in source code mode before keras2onnx installation.\n\n# validated pre-trained keras models\nmost keras models could be converted successfully by calling ```keras2onnx.convert_keras```, including cv, gan, nlp, speech and etc. see the tutorial [here](https://github.com/onnx/keras-onnx/tree/master/tutorial). however some models with a lot of custom operations need custom conversion, the following are some examples,\nlike [yolov3](https://github.com/qqwweee/keras-yolo3), and [mask rcnn](https://github.com/matterport/mask_rcnn).\n\n\n## scripts\nit will be useful to convert the models from keras to onnx from a python script.\nyou can use the following api:\n```\nimport keras2onnx\nkeras2onnx.convert_keras(model, name=none, doc_string='', target_opset=none, channel_first_inputs=none):\n    # type: (keras.model, str, str, int, []) -> onnx.modelproto\n    \"\"\"\n    :param model: keras model\n    :param name: the converted onnx model internal name\n    :param doc_string:\n    :param target_opset:\n    :param channel_first_inputs: a list of channel first input.\n    :return:\n    \"\"\"\n```\n\nuse the following script to convert keras application models to onnx, and then perform inference:\n```\nimport numpy as np\nfrom keras.preprocessing import image\nfrom keras.applications.resnet50 import preprocess_input\nimport keras2onnx\nimport onnxruntime\n\n# image preprocessing\nimg_path = 'street.jpg'   # make sure the image is in img_path\nimg_size = 224\nimg = image.load_img(img_path, target_size=(img_size, img_size))\nx = image.img_to_array(img)\nx = np.expand_dims(x, axis=0)\nx = preprocess_input(x)\n\n# load keras model\nfrom keras.applications.resnet50 import resnet50\nmodel = resnet50(include_top=true, weights='imagenet')\n\n# convert to onnx model\nonnx_model = keras2onnx.convert_keras(model, model.name)\n\n# runtime prediction\ncontent = onnx_model.serializetostring()\nsess = onnxruntime.inferencesession(content)\nx = x if isinstance(x, list) else [x]\nfeed = dict([(input.name, x[n]) for n, input in enumerate(sess.get_inputs())])\npred_onnx = sess.run(none, feed)\n```\n\nthe inference result is a list which aligns with keras model prediction result `model.predict()`.\nan alternative way to load onnx model to runtime session is to save the model first:\n```\ntemp_model_file = 'model.onnx'\nkeras2onnx.save_model(onnx_model, temp_model_file)\nsess = onnxruntime.inferencesession(temp_model_file)\n```\n\n## contribute\nwe welcome contributions in the form of feedback, ideas, or code.\n\n## license\n[mit license](license)\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "keras2onnx",
+  "package_url": "https://pypi.org/project/keras2onnx/",
+  "project_url": "https://pypi.org/project/keras2onnx/",
+  "project_urls": {
+    "Homepage": "https://github.com/onnx/keras-onnx"
+  },
+  "release_url": "https://pypi.org/project/keras2onnx/1.7.0/",
+  "requires_dist": [
+    "numpy",
+    "protobuf",
+    "requests",
+    "onnx",
+    "onnxconverter-common (>=1.7.0)",
+    "fire"
+  ],
+  "requires_python": "",
+  "summary": "converts machine learning models to onnx for use in windows ml",
+  "version": "1.7.0",
+  "releases": [],
+  "developers": [
+    "microsoft_corporation",
+    "winmlcvt@microsoft.com"
+  ],
+  "kwds": "convert_keras keras2onnx keras onnx_model tf_keras",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_keras2onnx",
+  "homepage": "https://github.com/onnx/keras-onnx",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_fire",
+    "pypi_numpy",
+    "pypi_onnx",
+    "pypi_onnxconverter_common",
+    "pypi_protobuf",
+    "pypi_requests"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "# fastapi-versioning\napi versioning for fastapi web applications\n\n# installation\n\n`pip install fastapi-versioning`\n\n## examples\n```python\nfrom fastapi import fastapi\nfrom fastapi_versioning import versionedfastapi, version\n\napp = fastapi(title=\"my app\")\n\n\n@app.get(\"/greet\")\n@version(1, 0)\ndef greet_with_hello():\n    return \"hello\"\n\n\n@app.get(\"/greet\")\n@version(1, 1)\ndef greet_with_hi():\n    return \"hi\"\n\n\napp = versionedfastapi(app)\n```\n\nthis will generate two endpoints:\n```\n/v1_0/greet\n/v1_1/greet\n```\nas well as:\n```\n/docs\n/v1_0/docs\n/v1_1/docs\n/v1_0/openapi.json\n/v1_1/openapi.json\n```\n\nthere's also the possibility of adding a set of additional endpoints that\nredirect the most recent api version. to do that make the argument\n`enable_latest` true:\n\n```python\napp = versionedfastapi(app, enable_latest=true)\n```\n\nthis will generate the following additional endpoints:\n```\n/latest/greet\n/latest/docs\n/latest/openapi.json\n```\nin this example, `/latest` endpoints will reflect the same data as `/v1.1`.\n\ntry it out:\n```sh\npip install pipenv\npipenv install --dev\npipenv run uvicorn example.annotation.app:app\n# pipenv run uvicorn example.folder_name.app:app\n```\n\n## usage without minor version\n```python\nfrom fastapi import fastapi\nfrom fastapi_versioning import versionedfastapi, version\n\napp = fastapi(title='my app')\n\n@app.get('/greet')\n@version(1)\ndef greet():\n  return 'hello'\n\n@app.get('/greet')\n@version(2)\ndef greet():\n  return 'hi'\n\napp = versionedfastapi(app,\n    version_format='{major}',\n    prefix_format='/v{major}')\n```\n\nthis will generate two endpoints:\n```\n/v1/greet\n/v2/greet\n```\nas well as:\n```\n/docs\n/v1/docs\n/v2/docs\n/v1/openapi.json\n/v2/openapi.json\n```\n\n## extra fastapi constructor arguments\n\nit's important to note that only the `title` from the original fastapi will be\nprovided to the versionedapi app. if you have any middleware, event handlers\netc these arguments will also need to be provided to the versionedapi function\ncall, as in the example below\n\n```python\nfrom fastapi import fastapi, request\nfrom fastapi_versioning import versionedfastapi, version\nfrom starlette.middleware import middleware\nfrom starlette.middleware.sessions import sessionmiddleware\n\napp = fastapi(\n    title='my app',\n    description='greet uses with a nice message',\n    middleware=[\n        middleware(sessionmiddleware, secret_key='mysecretkey')\n    ]\n)\n\n@app.get('/greet')\n@version(1)\ndef greet(request: request):\n    request.session['last_version_used'] = 1\n    return 'hello'\n\n@app.get('/greet')\n@version(2)\ndef greet(request: request):\n    request.session['last_version_used'] = 2\n    return 'hi'\n\n@app.get('/version')\ndef last_version(request: request):\n    return f'your last greeting was sent from version {request.session[\"last_version_used\"]}'\n\napp = versionedfastapi(app,\n    version_format='{major}',\n    prefix_format='/v{major}',\n    description='greet users with a nice message',\n    middleware=[\n        middleware(sessionmiddleware, secret_key='mysecretkey')\n    ]\n)\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "fastapi-versioning",
+  "package_url": "https://pypi.org/project/fastapi-versioning/",
+  "project_url": "https://pypi.org/project/fastapi-versioning/",
+  "project_urls": {
+    "Homepage": "https://github.com/DeanWay/fastapi-versioning"
+  },
+  "release_url": "https://pypi.org/project/fastapi-versioning/0.10.0/",
+  "requires_dist": [
+    "fastapi (>=0.56.0)",
+    "starlette"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "api versioning for fastapi web applications",
+  "version": "0.10.0",
+  "releases": [],
+  "developers": [
+    "dean_way"
+  ],
+  "kwds": "fastapi_versioning versionedfastapi openapi fastapi api",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_fastapi_versioning",
+  "homepage": "https://github.com/deanway/fastapi-versioning",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_fastapi",
+    "pypi_starlette"
+  ]
+}

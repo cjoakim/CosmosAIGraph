@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "[![build status](https://travis-ci.org/cloudsigma/cgroupspy.svg)](https://travis-ci.org/cloudsigma/cgroupspy)\ncgroupspy\n=========\n\npython library for managing cgroups\n\nthe library provides a pythonic way to manage and represent cgroups. it provides interfaces that convert\npython objects to cgroups compatible strings and vise versa.\n\n\ntrees\n-----\ncgroupspy has a couple of ways to represent the cgroups filesystem\n\n* as a tree - this is the most basic and generic way to represent them. you basically construct it from all\nthe directories in the cgroups root.\n\n* a grouped tree - that has access to all cgroup partitions with the same name, on the same level. for example -\n'machine' partition in memory, cpuset, cpus, etc cgroups. all these attributes are\naccessed via machine.cpus, machine.cpuset, etc.\n\n* a vmtree - a subclass of grouped tree with utilities for simple management of libvirt guests\n\nexample usage\n-------------\n```python\n#import the trees module, which contains a tree representation of cgroups\n>>> from cgroupspy import trees\n\n# this is the most basic type of cgroup tree. it models the filesystem.\n>>> t = trees.tree()\n\n# it has a root which is of type node\n>>> t.root\n<node />\n\n# and the root has children\n>>> print(t.root.children)\n[<node /hugetlb>, <node /net_prio>, <node /perf_event>, <node /blkio>, <node /net_cls>, <node /freezer>, <node /devices>, <node /memory>, <node /cpuacct>, <node /cpu>, <node /cpuset>, <node /systemd>, <node /cgmanager>]\n\n# you can for example get the cpuset\n>>> cset = t.get_node_by_path('/cpuset/')\n>>> cset\n<node /cpuset>\n\n# the controller used for this cgroup is a cpusetcontroller\n>>> cset.controller\n<cgroupspy.controllers.cpusetcontroller object at 0x7f63a3843050>\n\n# which can for example show you the cpu pinning\n>>> cset.controller.cpus\nset([0, 1])\n\n# you can create a cgroup\n>>> test = cset.create_cgroup('test')\n<node /cpuset/test>\n\n# see its cpu restrictions\n>>> test.controller.cpus\nset([0, 1])\n\n# and change them\n>>> test.controller.cpus = [1]\n\n# the tasks in this cgroup are now restricted to cpu 1\n>>> test.controller.cpus\nset([1])\n```\n\nanother example with the vmtree - for managing libvirt guests\n\n```python\n>>> from cgroupspy.trees import vmtree\n>>> vmt = vmtree()\n>>> print(vmt.vms)\n{u'1ce10f47-fb4e-4b6a-8ee6-ba34940cdda7.libvirt-qemu': <nodevm 1ce10f47-fb4e-4b6a-8ee6-ba34940cdda7.libvirt-qemu>,\n u'3d5013b9-93ed-4ef1-b518-a2cea43f69ad.libvirt-qemu': <nodevm 3d5013b9-93ed-4ef1-b518-a2cea43f69ad.libvirt-qemu>,\n}\n\n>>> vm = vmt.get_vm_node(\"1ce10f47-fb4e-4b6a-8ee6-ba34940cdda7\")\n>>> print(vm.cpu.shares)\n1024\n>>> print(vm.cpuset.cpus)\n{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}\n>>> print(vm.memory.limit_in_bytes)\n25603080192\n>>> print(vm.children)\n[<nodecontrolgroup vcpu1>,\n <nodecontrolgroup vcpu0>,\n <nodecontrolgroup emulator>]\n>>> print(vm.path)\n/machine/grey/1ce10f47-fb4e-4b6a-8ee6-ba34940cdda7.libvirt-qemu\n>>> vcpu1 = vm.children[0]\n>>> print(vcpu1.cpuset.cpus)\n{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}\n\n>>> vcpu1.cpuset.cpus = {1,2,3}\n\n>>> print(vcpu1.cpuset.cpus)\n{1, 2, 3}\n```\n\nlicense\n-------\nnew bsd licence\n\n\n\n\n",
+  "docs_url": null,
+  "keywords": "cgroups",
+  "license": "new bsd",
+  "name": "cgroupspy",
+  "package_url": "https://pypi.org/project/cgroupspy/",
+  "project_url": "https://pypi.org/project/cgroupspy/",
+  "project_urls": {
+    "Homepage": "https://github.com/cloudsigma/cgroupspy"
+  },
+  "release_url": "https://pypi.org/project/cgroupspy/0.2.2/",
+  "requires_dist": [],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*",
+  "summary": "python library for managing cgroups",
+  "version": "0.2.2",
+  "releases": [],
+  "developers": [
+    "cloudsigma_ag",
+    "dev-support@cloudsigma.com",
+    "miguel@cloudsigma.com",
+    "miguel_trujillo"
+  ],
+  "kwds": "cgroups create_cgroup cgroupspy cgroup pythonic",
+  "license_kwds": "new bsd",
+  "libtype": "pypi",
+  "id": "pypi_cgroupspy",
+  "homepage": "https://github.com/cloudsigma/cgroupspy",
+  "release_count": 9,
+  "dependency_ids": []
+}

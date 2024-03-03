@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "topic :: software development",
+    "typing :: typed"
+  ],
+  "description": "# pyre extensions\nthis module defines extensions to the standard \u201ctyping\u201d module that are supported by the [pyre typechecker](https://pypi.org/project/pyre-check/).\n\n## `none_throws`\nfunction to make assumptions about `optional`s explicit. the function will raise an\nassertion error if passed `none` and return the value otherwise.\n\n## parameterspecification\n`parameterspecification`s are a special kind of type variable that captures callable parameter\nspecifications (known as argspecs in the runtime and inspect library) instead of types, allowing\nthe typing of decorators which transform the return type of the given callable.\nfor example:\n```\nfrom typing import typevar, callable, list\nfrom pyre_extensions import parameterspecification\ntparams = parameterspecification(\"tparams\")\ntreturn = typevar(\"treturn\")\ndef unwrap(f: callable[tparams, list[treturn]]) -> callable[tparams, treturn]:\n    def inner(*args: tparams.args, **kwargs: tparams.kwargs) -> treturn:\n        return f(*args, **kwargs)[0]\n\n    return inner\n@unwrap\ndef foo(x: int, y: str, z: bool = false) -> list[int]:\n    return [1, 2, 3]\n```\ndecorates foo into a callable that returns int, but still has the same parameters, including their\nnames and whether they are required.\n\nthese `parameterspecification` variables also have two special properties, `args` and `kwargs`,\nwhich correspond to the positional and keyword arguments for a specific call to the\n`parameterspecification` function.  because the division of parameters into these two argument\ncollections can be different each invocation, these special annotations can only be used in one\nmanner: together, in a function definition, as `*args` and `**kwargs` with no other parameters\nlisted.\n\n## safe json\nthe `safe_json` module provides a type-safe way to parse json. it is meant as a drop-in replacement\nfor the builtin `json` module but instead of returning an object of undefined shape (i.e. `any`)\nallows you to specify the shape of the json you're expecting. the parser will validate whether the\ninput matches the expected type and raise an exception if it does not.\n\n### examples\nfor trivial json structures you can use builtin types:\n\n```python\n>>> from pyre_extensions import safe_json\n>>> from typing import list, dict\n>>> safe_json.loads(\"[1, 2, 3]\", list[int])\n[1, 2, 3]\n>>> safe_json.loads(\"[1, 2, 3]\", list[str])\n# raises `pyre_extensions.safe_json.invalidjson`\n>>> safe_json.loads('{\"key\": \"value\"}', dict[str, str])\n{'key': 'value'}\n>>> safe_json.loads('{\"key\": \"value\"}', dict[str, int])\n# raises `pyre_extensions.safe_json.invalidjson`\n```\n\nfor more complicated, nested structures, typed dictionaries are the way to go:\n```python\n>>> from typing import typeddict\n>>> class movie(typeddict):\n...     name: str\n...     year: int\n...\n>>> safe_json.loads('{\"name\": \"blade runner\", \"year\": 1982 }', movie)\n{'name': 'blade runner', 'year': 1982}\n>>> safe_json.loads('{\"name\": \"blade runner\", \"year\": \"1982\" }', movie)\n# raises `pyre_extensions.safe_json.invalidjson`\n```\n\nvalidate if data is expected type:\n```python\n>>> from pyre_extensions import safe_json\n>>> from typing import list, dict\n>>> data = {\"foo\": 23}\n>>> safe_json.validate(data, dict[str, str])\n# raises `pyre_extensions.safe_json.invalidjson`\n>>> safe_json.validate(data, dict[str, int])\n{\"foo\": 23}\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pyre-extensions",
+  "package_url": "https://pypi.org/project/pyre-extensions/",
+  "project_url": "https://pypi.org/project/pyre-extensions/",
+  "project_urls": {
+    "Homepage": "https://pyre-check.org"
+  },
+  "release_url": "https://pypi.org/project/pyre-extensions/0.0.30/",
+  "requires_dist": [
+    "typing-inspect",
+    "typing-extensions"
+  ],
+  "requires_python": "",
+  "summary": "type system extensions for use with the pyre type checker",
+  "version": "0.0.30",
+  "releases": [],
+  "developers": [
+    "facebook",
+    "pyre@fb.com"
+  ],
+  "kwds": "pyre_extensions typevar parameterspecification pyre decorators",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pyre_extensions",
+  "homepage": "https://pyre-check.org",
+  "release_count": 29,
+  "dependency_ids": [
+    "pypi_typing_extensions",
+    "pypi_typing_inspect"
+  ]
+}

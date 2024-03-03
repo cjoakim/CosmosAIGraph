@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "\n# canalyst-ii driver for python\n\nunofficial python userspace driver for the low cost usb analyzer \"canalyst-ii\" by chuangxin technology (\u521b\u82af\u79d1\u6280).\n\nuses [pyusb](https://pyusb.github.io/pyusb/) library for usb support on windows, macos and linux.\n\nthis driver is based on black box reverse engineering of the usb behaviour of the proprietary software, and reading the basic data structure layouts in the original python-can canalystii source.\n\nintended for use as a backend driver for [python-can](https://python-can.readthedocs.io/). however it can also be used standalone.\n\n## standalone usage\n\n```py\nimport canalystii\n\n# connect to the canalyst-ii device\n# passing a bitrate to the constructor causes both channels to be initialized and started.\ndev = canalystii.canalystdevice(bitrate=500000)\n\n# receive all pending messages on channel 0\nfor msg in dev.receive(0):\n    print(msg)\n\n# the canalystii.message class is a ctypes structure, to minimize overhead\nnew_message = canalystii.message(can_id=0x300,\n                                 remote=false,\n                                 extended=false,\n                                 data_len=8,\n                                 data=(0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08))\n# send one copy to channel 1\ndev.send(1, new_message)\n# send 3 copies to channel 0\n# (argument can be an instance of canalystii.message or a list of instances)\ndev.send(0, [new_message] * 3)\n\n# stop both channels (need to call start() again to resume capturing or send any messages)\ndev.stop(0)\ndev.stop(1)\n```\n\n## limitations\n\ncurrently, the following things are not supported and may not be possible based on the known usb protocol:\n\n* can bus error conditions. there is a function `get_can_status()` that seems to provide access to some internal device state, not clear if this can be used to determine when errors occured or invalid messages seen.\n* receive buffer hardware overflow detection (see performance, below).\n* ack status of sent can messages.\n* failure status of sent can messages. if the device fails to get bus arbitration after some unknown amount of time, it will drop the message silently.\n* hardware filtering of incoming messages. there is a `filter` field of `initcommand` structure, not clear how it works.\n* configuring whether messages are acked by canalyst-ii. this may be possible, see `initcommand` `acc_code` and `acc_mask`.\n\n## performance\n\nbecause the canalyst-ii usb protocol requires polling, the host needs to constantly poll the device to request any new can messages. there is a trade-off of cpu usage against both latency and maximum receive throughput.\n\nthe hardware seems able to buffer 1000-2000 messages (possibly a little more) per channel. the maximum number seems to depend on relative timing of the messages. therefore, if a 1mbps (maximum speed) can channel is receiving the maximum possible ~7800 messages/second then software should call `receive()` at least every 100ms in order to avoid lost messages. it's not possible to tell if any messages in the hardware buffer were lost due to overflow.\n\ntesting linux cpython 3.9 on a i7-6500u cpu (~2016 vintage), calling `receive()` in a tight loop while receiving maximum message rate (~7800 messages/sec) on both channels (~15600 messages/sec total)  uses approximately 40% of a single cpu. adding a 50ms delay `time.sleep(0.05)` in the loop drops cpu usage to around 10% without losing any messages. longer sleep periods in the loop reduce cpu usage further but some messages are dropped. see the `tests/can_spammer_test.py` file for the test code.\n\nin systems where the can message rate is lower than the maximum, `receive()` can be called less frequently without losing messages. in systems where the python process may be pre-empted, it's possible for messages to be lost anyhow.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "canalystii",
+  "package_url": "https://pypi.org/project/canalystii/",
+  "project_url": "https://pypi.org/project/canalystii/",
+  "project_urls": {
+    "Homepage": "https://github.com/projectgus/python-canalystii"
+  },
+  "release_url": "https://pypi.org/project/canalystii/0.1/",
+  "requires_dist": [
+    "pyusb (>=1.2.0)"
+  ],
+  "requires_python": "",
+  "summary": "python userspace driver for canalyst-ii usb can analyzer.",
+  "version": "0.1",
+  "releases": [],
+  "developers": [
+    "angus_gratton",
+    "gus@canalystii.projectgus.com"
+  ],
+  "kwds": "canalystdevice canalyst pyusb canalystii usb",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_canalystii",
+  "homepage": "https://github.com/projectgus/python-canalystii",
+  "release_count": 1,
+  "dependency_ids": [
+    "pypi_pyusb"
+  ]
+}

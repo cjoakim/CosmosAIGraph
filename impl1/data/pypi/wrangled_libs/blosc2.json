@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "operating system :: microsoft :: windows",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "=============\npython-blosc2\n=============\n\na python wrapper for the extremely fast blosc2 compression library\n==================================================================\n\n:author: the blosc development team\n:contact: blosc@blosc.org\n:github: https://github.com/blosc/python-blosc2\n:actions: |actions|\n:pypi: |version|\n:numfocus: |numfocus|\n:code of conduct: |contributor covenant|\n\n.. |version| image:: https://img.shields.io/pypi/v/blosc2.png\n        :target: https://pypi.python.org/pypi/blosc2\n.. |contributor covenant| image:: https://img.shields.io/badge/contributor%20covenant-v2.0%20adopted-ff69b4.svg\n        :target: https://github.com/blosc/community/blob/master/code_of_conduct.md\n.. |numfocus| image:: https://img.shields.io/badge/powered%20by-numfocus-orange.svg?style=flat&colora=e1523d&colorb=007d8a\n        :target: https://numfocus.org\n.. |actions| image:: https://github.com/blosc/python-blosc2/actions/workflows/build.yml/badge.svg\n        :target: https://github.com/blosc/python-blosc2/actions/workflows/build.yml\n\n\nwhat it is\n==========\n\n`c-blosc2 <https://github.com/blosc/c-blosc2>`_ is the new major version of\n`c-blosc <https://github.com/blosc/c-blosc>`_, and is backward compatible with\nboth the c-blosc1 api and its in-memory format. python-blosc2 is a python package\nthat wraps c-blosc2, the newest version of the blosc compressor.\n\ncurrently python-blosc2 already reproduces the api of\n`python-blosc <https://github.com/blosc/python-blosc>`_, so it can be\nused as a drop-in replacement.  however, there are a `few exceptions\nfor a full compatibility.\n<https://github.com/blosc/python-blosc2/blob/main/release_notes.md#changes-from-python-blosc-to-python-blosc2>`_\n\nin addition, python-blosc2 aims to leverage the new c-blosc2 api so as to support\nsuper-chunks, multi-dimensional arrays\n(`ndarray <https://www.blosc.org/python-blosc2/reference/ndarray_api.html>`_),\nserialization and other bells and whistles introduced in c-blosc2.  although\nthis is always and endless process, we have already catch up with most of the\nc-blosc2 api capabilities.\n\n**note:** python-blosc2 is meant to be backward compatible with python-blosc data.\nthat means that it can read data generated with python-blosc, but the opposite\nis not true (i.e. there is no *forward* compatibility).\n\nschunk: a 64-bit compressed store\n=================================\n\n`schunk` is the simple data container that handles setting, expanding and getting\ndata and metadata. contrarily to chunks, a super-chunk can update and resize the data\nthat it contains, supports user metadata, and it does not have the 2 gb storage limitation.\n\nadditionally, you can convert a schunk into a contiguous, serialized buffer (aka\n`cframe <https://github.com/blosc/c-blosc2/blob/main/readme_cframe_format.rst>`_)\nand vice-versa; as a bonus, the serialization/deserialization process also works with numpy\narrays and pytorch/tensorflow tensors at a blazing speed:\n\n.. |compress| image:: https://github.com/blosc/python-blosc2/blob/main/images/linspace-compress.png?raw=true\n  :width: 100%\n  :alt: compression speed for different codecs\n\n.. |decompress| image:: https://github.com/blosc/python-blosc2/blob/main/images/linspace-decompress.png?raw=true\n  :width: 100%\n  :alt: decompression speed for different codecs\n\n+----------------+---------------+\n| |compress|     | |decompress|  |\n+----------------+---------------+\n\nwhile reaching excellent compression ratios:\n\n.. image:: https://github.com/blosc/python-blosc2/blob/main/images/pack-array-cratios.png?raw=true\n  :width: 75%\n  :align: center\n  :alt: compression ratio for different codecs\n\nalso, if you are a mac m1/m2 owner, make you a favor and use its native arm64 arch (yes, we are\ndistributing mac arm64 wheels too; you are welcome ;-):\n\n.. |pack_arm| image:: https://github.com/blosc/python-blosc2/blob/main/images/m1-i386-vs-arm64-pack.png?raw=true\n  :width: 100%\n  :alt: compression speed for different codecs on apple m1\n\n.. |unpack_arm| image:: https://github.com/blosc/python-blosc2/blob/main/images/m1-i386-vs-arm64-unpack.png?raw=true\n  :width: 100%\n  :alt: decompression speed for different codecs on apple m1\n\n+------------+--------------+\n| |pack_arm| | |unpack_arm| |\n+------------+--------------+\n\nread more about `schunk` features in our blog entry at: https://www.blosc.org/posts/python-blosc2-improvements\n\nndarray: an n-dimensional store\n===============================\n\none of the latest and more exciting additions in python-blosc2 is the\n`ndarray <https://www.blosc.org/python-blosc2/reference/ndarray_api.html>`_ object.\nit can write and read n-dimensional datasets in an extremely efficient way thanks\nto a n-dim 2-level partitioning, allowing to slice and dice arbitrary large and\ncompressed data in a more fine-grained way:\n\n.. image:: https://github.com/blosc/python-blosc2/blob/main/images/b2nd-2level-parts.png?raw=true\n  :width: 75%\n\nto wet you appetite, here it is how the `ndarray` object performs on getting slices\northogonal to the different axis of a 4-dim dataset:\n\n.. image:: https://github.com/blosc/python-blosc2/blob/main/images/read-partial-slices-b2nd.png?raw=true\n  :width: 75%\n\nwe have blogged about this: https://www.blosc.org/posts/blosc2-ndim-intro\n\nwe also have a ~2 min explanatory video on `why slicing in a pineapple-style (aka double partition)\nis useful <https://www.youtube.com/watch?v=lvp9zxmgbng>`_:\n\n.. image:: https://github.com/blosc/blogsite/blob/master/files/images/slicing-pineapple-style.png?raw=true\n  :width: 50%\n  :alt: slicing a dataset in pineapple-style\n  :target: https://www.youtube.com/watch?v=lvp9zxmgbng\n\ninstalling\n==========\n\nblosc is now offering python wheels for the main os (win, mac and linux) and platforms.\nyou can install binary packages from pypi using ``pip``:\n\n.. code-block:: console\n\n    pip install blosc2\n\ndocumentation\n=============\n\nthe documentation is here:\n\nhttps://blosc.org/python-blosc2/python-blosc2.html\n\nalso, some examples are available on:\n\nhttps://github.com/blosc/python-blosc2/tree/main/examples\n\n\nbuilding from sources\n=====================\n\n`python-blosc2` comes with the c-blosc2 sources with it and can be built in-place:\n\n.. code-block:: console\n\n    git clone https://github.com/blosc/python-blosc2/\n    cd python-blosc2\n    git submodule update --init --recursive\n    python -m pip install -r requirements-build.txt\n    python setup.py build_ext --inplace\n\nthat's all. you can proceed with testing section now.\n\ntesting\n=======\n\nafter compiling, you can quickly check that the package is sane by\nrunning the tests:\n\n.. code-block:: console\n\n    python -m pip install -r requirements-tests.txt\n    python -m pytest  (add -v for verbose mode)\n\nbenchmarking\n============\n\nif curious, you may want to run a small benchmark that compares a plain\nnumpy array copy against compression through different compressors in\nyour blosc build:\n\n.. code-block:: console\n\n     pythonpath=. python bench/pack_compress.py\n\nlicense\n=======\n\nthe software is licenses under a 3-clause bsd license. a copy of the\npython-blosc2 license can be found in `license.txt <https://github.com/blosc/python-blosc2/tree/main/license.txt>`_.\n\nmailing list\n============\n\ndiscussion about this module is welcome in the blosc list:\n\nblosc@googlegroups.com\n\nhttps://groups.google.es/group/blosc\n\ntwitter\n=======\n\nplease follow `@blosc2 <https://twitter.com/blosc2>`_ to get informed about the latest developments.\n\nciting blosc\n============\n\nyou can cite our work on the different libraries under the blosc umbrella as:\n\n.. code-block:: console\n\n  @online{blosc,\n    author = {{blosc development team}},\n    title = \"{a fast, compressed and persistent data store library}\",\n    year = {2009-2023},\n    note = {https://blosc.org}\n  }\n\n\n----\n\n  **enjoy!**\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-3-clause",
+  "name": "blosc2",
+  "package_url": "https://pypi.org/project/blosc2/",
+  "project_url": "https://pypi.org/project/blosc2/",
+  "project_urls": {
+    "documentation": "https://www.blosc.org/python-blosc2/python-blosc2.html",
+    "homepage": "https://github.com/Blosc/python-blosc2"
+  },
+  "release_url": "https://pypi.org/project/blosc2/2.3.2/",
+  "requires_dist": [
+    "numpy >=1.20.3",
+    "ndindex >=1.4",
+    "msgpack",
+    "py-cpuinfo"
+  ],
+  "requires_python": "<4,>=3.8",
+  "summary": "python wrapper for the c-blosc2 library",
+  "version": "2.3.2",
+  "releases": [],
+  "developers": [
+    "blosc@blosc.org"
+  ],
+  "kwds": "blosc2 blosc blosc1 compression pack_compress",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_blosc2",
+  "homepage": "",
+  "release_count": 40,
+  "dependency_ids": [
+    "pypi_msgpack",
+    "pypi_ndindex",
+    "pypi_numpy",
+    "pypi_py_cpuinfo"
+  ]
+}

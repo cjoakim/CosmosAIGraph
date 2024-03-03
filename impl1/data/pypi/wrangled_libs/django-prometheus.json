@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "framework :: django :: 4.1",
+    "framework :: django :: 4.2",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: system :: monitoring"
+  ],
+  "description": "# django-prometheus\n\nexport django monitoring metrics for prometheus.io\n\n[![join the chat at https://gitter.im/django-prometheus/community](https://badges.gitter.im/django-prometheus/community.svg)](https://gitter.im/django-prometheus/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)\n\n[![pypi version](https://badge.fury.io/py/django-prometheus.svg)](http://badge.fury.io/py/django-prometheus)\n[![build status](https://github.com/korfuri/django-prometheus/actions/workflows/ci.yml/badge.svg)](https://github.com/korfuri/django-prometheus/actions/workflows/ci.yml)\n[![coverage status](https://coveralls.io/repos/github/korfuri/django-prometheus/badge.svg?branch=master)](https://coveralls.io/github/korfuri/django-prometheus?branch=master)\n[![pypi page link -- python versions](https://img.shields.io/pypi/pyversions/django-prometheus.svg)](https://pypi.python.org/pypi/django-prometheus)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n\n## features\n\nthis library provides prometheus metrics for django related operations:\n\n* requests & responses\n* database access done via [django orm](https://docs.djangoproject.com/en/3.2/topics/db/)\n* cache access done via [django cache framework](https://docs.djangoproject.com/en/3.2/topics/cache/)\n\n## usage\n\n### requirements\n\n* django >= 3.2\n* python 3.7 and above.\n\n### installation\n\ninstall with:\n\n```shell\npip install django-prometheus\n```\n\nor, if you're using a development version cloned from this repository:\n\n```shell\npython path-to-where-you-cloned-django-prometheus/setup.py install\n```\n\nthis will install [prometheus_client](https://github.com/prometheus/client_python) as a dependency.\n\n### quickstart\n\nin your settings.py:\n\n```python\ninstalled_apps = [\n   ...\n   'django_prometheus',\n   ...\n]\n\nmiddleware = [\n    'django_prometheus.middleware.prometheusbeforemiddleware',\n    # all your other middlewares go here, including the default\n    # middlewares like sessionmiddleware, commonmiddleware,\n    # csrfviewmiddleware, securitymiddleware, etc.\n    'django_prometheus.middleware.prometheusaftermiddleware',\n]\n```\n\nin your urls.py:\n\n```python\nurlpatterns = [\n    ...\n    path('', include('django_prometheus.urls')),\n]\n```\n\n### configuration\n\nprometheus uses histogram based grouping for monitoring latencies. the default\nbuckets are:\n\n```python\nprometheus_latency_buckets = (0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0, 25.0, 50.0, 75.0, float(\"inf\"),)\n```\n\nyou can define custom buckets for latency, adding more buckets decreases performance but\nincreases accuracy: <https://prometheus.io/docs/practices/histograms/>\n\n```python\nprometheus_latency_buckets = (.1, .2, .5, .6, .8, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.5, 9.0, 12.0, 15.0, 20.0, 30.0, float(\"inf\"))\n```\n\n### monitoring your databases\n\nsqlite, mysql, and postgresql databases can be monitored. just\nreplace the `engine` property of your database, replacing\n`django.db.backends` with `django_prometheus.db.backends`.\n\n```python\ndatabases = {\n    'default': {\n        'engine': 'django_prometheus.db.backends.sqlite3',\n        'name': os.path.join(base_dir, 'db.sqlite3'),\n    },\n}\n```\n\n### monitoring your caches\n\nfilebased, memcached, redis caches can be monitored. just replace\nthe cache backend to use the one provided by django_prometheus\n`django.core.cache.backends` with `django_prometheus.cache.backends`.\n\n```python\ncaches = {\n    'default': {\n        'backend': 'django_prometheus.cache.backends.filebased.filebasedcache',\n        'location': '/var/tmp/django_cache',\n    }\n}\n```\n\n### monitoring your models\n\nyou may want to monitor the creation/deletion/update rate for your\nmodel. this can be done by adding a mixin to them. this is safe to do\non existing models (it does not require a migration).\n\nif your model is:\n\n```python\nclass dog(models.model):\n    name = models.charfield(max_length=100, unique=true)\n    breed = models.charfield(max_length=100, blank=true, null=true)\n    age = models.positiveintegerfield(blank=true, null=true)\n```\n\njust add the `exportmodeloperationsmixin` as such:\n\n```python\nfrom django_prometheus.models import exportmodeloperationsmixin\n\nclass dog(exportmodeloperationsmixin('dog'), models.model):\n    name = models.charfield(max_length=100, unique=true)\n    breed = models.charfield(max_length=100, blank=true, null=true)\n    age = models.positiveintegerfield(blank=true, null=true)\n```\n\nthis will export 3 metrics, `django_model_inserts_total{model=\"dog\"}`,\n`django_model_updates_total{model=\"dog\"}` and\n`django_model_deletes_total{model=\"dog\"}`.\n\nnote that the exported metrics are counters of creations,\nmodifications and deletions done in the current process. they are not\ngauges of the number of objects in the model.\n\nstarting with django 1.7, migrations are also monitored. two gauges\nare exported, `django_migrations_applied_by_connection` and\n`django_migrations_unapplied_by_connection`. you may want to alert if\nthere are unapplied migrations.\n\nif you want to disable the django migration metrics, set the\n`prometheus_export_migrations` setting to false.\n\n### monitoring and aggregating the metrics\n\nprometheus is quite easy to set up. an example prometheus.conf to\nscrape `127.0.0.1:8001` can be found in `examples/prometheus`.\n\nhere's an example of a promdash displaying some of the metrics\ncollected by django-prometheus:\n\n![example dashboard](https://raw.githubusercontent.com/korfuri/django-prometheus/master/examples/django-promdash.png)\n\n## adding your own metrics\n\nyou can add application-level metrics in your code by using\n[prometheus_client](https://github.com/prometheus/client_python)\ndirectly. the exporter is global and will pick up your metrics.\n\nto add metrics to the django internals, the easiest way is to extend\ndjango-prometheus' classes. please consider contributing your metrics,\npull requests are welcome. make sure to read the prometheus best\npractices on\n[instrumentation](http://prometheus.io/docs/practices/instrumentation/)\nand [naming](http://prometheus.io/docs/practices/naming/).\n\n## importing django prometheus using only local settings\n\nif you wish to use django prometheus but are not able to change\nthe code base, it's possible to have all the default metrics by\nmodifying only the settings.\n\nfirst step is to inject prometheus' middlewares and to add\ndjango_prometheus in installed_apps\n\n```python\nmiddleware = \\\n    ['django_prometheus.middleware.prometheusbeforemiddleware'] + \\\n    middleware + \\\n    ['django_prometheus.middleware.prometheusaftermiddleware']\n\ninstalled_apps += ['django_prometheus']\n```\n\nsecond step is to create the /metrics end point, for that we need\nanother file (called urls_prometheus_wrapper.py in this example) that\nwill wraps the apps urls and add one on top:\n\n```python\nfrom django.urls import include, path\n\n\nurlpatterns = []\n\nurlpatterns.append(path('prometheus/', include('django_prometheus.urls')))\nurlpatterns.append(path('', include('myapp.urls')))\n```\n\nthis file will add a \"/prometheus/metrics\" end point to the urls of django\nthat will export the metrics (replace myapp by your project name).\n\nthen we inject the wrapper in settings:\n\n```python\nroot_urlconf = \"graphite.urls_prometheus_wrapper\"\n```\n\n## adding custom labels to middleware (request/response) metrics\n\nyou can add application specific labels to metrics reported by the django-prometheus middleware.\nthis involves extending the classes defined in middleware.py.\n\n* extend the metrics class and override the `register_metric` method to add the application specific labels.\n* extend middleware classes, set the metrics_cls class attribute to the the extended metric class and override the label_metric method to attach custom metrics.\n\nsee implementation example in [the test app](django_prometheus/tests/end2end/testapp/test_middleware_custom_labels.py#l19-l46)\n",
+  "docs_url": null,
+  "keywords": "django monitoring prometheus",
+  "license": "apache",
+  "name": "django-prometheus",
+  "package_url": "https://pypi.org/project/django-prometheus/",
+  "project_url": "https://pypi.org/project/django-prometheus/",
+  "project_urls": {
+    "Changelog": "https://github.com/korfuri/django-prometheus/blob/master/CHANGELOG.md",
+    "Documentation": "https://github.com/korfuri/django-prometheus/blob/master/README.md",
+    "Homepage": "http://github.com/korfuri/django-prometheus",
+    "Source": "https://github.com/korfuri/django-prometheus",
+    "Tracker": "https://github.com/korfuri/django-prometheus/issues"
+  },
+  "release_url": "https://pypi.org/project/django-prometheus/2.3.1/",
+  "requires_dist": [
+    "prometheus-client (>=0.7)"
+  ],
+  "requires_python": "",
+  "summary": "django middlewares to monitor your application with prometheus.io.",
+  "version": "2.3.1",
+  "releases": [],
+  "developers": [
+    "uriel@corfa.fr",
+    "uriel_corfa"
+  ],
+  "kwds": "django_prometheus prometheus_client prometheusbeforemiddleware prometheusaftermiddleware prometheus",
+  "license_kwds": "apache",
+  "libtype": "pypi",
+  "id": "pypi_django_prometheus",
+  "homepage": "http://github.com/korfuri/django-prometheus",
+  "release_count": 105,
+  "dependency_ids": [
+    "pypi_prometheus_client"
+  ]
+}

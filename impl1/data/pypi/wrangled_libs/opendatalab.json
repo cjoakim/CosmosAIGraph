@@ -1,0 +1,64 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "typing :: typed"
+  ],
+  "description": "# opendatalab python sdk\n\n\n[![downloads](https://pepy.tech/badge/opendatalab/month)](https://pepy.tech/project/opendatalab)\n[![pypi](https://img.shields.io/pypi/v/opendatalab)](https://pypi.org/project/opendatalab/)\n[![pypi - python version](https://img.shields.io/pypi/pyversions/opendatalab)](https://pypi.org/project/opendatalab/)\n\n---\n\n**important**: opendatalab sdk wip, not ensure the necessary compatibility of openapi and sdk. as a result, please use the sdk with the **latest** version.  \n\n---\n\nopendatalab python sdk is a python library to access [opendatalab](https://opendatalab.org.cn/)\nand use open datasets.  \nit provides:\n\n-   a pythonic way to access opendatalab resources.\n-   a convenient cli tool `odl` to access open datasets.\n\n## installation\n\n```console\n$ pip3 install opendatalab\n```\n\n## usage:\n\nan **account** is needed to access to opendatalab platform.\nplease visit [offical websit](https://opendatalab.org.cn/register) to get the account username and password first.\n\n### help\nshow cmd help\n```cmd\n$ odl -h\n$ odl --help\n\nusage: odl [options] command [args]...\n\n  you can use `odl <command>` to access open datasets.\n\noptions:\n  --version   show the version and exit.\n  -h, --help  show this message and exit.\n\ncommands:\n  get      get(download) dataset files into local path.\n  info     print dataset info.\n  login    login opendatalab with account.\n  logout   logout opendatalab account.\n  ls       list files of the dataset.\n  search   search dataset info.\n  version  show opendatalab version.\n```\n\n### version\n```cmd\n$ odl version\nodl version, current: 0.0.6, svc: 1.8\n```\n\n### login\nlogin with opendatalab username and password. if you haven't an opendatalab account\uff0cplease register with link: https://opendatalab.org.cn/\n\n```cmd\n$ odl login\nusername []: someone@example.com\npassword []: \nlogin successfully as someone@example.com\nor\n$ odl login -u someone@example.com\npassword[]:\n```\n\n### logout\nlogout current opendatalab account \n```cmd\n$ odl logout\ndo you want to logout? [y/n]: y\nsomeone@example.com logout\n```\n\n\n### list dataset files\nlist dataset files, support prefix of sub_directory\n```cmd\n# list all dataset files \n$ odl ls  mnist\ntotal: 4, size: 11.1m\n+----------------------------+--------------+\n| file name                  | size         |\n+----------------------------+--------------+\n| train-labels-idx1-ubyte.gz | 28.2k        |\n+----------------------------+--------------+\n| train-images-idx3-ubyte.gz | 9.5m         |\n+----------------------------+--------------+\n| t10k-labels-idx1-ubyte.gz  | 4.4k         |\n+----------------------------+--------------+\n| t10k-images-idx3-ubyte.gz  | 1.6m         |\n+----------------------------+--------------+                                                                          \t1.6m\n\n# list sub directory files\n$ odl ls mnist/t10k\ntotal: 2, size: 1.6m\n+---------------------------+--------------+\n| file name                 | size         |\n+---------------------------+--------------+\n| t10k-labels-idx1-ubyte.gz | 4.4k         |\n+---------------------------+--------------+\n| t10k-images-idx3-ubyte.gz | 1.6m         |\n+---------------------------+--------------+\n```\n\n```cmd\n# download dataset files into local  \n# get all files of dataset  \n$ odl get mnist  \n\n# get partial files of dataset  \n$ odl get mnist/t10k  \n```\n\n## python develop sample\n```python\nimport json\nfrom opendatalab.__version__ import __url__\nfrom opendatalab.cli.get import implement_get\nfrom opendatalab.cli.info import implement_info\nfrom opendatalab.cli.login import implement_login\nfrom opendatalab.cli.ls import implement_ls\nfrom opendatalab.cli.search import implement_search\nfrom opendatalab.cli.utility import contextinfo\n\nif __name__ == '__main__':\n    \"\"\"\n    contextinfo: default\n        please use shell login first, use: opendatalab login\n    \"\"\"\n    ctx = contextinfo(__url__, \"\")\n    client = ctx.get_client()\n    odl_api = client.get_api()\n\n    # 0. login with account\n    # account = \"xxxxx\"  # your username\n    # pw = \"xxxxx\"  # your password\n    # print(f'*****'*8)\n    # implement_login(ctx, account, pw)\n\n    # 1. search demo    \n    res_list = odl_api.search_dataset(\"coco\")\n    for index, res in enumerate(res_list):\n        print(f\"index: {index}, result: {res['name']}\")\n\n    # implement_search(\"coco\")\n    print(f'*****'*8)\n\n    # 2. list demo\n    implement_ls(ctx, 'tao')\n    print(f'*****' * 8)\n\n    # 3. read file online demo\n    dataset = client.get_dataset('fb15k')\n    with dataset.get('meta/info.json', false) as fd:\n        content = json.load(fd)\n        print(f\"{content}\")\n    print(f'*****'*8)\n\n    # 4. get dataset info\n    implement_info(ctx, 'fb15k')\n\n    # 5. download\n    # get all files of dataset\n    # implement_get(ctx, \"mnist\", 4, 0)\n\n    # get partial files of dataset\n    implement_get(ctx, \"got-10k/data/test_data.zip\", 4, 0) # 139, zip 1.16g got-10k\n    print(f'*****' * 5)\n```\n\n## documentation\nmore information can be found on the [documentation site](https://opendatalab.org.cn/docs)\n",
+  "docs_url": null,
+  "keywords": "opendatalab,dataset,test",
+  "license": "mit",
+  "name": "opendatalab",
+  "package_url": "https://pypi.org/project/opendatalab/",
+  "project_url": "https://pypi.org/project/opendatalab/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/opendatalab/opendatalab-python-sdk/issues",
+    "Homepage": "https://github.com/opendatalab/opendatalab-python-sdk"
+  },
+  "release_url": "https://pypi.org/project/opendatalab/0.0.10/",
+  "requires_dist": [
+    "pycryptodome",
+    "click (>=7.0.0)",
+    "requests (>=2.4.2)",
+    "tqdm",
+    "colorama",
+    "rich",
+    "openxlab",
+    "pywin32 ; platform_system == \"Windows\""
+  ],
+  "requires_python": ">=3.7",
+  "summary": "opendatalab python sdk",
+  "version": "0.0.10",
+  "releases": [],
+  "developers": [
+    "opendatalab",
+    "opendatalab@pjlab.org.cn"
+  ],
+  "kwds": "opendatalab openapi pyversions pypi sdk",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_opendatalab",
+  "homepage": "https://github.com/opendatalab/opendatalab-python-sdk",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_colorama",
+    "pypi_openxlab",
+    "pypi_pycryptodome",
+    "pypi_pywin32",
+    "pypi_requests",
+    "pypi_rich",
+    "pypi_tqdm"
+  ]
+}

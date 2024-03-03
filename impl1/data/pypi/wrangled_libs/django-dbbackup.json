@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "environment :: web environment",
+    "framework :: django :: 2.2",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: database",
+    "topic :: system :: archiving",
+    "topic :: system :: archiving :: backup",
+    "topic :: system :: archiving :: compression"
+  ],
+  "description": "django database backup\n======================\n\n.. image:: https://github.com/jazzband/django-dbbackup/actions/workflows/build.yml/badge.svg\n        :target: https://github.com/jazzband/django-dbbackup/actions\n\n.. image:: https://readthedocs.org/projects/django-dbbackup/badge/?version=stable\n        :target: https://django-dbbackup.readthedocs.io/\n        :alt: documentation status\n\n.. image:: https://codecov.io/gh/jazzband/django-dbbackup/branch/master/graph/badge.svg?token=zaymstcsux\n        :target: https://codecov.io/gh/jazzband/django-dbbackup\n\n.. image:: https://jazzband.co/static/img/badge.svg\n        :target: https://jazzband.co/\n        :alt: jazzband\n\nthis django application provides management commands to help backup and\nrestore your project database and media files with various storages such as\namazon s3, dropbox, local file storage or any django storage.\n\nit is made to:\n\n- allow you to secure your backup with gpg signature and encryption\n- archive with compression\n- deal easily with remote archiving\n- keep your development database up to date\n- use crontab or celery to setup automated backups\n\ndocs\n====\n\nsee our official documentation at `read the docs`_.\n\nwhy use dbbackup\n================\n\nthis software doesn't reinvent the wheel, in a few words it is a pipe between\nyour django project and your backup storage. it tries to use the traditional dump &\nrestore mechanisms, apply compression and/or encryption and use the storage system you desire.\n\nit gives a simple interface to backup and restore your database or media\nfiles.\n\nmanagement commands\n===================\n\ndbbackup\n--------\n\nbackup your database to the specified storage. by default this will backup all\ndatabases specified in your settings.py file and will not delete any old\nbackups. you can optionally specify a server name to be included in the backup\nfilename.\n\n::\n\n  usage: ./manage.py dbbackup [options]\n  \n  options:\n    --noinput             tells django to not prompt the user for input of any\n                          kind.\n    -q, --quiet           tells django to not output other text than errors.\n    -c, --clean           clean up old backup files\n    -d database, --database=database\n                          database to backup (default: everything)\n    -s servername, --servername=servername\n                          specify server name to include in backup filename\n    -z, --compress        compress the backup files\n    -e, --encrypt         encrypt the backup files\n    -o output_filename, --output-filename=output_filename\n                          specify filename on storage\n    -o output_path, --output-path=output_path\n                          specify where to store on local filesystem\n    -x exclude_tables, --exclude-tables=exclude_tables\n                          exclude tables data from backup (-x 'public.table1, public.table2')\n\ndbrestore\n---------\n\nrestore your database from the specified storage. by default this will lookup\nthe latest backup and restore from that. you may optionally specify a\nservername if you you want to backup a database image that was created from a\ndifferent server. you may also specify an explicit local file to backup from.\n\n::\n\n  usage: ./manage.py dbrestore [options]\n  \n  options:\n    --noinput             tells django to not prompt the user for input of any\n                          kind.\n    -d database, --database=database\n                          database to restore\n    -i input_filename, --input-filename=input_filename\n                          specify filename to backup from\n    -i input_path, --input-path=input_path\n                          specify path on local filesystem to backup from\n    -s servername, --servername=servername\n                          use a different servername backup\n    -c, --decrypt         decrypt data before restoring\n    -p passphrase, --passphrase=passphrase\n                          passphrase for decrypt file\n    -z, --uncompress      uncompress gzip data before restoring\n\n\nmediabackup\n-----------\n\nbackup media files by get them one by one, include in a tar file. ::\n\n  usage: ./manage.py mediabackup [options]\n  \n  options:\n    --noinput             tells django to not prompt the user for input of any\n                          kind.\n    -q, --quiet           tells django to not output other text than errors.\n    -c, --clean           clean up old backup files\n    -s servername, --servername=servername\n                          specify server name to include in backup filename\n    -z, --compress        compress the archive\n    -e, --encrypt         encrypt the backup files\n    -o output_filename, --output-filename=output_filename\n                          specify filename on storage\n    -o output_path, --output-path=output_path\n                          specify where to store on local filesystem\n\nmediarestore\n------------\n\nrestore media files from storage backup to your media storage. ::\n\n  usage: ./manage.py mediarestore [options]\n  \n  options:\n    --noinput             tells django to not prompt the user for input of any\n                          kind.\n    -q, --quiet           tells django to not output other text than errors.\n    -i input_filename, --input-filename=input_filename\n                          specify filename to backup from\n    -i input_path, --input-path=input_path\n                          specify path on local filesystem to backup from\n    -e, --decrypt         decrypt data before restoring\n    -p passphrase, --passphrase=passphrase\n                          passphrase for decrypt file\n    -z, --uncompress      uncompress gzip data before restoring\n    -r, --replace         replace existing files\n\ntests\n=====\n\ntests are stored in `dbbackup.tests` and to run them you must launch:\n\n::\n\n    python runtests.py\n\nin fact, ``runtests.py`` acts as a ``manage.py`` file and all django commands\nare available. so you could launch:\n\n::\n\n    python runtests.py shell\n\nto get a python shell configured with the test project. also all test\ncommand options are available and usable to run only a selection of tests.\nsee `django test command documentation`_ for more information about it.\n\n.. _`django test command documentation`: https://docs.djangoproject.com/en/stable/topics/testing/overview/#running-tests\n\nthere are even functional tests: ::\n\n    ./functional.sh\n\nsee documentation for details.\n\nto run the tests across all supported versions of django and python, you\ncan use tox. firstly install tox:\n\n::\n\n    pip install tox\n\nto run the tests just use the command ``tox`` in the command line.  if you\nwant to run the tests against just one specific test environment you can run\n``tox -e <testenv>``.  for example, to run the tests with python3.9 and\ndjango3.2 you would run:\n\n::\n\n    tox -e py39-django32\n\nthe available test environments can be found in ``tox.ini``.\n\ncontributing\n============\n\n.. image:: https://jazzband.co/static/img/jazzband.svg\n   :target: https://jazzband.co/\n   :alt: jazzband\n\nthis is a `jazzband <https://jazzband.co>`_ project. by contributing you agree\nto abide by the `contributor code of conduct <https://jazzband.co/about/conduct>`_\nand follow the `guidelines <https://jazzband.co/about/guidelines>`_.\n\nall contribution are very welcomed, propositions, problems, bugs and\nenhancement are tracked with `github issues`_ system and patches are submitted\nvia `pull requests`_.\n\nwe use github actions as continuous integration tools.\n\n.. _`read the docs`: https://django-dbbackup.readthedocs.org/\n.. _`github issues`: https://github.com/jazzband/django-dbbackup/issues\n.. _`pull requests`: https://github.com/jazzband/django-dbbackup/pulls\n.. _coveralls: https://coveralls.io/github/jazzband/django-dbbackup\n",
+  "docs_url": null,
+  "keywords": "django,database,media,backup,amazon,s3,dropbox",
+  "license": "bsd",
+  "name": "django-dbbackup",
+  "package_url": "https://pypi.org/project/django-dbbackup/",
+  "project_url": "https://pypi.org/project/django-dbbackup/",
+  "project_urls": {
+    "Homepage": "https://github.com/jazzband/django-dbbackup"
+  },
+  "release_url": "https://pypi.org/project/django-dbbackup/4.0.2/",
+  "requires_dist": [
+    "django (>=2.2)",
+    "pytz"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "management commands to help backup and restore a project database and media.",
+  "version": "4.0.2",
+  "releases": [],
+  "developers": [
+    "archiethemonger@gmail.com",
+    "archmonger"
+  ],
+  "kwds": "django3 dbbackup django django32 djangoproject",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_django_dbbackup",
+  "homepage": "https://github.com/jazzband/django-dbbackup",
+  "release_count": 43,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_pytz"
+  ]
+}

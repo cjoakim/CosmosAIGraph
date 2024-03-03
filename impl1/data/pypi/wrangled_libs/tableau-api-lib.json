@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# overview of tableau-api-lib\n\nthis library allows developers to call all methods as seen in tableau server's rest api reference.\neach method returns the corresponding http response, providing among other things the status code and a json response body.\n\ntableau's rest api has numerous methods you can leverage. use their [api reference](https://help.tableau.com/current/api/rest_api/en-us/rest/rest_api_ref.htm) to identify the methods that help you accomplish whatever tasks you need. this library's purpose is to make calling on those methods as easy as possible.\n\n## use case\n\nsuppose you wanted to download a pdf or a screenshot of each dashboard on tableau server. generally speaking, you would need to:\n1. get a list of all sites on your tableau server\n2. for each site, get a list of all workbooks on the site\n3. for each workbook, download the pdf / screenshot for each view in the workbook\n\nwhile there is not a method in the tableau server rest api to print all workbook pdfs on the server, this library gives you the tools you need in order to chain together existing methods and build the functionality you need. this library makes it possible to call on all of the tableau server rest api methods, enabling you to automate much of your tableau server administrative tasks.\n\nin the scenario above, we could accomplish the task by identifying the following methods in the rest api reference:\n1. api reference: query sites  |  tableau-api-lib: query_sites()\n2. api reference: query workbooks on site | tableau-api-lib: query_workbooks_on_site()\n3. api reference: query views for workbook | tableau-api-lib: query_views_for_workbook()\n4. api refrerence: query view pdf | tableau-api-lib: query_view_pdf()\n5. api reference: query view image | tableau-api-lib: query_view_image()\n6. api reference: switch site | tableau-api-lib: switch_site()\n\n## why use tableau-api-lib\n\nthis library strives to mirror each and every rest api method, word for word. once you find the methods you need on the tableau server rest api reference, this library helps you chain them together. to use this library effectively, you first browse tableau's rest api reference and identify the specific methods you intend to use. you may then invoke those methods using this library.\n\nwhen you call on the tableau-api-lib methods, you receive an http response. if you are expecting data to be returned to you (querying users, workbooks, groups, etc.) then you will likely want to access the json body of the response. \n\n``response = connection.query_sites()``\n\n``response.json()``  --> accesses the json body of the response, can be accessed directly as a dict\n\n``sites = response.json()['sites']['site']``\n\nhow did we know to access the 'sites' and 'site' element? because these elements are documented on tableau server's rest api reference. use the [reference](https://help.tableau.com/current/api/rest_api/en-us/rest/rest_api_ref.htm) to understand how the server will respond to your requests.\n\n## how it all works\n\n1. ``pip install --upgrade tableau-api-lib``\n2. open a jupyter notebook or a python file in the text editor of your choice\n3. ``from tableau_api_lib import tableauserverconnection``\n4. import a config object (dict / json), or build it from scratch using the config guidelines below\n5. ``connection = tableauserverconnection(your_config_object)``\n6. ``connection.sign_in()``\n7. call on your tableau server connection to perform tasks from the rest api reference\n8. ``your_connection.sign_out()``\n\n## defining your config object\n\na sample / starter configuration object is provided.\n\n``from tableau_api_lib import sample_config``\n``print(sample_config)``\n\nthe config object can have multiple environments. the default environment is defined as 'tableau_prod', and you can change this if needed by specifying an 'env' parameter when calling the tabelauserverconnection class.\nfor each environment you have, define them. for example:\n\n    tableau_config = {\n        'tableau_prod': {\n            'server': 'https://<your_prod_server>.com',\n            'api_version': '<your_prod_api_version>',\n            'username': '<your_prod_username>',\n            'password': '<your_prod_password>',\n            'site_name': '<your_prod_ite_name>',\n            'site_url': '<your_prod_site_url>',\n            'cache_buster': '',\n            'temp_dir': ''\n        },\n        'tableau_dev': {\n            'server': 'https://<your_dev_server>.com',\n            'api_version': '<your_api_version>',\n            'username': '<your_dev_username>',\n            'password': '<your_dev_password>',\n            'site_name': '<your_dev_site_name>',\n            'site_url': '<your_dev_site_content_url>',\n            'cache_buster': '',\n            'temp_dir': ''\n        }\n    }\n\n## try it out\n### this example creates a tableau server connection and prints the response from invoking the rest api's \"query_sites\" method.\n### for more details, see tableau's [rest api reference](https://help.tableau.com/current/api/rest_api/en-us/rest/rest_api_ref.htm#query_sites).\n\n    from tableau_api_lib import tableauserverconnection\n\n    tableau_config = {\n        'tableau_prod': {\n            'server': 'https://<your_prod_server>.com',\n            'api_version': '<your_prod_api_version>',\n            'username': '<your_prod_username>',\n            'password': '<your_prod_password>',\n            'site_name': '<your_prod_ite_name>',\n            'site_url': '<your_prod_site_url>',\n            'cache_buster': '',\n            'temp_dir': ''\n        }\n    }\n\n    connection = tableauserverconnection(config_json=tableau_config, env='tableau_prod')\n    connection.sign_in()\n\n    print(connection.query_sites().json())\n\n    connection.sign_out()\n\n## example of building a list of tuples storing the site name and site id for each site on the server\n\n    connection = tableauserverconnection(tableau_config)\n    connection.sign_in()\n    response = connection.query_sites()\n    site_list = [(site['name'], site['id']) for site in response.json()['sites']['site']]\n    connection.sign_out()\n\nthe variable site_list is a list of all available sites, and each element of this list is a tuple which contains the site name and site id.\n\n\n## example of unpacking paginated results\n\nlet's say you attempt the previous example (printing all site names and site ids), but you only see 100 sites, when your organization really has 170 sites. \nthe http responses you receive will paginate the results whenever you query the server for items such as sites, users, groups, etc.\n\nby default, these http responses return 100 results per page. you can modify this amount manually, or you can use our built-in util functions\nto control the behavior of paginated results.\n\nbelow, you can find an example of how to unpack all of the pages in a paginated result.\n\n    from tableau_api_lib.utils import extract_pages\n\n    connection = tableauserverconnection(tableau_config)\n    connection.sign_in()\n    all_sites = extract_pages(connection.query_sites)\n    site_list = [(site['name'], site['id']) for site in all_sites]\n    connection.sign_out()\n\nthe extract_pages() function automatically unpacks all of the pages and results available to us via our connection's query_sites() method.\n\nwe could also play with the optional parameters in the extract_pages() function, as seen below:\n\n    from tableau_api_lib.utils import extract_pages\n\n    connection = tableauserverconnection(tableau_config)\n    connection.sign_in()\n    all_sites = extract_pages(conn.query_sites, starting_page=1, page_size=200, limit=500)\n    site_list = [(site['name'], site['id']) for site in all_sites]\n    connection.sign_out()\n\nthe above example will iterate through each available page of site results (each page has 200 results, a number we specified) and cuts the results off at 500 sites.\nthere is no default cutoff limit when using extract_pages(); if you only want to pull the first x results, you have to pass x as the 'limit' argument.\n\nnote that in the first example, we called query_sites() directly and then needed to parse the json object returned by that method.\nhowever, when we used extract_pages(), we pass the 'query_sites' method as an argument and the result returned to us is already parsed. the extract_pages() method is a clean way of obtaining the desired objects we are querying.\n\nthe functions found within tableau_api_lib.utils all build upon the base functionality supported by the tableau server rest api reference. you can use these pre-made functions or build your own as you see fit.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "tableau-api-lib",
+  "package_url": "https://pypi.org/project/tableau-api-lib/",
+  "project_url": "https://pypi.org/project/tableau-api-lib/",
+  "project_urls": {
+    "Homepage": "https://github.com/divinorum-webb/tableau-api-lib"
+  },
+  "release_url": "https://pypi.org/project/tableau-api-lib/0.1.50/",
+  "requires_dist": [
+    "requests (>2)",
+    "urllib3",
+    "pandas",
+    "requests-toolbelt (>=0.9.0)",
+    "bleach (>=3.0)",
+    "typeguard",
+    "packaging"
+  ],
+  "requires_python": "",
+  "summary": "this library enables developers to call any method seen in tableau server's rest api documentation.",
+  "version": "0.1.50",
+  "releases": [],
+  "developers": [
+    "elliott.stam@gmail.com",
+    "elliott_stam"
+  ],
+  "kwds": "tableau_api_lib tableau tableau_dev tableau_prod tableau_config",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_tableau_api_lib",
+  "homepage": "https://github.com/divinorum-webb/tableau-api-lib",
+  "release_count": 138,
+  "dependency_ids": [
+    "pypi_bleach",
+    "pypi_packaging",
+    "pypi_pandas",
+    "pypi_requests",
+    "pypi_requests_toolbelt",
+    "pypi_typeguard",
+    "pypi_urllib3"
+  ]
+}

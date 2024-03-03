@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: utilities"
+  ],
+  "description": "docker-based integration tests\n=====\n[![pypi version](https://img.shields.io/pypi/v/pytest-docker?color=green)](https://pypi.org/project/pytest-docker/)\n[![build status](https://github.com/avast/pytest-docker/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/avast/pytest-docker/actions/workflows/tests.yaml)\n[![python versions](https://img.shields.io/pypi/pyversions/pytest-docker)](https://pypi.org/project/pytest-docker/)\n[![code style](https://img.shields.io/badge/formatted%20with-black-black)](https://github.com/psf/black)\n\n\n# description\nsimple [pytest](http://doc.pytest.org/) fixtures that help you write integration\ntests with docker and [docker compose](https://docs.docker.com/compose/).\nspecify all necessary containers in a `docker-compose.yml` file and and\n`pytest-docker` will spin them up for the duration of your tests.\n\nthis package is tested with python versions `3.6`, `3.7`, `3.8` and\n`3.9`, and `pytest` version 4, 5 and 6. python 2 is not supported.\n\n`pytest-docker` was originally created by andr\u00e9 caron.\n\n# installation\ninstall `pytest-docker` with `pip` or add it to your test requirements.\n\nby default, it uses the `docker compose` command, so it relies on the compose plugin for docker (also called docker compose v2).\n\n## docker compose v1 compatibility\n\nif you want to use the old `docker-compose` command (deprecated since july 2023, not receiving updates since 2021)\n then you can do it using the [`docker-compose-command`](#docker_compose_command) fixture:\n\n```python\n@pytest.fixture(scope=\"session\")\ndef docker_compose_command() -> str:\n    return \"docker-compose\"\n```\n\nif you want to use the pip-distributed version of `docker-compose` command, you can install it using\n```\npip install pytest-docker[docker-compose-v1]\n```\n\nanother option could be usage of [`compose-switch`](https://github.com/docker/compose-switch).\n\n# usage\nhere is an example of a test that depends on a http service.\n\nwith a `docker-compose.yml` file like this (using the\n[httpbin](https://httpbin.org/) service):\n\n```yaml\nversion: '2'\nservices:\n  httpbin:\n    image: \"kennethreitz/httpbin\"\n    ports:\n      - \"8000:80\"\n```\n\nyou can write a test like this:\n\n```python\nimport pytest\nimport requests\n\nfrom requests.exceptions import connectionerror\n\n\ndef is_responsive(url):\n    try:\n        response = requests.get(url)\n        if response.status_code == 200:\n            return true\n    except connectionerror:\n        return false\n\n\n@pytest.fixture(scope=\"session\")\ndef http_service(docker_ip, docker_services):\n    \"\"\"ensure that http service is up and responsive.\"\"\"\n\n    # `port_for` takes a container port and returns the corresponding host port\n    port = docker_services.port_for(\"httpbin\", 80)\n    url = \"http://{}:{}\".format(docker_ip, port)\n    docker_services.wait_until_responsive(\n        timeout=30.0, pause=0.1, check=lambda: is_responsive(url)\n    )\n    return url\n\n\ndef test_status_code(http_service):\n    status = 418\n    response = requests.get(http_service + \"/status/{}\".format(status))\n\n    assert response.status_code == status\n```\n\nby default this plugin will try to open `docker-compose.yml` in your\n`tests` directory. if you need to use a custom location, override the\n`docker_compose_file` fixture inside your `conftest.py` file:\n\n```python\nimport os\nimport pytest\n\n\n@pytest.fixture(scope=\"session\")\ndef docker_compose_file(pytestconfig):\n    return os.path.join(str(pytestconfig.rootdir), \"mycustomdir\", \"docker-compose.yml\")\n```\n\n## available fixtures\nall fixtures have `session` scope.\n\n### `docker_ip`\n\ndetermine the ip address for tcp connections to docker containers.\n\n### `docker_compose_file`\n\nget an absolute path to the  `docker-compose.yml` file. override this fixture in\nyour tests if you need a custom location.\n\n### `docker_compose_project_name`\n\ngenerate a project name using the current process pid. override this fixture in\nyour tests if you need a particular project name.\n\n### `docker_services`\n\nstart all services from the docker compose file (`docker-compose up`).\nafter test are finished, shutdown all services (`docker-compose down`).\n\n### `docker_compose_command`\n\ndocker compose command to use to execute dockers. default is to use\ndocker compose v2 (command is `docker compose`). if you want to use\ndocker compose v1, change this fixture to return `docker-compose`.\n\n### `docker_setup`\n\nget the docker_compose command to be executed for test spawn actions.\noverride this fixture in your tests if you need to change spawn actions.\nreturning anything that would evaluate to false will skip this command.\n\n### `docker_cleanup`\n\nget the docker_compose command to be executed for test clean-up actions.\noverride this fixture in your tests if you need to change clean-up actions.\nreturning anything that would evaluate to false will skip this command.\n\n\n# development\nuse of a virtual environment is recommended. see the\n[venv](https://docs.python.org/3/library/venv.html) package for more\ninformation.\n\nfirst, install `pytest-docker` and its test dependencies:\n\n\tpip install -e \".[tests]\"\n\nrun tests with\n\n\tpytest -c setup.cfg\n\nto make sure that the correct configuration is used. this is also how tests are\nrun in ci.\n\nuse [black](https://pypi.org/project/black/) with default settings for\nformatting. you can also use `pylint` with `setup.cfg` as the configuration\nfile.\n\n\n# contributing\nthis pytest plug-in and its source code are made available to you under a mit\nlicense. it is safe to use in commercial and closed-source applications. read\nthe license for details!\n\nfound a bug? think a new feature would make this plug-in more practical? we\nwelcome issues and pull requests!\n\nwhen creating a pull request, be sure to follow this projects conventions (see\nabove).\n",
+  "docs_url": null,
+  "keywords": "docker,docker-compose,pytest",
+  "license": "mit",
+  "name": "pytest-docker",
+  "package_url": "https://pypi.org/project/pytest-docker/",
+  "project_url": "https://pypi.org/project/pytest-docker/",
+  "project_urls": {
+    "Homepage": "https://github.com/avast/pytest-docker"
+  },
+  "release_url": "https://pypi.org/project/pytest-docker/2.0.1/",
+  "requires_dist": [
+    "pytest <8.0,>=4.0",
+    "attrs >=19.2.0",
+    "docker-compose <2.0,>=1.27.3 ; extra == 'docker-compose-v1'",
+    "requests <3.0,>=2.22.0 ; extra == 'tests'",
+    "pytest-pylint <1.0,>=0.14.1 ; extra == 'tests'",
+    "pytest-pycodestyle <3.0,>=2.0.0 ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "simple pytest fixtures for docker and docker compose based tests",
+  "version": "2.0.1",
+  "releases": [],
+  "developers": [
+    "max_k",
+    "maxim.kovykov@avast.com"
+  ],
+  "kwds": "pytest pytestconfig dockers docker docker_compose",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_docker",
+  "homepage": "https://github.com/avast/pytest-docker",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_attrs",
+    "pypi_docker_compose",
+    "pypi_pytest",
+    "pypi_pytest_pycodestyle",
+    "pypi_pytest_pylint",
+    "pypi_requests"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "topic :: internet :: www/http",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# requests-oauth\n\nthis plugins adds oauth v1.0 support to <a href=\"https://github.com/kennethreitz\">@kennethreitz</a> well-known <a href=\"http://github.com/kennethreitz/requests\">requests</a> library providing both header and url-encoded authentication.\n\nrequests-oauth wants to provide the simplest and easiest way to do oauth in python. it was initially based on <a href=\"https://github.com/simplegeo/python-oauth2\">python-oauth2</a> (which looks unmaintained), kudos to the authors and contributors for doing a huge effort in providing oauth to python httplib2. from that point on, the code base has been cleaned, fixing several bugs and heavily refactoring it to eliminate dependencies with python-oauth2, being now a stand-alone plugin.\n\n* author: <a href=\"http://www.github.com/maraujop/\">miguel araujo</a>\n* licence: bsd\n\n## installation\n\nyou can install requests-oauth by simply doing:\n\n    pip install requests-oauth\n\n## usage\n\nimport the hook doing:\n\n    from oauth_hook import oauthhook\n\nyou can initialize the hook passing it 5 parameters: `access_token`, `access_token_secret`, `consumer_key`, `consumer_secret` and `header_auth`. first two `access_token` and `access_token_secret` are optional, in case you want to retrieve those from the api service (see later for an example). there are two ways to do initialize the hook. first one:\n\n    oauth_hook = oauthhook(access_token, access_token_secret, consumer_key, consumer_secret, header_auth)\n\nthe `header_auth` parameter lets you chose the authentication method used. it's a boolean, if you set it to `true` you will be using an authorization header. if your api supports this authentication method, it's the one you should be using and the prefered method by the oauth spec (<a href=\"http://tools.ietf.org/html/rfc5849#section-3.5\">rfc 5849</a>), an example would be twitter's api. by default `header_auth` is set to `false`, which means url encoded authentication will be used. this is because this the most widely supported authentication system.\n\nif you are using the same `consumer_key` and `consumer_secret` all the time, you probably want to setup those fixed, so that you only have to pass the token parameters for setting the hook:\n\n    oauthhook.consumer_key = consumer_key\n    oauthhook.consumer_secret = consumer_secret\n    oauth_hook = oauthhook(access_token, access_token_secret, header_auth=true)\n\nnow you need to pass the hook to python-requests, you probably want to do it as a session, so you don't have to do this every time:\n\n    client = requests.session(hooks={'pre_request': oauth_hook})\n\nwhat you get is python-requests client which you can use the same way as you use requests api. let's see a get example:\n\n    response = client.get('http://api.twitter.com/1/account/rate_limit_status.json')\n    results = json.loads(response.content)\n\nand a post example:\n\n    response = client.post('http://api.twitter.com/1/statuses/update.json', {'status': \"yay! it works!\", 'wrap_links': true})\n\n## 3-legged authorization\n\nfirst time authorization and authentication follows a system named three legged oauth, very well described in <a href=\"https://dev.twitter.com/docs/auth/implementing-sign-twitter\">twitter documentation</a>.\n\nbasically it is composed of three steps. let's see an example based on imgur's api. all the other apis work pretty much the same way, only endpoints (urls) change:\n\n#### step 1: obtaining a request token\n\nwe start asking for a request token, which will finally turn into an access token, the one we need to operate on behalf of the user.\n\n    imgur_oauth_hook = oauthhook(consumer_key=your_imgur_consumer_key, consumer_secret=your_imgur_consumer_secret)\n    response = requests.post('http://api.imgur.com/oauth/request_token', hooks={'pre_request': imgur_oauth_hook})\n    qs = parse_qs(response.text)\n    oauth_token = qs['oauth_token'][0]\n    oauth_secret = qs['oauth_token_secret'][0]\n\n#### step 2: redirecting the user for getting authorization\n\nin this step we give the user a link or open a web browser redirecting him to an endpoint, passing the `oauth_token` got in the previous step as a url parameter. the user will get a dialog asking for authorization for our application. in this case we are doing an out of band desktop application, so the user will have to input us a code named `verifier`. in web apps, we will get this code as a webhook.\n\n    print \"go to http://api.imgur.com/oauth/authorize?oauth_token=%s allow the app and copy your pin\" % oauth_token\n    oauth_verifier = raw_input('please enter your pin:')\n\n#### step 3: authenticate\n\nonce we get user's authorization, we request a final access token, to operate on behalf of the user. we build a new hook using previous request token information achieved on step1 and pass the verifier (got in step2) as data using `oauth_verifier` key:\n\n    new_imgur_oauth_hook = oauthhook(oauth_token, oauth_secret, imgur_consumer_key, imgur_consumer_secret)\n    response = requests.post('http://api.imgur.com/oauth/access_token', {'oauth_verifier': oauth_verifier}, hooks={'pre_request': new_imgur_oauth_hook})\n    response = parse_qs(response.content)\n    final_token = response['oauth_token'][0]\n    final_token_secret = response['oauth_token_secret'][0]\n\nthese `final_token` and `final_token_secret` are the credentials we need to use for handling user's oauth, so most likely you will want to persist them somehow. these are the ones you should use for building a requests session with a new hook. beware that not all oauth apis provide unlimited time credentials.\n\n## testing\n\nif you want to run the tests, you will need to copy `test_settings.py.template` into `test_settings.py`. this file is in the `.gitignore` index, so it won't be committed:\n\n    cp test_settings.py.template test_settings.py\n\nthen fill in the information there. the testing of the library is done in a functional way, doing gets and posts against public oauth apis like twitter, so use a test account and not your personal account:\n\n    ./tests.py\n\n## contributing\n\nif you'd like to contribute, simply fork the repository, commit your changes to the `dev` branch (or branch off of it), and send a pull request. make sure you add yourself to authors.",
+  "docs_url": null,
+  "keywords": "requests,python-requests,oauth,open authentication",
+  "license": "bsd",
+  "name": "requests-oauth",
+  "package_url": "https://pypi.org/project/requests-oauth/",
+  "project_url": "https://pypi.org/project/requests-oauth/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "http://github.com/maraujop/requests-oauth"
+  },
+  "release_url": "https://pypi.org/project/requests-oauth/0.4.1/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "hook for adding open authentication support to python-requests http library.",
+  "version": "0.4.1",
+  "releases": [],
+  "developers": [
+    "miguel.araujo.perez@gmail.com",
+    "miguel_araujo"
+  ],
+  "kwds": "oauth2 oauthhook oauth oauth_secret oauth_hook",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_requests_oauth",
+  "homepage": "http://github.com/maraujop/requests-oauth",
+  "release_count": 6,
+  "dependency_ids": []
+}

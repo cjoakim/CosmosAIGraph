@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# structlog-sentry\n\n| what          | where                                         |\n| ------------- | --------------------------------------------- |\n| documentation | <https://github.com/kiwicom/structlog-sentry> |\n| maintainer    | @kiwicom/platform                             |\n\nbased on <https://gist.github.com/hynek/a1f3f92d57071ebc5b91>\n\n## installation\n\ninstall the package with [pip](https://pip.pypa.io/):\n\n```\npip install structlog-sentry\n```\n\n## usage\n\nthis module is intended to be used with `structlog` like this:\n\n```python\nimport sentry_sdk\nimport structlog\nfrom structlog_sentry import sentryprocessor\n\n\nsentry_sdk.init()  # pass dsn in argument or via sentry_dsn env variable\n\nstructlog.configure(\n    processors=[\n        structlog.stdlib.add_logger_name,  # optional, must be placed before sentryprocessor()\n        structlog.stdlib.add_log_level,  # required before sentryprocessor()\n        sentryprocessor(event_level=logging.error),\n    ],\n    logger_factory=structlog.stdlib.loggerfactory(),\n    wrapper_class=structlog.stdlib.boundlogger,\n)\n\n\nlog = structlog.get_logger()\n```\n\ndo not forget to add the `structlog.stdlib.add_log_level` and optionally the\n`structlog.stdlib.add_logger_name` processors before `sentryprocessor`. the\n`sentryprocessor` class takes the following arguments:\n\n- `level` events of this or higher levels will be reported as sentry\n  breadcrumbs. dfault is `logging.info`.\n- `event_level` events of this or higher levels will be reported to sentry\n  as events. default is `logging.warning`.\n- `active` a flag to make this processor enabled/disabled.\n- `as_context` send `event_dict` as extra info to sentry. default is `true`.\n- `tag_keys` a list of keys. if any if these keys appear in `event_dict`,\n  the key and its corresponding value in `event_dict` will be used as sentry\n  event tags. use `\"__all__\"` to report all key/value pairs of event as tags.\n- `ignore_loggers` a list of logger names to ignore any events from.\n- `verbose` report the action taken by the logger in the `event_dict`.\n  default is `false`.\n- `hub` optionally specify `sentry_sdk.hub`.\n\nnow events are automatically captured by sentry with `log.error()`:\n\n```python\ntry:\n    1/0\nexcept zerodivisionerror:\n    log.error(\"zero divsiion\")\n\ntry:\n    resp = requests.get(f\"https://api.example.com/users/{user_id}/\")\n    resp.raise_for_status()\nexcept requestexception:\n    log.error(\"request error\", user_id=user_id)\n```\n\nthis won't automatically collect `sys.exc_info()` along with the message, if you want\nto enable this behavior, just pass `exc_info=true`.\n\nwhen you want to use structlog's built-in\n[`format_exc_info`](http://www.structlog.org/en/stable/api.html#structlog.processors.format_exc_info)\nprocessor, make that the `sentryprocessor` comes *before* `format_exc_info`!\notherwise, the `sentryprocessor` won't have an `exc_info` to work with, because\nit's removed from the event by `format_exc_info`.\n\nlogging calls with no `sys.exc_info()` are also automatically captured by sentry\neither as breadcrumbs (if configured by the `level` argument) or as events:\n\n```python\nlog.info(\"info message\", scope=\"accounts\")\nlog.warning(\"warning message\", scope=\"invoices\")\nlog.error(\"error message\", scope=\"products\")\n```\n\nif you do not want to forward a specific logs into sentry, you can pass the\n`sentry_skip=true` optional argument to logger methods, like this:\n\n```python\nlog.error(\"error message\", sentry_skip=true)\n```\n\n### sentry tags\n\nyou can set some or all of key/value pairs of structlog `event_dict` as sentry `tags`:\n\n```python\nstructlog.configure(\n    processors=[\n        structlog.stdlib.add_logger_name,\n        structlog.stdlib.add_log_level,\n        sentryprocessor(level=logging.error, tag_keys=[\"city\", \"timezone\"]),\n    ],...\n)\n\nlog.error(\"error message\", city=\"tehran\", timezone=\"utc+3:30\", movie_title=\"some title\")\n```\n\nthis will report the error and the sentry event will have **city** and **timezone** tags.\nif you want to have all event data as tags, create the `sentryprocessor` with `tag_keys=\"__all__\"`.\n\n```python\nstructlog.configure(\n    processors=[\n        structlog.stdlib.add_logger_name,\n        structlog.stdlib.add_log_level,\n        sentryprocessor(level=logging.error, tag_keys=\"__all__\"),\n    ],...\n)\n```\n\n### skip context\n\nby default `sentryprocessor` will send `event_dict` key/value pairs as contextual info to sentry.\nsometimes you may want to skip this, specially when sending the `event_dict` as sentry tags:\n\n```python\nstructlog.configure(\n    processors=[\n        structlog.stdlib.add_logger_name,\n        structlog.stdlib.add_log_level,\n        sentryprocessor(level=logging.error, as_context=false, tag_keys=\"__all__\"),\n    ],...\n)\n```\n\n### ignore specific loggers\n\nif you want to ignore specific loggers from being processed by the `sentryprocessor` just pass\na list of loggers when instantiating the processor:\n\n```python\nstructlog.configure(\n    processors=[\n        structlog.stdlib.add_logger_name,\n        structlog.stdlib.add_log_level,\n        sentryprocessor(level=logging.error, ignore_loggers=[\"some.logger\"]),\n    ],...\n)\n```\n\n### logging as json\n\nif you want to configure `structlog` to format the output as **json** (maybe for\n[elk-stack](https://www.elastic.co/elk-stack)) you have to disable standard logging\nintegration in sentry sdk by passing the `loggingintegration(event_level=none, level=none)`\ninstance to `sentry_sdk.init` method. this prevents duplication of an event reported to sentry:\n\n```python\nfrom sentry_sdk.integrations.logging import loggingintegration\n\n\nintegrations = [\n    # ... other integrations\n    loggingintegration(event_level=none, level=none),\n]\n\nsentry_sdk.init(integrations=integrations)\n```\n\nthis integration tells `sentry_sdk` to *ignore* standard logging and captures the events manually.\n\n## testing\n\nto run all tests:\n\n```\ntox\n```\n\n## contributing\n\ncreate a merge request and tag @kiwicom/platform  for review.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "structlog-sentry",
+  "package_url": "https://pypi.org/project/structlog-sentry/",
+  "project_url": "https://pypi.org/project/structlog-sentry/",
+  "project_urls": {
+    "Homepage": "https://github.com/kiwicom/structlog-sentry",
+    "Repository": "https://github.com/kiwicom/structlog-sentry"
+  },
+  "release_url": "https://pypi.org/project/structlog-sentry/2.0.3/",
+  "requires_dist": [
+    "sentry-sdk",
+    "structlog"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "sentry integration for structlog",
+  "version": "2.0.3",
+  "releases": [],
+  "developers": [
+    "kiwi",
+    "platform@kiwi.com"
+  ],
+  "kwds": "structlog_sentry structlog sentry_sdk sentryprocessor sentry_dsn",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_structlog_sentry",
+  "homepage": "https://github.com/kiwicom/structlog-sentry",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_sentry_sdk",
+    "pypi_structlog"
+  ]
+}

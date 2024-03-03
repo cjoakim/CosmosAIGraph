@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "framework :: pytest",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3"
+  ],
+  "description": "|actions|_ |pypi|_ |pyversions|_ |womm|_\n\n.. |actions| image:: https://github.com/wimglenn/pytest-structlog/actions/workflows/tests.yml/badge.svg\n.. _actions: https://github.com/wimglenn/pytest-structlog/actions/workflows/tests.yml/\n\n.. |pypi| image:: https://img.shields.io/pypi/v/pytest-structlog.svg\n.. _pypi: https://pypi.org/project/pytest-structlog\n\n.. |pyversions| image:: https://img.shields.io/pypi/pyversions/pytest-structlog.svg\n.. _pyversions:\n\n.. |womm| image:: https://cdn.rawgit.com/nikku/works-on-my-machine/v0.2.0/badge.svg\n.. _womm: https://github.com/nikku/works-on-my-machine\n\n\npytest-structlog\n================\n\nstructured logging assertions.  pytest_ + structlog_ = ``pytest-structlog``.\n\n|pytest|    |structlog|\n\n\ninstallation:\n-------------\n\n.. code-block:: bash\n\n   $ pip install pytest-structlog\n\nusage:\n------\n\nthe fixture name is ``log``. it has two attributes of interest: ``log.events`` is a list of events from captured log calls, and ``log.has`` is a helper function for asserting a single event was logged within the expected context.\n\nsuppose you have some library module, ``your_lib``, which is using ``structlog``:\n\n.. code-block:: python\n\n   # your_lib.py\n   from structlog import get_logger\n\n   logger = get_logger()\n\n   def spline_reticulator():\n       logger.info(\"reticulating splines\")\n       for i in range(3):\n           logger.debug(\"processing\", spline=i)\n       logger.info(\"reticulated splines\", n_splines=3)\n\n\nthen your test suite might use assertions such as shown below:\n\n.. code-block:: python\n\n   # test_your_lib.py\n   from your_lib import spline_reticulator\n\n   def test_spline_reticulator(log):\n       assert len(log.events) == 0\n       spline_reticulator()\n       assert len(log.events) == 5\n\n       # can assert on the event only\n       assert log.has(\"reticulating splines\")\n\n       # can assert with subcontext\n       assert log.has(\"reticulated splines\")\n       assert log.has(\"reticulated splines\", n_splines=3)\n       assert log.has(\"reticulated splines\", n_splines=3, level=\"info\")\n\n       # but not incorrect context\n       assert not log.has(\"reticulated splines\", n_splines=42)\n       assert not log.has(\"reticulated splines\", key=\"bogus\")\n\n       # can assert with the event dicts directly\n       assert log.events == [\n           {\"event\": \"reticulating splines\", \"level\": \"info\"},\n           {\"event\": \"processing\", \"level\": \"debug\", \"spline\": 0},\n           {\"event\": \"processing\", \"level\": \"debug\", \"spline\": 1},\n           {\"event\": \"processing\", \"level\": \"debug\", \"spline\": 2},\n           {\"event\": \"reticulated splines\", \"level\": \"info\", \"n_splines\": 3},\n       ]\n\n       # can use membership to check for a single event's data\n       assert {\"event\": \"reticulating splines\", \"level\": \"info\"} in log.events\n\n       # can use >= to specify only the events you're interested in\n       assert log.events >= [\n           {\"event\": \"processing\", \"level\": \"debug\", \"spline\": 0},\n           {\"event\": \"processing\", \"level\": \"debug\", \"spline\": 2},\n       ]\n\n       # or put the comparison the other way around if you prefer\n       assert [\n           {\"event\": \"processing\", \"level\": \"debug\", \"spline\": 0},\n           {\"event\": \"processing\", \"level\": \"debug\", \"spline\": 2},\n       ] <= log.events\n\n       # note: comparisons are order sensitive!\n       assert not [\n           {\"event\": \"processing\", \"level\": \"debug\", \"spline\": 2},\n           {\"event\": \"processing\", \"level\": \"debug\", \"spline\": 0},\n       ] <= log.events\n\n\n.. _pytest: https://docs.pytest.org/\n.. _structlog: https://www.structlog.org/\n.. |pytest| image:: https://user-images.githubusercontent.com/6615374/46903931-515eef00-cea2-11e8-8945-980ddbf0a053.png\n.. |structlog| image:: https://user-images.githubusercontent.com/6615374/46903937-5b80ed80-cea2-11e8-9b85-d3f071180fe1.png\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pytest-structlog",
+  "package_url": "https://pypi.org/project/pytest-structlog/",
+  "project_url": "https://pypi.org/project/pytest-structlog/",
+  "project_urls": {
+    "Homepage": "https://github.com/wimglenn/pytest-structlog"
+  },
+  "release_url": "https://pypi.org/project/pytest-structlog/0.6/",
+  "requires_dist": [
+    "pytest",
+    "structlog"
+  ],
+  "requires_python": "",
+  "summary": "structured logging assertions",
+  "version": "0.6",
+  "releases": [],
+  "developers": [
+    "hey@wimglenn.com",
+    "wim_glenn"
+  ],
+  "kwds": "pytest_ pytest _pytest _pyversions _actions",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_structlog",
+  "homepage": "https://github.com/wimglenn/pytest-structlog",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_pytest",
+    "pypi_structlog"
+  ]
+}

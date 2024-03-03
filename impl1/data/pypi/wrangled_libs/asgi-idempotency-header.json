@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: web environment",
+    "framework :: asyncio",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "license :: other/proprietary license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: internet :: www/http :: wsgi :: middleware",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: application frameworks",
+    "topic :: software development :: libraries :: python modules",
+    "typing :: typed"
+  ],
+  "description": "[![tests](https://github.com/sondrelg/asgi-idempotency-header/actions/workflows/test.yml/badge.svg)](https://github.com/sondrelg/asgi-idempotency-header/actions/workflows/test.yml)\n[![pypi](https://img.shields.io/pypi/v/asgi-idempotency-header.svg)](https://pypi.org/project/drf-openapi-tester/)\n[![python-versions](https://img.shields.io/badge/python-3.8%2b-blue)](https://pypi.org/project/asgi-idempotency-header)\n[![codecov](https://codecov.io/gh/sondrelg/asgi-idempotency-header/branch/main/graph/badge.svg?token=uojtcsy8h7)](https://codecov.io/gh/sondrelg/asgi-idempotency-header)\n\n# idempotency header asgi middleware\n\na middleware for making endpoints idempotent.\n\nthe purpose of the middleware is to guarantee that execution of mutating endpoints happens exactly once,\nregardless of the number of requests.\nwe achieve this by caching responses, and returning already-saved responses to the user on repeated requests.\nresponses are only cached when an idempotency-key http header is present, so clients must opt-into this behaviour.\nadditionally, only configured http methods (by default, `post` and `patch`) that return json payloads are cached and replayed.\n\nthis is largely modelled after [stripe' implementation](https://stripe.com/docs/api/idempotent_requests).\n\nthe middleware is compatible with both [starlette](https://github.com/encode/starlette)\nand [fastapi](https://github.com/tiangolo/fastapi) apps.\n\n## installation\n\n```\npip install asgi-idempotency-header\n```\n\n## setup\n\nadd the middleware to your app like this:\n\n```python\nfrom fastapi import fastapi\n\nfrom idempotency_header_middleware import idempotencyheadermiddleware\nfrom idempotency_header_middleware.backends import redisbackend\n\n\nbackend = redisbackend(redis=redis)\n\napp = fastapi()\napp.add_middleware(idempotencyheadermiddleware(backend=backend))\n```\n\nor like this:\n\n```python\nfrom fastapi import fastapi\nfrom fastapi.middleware import middleware\n\nfrom idempotency_header_middleware import idempotencyheadermiddleware\nfrom idempotency_header_middleware.backends import redisbackend\n\n\nbackend = redisbackend(redis=redis)\n\napp = fastapi(\n    middleware=[\n        middleware(\n            idempotencyheadermiddleware,\n            backend=backend,\n        )\n    ]\n)\n```\n\nif you're using `starlette`, just substitute `fastapi` for `starlette` and it should work the same.\n\n## configuration\n\nthe middleware takes a few arguments. a full example looks like this:\n\n```python\nfrom aioredis import from_url\n\nfrom idempotency_header_middleware import idempotencyheadermiddleware\nfrom idempotency_header_middleware.backends import redisbackend\n\n\nredis = from_url(redis_url)\nbackend = redisbackend(redis=redis)\n\nidempotencyheadermiddleware(\n    backend,\n    idempotency_header_key='idempotency-key',\n    replay_header_key='idempotent-replayed',\n    enforce_uuid4_formatting=false,\n    expiry=60 * 60 * 24,\n    applicable_methods=['post', 'patch']\n)\n```\n\nthe following section describes each argument:\n\n### backend\n\n```python\nfrom idempotency_header_middleware.backends import redisbackend, memorybackend\n\nbackend: union[redisbackend, memorybackend]\n```\n\nthe backend is the only required argument, as it defines **how** and **where** to store a response.\n\nthe package comes with an [aioredis](https://github.com/aio-libs/aioredis-py) backend implementation, and a\nmemory-backend for testing.\n\ncontributions for more backends are welcomed, and configuring a custom backend is pretty simple - just take a look at\nthe existing ones.\n\n### idempotency header key\n\n```python\nidempotency_header_key: str = 'idempotency-key'\n```\n\nthe idempotency header key is the header value to check for. when present, the middleware will be used if the http\nmethod is in the [applicable methods](#applicable-methods).\n\nthe default value is `\"idempotency-key\"`, but it can be defined as any string.\n\n### replay header key\n\n```python\nreplay_header_key: str = 'idempotent-replayed'\n```\n\nthe replay header is added to replayed responses. it provides a way for the client to tell whether the action was\nperformed for the first time or not.\n\n### enforce uuid formatting\n\n```python\nenforce_uuid4_formatting: bool = false\n```\n\nconvenience option for stricter header value validation.\n\nclients can technically set any value they want in their header,\nbut the shorter the key value is, the higher the risk of value-collisions is from other users.\nif two users accidentally send in the same header value for what's meant to be two separate requests,\nthe middleware will interpret them as the same.\n\nby enabling this option, you can force users to use uuids as header values, and pretty much eliminate this risk.\n\nwhen validation fails, a 422 response is returned from the middleware, informing the user that the header value is malformed.\n\n### expiry\n\n```python\nexpiry: int = 60 * 60 * 24\n```\n\nhow long to cache responses for, measured in seconds. set to 24 hours by default.\n\n### applicable methods\n\n```python\napplicable_methods=['post', 'patch']\n```\n\nwhat http methods to consider for idempotency. if the request method is one of the methods in this list, and the\n[idempotency header](#idempotency-header-key) is sent, the middleware will be used. by default, only `post`\nand `patch` methods are cached and replayed.\n\n## quick summary of behaviours\n\nbriefly summarized, this is how the middleware functions:\n\n- the first request is processed, and consequent requests are replayed, until the response expires.\n  `expiry` *can* be set to `none` to skip expiry, but most likely you will want to expire responses\n  after a while.\n- if two requests comes in at the same time - i.e., if a second request hits the middlware *before*\n  the first request has finished, the middleware will return a 409, informing the user that a request\n  is being processed, and that we cannot handle the second request.\n- the middleware only handles http requests.\n- by default, the middleware only handles requests with `post` and `patch` methods. other http methods skip this middleware.\n- only valid json responses with `content-type` == `application/json` are cached.\n",
+  "docs_url": null,
+  "keywords": "idempotence,idempotency,header,fastapi,starlette,asgi,middleware,api,endpoint,http",
+  "license": "bsd-3",
+  "name": "asgi-idempotency-header",
+  "package_url": "https://pypi.org/project/asgi-idempotency-header/",
+  "project_url": "https://pypi.org/project/asgi-idempotency-header/",
+  "project_urls": {
+    "Homepage": "https://github.com/snok/asgi-idempotency-header",
+    "Repository": "https://github.com/snok/asgi-idempotency-header"
+  },
+  "release_url": "https://pypi.org/project/asgi-idempotency-header/0.2.0/",
+  "requires_dist": [
+    "fastapi (>=0.70.0,<0.71.0); extra == \"fastapi\" or extra == \"all\"",
+    "starlette; extra == \"starlette\" or extra == \"all\"",
+    "redis (>=4.2,<5.0); extra == \"redis\" or extra == \"all\"",
+    "lupa; extra == \"redis\" or extra == \"all\""
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "enable idempotent operations for your endpoints.",
+  "version": "0.2.0",
+  "releases": [],
+  "developers": [
+    "patrick_gleeson",
+    "pgleeson@spoton.com",
+    "sondrelg@live.no"
+  ],
+  "kwds": "idempotencyheadermiddleware idempotency_header_middleware idempotent_requests openapi asgi",
+  "license_kwds": "bsd-3",
+  "libtype": "pypi",
+  "id": "pypi_asgi_idempotency_header",
+  "homepage": "https://github.com/snok/asgi-idempotency-header",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_fastapi",
+    "pypi_lupa",
+    "pypi_redis",
+    "pypi_starlette"
+  ]
+}

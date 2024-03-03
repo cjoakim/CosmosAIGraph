@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: security"
+  ],
+  "description": "openssh public key parser for python\n====================================\n\n.. image:: https://github.com/ojarva/python-sshpubkeys/workflows/run%20python%20tests/badge.svg\n\nmajor changes between versions 2 and 3\n--------------------------------------\n\n- dropped support for python 2.6 and 3.3\n- even in loose mode, dsa keys must be 1024, 2048, or 3072 bits (earlier this was looser)\n- the interface (api) is exactly the same\n\n\nusage\n-----\n\nnative implementation for validating openssh public keys.\n\ncurrently ssh-rsa, ssh-dss (dsa), ssh-ed25519 and ecdsa keys with nist curves are supported.\n\ninstallation:\n\n::\n\n  pip install sshpubkeys\n\nor clone the `repository <https://github.com/ojarva/sshpubkeys>`_ and use\n\n::\n\n  python setup.py install\n\nusage:\n\n::\n\n  import sys\n  from sshpubkeys import sshkey\n\n  ssh = sshkey(\"ssh-rsa aaaab3nzac1yc2eaaaadaqabaaaayqcxo38tkajxis9ivpxt7ay\"\n        \"dfybgtar1ow3qkb9gpq6wkfhqqcfde6fakcxh6idrteo4d8l8b\"\n        \"xwzn42uzsb0nfmjkixftceu3mfsxebwbyg78aoddmraajatyrh\"\n        \"h1pon6p0= ojarva@ojar-laptop\", strict=true)\n  try:\n      ssh.parse()\n  except invalidkeyerror as err:\n      print(\"invalid key:\", err)\n      sys.exit(1)\n  except notimplementederror as err:\n      print(\"invalid key type:\", err)\n      sys.exit(1)\n\n  print(ssh.bits)  # 768\n  print(ssh.hash_md5())  # 56:84:1e:90:08:3b:60:c7:29:70:5f:5e:25:a6:3b:86\n  print(ssh.hash_sha256())  # sha256:xk3iejidior9mmsrxtp98rjddzocmxjje/28ohmqewm\n  print(ssh.hash_sha512())  # sha512:1c3lnbhjpdvqe39hnyy+xvlzyu3ipwzqk1rvnegavy6o3/ebjeqsfvmewoymtplianmuk1hmr9na8skmj516ha\n  print(ssh.comment)  # ojar@ojar-laptop\n  print(ssh.options_raw)  # none (string of optional options at the beginning of public key)\n  print(ssh.options)  # none (options as a dictionary, parsed and validated)\n\n\nparsing of `authorized_keys` files:\n\n::\n\n  import os\n  from sshpubkeys import authorizedkeysfile\n  f = open(os.environ[\"home\"] + \"/.ssh/authorized_keys\", \"r\")\n  key_file = authorizedkeysfile(f, strict=false)\n\n  for key in key_file.keys:\n      print(key.key_type, key.bits, key.hash_sha512())\n\n\noptions\n-------\n\nset options in constructor as a keywords (i.e., `sshkey(none, strict=false)`)\n\n- strict: defaults to true. disallows keys openssh's ssh-keygen refuses to create. for instance, this includes dsa keys where length != 1024 bits and rsa keys shorter than 1024-bit. if set to false, tries to allow all keys openssh accepts, including highly insecure 1-bit dsa keys.\n- skip_option_parsing: if set to true, options string is not parsed (ssh.options_raw is populated, but ssh.options is not).\n- disallow_options: if set to true, options are not allowed and it will raise an\n  invalidoptionserror.\n\nexceptions\n----------\n\n- notimplementederror if invalid ecdsa curve or unknown key type is encountered.\n- invalidkeyerror if any other error is encountered:\n    - tooshortkeyerror if key is too short (<768 bits for rsa, <1024 for dsa, <256 for ed25519)\n    - toolongkeyerror if key is too long (>16384 for rsa, >1024 for dsa, >256 for ed25519)\n    - invalidtypeerror if key type (\"ssh-rsa\" in above example) does not match to what is included in base64 encoded data.\n    - malformeddataerror if decoding and extracting the data fails.\n    - invalidoptionserror if options string is invalid.\n        - invalidoptionnameerror if option name contains invalid characters.\n            - unknownoptionnameerror if option name is not recognized.\n        - missingmandatoryoptionvalueerror if option needs to have parameter, but it is absent.\n\ntests\n-----\n\nsee \"`tests/ <https://github.com/ojarva/sshpubkeys/tree/master/tests>`_\" folder for unit tests. use\n\n::\n\n  python setup.py test\n\nor\n\n::\n\n  python3 setup.py test\n\nto run test suite. if you have keys that are not parsed properly, or malformed keys that raise incorrect exception, please send your *public key* to olli@jarva.fi, and i'll include it. alternatively, `create a new issue <https://github.com/ojarva/sshpubkeys/issues/new>`_ or make `a pull request <https://github.com/ojarva/sshpubkeys/compare>`_ in github.\n\n\n",
+  "docs_url": null,
+  "keywords": "ssh pubkey public key openssh ssh-rsa ssh-dss ssh-ed25519",
+  "license": "bsd",
+  "name": "sshpubkeys",
+  "package_url": "https://pypi.org/project/sshpubkeys/",
+  "project_url": "https://pypi.org/project/sshpubkeys/",
+  "project_urls": {
+    "Homepage": "https://github.com/ojarva/python-sshpubkeys"
+  },
+  "release_url": "https://pypi.org/project/sshpubkeys/3.3.1/",
+  "requires_dist": [
+    "cryptography (>=2.1.4)",
+    "ecdsa (>=0.13)",
+    "twine ; extra == 'dev'",
+    "wheel ; extra == 'dev'",
+    "yapf ; extra == 'dev'"
+  ],
+  "requires_python": ">=3",
+  "summary": "ssh public key parser",
+  "version": "3.3.1",
+  "releases": [],
+  "developers": [
+    "olli@jarva.fi",
+    "olli_jarva"
+  ],
+  "kwds": "sshpubkeys sshkey authorized_keys openssh invalidkeyerror",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_sshpubkeys",
+  "homepage": "https://github.com/ojarva/python-sshpubkeys",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_cryptography",
+    "pypi_ecdsa",
+    "pypi_twine",
+    "pypi_wheel",
+    "pypi_yapf"
+  ]
+}

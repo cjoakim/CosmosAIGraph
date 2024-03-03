@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# elasticsearch dbapi\n\n\n[![build status](https://github.com/preset-io/elasticsearch-dbapi/workflows/python/badge.svg)](https://github.com/preset-io/elasticsearch-dbapi/actions)\n[![pypi version](https://badge.fury.io/py/elasticsearch-dbapi.svg)](https://badge.fury.io/py/elasticsearch-dbapi)\n[![coverage status](https://codecov.io/github/preset-io/elasticsearch-dbapi/coverage.svg?branch=master)](https://codecov.io/github/preset-io/elasticsearch-dbapi)\n\n\n`elasticsearch-dbapi` implements a dbapi (pep-249) and sqlalchemy dialect,\nthat enables sql access on elasticsearch clusters for query only access.\n\non elastic elasticsearch:\nuses elastic x-pack [sql api](https://www.elastic.co/guide/en/elasticsearch/reference/current/xpack-sql.html)\n\non aws es, opendistro elasticsearch:\n[open distro sql](https://opendistro.github.io/for-elasticsearch-docs/docs/sql/)\n\nthis library supports elasticsearch 7.x versions.\n\n### installation\n\n```bash\n$ pip install elasticsearch-dbapi\n```\n\nto install support for aws elasticsearch service / [open distro](https://opendistro.github.io/for-elasticsearch/features/sql%20support.html):\n\n```bash\n$ pip install elasticsearch-dbapi[opendistro]\n```\n\n### usage:\n\n#### using dbapi:\n\n```python\nfrom es.elastic.api import connect\n\nconn = connect(host='localhost')\ncurs = conn.cursor()\ncurs.execute(\n    \"select * from flights limit 10\"\n)\nprint([row for row in curs])\n```\n\n#### using sqlalchemy execute:\n\n```python\nfrom sqlalchemy.engine import create_engine\n\nengine = create_engine(\"elasticsearch+http://localhost:9200/\")\nrows = engine.connect().execute(\n    \"select * from flights limit 10\"\n)\nprint([row for row in rows])\n```\n\n#### using sqlalchemy:\n\n```python\nfrom sqlalchemy import func, select\nfrom sqlalchemy.engine import create_engine\nfrom sqlalchemy.schema import metadata, table\n\n\nengine = create_engine(\"elasticsearch+http://localhost:9200/\")\nlogs = table(\"flights\", metadata(bind=engine), autoload=true)\ncount = select([func.count(\"*\")], from_obj=logs).scalar()\nprint(f\"count: {count}\")\n```\n\n#### using sqlalchemy reflection:\n\n```python\n\nfrom sqlalchemy.engine import create_engine\nfrom sqlalchemy.schema import table, metadata\n\nengine = create_engine(\"elasticsearch+http://localhost:9200/\")\nlogs = table(\"flights\", metadata(bind=engine), autoload=true)\nprint(engine.table_names())\n\nmetadata = metadata()\nmetadata.reflect(bind=engine)\nprint([table for table in metadata.sorted_tables])\nprint(logs.columns)\n```\n\n#### connection parameters:\n\n[elasticsearch-py](https://elasticsearch-py.readthedocs.io/en/master/index.html)\nis used to establish connections and transport, this is the official\nelastic python library. `elasticsearch` constructor accepts multiple optional parameters\nthat can be used to properly configure your connection on aspects like security, performance\nand high availability. these optional parameters can be set at the connection string, for\nexample:\n\n ```bash\n    elasticsearch+http://localhost:9200/?http_compress=true&timeout=100\n```\nwill set transport to use gzip (http_compress) and timeout to 10 seconds.\n\nfor more information on configuration options, look at `elasticsearch-py`\u2019s documentation:\n- [transport options](https://elasticsearch-py.readthedocs.io/en/master/connection.html#transport)\n- [http tranport](https://elasticsearch-py.readthedocs.io/en/master/transports.html#urllib3httpconnection)\n\nthe connection string follows rfc-1738, to support multiple nodes you should use `sniff_*` parameters\n\n#### fetch size\n\nby default the maximum number of rows which get fetched by a single query\nis limited to 10000. this can be adapted through the `fetch_size`\nparameter:\n\n```python\nfrom es.elastic.api import connect\n\nconn = connect(host=\"localhost\", fetch_size=1000)\ncurs = conn.cursor()\n```\n\nif more than 10000 rows should get fetched then\n[max_result_window](https://www.elastic.co/guide/en/elasticsearch/reference/7.x/index-modules.html#dynamic-index-settings)\nhas to be adapted as well.\n\n#### time zone\n\nby default, elasticsearch query time zone defaults to `z` (utc). this can be adapted through the `time_zone`\nparameter:\n\n```python\nfrom es.elastic.api import connect\n\nconn = connect(host=\"localhost\", time_zone=\"asia/shanghai\")\ncurs = conn.cursor()\n```\n\n### tests\n\nto run unittest launch elasticsearch and kibana (kibana is really not required but is a nice to have)\n\n```bash\n$ docker-compose up -d\n$ nosetests -v\n```\n\n### special case for sql opendistro endpoint (aws es)\n\naws es exposes the opendistro sql plugin, and it follows a different sql dialect.\nusing the `odelasticsearch` driver:\n\n```python\nfrom sqlalchemy.engine import create_engine\n\nengine = create_engine(\n    \"odelasticsearch+https://search-some-cluster.us-west-2.es.amazonaws.com:443/\"\n)\nrows = engine.connect().execute(\n    \"select count(*), carrier from flights group by carrier\"\n)\nprint([row for row in rows])\n```\n\nor using dbapi:\n```python\nfrom es.opendistro.api import connect\n\nconn = connect(host='localhost',port=9200,path=\"\", scheme=\"http\")\n\ncurs = conn.cursor().execute(\n    \"select * from flights limit 10\"\n)\n\nprint([row for row in curs])\n```\n\n### opendistro (aws es) basic authentication\n\nbasic authentication is configured as expected on the <username>,<password> fields of the uri\n\n```python\nfrom sqlalchemy.engine import create_engine\n\nengine = create_engine(\n    \"odelasticsearch+https://my_user:my_password@search-some-cluster.us-west-2.es.amazonaws.com:443/\"\n)\n```\n\niam aws authentication keys are passed on the uri basic auth location, and by setting `aws_keys`\n\nquery string keys are:\n\n- aws_keys\n- aws_region\n\n```python\nfrom sqlalchemy.engine import create_engine\n\nengine = create_engine(\n    \"odelasticsearch+https://<aws_access_key>:<aws_secret_key>@search-some-cluster.us-west-2.es.amazonaws.com:443/?aws_keys=1&&aws_region=<aws_region>\"\n)\n```\n\niam aws profile is configured has a query parameter name `aws_profile` on the uri. the value for the key provides the aws region\n\n```python\nfrom sqlalchemy.engine import create_engine\n\nengine = create_engine(\n    \"odelasticsearch+https://search-some-cluster.us-west-2.es.amazonaws.com:443/?aws_profile=us-west-2\"\n)\n```\n\nusing the new sql engine:\n\nopendistro 1.13.0 brings (enabled by default) a new sql engine, with lots of improvements and fixes.\ntake a look at the [release notes](https://github.com/opendistro-for-elasticsearch/sql/blob/develop/docs/dev/newsqlengine.md)\n\nthis dbapi has to behave slightly different for sql v1 and sql v2, by default we comply with v1,\nto enable v2 support, pass `v2=true` has a query parameter.\n\n```\nodelasticsearch+https://search-some-cluster.us-west-2.es.amazonaws.com:443/?aws_profile=us-west-2&v2=true\n```\n\nto connect to the provided opendistro es on `docker-compose` use the following uri:\n`odelasticsearch+https://admin:admin@localhost:9400/?verify_certs=false`\n\n### known limitations\n\nthis library does not yet support the following features:\n\n- array type columns are not supported. elaticsearch sql does not support them either.\nsqlalchemy `get_columns` will exclude them.\n- `object` and `nested` column types are not well supported and are converted to strings\n- indexes that whose name start with `.`\n- geo points are not currently well-supported and are converted to strings\n\n- aws es (opendistro elascticsearch) is supported (still beta), known limitations are:\n  * you are only able to `group by` keyword fields (new [experimental](https://github.com/opendistro-for-elasticsearch/sql#experimental)\n opendistro sql already supports it)\n  * indices with dots are not supported (indices like 'audit_log.2021.01.20'),\n  on these cases we recommend the use of aliases\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license, version 2.0",
+  "name": "elasticsearch-dbapi",
+  "package_url": "https://pypi.org/project/elasticsearch-dbapi/",
+  "project_url": "https://pypi.org/project/elasticsearch-dbapi/",
+  "project_urls": {
+    "Download": "https://github.com/preset-io/elasticsearch-dbapi/releases/tag/0.2.10",
+    "Homepage": "http://preset.io"
+  },
+  "release_url": "https://pypi.org/project/elasticsearch-dbapi/0.2.10/",
+  "requires_dist": [
+    "elasticsearch (<7.14,>7)",
+    "packaging (<22.0,>=21.0)",
+    "sqlalchemy",
+    "requests-aws4auth ; extra == 'opendistro'",
+    "boto3 ; extra == 'opendistro'"
+  ],
+  "requires_python": "",
+  "summary": "a dbapi and sqlalchemy dialect for elasticsearch",
+  "version": "0.2.10",
+  "releases": [],
+  "developers": [
+    "daniel@preset.io",
+    "preset_inc"
+  ],
+  "kwds": "elasticsearch elascticsearch aws_access_key kibana dbapi",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_elasticsearch_dbapi",
+  "homepage": "http://preset.io",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_elasticsearch",
+    "pypi_packaging",
+    "pypi_requests_aws4auth",
+    "pypi_sqlalchemy"
+  ]
+}

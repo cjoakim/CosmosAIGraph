@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license"
+  ],
+  "description": "# batch balanced knn\n\nbbknn is a fast and intuitive batch effect removal tool that can be directly used in the [scanpy](https://scanpy.readthedocs.io/en/latest/) workflow. it serves as an alternative to `scanpy.pp.neighbors()`, with both functions creating a neighbour graph for subsequent use in clustering, pseudotime and umap visualisation. the standard approach begins by identifying the k nearest neighbours for each individual cell across the entire data structure, with the candidates being subsequently transformed to exponentially related connectivities before serving as the basis for further analyses. if technical artifacts (be they because of differing data acquisition technologies, protocol alterations or even particularly severe operator effects) are present in the data, they will make it challenging to link corresponding cell types across different batches.\n\n<p align=\"center\"><img src=\"figures/batch1.png\" alt=\"knn\" width=\"50%\"></p>\n\nas such, bbknn actively combats this effect by taking each cell and identifying a (smaller) k nearest neighbours in each batch separately, rather than the dataset as a whole. these nearest neighbours for each batch are then merged into a final neighbour list for the cell. this helps create connections between analogous cells in different batches without altering the counts or pca space.\n\n<p align=\"center\"><img src=\"figures/batch2.png\" alt=\"bbknn\" width=\"50%\"></p>\n\n## citation\n\nif you use bbknn in your work, please cite the [paper](https://doi.org/10.1093/bioinformatics/btz625):\n\n\t@article{polanski2019bbknn,\n\t  title={bbknn: fast batch alignment of single cell transcriptomes},\n\t  author={pola{\\'n}ski, krzysztof and young, matthew d and miao, zhichao and meyer, kerstin b and teichmann, sarah a and park, jong-eun},\n\t  doi={10.1093/bioinformatics/btz625},\n\t  journal={bioinformatics},\n\t  year={2019}\n\t}\n\n## installation\n\nbbknn depends on cython, numpy, scipy, annoy, pynndescent, umap-learn and scikit-learn. the package is available on pip and conda, and can be easily installed as follows:\n\n```bash\npip3 install bbknn\n```\n\nor\n\n```bash\nconda install -c bioconda bbknn\n```\n\nbbknn can also make use of faiss. consult the [official installation instructions](https://github.com/facebookresearch/faiss/blob/master/install.md), the easiest way to get it is via conda.\n\n## usage and documentation\n\nbbknn has the option to immediately slot into the spot occupied by `scanpy.neighbors()` in the [seurat-inspired scanpy workflow](https://nbviewer.jupyter.org/github/theislab/scanpy_usage/blob/master/170505_seurat/seurat.ipynb). it computes a batch aligned variant of the neighbourhood graph, with its uses within scanpy including clustering, diffusion map pseudotime inference and umap visualisation. the basic syntax to run bbknn on scanpy's anndata object (with pca computed via `scanpy.tl.pca()`) is as follows:\n\n```python3\nimport bbknn\n\nbbknn.bbknn(adata)\n```\n\nyou can provide which `adata.obs` column to use for batch discrimination via the `batch_key` parameter. this defaults to `'batch'`, which is created by scanpy when you merge multiple anndata objects (e.g. if you were to import multiple samples separately and then concatenate them).\n\nintegration can be improved by using ridge regression on both a technical effect and a biological grouping prior to bbknn, following a workflow from [park _et al._, 2020](https://science.sciencemag.org/content/367/6480/eaay3224.abstract). in the event of not having a biological grouping at hand, a coarse clustering obtained from a bbknn-corrected graph can be used in its place. this creates the following basic workflow syntax:\n\n```python3\nimport bbknn\nimport scanpy\n\nbbknn.bbknn(adata)\nscanpy.tl.leiden(adata)\nbbknn.ridge_regression(adata, batch_key=['batch'], confounder_key=['leiden'])\nscanpy.tl.pca(adata)\nbbknn.bbknn(adata)\n```\n\nalternately, you can just provide a pca matrix with cells as rows and a matching vector of batch assignments for each of the cells and call bbknn as follows (with `connectivities` being the primary graph output of interest):\n\n```python3\nimport bbknn.matrix\n\ndistances, connectivities, parameters = bbknn.matrix.bbknn(pca_matrix, batch_list)\n```\n\nan html render of the bbknn function docstring, detailing all the parameters, can be accessed at [readthedocs](https://bbknn.readthedocs.io/en/latest/). bbknn use, along with using ridge regression to improve the integration, is shown in a [demonstration notebook](https://nbviewer.jupyter.org/github/teichlab/bbknn/blob/master/examples/demo.ipynb).\n\n## bbknn in r\n\nat this point, there is no plan to create a bbknn r package. however, it can be ran quite easily via reticulate. using the base functions is the same as in python. if you're in possession of a pca matrix and a batch assignment vector and want to get umap coordinates out of it, you can use the following code snippet to do so. the weird pca computation part and replacing it with your original values is unfortunately necessary due to how anndata innards operate from a reticulate level. provide your python path in `use_python()`\n\n```r\nlibrary(reticulate)\nuse_python(\"/usr/bin/python3\")\n\nanndata = import(\"anndata\",convert=false)\nbbknn = import(\"bbknn\", convert=false)\nsc = import(\"scanpy\",convert=false)\n\nadata = anndata$anndata(x=pca, obs=batch)\nsc$tl$pca(adata)\nadata$obsm$x_pca = pca\nbbknn$bbknn(adata,batch_key=0)\nsc$tl$umap(adata)\numap = py_to_r(adata$obsm[[\"x_umap\"]])\n```\n\nif you wish to change any integer arguments (such as `neighbors_within_batch`), you'll have to `as.integer()` the value so python understands it as an integer.\n\nwhen testing locally, faiss refused to work when bbknn was reticulated. as such, provide `use_faiss=false` to the bbknn call if you run into this problem.\n\n## example notebooks\n\n**[demo.ipynb](https://nbviewer.jupyter.org/github/teichlab/bbknn/blob/master/examples/demo.ipynb) is the main demonstration, applying bbknn to some pancreas data with a batch effect. the notebook also uses ridge regression to improve the integration.** \n\nthe [bbknn paper](https://doi.org/10.1093/bioinformatics/btz625) makes use of the following analyses:\n- [simulation.ipynb](https://nbviewer.jupyter.org/github/teichlab/bbknn/blob/master/examples/simulation.ipynb) applies bbknn to simulated data with a known ground truth, and demonstrates the utility of graph trimming by introducing an unrelated cell population. this simulated data is then used to benchmark bbknn against mnncorrect, cca, scanorama and harmony in [benchmark.ipynb](https://nbviewer.jupyter.org/github/teichlab/bbknn/blob/master/examples/benchmark.ipynb), and then finish off with a benchmarking of a bbknn variant reluctant to work within r/reticulate and visualise the findings in  [benchmark2.ipynb](https://nbviewer.jupyter.org/github/teichlab/bbknn/blob/master/examples/benchmark2.ipynb). [benchmark3-new-r-methods.ipynb](https://nbviewer.jupyter.org/github/teichlab/bbknn/blob/master/examples/benchmark3-new-r-methods.ipynb) adds some newer r approaches to the benchmark.\n- [mouse.ipynb](https://nbviewer.jupyter.org/github/teichlab/bbknn/blob/master/examples/mouse.ipynb) runs a collection of murine atlases through bbknn. [mouse-harmony.ipynb](https://nbviewer.jupyter.org/github/teichlab/bbknn/blob/master/examples/mouse-harmony.ipynb) applies harmony to the same data.\n\nthe [bbknn preprint](https://www.biorxiv.org/content/early/2018/08/22/397042) performed some additional analyses that got left out of the final manuscript. archival notebooks are stored in a [separate repository](https://github.com/teichlab/bbknn_preprint).",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "bbknn",
+  "package_url": "https://pypi.org/project/bbknn/",
+  "project_url": "https://pypi.org/project/bbknn/",
+  "project_urls": {
+    "Documentation": "https://bbknn.readthedocs.io/en/latest/",
+    "Home": "https://github.com/Teichlab/bbknn"
+  },
+  "release_url": "https://pypi.org/project/bbknn/1.6.0/",
+  "requires_dist": [
+    "Cython",
+    "scipy>=1.6.0",
+    "numpy",
+    "pandas",
+    "annoy",
+    "pynndescent",
+    "umap-learn",
+    "scikit-learn>=1.0.2"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "batch balanced knn",
+  "version": "1.6.0",
+  "releases": [],
+  "developers": [
+    "kp9@sanger.ac.uk"
+  ],
+  "kwds": "neighbors_within_batch batch batches batch2 scanpy",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_bbknn",
+  "homepage": "",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_annoy",
+    "pypi_cython",
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_pynndescent",
+    "pypi_scikit_learn",
+    "pypi_scipy",
+    "pypi_umap_learn"
+  ]
+}

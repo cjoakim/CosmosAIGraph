@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.2",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "topic :: database",
+    "topic :: software development",
+    "topic :: software development :: testing"
+  ],
+  "description": "``testing.mysqld`` automatically setups a mysqld instance in a temporary directory, and destroys it after testing\n\n.. image:: https://travis-ci.org/tk0miya/testing.mysqld.svg?branch=master\n   :target: https://travis-ci.org/tk0miya/testing.mysqld\n\n.. image:: https://coveralls.io/repos/tk0miya/testing.mysqld/badge.png?branch=master\n   :target: https://coveralls.io/r/tk0miya/testing.mysqld?branch=master\n\n.. image:: https://codeclimate.com/github/tk0miya/testing.mysqld/badges/gpa.svg\n   :target: https://codeclimate.com/github/tk0miya/testing.mysqld\n\ninstall\n=======\nuse easy_install (or pip)::\n\n   $ easy_install testing.mysqld\n\nand ``testing.mysqld`` requires mysql server in your path.\n\n\nusage\n=====\ncreate mysql instance using ``testing.mysqld.mysqld``::\n\n  import testing.mysqld\n  from sqlalchemy import create_engine\n\n  # lanuch new mysql server\n  with testing.mysqld.mysqld() as mysqld:\n      # connect to mysql\n      engine = create_engine(mysqld.url())\n\n      # if you use mysqldb or other drivers:\n      #   import _mysql\n      #   db = _mysql.connect(**mysqld.dsn())\n\n      #\n      # do any tests using mysql...\n      #\n\n  # mysql server is terminated here\n\n\n``testing.mysqld.mysqld`` executes ``mysql_install_db`` and ``mysqld`` on instantiation.\non deleting mysqld object, it terminates mysql instance and removes temporary directory.\n\nif you want a database including tables and any fixtures for your apps,\nuse ``copy_data_from`` keyword::\n\n  # uses a copy of specified data directory of mysql.\n  mysqld = testing.mysqld.mysqld(copy_data_from='/path/to/your/database')\n\n\nyou can specify parameters for mysql with ``my_cnf`` keyword::\n\n  # boot mysql server without socket listener (use unix-domain socket) \n  mysqld = testing.mysqld.mysqld(my_cnf={'skip-networking': none})\n\n\nfor example, you can setup new mysql server for each testcases on setup() method::\n\n  import unittest\n  import testing.mysqld\n\n  class mytestcase(unittest.testcase):\n      def setup(self):\n          self.mysqld = testing.mysqld.mysqld(my_cnf={'skip-networking': none})\n\n      def teardown(self):\n          self.mysqld.stop()\n\n\nto make your tests faster\n-------------------------\n\n``testing.mysqld.mysqld`` invokes ``initdb`` command on every instantiation.\nthat is very simple. but, in many cases, it is very waste that generating brandnew database for each testcase.\n\nto optimize the behavior, use ``testing.mysqld.mysqldfactory``.\nthe factory class is able to cache the generated database beyond the testcases,\nand it reduces the number of invocation of ``mysql_install_db`` command::\n\n  import unittest\n  import testing.mysqld\n\n  # generate mysqld class which shares the generated database\n  mysqld = testing.mysqld.mysqldfactory(cache_initialized_db=true)\n\n\n  def teardownmodule(self):\n      # clear cached database at end of tests\n      mysqld.clear_cache()\n\n\n  class mytestcase(unittest.testcase):\n      def setup(self):\n          # use the generated mysqld class instead of testing.mysqld.mysqld\n          self.mysqld = mysqld()\n\n      def teardown(self):\n          self.mysqld.stop()\n\nif you want to insert fixtures to the cached database, use ``initdb_handler`` option::\n\n  # create initial data on create as fixtures into the database\n  def handler(mysqld):\n      conn = psycopg2.connect(**mysqld.dsn())\n      cursor = conn.cursor()\n      cursor.execute(\"create table hello(id int, value varchar(256))\")\n      cursor.execute(\"insert into hello values(1, 'hello'), (2, 'ciao')\")\n      cursor.close()\n      conn.commit()\n      conn.close()\n\n  # use `handler()` on initialize database\n  mysqld = testing.mysqld.mysqldfactory(cache_initialized_db=true,\n                                        on_initialized=handler)\n\n\n\nrequirements\n============\n* python 2.7, 3.3, 3.4, 3.5\n* pymysql\n\nlicense\n=======\napache license 2.0\n\n\nhistory\n=======\n\n1.4.0 (2016-08-20)\n-------------------\n* drop py26, py32 support\n* allow ``user`` and ``password`` argument to connect authorized database\n* depend on testing.common.database >= 2.0.0\n\n1.3.0 (2016-02-03)\n-------------------\n* add timeout to server invoker\n* support mysql-5.7\n* add testing.mysqld.mysqldfactory\n* depend on ``testing.common.database`` package\n* assign port if networking not disabled\n\n1.2.8 (2015-04-06)\n-------------------\n* fix bugs\n\n1.2.7 (2014-12-20)\n-------------------\n* support for relative mysql_install_db links\n* use absolute path for which command\n\n1.2.6 (2014-06-19)\n-------------------\n* add timeout on terminating mysqld\n* fix bugs\n\n1.2.5 (2014-06-11)\n-------------------\n* fix importerror if caught sigint on py3\n\n1.2.4 (2014-02-13)\n-------------------\n* fix testing.mysqld.mysqld#start() fails if mysql_install_db does not create database named \"test\"\n\n1.2.3 (2013-12-11)\n-------------------\n* use pymysql driver as default in mysqld#url()\n\n1.2.2 (2013-12-06)\n-------------------\n* change behavior: mysqld#stop() cleans workdir\n* fix caught attributeerror on object deletion\n\n1.2.1 (2013-12-05)\n-------------------\n* add mysqld.skipifnotinstalled decorator (alias of skipifnotfound)\n* suport python 2.6 and 3.2\n\n1.2.0 (2013-12-04)\n-------------------\n* add @skipifnotfound decorator\n\n1.1.2 (2013-11-26)\n-------------------\n* fix it does not cleanup temporary directory if mysqld object has been deleted\n\n1.1.1 (2013-11-25)\n-------------------\n* add charset parameter to mysqld#url()\n\n1.1.0 (2013-11-22)\n-------------------\n* rename package: test.mysqld -> testing.mysqld\n* add mysqld#url() method (for sqlalchemy)\n\n1.0.0 (2013-10-17)\n-------------------\n* first release",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "testing.mysqld",
+  "package_url": "https://pypi.org/project/testing.mysqld/",
+  "project_url": "https://pypi.org/project/testing.mysqld/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "https://github.com/tk0miya/testing.mysqld"
+  },
+  "release_url": "https://pypi.org/project/testing.mysqld/1.4.0/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "automatically setups a mysqld instance in a temporary directory, and destroys it after testing",
+  "version": "1.4.0",
+  "releases": [],
+  "developers": [
+    "takeshi_komiya"
+  ],
+  "kwds": "mysqldfactory mysql_install_db mysqld mysqldb mytestcase",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_testing.mysqld",
+  "homepage": "https://github.com/tk0miya/testing.mysqld",
+  "release_count": 15,
+  "dependency_ids": []
+}

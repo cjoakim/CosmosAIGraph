@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development"
+  ],
+  "description": "# python minifier\n\ntransforms python source code into its most compact representation.\n\n[try it out!](https://python-minifier.com)\n\npython-minifier currently supports python 2.7 and python 3.3 to 3.11. previous releases supported python 2.6.\n\n* [pypi](https://pypi.org/project/python-minifier/)\n* [documentation](https://dflook.github.io/python-minifier/)\n* [issues](https://github.com/dflook/python-minifier/issues)\n\nas an example, the following python source:\n\n```python\ndef handler(event, context):\n    l.info(event)\n    try:\n        i_token = hashlib.new('md5', (event['requestid'] + event['stackid']).encode()).hexdigest()\n        props = event['resourceproperties']\n\n        if event['requesttype'] == 'create':\n            event['physicalresourceid'] = 'none'\n            event['physicalresourceid'] = create_cert(props, i_token)\n            add_tags(event['physicalresourceid'], props)\n            validate(event['physicalresourceid'], props)\n\n            if wait_for_issuance(event['physicalresourceid'], context):\n                event['status'] = 'success'\n                return send(event)\n            else:\n                return reinvoke(event, context)\n\n        elif event['requesttype'] == 'delete':\n            if event['physicalresourceid'] != 'none':\n                acm.delete_certificate(certificatearn=event['physicalresourceid'])\n            event['status'] = 'success'\n            return send(event)\n\n        elif event['requesttype'] == 'update':\n\n            if replace_cert(event):\n                event['physicalresourceid'] = create_cert(props, i_token)\n                add_tags(event['physicalresourceid'], props)\n                validate(event['physicalresourceid'], props)\n\n                if not wait_for_issuance(event['physicalresourceid'], context):\n                    return reinvoke(event, context)\n            else:\n                if 'tags' in event['oldresourceproperties']:\n                    acm.remove_tags_from_certificate(certificatearn=event['physicalresourceid'],\n                                                     tags=event['oldresourceproperties']['tags'])\n\n                add_tags(event['physicalresourceid'], props)\n\n            event['status'] = 'success'\n            return send(event)\n        else:\n            raise runtimeerror('unknown requesttype')\n\n    except exception as ex:\n        l.exception('')\n        event['status'] = 'failed'\n        event['reason'] = str(ex)\n        return send(event)\n```\n\nbecomes:\n\n```python\ndef handler(event,context):\n\tl='oldresourceproperties';k='tags';j='none';h='success';g='requesttype';e='status';d=context;b='physicalresourceid';a=event;l.info(a)\n\ttry:\n\t\tf=hashlib.new('md5',(a['requestid']+a['stackid']).encode()).hexdigest();c=a['resourceproperties']\n\t\tif a[g]=='create':\n\t\t\ta[b]=j;a[b]=create_cert(c,f);add_tags(a[b],c);validate(a[b],c)\n\t\t\tif wait_for_issuance(a[b],d):a[e]=h;return send(a)\n\t\t\telse:return reinvoke(a,d)\n\t\telif a[g]=='delete':\n\t\t\tif a[b]!=j:acm.delete_certificate(certificatearn=a[b])\n\t\t\ta[e]=h;return send(a)\n\t\telif a[g]=='update':\n\t\t\tif replace_cert(a):\n\t\t\t\ta[b]=create_cert(c,f);add_tags(a[b],c);validate(a[b],c)\n\t\t\t\tif not wait_for_issuance(a[b],d):return reinvoke(a,d)\n\t\t\telse:\n\t\t\t\tif k in a[l]:acm.remove_tags_from_certificate(certificatearn=a[b],tags=a[l][k])\n\t\t\t\tadd_tags(a[b],c)\n\t\t\ta[e]=h;return send(a)\n\t\telse:raise runtimeerror('unknown requesttype')\n\texcept exception as i:l.exception('');a[e]='failed';a['reason']=str(i);return send(a)\n```\n\n## why?\n\naws cloudformation templates may have aws lambda function source code embedded in them, but only if the function is less \nthan 4kib. i wrote this package so i could write python normally and still embed the module in a template.\n\n## installation\n\nto install python-minifier use pip:\n\n```bash\n$ pip install python-minifier\n```\n\nnote that python-minifier depends on the python interpreter for parsing source code, \nso install using a version of python appropriate for your source.\n\npython-minifier runs with and can minify code written for python 2.7 and python 3.3 to 3.11.\n\n## usage\n\nto minify a source file, and write the minified module to stdout:\n\n```bash\n$ pyminify hello.py\n```\n\nthere is also an api. the same example would look like:\n\n```python\nimport python_minifier\n\nwith open('hello.py') as f:\n    print(python_minifier.minify(f.read()))\n```\n\ndocumentation is available at [dflook.github.io/python-minifier/](https://dflook.github.io/python-minifier/)\n\n## license\n\navailable under the mit license. full text is in the [license](license) file.\n\ncopyright (c) 2020 daniel flook\n",
+  "docs_url": null,
+  "keywords": "minify minifier",
+  "license": "mit",
+  "name": "python-minifier",
+  "package_url": "https://pypi.org/project/python-minifier/",
+  "project_url": "https://pypi.org/project/python-minifier/",
+  "project_urls": {
+    "Documentation": "https://dflook.github.io/python-minifier/",
+    "Homepage": "https://github.com/dflook/python-minifier",
+    "Issues": "https://github.com/dflook/python-minifier/issues"
+  },
+  "release_url": "https://pypi.org/project/python-minifier/2.9.0/",
+  "requires_dist": [],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, <3.12",
+  "summary": "transform python source code into it's most compact representation",
+  "version": "2.9.0",
+  "releases": [],
+  "developers": [
+    "daniel@flook.org",
+    "daniel_flook"
+  ],
+  "kwds": "python_minifier minifier minified minify pip",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python_minifier",
+  "homepage": "https://github.com/dflook/python-minifier",
+  "release_count": 19,
+  "dependency_ids": []
+}

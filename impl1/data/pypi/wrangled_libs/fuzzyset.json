@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "===========================================\nfuzzyset - a fuzzy string set for python.\n===========================================\n\nfuzzyset is a data structure that performs something akin to fulltext search\nagainst data to determine likely misspellings and approximate string matching.\n\nusage\n-----\n\nthe usage is simple. just add a string to the set, and ask for it later\nby using either ``.get`` or ``[]``::\n\n   >>> a = fuzzyset.fuzzyset()\n   >>> a.add(\"michael axiak\")\n   >>> a.get(\"micael asiak\")\n   [(0.8461538461538461, u'michael axiak')]\n\nthe result will be a list of ``(score, mached_value)`` tuples.\nthe score is between 0 and 1, with 1 being a perfect match.\n\nfor roughly 15% performance increase, there is also a cython-implemented\nversion called ``cfuzzyset``. so you can write the following, akin to\n``cstringio`` and ``cpickle``::\n\n    try:\n        from cfuzzyset import cfuzzyset as fuzzyset\n    except importerror:\n        from fuzzyset import fuzzyset\n\nconstruction arguments\n----------------------\n\n - iterable: an iterable that yields strings to initialize the data structure with\n - gram_size_lower: the lower bound of gram sizes to use, inclusive (see theory of operation). default: 2\n - gram_size_upper: the upper bound of gram sizes to use, inclusive (see theory of operation). default: 3\n - use_levenshtein: whether or not to use the levenshtein distance to determine the match scoring. default: true\n\ntheory of operation\n-------------------\n\nadding to the data structure\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nfirst let's look at adding a string, 'michaelich' to an empty set. we first break apart the string into n-grams (strings of length\nn). so trigrams of 'michaelich' would look like::\n\n    '-mi'\n    'mic'\n    'ich'\n    'cha'\n    'hae'\n    'ael'\n    'eli'\n    'lic'\n    'ich'\n    'ch-'\n\nnote that fuzzyset will first normalize the string by removing non word characters except for spaces and commas and force\neverything to be lowercase.\n\nnext the fuzzyset essentially creates a reverse index on those grams. maintaining a dictionary that says::\n\n     'mic' -> (1, 0)\n     'ich' -> (2, 0)\n     ...\n\nand there's a list that looks like::\n\n    [(3.31, 'michaelich')]\n\nnote that we maintain this reverse index for *all* grams from ``gram_size_lower`` to ``gram_size_upper`` in the constructor.\nthis becomes important in a second.\n\nretrieving\n~~~~~~~~~~\n\nto search the data structure, we take the n-grams of the query string and perform a reverse index look up. to illustrate,\nlet's consider looking up ``'michael'`` in our fictitious set containing ``'michaelich'`` where the ``gram_size_upper``\nand ``gram_size_lower`` parameters are default (3 and 2 respectively).\n\nwe begin by considering first all trigrams (the value of ``gram_size_upper``). those grams are::\n\n   '-mi'\n   'mic'\n   'ich'\n   'cha'\n   'el-'\n\nthen we create a list of any element in the set that has *at least one* occurrence of a trigram listed above. note that\nthis is just a dictionary lookup 5 times. for each of these matched elements, we compute the `cosine similarity`_ between\neach element and the query string. we then sort to get the most similar matched elements.\n\nif ``use_levenshtein`` is false, then we return all top matched elements with the same cosine similarity.\n\nif ``use_levenshtein`` is true, then we truncate the possible search space to 50, compute a score based on the levenshtein\ndistance (so that we handle transpositions), and return based on that.\n\nin the event that none of the trigrams matched, we try the whole thing again with bigrams (note though that if there are no matches,\nthe failure to match will be quick). bigram searching will always be slower because there will be a much larger set to order.\n\n.. _cosine similarity: http://en.wikipedia.org/wiki/cosine_similarity\n\n\ninstall\n--------\n\n``pip install fuzzyset2``\n\nafterwards, you can import the package simply with::\n\n    try:\n        from cfuzzyset import cfuzzyset as fuzzyset\n    except importerror:\n        from fuzzyset import fuzzyset\n\n\n\nlicense\n-------\n\nbsd\n\nauthor\n--------\n\n-  mike axiak <mike@axiak.net>\n-  adrian altenhoff <adrian.altenhoff@inf.ethz.ch>\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "fuzzyset",
+  "package_url": "https://pypi.org/project/fuzzyset/",
+  "project_url": "https://pypi.org/project/fuzzyset/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/fuzzyset/0.1.2/",
+  "requires_dist": [
+    "python-Levenshtein (>=0.21.1,<0.22.0)"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "",
+  "version": "0.1.2",
+  "releases": [],
+  "developers": [
+    "mike@axiak.net",
+    "mike_axiak"
+  ],
+  "kwds": "fuzzyset fuzzyset2 fuzzy strings string",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_fuzzyset",
+  "homepage": "",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_python_levenshtein"
+  ]
+}

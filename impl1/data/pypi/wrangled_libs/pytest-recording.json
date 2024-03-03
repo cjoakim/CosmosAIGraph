@@ -1,0 +1,69 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: testing"
+  ],
+  "description": "pytest-recording\n================\n\n|codecov| |build| |version| |python versions| |license|\n\na pytest plugin that records network interactions in your tests via vcr.py.\n\nfeatures\n--------\n\n- straightforward ``pytest.mark.vcr``, that reflects ``vcr.use_cassettes`` api;\n- combining multiple vcr cassettes;\n- network access blocking;\n- the ``rewrite`` recording mode that rewrites cassettes from scratch.\n\nusage\n-----\n\n.. code:: python\n\n    import pytest\n    import requests\n\n    # cassettes/{module_name}/test_single.yaml will be used\n    @pytest.mark.vcr\n    def test_single():\n        assert requests.get(\"http://httpbin.org/get\").text == '{\"get\": true}'\n\n    # cassettes/{module_name}/example.yaml will be used\n    @pytest.mark.default_cassette(\"example.yaml\")\n    @pytest.mark.vcr\n    def test_default():\n        assert requests.get(\"http://httpbin.org/get\").text == '{\"get\": true}'\n\n    # these cassettes will be used in addition to the default one\n    @pytest.mark.vcr(\"/path/to/ip.yaml\", \"/path/to/get.yaml\")\n    def test_multiple():\n        assert requests.get(\"http://httpbin.org/get\").text == '{\"get\": true}'\n        assert requests.get(\"http://httpbin.org/ip\").text == '{\"ip\": true}'\n\nrun your tests:\n\n.. code:: bash\n\n    pytest --record-mode=once test_network.py\n\ndefault recording mode\n~~~~~~~~~~~~~~~~~~~~~~\n\n``pytest-recording`` uses the ``none`` vcr recording mode by default to prevent unintentional network requests.\nto allow them you need to pass a different recording mode (e.g. ``once``) via the ``--record-mode`` cli option to your test command.\nsee more information about available recording modes in the `official vcr documentation <https://vcrpy.readthedocs.io/en/latest/usage.html#record-modes>`_\n\nconfiguration\n~~~~~~~~~~~~~\n\nyou can provide the recording configuration with the ``vcr_config`` fixture, which could be any scope - ``session``,\n``package``, ``module``, or ``function``. it should return a dictionary that will be passed directly to ``vcr.use_cassettes``\nunder the hood.\n\n.. code:: python\n\n    import pytest\n\n    @pytest.fixture(scope=\"module\")\n    def vcr_config():\n        return {\"filter_headers\": [\"authorization\"]}\n\nfor more granular control you need to pass these keyword arguments to individual ``pytest.mark.vcr`` marks, and in this case\nall arguments will be merged into a single dictionary with the following priority (low -> high):\n\n- ``vcr_config`` fixture\n- all marks from the most broad scope (\"session\") to the most narrow one (\"function\")\n\nexample:\n\n.. code:: python\n\n    import pytest\n\n    pytestmark = [pytest.mark.vcr(ignore_localhost=true)]\n\n    @pytest.fixture(scope=\"module\")\n    def vcr_config():\n        return {\"filter_headers\": [\"authorization\"]}\n\n    @pytest.mark.vcr(filter_headers=[])\n    def test_one():\n        ...\n\n    @pytest.mark.vcr(filter_query_parameters=[\"api_key\"])\n    def test_two():\n        ...\n\nresulting vcr configs for each test:\n\n- ``test_one`` - ``{\"ignore_localhost\": true, \"filter_headers\": []}``\n- ``test_two`` - ``{\"ignore_localhost\": true, \"filter_headers\": [\"authorization\"], \"filter_query_parameters\": [\"api_key\"]}``\n\nyou can get access to the used ``vcr`` instance via ``pytest_recording_configure`` hook. it might be useful for registering\ncustom matchers, persisters, etc.:\n\n.. code:: python\n\n    # conftest.py\n\n    def jurassic_matcher(r1, r2):\n        assert r1.uri == r2.uri and \"jurassic park\" in r1.body, \\\n            \"required string (jurassic park) not found in request body\"\n\n    def pytest_recording_configure(config, vcr):\n        vcr.register_matcher(\"jurassic\", jurassic_matcher)\n\nyou can disable the vcr.py integration entirely by passing the ``--disable-recording`` cli option.\n\nrewrite record mode\n~~~~~~~~~~~~~~~~~~~\n\nit is possible to rewrite a cassette from scratch and not extend it with new entries as it works now with the ``all`` record mode from vcr.py.\n\nhowever, it will rewrite only the default cassette and won't touch extra cassettes.\n\n.. code:: python\n\n    import pytest\n\n    @pytest.fixture(scope=\"module\")\n    def vcr_config():\n        return {\"record_mode\": \"rewrite\"}\n\nor via command-line option:\n\n.. code:: bash\n\n    $ pytest --record-mode=rewrite tests/\n\nblocking network access\n~~~~~~~~~~~~~~~~~~~~~~~\n\nto have more confidence that your tests will not go over the wire, you can block it with ``pytest.mark.block_network`` mark:\n\n.. code:: python\n\n    import pytest\n    import requests\n\n    @pytest.mark.block_network\n    def test_multiple():\n        assert requests.get(\"http://httpbin.org/get\").text == '{\"get\": true}'\n\n    ...\n    # in case of access\n    runtimeerror: network is disabled\n\nbesides marks, the network access could be blocked globally with ``--block-network`` command-line option.\n\nhowever, if vcr.py recording is enabled, the network is not blocked for tests with ``pytest.mark.vcr``.\n\nexample:\n\n.. code:: python\n\n    import pytest\n    import requests\n\n    @pytest.mark.vcr\n    def test_multiple():\n        assert requests.get(\"http://httpbin.org/get\").text == '{\"get\": true}'\n\nrun ``pytest``:\n\n.. code:: bash\n\n    $ pytest --record-mode=once --block-network tests/\n\nthe network blocking feature supports ``socket``-based transports and ``pycurl``.\n\nit is possible to allow access to specified hosts during network blocking:\n\n.. code:: python\n\n    import pytest\n    import requests\n\n    @pytest.mark.block_network(allowed_hosts=[\"httpbin.*\"])\n    def test_access():\n        assert requests.get(\"http://httpbin.org/get\").text == '{\"get\": true}'\n        with pytest.raises(runtimeerror, match=r\"^network is disabled$\"):\n            requests.get(\"http://example.com\")\n\nor via command-line option:\n\n.. code:: bash\n\n    $ pytest --record-mode=once --block-network --allowed-hosts=httpbin.*,localhost tests/\n\n\nor via `vcr_config` fixture:\n\n.. code:: python\n\n    import pytest\n\n    @pytest.fixture(autouse=true)\n    def vcr_config():\n        return {\"allowed_hosts\": [\"httpbin.*\"]}\n\nadditional resources\n--------------------\n\nlooking for more examples? check out `this article <https://code.kiwi.com/pytest-cassettes-forget-about-mocks-or-live-requests-a9336e1caee6>`_ about ``pytest-recording``.\n\ncontributing\n------------\n\nto run the tests:\n\n.. code:: bash\n\n    $ tox -p all\n\nfor more information, take a look at `our contributing guide <https://github.com/kiwicom/pytest-recording/blob/master/contributing.rst>`_\n\npython support\n--------------\n\npytest-recording supports:\n\n- cpython 3.7, 3.8, 3.9, 3.10, 3.11, and 3.12\n- pypy 7 (3.6)\n\nlicense\n-------\n\nthe code in this project is licensed under `mit license`_. by contributing to ``pytest-recording``, you agree that your contributions will be licensed under its mit license.\n\n\n.. |codecov| image:: https://codecov.io/gh/kiwicom/pytest-recording/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/kiwicom/pytest-recording\n.. |build| image:: https://github.com/kiwicom/pytest-recording/actions/workflows/build.yml/badge.svg\n   :target: https://github.com/kiwicom/pytest-recording/actions?query=workflow%3abuild\n.. |version| image:: https://img.shields.io/pypi/v/pytest-recording.svg\n   :target: https://pypi.org/project/pytest-recording/\n.. |python versions| image:: https://img.shields.io/pypi/pyversions/pytest-recording.svg\n   :target: https://pypi.org/project/pytest-recording/\n.. |license| image:: https://img.shields.io/pypi/l/pytest-recording.svg\n   :target: https://opensource.org/licenses/mit\n\n.. _mit license: https://opensource.org/licenses/mit\n",
+  "docs_url": null,
+  "keywords": "mock,network,pytest,vcr",
+  "license": "",
+  "name": "pytest-recording",
+  "package_url": "https://pypi.org/project/pytest-recording/",
+  "project_url": "https://pypi.org/project/pytest-recording/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/kiwicom/pytest-recording/issues",
+    "Change Log": "https://github.com/kiwicom/pytest-recording/blob/master/docs/changelog.rst",
+    "Changelog": "https://github.com/kiwicom/pytest-recording/blob/master/docs/changelog.rst",
+    "Documentation": "https://github.com/kiwicom/pytest-recording",
+    "Source Code": "https://github.com/kiwicom/pytest-recording"
+  },
+  "release_url": "https://pypi.org/project/pytest-recording/0.13.1/",
+  "requires_dist": [
+    "pytest>=3.5.0",
+    "vcrpy>=2.0.1",
+    "pytest-recording[tests]; extra == 'dev'",
+    "pytest-httpbin; extra == 'tests'",
+    "pytest-mock; extra == 'tests'",
+    "requests; extra == 'tests'",
+    "werkzeug==3.0.1; extra == 'tests'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a pytest plugin that allows you recording of network interactions via vcr.py",
+  "version": "0.13.1",
+  "releases": [],
+  "developers": [
+    "dmitry@dygalo.dev"
+  ],
+  "kwds": "pytest_recording_configure test_network pytest use_cassettes test_single",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pytest_recording",
+  "homepage": "",
+  "release_count": 23,
+  "dependency_ids": [
+    "pypi_pytest",
+    "pypi_pytest_httpbin",
+    "pypi_pytest_mock",
+    "pypi_pytest_recording",
+    "pypi_requests",
+    "pypi_vcrpy",
+    "pypi_werkzeug"
+  ]
+}

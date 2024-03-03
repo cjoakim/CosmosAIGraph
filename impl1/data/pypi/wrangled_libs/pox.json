@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: scientific/engineering",
+    "topic :: software development"
+  ],
+  "description": "--------------------------------------------------------------\npox: utilities for filesystem exploration and automated builds\n--------------------------------------------------------------\n\nabout pox\n=========\n\n``pox`` provides a collection of utilities for navigating and manipulating\nfilesystems. this module is designed to facilitate some of the low level\noperating system interactions that are useful when exploring a filesystem\non a remote host, where queries such as *\"what is the root of the filesystem?\"*,\n*\"what is the user's name?\"*, and *\"what login shell is preferred?\"* become\nessential in allowing a remote user to function as if they were logged in\nlocally. while ``pox`` is in the same vein of both the ``os`` and ``shutil``\nbuiltin modules, the majority of its functionality is unique and compliments\nthese two modules.\n\n``pox`` provides python equivalents of several unix shell commands such as\n``which`` and ``find``. these commands allow automated discovery of what has\nbeen installed on an operating system, and where the essential tools are\nlocated. this capability is useful not only for exploring remote hosts,\nbut also locally as a helper utility for automated build and installation.\n\nseveral high-level operations on files and filesystems are also provided.\nexamples of which are: finding the location of an installed python package,\ndetermining if and where the source code resides on the filesystem, and\ndetermining what version the installed package is.\n\n``pox`` also provides utilities to enable the abstraction of commands sent\nto a remote filesystem.  in conjunction with a registry of environment\nvariables and installed utilites, ``pox`` enables the user to interact with\na remote filesystem as if they were logged in locally. \n\n``pox`` is part of ``pathos``, a python framework for heterogeneous computing.\n``pox`` is in active development, so any user feedback, bug reports, comments,\nor suggestions are highly appreciated.  a list of issues is located at https://github.com/uqfoundation/pox/issues, with a legacy list maintained at https://uqfoundation.github.io/project/pathos/query.\n\n\nmajor features\n==============\n\n``pox`` provides utilities for discovering the user's environment:\n\n    - return the user's name, current shell, and path to user's home directory\n    - strip duplicate entries from the user's ``$path``\n    - lookup and expand environment variables from ``${var}`` to ``value``\n\n``pox`` also provides utilities for filesystem exploration and manipulation:\n\n    - discover the path to a file, exectuable, directory, or symbolic link \n    - discover the path to an installed package\n    - parse operating system commands for remote shell invocation\n    - convert text files to platform-specific formatting\n\n\ncurrent release\n===============\n\nthe latest released version of ``pox`` is available from:\n\n    https://pypi.org/project/pox\n\n``pox`` is distributed under a 3-clause bsd license.\n\n\ndevelopment version\n===================\n\nyou can get the latest development version with all the shiny new features at:\n\n    https://github.com/uqfoundation\n\nif you have a new contribution, please submit a pull request.\n\n\ninstallation\n============\n\n``pox`` can be installed with ``pip``::\n\n    $ pip install pox\n\n\nrequirements\n============\n\n``pox`` requires:\n\n    - ``python`` (or ``pypy``), **>=3.7**\n    - ``setuptools``, **>=42**\n\n\nbasic usage\n===========\n\n``pox`` includes some basic utilities to connect to and automate exploration\non local and remote filesystems. there are some basic functions to discover\nimportant locations::\n\n    >>> import pox\n    >>> pox.homedir()\n    '/users/mmckerns'\n    >>> pox.rootdir()\n    '/'\n\nor, you can interact with local and global environment variables::\n\n    >>> local = {'dev':'${home}/dev', 'foo_version':'0.1', 'bar_version':'1.0'}\n    >>> pox.getvars('${dev}/lib/foo-${foo_version}', local)\n    {'dev': '${home}/dev', 'foo_version': '0.1'}\n    >>> pox.expandvars('${dev}/lib/foo-${foo_version}', local)\n    '${home}/dev/lib/foo-0.1'\n    >>> pox.expandvars('${home}/dev/lib/foo-0.1')\n    '/users/mmckerns/dev/lib/foo-0.1'\n    >>> pox.env('home')\n    {'home': '/users/mmckerns'}\n\nand perform some basic search functions::\n\n    >>> pox.find('python3.9', recurse=5, root='/opt')\n    ['/opt/local/bin/python3.9']\n    >>> pox.which('python3.9')\n    '/opt/local/bin/python3.9'\n\n``pox`` also has a specialized `which` command just for python::\n\n    >>> pox.which_python()\n    '/opt/local/bin/python3.9'\n    >>> pox.which_python(lazy=true, version=true)\n    '`which python3.9`'\n\nany of the ``pox`` functions can be launched from the command line,\nwhich facilitates executing commands across parallel and distributed pipes\n(such as `pathos.connection.pipe` and `pathos.secure.connection.pipe`)::\n\n    >>> import pathos\n    >>> p = pathos.connection.pipe()\n    >>> p(command=\"python -m pox 'which_python()'\")\n    >>> p.launch()\n    >>> print(p.response())\n    '/usr/bin/python'\n    >>> p.kill()\n\nthe functions in ``pox`` that help make interactions with filesystems and\nenvironment varialbles programmatic and abstract become especially relevant\nwhen trying to execute complex commands remotely. \n\n\nmore information\n================\n\nprobably the best way to get started is to look at the documentation at\nhttp://pox.rtfd.io. also see ``pox.tests`` for a set of scripts that demonstrate\nhow ``pox`` can be used to interact with the operating system. you can run the\ntest suite with ``python -m pox.tests``.  all ``pox`` utilities\ncan be launched directly from an operating system terminal, using the ``pox``\nscript (or with ``python -m pox``).  the source code is also generally well\ndocumented, so further questions may be resolved by inspecting the code\nitself.  please feel free to submit a ticket on github, or ask a\nquestion on stackoverflow (**@mike mckerns**).\nif you would like to share how you use ``pox`` in your work, please send an\nemail (to **mmckerns at uqfoundation dot org**).\n\n\ncitation\n========\n\nif you use ``pox`` to do research that leads to publication, we ask that you\nacknowledge use of ``pox`` by citing the following in your publication::\n\n    m.m. mckerns, l. strand, t. sullivan, a. fang, m.a.g. aivazis,\n    \"building a framework for predictive science\", proceedings of\n    the 10th python in science conference, 2011;\n    http://arxiv.org/pdf/1202.1056\n\n    michael mckerns and michael aivazis,\n    \"pathos: a framework for heterogeneous computing\", 2010- ;\n    https://uqfoundation.github.io/project/pathos\n\nplease see https://uqfoundation.github.io/project/pathos or\nhttp://arxiv.org/pdf/1202.1056 for further information.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-3-clause",
+  "name": "pox",
+  "package_url": "https://pypi.org/project/pox/",
+  "project_url": "https://pypi.org/project/pox/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/uqfoundation/pox/issues",
+    "Documentation": "http://pox.rtfd.io",
+    "Download": "https://pypi.org/project/pox/#files",
+    "Homepage": "https://github.com/uqfoundation/pox",
+    "Source Code": "https://github.com/uqfoundation/pox"
+  },
+  "release_url": "https://pypi.org/project/pox/0.3.3/",
+  "requires_dist": [],
+  "requires_python": ">=3.7",
+  "summary": "utilities for filesystem exploration and automated builds",
+  "version": "0.3.3",
+  "releases": [],
+  "developers": [
+    "mike_mckerns",
+    "mmckerns@uqfoundation.org"
+  ],
+  "kwds": "unix shell filesystems filesystem pox",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_pox",
+  "homepage": "https://github.com/uqfoundation/pox",
+  "release_count": 15,
+  "dependency_ids": []
+}

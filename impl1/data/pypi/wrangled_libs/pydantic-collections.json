@@ -1,0 +1,36 @@
+{
+  "classifiers": [],
+  "description": "# pydantic-collections\n\n[![ci](https://github.com/romis2012/pydantic-collections/actions/workflows/ci.yml/badge.svg)](https://github.com/romis2012/pydantic-collections/actions/workflows/ci.yml)\n[![coverage status](https://codecov.io/gh/romis2012/pydantic-collections/branch/master/graph/badge.svg)](https://codecov.io/gh/romis2012/pydantic-collections)\n[![pypi version](https://badge.fury.io/py/pydantic-collections.svg)](https://pypi.python.org/pypi/pydantic-collections)\n\nthe `pydantic-collections` package provides `basecollectionmodel` class that allows you \nto manipulate collections of [pydantic](https://github.com/samuelcolvin/pydantic) models \n(and any other types supported by pydantic).\n\n\n## requirements\n- python>=3.7\n- pydantic>=1.8.2,<3.0\n\n\n## installation\n\n```\npip install pydantic-collections\n```\n\n## usage\n\n#### basic usage\n```python\n\nfrom datetime import datetime\n\nfrom pydantic import basemodel\nfrom pydantic_collections import basecollectionmodel\n\n\nclass user(basemodel):\n    id: int\n    name: str\n    birth_date: datetime\n\n\nclass usercollection(basecollectionmodel[user]):\n    pass\n\n\n user_data = [\n        {'id': 1, 'name': 'bender', 'birth_date': '2010-04-01t12:59:59'},\n        {'id': 2, 'name': 'balaganov', 'birth_date': '2020-04-01t12:59:59'},\n    ]\n\nusers = usercollection(user_data)\n\nprint(users)\n#> usercollection([user(id=1, name='bender', birth_date=datetime.datetime(2010, 4, 1, 12, 59, 59)), user(id=2, name='balaganov', birth_date=datetime.datetime(2020, 4, 1, 12, 59, 59))])\n\nprint(users.dict())  # pydantic v1.x\nprint(users.model_dump())  # pydantic v2.x\n#> [{'id': 1, 'name': 'bender', 'birth_date': datetime.datetime(2010, 4, 1, 12, 59, 59)}, {'id': 2, 'name': 'balaganov', 'birth_date': datetime.datetime(2020, 4, 1, 12, 59, 59)}]\n\nprint(users.json()) # pydantic v1.x\nprint(users.model_dump_json()) # pydantic v2.x\n#> [{\"id\": 1, \"name\": \"bender\", \"birth_date\": \"2010-04-01t12:59:59\"}, {\"id\": 2, \"name\": \"balaganov\", \"birth_date\": \"2020-04-01t12:59:59\"}]\n```\n\n#### strict assignment validation\n\nby default `basecollectionmodel` has a strict assignment check\n```python\n...\nusers = usercollection()\nusers.append(user(id=1, name='bender', birth_date=datetime.utcnow()))  # ok\nusers.append({'id': 1, 'name': 'bender', 'birth_date': '2010-04-01t12:59:59'})\n#> pydantic.error_wrappers.validationerror: 1 validation error for usercollection\n#> __root__ -> 2\n#>  instance of user expected (type=type_error.arbitrary_type; expected_arbitrary_type=user)\n```\n\nthis behavior can be changed via model config\n\npydantic v1.x\n```python\nfrom pydantic_collections import basecollectionmodel\n...\nclass usercollection(basecollectionmodel[user]):\n    class config:\n        validate_assignment_strict = false\n```\n\npydantic v2.x\n```python\nfrom pydantic_collections import basecollectionmodel, collectionmodelconfig\n...\nclass usercollection(basecollectionmodel[user]):\n    model_config = collectionmodelconfig(validate_assignment_strict=false)\n```\n\n```python\nusers = usercollection()\nusers.append({'id': 1, 'name': 'bender', 'birth_date': '2010-04-01t12:59:59'})  # ok\nassert users[0].__class__ is user\nassert users[0].id == 1\n```\n\n#### using as a model field\n\n`basecollectionmodel` is a subclass of `basemodel`, so you can use it as a model field\n```python\n...\nclass usercontainer(basemodel):\n    users: usercollection = []\n        \ndata = {\n    'users': [\n        {'id': 1, 'name': 'bender', 'birth_date': '2010-04-01t12:59:59'},\n        {'id': 2, 'name': 'balaganov', 'birth_date': '2020-04-01t12:59:59'},\n    ]\n}\n\ncontainer = usercontainer(**data)\ncontainer.users.append(user(...))\n...\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "python pydantic validation parsing serialization models",
+  "license": "apache 2",
+  "name": "pydantic-collections",
+  "package_url": "https://pypi.org/project/pydantic-collections/",
+  "project_url": "https://pypi.org/project/pydantic-collections/",
+  "project_urls": {
+    "Homepage": "https://github.com/romis2012/pydantic-collections"
+  },
+  "release_url": "https://pypi.org/project/pydantic-collections/0.5.2/",
+  "requires_dist": [
+    "pydantic (<3.0,>=1.8.2)",
+    "typing-extensions (>=4.7.1)"
+  ],
+  "requires_python": "",
+  "summary": "collections of pydantic models",
+  "version": "0.5.2",
+  "releases": [],
+  "developers": [
+    "roman_snegirev",
+    "snegiryev@gmail.com"
+  ],
+  "kwds": "pydantic_collections pydantic serialization validate_assignment_strict model_dump",
+  "license_kwds": "apache 2",
+  "libtype": "pypi",
+  "id": "pypi_pydantic_collections",
+  "homepage": "https://github.com/romis2012/pydantic-collections",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_pydantic",
+    "pypi_typing_extensions"
+  ]
+}

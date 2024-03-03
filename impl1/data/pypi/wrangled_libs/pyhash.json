@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: c++",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: internet",
+    "topic :: software development",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: utilities"
+  ],
+  "description": "# introduction [![pypi](https://img.shields.io/pypi/v/pyhash.svg)](https://pypi.org/project/pyhash/) [![travis ci status](https://travis-ci.org/flier/pyfasthash.svg?branch=master)](https://travis-ci.org/flier/pyfasthash) [![codecov](https://codecov.io/gh/flier/pyfasthash/branch/master/graph/badge.svg)](https://codecov.io/gh/flier/pyfasthash)\n\n`pyhash` is a python non-cryptographic hash library.\n\nit provides several common hash algorithms with c/c++ implementation for performance and compatibility.\n\n```python\n>>> import pyhash\n>>> hasher = pyhash.fnv1_32()\n\n>>> hasher('hello world')\n2805756500l\n\n>>> hasher('hello', ' ', 'world')\n2805756500l\n\n>>> hasher('world', seed=hasher('hello '))\n2805756500l\n```\n\nit also can be used to generate fingerprints without seed.\n\n```python\n>>> import pyhash\n>>> fp = pyhash.farm_fingerprint_64()\n\n>>> fp('hello')\n>>> 13009744463427800296l\n\n>>> fp('hello', 'world')\n>>> [13009744463427800296l, 16436542438370751598l]\n```\n\n**notes**\n\n`hasher('hello', ' ', 'world')` is a syntax sugar for `hasher('world', seed=hasher(' ', seed=hasher('hello')))`, and may not equals to `hasher('hello world')`, because some hash algorithms use different `hash` and `seed` size.\n\nfor example, `metro` hash always use 32bit seed for 64/128 bit hash value.\n\n```python\n>>> import pyhash\n>>> hasher = pyhash.metro_64()\n\n>>> hasher('hello world')\n>>> 5622782129197849471l\n\n>>> hasher('hello', ' ', 'world')\n>>> 16402988188088019159l\n\n>>> hasher('world', seed=hasher(' ', seed=hasher('hello')))\n>>> 16402988188088019159l\n```\n\n# installation\n\n```bash\n$ pip install pyhash\n```\n\n**notes**\n\nif `pip` install failed with similar errors, [#27](https://github.com/flier/pyfasthash/issues/27)\n\n```\n/usr/lib/gcc/x86_64-linux-gnu/6/include/smmintrin.h:846:1: error: inlining failed in call to always_inline 'long long unsigned int _mm_crc32_u64(long long unsigned int, long long unsigned int)': target specific option mismatch\n _mm_crc32_u64 (unsigned long long __c, unsigned long long __v)\n ^~~~~~~~~~~~~\nsrc/smhasher/metrohash64crc.cpp:52:34: note: called from here\n             v[0] ^= _mm_crc32_u64(v[0], read_u64(ptr)); ptr += 8;\n                     ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~\n```\n\nplease upgrade `pip` and `setuptools` to latest version and try again\n\n```bash\n$ pip install --upgrade pip setuptools\n```\n\n**notes**\n\nif `pip` install failed on macos with similar errors [#28](https://github.com/flier/pyfasthash/issues/28)\n\n```\n   creating build/temp.macosx-10.6-intel-3.6\n   ...\n   /usr/bin/clang -fno-strict-aliasing -wsign-compare -fno-common -dynamic -dndebug -g -fwrapv -o3 -wall -wstrict-prototypes -arch i386 -arch x86_64 -g -c src/smhasher/metrohash64crc.cpp -o build/temp.macosx-10.6-intel-3.6/src/smhasher/metrohash64crc.o -msse4.2 -maes -mavx -mavx2\n    src/smhasher/metrohash64crc.cpp:52:21: error: use of undeclared identifier '_mm_crc32_u64'\n                v[0] ^= _mm_crc32_u64(v[0], read_u64(ptr)); ptr += 8;\n                        ^\n```\n\nyou may try to\n\n```bash\n$ cflags=\"-mmacosx-version-min=10.13\" pip install pyhash\n```\n\n**notes**\n\n`pyhash` only support `pypy` v6.0 or newer, please [download and install](https://pypy.org/download.html) the latest `pypy`.\n\n# algorithms\n\npyhash supports the following hash algorithms\n\n- [fnv](http://isthe.com/chongo/tech/comp/fnv/) (fowler-noll-vo) hash\n  - fnv1_32\n  - fnv1a_32\n  - fnv1_64\n  - fnv1a_64\n- [murmurhash](http://code.google.com/p/smhasher/)\n  - murmur1_32\n  - murmur1_aligned_32\n  - murmur2_32\n  - murmur2a_32\n  - murmur2_aligned_32\n  - murmur2_neutral_32\n  - murmur2_x64_64a\n  - murmur2_x86_64b\n  - murmur3_32\n  - murmur3_x86_128\n  - murmur3_x64_128\n- [lookup3](http://burtleburtle.net/bob/hash/doobs.html)\n  - lookup3\n  - lookup3_little\n  - lookup3_big\n- [superfasthash](http://www.azillionmonkeys.com/qed/hash.html)\n  - super_fast_hash\n- [city hash](https://code.google.com/p/cityhash/)\n  _ city_32\n  - city_64\n  - city_128\n  - city_crc_128\n  - city_fingerprint_256\n- [spooky hash](http://burtleburtle.net/bob/hash/spooky.html)\n  - spooky_32\n  - spooky_64\n  - spooky_128\n- [farmhash](https://github.com/google/farmhash)\n  - farm_32\n  - farm_64\n  - farm_128\n  - farm_fingerprint_32\n  - farm_fingerprint_64\n  - farm_fingerprint_128\n- [metrohash](https://github.com/jandrewrogers/metrohash)\n  - metro_64\n  - metro_128\n  - metro_crc_64\n  - metro_crc_128\n- [mumhash](https://github.com/vnmakarov/mum-hash)\n  - mum_64\n- [t1ha](https://github.com/leo-yuriev/t1ha)\n  - t1ha2 _(64-bit little-endian)_\n  - t1ha2_128 _(128-bit little-endian)_\n  - t1ha1 _(64-bit native-endian)_\n  - t1ha1_le _(64-bit little-endian)_\n  - t1ha1_be _(64-bit big-endian)_\n  - t1ha0 _(64-bit, choice fastest function in runtime.)_\n  - ~~t1_32~~\n  - ~~t1_32_be~~\n  - ~~t1_64~~\n  - ~~t1_64_be~~\n- [xxhash](https://github.com/cyan4973/xxhash)\n  - xx_32\n  - xx_64\n\n## string and bytes literals\n\npython has two types can be used to present string literals, the hash values of the two types are definitely different.\n\n- for python 2.x [string literals](https://docs.python.org/2/reference/lexical_analysis.html#string-literals), `str` will be used by default, `unicode` can be used with the `u` prefix.\n- for python 3.x [string and bytes literals](https://docs.python.org/3/reference/lexical_analysis.html#string-and-bytes-literals), `unicode` will be used by default, `bytes` can be used with the `b` prefix.\n\nfor example,\n\n```\n$ python2\npython 2.7.15 (default, jun 17 2018, 12:46:58)\n[gcc 4.2.1 compatible apple llvm 9.1.0 (clang-902.0.39.2)] on darwin\ntype \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>> import pyhash\n>>> hasher = pyhash.murmur3_32()\n>>> hasher('foo')\n4138058784l\n>>> hasher(u'foo')\n2085578581l\n>>> hasher(b'foo')\n4138058784l\n```\n\n```\n$ python3\npython 3.7.0 (default, jun 29 2018, 20:13:13)\n[clang 9.1.0 (clang-902.0.39.2)] on darwin\ntype \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>> import pyhash\n>>> hasher = pyhash.murmur3_32()\n>>> hasher('foo')\n2085578581\n>>> hasher(u'foo')\n2085578581\n>>> hasher(b'foo')\n4138058784\n```\n\nyou can also import [unicode_literals](http://python-future.org/unicode_literals.html) to use unicode literals in python 2.x\n\n```python\nfrom __future__ import unicode_literals\n```\n\n> in general, it is more compelling to use unicode_literals when back-porting new or existing python 3 code to python 2/3 than when porting existing python 2 code to 2/3. in the latter case, explicitly marking up all unicode string literals with u'' prefixes would help to avoid unintentionally changing the existing python 2 api. however, if changing the existing python 2 api is not a concern, using unicode_literals may speed up the porting process.\n\n\n",
+  "docs_url": null,
+  "keywords": "hash hashing fasthash",
+  "license": "apache software license",
+  "name": "pyhash",
+  "package_url": "https://pypi.org/project/pyhash/",
+  "project_url": "https://pypi.org/project/pyhash/",
+  "project_urls": {
+    "Download": "https://github.com/flier/pyfasthash/releases",
+    "Homepage": "https://github.com/flier/pyfasthash"
+  },
+  "release_url": "https://pypi.org/project/pyhash/0.9.3/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python non-cryptographic hash library",
+  "version": "0.9.3",
+  "releases": [],
+  "developers": [
+    "flier.lu@gmail.com",
+    "flier_lu"
+  ],
+  "kwds": "pyfasthash pyhash fasthash super_fast_hash hashing",
+  "license_kwds": "apache software license",
+  "libtype": "pypi",
+  "id": "pypi_pyhash",
+  "homepage": "https://github.com/flier/pyfasthash",
+  "release_count": 17,
+  "dependency_ids": []
+}

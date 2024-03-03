@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: utilities"
+  ],
+  "description": "========\noverview\n========\n\n\n\nremote vanilla pdb (over tcp sockets) *done right*: no extras, proper handling around connection failures and ci. based\non `pdbx <https://pypi.python.org/pypi/pdbx>`_.\n\n* free software: bsd 2-clause license\n\ninstallation\n============\n\n::\n\n    pip install remote-pdb\n\nusage\n=====\n\nto open a remote pdb on first available port:\n\n.. code:: python\n\n    from remote_pdb import set_trace\n    set_trace() # you'll see the port number in the logs\n\nto use some specific host/port:\n\n.. code:: python\n\n    from remote_pdb import remotepdb\n    remotepdb('127.0.0.1', 4444).set_trace()\n\nto connect just run ``telnet 127.0.0.1 4444``.  when you are finished\ndebugging, either exit the debugger, or press control-], then control-d.\n\nalternately, one can connect with netcat: ``nc -c 127.0.0.1 4444`` or socat: ``socat readline\ntcp:127.0.0.1:4444`` (for line editing and history support).  when finished debugging, either exit\nthe debugger, or press control-c.\n\nnote that newer ubuntu disabled readline support in socat, so if you get\n``unknown device/address \"readline\"`` try using rlwrap like this::\n\n    rlwrap socat - tcp:127.0.0.1:4444\n\nusing in containers\n===================\n\nif you want to connect from the host to remote-pdb running inside the container you should make sure that:\n\n* the port you will use is mapped (eg: ``-p 4444:4444``).\n* the host is set to ``0.0.0.0`` (``localhost` or ``127.0.0.1`` will not work because\n  docker doesn't map the port on the local interface).\n\nintegration with breakpoint() in python 3.7+\n============================================\n\nif you are using python 3.7 one can use the new ``breakpoint()`` built in to invoke\nremote pdb. in this case the following environment variable must be set:\n\n.. code:: bash\n\n    pythonbreakpoint=remote_pdb.set_trace\n\nthe debugger can then be invoked as follows, without any imports:\n\n.. code:: python\n\n    breakpoint()\n\nas the ``breakpoint()`` function does not take any arguments, environment variables can be used to\nspecify the host and port that the server should listen to. for example, to run ``script.py`` in such a\nway as to make ``telnet 127.0.0.1 4444`` the correct way of connecting, one would run:\n\n.. code:: bash\n\n    pythonbreakpoint=remote_pdb.set_trace remote_pdb_host=127.0.0.1 remote_pdb_port=4444 python script.py\n\nif ``remote_pdb_host`` is omitted then a default value of 127.0.0.1 will be used. if ``remote_pdb_port`` is\nomitted then the first available port will be used. the connection information will be logged to the console,\nas with calls to ``remote_pdb.set_trace()``.\n\nto quiet the output, set ``remote_pdb_quiet=1``, this will prevent\n``remotepdb`` from producing any output -- you'll probably want to specify\n``remote_pdb_port`` as well since the randomized port won't be printed.\n\n\nnote about os x\n===============\n\nin certain scenarios (backgrounded processes) os x will prevent readline to be imported (and readline is a dependency of pdb).\na workaround (run this early):\n\n.. code:: python\n\n    import signal\n    signal.signal(signal.sigttou, signal.sig_ign)\n\nsee `#9 <https://github.com/ionelmc/python-remote-pdb/issues/9>`_ and `cpython#14892 <http://bugs.python.org/issue14892>`_.\n\nrequirements\n============\n\npython 2.6, 2.7, 3.2, 3.3 and pypy are supported.\n\nsimilar projects\n================\n\n* `qdb <https://pypi.python.org/pypi/qdb>`_\n\n\nchangelog\n=========\n\n2.1.0 (2020-07-24)\n------------------\n\n* changed logging to use ``remote_pdb`` logger instead of the root one.\n  contributed by terence honles in `#24 <https://github.com/ionelmc/python-remote-pdb/pull/24>`_.\n\n2.0.0 (2019-07-31)\n------------------\n\n* fixed inconsistency with normal use of ``pdb`` - `bdbquit` will now be raised on quitting.\n  contributed by anthony sottile in `#18 <https://github.com/ionelmc/python-remote-pdb/pull/18>`_.\n  **backwards incompatible**.\n* added ``remote_pdb_quiet=1`` to silence output.\n  contributed by anthony sottile in `#19 <https://github.com/ionelmc/python-remote-pdb/pull/19>`_.\n\n1.3.0 (2019-03-13)\n------------------\n\n* documented support for python 3.7's ``breakpoint()``.\n* added support for setting the socket listening host/port through the ``remote_pdb_host``/``remote_pdb_port``\n  environment variables. contributed by matthew wilkes in `#14 <https://github.com/ionelmc/python-remote-pdb/pull/14>`_.\n* removed use of `rw` file wrappers around sockets (turns out socket's ``makefile`` is very buggy in python 3.6 and\n  later - `output is discarded <https://bugs.python.org/issue35928>`_). contributed in `#13\n  <https://github.com/ionelmc/python-remote-pdb/pull/13>`_.\n\n1.2.0 (2015-09-26)\n------------------\n\n* always print/log listening address.\n\n1.1.3 (2015-07-06)\n------------------\n\n* corrected the default frame tracing starts from.\n\n1.1.2 (2015-07-06)\n------------------\n\n* small readme update.\n\n1.1.1 (2015-07-06)\n------------------\n\n* remove bogus ``remote_pdb`` console script.\n\n1.1.0 (2015-06-21)\n------------------\n\n* fixed buffering issues when running on python 3 and windows.\n\n1.0.0 (2015-06-15)\n------------------\n\n* added support for pdb++.\n\n0.2.1 (2014-03-07)\n------------------\n\n* first release on pypi.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-2-clause",
+  "name": "remote-pdb",
+  "package_url": "https://pypi.org/project/remote-pdb/",
+  "project_url": "https://pypi.org/project/remote-pdb/",
+  "project_urls": {
+    "Changelog": "https://python-remote-pdb.readthedocs.io/en/latest/changelog.html",
+    "Documentation": "https://python-remote-pdb.readthedocs.io/",
+    "Homepage": "https://github.com/ionelmc/python-remote-pdb",
+    "Issue Tracker": "https://github.com/ionelmc/python-remote-pdb/issues"
+  },
+  "release_url": "https://pypi.org/project/remote-pdb/2.1.0/",
+  "requires_dist": [],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+  "summary": "remote vanilla pdb (over tcp sockets) *done right*: no extras, proper handling around connection failures and ci. based on `pdbx <https://pypi.python.org/pypi/pdbx>`_.",
+  "version": "2.1.0",
+  "releases": [],
+  "developers": [
+    "contact@ionelmc.ro"
+  ],
+  "kwds": "remote_pdb_port remote_pdb remote_pdb_host remote_pdb_quiet remotepdb",
+  "license_kwds": "bsd-2-clause",
+  "libtype": "pypi",
+  "id": "pypi_remote_pdb",
+  "homepage": "https://github.com/ionelmc/python-remote-pdb",
+  "release_count": 12,
+  "dependency_ids": []
+}

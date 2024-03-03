@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "jmespath\n========\n\n\n.. image:: https://badges.gitter.im/join chat.svg\n   :target: https://gitter.im/jmespath/chat\n\n\njmespath (pronounced \"james path\") allows you to declaratively specify how to\nextract elements from a json document.\n\nfor example, given this document::\n\n    {\"foo\": {\"bar\": \"baz\"}}\n\nthe jmespath expression ``foo.bar`` will return \"baz\".\n\njmespath also supports:\n\nreferencing elements in a list.  given the data::\n\n    {\"foo\": {\"bar\": [\"one\", \"two\"]}}\n\nthe expression: ``foo.bar[0]`` will return \"one\".\nyou can also reference all the items in a list using the ``*``\nsyntax::\n\n   {\"foo\": {\"bar\": [{\"name\": \"one\"}, {\"name\": \"two\"}]}}\n\nthe expression: ``foo.bar[*].name`` will return [\"one\", \"two\"].\nnegative indexing is also supported (-1 refers to the last element\nin the list).  given the data above, the expression\n``foo.bar[-1].name`` will return \"two\".\n\nthe ``*`` can also be used for hash types::\n\n   {\"foo\": {\"bar\": {\"name\": \"one\"}, \"baz\": {\"name\": \"two\"}}}\n\nthe expression: ``foo.*.name`` will return [\"one\", \"two\"].\n\n\ninstallation\n============\n\nyou can install jmespath from pypi with:\n\n.. code:: bash\n\n    pip install jmespath\n\n\napi\n===\n\nthe ``jmespath.py`` library has two functions\nthat operate on python data structures.  you can use ``search``\nand give it the jmespath expression and the data:\n\n.. code:: python\n\n    >>> import jmespath\n    >>> path = jmespath.search('foo.bar', {'foo': {'bar': 'baz'}})\n    'baz'\n\nsimilar to the ``re`` module, you can use the ``compile`` function\nto compile the jmespath expression and use this parsed expression\nto perform repeated searches:\n\n.. code:: python\n\n    >>> import jmespath\n    >>> expression = jmespath.compile('foo.bar')\n    >>> expression.search({'foo': {'bar': 'baz'}})\n    'baz'\n    >>> expression.search({'foo': {'bar': 'other'}})\n    'other'\n\nthis is useful if you're going to use the same jmespath expression to\nsearch multiple documents.  this avoids having to reparse the\njmespath expression each time you search a new document.\n\noptions\n-------\n\nyou can provide an instance of ``jmespath.options`` to control how\na jmespath expression is evaluated.  the most common scenario for\nusing an ``options`` instance is if you want to have ordered output\nof your dict keys.  to do this you can use either of these options:\n\n.. code:: python\n\n    >>> import jmespath\n    >>> jmespath.search('{a: a, b: b}',\n    ...                 mydata,\n    ...                 jmespath.options(dict_cls=collections.ordereddict))\n\n\n    >>> import jmespath\n    >>> parsed = jmespath.compile('{a: a, b: b}')\n    >>> parsed.search(mydata,\n    ...               jmespath.options(dict_cls=collections.ordereddict))\n\n\ncustom functions\n~~~~~~~~~~~~~~~~\n\nthe jmespath language has numerous\n`built-in functions\n<http://jmespath.org/specification.html#built-in-functions>`__, but it is\nalso possible to add your own custom functions.  keep in mind that\ncustom function support in jmespath.py is experimental and the api may\nchange based on feedback.\n\n**if you have a custom function that you've found useful, consider submitting\nit to jmespath.site and propose that it be added to the jmespath language.**\nyou can submit proposals\n`here <https://github.com/jmespath/jmespath.site/issues>`__.\n\nto create custom functions:\n\n* create a subclass of ``jmespath.functions.functions``.\n* create a method with the name ``_func_<your function name>``.\n* apply the ``jmespath.functions.signature`` decorator that indicates\n  the expected types of the function arguments.\n* provide an instance of your subclass in a ``jmespath.options`` object.\n\nbelow are a few examples:\n\n.. code:: python\n\n    import jmespath\n    from jmespath import functions\n\n    # 1. create a subclass of functions.functions.\n    #    the function.functions base class has logic\n    #    that introspects all of its methods and automatically\n    #    registers your custom functions in its function table.\n    class customfunctions(functions.functions):\n\n        # 2 and 3.  create a function that starts with _func_\n        # and decorate it with @signature which indicates its\n        # expected types.\n        # in this example, we're creating a jmespath function\n        # called \"unique_letters\" that accepts a single argument\n        # with an expected type \"string\".\n        @functions.signature({'types': ['string']})\n        def _func_unique_letters(self, s):\n            # given a string s, return a sorted\n            # string of unique letters: 'ccbbadd' ->  'abcd'\n            return ''.join(sorted(set(s)))\n\n        # here's another example.  this is creating\n        # a jmespath function called \"my_add\" that expects\n        # two arguments, both of which should be of type number.\n        @functions.signature({'types': ['number']}, {'types': ['number']})\n        def _func_my_add(self, x, y):\n            return x + y\n\n    # 4. provide an instance of your subclass in a options object.\n    options = jmespath.options(custom_functions=customfunctions())\n\n    # provide this value to jmespath.search:\n    # this will print 3\n    print(\n        jmespath.search(\n            'my_add(`1`, `2`)', {}, options=options)\n    )\n\n    # this will print \"abcd\"\n    print(\n        jmespath.search(\n            'foo.bar | unique_letters(@)',\n            {'foo': {'bar': 'ccbbadd'}},\n            options=options)\n    )\n\nagain, if you come up with useful functions that you think make\nsense in the jmespath language (and make sense to implement in all\njmespath libraries, not just python), please let us know at\n`jmespath.site <https://github.com/jmespath/jmespath.site/issues>`__.\n\n\nspecification\n=============\n\nif you'd like to learn more about the jmespath language, you can check out\nthe `jmespath tutorial <http://jmespath.org/tutorial.html>`__.  also check\nout the `jmespath examples page <http://jmespath.org/examples.html>`__ for\nexamples of more complex jmespath queries.\n\nthe grammar is specified using abnf, as described in\n`rfc4234 <http://www.ietf.org/rfc/rfc4234.txt>`_.\nyou can find the most up to date\n`grammar for jmespath here <http://jmespath.org/specification.html#grammar>`__.\n\nyou can read the full\n`jmespath specification here <http://jmespath.org/specification.html>`__.\n\n\ntesting\n=======\n\nin addition to the unit tests for the jmespath modules,\nthere is a ``tests/compliance`` directory that contains\n.json files with test cases.  this allows other implementations\nto verify they are producing the correct output.  each json\nfile is grouped by feature.\n\n\ndiscuss\n=======\n\njoin us on our `gitter channel <https://gitter.im/jmespath/chat>`__\nif you want to chat or if you have any questions.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "jmespath",
+  "package_url": "https://pypi.org/project/jmespath/",
+  "project_url": "https://pypi.org/project/jmespath/",
+  "project_urls": {
+    "Homepage": "https://github.com/jmespath/jmespath.py"
+  },
+  "release_url": "https://pypi.org/project/jmespath/1.0.1/",
+  "requires_dist": [],
+  "requires_python": ">=3.7",
+  "summary": "json matching expressions",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "james_saryerwinnie",
+    "js@jamesls.com"
+  ],
+  "kwds": "jmespath json svg refers extract",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_jmespath",
+  "homepage": "https://github.com/jmespath/jmespath.py",
+  "release_count": 26,
+  "dependency_ids": []
+}

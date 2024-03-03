@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: scientific/engineering",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: distributed computing",
+    "topic :: utilities"
+  ],
+  "description": "\n===================\ngenie python client\n===================\n\nthis package provides a robust client for interacting with an existing genie service. included are modules for the\nresource models (application, command, cluster, job, etc), exceptions and retry logic wrappers for api calls.\n\nfor more documentation on genie and its available api's see the `genie github <http://netflix.github.io/genie/>`_ page.\n\nexamples\n--------\n\nconfiguration service example\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthis example shows how to register a new application with a running genie instance. similar processes can be followed\nfor registering clusters and commands as well as relating all three to each other.\n\n::\n\n    import genie2.client.wrapper\n    import genie2.model.application\n\n    # create a genie client which proxies api calls through wrapper which retries failures based on various return codes\n    genie = genie2.client.wrapper.genie2(\"http://localhost:7001/genie\", genie2.client.wrapper.retrypolicy(tries=8, none_on_404=true, no_retry_http_codes=range(400, 500)))\n\n    # create a new application instance and set required fields\n    app = genie2.model.application.application()\n    app.name = \"exampleappname\"\n    app.user = \"exampleuser\"\n    app.version = \"0.0.1\"\n    app.status = \"active\"\n\n    # save the application to the service\n    created_app = genie.createapplication(app)\n    print created_app.id\n\n    # retrieve the application by id\n    got_app = genie.getapplication(created_app.id)\n    print got_app.name\n\n    # delete the application by id\n    deleted_app = genie.deleteapplication(got_app.id)\n    print deleted_app.id\n\n\nexecution service example\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthis example shows how to execute a job on genie. in this case it's running a `presto <http://prestodb.io/>`_ query.\nthis assumes the presto cluster has already been configured with genie and the command registered.\n\n::\n\n    import genie2.client.wrapper\n    import genie2.model.job\n    import genie2.model.clustercriteria\n\n    # create a genie client which proxies api calls through wrapper which retries failures based on various return codes\n    genie = genie2.client.wrapper.genie2(\"http://localhost:7001/genie\", genie2.client.wrapper.retrypolicy(tries=8, none_on_404=true, no_retry_http_codes=range(400, 500)))\n\n    # create a job instance and fill in the required parameters\n    job = genie2.model.job.job()\n    job.name = \"geniepythonclientexamplejob\"\n    job.user = \"tgianos\"\n    job.version = \"0.0.1\"\n\n    # create a list of cluster criterias which determine the cluster to run the job on\n    cluster_criterias = list()\n    cluster_criteria = genie2.model.clustercriteria.clustercriteria()\n    criteria = set()\n    criteria.add(\"presto\")\n    criteria.add(\"prod\")\n    cluster_criteria.tags = criteria\n    cluster_criterias.append(cluster_criteria)\n    job.clustercriterias = cluster_criterias\n\n    # create the set of command criteria which will determine what command genie executes for the job\n    command_criteria = set()\n    command_criteria.add(\"presto\")\n    job.commandcriteria = command_criteria\n\n    # any command line arguments to run along with the command. in this case it holds the actual query but this\n    # could also be done via an attachment or file dependency.\n    job.commandargs = \"--execute \\\"show tables;\\\"\"\n\n    # submit the job to genie\n    running_job = genie.submitjob(job)\n\n    # check on the status of the job\n    job_status = genie.getjobstatus(running_job.id)\n    print job_status\n\n\n",
+  "docs_url": null,
+  "keywords": "genie hadoop cloud netflix client bigdata presto",
+  "license": "apache 2.0",
+  "name": "nflx-genie-client",
+  "package_url": "https://pypi.org/project/nflx-genie-client/",
+  "project_url": "https://pypi.org/project/nflx-genie-client/",
+  "project_urls": {
+    "Homepage": "http://netflix.github.io/genie/"
+  },
+  "release_url": "https://pypi.org/project/nflx-genie-client/3.6.17/",
+  "requires_dist": [
+    "decorator",
+    "multipledispatch",
+    "pyconfigurator",
+    "python-dateutil (>=2.4)",
+    "requests",
+    "six"
+  ],
+  "requires_python": "",
+  "summary": "genie python client.",
+  "version": "3.6.17",
+  "releases": [],
+  "developers": [
+    "genieoss@googlegroups.com",
+    "netflix_inc"
+  ],
+  "kwds": "genie genie2 geniepythonclientexamplejob api cloud",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_nflx_genie_client",
+  "homepage": "http://netflix.github.io/genie/",
+  "release_count": 102,
+  "dependency_ids": [
+    "pypi_decorator",
+    "pypi_multipledispatch",
+    "pypi_pyconfigurator",
+    "pypi_python_dateutil",
+    "pypi_requests",
+    "pypi_six"
+  ]
+}

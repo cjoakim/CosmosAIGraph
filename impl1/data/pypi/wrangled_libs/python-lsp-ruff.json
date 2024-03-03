@@ -1,0 +1,46 @@
+{
+  "classifiers": [],
+  "description": "# python-lsp-ruff\n\n[![pypi](https://img.shields.io/pypi/v/python-lsp-ruff.svg)](https://pypi.org/project/python-lsp-ruff)\n[![anaconda](https://anaconda.org/conda-forge/python-lsp-ruff/badges/version.svg)](https://anaconda.org/conda-forge/python-lsp-ruff)\n[![python](https://github.com/python-lsp/python-lsp-ruff/actions/workflows/python.yml/badge.svg)](https://github.com/python-lsp/python-lsp-ruff/actions/workflows/python.yml)\n\n`python-lsp-ruff` is a plugin for `python-lsp-server` that adds linting, code action and formatting capabilities that are provided by [ruff](https://github.com/charliermarsh/ruff),\nan extremely fast python linter written in rust.\n\n## install\n\nin the same `virtualenv` as `python-lsp-server`:\n\n```shell\npip install python-lsp-ruff\n```\n\nthere also exists an [aur package](https://aur.archlinux.org/packages/python-lsp-ruff).\n\n### when using ruff before version 0.1.0\nruff version `0.1.0` introduced api changes that are fixed in python lsp ruff `v1.6.0`. to continue with `ruff<0.1.0` please use `v1.5.3`, e.g. using `pip`:\n\n```sh\npip install \"ruff<0.1.0\" \"python-lsp-ruff==1.5.3\"\n```\n\n## usage\n\nthis plugin will disable `pycodestyle`, `pyflakes`, `mccabe` and `pyls_isort` by default, unless they are explicitly enabled in the client configuration.\nwhen enabled, all linting diagnostics will be provided by `ruff`.\n\nany codes given in the `format` option will only be marked as `fixable` for ruff during the formatting operation, the user has to make sure that these codes are also in the list of codes that ruff checks!\n\n\n## configuration\n\nconfiguration options can be passed to the python-language-server. if a `pyproject.toml`\nfile is present in the project, `python-lsp-ruff` will ignore specific options (see below).\n\nthe plugin follows [python-lsp-server's configuration](https://github.com/python-lsp/python-lsp-server/#configuration).\nthis example configuration using for `neovim` shows the possible optionsl\n\n```lua\npylsp = {\n  plugins = {\n    ruff = {\n      enabled = true,  -- enable the plugin\n      executable = \"<path-to-ruff-bin>\",  -- custom path to ruff\n      path = \"<path_to_custom_ruff_toml>\",  -- custom config for ruff to use\n      extendselect = { \"i\" },  -- rules that are additionally used by ruff\n      extendignore = { \"c90\" },  -- rules that are additionally ignored by ruff\n      format = { \"i\" },  -- rules that are marked as fixable by ruff that should be fixed when running textdocument/formatting\n      severities = { [\"d212\"] = \"i\" },  -- optional table of rules where a custom severity is desired\n      unsafefixes = false,  -- whether or not to offer unsafe fixes as code actions. ignored with the \"fix all\" action\n\n      -- rules that are ignored when a pyproject.toml or ruff.toml is present:\n      linelength = 88,  -- line length to pass to ruff checking and formatting\n      exclude = { \"__about__.py\" },  -- files to be excluded by ruff checking\n      select = { \"f\" },  -- rules to be enabled by ruff\n      ignore = { \"d210\" },  -- rules to be ignored by ruff\n      perfileignores = { [\"__init__.py\"] = \"cpy001\" },  -- rules that should be ignored for specific files\n      preview = false,  -- whether to enable the preview style linting and formatting.\n      targetversion = \"py310\",  -- the minimum python version to target (applies for both linting and formatting).\n    },\n  }\n}\n```\n\nfor more information on the configuration visit [ruff's homepage](https://beta.ruff.rs/docs/configuration/).\n\n### custom severities\n\nby default, all diagnostics are marked as warning, except for `\"e999\"` and all error codes starting with `\"f\"`, which are displayed as errors.\nthis default can be changed through the `pylsp.plugins.ruff.severities` option, which takes the error code as a key and any of\n`\"e\"`, `\"w\"`, `\"i\"` and `\"h\"` to be displayed as errors, warnings, information and hints, respectively.\nfor more information on the diagnostic severities please refer to\n[the official lsp reference](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#diagnosticseverity).\n\nwith `v2.0.0` it is also possible to use patterns to match codes. rules match if the error code starts with the given pattern. if multiple patterns match the error code, `python-lsp-ruff` chooses the one with the most amount of matching characters.\n\n\n## code formatting\n\nwith `python-lsp-ruff>1.6.0` formatting is done using [ruffs own formatter](https://docs.astral.sh/ruff/formatter/).\nin addition, rules that should be fixed during the `textdocument/formatting` request can be added with the `format` option.\n\ncoming from previous versions the only change is that `isort` rules are **not** applied by default.\nto enable sorting of imports using ruff's isort functionality, add `\"i\"` to the list of `format` rules. \n\n\n## code actions\n\n`python-lsp-ruff` supports code actions as given by possible fixes by `ruff`. `python-lsp-ruff` also supports [unsafe fixes](https://docs.astral.sh/ruff/linter/#fix-safety).\nfixes considered unsafe by `ruff` are marked `(unsafe)` in the code action.\nthe `fix all` code action *only* consideres safe fixes.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "python-lsp-ruff",
+  "package_url": "https://pypi.org/project/python-lsp-ruff/",
+  "project_url": "https://pypi.org/project/python-lsp-ruff/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/python-lsp/python-lsp-ruff/issues",
+    "Homepage": "https://github.com/python-lsp/python-lsp-ruff"
+  },
+  "release_url": "https://pypi.org/project/python-lsp-ruff/2.0.1/",
+  "requires_dist": [
+    "ruff <0.2.0,>=0.1.5",
+    "python-lsp-server",
+    "cattrs !=23.2.1",
+    "lsprotocol >=2022.0.0a1",
+    "tomli >=1.1.0 ; python_version < \"3.11\"",
+    "pytest ; extra == 'dev'",
+    "pre-commit ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "ruff linting plugin for pylsp",
+  "version": "2.0.1",
+  "releases": [],
+  "developers": [
+    "julian.hossbach@gmx.de"
+  ],
+  "kwds": "ruff ruffs lsp path_to_custom_ruff_toml pylsp",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python_lsp_ruff",
+  "homepage": "",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_cattrs",
+    "pypi_lsprotocol",
+    "pypi_pre_commit",
+    "pypi_pytest",
+    "pypi_python_lsp_server",
+    "pypi_ruff",
+    "pypi_tomli"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: database",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "python-sql\n==========\n\npython-sql is a library to write sql queries in a pythonic way.\n\nnutshell\n--------\n\nimport::\n\n    >>> from sql import *\n    >>> from sql.aggregate import *\n    >>> from sql.conditionals import *\n\nsimple selects::\n\n    >>> user = table('user')\n    >>> select = user.select()\n    >>> tuple(select)\n    ('select * from \"user\" as \"a\"', ())\n\n    >>> select = user.select(user.name)\n    >>> tuple(select)\n    ('select \"a\".\"name\" from \"user\" as \"a\"', ())\n\n    >>> select = user.select(count(literal(1)))\n    >>> tuple(select)\n    ('select count(%s) from \"user\" as \"a\"', (1,))\n\n    >>> select = user.select(user.name, distinct=true)\n    >>> tuple(select)\n    ('select distinct \"a\".\"name\" from \"user\" as \"a\"', ())\n\n    >>> select = user.select(user.id, user.name)\n    >>> tuple(select)\n    ('select \"a\".\"id\", \"a\".\"name\" from \"user\" as \"a\"', ())\n\nselect with where condition::\n\n    >>> select.where = user.name == 'foo'\n    >>> tuple(select)\n    ('select \"a\".\"id\", \"a\".\"name\" from \"user\" as \"a\" where (\"a\".\"name\" = %s)', ('foo',))\n\n    >>> select.where = (user.name == 'foo') & (user.active == true)\n    >>> tuple(select)\n    ('select \"a\".\"id\", \"a\".\"name\" from \"user\" as \"a\" where ((\"a\".\"name\" = %s) and (\"a\".\"active\" = %s))', ('foo', true))\n    >>> select.where = user.name == user.login\n    >>> tuple(select)\n    ('select \"a\".\"id\", \"a\".\"name\" from \"user\" as \"a\" where (\"a\".\"name\" = \"a\".\"login\")', ())\n\nselect with join::\n\n    >>> join = user.join(table('user_group'))\n    >>> join.condition = join.right.user == user.id\n    >>> select = join.select(user.name, join.right.group)\n    >>> tuple(select)\n    ('select \"a\".\"name\", \"b\".\"group\" from \"user\" as \"a\" inner join \"user_group\" as \"b\" on (\"b\".\"user\" = \"a\".\"id\")', ())\n\nselect with multiple joins::\n\n    >>> join1 = user.join(table('user'))\n    >>> join2 = join1.join(table('user'))\n    >>> select = join2.select(user.id, join1.right.id, join2.right.id)\n    >>> tuple(select)\n    ('select \"a\".\"id\", \"b\".\"id\", \"c\".\"id\" from \"user\" as \"a\" inner join \"user\" as \"b\" inner join \"user\" as \"c\"', ())\n\nselect with group_by::\n\n    >>> invoice = table('invoice')\n    >>> select = invoice.select(sum(invoice.amount), invoice.currency,\n    ...         group_by=invoice.currency)\n    >>> tuple(select)\n    ('select sum(\"a\".\"amount\"), \"a\".\"currency\" from \"invoice\" as \"a\" group by \"a\".\"currency\"', ())\n\nselect with output name::\n\n    >>> tuple(user.select(user.name.as_('first name')))\n    ('select \"a\".\"name\" as \"first name\" from \"user\" as \"a\"', ())\n\nselect with order_by::\n\n    >>> tuple(user.select(order_by=user.date))\n    ('select * from \"user\" as \"a\" order by \"a\".\"date\"', ())\n    >>> tuple(user.select(order_by=asc(user.date)))\n    ('select * from \"user\" as \"a\" order by \"a\".\"date\" asc', ())\n    >>> tuple(user.select(order_by=(user.date.asc, user.id.desc)))\n    ('select * from \"user\" as \"a\" order by \"a\".\"date\" asc, \"a\".\"id\" desc', ())\n\nselect with sub-select::\n\n    >>> user_group = table('user_group')\n    >>> subselect = user_group.select(user_group.user,\n    ...     where=user_group.active == true)\n    >>> user = table('user')\n    >>> tuple(user.select(user.id, where=user.id.in_(subselect)))\n    ('select \"a\".\"id\" from \"user\" as \"a\" where (\"a\".\"id\" in (select \"b\".\"user\" from \"user_group\" as \"b\" where (\"b\".\"active\" = %s)))', (true,))\n    >>> tuple(subselect.select(subselect.user))\n    ('select \"a\".\"user\" from (select \"b\".\"user\" from \"user_group\" as \"b\" where (\"b\".\"active\" = %s)) as \"a\"', (true,))\n\nselect on other schema::\n\n    >>> other_table = table('user', 'myschema')\n    >>> tuple(other_table.select())\n    ('select * from \"myschema\".\"user\" as \"a\"', ())\n\ninsert query with default values::\n\n    >>> tuple(user.insert())\n    ('insert into \"user\" as \"a\" default values', ())\n\ninsert query with values::\n\n    >>> tuple(user.insert(columns=[user.name, user.login],\n    ...         values=[['foo', 'foo']]))\n    ('insert into \"user\" as \"a\" (\"name\", \"login\") values (%s, %s)', ('foo', 'foo'))\n    >>> tuple(user.insert(columns=[user.name, user.login],\n    ...         values=[['foo', 'foo'], ['bar', 'bar']]))\n    ('insert into \"user\" as \"a\" (\"name\", \"login\") values (%s, %s), (%s, %s)', ('foo', 'foo', 'bar', 'bar'))\n\ninsert query with query::\n\n    >>> passwd = table('passwd')\n    >>> select = passwd.select(passwd.login, passwd.passwd)\n    >>> tuple(user.insert(values=select))\n    ('insert into \"user\" as \"b\" select \"a\".\"login\", \"a\".\"passwd\" from \"passwd\" as \"a\"', ())\n\nupdate query with values::\n\n    >>> tuple(user.update(columns=[user.active], values=[true]))\n    ('update \"user\" as \"a\" set \"active\" = %s', (true,))\n    >>> tuple(invoice.update(columns=[invoice.total], values=[invoice.amount + invoice.tax]))\n    ('update \"invoice\" as \"a\" set \"total\" = (\"a\".\"amount\" + \"a\".\"tax\")', ())\n\nupdate query with where condition::\n\n    >>> tuple(user.update(columns=[user.active], values=[true],\n    ...          where=user.active == false))\n    ('update \"user\" as \"a\" set \"active\" = %s where (\"a\".\"active\" = %s)', (true, false))\n\nupdate query with from list::\n\n    >>> group = table('user_group')\n    >>> tuple(user.update(columns=[user.active], values=[group.active],\n    ...         from_=[group], where=user.id == group.user))\n    ('update \"user\" as \"b\" set \"active\" = \"a\".\"active\" from \"user_group\" as \"a\" where (\"b\".\"id\" = \"a\".\"user\")', ())\n\ndelete query::\n\n    >>> tuple(user.delete())\n    ('delete from \"user\"', ())\n\ndelete query with where condition::\n\n    >>> tuple(user.delete(where=user.name == 'foo'))\n    ('delete from \"user\" where (\"name\" = %s)', ('foo',))\n\ndelete query with sub-query::\n\n    >>> tuple(user.delete(\n    ...             where=user.id.in_(user_group.select(user_group.user))))\n    ('delete from \"user\" where (\"id\" in (select \"a\".\"user\" from \"user_group\" as \"a\"))', ())\n\nflavors::\n\n    >>> select = user.select()\n    >>> select.offset = 10\n    >>> flavor.set(flavor())\n    >>> tuple(select)\n    ('select * from \"user\" as \"a\" offset 10', ())\n    >>> flavor.set(flavor(max_limit=18446744073709551615))\n    >>> tuple(select)\n    ('select * from \"user\" as \"a\" limit 18446744073709551615 offset 10', ())\n    >>> flavor.set(flavor(max_limit=-1))\n    >>> tuple(select)\n    ('select * from \"user\" as \"a\" limit -1 offset 10', ())\n\nlimit style::\n\n    >>> select = user.select(limit=10, offset=20)\n    >>> flavor.set(flavor(limitstyle='limit'))\n    >>> tuple(select)\n    ('select * from \"user\" as \"a\" limit 10 offset 20', ())\n    >>> flavor.set(flavor(limitstyle='fetch'))\n    >>> tuple(select)\n    ('select * from \"user\" as \"a\" offset (20) rows fetch first (10) rows only', ())\n    >>> flavor.set(flavor(limitstyle='rownum'))\n    >>> tuple(select)\n    ('select \"a\".* from (select \"b\".*, rownum as \"rnum\" from (select * from \"user\" as \"c\") as \"b\" where (rownum <= %s)) as \"a\" where (\"rnum\" > %s)', (30, 20))\n\nqmark style::\n\n    >>> flavor.set(flavor(paramstyle='qmark'))\n    >>> select = user.select()\n    >>> select.where = user.name == 'foo'\n    >>> tuple(select)\n    ('select * from \"user\" as \"a\" where (\"a\".\"name\" = ?)', ('foo',))\n\nnumeric style::\n\n    >>> flavor.set(flavor(paramstyle='format'))\n    >>> select = user.select()\n    >>> select.where = user.name == 'foo'\n    >>> format2numeric(*select)\n    ('select * from \"user\" as \"a\" where (\"a\".\"name\" = :0)', ('foo',))\n",
+  "docs_url": null,
+  "keywords": "sql database query",
+  "license": "bsd",
+  "name": "python-sql",
+  "package_url": "https://pypi.org/project/python-sql/",
+  "project_url": "https://pypi.org/project/python-sql/",
+  "project_urls": {
+    "Bug Tracker": "https://bugs.tryton.org/python-sql",
+    "Download": "https://downloads.tryton.org/python-sql/",
+    "Forum": "https://discuss.tryton.org/tags/python-sql",
+    "Homepage": "https://pypi.org/project/python-sql/",
+    "Source Code": "https://code.tryton.org/python-sql"
+  },
+  "release_url": "https://pypi.org/project/python-sql/1.4.2/",
+  "requires_dist": [],
+  "requires_python": ">=3.5",
+  "summary": "library to write sql queries",
+  "version": "1.4.2",
+  "releases": [],
+  "developers": [
+    "foundation@tryton.org",
+    "tryton"
+  ],
+  "kwds": "sql queries query distinct user_group",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_python_sql",
+  "homepage": "https://pypi.org/project/python-sql/",
+  "release_count": 18,
+  "dependency_ids": []
+}

@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "=====================\njson log formatter \ud83e\udeb5\n=====================\n\nthe library helps you to store logs in json format. why is it important?\nwell, it facilitates integration with **logstash**.\n\nusage example:\n\n.. code-block:: python\n\n    import logging\n\n    import json_log_formatter\n\n    formatter = json_log_formatter.jsonformatter()\n\n    json_handler = logging.filehandler(filename='/var/log/my-log.json')\n    json_handler.setformatter(formatter)\n\n    logger = logging.getlogger('my_json')\n    logger.addhandler(json_handler)\n    logger.setlevel(logging.info)\n\n    logger.info('sign up', extra={'referral_code': '52d6ce'})\n\n    try:\n        raise valueerror('something wrong')\n    except valueerror:\n        logger.error('request failed', exc_info=true)\n\nthe log file will contain the following log record (inline).\n\n.. code-block:: json\n\n    {\n        \"message\": \"sign up\",\n        \"time\": \"2015-09-01t06:06:26.524448\",\n        \"referral_code\": \"52d6ce\"\n    }\n    {\n        \"message\": \"request failed\",\n        \"time\": \"2015-09-01t06:06:26.524449\",\n        \"exc_info\": \"traceback (most recent call last): ...\"\n    }\n\nif you use a log collection and analysis system,\nyou might need to include the built-in\n`log record attributes <https://docs.python.org/3/library/logging.html#logrecord-attributes>`_\nwith ``verbosejsonformatter``.\n\n.. code-block:: python\n\n    json_handler.setformatter(json_log_formatter.verbosejsonformatter())\n    logger.error('an error has occured')\n\n.. code-block:: json\n\n    {\n        \"filename\": \"tests.py\",\n        \"funcname\": \"test_file_name_is_testspy\",\n        \"levelname\": \"error\",\n        \"lineno\": 276,\n        \"module\": \"tests\",\n        \"name\": \"my_json\",\n        \"pathname\": \"/users/bob/json-log-formatter/tests.py\",\n        \"process\": 3081,\n        \"processname\": \"mainprocess\",\n        \"stack_info\": null,\n        \"thread\": 4664270272,\n        \"threadname\": \"mainthread\",\n        \"message\": \"an error has occured\",\n        \"time\": \"2021-07-04t21:05:42.767726\"\n    }\n\njson libraries\n--------------\n\nyou can use **ujson** or **simplejson** instead of built-in **json** library.\n\n.. code-block:: python\n\n    import json_log_formatter\n    import ujson\n\n    formatter = json_log_formatter.jsonformatter()\n    formatter.json_lib = ujson\n\nnote, **ujson** doesn't support ``dumps(default=f)`` argument:\nif it can't serialize an attribute, it might fail with ``typeerror`` or skip an attribute.\n\ndjango integration\n------------------\n\nhere is an example of how the json formatter can be used with django.\n\n.. code-block:: python\n\n    logging['formatters']['json'] = {\n        '()': 'json_log_formatter.jsonformatter',\n    }\n    logging['handlers']['json_file'] = {\n        'level': 'info',\n        'class': 'logging.filehandler',\n        'filename': '/var/log/my-log.json',\n        'formatter': 'json',\n    }\n    logging['loggers']['my_json'] = {\n        'handlers': ['json_file'],\n        'level': 'info',\n    }\n\nlet's try to log something.\n\n.. code-block:: python\n\n    import logging\n\n    logger = logging.getlogger('my_json')\n\n    logger.info('sign up', extra={'referral_code': '52d6ce'})\n\ncustom formatter\n----------------\n\nyou will likely need a custom log formatter. for instance, you want to log\na user id, an ip address and ``time`` as ``django.utils.timezone.now()``.\nto do so you should override ``jsonformatter.json_record()``.\n\n.. code-block:: python\n\n    class customisedjsonformatter(json_log_formatter.jsonformatter):\n        def json_record(self, message: str, extra: dict, record: logging.logrecord) -> dict:\n            extra['message'] = message\n            extra['user_id'] = current_user_id()\n            extra['ip'] = current_ip()\n\n            # include builtins\n            extra['level'] = record.levelname\n            extra['name'] = record.name\n\n            if 'time' not in extra:\n                extra['time'] = django.utils.timezone.now()\n\n            if record.exc_info:\n                extra['exc_info'] = self.formatexception(record.exc_info)\n\n            return extra\n\nlet's say you want ``datetime`` to be serialized as timestamp.\nyou can use **ujson** (which does it by default) and disable\niso8601 date mutation.\n\n.. code-block:: python\n\n    class customisedjsonformatter(json_log_formatter.jsonformatter):\n        json_lib = ujson\n\n        def mutate_json_record(self, json_record):\n            return json_record\n\ntests\n-----\n\n.. code-block:: console\n\n    $ pip install -r requirements.txt\n    $ tox\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "json-log-formatter",
+  "package_url": "https://pypi.org/project/JSON-log-formatter/",
+  "project_url": "https://pypi.org/project/JSON-log-formatter/",
+  "project_urls": {
+    "Homepage": "https://github.com/marselester/json-log-formatter",
+    "repository": "https://github.com/marselester/json-log-formatter"
+  },
+  "release_url": "https://pypi.org/project/JSON-log-formatter/0.5.2/",
+  "requires_dist": [],
+  "requires_python": ">=2.7",
+  "summary": "json log formatter",
+  "version": "0.5.2",
+  "releases": [],
+  "developers": [
+    "marsel_mavletkulov",
+    "marselester@ya.ru"
+  ],
+  "kwds": "json_log_formatter logstash json_file logging json_handler",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_json_log_formatter",
+  "homepage": "https://github.com/marselester/json-log-formatter",
+  "release_count": 10,
+  "dependency_ids": []
+}

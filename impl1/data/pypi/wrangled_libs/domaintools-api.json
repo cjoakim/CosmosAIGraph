@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 6 - mature",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries",
+    "topic :: utilities"
+  ],
+  "description": "![domaintools](https://github.com/domaintools/python_api/raw/main/artwork/logo.png)\n===================\n\n[![pypi version](https://badge.fury.io/py/domaintools_api.svg)](http://badge.fury.io/py/domaintools_api)\n[![ci status](https://github.com/domaintools/python_api/workflows/tests/badge.svg)](https://github.com/domaintools/python_api/actions)\n[![coverage status](https://coveralls.io/repos/github/domaintools/python_api/badge.svg?branch=main)](https://coveralls.io/github/domaintools/python_api?branch=main)\n[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://pypi.python.org/pypi/domaintools_api/)\n\ndomaintools official python api\n\n![domaintools example](https://github.com/domaintools/python_api/raw/main/artwork/example.gif)\n\nthe domaintools python api wrapper provides an interface to work with our cybersecurity and related data tools provided by our iris investigate\u2122, iris enrich\u2122, and iris detect\u2122 products. it is actively maintained and may be downloaded via <a href=\"https://github.com/domaintools/python_api\">github</a> or <a href=\"https://pypi.org/project/domaintools-api/\">pypi</a>. see the included readme file, the examples folder, and api documentation (https://app.swaggerhub.com/apis-docs/domaintoolsllc/domaintools_apis/1.0#) for more info.\n\ninstalling the domaintools api\n===================\n\nto install the api run\n\n```bash\npip install domaintools_api --upgrade\n```\n\nideally, within a virtual environment.\n\n\nusing the api\n===================\n\nto start out create an instance of the api - passing in your credentials\n\n```python\n\nfrom domaintools import api\n\n\napi = api(user_name, key)\n```\n\nevery api endpoint is then exposed as a method on the api object, with any parameters that should be passed into that endpoint\nbeing passed in as method arguments:\n\n```python\napi.iris_enrich('domaintools.com')\n```\n\nyou can get an overview of every endpoint that you can interact with using the builtin help function:\n\n```python\nhelp(api)\n```\n\nor if you know the endpoint you want to use, you can get more information about it:\n\n```python\nhelp(api.iris_investigate)\n```\n\nif applicable, native python looping can be used directly to loop through any results:\n\n```python\nfor result in api.iris_enrich('domaintools.com').response().get('results', {}):\n    print(result['domain'])\n```\n\nyou can also use a context manager to ensure processing on the results only occurs if the request is successfully made:\n\n```python\nwith api.iris_enrich('domaintools.com').response().get('results', {}) as results:\n    print(results)\n```\n\nfor api calls where a single item is expected to be returned, you can directly interact with the result:\n\n```python\nprofile = api.domain_profile('google.com')\ntitle = profile['website_data']['title']\n```\n\nfor any api call where a single type of data is expected you can directly cast to the desired type:\n\n```python\nfloat(api.reputation('google.com')) == 0.0\nint(api.reputation('google.com')) == 0\n```\n\nthe entire structure returned from domaintools can be retrieved by doing `.data()` while just the actionable response information\ncan be retrieved by doing `.response()`:\n\n```python\napi.iris_enrich('domaintools.com').data() == {'response': { ... }}\napi.iris_enrich('domaintools.com').response() == { ... }\n```\n\nyou can directly get the html, xml, or json version of the response by calling `.(html|xml|json)()` these only work with non asyncresults:\n```python\njson = str(api.domain_search('google').json())\nxml = str(api.domain_search('google').xml())\nhtml = str(api.domain_search('google').html())\n```\n\nif any api call is unsuccesfull, one of the exceptions defined in `domaintools.exceptions` will be raised:\n\n```python-traceback\napi.domain_profile('notvalid').data()\n\n\n---------------------------------------------------------------------------\nbadrequestexception                       traceback (most recent call last)\n<ipython-input-3-f9e22e2cf09d> in <module>()\n----> 1 api.domain_profile('google').data()\n\n/home/tcrosley/projects/external/python_api/venv/lib/python3.5/site-packages/domaintools-0.0.1-py3.5.egg/domaintools/base_results.py in data(self)\n     25                 self.api._request_session = session()\n     26             results = self.api._request_session.get(self.url, params=self.kwargs)\n---> 27             self.status = results.status_code\n     28             if self.kwargs.get('format', 'json') == 'json':\n     29                 self._data = results.json()\n\n/home/tcrosley/projects/external/python_api/venv/lib/python3.5/site-packages/domaintools-0.0.1-py3.5.egg/domaintools/base_results.py in status(self, code)\n     44\n     45         elif code == 400:\n---> 46             raise badrequestexception()\n     47         elif code == 403:\n     48             raise notauthorizedexception()\n\nbadrequestexception:\n\n```\n\nthe exception will contain the status code and the reason for the exception:\n\n```python\ntry:\n    api.domain_profile('notvalid').data()\nexcept exception as e:\n    assert e.code == 400\n    assert 'we could not understand your request' in e.reason['error']['message']\n```\n\nyou can get the status code of a response outside of exception handling by doing `.status`:\n\n```python\n\napi.domain_profile('google.com').status == 200\n```\n\nusing the api asynchronously\n===================\n\n![domaintools async example](https://github.com/domaintools/python_api/raw/main/artwork/example_async.gif)\n\nthe domaintools api automatically supports async usage:\n\n```python\n\nsearch_results = await api.iris_enrich('domaintools.com').response().get('results', {})\n```\n\nthere is built-in support for async context managers:\n\n```python\nasync with api.iris_enrich('domaintools.com').response().get('results', {}) as search_results:\n    # do things\n```\n\nand direct async for loops:\n\n```python\nasync for result in api.iris_enrich('domaintools.com').response().get('results', {}):\n    print(result)\n```\n\nall async operations can safely be intermixed with non async ones - with optimal performance achieved if the async call is done first:\n```python\nprofile = api.domain_profile('google.com')\nawait profile\ntitle = profile['website_data']['title']\n```\n\ninteracting with the api via the command line client\n===================\n\n![domaintools cli example](https://github.com/domaintools/python_api/raw/main/artwork/example_cli.gif)\n\nimmediately after installing `domaintools_api` with pip, a `domaintools` command line client will become available to you:\n\n```bash\ndomaintools --help\n```\n\nto use - simply pass in the api_call you would like to make along with the parameters that it takes and your credentials:\n\n```bash\ndomaintools iris_investigate --domains domaintools.com -u $test_user -k $test_key\n```\n\noptionally, you can specify the desired format (html, xml, json, or list) of the results:\n\n```bash\ndomaintools domain_search google --max_length 10 -u $test_user -k $test_key -f html\n```\n\nto avoid having to type in your api key repeatedly, you can specify them in `~/.dtapi` separated by a new line:\n\n```bash\napi_user\napi_key\n```\n\npython version support policy\n===================\n\nplease see the [supported versions](https://github.com/domaintools/python_api/raw/main/python_support.md) document \nfor the domaintools python support policy.\n",
+  "docs_url": null,
+  "keywords": "python,python3",
+  "license": "mit",
+  "name": "domaintools-api",
+  "package_url": "https://pypi.org/project/domaintools-api/",
+  "project_url": "https://pypi.org/project/domaintools-api/",
+  "project_urls": {
+    "Homepage": "https://github.com/domaintools/python_api"
+  },
+  "release_url": "https://pypi.org/project/domaintools-api/1.0.1/",
+  "requires_dist": [
+    "httpx",
+    "dateparser"
+  ],
+  "requires_python": "",
+  "summary": "domaintools official python api",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "domaintools",
+    "integrations@domaintools.com"
+  ],
+  "kwds": "badge status_code domaintools_apis domaintools workflows",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_domaintools_api",
+  "homepage": "https://github.com/domaintools/python_api",
+  "release_count": 30,
+  "dependency_ids": [
+    "pypi_dateparser",
+    "pypi_httpx"
+  ]
+}

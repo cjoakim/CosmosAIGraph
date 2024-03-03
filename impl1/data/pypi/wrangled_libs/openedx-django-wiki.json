@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "development status :: 2 - pre-alpha",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.2",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu general public license v3 (gplv3)",
+    "operating system :: os independent",
+    "programming language :: python :: 3.8",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development",
+    "topic :: software development :: libraries :: application frameworks"
+  ],
+  "description": "django-wiki\n===========\n\n*last update: 2012-08-22*\n\ndemo here, sign up for an account to see the notification system.\n\n[wiki.overtag.dk](http://wiki.overtag.dk)\n\nnb!! *this is a work in progr...*\n---------------------------------\n\ncurrently, the whole api is subject to change. that means, if you use the wiki, you should use it *as it is* and not access internals or override templates or write plugins... **yet!** but the games will soon begin, and django south migrations are available.\n\nplease refer to the [todo](https://github.com/benjaoming/django-wiki/blob/master/todo.md) for a detailed status or the issue list.\n\nmanifesto\n---------\n\nthis is where it all begins. in *less than 1 week* we should have a wiki system appealing to any kind of django developer out there. here is the manifest (so far):\n\n * **be pluggable and light-weight.** don't integrate optional features in the core.\n * **be open.** make an extension api that allows the ecology of the wiki to grow. after all, wikipedia consists of some [680 extensions](http://svn.wikimedia.org/viewvc/mediawiki/trunk/extensions/) written for mediawiki.\n * **be smart.** [this is](https://upload.wikimedia.org/wikipedia/commons/8/88/mediawiki_database_schema_1-19_%28r102798%29.png) the map of tables in mediawiki - we'll understand the choices of other wiki projects and make our own. after-all, this is a django project.\n * **be simple.** the source code should *almost* explain itself.\n * **be structured.** markdown is a simple syntax for readability. features should be implemented either through easy coding patterns in the content field, but rather stored in a structured way (in the database) and managed through a friendly interface. this gives control back to the website developer, and makes knowledge more usable. just ask: why has wikipedia never changed? answer: because it's knowledge is stored in a complicated way, thus it becomes very static.\n\ninstallation\n------------\n\n### install\n\ninstall directly from github, since there is no release yet:\n\n`pip install git+git://github.com/benjaoming/django-wiki.git`\n\n### configure `settings.installed_apps`\n\nmake sure that the following is present:\n\n    'wiki',\n    'wiki.plugins.attachments',\n    'wiki.plugins.notifications',\n    'wiki.plugins.images',\n    'south',\n    'django_notify',\n    'mptt',\n    'sekizai',\n    'django.contrib.humanize',\n\n### database\n\nto sync and create tables, do:\n\n    python manage.py syncdb\n    python manage.py migrate\n\n### configure `settings.template_context_processors`\n\nadd `'sekizai.context_processors.sekizai'` to `settings.template_context_processors`.\n\n### include urlpatterns\n\nto integrate the wiki to your existing application, you shoud add the following lines at the end of your project's `urls.py`.\n\n    from wiki.urls import get_pattern as get_wiki_pattern\n    from django_notify.urls import get_pattern as get_notify_pattern\n    urlpatterns += patterns('',\n        (r'^notify/', get_notify_pattern()),\n        (r'', get_wiki_pattern())\n    )\n\nplease use these function calls rather than writing your own include() call - the url namespaces aren't supposed to be customized.\n\nthe above line puts the wiki in */* so it's important to put it at the end of your urlconf. you can also put it in */wiki* by putting `'^wiki/'` as the pattern.\n\n### settings\n\nfor now, look in [wiki/conf/settings.py](wiki/conf/settings.py) to see a list of available settings.\n\n### other tips\n\n 1. **account handling:** there are simple views that handle login, logout and signup. they are on by default. make sure to set settings.login_url to point to your login page as many wiki views may redirect to a login page.\n\nplugins\n------------\n\nadd/remove the following to your `settings.installed_apps` to enable/disable the core plugins:\n\n * `'wiki.plugins.attachments'`\n * `'wiki.plugins.images'`\n * `'wiki.plugins.notifications'`\n\nthe notifications plugin is mandatory for an out-of-the-box installation. you can safely remove it from installed_apps if you also override the **wiki/base.html** template.\n\nbackground\n----------\n\ndjango-wiki is a rewrite of [django-simplewiki](http://code.google.com/p/django-simple-wiki/), a project from 2009 that aimed to be a base system for a wiki. it proposed that the user should customize the wiki by overwriting templates, but soon learned that the only customization that really took place was that people forked the entire project. we don't want that for django-wiki, we want it to be modular and extendable.\n\nas of now, django has existed for too long without a proper wiki application. the dream of django-wiki is to become a contestant alongside mediawiki, so that django developers can stick to the django platform even when facing tough challenges such as implementing a wiki.\n\ncontributing\n------------\n\nthis project will be very open for enrolling anyone with a good idea. as of now, however, it's a bit closed while we get the foundation laid out.\n\nq&a\n------------\n\n * **why is the module named just \"wiki\"?** because \"pip install wiki\" returns \"no distributions at all found for wiki\"! :)\n * **what markup language will you use?** the markup engine will be pluggable, but markdown will be the built-in supported one.\n * **why not use django-reversion?** it's a great project, but if the wiki has to grow ambitious, someone will have to optimize its behavior, and using a third-party application for something as crucial as the revision system is a no-go in this regard.\n\ndependencies\n------------\n\nso far the dependencies are:\n\n * [django=>1.4](http://www.djangoproject.com)\n * [django-south](http://south.aeracode.org/)\n * [markdown>=2.2.0](https://github.com/waylan/python-markdown)\n * [django-mptt>=0.5](https://github.com/django-mptt/django-mptt)\n * [django-sekizai](https://github.com/ojii/django-sekizai/)\n * [sorl-thumbnail](https://github.com/sorl/sorl-thumbnail)\n\ndevelopment\n------------\n\nin a your git fork, run `pip install -r requirements.txt` to install the requirements.\n\nthe folder **testproject/** contains a pre-configured django project and an sqlite database. login for django admin is *admin:admin*. this project should always be maintained, although the sqlite database will be deleted very soon to avoid unnecessary conflicts.\n\nacknowledgements\n----------------\n\n * the people at [edx](http://www.edxonline.org/) & mit for finding and supporting the project both financially and with ideas.\n * [django-cms](https://github.com/divio/django-cms) for venturing where no django app has gone before in terms of well-planned features and high standards. it's a very big inspiration.\n * [django-mptt](https://github.com/django-mptt/django-mptt), a wonderful utility for inexpensively using tree structures in django with a relational database backend.\n\n\n",
+  "docs_url": null,
+  "keywords": "django wiki markdown",
+  "license": "gplv3",
+  "name": "openedx-django-wiki",
+  "package_url": "https://pypi.org/project/openedx-django-wiki/",
+  "project_url": "https://pypi.org/project/openedx-django-wiki/",
+  "project_urls": {
+    "Homepage": "https://github.com/openedx/django-wiki"
+  },
+  "release_url": "https://pypi.org/project/openedx-django-wiki/2.0.3/",
+  "requires_dist": [
+    "django",
+    "Markdown",
+    "bleach[css] >=6.0.0",
+    "django-mptt",
+    "sorl-thumbnail",
+    "django-sekizai"
+  ],
+  "requires_python": "",
+  "summary": "a wiki system written for the django framework.",
+  "version": "2.0.3",
+  "releases": [],
+  "developers": [
+    "benjamin@overtag.dk",
+    "benjamin_bach"
+  ],
+  "kwds": "django djangoproject django_notify get_wiki_pattern mediawiki",
+  "license_kwds": "gplv3",
+  "libtype": "pypi",
+  "id": "pypi_openedx_django_wiki",
+  "homepage": "https://github.com/openedx/django-wiki",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_bleach",
+    "pypi_django",
+    "pypi_django_mptt",
+    "pypi_django_sekizai",
+    "pypi_markdown",
+    "pypi_sorl_thumbnail"
+  ]
+}

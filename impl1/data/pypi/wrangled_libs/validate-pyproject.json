@@ -1,0 +1,68 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "programming language :: python"
+  ],
+  "description": ".. these are examples of badges you might want to add to your readme:\n   please update the urls accordingly\n\n    .. image:: https://img.shields.io/conda/vn/conda-forge/validate-pyproject.svg\n        :alt: conda-forge\n        :target: https://anaconda.org/conda-forge/validate-pyproject\n    .. image:: https://pepy.tech/badge/validate-pyproject/month\n        :alt: monthly downloads\n        :target: https://pepy.tech/project/validate-pyproject\n    .. image:: https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=twitter\n        :alt: twitter\n        :target: https://twitter.com/validate-pyproject\n\n.. image:: https://img.shields.io/badge/-pyscaffold-005ca0?logo=pyscaffold\n    :alt: project generated with pyscaffold\n    :target: https://pyscaffold.org/\n.. image:: https://api.cirrus-ci.com/github/abravalheri/validate-pyproject.svg?branch=main\n    :alt: built status\n    :target: https://cirrus-ci.com/github/abravalheri/validate-pyproject\n.. image:: https://readthedocs.org/projects/validate-pyproject/badge/?version=latest\n    :alt: readthedocs\n    :target: https://validate-pyproject.readthedocs.io\n.. image:: https://img.shields.io/coveralls/github/abravalheri/validate-pyproject/main.svg\n    :alt: coveralls\n    :target: https://coveralls.io/r/abravalheri/validate-pyproject\n.. image:: https://img.shields.io/pypi/v/validate-pyproject.svg\n    :alt: pypi-server\n    :target: https://pypi.org/project/validate-pyproject/\n\n|\n\n==================\nvalidate-pyproject\n==================\n\n\n    automated checks on ``pyproject.toml`` powered by json schema definitions\n\n\n.. important:: this project is **experimental** and under active development.\n   issue reports and contributions are very welcome.\n\n\ndescription\n===========\n\nwith the approval of `pep 517`_ and `pep 518`_, the python community shifted\ntowards a strong focus on standardisation for packaging software, which allows\nmore freedom when choosing tools during development and make sure packages\ncreated using different technologies can interoperate without the need for\ncustom installation procedures.\n\nthis shift became even more clear when `pep 621`_ was also approved, as a\nstandardised way of specifying project metadata and dependencies.\n\n``validate-pyproject`` was born in this context, with the mission of validating\n``pyproject.toml`` files, and make sure they are compliant with the standards\nand peps. behind the scenes, ``validate-pyproject`` relies on `json schema`_\nfiles, which, in turn, are also a standardised way of checking if a given data\nstructure complies with a certain specification.\n\n\n.. _installation:\n\nusage\n=====\n\nthe easiest way of using ``validate-pyproject`` is via cli.\nto get started, you need to install the package, which can be easily done\nusing |pipx|_:\n\n.. code-block:: bash\n\n    $ pipx install 'validate-pyproject[all]'\n\nnow you can use ``validate-pyproject`` as a command line tool:\n\n.. code-block:: bash\n\n    # in you terminal\n    $ validate-pyproject --help\n    $ validate-pyproject path/to/your/pyproject.toml\n\nyou can also use ``validate-pyproject`` in your python scripts or projects:\n\n.. _example-api:\n\n.. code-block:: python\n\n    # in your python code\n    from validate_pyproject import api, errors\n\n    # let's assume that you have access to a `loads` function\n    # responsible for parsing a string representing the toml file\n    # (you can check the `toml` or `tomli` projects for that)\n    pyproject_as_dict = loads(pyproject_toml_str)\n\n    # now we can use validate-pyproject\n    validator = api.validator()\n\n    try:\n        validator(pyproject_as_dict)\n    except errors.validationerror as ex:\n        print(f\"invalid document: {ex.message}\")\n\nto do so, don't forget to add it to your `virtual environment`_ or specify it as a\n`project`_ or `library dependency`_.\n\n.. note::\n   when you install ``validate-pyproject[all]``, the packages ``tomli``,\n   ``packaging`` and ``trove-classifiers`` will be automatically pulled as\n   dependencies. ``tomli`` is a lightweight parser for toml, while\n   ``packaging`` and ``trove-classifiers`` are used to validate aspects of `pep\n   621`_.\n\n   if you are only interested in using the python api and wants to keep the\n   dependencies minimal, you can also install ``validate-pyproject``\n   (without the ``[all]`` extra dependencies group).\n\n   if you don't install ``trove-classifiers``, ``validate-pyproject`` will\n   try to download a list of valid classifiers directly from pypi\n   (to prevent that, set the environment variable\n   ``no_network`` or ``validate_pyproject_no_network``).\n\n   on the other hand, if ``validate-pyproject`` cannot find a copy of\n   ``packaging`` in your environment, the validation will fail.\n\nmore details about ``validate-pyproject`` and its python api can be found in\n`our docs`_, which includes a description of the `used json schemas`_,\ninstructions for using it in a |pre-compiled way|_ and information about\nextending the validation with your own plugins_.\n\n.. _pyscaffold-notes:\n\n.. tip::\n   if you consider contributing to this project, have a look on our\n   `contribution guides`_.\n\npre-commit\n==========\n\n``validate-pyproject`` can be installed as a pre-commit hook:\n\n.. code-block:: yaml\n\n    ---\n    repos:\n      - repo: https://github.com/abravalheri/validate-pyproject\n        rev: main\n        hooks:\n          - id: validate-pyproject\n\nby default, this ``pre-commit`` hook will only validate the ``pyproject.toml``\nfile at the root of the project repository.\nyou can customize that by defining a `custom regular expression pattern`_ using\nthe ``files`` parameter.\n\nyou can also use ``pre-commit autoupdate`` to update to the latest stable\nversion of ``validate-pyproject`` (recommended).\n\n\nnote\n====\n\nthis project and its sister project ini2toml_ were initially created in the\ncontext of pyscaffold, with the purpose of helping migrating existing projects\nto `pep 621`_-style configuration when it is made available on ``setuptools``.\nfor details and usage information on pyscaffold see https://pyscaffold.org/.\n\n\n.. |pipx| replace:: ``pipx``\n.. |pre-compiled way| replace:: *pre-compiled* way\n\n\n.. _contribution guides: https://validate-pyproject.readthedocs.io/en/latest/contributing.html\n.. _custom regular expression pattern: https://pre-commit.com/#regular-expressions\n.. _our docs: https://validate-pyproject.readthedocs.io\n.. _ini2toml: https://ini2toml.readthedocs.io\n.. _json schema: https://json-schema.org/\n.. _library dependency: https://setuptools.pypa.io/en/latest/userguide/dependency_management.html\n.. _pep 517: https://peps.python.org/pep-0517/\n.. _pep 518: https://peps.python.org/pep-0518/\n.. _pep 621: https://peps.python.org/pep-0621/\n.. _pipx: https://pypa.github.io/pipx/\n.. _project: https://packaging.python.org/tutorials/managing-dependencies/\n.. _setuptools: https://setuptools.pypa.io/en/stable/\n.. _used json schemas: https://validate-pyproject.readthedocs.io/en/latest/schemas.html\n.. _pre-compiled way: https://validate-pyproject.readthedocs.io/en/latest/embedding.html\n.. _plugins: https://validate-pyproject.readthedocs.io/en/latest/dev-guide.html\n.. _virtual environment: https://realpython.com/python-virtual-environments-a-primer/\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mpl-2.0 and mit and bsd-3-clause",
+  "name": "validate-pyproject",
+  "package_url": "https://pypi.org/project/validate-pyproject/",
+  "project_url": "https://pypi.org/project/validate-pyproject/",
+  "project_urls": {
+    "Changelog": "https://validate-pyproject.readthedocs.io/en/latest/changelog.html",
+    "Documentation": "https://validate-pyproject.readthedocs.io/",
+    "Download": "https://pypi.org/project/validate-pyproject/#files",
+    "Homepage": "https://github.com/abravalheri/validate-pyproject/",
+    "Source": "https://github.com/abravalheri/validate-pyproject",
+    "Tracker": "https://github.com/abravalheri/validate-pyproject/issues"
+  },
+  "release_url": "https://pypi.org/project/validate-pyproject/0.15/",
+  "requires_dist": [
+    "fastjsonschema <=3,>=2.16.2",
+    "importlib-resources ; python_version < \"3.7\"",
+    "importlib-metadata ; python_version < \"3.8\"",
+    "packaging >=20.4 ; extra == 'all'",
+    "trove-classifiers >=2021.10.20 ; extra == 'all'",
+    "tomli >=1.2.1 ; (python_version < \"3.11\") and extra == 'all'",
+    "setuptools ; extra == 'testing'",
+    "pytest ; extra == 'testing'",
+    "pytest-cov ; extra == 'testing'",
+    "pytest-xdist ; extra == 'testing'",
+    "pytest-randomly ; extra == 'testing'",
+    "tomli >=1.2.1 ; (python_version < \"3.11\") and extra == 'testing'",
+    "repo-review ; (python_version >= \"3.10\") and extra == 'testing'",
+    "mypy ; extra == 'typecheck'",
+    "importlib-resources ; extra == 'typecheck'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "validation library and cli tool for checking on 'pyproject.toml' files using json schema",
+  "version": "0.15",
+  "releases": [],
+  "developers": [
+    "anderson_bravalheri",
+    "andersonbravalheri@gmail.com"
+  ],
+  "kwds": "validate_pyproject badges _pyscaffold pyscaffold badge",
+  "license_kwds": "mpl-2.0 and mit and bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_validate_pyproject",
+  "homepage": "https://github.com/abravalheri/validate-pyproject/",
+  "release_count": 28,
+  "dependency_ids": [
+    "pypi_fastjsonschema",
+    "pypi_importlib_metadata",
+    "pypi_importlib_resources",
+    "pypi_mypy",
+    "pypi_packaging",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_randomly",
+    "pypi_pytest_xdist",
+    "pypi_repo_review",
+    "pypi_setuptools",
+    "pypi_tomli",
+    "pypi_trove_classifiers"
+  ]
+}

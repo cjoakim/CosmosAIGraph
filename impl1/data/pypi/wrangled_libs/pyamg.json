@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: c++",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: education",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: mathematics",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "[![ci](https://github.com/pyamg/pyamg/workflows/ci/badge.svg)](https://github.com/pyamg/pyamg/actions?query=workflow%3aci+branch%3amain)\n[![pypi](https://img.shields.io/pypi/pyversions/pyamg.svg?style=flat-square)](https://pypi.python.org/pypi/pyamg/)\n[![codecov](https://codecov.io/gh/pyamg/pyamg/branch/main/graph/badge.svg?token=jpro1gdalc)](https://codecov.io/gh/pyamg/pyamg)\n[![doi](https://joss.theoj.org/papers/10.21105/joss.04142/status.svg)](https://doi.org/10.21105/joss.04142)\n\n# installation\npyamg requires `numpy` and `scipy`\n\n```\npip install pyamg\n```\n\nor from source:\n\n```\npip install .\n```\n\n(`python setup.py install` will no longer work)\n\nor with conda (see details below)\n\n```\nconda config --add channels conda-forge\nconda install pyamg\n```\n\n# introduction\n\npyamg is a library of **algebraic multigrid (amg)** solvers with a convenient python interface.\n\n![](https://raw.githubusercontent.com/pyamg/pyamg/main/docs/logo/pyamg_logo_withtext.png)\n\npyamg is currently developed and maintained by\n[luke olson](http://lukeo.cs.illinois.edu),\n[jacob schroder](https://www.unm.edu/~jbschroder), and\n[ben southworth](https://arxiv.org/a/southworth_b_1.html).\nthe organization of the project can be found in [`organization.md`](organization.md) and\nexamples of use can be found in [`pyamg-examples`](https://github.com/pyamg/pyamg-examples).\n\n**acknowledgements:**\npyamg was created by\n[nathan bell](http://wnbell.com/), \n[luke olson](http://lukeo.cs.illinois.edu), and\n[jacob schroder](https://www.unm.edu/~jbschroder).\nportions of the project were partially supported by the nsf under award dms-0612448.\n\n# citing\n\nif you use pyamg in your work, please consider using the following citation:\n\n<pre>\n@article{beolscso2023,\n  author    = {nathan bell and luke n. olson and jacob schroder and ben s. southworth},\n  title     = {{pyamg}: algebraic multigrid solvers in python},\n  journal   = {journal of open source software},\n  year      = {2023},\n  publisher = {the open journal},\n  note      = {submitted},\n}\n\n@article{beolsc2022,\n  author    = {nathan bell and luke n. olson and jacob schroder},\n  title     = {{pyamg}: algebraic multigrid solvers in python},\n  journal   = {journal of open source software},\n  year      = {2022},\n  publisher = {the open journal},\n  volume    = {7},\n  number    = {72},\n  pages     = {4142},\n  doi       = {10.21105/joss.04142},\n  url       = {https://doi.org/10.21105/joss.04142},\n}\n</pre>\n\n# getting help\n\n- for documentation see [http://pyamg.readthedocs.io/en/latest/](http://pyamg.readthedocs.io/en/latest/).\n\n- create an [issue](https://github.com/pyamg/pyamg/issues).\n\n- look at the [tutorial](https://github.com/pyamg/pyamg/wiki/tutorial) or the [examples](https://github.com/pyamg/pyamg-examples) (for instance  the [0_start_here](https://github.com/pyamg/pyamg-examples/blob/main/0_start_here/demo.py) example).\n\n- run the unit tests (`pip install pytest`):\n  - with pyamg installed and from a non-source directory:\n  ```python\n  import pyamg\n  pyamg.test()\n  ```\n  - from the pyamg source directory and installed (e.g. with `pip install -e .`):\n  ```python\n  pytest .\n  ```\n\n# what is amg?\n\n amg is a multilevel technique for solving large-scale linear systems with optimal or near-optimal efficiency.  unlike geometric multigrid, amg requires little or no geometric information about the underlying problem and develops a sequence of coarser grids directly from the input matrix.  this feature is especially important for problems discretized on unstructured meshes and irregular grids.\n\n# pyamg features\n\npyamg features implementations of:\n\n- **ruge-stuben (rs)** or *classical amg*\n- amg based on **smoothed aggregation (sa)**\n\nand experimental support for:\n\n- **adaptive smoothed aggregation (\u03b1sa)**\n- **compatible relaxation (cr)**\n\nthe predominant portion of pyamg is written in python with a smaller amount of supporting c++ code for performance critical operations.\n\n# example usage\n\npyamg is easy to use!  the following code constructs a two-dimensional poisson problem and solves the resulting linear system with classical amg.\n\n````python\nimport pyamg\nimport numpy as np\na = pyamg.gallery.poisson((500,500), format='csr')  # 2d poisson problem on 500x500 grid\nml = pyamg.ruge_stuben_solver(a)                    # construct the multigrid hierarchy\nprint(ml)                                           # print hierarchy information\nb = np.random.rand(a.shape[0])                      # pick a random right hand side\nx = ml.solve(b, tol=1e-10)                          # solve ax=b to a tolerance of 1e-10\nprint(\"residual: \", np.linalg.norm(b-a*x))          # compute norm of residual vector\n````\n\nprogram output:\n\n<pre>\nmultilevel_solver\nnumber of levels:     9\noperator complexity:  2.199\ngrid complexity:      1.667\ncoarse solver:        'pinv2'\n  level   unknowns     nonzeros\n    0       250000      1248000 [45.47%]\n    1       125000      1121002 [40.84%]\n    2        31252       280662 [10.23%]\n    3         7825        70657 [ 2.57%]\n    4         1937        17971 [ 0.65%]\n    5          483         4725 [ 0.17%]\n    6          124         1352 [ 0.05%]\n    7           29          293 [ 0.01%]\n    8            7           41 [ 0.00%]\n\nresidual:  1.24748994988e-08\n</pre>\n\n# conda\n\nmore information can be found at [conda-forge/pyamg-feedstock](https://github.com/conda-forge/pyamg-feedstock).\n\n*linux:*\n[![circle ci](https://circleci.com/gh/conda-forge/pyamg-feedstock.svg?style=shield)](https://circleci.com/gh/conda-forge/pyamg-feedstock)\n\n*osx:*\n[![travisci](https://travis-ci.org/conda-forge/pyamg-feedstock.svg?branch=master)](https://travis-ci.org/conda-forge/pyamg-feedstock)\n\n*windows:*\n[![appveyor](https://ci.appveyor.com/api/projects/status/github/conda-forge/pyamg-feedstock?svg=true)](https://ci.appveyor.com/project/conda-forge/pyamg-feedstock/branch/master)\n\n*version:*\n[![anaconda-server badge](https://anaconda.org/conda-forge/pyamg/badges/version.svg)](https://anaconda.org/conda-forge/pyamg)\n\n*downloads:*\n[![anaconda-server badge](https://anaconda.org/conda-forge/pyamg/badges/downloads.svg)](https://anaconda.org/conda-forge/pyamg)\n\ninstalling `pyamg` from the `conda-forge` channel can be achieved by adding `conda-forge` to your channels with:\n\n```\nconda config --add channels conda-forge\n```\n\nonce the `conda-forge` channel has been enabled, `pyamg` can be installed with:\n\n```\nconda install pyamg\n```\n\nit is possible to list all of the versions of `pyamg` available on your platform with:\n\n```\nconda search pyamg --channel conda-forge\n```\n",
+  "docs_url": null,
+  "keywords": "algebraic multigrid,amg,sparse matrix,preconditioning",
+  "license": "mit",
+  "name": "pyamg",
+  "package_url": "https://pypi.org/project/pyamg/",
+  "project_url": "https://pypi.org/project/pyamg/",
+  "project_urls": {
+    "Download": "https://github.com/pyamg/pyamg/releases",
+    "Homepage": "https://github.com/pyamg/pyamg"
+  },
+  "release_url": "https://pypi.org/project/pyamg/5.0.1/",
+  "requires_dist": [
+    "numpy (>=1.7.0)",
+    "scipy (>=0.12.0)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "pyamg: algebraic multigrid solvers in python",
+  "version": "5.0.1",
+  "releases": [],
+  "developers": [
+    "luke.olson@gmail.com",
+    "luke_olson",
+    "nathan_bell"
+  ],
+  "kwds": "multigrid grid grids multilevel_solver linalg",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pyamg",
+  "homepage": "https://github.com/pyamg/pyamg",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_scipy"
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: jupyter",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3"
+  ],
+  "description": "# pytest-jupyter\n\na set of pytest plugins for jupyter libraries and extensions.\n\n[![build status](https://github.com/jupyter-server/pytest-jupyter/actions/workflows/test.yml/badge.svg?query=branch%3amain++)](https://github.com/jupyter-server/pytest-jupyter/actions/workflows/test.yml/badge.svg?query=branch%3amain++)\n\n## basic usage\n\nfirst, install `pytest-jupyter` from pypi using pip:\n\n```bash\npip install pytest-jupyter\n```\n\nthis installs the basic pytest-jupyter package that includes fixture definitions for the various jupyter-based pytest plugins.\n\nto use one of these plugins, you'll also need to install their dependencies. this requires a second `pip install` call. for example, if you'd like to use the `jupyter_server` plugin, you'll need to call:\n\n```bash\npip install \"pytest-jupyter[server]\"\n```\n\nthis *should* install everything you need for the plugin to work.\n\nto use a plugin, add it to the `pytest_plugins` list in the `conftest.py` of your project's root test directory.\n\n```python\n# inside the conftest.py\n\npytest_plugins = [\"pytest_jupyter.jupyter_server\"]\n```\n\nthis library includes an `echo_kernel`, which is useful to speed up testing.\nyou must have either `\"pytest-jupyter[server]\"` or `\"pytest-jupyter[client]\"`\ninstalled to use the echo kernel.\n\nthe `pytest_jupyter.jupyter_client` plugin provides an installed\n`echo_kernel_spec` as a fixture, and a `start_kernel` fixture\nthat provides a factory function that starts a kernel using the `echo` kernel\nby default.\n\n*note*: the server plugin also includes the client plugin, so you can use both\nsets of fixtures with `\"pytest_jupyter.jupyter_server\"`.  both the `client`\nand `server` plugins also include the core fixtures.\n\n*note*: the client and server plugins use `pytest-tornasync` for async\ntest suite running.  it may not compatible with `pytest-asyncio`, meaning\nthat all fixtures must be synchronous.  you can use the `asyncio_loop` fixture\nand run `asyncio_loop.run_until_complete` against an async function in your\nfixtures if needed.\n\nthe server fixures use the echo kernel by default.  to override this behavior,\noverride the `jp_server_config` fixture and add the following config:\n\n```json\n{\n    \"multikernelmanager\": {\n        \"default_kernel_name\": \"<desired_kernel_name\"\n    }\n}\n```\n\nall fixtures inside the plugin (e.g. jupyter_server) will be available to all of your project's unit tests. you can use a fixtures by passing it as an argument to your unit test function:\n\n```python\nasync def test_jupyter_server_api(jp_fetch):\n    # send request to a temporary jupyter server web application\n    response = await jp_fetch(\"api/spec.yml\")\n\n    # confirm that the request is successful.\n    assert response.code == 200\n```\n\nyou can list the fixtures for a given plugin using the `--fixtures` argument from the pytest command line interface:\n\n```bash\npytest --fixtures -p pytest_jupyter.jupyter_server\n```\n\nor by calling the `pytest --fixtures` where the plugin is listed in the `pytest_plugins` variable of a given test directory.\n",
+  "docs_url": null,
+  "keywords": "jupyter,pytest",
+  "license": "# licensing terms  this project is licensed under the terms of the modified bsd license (also known as new or revised or 3-clause bsd), as follows:  - copyright (c) 2020-, jupyter development team  all rights reserved.  redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:  redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.  redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.  neither the name of the jupyter development team nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.  this software is provided by the copyright holders and contributors \"as is\" and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed.  in no event shall the copyright owner or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.  ## about the jupyter development team  the jupyter development team is the set of all contributors to the jupyter project. this includes all of the jupyter subprojects.  the core team that coordinates development on github can be found here: https://github.com/jupyter/.  ## our copyright policy  jupyter uses a shared copyright model. each contributor maintains copyright over their contributions to jupyter. but, it is important to note that these contributions are typically only changes to the repositories. thus, the jupyter source code, in its entirety is not the copyright of any single person or institution.  instead, it is the collective copyright of the entire jupyter development team.  if individual contributors want to maintain a record of what changes/contributions they have specific copyright on, they should indicate their copyright in the commit message of the change, when they commit the change to one of the jupyter repositories.  with this in mind, the following banner should be used in any source code file to indicate the copyright and license terms:  # copyright (c) jupyter development team. # distributed under the terms of the modified bsd license.   pytest tornasync file license =============================  the pytest_jupyter/pytest_tornasync.py was originally licensed as:  the mit license (mit)  copyright (c) 2016 eukaryote  permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"software\"), to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, subject to the following conditions:  the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software.",
+  "name": "pytest-jupyter",
+  "package_url": "https://pypi.org/project/pytest-jupyter/",
+  "project_url": "https://pypi.org/project/pytest-jupyter/",
+  "project_urls": {
+    "Funding": "https://numfocus.org/donate",
+    "Homepage": "http://jupyter.org",
+    "Source": "https://github.com/jupyter-server/pytest-jupyter",
+    "Tracker": "https://github.com/jupyter-server/pytest-jupyter/issues"
+  },
+  "release_url": "https://pypi.org/project/pytest-jupyter/0.8.0/",
+  "requires_dist": [
+    "jupyter-core",
+    "pytest",
+    "ipykernel>=6.14; extra == 'client'",
+    "jupyter-client>=7.4.0; extra == 'client'",
+    "nbformat>=5.3; extra == 'client'",
+    "myst-parser; extra == 'docs'",
+    "pydata-sphinx-theme; extra == 'docs'",
+    "sphinx; extra == 'docs'",
+    "sphinxcontrib-spelling; extra == 'docs'",
+    "ipykernel>=6.14; extra == 'server'",
+    "jupyter-client>=7.4.0; extra == 'server'",
+    "jupyter-server>=1.21; extra == 'server'",
+    "nbformat>=5.3; extra == 'server'",
+    "pytest-timeout; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "a pytest plugin for testing jupyter libraries and extensions.",
+  "version": "0.8.0",
+  "releases": [],
+  "developers": [
+    "jupyter@googlegroups.com"
+  ],
+  "kwds": "pytest_jupyter jupyter_server test_jupyter_server_api jupyter_client pytest_plugins",
+  "license_kwds": "copyright licensing jupyter licensed noninfringement",
+  "libtype": "pypi",
+  "id": "pypi_pytest_jupyter",
+  "homepage": "",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_ipykernel",
+    "pypi_jupyter_client",
+    "pypi_jupyter_core",
+    "pypi_jupyter_server",
+    "pypi_myst_parser",
+    "pypi_nbformat",
+    "pypi_pydata_sphinx_theme",
+    "pypi_pytest",
+    "pypi_pytest_timeout",
+    "pypi_sphinx",
+    "pypi_sphinxcontrib_spelling"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: system :: filesystems",
+    "topic :: text processing :: filters",
+    "typing :: typed"
+  ],
+  "description": ".. image:: http://www.repostatus.org/badges/latest/active.svg\n    :target: http://www.repostatus.org/#active\n    :alt: project status: active - the project has reached a stable, usable\n          state and is being actively developed.\n\n.. image:: https://github.com/jwodder/inplace/workflows/test/badge.svg?branch=master\n    :target: https://github.com/jwodder/inplace/actions?workflow=test\n    :alt: ci status\n\n.. image:: https://codecov.io/gh/jwodder/inplace/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/jwodder/inplace\n\n.. image:: https://img.shields.io/pypi/pyversions/in_place.svg\n    :target: https://pypi.org/project/in_place\n\n.. image:: https://img.shields.io/conda/vn/conda-forge/in_place.svg\n    :target: https://anaconda.org/conda-forge/in_place\n    :alt: conda version\n\n.. image:: https://img.shields.io/github/license/jwodder/inplace.svg?maxage=2592000\n    :target: https://opensource.org/licenses/mit\n    :alt: mit license\n\n`github <https://github.com/jwodder/inplace>`_\n| `pypi <https://pypi.org/project/in_place>`_\n| `issues <https://github.com/jwodder/inplace/issues>`_\n| `changelog <https://github.com/jwodder/inplace/blob/master/changelog.md>`_\n\nthe ``in_place`` module provides an ``inplace`` class for reading & writing a\nfile \"in-place\": data that you write ends up at the same filepath that you read\nfrom, and ``in_place`` takes care of all the necessary mucking about with\ntemporary files for you.\n\nfor example, given the file ``somefile.txt``::\n\n    'twas brillig, and the slithy toves\n        did gyre and gimble in the wabe;\n    all mimsy were the borogoves,\n        and the mome raths outgrabe.\n\nand the program ``disemvowel.py``:\n\n.. code:: python\n\n    import in_place\n\n    with in_place.inplace(\"somefile.txt\") as fp:\n        for line in fp:\n            fp.write(\"\".join(c for c in line if c not in \"aeiouaeiou\"))\n\nafter running the program, ``somefile.txt`` will have been edited in place,\nreducing it to just::\n\n    'tws brllg, nd th slthy tvs\n        dd gyr nd gmbl n th wb;\n    ll mmsy wr th brgvs,\n        nd th mm rths tgrb.\n\nand no sign of those pesky vowels remains!  if you want a sign of those pesky\nvowels to remain, you can instead save the file's original contents in, say,\n``somefile.txt~`` by constructing the filehandle with:\n\n.. code:: python\n\n    in_place.inplace(\"somefile.txt\", backup_ext=\"~\")\n\nor save to ``someotherfile.txt`` with:\n\n.. code:: python\n\n    in_place.inplace(\"somefile.txt\", backup=\"someotherfile.txt\")\n\ncompared to the in-place filtering implemented by the python standard library's\n|fileinput|_ module, ``in_place`` offers the following benefits:\n\n- instead of hijacking ``sys.stdout``, a new filehandle is returned for\n  writing.\n- the filehandle supports all of the standard i/o methods, not just\n  ``readline()``.\n- there are options for setting the encoding, encoding error handling, and\n  newline policy for opening the file, along with support for opening files in\n  binary mode, and these options apply to both input and output.\n- the complete filename of the backup file can be specified; you aren't\n  constrained to just adding an extension.\n- when used as a context manager, ``in_place`` will restore the original file\n  if an exception occurs.\n- the creation of temporary files won't silently clobber innocent bystander\n  files.\n\n.. |fileinput| replace:: ``fileinput``\n.. _fileinput: https://docs.python.org/3/library/fileinput.html\n\n\ninstallation\n============\n``in_place`` requires python 3.8 or higher.  just use `pip\n<https://pip.pypa.io>`_ for python 3 (you have pip, right?) to install it::\n\n    python3 -m pip install in_place\n\n\nbasic usage\n===========\n``in_place`` provides a single class, ``inplace``.  its constructor takes the\nfollowing arguments:\n\n``name=<path>`` (required)\n   the path to the file to open & edit in-place\n\n``mode=<\"b\"|\"t\"|none>``\n   whether to operate on the file in binary or text mode.  if ``mode`` is\n   ``\"b\"``, the file will be opened in binary mode, and data will be read &\n   written as ``bytes`` objects.  if ``mode`` is ``\"t\"`` or ``none`` (the\n   default), the file will be opened in text mode, and data will be read &\n   written as ``str`` objects.\n\n``backup=<path>``\n   if set, the original contents of the file will be saved to the given path\n   when the instance is closed.  ``backup`` cannot be set to the empty string.\n\n``backup_ext=<extension>``\n   if set, the path to the backup file will be created by appending\n   ``backup_ext`` to the original file path.\n\n   ``backup`` and ``backup_ext`` are mutually exclusive.  ``backup_ext`` cannot\n   be set to the empty string.\n\n``**kwargs``\n   any additional keyword arguments (such as ``encoding``, ``errors``, and\n   ``newline``) will be forwarded to ``open()`` when opening both the input and\n   output file streams.\n\n``name``, ``backup``, and ``backup_ext`` can be ``str``, filesystem-encoded\n``bytes``, or path-like objects.\n\n``inplace`` instances act as read-write filehandles with the usual filehandle\nattributes, specifically::\n\n    __iter__()              __next__()              closed\n    flush()                 name                    read()\n    read1() *               readinto() *            readinto1() *\n    readline()              readlines()             write()\n    writelines()\n\n    * binary mode only\n\n``inplace`` instances also feature the following new or modified attributes:\n\n``close()``\n   close filehandles and move files to their final destinations.  if called\n   after the filehandle has already been closed, ``close()`` does nothing.\n\n   be sure to always close your instances when you're done with them by calling\n   ``close()`` or ``rollback()`` either explicitly or implicitly (i.e., via use\n   as a context manager).\n\n``rollback()``\n   like ``close()``, but discard the output data (keeping the original file\n   intact) instead of replacing the original file with it\n\n``__enter__()``, ``__exit__()``\n   when an ``inplace`` instance is used as a context manager, on exiting the\n   context, the instance will be either closed (if all went well) or rolled\n   back (if an exception occurred).  ``inplace`` context managers are not\n   reusable_ but are reentrant_ (as long as no further operations are performed\n   after the innermost context ends).\n\n``input``\n   the actual filehandle that data is read from, in case you need to access it\n   directly\n\n``output``\n   the actual filehandle that data is written to, in case you need to access it\n   directly\n\n.. _reentrant: https://docs.python.org/3/library/contextlib.html#reentrant-cms\n.. _reusable: https://docs.python.org/3/library/contextlib.html#reusable-context-managers\n",
+  "docs_url": null,
+  "keywords": "inplace,in-place,io,open,file,tmpfile,tempfile,sed,redirection,fileinput",
+  "license": "mit",
+  "name": "in-place",
+  "package_url": "https://pypi.org/project/in-place/",
+  "project_url": "https://pypi.org/project/in-place/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/jwodder/inplace/issues",
+    "Homepage": "https://github.com/jwodder/inplace",
+    "Source Code": "https://github.com/jwodder/inplace"
+  },
+  "release_url": "https://pypi.org/project/in-place/1.0.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "in-place file processing",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "inplace@varonathe.org",
+    "john_thorvald_wodder_ii"
+  ],
+  "kwds": "badges badge svg pyversions workflows",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_in_place",
+  "homepage": "https://github.com/jwodder/inplace",
+  "release_count": 6,
+  "dependency_ids": []
+}

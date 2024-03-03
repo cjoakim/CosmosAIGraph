@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: android",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: application frameworks"
+  ],
+  "description": "pyjnius\n=======\n\na python module to access java classes as python classes using the java native\ninterface (jni).\nwarning: the pypi name is now `pyjnius` instead of `jnius`.\n\n[![tests](https://github.com/kivy/pyjnius/workflows/continuous%20integration/badge.svg)](https://github.com/kivy/pyjnius/actions)\n[![tests (x86)](https://github.com/kivy/pyjnius/workflows/continuous%20integration%20(x86)/badge.svg)](https://github.com/kivy/pyjnius/actions)\n[![builds](https://github.com/kivy/pyjnius/workflows/continuous%20delivery/badge.svg)](https://github.com/kivy/pyjnius/actions)\n[![pypi](https://img.shields.io/pypi/v/pyjnius.svg)]()\n[![backers on open collective](https://opencollective.com/kivy/backers/badge.svg)](#backers)\n[![sponsors on open collective](https://opencollective.com/kivy/sponsors/badge.svg)](#sponsors)\n\ninstallation\n------------\n\n```\npip install pyjnius\n```\n\nquick overview\n--------------\n\n```python\n>>> from jnius import autoclass\n>>> autoclass('java.lang.system').out.println('hello world')\nhello world\n\n>>> stack = autoclass('java.util.stack')\n>>> stack = stack()\n>>> stack.push('hello')\n>>> stack.push('world')\n>>> print(stack.pop())\nworld\n>>> print(stack.pop())\nhello\n```\n\nusage with python-for-android\n-----------------------------\n\n* get [python-for-android](http://github.com/kivy/python-for-android)\n* compile a distribution with kivy (pyjnius will be automatically added)\n\nthen, you can do this kind of things:\n\n```python\nfrom time import sleep\nfrom jnius import autoclass\n\nhardware = autoclass('org.renpy.android.hardware')\nprint('dpi is', hardware.getdpi())\n\nhardware.accelerometerenable(true)\nfor x in xrange(20):\n    print(hardware.accelerometerreading())\n    sleep(.1)\n```\n\nit will output something like:\n\n```\ni/python  ( 5983): android kivy bootstrap done. __name__ is __main__\ni/python  ( 5983): run user program, change dir and execute main.py\ni/python  ( 5983): dpi is 160\ni/python  ( 5983): [0.0, 0.0, 0.0]\ni/python  ( 5983): [-0.0095768067985773087, 9.3852710723876953, 2.2218191623687744]\ni/python  ( 5983): [-0.0095768067985773087, 9.3948478698730469, 2.2218191623687744]\ni/python  ( 5983): [-0.0095768067985773087, 9.3948478698730469, 2.2026655673980713]\ni/python  ( 5983): [-0.028730420395731926, 9.4044246673583984, 2.2122423648834229]\ni/python  ( 5983): [-0.019153613597154617, 9.3852710723876953, 2.2026655673980713]\ni/python  ( 5983): [-0.028730420395731926, 9.3852710723876953, 2.2122423648834229]\ni/python  ( 5983): [-0.0095768067985773087, 9.3852710723876953, 2.1835119724273682]\ni/python  ( 5983): [-0.0095768067985773087, 9.3756942749023438, 2.1835119724273682]\ni/python  ( 5983): [0.019153613597154617, 9.3948478698730469, 2.2122423648834229]\ni/python  ( 5983): [0.038307227194309235, 9.3852710723876953, 2.2218191623687744]\ni/python  ( 5983): [-0.028730420395731926, 9.3948478698730469, 2.2026655673980713]\ni/python  ( 5983): [-0.028730420395731926, 9.3852710723876953, 2.2122423648834229]\ni/python  ( 5983): [-0.038307227194309235, 9.3756942749023438, 2.2026655673980713]\ni/python  ( 5983): [0.3926490843296051, 9.3086557388305664, 1.3311761617660522]\ni/python  ( 5983): [-0.10534487664699554, 9.4331550598144531, 2.1068975925445557]\ni/python  ( 5983): [0.26815059781074524, 9.3469638824462891, 2.3463177680969238]\ni/python  ( 5983): [-0.1149216815829277, 9.3852710723876953, 2.31758713722229]\ni/python  ( 5983): [-0.038307227194309235, 9.41400146484375, 1.8674772977828979]\ni/python  ( 5983): [0.13407529890537262, 9.4235782623291016, 2.2026655673980713]\n```\n\nadvanced example\n----------------\n\nwhen you use `autoclass`, it will discover all the methods and fields of the\nclass and resolve them. you may want to declare and use only what you\nneed. the previous example can be done manually as follows:\n\n```python\nfrom time import sleep\nfrom jnius import metajavaclass, javaclass, javamethod, javastaticmethod\n\nclass hardware(javaclass):\n    __metaclass__ = metajavaclass\n    __javaclass__ = 'org/renpy/android/hardware'\n    vibrate = javastaticmethod('(d)v')\n    accelerometerenable = javastaticmethod('(z)v')\n    accelerometerreading = javastaticmethod('()[f')\n    getdpi = javastaticmethod('()i')\n\n# use that new class!\nprint('dpi is', hardware.getdpi())\n\nhardware.accelerometerenable()\nfor x in xrange(20):\n    print(hardware.accelerometerreading())\n    sleep(.1)\n```\n\nyou can use the `signatures` method of `javamethod` and `javamultiplemethod`, to inspect the discovered signatures of a method of an object\n\n```python\n>>> string = autoclass('java.lang.string')\n>>> dir(string)\n['case_insensitive_order', '__class__', '_javaclass__cls_storage', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__javaclass__', '__javaconstructor__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__pyx_vtable__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__setstate__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', 'charat', 'checkbounds', 'clone', 'codepointat', 'codepointbefore', 'codepointcount', 'compareto', 'comparetoignorecase', 'concat', 'contains', 'contentequals', 'copyvalueof', 'empty', 'endswith', 'equals', 'equalsignorecase', 'finalize', 'format', 'getbytes', 'getchars', 'getclass', 'hashcode', 'indexof', 'indexofsupplementary', 'intern', 'isempty', 'join', 'lastindexof', 'lastindexofsupplementary', 'length', 'matches', 'nonsynccontentequals', 'notify', 'notifyall', 'offsetbycodepoints', 'regionmatches', 'registernatives', 'replace', 'replaceall', 'replacefirst', 'split', 'startswith', 'subsequence', 'substring', 'tochararray', 'tolowercase', 'tostring', 'touppercase', 'trim', 'valueof', 'wait']\n>>> string.format.signatures()\n[(['java/util/locale', 'java/lang/string', 'java/lang/object...'], 'java/lang/string'), (['java/lang/string', 'java/lang/object...'], 'java/lang/string')]\n```\neach pair contains the list of accepted arguments types, and the returned type.\n\ntroubleshooting\n---------------\n\nmake sure a java development kit (jdk) is installed on your operating system if\nyou want to use pyjnius on desktop. openjdk is known to work, and the oracle\njava jdk should work as well.\n\non windows, make sure `java_home` points to your java installation, so pyjnius\ncan locate the `jvm.dll` file allowing it to start java. this shouldn't be\nnecessary on osx and linux, but in case pyjnius fails to find it, setting\n`java_home` should help.\n\nsupport\n-------\n\nif you need assistance, you can ask for help on our mailing list:\n\n* user group : https://groups.google.com/group/kivy-users\n* email      : kivy-users@googlegroups.com\n\nwe also have a discord server:\n\n[https://chat.kivy.org/](https://chat.kivy.org/)\n\ncontributing\n------------\n\nwe love pull requests and discussing novel ideas. check out our\n[contribution guide](http://kivy.org/docs/contribute.html) and\nfeel free to improve pyjnius.\n\nthe following mailing list and irc channel are used exclusively for\ndiscussions about developing the kivy framework and its sister projects:\n\n* dev group : https://groups.google.com/group/kivy-dev\n* email     : kivy-dev@googlegroups.com\n\nlicense\n-------\n\npyjnius is released under the terms of the mit license. please refer to the\nlicense file for more information.\n\n\n## backers\n\nthank you to all our backers! \ud83d\ude4f [[become a backer](https://opencollective.com/kivy#backer)]\n\n<a href=\"https://opencollective.com/kivy#backers\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/backers.svg?width=890\"></a>\n\n\n## sponsors\n\nsupport this project by becoming a sponsor. your logo will show up here with a link to your website. [[become a sponsor](https://opencollective.com/kivy#sponsor)]\n\n<a href=\"https://opencollective.com/kivy/sponsor/0/website\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/sponsor/0/avatar.svg\"></a>\n<a href=\"https://opencollective.com/kivy/sponsor/1/website\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/sponsor/1/avatar.svg\"></a>\n<a href=\"https://opencollective.com/kivy/sponsor/2/website\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/sponsor/2/avatar.svg\"></a>\n<a href=\"https://opencollective.com/kivy/sponsor/3/website\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/sponsor/3/avatar.svg\"></a>\n<a href=\"https://opencollective.com/kivy/sponsor/4/website\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/sponsor/4/avatar.svg\"></a>\n<a href=\"https://opencollective.com/kivy/sponsor/5/website\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/sponsor/5/avatar.svg\"></a>\n<a href=\"https://opencollective.com/kivy/sponsor/6/website\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/sponsor/6/avatar.svg\"></a>\n<a href=\"https://opencollective.com/kivy/sponsor/7/website\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/sponsor/7/avatar.svg\"></a>\n<a href=\"https://opencollective.com/kivy/sponsor/8/website\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/sponsor/8/avatar.svg\"></a>\n<a href=\"https://opencollective.com/kivy/sponsor/9/website\" target=\"_blank\"><img src=\"https://opencollective.com/kivy/sponsor/9/avatar.svg\"></a>\n",
+  "docs_url": null,
+  "keywords": "java jni android",
+  "license": "",
+  "name": "pyjnius",
+  "package_url": "https://pypi.org/project/pyjnius/",
+  "project_url": "https://pypi.org/project/pyjnius/",
+  "project_urls": {
+    "Homepage": "https://github.com/kivy/pyjnius"
+  },
+  "release_url": "https://pypi.org/project/pyjnius/1.6.1/",
+  "requires_dist": [
+    "coveralls ; extra == 'ci'",
+    "pytest-rerunfailures ; extra == 'ci'",
+    "pytest ; extra == 'dev'",
+    "pytest-cov ; extra == 'dev'",
+    "pycodestyle ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "a python module to access java classes as python classes using jni.",
+  "version": "1.6.1",
+  "releases": [],
+  "developers": [
+    "kivy-dev@googlegroups.com",
+    "kivy_team_and_other_contributors"
+  ],
+  "kwds": "__javaclass__ pyjnius javaclass openjdk jni",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pyjnius",
+  "homepage": "https://github.com/kivy/pyjnius",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_coveralls",
+    "pypi_pycodestyle",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_rerunfailures"
+  ]
+}

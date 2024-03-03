@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# python slugify\n\n**a python slugify application that handles unicode**.\n\n[![status-image]][status-link]\n[![version-image]][version-link]\n[![coverage-image]][coverage-link]\n\n# overview\n\n**best attempt** to create slugs from unicode strings while keeping it **dry**.\n\n# notice\n\nthis module, by default installs and uses [text-unidecode](https://github.com/kmike/text-unidecode) _(gpl & perl artistic)_ for its decoding needs.\n\nhowever, there is an alternative decoding package called [unidecode](https://github.com/avian2/unidecode) _(gpl)_. it can be installed as `python-slugify[unidecode]` for those who prefer it. `unidecode` is believed to be more advanced.\n\n### `official` support matrix\n\n| python         | slugify            |\n| -------------- | ------------------ |\n| `>= 2.7 < 3.6` | `< 5.0.0`          |\n| `>= 3.6 < 3.7` | `>= 5.0.0 < 7.0.0` |\n| `>= 3.7`       | `>= 7.0.0`         |\n\n# how to install\n\n    easy_install python-slugify |or| easy_install python-slugify[unidecode]\n    -- or --\n    pip install python-slugify |or| pip install python-slugify[unidecode]\n\n# options\n\n```python\ndef slugify(\n    text,\n    entities=true,\n    decimal=true,\n    hexadecimal=true,\n    max_length=0,\n    word_boundary=false,\n    separator='-',\n    save_order=false,\n    stopwords=(),\n    regex_pattern=none,\n    lowercase=true,\n    replacements=(),\n    allow_unicode=false\n  ):\n  \"\"\"\n  make a slug from the given text.\n  :param text (str): initial text\n  :param entities (bool): converts html entities to unicode (foo &amp; bar -> foo-bar)\n  :param decimal (bool): converts html decimal to unicode (&#381; -> \u017e -> z)\n  :param hexadecimal (bool): converts html hexadecimal to unicode (&#x17d; -> \u017e -> z)\n  :param max_length (int): output string length\n  :param word_boundary (bool): truncates to end of full words (length may be shorter than max_length)\n  :param save_order (bool): if parameter is true and max_length > 0 return whole words in the initial order\n  :param separator (str): separator between words\n  :param stopwords (iterable): words to discount\n  :param regex_pattern (str): regex pattern for disallowed characters\n  :param lowercase (bool): activate case sensitivity by setting it to false\n  :param replacements (iterable): list of replacement rules e.g. [['|', 'or'], ['%', 'percent']]\n  :param allow_unicode (bool): allow unicode characters\n  :return (str): slugify text\n  \"\"\"\n```\n\n# how to use\n\n```python\nfrom slugify import slugify\n\ntxt = \"this is a test ---\"\nr = slugify(txt)\nself.assertequal(r, \"this-is-a-test\")\n\ntxt = '\u5f71\u5e2b\u55ce'\nr = slugify(txt)\nself.assertequal(r, \"ying-shi-ma\")\n\ntxt = '\u5f71\u5e2b\u55ce'\nr = slugify(txt, allow_unicode=true)\nself.assertequal(r, \"\u5f71\u5e2b\u55ce\")\n\ntxt = 'c\\'est d\u00e9j\u00e0 l\\'\u00e9t\u00e9.'\nr = slugify(txt)\nself.assertequal(r, \"c-est-deja-l-ete\")\n\ntxt = 'n\u00edn h\u01ceo. w\u01d2 sh\u00ec zh\u014dng gu\u00f3 r\u00e9n'\nr = slugify(txt)\nself.assertequal(r, \"nin-hao-wo-shi-zhong-guo-ren\")\n\ntxt = '\u043a\u043e\u043c\u043f\u044c\u044e\u0442\u0435\u0440'\nr = slugify(txt)\nself.assertequal(r, \"kompiuter\")\n\ntxt = 'jaja---lol-m\u00e9m\u00e9m\u00e9oo--a'\nr = slugify(txt, max_length=9)\nself.assertequal(r, \"jaja-lol\")\n\ntxt = 'jaja---lol-m\u00e9m\u00e9m\u00e9oo--a'\nr = slugify(txt, max_length=15, word_boundary=true)\nself.assertequal(r, \"jaja-lol-a\")\n\ntxt = 'jaja---lol-m\u00e9m\u00e9m\u00e9oo--a'\nr = slugify(txt, max_length=20, word_boundary=true, separator=\".\")\nself.assertequal(r, \"jaja.lol.mememeoo.a\")\n\ntxt = 'one two three four five'\nr = slugify(txt, max_length=13, word_boundary=true, save_order=true)\nself.assertequal(r, \"one-two-three\")\n\ntxt = 'the quick brown fox jumps over the lazy dog'\nr = slugify(txt, stopwords=['the'])\nself.assertequal(r, 'quick-brown-fox-jumps-over-lazy-dog')\n\ntxt = 'the quick brown fox jumps over the lazy dog in a hurry'\nr = slugify(txt, stopwords=['the', 'in', 'a', 'hurry'])\nself.assertequal(r, 'quick-brown-fox-jumps-over-lazy-dog')\n\ntxt = 'this has a stopword stopword'\nr = slugify(txt, stopwords=['stopword'], lowercase=false)\nself.assertequal(r, 'this-has-a-stopword')\n\ntxt = \"___this is a test___\"\nregex_pattern = r'[^-a-z0-9_]+'\nr = slugify(txt, regex_pattern=regex_pattern)\nself.assertequal(r, \"___this-is-a-test___\")\n\ntxt = \"___this is a test___\"\nregex_pattern = r'[^-a-z0-9_]+'\nr = slugify(txt, separator='_', regex_pattern=regex_pattern)\nself.assertnotequal(r, \"_this_is_a_test_\")\n\ntxt = '10 | 20 %'\nr = slugify(txt, replacements=[['|', 'or'], ['%', 'percent']])\nself.assertequal(r, \"10-or-20-percent\")\n\ntxt = '\u00fcber \u00fcber german umlaut'\nr = slugify(txt, replacements=[['\u00fc', 'ue'], ['\u00fc', 'ue']])\nself.assertequal(r, \"ueber-ueber-german-umlaut\")\n\ntxt = 'i love \ud83e\udd84'\nr = slugify(txt, allow_unicode=true)\nself.assertequal(r, \"i-love\")\n\ntxt = 'i love \ud83e\udd84'\nr = slugify(txt, allow_unicode=true, regex_pattern=r'[^\ud83e\udd84]+')\nself.assertequal(r, \"\ud83e\udd84\")\n\n```\n\nfor more examples, have a look at the [test.py](test.py) file.\n\n# command line options\n\nwith the package, a command line tool called `slugify` is also installed.\n\nit allows convenient command line access to all the features the `slugify` function supports. call it with `-h` for help.\n\nthe command can take its input directly on the command line or from stdin (when the `--stdin` flag is passed):\n\n```\n$ echo \"taking input from stdin\" | slugify --stdin\ntaking-input-from-stdin\n```\n\n```\n$ slugify taking input from the command line\ntaking-input-from-the-command-line\n```\n\nplease note that when a multi-valued option such as `--stopwords` or `--replacements` is passed, you need to use `--` as separator before you start with the input:\n\n```\n$ slugify --stopwords the in a hurry -- the quick brown fox jumps over the lazy dog in a hurry\nquick-brown-fox-jumps-over-lazy-dog\n```\n\n# running the tests\n\nto run the tests against the current environment:\n\n    python test.py\n\n# contribution\n\nplease read the ([wiki](https://github.com/un33k/python-slugify/wiki/python-slugify-wiki)) page prior to raising any prs.\n\n# license\n\nreleased under a ([mit](license)) license.\n\n### notes on gpl dependencies\nthough the dependencies may be gpl licensed, `python-slugify` itself is not considered a derivative work and will remain under the mit license.  \nif you wish to avoid installation of any gpl licensed packages, please note that the default dependency `text-unidecode` explicitly lets you choose to use the [artistic license](https://opensource.org/license/artistic-perl-1-0-2/) instead. use without concern.\n\n# version\n\nx.y.z version\n\n    `major` version -- when you make incompatible api changes,\n    `minor` version -- when you add functionality in a backwards-compatible manner, and\n    `patch` version -- when you make backwards-compatible bug fixes.\n\n[status-image]: https://github.com/un33k/python-slugify/actions/workflows/ci.yml/badge.svg\n[status-link]: https://github.com/un33k/python-slugify/actions/workflows/ci.yml\n[version-image]: https://img.shields.io/pypi/v/python-slugify.svg\n[version-link]: https://pypi.python.org/pypi/python-slugify\n[coverage-image]: https://coveralls.io/repos/un33k/python-slugify/badge.svg\n[coverage-link]: https://coveralls.io/r/un33k/python-slugify\n[download-image]: https://img.shields.io/pypi/dm/python-slugify.svg\n[download-link]: https://pypi.python.org/pypi/python-slugify\n\n# sponsors\n\n[neekware inc.](http://neekware.com)\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "python-slugify",
+  "package_url": "https://pypi.org/project/python-slugify/",
+  "project_url": "https://pypi.org/project/python-slugify/",
+  "project_urls": {
+    "Homepage": "https://github.com/un33k/python-slugify"
+  },
+  "release_url": "https://pypi.org/project/python-slugify/8.0.1/",
+  "requires_dist": [
+    "text-unidecode (>=1.3)",
+    "Unidecode (>=1.1.1) ; extra == 'unidecode'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a python slugify application that also handles unicode",
+  "version": "8.0.1",
+  "releases": [],
+  "developers": [
+    "info@neekware.com",
+    "val_neekman"
+  ],
+  "kwds": "allow_unicode unicode unidecode decoding slug",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python_slugify",
+  "homepage": "https://github.com/un33k/python-slugify",
+  "release_count": 44,
+  "dependency_ids": [
+    "pypi_text_unidecode",
+    "pypi_unidecode"
+  ]
+}

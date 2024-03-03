@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "[![python](https://img.shields.io/pypi/pyversions/jaxns.svg)](https://badge.fury.io/py/jaxns)\n[![pypi](https://badge.fury.io/py/jaxns.svg)](https://badge.fury.io/py/jaxns)\n[![documentation status](https://readthedocs.org/projects/jaxns/badge/?version=latest)](https://jaxns.readthedocs.io/en/latest/?badge=latest)\n\nmain\nstatus: ![workflow name](https://github.com/joshuaalbert/jaxns/actions/workflows/unittests.yml/badge.svg?branch=main)\n\ndevelop\nstatus: ![workflow name](https://github.com/joshuaalbert/jaxns/actions/workflows/unittests.yml/badge.svg?branch=develop)\n\n![jaxns](https://github.com/joshuaalbert/jaxns/raw/main/jaxns_logo.png)\n\n## mission: _to make nested sampling **faster, easier, and more powerful**_\n\n# what is it?\n\njaxns is:\n\n1) a probabilistic programming framework using nested sampling as the engine;\n2) coded in jax in a manner that allows lowering the entire inference algorithm to xla primitives, which are\n   jit-compiled for high performance;\n3) continuously improving on its mission of making nested sampling faster, easier, and more powerful; and\n4) citable, and you can read an (old) pre-print here: (https://arxiv.org/abs/2012.15286).\n\n# documentation\n\nyou can read the documentation [here](https://jaxns.readthedocs.io/en/latest/#).\n\n# install\n\n**notes:**\n\n1. jaxns requires >= python 3.8.\n2. it is always highly recommended to use a unique virtual environment for each project.\n   to use `miniconda`, have it installed, and run\n\n```bash\n# to create a new env, if necessary\nconda create -n jaxns_py python=3.11\nconda activate jaxns_py\n```\n\n## for end users\n\ninstall directly from pypi,\n\n```bash\npip install jaxns\n```\n\n## for development\n\nclone repo `git clone https://www.github.com/joshuaalbert/jaxns.git`, and install:\n\n```bash\ncd jaxns\npip install -r requirements.txt\npip install -r requirements-tests.txt\npip install -r requirements-examples.txt\npip install .\n```\n\n# getting help and contributing examples\n\ndo you have a neat bayesian problem, and want to solve it with jaxns?\ni'm really encourage anyone in either the scientific community or industry to get involved and join the discussion\nforum.\nplease use the [github discussion forum](https://github.com/joshuaalbert/jaxns/discussions) for getting help, or\ncontributing examples/neat use cases.\n\n# quick start\n\ncheckout the examples [here](https://jaxns.readthedocs.io/en/latest/#).\n\n## caveats\n\nthe caveat is that you need to be able to define your likelihood function with jax. this is usually no big deal because\njax is just a replacement for numpy and many likelihoods can be expressed such.\nif you're unfamiliar, take a quick tour of jax (https://jax.readthedocs.io/en/latest/notebooks/quickstart.html).\n\n# speed test comparison with other nested sampling packages\n\njaxns is really fast because it uses jax.\njaxns is much faster than polychord, multinest, and dynesty, typically achieving two to three orders of magnitude\nimprovement in run time, for models with cheap likelihood evaluations.\nthis is shown in (https://arxiv.org/abs/2012.15286). \n\nrecently jaxns has implemented phantom-powered nested sampling, which significantly reduces the number of required \nlikelihood evaluations. this is shown in (https://arxiv.org/abs/). \n\n# note on performance with parallelisation\n\n__note, that this is an experimental feature.__\n\nif you set `num_parallel_workers > 1` you will use `jax.pmap` under the hood for parallelisation.\nthis is a very powerful feature, but it is important to understand how it works.\nit runs identical copies of the nested sampling algorithm on multiple devices.\nthere is a two-part stopping condition.\nfirst, each copy goes until the user defined stopping condition is met __per device__.\nthen, it performs an all-gather and finds at the highest likelihood contour among all copies, and continues all copies\nhit this likelihood contour.\nthis ensures consistency of depth across all copies.\nwe then merge the copies and compute the final results.\n\nthe algorithm is fairly memory bound, so running parallelisation over multiple cpus on the same machine may not yield\nthe expected speed up, and depends how expensive the likelihood evaluations are. running over separate physical devices \nis the best way to achieve speed up.\n\n# change log\n\n21 dec, 2023 -- jaxns 2.3.4 released. correction for ess and logz uncert. `parameter_estimation` mode.\n\n20 dec, 2023 -- jaxns 2.3.2/3 released. improved default parameters. `difficult_model` mode. improve plotting. \n\n18 dec, 2023 -- jaxns 2.3.1 released. paper open science release. default parameters from paper.\n\n11 dec, 2023 -- jaxns 2.3.0 released. released of phantom-powered nested sampling algorithm.\n\n5 oct, 2023 -- jaxns 2.2.6 released. minor update to evidence maximisation.\n\n3 oct, 2023 -- jaxns 2.2.5 released. parametrised priors, and evidence maximisation added.\n\n24 sept, 2023 -- jaxns 2.2.4 released. add marginalising from saved u samples.\n\n28 july, 2023 -- jaxns 2.2.3 released. bug fix for singular priors.\n\n26 june, 2023 -- jaxns 2.2.1 released. multi-ellipsoidal sampler added back in. adaptive refinement disabled, as a bias\nhas been detected in it.\n\n15 june, 2023 -- jaxns 2.2.0 released. added support to allow tfp bijectors to defined transformed distributions. other\nminor improvements.\n\n15 april, 2023 -- jaxns 2.1.0 released. pmap used on outer-most loops allowing efficient device-device communication\nduring parallel runs.\n\n8 march, 2023 -- jaxns 2.0.1 released. changed how we're doing annotations to support python 3.8 again.\n\n3 january, 2023 -- jaxns 2.0 released. complete overhaul of components. new way to build models.\n\n5 august, 2022 -- jaxns 1.1.1 released. pytree shaped priors.\n\n2 june, 2022 -- jaxns 1.1.0 released. dynamic sampling takes advantage of adaptive refinement. parallelisation. bayesian\nopt and global opt modules.\n\n30 may, 2022 -- jaxns 1.0.1 released. improvements to speed, parallelisation, and structure of code.\n\n9 april, 2022 -- jaxns 1.0.0 released. parallel sampling, dynamic search, and adaptive refinement. global optimiser\nreleased.\n\n2 jun, 2021 -- jaxns 0.0.7 released.\n\n13 may, 2021 -- jaxns 0.0.6 released.\n\n8 mar, 2021 -- jaxns 0.0.5 released.\n\n8 mar, 2021 -- jaxns 0.0.4 released.\n\n7 mar, 2021 -- jaxns 0.0.3 released.\n\n28 feb, 2021 -- jaxns 0.0.2 released.\n\n28 feb, 2021 -- jaxns 0.0.1 released.\n\n1 january, 2021 -- paper submitted\n\n## star history\n\n<a href=\"https://star-history.com/#joshuaalbert/jaxns&date\">\n  <picture>\n    <source media=\"(prefers-color-scheme: dark)\" srcset=\"https://api.star-history.com/svg?repos=joshuaalbert/jaxns&type=date&theme=dark\" />\n    <source media=\"(prefers-color-scheme: light)\" srcset=\"https://api.star-history.com/svg?repos=joshuaalbert/jaxns&type=date\" />\n    <img alt=\"star history chart\" src=\"https://api.star-history.com/svg?repos=joshuaalbert/jaxns&type=date\" />\n  </picture>\n</a>\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "jaxns",
+  "package_url": "https://pypi.org/project/jaxns/",
+  "project_url": "https://pypi.org/project/jaxns/",
+  "project_urls": {
+    "Homepage": "https://github.com/joshuaalbert/jaxns"
+  },
+  "release_url": "https://pypi.org/project/jaxns/2.3.4/",
+  "requires_dist": [
+    "jax",
+    "jaxlib",
+    "chex",
+    "typing-extensions",
+    "matplotlib",
+    "numpy",
+    "scipy",
+    "tensorflow-probability",
+    "tqdm",
+    "dm-haiku",
+    "optax"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "nested sampling in jax",
+  "version": "2.3.4",
+  "releases": [],
+  "developers": [
+    "albert@strw.leidenuniv.nl",
+    "joshua_g"
+  ],
+  "kwds": "jaxns_py jaxns_logo jaxns jax badge",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_jaxns",
+  "homepage": "https://github.com/joshuaalbert/jaxns",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_chex",
+    "pypi_dm_haiku",
+    "pypi_jax",
+    "pypi_jaxlib",
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_optax",
+    "pypi_scipy",
+    "pypi_tensorflow_probability",
+    "pypi_tqdm",
+    "pypi_typing_extensions"
+  ]
+}

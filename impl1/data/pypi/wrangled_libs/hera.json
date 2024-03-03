@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering"
+  ],
+  "description": "# hera\n\nhera is a python framework for constructing and submitting argo workflows. the main goal of hera is to make the argo\necosystem accessible by simplifying workflow construction and submission.\n\n[see the quick start guide](https://hera.readthedocs.io/en/stable/walk-through/quick-start/) to start using hera to\norchestrate your argo workflows!\n\n```text\nthe argo was constructed by the shipwright argus,\nand its crew were specially protected by the goddess hera.\n```\n\n## links\n\n[![open in github codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/argoproj-labs/hera)\n\n[![open in gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/argoproj-labs/hera)\n\n[![cicd](https://github.com/argoproj-labs/hera/actions/workflows/cicd.yaml/badge.svg)](https://github.com/argoproj-labs/hera/actions/workflows/cicd.yaml)\n[![docs](https://readthedocs.org/projects/hera/badge/?version=latest)](https://hera.readthedocs.io/en/latest/?badge=latest)\n[![codecov](https://codecov.io/gh/argoproj-labs/hera/branch/main/graph/badge.svg?token=x4tvsqrkxp)](https://codecov.io/gh/argoproj-labs/hera)\n[![license: mit](https://img.shields.io/badge/license-mit-yellow.svg)](https://opensource.org/licenses/mit)\n\n[![pypi](https://img.shields.io/pypi/v/hera.svg)](https://pypi.python.org/pypi/hera)\n[![versions](https://img.shields.io/pypi/pyversions/hera.svg)](https://github.com/argoproj-labs/hera)\n\n[![condaforge](https://anaconda.org/conda-forge/hera-workflows/badges/version.svg)](https://anaconda.org/conda-forge/hera-workflows)\n\n### pypi stats for `hera`\n\n[![downloads](https://static.pepy.tech/badge/hera)](https://pepy.tech/project/hera)\n[![downloads/month](https://static.pepy.tech/badge/hera/month)](https://pepy.tech/project/hera)\n[![downloads/week](https://static.pepy.tech/badge/hera/week)](https://pepy.tech/project/hera)\n\n### pypi stats for `hera-workflows`\n\n> **\u26a0 note \u26a0** the `hera-workflows` package is **deprecated** since the project\n> [renamed to hera](https://github.com/argoproj-labs/hera/discussions/532) for v5. please install from the `hera` pypi\n> package.\n\n[![downloads](https://static.pepy.tech/badge/hera-workflows)](https://pepy.tech/project/hera-workflows)\n[![downloads/month](https://static.pepy.tech/badge/hera-workflows/month)](https://pepy.tech/project/hera-workflows)\n[![downloads/week](https://static.pepy.tech/badge/hera-workflows/week)](https://pepy.tech/project/hera-workflows)\n\n## hera at a glance\n\n### steps diamond\n\n```python\nfrom hera.workflows import steps, workflow, script\n\n@script()\ndef echo(message: str):\n    print(message)\n\nwith workflow(\n    generate_name=\"single-script-\",\n    entrypoint=\"steps\",\n) as w:\n    with steps(name=\"steps\") as s:\n        echo(name=\"a\", arguments={\"message\": \"i'm a step\"})\n        with s.parallel():\n            echo(name=\"b\", arguments={\"message\": \"we're steps\"})\n            echo(name=\"c\", arguments={\"message\": \"in parallel!\"})\n        echo(name=\"d\", arguments={\"message\": \"i'm another step!\"})\n\nw.create()\n```\n\n### dag diamond\n\n```python\nfrom hera.workflows import dag, workflow, script\n\n@script()\ndef echo(message: str):\n    print(message)\n\nwith workflow(\n    generate_name=\"dag-diamond-\",\n    entrypoint=\"diamond\",\n) as w:\n    with dag(name=\"diamond\"):\n        a = echo(name=\"a\", arguments={\"message\": \"a\"})\n        b = echo(name=\"b\", arguments={\"message\": \"b\"})\n        c = echo(name=\"c\", arguments={\"message\": \"c\"})\n        d = echo(name=\"d\", arguments={\"message\": \"d\"})\n        a >> [b, c] >> d\n\nw.create()\n```\n\nsee the [examples](./examples/workflows-examples.md) for a collection of argo workflow construction and submission via hera!\n\n## requirements\n\nhera requires an argo server to be deployed to a kubernetes cluster. currently, hera assumes that the argo server sits\nbehind an authentication layer that can authenticate workflow submission requests by using the bearer token on the\nrequest. to learn how to deploy argo to your own kubernetes cluster you can follow\nthe [argo workflows](https://argoproj.github.io/argo-workflows/quick-start/) guide!\n\nanother option for workflow submission without the authentication layer is using port forwarding to your argo server\ndeployment and submitting workflows to `localhost:2746` (2746 is the default, but you are free to change it). please\nrefer to the documentation of [argo workflows](https://argoproj.github.io/argo-workflows/quick-start/) to see the\ncommand for port forward!\n\n> **note** since the deprecation of tokens being automatically created for serviceaccounts and argo using bearer tokens\n> in place, it is necessary to use `--auth=server` and/or `--auth=client` when setting up argo workflows on kubernetes\n> v1.24+ in order for hera to communicate to the argo server.\n\n### authenticating in hera\n\nthere are a few ways to authenticate in hera - read more in the\n[authentication walk through](https://hera.readthedocs.io/en/stable/walk-through/authentication/) - for now, with the\n`argo` cli tool installed, this example will get you up and running:\n\n```py\nfrom hera.workflows import workflow, container\nfrom hera.shared import global_config\nfrom hera.auth import argoclitokengenerator\n\nglobal_config.host = \"http://localhost:2746\"\nglobal_config.token = argoclitokengenerator\n\nwith workflow(generate_name=\"local-test-\", entrypoint=\"c\") as w:\n    container( name=\"c\", image=\"docker/whalesay\", command=[\"cowsay\", \"hello\"])\n\nw.create()\n```\n\n## installation\n\n> **note** hera went through a name change - from `hera-workflows` to `hera`. this is reflected in the published python\n> package. if you'd like to install versions prior to `5.0.0`, you have to use `hera-workflows`. hera currently\n> publishes releases to both `hera` and `hera-workflows` for backwards compatibility purposes.\n\n| source                                                   | command                                                                                              |\n|----------------------------------------------------------|------------------------------------------------------------------------------------------------------|\n| [pypi](https://pypi.org/project/hera/)                   | `pip install hera`                                                                                   |\n| [pypi](https://pypi.org/project/hera-workflows/)         | `pip install hera-workflows`                                                                         |\n| [conda](https://anaconda.org/conda-forge/hera-workflows) | `conda install -c conda-forge hera-workflows`                                                        |\n| [github repo](https://github.com/argoproj-labs/hera)     | `python -m pip install git+https://github.com/argoproj-labs/hera --ignore-installed`/`pip install .` |\n\n### optional dependencies\n\n#### yaml\n\n- install via `hera[yaml]`\n- [pyyaml](https://pypi.org/project/pyyaml/) is required for the `yaml` output format, which is accessible via\n  `hera.workflows.workflow.to_yaml(*args, **kwargs)`. this enables gitops practices and easier debugging.\n\n## presentations\n\n- [argo workflows and events community meeting 20 oct 2021 - hera introductory presentation](https://youtu.be/qetfzfvv-gy?t=181)\n- [argo workflows and events community meeting 15 june 2022 - hera project update](https://youtu.be/sdkbdpodq-g?t=231)\n- [kubecon/argocon eu 2023 - scaling gene therapy with argo workflows and hera](https://www.youtube.com/watch?v=h2tew8kd1ds)\n- [dokc town hall #2 - unsticking ourselves from glue - migrating payit's data pipelines to argo workflows and hera](https://youtu.be/sslfviiekce?t=2088)\n- [kubecon / argocon na 2023 - how to train an llm with argo workflows and hera](https://www.youtube.com/watch?v=nryf3gkkpss&ab_channel=cncf%5bcloudnativecomputingfoundation%5d)\n    - [featured code](https://github.com/flaviuvadan/kubecon_na_23_llama2_finetune)\n- [cncf tag app-delivery @ kubecon na 2023 - automating the deployment of data workloads to kubernetes with argocd, argo workflows, and hera](https://www.youtube.com/watch?v=nzcmyrvzigy&t=12481s&ab_channel=cncftagappdelivery)\n\n## blogs\n\n- [hera introduction and motivation](https://www.dynotx.com/hera-the-missing-argo-workflows-python-sdk/)\n- [dyno is scaling gene therapy research with cloud-native tools like argo workflows and hera](https://www.dynotx.com/argo-workflows-hera/)\n\n## contributing\n\nsee the [contributing guide](./contributing.md)!\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "hera",
+  "package_url": "https://pypi.org/project/hera/",
+  "project_url": "https://pypi.org/project/hera/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/argoproj-labs/hera/issues",
+    "Documentation": "https://github.com/argoproj-labs/hera/README.md",
+    "Homepage": "https://github.com/argoproj-labs/hera",
+    "Repository": "https://github.com/argoproj-labs/hera"
+  },
+  "release_url": "https://pypi.org/project/hera/5.11.0/",
+  "requires_dist": [
+    "pydantic[email] (>=1.7,<3.0)",
+    "pyyaml (>=6.0) ; extra == \"yaml\"",
+    "requests"
+  ],
+  "requires_python": ">=3.8,<4",
+  "summary": "hera is a python framework for constructing and submitting argo workflows. the main goal of hera is to make argo workflows more accessible by abstracting away some setup that is typically necessary for constructing argo workflows.",
+  "version": "5.11.0",
+  "releases": [],
+  "developers": [
+    "flaviu.vadan@dynotx.com",
+    "flaviu_vadan"
+  ],
+  "kwds": "hera workflows workflow gitpod documentation",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_hera",
+  "homepage": "https://github.com/argoproj-labs/hera",
+  "release_count": 35,
+  "dependency_ids": [
+    "pypi_pydantic",
+    "pypi_pyyaml",
+    "pypi_requests"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon route53 construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\nto add a public hosted zone:\n\n```python\nroute53.publichostedzone(self, \"hostedzone\",\n    zone_name=\"fully.qualified.domain.com\"\n)\n```\n\nto add a private hosted zone, use `privatehostedzone`. note that\n`enablednshostnames` and `enablednssupport` must have been enabled for the\nvpc you're configuring for private hosted zones.\n\n```python\n# vpc: ec2.vpc\n\n\nzone = route53.privatehostedzone(self, \"hostedzone\",\n    zone_name=\"fully.qualified.domain.com\",\n    vpc=vpc\n)\n```\n\nadditional vpcs can be added with `zone.addvpc()`.\n\n## adding records\n\nto add a txt record to your zone:\n\n```python\n# my_zone: route53.hostedzone\n\n\nroute53.txtrecord(self, \"txtrecord\",\n    zone=my_zone,\n    record_name=\"_foo\",  # if the name ends with a \".\", it will be used as-is;\n    # if it ends with a \".\" followed by the zone name, a trailing \".\" will be added automatically;\n    # otherwise, a \".\", the zone name, and a trailing \".\" will be added automatically.\n    # defaults to zone root if not specified.\n    values=[\"bar!\", \"baz?\"],\n    ttl=duration.minutes(90)\n)\n```\n\nto add a ns record to your zone:\n\n```python\n# my_zone: route53.hostedzone\n\n\nroute53.nsrecord(self, \"nsrecord\",\n    zone=my_zone,\n    record_name=\"foo\",\n    values=[\"ns-1.awsdns.co.uk.\", \"ns-2.awsdns.com.\"\n    ],\n    ttl=duration.minutes(90)\n)\n```\n\nto add a ds record to your zone:\n\n```python\n# my_zone: route53.hostedzone\n\n\nroute53.dsrecord(self, \"dsrecord\",\n    zone=my_zone,\n    record_name=\"foo\",\n    values=[\"12345 3 1 123456789abcdef67890123456789abcdef67890\"\n    ],\n    ttl=duration.minutes(90)\n)\n```\n\nto add an a record to your zone:\n\n```python\n# my_zone: route53.hostedzone\n\n\nroute53.arecord(self, \"arecord\",\n    zone=my_zone,\n    target=route53.recordtarget.from_ip_addresses(\"1.2.3.4\", \"5.6.7.8\")\n)\n```\n\nto add an a record for an ec2 instance with an elastic ip (eip) to your zone:\n\n```python\n# instance: ec2.instance\n\n# my_zone: route53.hostedzone\n\n\nelastic_ip = ec2.cfneip(self, \"eip\",\n    domain=\"vpc\",\n    instance_id=instance.instance_id\n)\nroute53.arecord(self, \"arecord\",\n    zone=my_zone,\n    target=route53.recordtarget.from_ip_addresses(elastic_ip.ref)\n)\n```\n\nto add an aaaa record pointing to a cloudfront distribution:\n\n```python\nimport aws_cdk.aws_cloudfront as cloudfront\n\n# my_zone: route53.hostedzone\n# distribution: cloudfront.cloudfrontwebdistribution\n\nroute53.aaaarecord(self, \"alias\",\n    zone=my_zone,\n    target=route53.recordtarget.from_alias(targets.cloudfronttarget(distribution))\n)\n```\n\nconstructs are available for a, aaaa, caa, cname, mx, ns, srv and txt records.\n\nuse the `caaamazonrecord` construct to easily restrict certificate authorities\nallowed to issue certificates for a domain to amazon only.\n\nto add a ns record to a hostedzone in different account you can do the following:\n\nin the account containing the parent hosted zone:\n\n```python\nparent_zone = route53.publichostedzone(self, \"hostedzone\",\n    zone_name=\"someexample.com\",\n    cross_account_zone_delegation_principal=iam.accountprincipal(\"12345678901\"),\n    cross_account_zone_delegation_role_name=\"mydelegationrole\"\n)\n```\n\nin the account containing the child zone to be delegated:\n\n```python\nsub_zone = route53.publichostedzone(self, \"subzone\",\n    zone_name=\"sub.someexample.com\"\n)\n\n# import the delegation role by constructing the rolearn\ndelegation_role_arn = stack.of(self).format_arn(\n    region=\"\",  # iam is global in each partition\n    service=\"iam\",\n    account=\"parent-account-id\",\n    resource=\"role\",\n    resource_name=\"mydelegationrole\"\n)\ndelegation_role = iam.role.from_role_arn(self, \"delegationrole\", delegation_role_arn)\n\n# create the record\nroute53.crossaccountzonedelegationrecord(self, \"delegate\",\n    delegated_zone=sub_zone,\n    parent_hosted_zone_name=\"someexample.com\",  # or you can use parenthostedzoneid\n    delegation_role=delegation_role\n)\n```\n\n## imports\n\nif you don't know the id of the hosted zone to import, you can use the\n`hostedzone.fromlookup`:\n\n```python\nroute53.hostedzone.from_lookup(self, \"myzone\",\n    domain_name=\"example.com\"\n)\n```\n\n`hostedzone.fromlookup` requires an environment to be configured. check\nout the [documentation](https://docs.aws.amazon.com/cdk/latest/guide/environments.html) for more documentation and examples. cdk\nautomatically looks into your `~/.aws/config` file for the `[default]` profile.\nif you want to specify a different account run `cdk deploy --profile [profile]`.\n\n```text\nnew mydevstack(app, 'dev', {\n  env: {\n    account: process.env.cdk_default_account,\n    region: process.env.cdk_default_region,\n  },\n});\n```\n\nif you know the id and name of a hosted zone, you can import it directly:\n\n```python\nzone = route53.hostedzone.from_hosted_zone_attributes(self, \"myzone\",\n    zone_name=\"example.com\",\n    hosted_zone_id=\"zojjzc49e0epz\"\n)\n```\n\nalternatively, use the `hostedzone.fromhostedzoneid` to import hosted zones if\nyou know the id and the retrieval for the `zonename` is undesirable.\n\n```python\nzone = route53.hostedzone.from_hosted_zone_id(self, \"myzone\", \"zojjzc49e0epz\")\n```\n\nyou can import a public hosted zone as well with the similar `pubichostedzone.frompublichostedzoneid` and `pubichostedzone.frompublichostedzoneattributes` methods:\n\n```python\nzone_from_attributes = route53.publichostedzone.from_public_hosted_zone_attributes(self, \"myzone\",\n    zone_name=\"example.com\",\n    hosted_zone_id=\"zojjzc49e0epz\"\n)\n\n# does not know zonename\nzone_from_id = route53.publichostedzone.from_public_hosted_zone_id(self, \"myzone\", \"zojjzc49e0epz\")\n```\n\n## vpc endpoint service private dns\n\nwhen you create a vpc endpoint service, aws generates endpoint-specific dns hostnames that consumers use to communicate with the service.\nfor example, vpce-1234-abcdev-us-east-1.vpce-svc-123345.us-east-1.vpce.amazonaws.com.\nby default, your consumers access the service with that dns name.\nthis can cause problems with https traffic because the dns will not match the backend certificate:\n\n```console\ncurl: (60) ssl: no alternative certificate subject name matches target host name 'vpce-abcdefghijklmnopq-rstuvwx.vpce-svc-abcdefghijklmnopq.us-east-1.vpce.amazonaws.com'\n```\n\neffectively, the endpoint appears untrustworthy. to mitigate this, clients have to create an alias for this dns name in route53.\n\nprivate dns for an endpoint service lets you configure a private dns name so consumers can\naccess the service using an existing dns name without creating this route53 dns alias\nthis dns name can also be guaranteed to match up with the backend certificate.\n\nbefore consumers can use the private dns name, you must verify that you have control of the domain/subdomain.\n\nassuming your account has ownership of the particular domain/subdomain,\nthis construct sets up the private dns configuration on the endpoint service,\ncreates all the necessary route53 entries, and verifies domain ownership.\n\n```python\nfrom aws_cdk.core import stack\nfrom aws_cdk.aws_ec2 import vpc, vpcendpointservice\nfrom aws_cdk.aws_elasticloadbalancingv2 import networkloadbalancer\nfrom aws_cdk.aws_route53 import publichostedzone, vpcendpointservicedomainname\n\nstack = stack()\nvpc = vpc(stack, \"vpc\")\nnlb = networkloadbalancer(stack, \"nlb\",\n    vpc=vpc\n)\nvpces = vpcendpointservice(stack, \"vpces\",\n    vpc_endpoint_service_load_balancers=[nlb]\n)\n# you must use a public hosted zone so domain ownership can be verified\nzone = publichostedzone(stack, \"phz\",\n    zone_name=\"aws-cdk.dev\"\n)\nvpcendpointservicedomainname(stack, \"endpointdomain\",\n    endpoint_service=vpces,\n    domain_name=\"my-stuff.aws-cdk.dev\",\n    public_hosted_zone=zone\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-route53",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-route53/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-route53/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-route53/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-ec2 (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-logs (==1.204.0)",
+    "aws-cdk.cloud-assembly-schema (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "aws-cdk.custom-resources (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::route53",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk aws_route53 aws_cloudfront awsdns aws_ec2",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_route53",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_ec2",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_logs",
+    "pypi_aws_cdk.cloud_assembly_schema",
+    "pypi_aws_cdk.core",
+    "pypi_aws_cdk.custom_resources",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

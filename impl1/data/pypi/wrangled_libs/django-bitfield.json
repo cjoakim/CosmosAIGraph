@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "framework :: django",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development"
+  ],
+  "description": "django-bitfield\n---------------\n\n.. image:: https://github.com/disqus/django-bitfield/actions/workflows/ci.yml/badge.svg\n    :target: https://github.com/disqus/django-bitfield/actions\n\nprovides a bitfield like class (using a bigintegerfield) for your django models.\n\nrequirements\n============\n\n* django >= 1.11 (a newer version with current security support is\n  highly recommended).\n* postgresql (see notes)\n\n**notes:**\n\n- sqlite does not support save operations using a ``bit`` (per the example under usage).\n- mysql fails on most queries related to bitfield's.\n\ninstallation\n============\n\ninstall it with pip (or easy_install)::\n\n\tpip install django-bitfield\n\nusage\n=====\n\nfirst you'll need to attach a bitfield to your class. this acts as a bigintegerfield (bigint) in your database::\n\n\tfrom bitfield import bitfield\n\n\tclass mymodel(models.model):\n\t    flags = bitfield(flags=(\n\t        'awesome_flag',\n\t        'flaggy_foo',\n\t        'baz_bar',\n\t    ))\n\nflags can also be defined with labels::\n\n\tclass mymodel(models.model):\n\t    flags = bitfield(flags=(\n\t        ('awesome_flag', 'awesome flag!'),\n\t        ('flaggy_foo', 'flaggy foo'),\n\t        ('baz_bar', 'baz (bar)'),\n\t    ))\n\nnow you can use the field using very familiar django operations::\n\n\t# create the model\n\to = mymodel.objects.create(flags=0)\n\n\t# add awesome_flag (does not work in sqlite)\n\tmymodel.objects.filter(pk=o.pk).update(flags=f('flags').bitor(mymodel.flags.awesome_flag))\n\n\t# set flags manually to [awesome_flag, flaggy_foo]\n\tmymodel.objects.filter(pk=o.pk).update(flags=mymodel.flags.awesome_flag | mymodel.flags.flaggy_foo)\n\n\t# remove awesome_flag (does not work in sqlite)\n\tmymodel.objects.filter(pk=o.pk).update(flags=f('flags').bitand(~mymodel.flags.awesome_flag))\n\n\t# find by awesome_flag\n\tmymodel.objects.filter(flags=mymodel.flags.awesome_flag)\n\n\t# exclude by awesome_flag\n\tmymodel.objects.filter(flags=~mymodel.flags.awesome_flag)\n\n\t# test awesome_flag\n\tif o.flags.awesome_flag:\n\t    print \"happy times!\"\n\n\t# list all flags on the field\n\tfor f in o.flags:\n\t    print f\n\n\t# get a flag label\n\tprint o.flags.get_label('awesome_flag')\n\nenjoy!\n\nadmin\n=====\n\nto use the widget in the admin, you'll need to import the classes and then update or create\na modeladmin with these formfield_overrides lines in your admin.py::\n\n    from bitfield import bitfield\n    from bitfield.forms import bitfieldcheckboxselectmultiple\n\n    class mymodeladmin(admin.modeladmin):\n\tformfield_overrides = {\n\t\tbitfield: {'widget': bitfieldcheckboxselectmultiple},\n\t}\n\t\n    admin.site.register(mymodel, mymodeladmin)\n\n\nthere is also a ``bitfieldlistfilter`` list filter (django 1.4 or newer).\nto use it set ``list_filter`` modeladmin option::\n\n    list_filter = (\n            ('flags', bitfieldlistfilter,)\n            )\n\nbitfieldlistfilter is in ``bitfield.admin`` module::\n\n    from bitfield.admin import bitfieldlistfilter\n\nchangelog\n=========\n\n2.2.0 - 2022-07-11:\n\n- add support for django 4.0.\n- drop support for django versions older than 1.11.29.\n- drop support for python 2.7.\n\n2.1.0 - 2021-05-25:\n\n- add support for django 3.1, 3.2 (no changes needed).\n- add support for python 3.8, 3.9.\n- fixed multiple bugs with use in the django admin.\n- removed dead compatibility code.\n\n2.0.1 - 2020-01-25:\n\n- add support for django 3.0.\n\n2.0.0 - 2020-01-24:\n\n- drop support for django versions below 1.10.\n- use _meta.private_fields instead of deprecated _meta.virtual_fields in compositebitfield.\n- add testing with python 3.6, 3.7 and django 2.x to travis configuration.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "django-bitfield",
+  "package_url": "https://pypi.org/project/django-bitfield/",
+  "project_url": "https://pypi.org/project/django-bitfield/",
+  "project_urls": {
+    "Homepage": "https://github.com/disqus/django-bitfield"
+  },
+  "release_url": "https://pypi.org/project/django-bitfield/2.2.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "bitfield in django",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "disqus",
+    "opensource@disqus.com"
+  ],
+  "kwds": "bitfield django bigintegerfield compositebitfield bitfieldlistfilter",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_django_bitfield",
+  "homepage": "https://github.com/disqus/django-bitfield",
+  "release_count": 30,
+  "dependency_ids": []
+}

@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3"
+  ],
+  "description": "# spyrmsd\n\n[![pytest](https://github.com/rmeli/spyrmsd/actions/workflows/pytest.yml/badge.svg?branch=develop)](https://github.com/rmeli/spyrmsd/actions/workflows/pytest.yml)\n![flake8](https://github.com/rmeli/spyrmsd/workflows/flake8/badge.svg)\n![mypy](https://github.com/rmeli/spyrmsd/workflows/mypy/badge.svg)\n[![codecov](https://codecov.io/gh/rmeli/spyrmsd/branch/develop/graph/badge.svg)](https://codecov.io/gh/rmeli/spyrmsd/branch/master)\n\n[![docs](https://img.shields.io/badge/docs-spyrmsd.readthedocs.io-blueviolet)](https://spyrmsd.readthedocs.io)\n[![documentation status](https://readthedocs.org/projects/spyrmsd/badge/?version=develop)](https://spyrmsd.readthedocs.io/en/develop/?badge=develop)\n\n[![license](https://img.shields.io/github/license/rmeli/pyrmsd?color=%2333bbff)](https://opensource.org/licenses/mit)\n[![pypi](https://img.shields.io/badge/pypi-v0.6.0%20-ff69b4)](https://pypi.org/project/spyrmsd/)\n[![conda version](https://img.shields.io/conda/vn/conda-forge/spyrmsd.svg)](https://anaconda.org/conda-forge/spyrmsd)\n\n[![j. cheminform.](https://img.shields.io/badge/j.%20cheminform.-10.1186%2fs13321--020--00455--2-blue)](https://doi.org/10.1186/s13321-020-00455-2)\n[![zenodo](https://zenodo.org/badge/214157073.svg)](https://zenodo.org/badge/latestdoi/214157073)\n\npython tool for symmetry-corrected rmsd calculations.\n\n---\n\nif you find `spyrmsd` useful, please consider citing the following paper:\n\n```text\n@article{spyrmsd2020,\n  author = {meli, rocco and biggin, philip c.},\n  journal = {journal of cheminformatics},\n  number = {1},\n  pages = {49},\n  title = {spyrmsd: symmetry-corrected rmsd calculations in python},\n  volume = {12},\n  year = {2020}\n}\n```\n\n## installation\n\n`spyrmsd` is available on [pypi](https://pypi.org/project/spyrmsd/) and [conda-forge](https://github.com/conda-forge/spyrmsd-feedstock) and can be easily installed from source. see [dependencies](###dependencies) for a description of all the dependencies.\n\n> [!note]\n> `spyrmsd` will install [networkx](https://networkx.github.io/) (multi-platform). you can install [graph-tool](https://graph-tool.skewed.de/) on macos and linux for higher performance.\n\n> [!warning]\n> if `spyrmsd` is used as a standalone tool, it is required to install either [rdkit](https://rdkit.org/) or [open babel](http://openbabel.org/). neither is automatically installed with `pip` nor `conda`.\n\n### pypi\n\n```bash\npip install spyrmsd\n```\n\n### conda\n\n```bash\nconda install spyrmsd -c conda-forge\n```\n\n### github\n\n```bash\ngit clone https://github.com/rmeli/spyrmsd.git\ncd spyrmsd\npip install .\n```\n\n### dependencies\n\n`spyrmsd` can be used both as a module or as a standalone tool.\n\n#### module\n\nthe following packages are required to use `spyrmsd` as a module:\n\n* [graph-tool](https://graph-tool.skewed.de/) or [networkx](https://networkx.github.io/)\n* [numpy](https://numpy.org/)\n* [scipy](https://www.scipy.org/)\n\n> [!note]\n> `spyrmsd` uses [graph-tool](https://graph-tool.skewed.de/) by default but will fall back to [networkx](https://networkx.github.io/) if the former is not installed (e.g. on windows). however, in order to support cross-platform installation [networkx](https://networkx.github.io/) is installed by default, and [graph-tool](https://graph-tool.skewed.de/) needs to be installed manually.\n\n#### standalone tool\n\nadditionally, one of the following packages is required to use `spyrmsd` as a standalone tool:\n\n* [open babel](http://openbabel.org/)\n* [rdkit](https://rdkit.org/)\n\n## usage\n\n### standalone tool\n\n```bash\npython -m spyrmsd -h\n```\n\n```text\nusage: python -m spyrmsd [-h] [-m] [-c] [--hydrogens] [-n] reference molecules [molecules ...]\n\nsymmetry-corrected rmsd calculations in python.\n\npositional arguments:\n  reference       reference file\n  molecules       input file(s)\n\noptional arguments:\n  -h, --help      show this help message and exit\n  -m, --minimize  minimize (fit)\n  -c, --center    center molecules at origin\n  --hydrogens     keep hydrogen atoms\n  -n, --nosymm    no graph isomorphism\n```\n\n### module\n\n```python\nfrom spyrmsd import rmsd\n```\n\n#### rmsd\n\nthe function  `rmsd.rmsd` computes rmsd without symmetry correction. the atoms are expected to be in the same order for both molecules being compared (no atom matching is performed).\n\n```python\ndef rmsd(\n    coords1: np.ndarray,    # coordinates of molecule 1\n    coords2: np.ndarray,    # coordinates of molecule 2\n    aprops1: np.ndarray,    # atomic properties of molecule 1\n    aprops2: np.ndarray,    # atomic properties of molecule 2\n    center: bool = false,   # flag to center molecules at origin\n    minimize: bool = false, # flag to compute minimum rmsd\n    atol: float = 1e-9,     # numerical tolerance for qcp method\n)\n```\n\n> [!note]\n> atomic properties (`aprops`) can be any python object when using [networkx](https://networkx.github.io/), or integers, floats, or strings when using [graph-tool](https://graph-tool.skewed.de/).\n\n#### symmetry-corrected rmsd\n\nthe function `rmsd.symmrmsd` computes symmetry-corrected rmsd using molecular graph isomorphisms. symmetry correction requires molecular adjacency matrices describing the connectivity but needs not the atoms to be in the same order.\n\natom matching is performed according to the molecular graph. this function should also be used when atoms in the molecules being compared are not in the same order (even if there is not symmetry to be accounted for).\n\n```python\ndef symmrmsd(\n    coordsref: np.ndarray,                       # reference coordinated\n    coords: union[np.ndarray, list[np.ndarray]], # coordinates (one set or multiple sets)\n    apropsref: np.ndarray,                       # reference atomic properties\n    aprops: np.ndarray,                          # atomic properties\n    amref: np.ndarray,                           # reference adjacency matrix\n    am: np.ndarray,                              # adjacency matrix\n    center: bool = false,                        # flag to center molecules at origin\n    minimize: bool = false,                      # flag to compute minimum rmsd\n    cache: bool = true,                          # cache graph isomorphisms\n    atol: float = 1e-9,                          # numerical tolerance for qcp method\n)\n```\n\n> [!note]\n> atomic properties (`aprops`) can be any python object when using [networkx](https://networkx.github.io/), or integers, floats, or strings when using [graph-tool](https://graph-tool.skewed.de/).\n\n## development\n\nto ensure code quality and consistency the following tools are used during development:\n\n* [black](https://black.readthedocs.io/en/stable/)\n* [flake 8](http://flake8.pycqa.org/en/latest/) (ci)\n* [isort]()\n* [mypy](http://mypy-lang.org/) (ci)\n\npre-commit `git` hooks can be installed with [pre-commit](https://pre-commit.com/).\n\n## copyright\n\ncopyright (c) 2019-2021, rocco meli.\n\n## references\n\nreferences are tracked with [duecredit](https://github.com/duecredit/duecredit/). run the `credits.sh` script in order to print up-to-date references.\n\n### acknowledgements\n\nproject based on the [computational molecular science python cookiecutter](https://github.com/molssi/cookiecutter-cms) version `1.1`.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "spyrmsd",
+  "package_url": "https://pypi.org/project/spyrmsd/",
+  "project_url": "https://pypi.org/project/spyrmsd/",
+  "project_urls": {
+    "Homepage": "https://spyrmsd.readthedocs.io"
+  },
+  "release_url": "https://pypi.org/project/spyrmsd/0.6.0/",
+  "requires_dist": [
+    "numpy",
+    "scipy",
+    "networkx>=2"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "python rmsd tool with symmetry correction.",
+  "version": "0.6.0",
+  "releases": [],
+  "developers": [
+    "rocco.meli@cscs.ch",
+    "rocco_meli"
+  ],
+  "kwds": "pytest badge spyrmsd2020 spyrmsd pyrmsd",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_spyrmsd",
+  "homepage": "https://spyrmsd.readthedocs.io",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_networkx",
+    "pypi_numpy",
+    "pypi_scipy"
+  ]
+}

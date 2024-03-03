@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "license :: other/proprietary license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "pykube-ng\n=========\n\n.. image:: https://img.shields.io/travis/hjacobs/pykube.svg\n   :target: https://travis-ci.org/hjacobs/pykube\n   :alt: build status\n\n.. image:: https://coveralls.io/repos/github/hjacobs/pykube/badge.svg?branch=master;_=1\n   :target: https://coveralls.io/github/hjacobs/pykube?branch=master\n   :alt: code coverage\n\n.. image:: https://readthedocs.org/projects/pykube/badge/?version=latest\n   :target: https://pykube.readthedocs.io/\n   :alt: documentation\n\n.. image:: https://img.shields.io/pypi/v/pykube-ng.svg\n   :target: https://pypi.python.org/pypi/pykube-ng/\n   :alt: pypi version\n\n.. image:: https://img.shields.io/pypi/pyversions/pykube-ng.svg\n   :target: https://pypi.python.org/pypi/pykube-ng/\n   :alt: python versions\n\n.. image:: https://img.shields.io/badge/license-apache-blue.svg\n   :target: https://pypi.python.org/pypi/pykube-ng/\n   :alt: apache license\n\n.. image:: https://img.shields.io/badge/calver-yy.mm.micro-22bfda.svg\n   :target: http://calver.org/\n   :alt: calver\n\npykube (pykube-ng) is a lightweight python 3.6+ client library for kubernetes.\n\nthis is a fork of `kelproject/pykube <https://github.com/kelproject/pykube>`_ which is no longer maintained (archived). here the original text of the pykube readme:\n\n    kel is an open source platform as a service (paas) from eldarion, inc. that\n    makes it easy to manage web application deployment and hosting through the\n    entire lifecycle from development through testing to production. it adds\n    components and tools on top of kubernetes that help developers manage their\n    application infrastructure. kel builds on eldarion's 7+ years experience running\n    one of the leading python and django paases.\n    for more information about kel, see `kelproject.com`_ or follow us on twitter\n    `@projectkel`_.\n\n.. _kelproject.com: http://kelproject.com/\n.. _@projectkel: https://twitter.com/projectkel\n\nfeatures\n--------\n\n* http interface using requests using kubeconfig for authentication\n* python native querying of kubernetes api objects\n\ninstallation\n------------\n\nto install pykube, use pip::\n\n    pip install pykube-ng\n\n\ninteractive console\n-------------------\n\nthe ``pykube`` library module can be run as an interactive console locally for quick exploration.\nit will automatically load ``~/.kube/config`` to provide the ``api`` object, and it loads pykube classes (``deployment``, ``pod``, ..) into local context:\n\n.. code-block:: bash\n\n    python3 -m pykube\n    >>> [d.name for d in deployment.objects(api)]\n\n\nusage\n-----\n\nquery for all ready pods in a custom namespace:\n\n.. code:: python\n\n    import operator\n    import pykube\n\n    api = pykube.httpclient(pykube.kubeconfig.from_file())\n    pods = pykube.pod.objects(api).filter(namespace=\"gondor-system\")\n    ready_pods = filter(operator.attrgetter(\"ready\"), pods)\n\naccess any attribute of the kubernetes object:\n\n.. code:: python\n\n    pod = pykube.pod.objects(api).filter(namespace=\"gondor-system\").get(name=\"my-pod\")\n    pod.obj[\"spec\"][\"containers\"][0][\"image\"]\n\nselector query:\n\n.. code:: python\n\n    pods = pykube.pod.objects(api).filter(\n        namespace=\"gondor-system\",\n        selector={\"gondor.io/name__in\": {\"api-web\", \"api-worker\"}},\n    )\n    pending_pods = pykube.objects.pod.objects(api).filter(\n        field_selector={\"status.phase\": \"pending\"}\n    )\n\nwatch query:\n\n.. code:: python\n\n    watch = pykube.job.objects(api, namespace=\"gondor-system\")\n    watch = watch.filter(field_selector={\"metadata.name\": \"my-job\"}).watch()\n\n    # watch is a generator:\n    for watch_event in watch:\n        print(watch_event.type) # 'added', 'deleted', 'modified'\n        print(watch_event.object) # pykube.job object\n\ncreate a deployment:\n\n.. code:: python\n\n    obj = {\n        \"apiversion\": \"apps/v1\",\n        \"kind\": \"deployment\",\n        \"metadata\": {\n            \"name\": \"my-deploy\",\n            \"namespace\": \"gondor-system\"\n        },\n        \"spec\": {\n            \"replicas\": 3,\n            \"selector\": {\n                \"matchlabels\": {\n                    \"app\": \"nginx\"\n                }\n            },\n            \"template\": {\n                \"metadata\": {\n                    \"labels\": {\n                        \"app\": \"nginx\"\n                    }\n                },\n                \"spec\": {\n                    \"containers\": [\n                        {\n                            \"name\": \"nginx\",\n                            \"image\": \"nginx\",\n                            \"ports\": [\n                                {\"containerport\": 80}\n                            ]\n                        }\n                    ]\n                }\n            }\n        }\n    }\n    pykube.deployment(api, obj).create()\n\ndelete a deployment:\n\n.. code:: python\n\n    obj = {\n        \"apiversion\": \"apps/v1\",\n        \"kind\": \"deployment\",\n        \"metadata\": {\n            \"name\": \"my-deploy\",\n            \"namespace\": \"gondor-system\"\n        }\n    }\n    pykube.deployment(api, obj).delete()\n\ncheck server version:\n\n.. code:: python\n\n    api = pykube.httpclient(pykube.kubeconfig.from_file())\n    api.version\n\n\nrequirements\n------------\n\n* python 3.6+\n* requests (included in ``install_requires``)\n* pyyaml (included in ``install_requires``)\n\n\nlocal development\n-----------------\n\nyou can run pykube against your current kubeconfig context, e.g. local minikube_:\n\n.. code-block:: bash\n\n    poetry install\n    poetry run python3\n    >>> import pykube\n    >>> config = pykube.kubeconfig.from_file()\n    >>> api = pykube.httpclient(config)\n    >>> list(pykube.deployment.objects(api))\n\nto run pep8 (flake8) checks and unit tests including coverage report:\n\n.. code-block:: bash\n\n    make test\n\n\nlicense\n-------\n\nthe code in this project is licensed under the apache license, version 2.0\n(included in this repository under license).\n\n\ncontributing\n------------\n\neasiest way to contribute is to provide feedback! we would love to hear what you like and what you think is missing.\ncreate an issue or `ping try_except_ on twitter`_.\n\nprs are welcome. please also have a look at `issues labeled with \"help wanted\"`_.\n\n\ncode of conduct\n----------------\n\nin order to foster a kind, inclusive, and harassment-free community, this project follows the `contributor covenant code of conduct`_.\n\n.. _contributor covenant code of conduct: http://contributor-covenant.org/version/1/4/\n\n\n.. _ping try_except_ on twitter: https://twitter.com/try_except_\n.. _issues labeled with \"help wanted\": https://codeberg.org/hjacobs/pykube-ng/issues?q=is%3aissue+is%3aopen+label%3a%22help+wanted%22\n.. _minikube: https://github.com/kubernetes/minikube\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache",
+  "name": "pykube-ng",
+  "package_url": "https://pypi.org/project/pykube-ng/",
+  "project_url": "https://pypi.org/project/pykube-ng/",
+  "project_urls": {
+    "Homepage": "https://codeberg.org/hjacobs/pykube-ng"
+  },
+  "release_url": "https://pypi.org/project/pykube-ng/23.6.0/",
+  "requires_dist": [
+    "urllib3 (>=1.26.9)",
+    "requests-oauthlib (>=1.3.0,<2.0.0); extra == \"oidc\"",
+    "google-auth; extra == \"gcp\"",
+    "jsonpath-ng; extra == \"gcp\"",
+    "pyyaml",
+    "requests (>=2.12)"
+  ],
+  "requires_python": ">=3.8,<4",
+  "summary": "python client library for kubernetes",
+  "version": "23.6.0",
+  "releases": [],
+  "developers": [
+    "development@eldarion.com",
+    "eldarion"
+  ],
+  "kwds": "pykube pyyaml pyversions pypi svg",
+  "license_kwds": "apache",
+  "libtype": "pypi",
+  "id": "pypi_pykube_ng",
+  "homepage": "https://codeberg.org/hjacobs/pykube-ng",
+  "release_count": 36,
+  "dependency_ids": [
+    "pypi_google_auth",
+    "pypi_jsonpath_ng",
+    "pypi_pyyaml",
+    "pypi_requests",
+    "pypi_requests_oauthlib",
+    "pypi_urllib3"
+  ]
+}

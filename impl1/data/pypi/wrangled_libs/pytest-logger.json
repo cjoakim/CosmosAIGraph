@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: testing"
+  ],
+  "description": ".. image:: https://img.shields.io/pypi/v/pytest-logger.svg\n    :target: https://pypi.python.org/pypi/pytest-logger\n    :alt: pypi package version\n.. image:: https://img.shields.io/pypi/pyversions/pytest-logger.svg\n    :target: https://pypi.python.org/pypi/pytest-logger\n    :alt: supported python versions\n.. image:: https://readthedocs.org/projects/pytest-logger/badge\n    :target: http://pytest-logger.readthedocs.io/en/latest\n    :alt: documentation status\n.. image:: https://coveralls.io/repos/github/aurzenligl/pytest-logger/badge.svg?branch=master\n    :target: https://coveralls.io/github/aurzenligl/pytest-logger?branch=master\n    :alt: coverage status\n.. image:: https://travis-ci.org/aurzenligl/pytest-logger.svg?branch=master\n    :target: https://travis-ci.org/aurzenligl/pytest-logger\n    :alt: travis-ci build status\n.. image:: https://ci.appveyor.com/api/projects/status/1h4cy8tk220pn03o?svg=true\n    :target: https://ci.appveyor.com/project/aurzenligl/pytest-logger\n    :alt: appveyor-ci build status\n\npytest-logger is a pytest plugin configuring handlers for loggers from python logging module.\n\nyou can install pytest-logger via ``pip`` from ``pypi``::\n\n    $ [sudo] pip install pytest-logger\n\nplugin puts logs on per-logger basis to:\n\n- standard output,\n- files within log-specific directory under pytest's ``tmpdir_factory`` session directory.\n\nyou can setup plugin using hook::\n\n    #conftest.py\n    import os\n\n    def pytest_logger_config(logger_config):\n        logger_config.add_loggers(['foo', 'bar', 'baz'], stdout_level='info')\n        logger_config.set_log_option_default('foo,bar')\n\n    def pytest_logger_logdirlink(config):\n        return os.path.join(os.path.dirname(__file__), 'mylogs')\n\nhave logging tests or libraries (including fixtures)::\n\n    #test_something.py\n    import pytest\n    import logging\n\n    foo = logging.getlogger('foo')\n    bar = logging.getlogger('bar')\n    baz = logging.getlogger('baz')\n\n    @pytest.yield_fixture(scope='session')\n    def session_thing():\n        foo.debug('constructing session thing')\n        yield\n        foo.debug('destroying session thing')\n\n    @pytest.yield_fixture\n    def testcase_thing():\n        foo.debug('constructing testcase thing')\n        yield\n        foo.debug('destroying testcase thing')\n\n    def test_one(session_thing, testcase_thing):\n        foo.info('one executes')\n        bar.warning('this test does nothing aside from logging')\n        baz.info('extra log, rarely read')\n\n    def test_two(session_thing, testcase_thing):\n        foo.info('two executes')\n        bar.warning('neither does this')\n        baz.info('extra log, not enabled by default')\n\nand expect output in terminal (if not captured)::\n\n    $ py.test -s -v\n    (...)\n    test_something.py::test_one\n    00:00.002 inf foo: one executes\n    00:00.002 wrn bar: this test does nothing aside from logging\n    passed\n\n    test_something.py::test_two\n    00:00.000 inf foo: two executes\n    00:00.000 wrn bar: neither does this\n    passed\n\nbeing able to change this output by cmdline option::\n\n    $ pytest -s -v --log foo.debug,baz\n    (...)\n    test_something.py::test_one\n    00:00.002 dbg foo: constructing session thing\n    00:00.002 dbg foo: constructing testcase thing\n    00:00.002 inf foo: one executes\n    00:00.003 inf baz: extra log, rarely read\n    passed\n\n    test_something.py::test_two\n    00:00.000 dbg foo: constructing testcase thing\n    00:00.000 inf foo: two executes\n    00:00.001 inf baz: extra log, not enabled by default\n    passed\n\nand - the same - in filesystem::\n\n    $ file mylogs\n    mylogs: symbolic link to `/tmp/pytest-of-aurzenligl/pytest-48/logs'\n\n    $ tree mylogs\n    mylogs\n    `-- test_something.py\n        |-- test_one\n        |   |-- bar\n        |   |-- baz\n        |   `-- foo\n        `-- test_two\n            |-- bar\n            |-- baz\n            `-- foo\n\ndistributed under the terms of the ``mit`` license, pytest-logger is free and open source software.\n\n\n",
+  "docs_url": null,
+  "keywords": "py.test pytest logging",
+  "license": "mit",
+  "name": "pytest-logger",
+  "package_url": "https://pypi.org/project/pytest-logger/",
+  "project_url": "https://pypi.org/project/pytest-logger/",
+  "project_urls": {
+    "Homepage": "https://github.com/aurzenligl/pytest-logger"
+  },
+  "release_url": "https://pypi.org/project/pytest-logger/0.5.1/",
+  "requires_dist": [
+    "future",
+    "pytest (>=3.2)"
+  ],
+  "requires_python": "",
+  "summary": "plugin configuring handlers for loggers from python logging module.",
+  "version": "0.5.1",
+  "releases": [],
+  "developers": [
+    "aurzenligl@gmail.com",
+    "krzysztof_laskowski"
+  ],
+  "kwds": "pytest_logger_logdirlink pytest_logger_config pytest add_loggers pyversions",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_logger",
+  "homepage": "https://github.com/aurzenligl/pytest-logger",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_future",
+    "pypi_pytest"
+  ]
+}

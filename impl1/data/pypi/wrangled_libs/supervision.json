@@ -1,0 +1,73 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: scientific/engineering :: image recognition",
+    "topic :: software development",
+    "typing :: typed"
+  ],
+  "description": "<div align=\"center\">\n  <p>\n    <a align=\"center\" href=\"\" target=\"_blank\">\n      <img\n        width=\"100%\"\n        src=\"https://media.roboflow.com/open-source/supervision/rf-supervision-banner.png?updatedat=1678995927529\"\n      >\n    </a>\n  </p>\n\n  <br>\n\n  [notebooks](https://github.com/roboflow/notebooks) | [inference](https://github.com/roboflow/inference) | [autodistill](https://github.com/autodistill/autodistill) | [collect](https://github.com/roboflow/roboflow-collect)\n\n  <br>\n\n  [![version](https://badge.fury.io/py/supervision.svg)](https://badge.fury.io/py/supervision)\n  [![downloads](https://img.shields.io/pypi/dm/supervision)](https://pypistats.org/packages/supervision)\n  [![license](https://img.shields.io/pypi/l/supervision)](https://github.com/roboflow/supervision/blob/main/license.md)\n  [![python-version](https://img.shields.io/pypi/pyversions/supervision)](https://badge.fury.io/py/supervision)\n  [![colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/roboflow/supervision/blob/main/demo.ipynb)\n  [![gradio](https://img.shields.io/badge/%f0%9f%a4%97%20hugging%20face-spaces-blue)](https://huggingface.co/spaces/roboflow/annotators)\n  [![discord](https://img.shields.io/discord/1159501506232451173)](https://discord.gg/gbfgxgj8bk)\n\n</div>\n\n## \ud83d\udc4b hello\n\n**we write your reusable computer vision tools.** whether you need to load your dataset from your hard drive, draw detections on an image or video, or count how many detections are in a zone. you can count on us! \ud83e\udd1d\n\n## \ud83d\udcbb install\n\npip install the supervision package in a\n[**python>=3.8**](https://www.python.org/) environment.\n\n```bash\npip install supervision\n```\n\nread more about desktop, headless, and local installation in our [guide](https://roboflow.github.io/supervision/).\n\n## \ud83d\udd25 quickstart\n\n### models\n\nsupervision was designed to be model agnostic. just plug in any classification, detection, or segmentation model. for your convenience, we have created [connectors](https://supervision.roboflow.com/detection/core/#detections) for the most popular libraries like ultralytics, transformers, or mmdetection.\n\n```python\n>>> import cv2\n>>> import supervision as sv\n>>> from ultralytics import yolo\n\n>>> image = cv2.imread(...)\n>>> model = yolo('yolov8s.pt')\n>>> result = model(image)[0]\n>>> detections = sv.detections.from_ultralytics(result)\n\n>>> len(detections)\n5\n```\n\n### annotators\n\nsupervision offers a wide range of highly customizable [annotators](https://supervision.roboflow.com/annotators/), allowing you to compose the perfect visualization for your use case.\n\n```python\n>>> import cv2\n>>> import supervision as sv\n\n>>> image = cv2.imread(...)\n>>> detections = sv.detections(...)\n\n>>> bounding_box_annotator = sv.boundingboxannotator()\n>>> annotated_frame = bounding_box_annotator.annotate(\n...     scene=image.copy(),\n...     detections=detections\n... )\n```\n\nhttps://github.com/roboflow/supervision/assets/26109316/691e219c-0565-4403-9218-ab5644f39bce\n\n### datasets\n\nsupervision provides a set of [utils](https://supervision.roboflow.com/datasets/) that allow you to load, split, merge, and save datasets in one of the supported formats.\n\n```python\n>>> import supervision as sv\n\n>>> dataset = sv.detectiondataset.from_yolo(\n...     images_directory_path=...,\n...     annotations_directory_path=...,\n...     data_yaml_path=...\n... )\n\n>>> dataset.classes\n['dog', 'person']\n\n>>> len(dataset)\n1000\n```\n\n<details close>\n<summary>\ud83d\udc49 more dataset utils</summary>\n\n- load\n\n    ```python\n    >>> dataset = sv.detectiondataset.from_yolo(\n    ...     images_directory_path=...,\n    ...     annotations_directory_path=...,\n    ...     data_yaml_path=...\n    ... )\n\n    >>> dataset = sv.detectiondataset.from_pascal_voc(\n    ...     images_directory_path=...,\n    ...     annotations_directory_path=...\n    ... )\n\n    >>> dataset = sv.detectiondataset.from_coco(\n    ...     images_directory_path=...,\n    ...     annotations_path=...\n    ... )\n    ```\n\n- split\n\n    ```python\n    >>> train_dataset, test_dataset = dataset.split(split_ratio=0.7)\n    >>> test_dataset, valid_dataset = test_dataset.split(split_ratio=0.5)\n\n    >>> len(train_dataset), len(test_dataset), len(valid_dataset)\n    (700, 150, 150)\n    ```\n\n- merge\n\n    ```python\n    >>> ds_1 = sv.detectiondataset(...)\n    >>> len(ds_1)\n    100\n    >>> ds_1.classes\n    ['dog', 'person']\n\n    >>> ds_2 = sv.detectiondataset(...)\n    >>> len(ds_2)\n    200\n    >>> ds_2.classes\n    ['cat']\n\n    >>> ds_merged = sv.detectiondataset.merge([ds_1, ds_2])\n    >>> len(ds_merged)\n    300\n    >>> ds_merged.classes\n    ['cat', 'dog', 'person']\n    ```\n\n- save\n\n    ```python\n    >>> dataset.as_yolo(\n    ...     images_directory_path=...,\n    ...     annotations_directory_path=...,\n    ...     data_yaml_path=...\n    ... )\n\n    >>> dataset.as_pascal_voc(\n    ...     images_directory_path=...,\n    ...     annotations_directory_path=...\n    ... )\n\n    >>> dataset.as_coco(\n    ...     images_directory_path=...,\n    ...     annotations_path=...\n    ... )\n    ```\n\n- convert\n\n    ```python\n    >>> sv.detectiondataset.from_yolo(\n    ...     images_directory_path=...,\n    ...     annotations_directory_path=...,\n    ...     data_yaml_path=...\n    ... ).as_pascal_voc(\n    ...     images_directory_path=...,\n    ...     annotations_directory_path=...\n    ... )\n    ```\n\n</details>\n\n## \ud83c\udfac tutorials\n\n<p align=\"left\">\n<a href=\"https://youtu.be/4q3ut7vqd5o\" title=\"traffic analysis with yolov8 and bytetrack - vehicle detection and tracking\"><img src=\"https://github.com/roboflow/supervision/assets/26109316/54afdf1c-218c-4451-8f12-627fb85f1682\" alt=\"traffic analysis with yolov8 and bytetrack - vehicle detection and tracking\" width=\"300px\" align=\"left\" /></a>\n<a href=\"https://youtu.be/4q3ut7vqd5o\" title=\"traffic analysis with yolov8 and bytetrack - vehicle detection and tracking\"><strong>traffic analysis with yolov8 and bytetrack - vehicle detection and tracking</strong></a>\n<div><strong>created: 6 sep 2023</strong> | <strong>updated: 6 sep 2023</strong></div>\n<br/> in this video, we explore real-time traffic analysis using yolov8 and bytetrack to detect and track vehicles on aerial images. harnessing the power of python and supervision, we delve deep into assigning cars to specific entry zones and understanding their direction of movement. by visualizing their paths, we gain insights into traffic flow across bustling roundabouts... </p>\n\n<br/>\n\n<p align=\"left\">\n<a href=\"https://youtu.be/d-d6zmadzpe\" title=\"sam - segment anything model by meta ai: complete guide\"><img src=\"https://github.com/skalskip/skalskip/assets/26109316/6913ff11-53c6-4341-8d90-eaff3023c3fd\" alt=\"sam - segment anything model by meta ai: complete guide\" width=\"300px\" align=\"left\" /></a>\n<a href=\"https://youtu.be/d-d6zmadzpe\" title=\"sam - segment anything model by meta ai: complete guide\"><strong>sam - segment anything model by meta ai: complete guide</strong></a>\n<div><strong>created: 11 apr 2023</strong> | <strong>updated: 11 apr 2023</strong></div>\n<br/> discover the incredible potential of meta ai's segment anything model (sam)! we dive into sam, an efficient and promptable model for image segmentation, which has revolutionized computer vision tasks. with over 1 billion masks on 11m licensed and privacy-respecting images, sam's zero-shot performance is often competitive with or even superior to prior fully supervised results... </p>\n\n## \ud83d\udc9c built with supervision\n\ndid you build something cool using supervision? [let us know!](https://github.com/roboflow/supervision/discussions/categories/built-with-supervision)\n\nhttps://user-images.githubusercontent.com/26109316/207858600-ee862b22-0353-440b-ad85-caa0c4777904.mp4\n\nhttps://github.com/roboflow/supervision/assets/26109316/c9436828-9fbf-4c25-ae8c-60e9c81b3900\n\n## \ud83d\udcda documentation\n\nvisit our [documentation](https://roboflow.github.io/supervision) page to learn how supervision can help you build computer vision applications faster and more reliably.\n\n## \ud83c\udfc6 contribution\n\nwe love your input! please see our [contributing guide](https://github.com/roboflow/supervision/blob/main/contributing.md) to get started. thank you \ud83d\ude4f to all our contributors!\n\n<p align=\"center\">\n    <a href=\"https://github.com/roboflow/supervision/graphs/contributors\">\n      <img src=\"https://contrib.rocks/image?repo=roboflow/supervision\" />\n    </a>\n</p>\n\n<br>\n\n<div align=\"center\">\n\n  <div align=\"center\">\n      <a href=\"https://youtube.com/roboflow\">\n          <img\n            src=\"https://media.roboflow.com/notebooks/template/icons/purple/youtube.png?ik-sdk-version=javascript-1.4.3&updatedat=1672949634652\"\n            width=\"3%\"\n          />\n      </a>\n      <img src=\"https://raw.githubusercontent.com/ultralytics/assets/main/social/logo-transparent.png\" width=\"3%\"/>\n      <a href=\"https://roboflow.com\">\n          <img\n            src=\"https://media.roboflow.com/notebooks/template/icons/purple/roboflow-app.png?ik-sdk-version=javascript-1.4.3&updatedat=1672949746649\"\n            width=\"3%\"\n          />\n      </a>\n      <img src=\"https://raw.githubusercontent.com/ultralytics/assets/main/social/logo-transparent.png\" width=\"3%\"/>\n      <a href=\"https://www.linkedin.com/company/roboflow-ai/\">\n          <img\n            src=\"https://media.roboflow.com/notebooks/template/icons/purple/linkedin.png?ik-sdk-version=javascript-1.4.3&updatedat=1672949633691\"\n            width=\"3%\"\n          />\n      </a>\n      <img src=\"https://raw.githubusercontent.com/ultralytics/assets/main/social/logo-transparent.png\" width=\"3%\"/>\n      <a href=\"https://docs.roboflow.com\">\n          <img\n            src=\"https://media.roboflow.com/notebooks/template/icons/purple/knowledge.png?ik-sdk-version=javascript-1.4.3&updatedat=1672949634511\"\n            width=\"3%\"\n          />\n      </a>\n      <img src=\"https://raw.githubusercontent.com/ultralytics/assets/main/social/logo-transparent.png\" width=\"3%\"/>\n      <a href=\"https://disuss.roboflow.com\">\n          <img\n            src=\"https://media.roboflow.com/notebooks/template/icons/purple/forum.png?ik-sdk-version=javascript-1.4.3&updatedat=1672949633584\"\n            width=\"3%\"\n          />\n      <img src=\"https://raw.githubusercontent.com/ultralytics/assets/main/social/logo-transparent.png\" width=\"3%\"/>\n      <a href=\"https://blog.roboflow.com\">\n          <img\n            src=\"https://media.roboflow.com/notebooks/template/icons/purple/blog.png?ik-sdk-version=javascript-1.4.3&updatedat=1672949633605\"\n            width=\"3%\"\n          />\n      </a>\n      </a>\n  </div>\n</div>\n\n",
+  "docs_url": null,
+  "keywords": "machine-learning,deep-learning,vision,ml,dl,ai,roboflow",
+  "license": "mit",
+  "name": "supervision",
+  "package_url": "https://pypi.org/project/supervision/",
+  "project_url": "https://pypi.org/project/supervision/",
+  "project_urls": {
+    "Documentation": "https://github.com/roboflow/supervision/blob/main/README.md",
+    "Homepage": "https://github.com/roboflow/supervision",
+    "Repository": "https://github.com/roboflow/supervision"
+  },
+  "release_url": "https://pypi.org/project/supervision/0.17.1/",
+  "requires_dist": [
+    "matplotlib (>=3.5.0)",
+    "numpy (>=1.21.2)",
+    "opencv-python (>=4.5.5.64,<=4.8.1.78) ; extra == \"desktop\"",
+    "opencv-python-headless (>=4.5.5.64,<=4.8.1.78)",
+    "pillow (>=9.4)",
+    "pyyaml (>=5.3)",
+    "requests (>=2.26.0,<=2.31.0) ; extra == \"assets\"",
+    "scipy (>=1.9.0)",
+    "tqdm (>=4.62.3,<=4.66.1) ; extra == \"assets\""
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "a set of easy-to-use utils that will come in handy in any computer vision project",
+  "version": "0.17.1",
+  "releases": [],
+  "developers": [
+    "piotr.skalski92@gmail.com",
+    "piotr_skalski"
+  ],
+  "kwds": "supervised supervision annotators models detections",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_supervision",
+  "homepage": "https://github.com/roboflow/supervision",
+  "release_count": 43,
+  "dependency_ids": [
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_opencv_python",
+    "pypi_opencv_python_headless",
+    "pypi_pillow",
+    "pypi_pyyaml",
+    "pypi_requests",
+    "pypi_scipy",
+    "pypi_tqdm"
+  ]
+}

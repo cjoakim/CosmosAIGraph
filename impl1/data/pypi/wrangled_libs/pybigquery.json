@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: database :: front-ends"
+  ],
+  "description": "sqlalchemy dialect for bigquery\n===============================\n\n.. attention::\n   pybigquery is **obsolete**.  use `sqlalchemy-bigquery\n   <https://pypi.org/project/sqlalchemy-bigquery/>`_ instead.  all\n   future changes will be made to sqlalchemy-bigquery.\n\n|obsolete| |pypi| |versions|\n\n`sqlalchemy dialects`_\n\n- `dialect documentation`_\n- `product documentation`_\n\n.. |obsolete| image:: https://img.shields.io/badge/support-obsolete-orange.svg\n.. |pypi| image:: https://img.shields.io/pypi/v/pybigquery.svg\n   :target: https://pypi.org/project/pybigquery/\n.. |versions| image:: https://img.shields.io/pypi/pyversions/pybigquery.svg\n   :target: https://pypi.org/project/pybigquery/\n.. _sqlalchemy dialects: https://docs.sqlalchemy.org/en/14/dialects/\n.. _dialect documentation: https://googleapis.dev/python/pybigquery/latest\n.. _product documentation: https://cloud.google.com/bigquery/docs/\n\n\nquick start\n-----------\n\nin order to use this library, you first need to go through the following steps:\n\n1. `select or create a cloud platform project.`_\n2. [optional] `enable billing for your project.`_\n3. `enable the bigquery storage api.`_\n4. `setup authentication.`_\n\n.. _select or create a cloud platform project.: https://console.cloud.google.com/project\n.. _enable billing for your project.: https://cloud.google.com/billing/docs/how-to/modify-project#enable_billing_for_a_project\n.. _enable the bigquery storage api.: https://console.cloud.google.com/apis/library/bigquery.googleapis.com\n.. _setup authentication.: https://googleapis.dev/python/google-api-core/latest/auth.html\n\ninstallation\n------------\n\ninstall this library in a `virtualenv`_ using pip. `virtualenv`_ is a tool to\ncreate isolated python environments. the basic problem it addresses is one of\ndependencies and versions, and indirectly permissions.\n\nwith `virtualenv`_, it's possible to install this library without needing system\ninstall permissions, and without clashing with the installed system\ndependencies.\n\n.. _`virtualenv`: https://virtualenv.pypa.io/en/latest/\n\n\nsupported python versions\n^^^^^^^^^^^^^^^^^^^^^^^^^\npython >= 3.6\n\nunsupported python versions\n^^^^^^^^^^^^^^^^^^^^^^^^^^^\npython <= 3.5.\n\n\nmac/linux\n^^^^^^^^^\n\n.. code-block:: console\n\n    pip install virtualenv\n    virtualenv <your-env>\n    source <your-env>/bin/activate\n    <your-env>/bin/pip install pybigquery\n\n\nwindows\n^^^^^^^\n\n.. code-block:: console\n\n    pip install virtualenv\n    virtualenv <your-env>\n    <your-env>\\scripts\\activate\n    <your-env>\\scripts\\pip.exe install pybigquery\n\nusage\n-----\n\nsqlalchemy\n^^^^^^^^^^\n\n.. code-block:: python\n\n    from sqlalchemy import *\n    from sqlalchemy.engine import create_engine\n    from sqlalchemy.schema import *\n    engine = create_engine('bigquery://project')\n    table = table('dataset.table', metadata(bind=engine), autoload=true)\n    print(select([func.count('*')], from_obj=table).scalar())\n\napi client\n^^^^^^^^^^\n\n.. code-block:: python\n\n    from pybigquery.api import apiclient\n    api_client = apiclient()\n    print(api_client.dry_run_query(query=sqlstr).total_bytes_processed)\n\nproject\n^^^^^^^\n\n``project`` in ``bigquery://project`` is used to instantiate bigquery client with the specific project id. to infer project from the environment, use ``bigquery://`` \u2013\u00a0without ``project``\n\nauthentication\n^^^^^^^^^^^^^^\n\nfollow the `google cloud library guide <https://google-cloud-python.readthedocs.io/en/latest/core/auth.html>`_ for authentication. alternatively, you can provide the path to a service account json file in ``create_engine()``:\n\n.. code-block:: python\n\n    engine = create_engine('bigquery://', credentials_path='/path/to/keyfile.json')\n\n\nlocation\n^^^^^^^^\n\nto specify location of your datasets pass ``location`` to ``create_engine()``:\n\n.. code-block:: python\n\n    engine = create_engine('bigquery://project', location=\"asia-northeast1\")\n\n\ntable names\n^^^^^^^^^^^\n\nto query tables from non-default projects or datasets, use the following format for the sqlalchemy schema name: ``[project.]dataset``, e.g.:\n\n.. code-block:: python\n\n    # if neither dataset nor project are the default\n    sample_table_1 = table('natality', schema='bigquery-public-data.samples')\n    # if just dataset is not the default\n    sample_table_2 = table('natality', schema='bigquery-public-data')\n\nbatch size\n^^^^^^^^^^\n\nby default, ``arraysize`` is set to ``5000``. ``arraysize`` is used to set the batch size for fetching results. to change it, pass ``arraysize`` to ``create_engine()``:\n\n.. code-block:: python\n\n    engine = create_engine('bigquery://project', arraysize=1000)\n\npage size for dataset.list_tables\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nby default, ``list_tables_page_size`` is set to ``1000``. ``list_tables_page_size`` is used to set the max_results for `dataset.list_tables`_ operation. to change it, pass ``list_tables_page_size`` to ``create_engine()``:\n\n.. _`dataset.list_tables`: https://cloud.google.com/bigquery/docs/reference/rest/v2/tables/list\n.. code-block:: python\n\n    engine = create_engine('bigquery://project', list_tables_page_size=100)\n\nadding a default dataset\n^^^^^^^^^^^^^^^^^^^^^^^^\n\nif you want to have the ``client`` use a default dataset, specify it as the \"database\" portion of the connection string.\n\n.. code-block:: python\n\n    engine = create_engine('bigquery://project/dataset')\n\nwhen using a default dataset, don't include the dataset name in the table name, e.g.:\n\n.. code-block:: python\n\n    table = table('table_name')\n\nnote that specifying a default dataset doesn't restrict execution of queries to that particular dataset when using raw queries, e.g.:\n\n.. code-block:: python\n\n    # set default dataset to dataset_a\n    engine = create_engine('bigquery://project/dataset_a')\n\n    # this will still execute and return rows from dataset_b\n    engine.execute('select * from dataset_b.table').fetchall()\n\n\nconnection string parameters\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nthere are many situations where you can't call ``create_engine`` directly, such as when using tools like `flask sqlalchemy <http://flask-sqlalchemy.pocoo.org/2.3/>`_. for situations like these, or for situations where you want the ``client`` to have a `default_query_job_config <https://googlecloudplatform.github.io/google-cloud-python/latest/bigquery/generated/google.cloud.bigquery.client.client.html#google.cloud.bigquery.client.client>`_, you can pass many arguments in the query of the connection string.\n\nthe ``credentials_path``, ``credentials_info``, ``location``, ``arraysize`` and ``list_tables_page_size`` parameters are used by this library, and the rest are used to create a `queryjobconfig <https://googlecloudplatform.github.io/google-cloud-python/latest/bigquery/generated/google.cloud.bigquery.job.queryjobconfig.html#google.cloud.bigquery.job.queryjobconfig>`_\n\nnote that if you want to use query strings, it will be more reliable if you use three slashes, so ``'bigquery:///?a=b'`` will work reliably, but ``'bigquery://?a=b'`` might be interpreted as having a \"database\" of ``?a=b``, depending on the system being used to parse the connection string.\n\nhere are examples of all the supported arguments. any not present are either for legacy sql (which isn't supported by this library), or are too complex and are not implemented.\n\n.. code-block:: python\n\n    engine = create_engine(\n        'bigquery://some-project/some-dataset' '?'\n        'credentials_path=/some/path/to.json' '&'\n        'location=some-location' '&'\n        'arraysize=1000' '&'\n        'list_tables_page_size=100' '&'\n        'clustering_fields=a,b,c' '&'\n        'create_disposition=create_if_needed' '&'\n        'destination=different-project.different-dataset.table' '&'\n        'destination_encryption_configuration=some-configuration' '&'\n        'dry_run=true' '&'\n        'labels=a:b,c:d' '&'\n        'maximum_bytes_billed=1000' '&'\n        'priority=interactive' '&'\n        'schema_update_options=allow_field_addition,allow_field_relaxation' '&'\n        'use_query_cache=true' '&'\n        'write_disposition=write_append'\n    )\n\n\ncreating tables\n^^^^^^^^^^^^^^^\n\nto add metadata to a table:\n\n.. code-block:: python\n\n    table = table('mytable', ..., bigquery_description='my table description', bigquery_friendly_name='my table friendly name')\n\nto add metadata to a column:\n\n.. code-block:: python\n\n    column('mycolumn', doc='my column description')\n\n\n",
+  "docs_url": null,
+  "keywords": "bigquery,sqlalchemy",
+  "license": "",
+  "name": "pybigquery",
+  "package_url": "https://pypi.org/project/pybigquery/",
+  "project_url": "https://pypi.org/project/pybigquery/",
+  "project_urls": {
+    "Homepage": "https://github.com/googleapis/python-bigquery-sqlalchemy"
+  },
+  "release_url": "https://pypi.org/project/pybigquery/0.10.2/",
+  "requires_dist": [
+    "google-cloud-bigquery (>=2.19.0)",
+    "google-api-core (>=1.30.0)",
+    "google-auth (<3.0.0dev,>=1.25.0)",
+    "sqlalchemy (<1.5.0dev,>=1.2.0)",
+    "future"
+  ],
+  "requires_python": ">=3.6, <3.10",
+  "summary": "obsolete sqlalchemy dialect for bigquery",
+  "version": "0.10.2",
+  "releases": [],
+  "developers": [
+    "googleapis-packages@google.com",
+    "the_pybigquery_authors"
+  ],
+  "kwds": "_sqlalchemy sqlalchemy pybigquery bigquery_description bigquery_friendly_name",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pybigquery",
+  "homepage": "https://github.com/googleapis/python-bigquery-sqlalchemy",
+  "release_count": 40,
+  "dependency_ids": [
+    "pypi_future",
+    "pypi_google_api_core",
+    "pypi_google_auth",
+    "pypi_google_cloud_bigquery",
+    "pypi_sqlalchemy"
+  ]
+}

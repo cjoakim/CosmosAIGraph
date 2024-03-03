@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: posix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "gbulb\n=====\n\n.. image:: https://img.shields.io/pypi/pyversions/gbulb.svg\n   :target: https://pypi.python.org/pypi/gbulb\n   :alt: python versions\n\n.. image:: https://img.shields.io/pypi/v/gbulb.svg\n   :target: https://pypi.python.org/pypi/gbulb\n   :alt: pypi version\n\n.. image:: https://img.shields.io/pypi/status/gbulb.svg\n   :target: https://pypi.python.org/pypi/gbulb\n   :alt: maturity\n\n.. image:: https://img.shields.io/pypi/l/gbulb.svg\n   :target: https://github.com/beeware/gbulb/blob/main/license\n   :alt: bsd license\n\n.. image:: https://github.com/beeware/gbulb/workflows/ci/badge.svg?branch=main\n   :target: https://github.com/beeware/gbulb/actions\n   :alt: build status\n\n.. image:: https://img.shields.io/discord/836455665257021440?label=discord%20chat&logo=discord&style=plastic\n   :target: https://beeware.org/bee/chat/\n   :alt: discord server\n\ngbulb is a python library that implements a `pep 3156\n<http://www.python.org/dev/peps/pep-3156/>`__ interface for the `glib main event\nloop <https://developer.gnome.org/glib/stable/glib-the-main-event-loop.html>`__\nunder unix-like systems.\n\nas much as possible, except where noted below, it mimics asyncio's interface.\nif you notice any differences, please report them.\n\nrequirements\n------------\n\n- python 3.7+\n- pygobject\n- glib\n- gtk+3 (optional)\n\nusage\n-----\n\nglib event loop\n~~~~~~~~~~~~~~~\n\nexample usage::\n\n    import asyncio, gbulb\n    gbulb.install()\n    asyncio.get_event_loop().run_forever()\n\ngtk+ event loop *(suitable for gtk+ applications)*\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nexample usage::\n\n    import asyncio, gbulb\n    gbulb.install(gtk=true)\n    asyncio.get_event_loop().run_forever()\n\ngapplication/gtkapplication event loop\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nexample usage::\n\n    import asyncio, gbulb\n    gbulb.install(gtk=true)  # only necessary if you're using gtkapplication\n\n    loop = asyncio.get_event_loop()\n    loop.run_forever(application=my_gapplication_object)\n\nwaiting on a signal asynchronously\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nsee examples/wait_signal.py\n\nknown issues\n------------\n\n- windows is not supported, sorry. if you are interested in this, please help\n  me get it working! i don't have windows so i can't test it.\n\ndivergences with pep 3156\n-------------------------\n\nin glib, the concept of event loop is split in two classes: glib.maincontext\nand glib.mainloop.\n\nthe event loop is mostly implemented by maincontext. mainloop is just a wrapper\nthat implements the run() and quit() functions. mainloop.run() atomically\nacquires a maincontext and repeatedly calls maincontext.iteration() until\nmainloop.quit() is called.\n\na maincontext is not bound to a particular thread, however it cannot be used\nby multiple threads concurrently. if the context is owned by another thread,\nthen mainloop.run() will block until the context is released by the other\nthread.\n\nmainloop.run() may be called recursively by the same thread (this is mainly\nused for implementing modal dialogs in gtk).\n\nthe issue: given a context, glib provides no ways to know if there is an\nexisting event loop running for that context. it implies the following\ndivergences with pep 3156:\n\n- ``.run_forever()`` and ``.run_until_complete()`` are not guaranteed to run\n  immediately. if the context is owned by another thread, then they will\n  block until the context is released by the other thread.\n\n- ``.stop()`` is relevant only when the currently running glib.mainloop object\n  was created by this asyncio object (i.e. by calling ``.run_forever()`` or\n  ``.run_until_complete()``). the event loop will quit only when it regains\n  control of the context. this can happen in two cases:\n\n  1. when multiple event loop are enclosed (by creating new ``mainloop``\n     objects and calling ``.run()`` recursively)\n  2. when the event loop has not even yet started because it is still\n     trying to acquire the context\n\nit would be wiser not to use any recursion at all. ``glibeventloop`` will\nactually prevent you from doing that (in accordance with pep 3156), however\n``gtkeventloop`` will allow you to call ``run()`` recursively. you should also keep\nin mind that enclosed loops may be started at any time by third-party code\ncalling glib's primitives.\n\ncommunity\n---------\n\ngbulb is part of the `beeware suite`_. you can talk to the community through:\n\n* `@pybeeware on twitter <https://twitter.com/pybeeware>`__\n\n* `discord <https://beeware.org/bee/chat/>`__\n\n* the gbulb `github discussions forum <https://github.com/beeware/gbulb/discussions>`__\n\nwe foster a welcoming and respectful community as described in our\n`beeware community code of conduct`_.\n\ncontributing\n------------\n\nif you experience problems with gbulb, `log them on github`_. if you\nwant to contribute code, please `fork the code`_ and `submit a pull request`_.\n\n.. _beeware suite: http://beeware.org\n.. _beeware community code of conduct: http://beeware.org/community/behavior/\n.. _log them on github: https://github.com/beeware/gbulb/issues\n.. _fork the code: https://github.com/beeware/gbulb\n.. _submit a pull request: https://github.com/beeware/gbulb/pulls\n",
+  "docs_url": null,
+  "keywords": "gtk,glib,gnome,asyncio,tulip",
+  "license": "apache 2.0",
+  "name": "gbulb",
+  "package_url": "https://pypi.org/project/gbulb/",
+  "project_url": "https://pypi.org/project/gbulb/",
+  "project_urls": {
+    "Documentation": "http://gbulb.readthedocs.io/en/latest/",
+    "Funding": "https://beeware.org/contributing/membership/",
+    "Homepage": "https://github.com/beeware/gbulb",
+    "Source": "https://github.com/beeware/gbulb",
+    "Tracker": "https://github.com/beeware/gbulb/issues"
+  },
+  "release_url": "https://pypi.org/project/gbulb/0.6.4/",
+  "requires_dist": [
+    "pygobject (>=3.14.0)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "glib event loop for tulip (pep 3156)",
+  "version": "0.6.4",
+  "releases": [],
+  "developers": [
+    "russell@keith-magee.com",
+    "russell_keith"
+  ],
+  "kwds": "gbulb glib shields glibeventloop pybeeware",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_gbulb",
+  "homepage": "https://github.com/beeware/gbulb",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_pygobject"
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: internet",
+    "topic :: multimedia :: sound/audio",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# pylast\n\n[![pypi version](https://img.shields.io/pypi/v/pylast.svg)](https://pypi.org/project/pylast/)\n[![supported python versions](https://img.shields.io/pypi/pyversions/pylast.svg)](https://pypi.org/project/pylast/)\n[![pypi downloads](https://img.shields.io/pypi/dm/pylast.svg)](https://pypistats.org/packages/pylast)\n[![test](https://github.com/pylast/pylast/workflows/test/badge.svg)](https://github.com/pylast/pylast/actions)\n[![coverage (codecov)](https://codecov.io/gh/pylast/pylast/branch/main/graph/badge.svg)](https://codecov.io/gh/pylast/pylast)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n[![doi](https://zenodo.org/badge/7803088.svg)](https://zenodo.org/badge/latestdoi/7803088)\n\na python interface to [last.fm](https://www.last.fm/) and other api-compatible websites\nsuch as [libre.fm](https://libre.fm/).\n\nuse the pydoc utility for help on usage or see [tests/](tests/) for examples.\n\n## installation\n\ninstall via pip:\n\n```sh\npython3 -m pip install pylast\n```\n\ninstall latest development version:\n\n```sh\npython3 -m pip install -u git+https://github.com/pylast/pylast\n```\n\nor from requirements.txt:\n\n```txt\n-e https://github.com/pylast/pylast.git#egg=pylast\n```\n\nnote:\n\n* pylast 5.2+ supports python 3.8-3.12.\n* pylast 5.1 supports python 3.7-3.11.\n* pylast 5.0 supports python 3.7-3.10.\n* pylast 4.3 - 4.5 supports python 3.6-3.10.\n* pylast 4.0 - 4.2 supports python 3.6-3.9.\n* pylast 3.2 - 3.3 supports python 3.5-3.8.\n* pylast 3.0 - 3.1 supports python 3.5-3.7.\n* pylast 2.2 - 2.4 supports python 2.7.10+, 3.4-3.7.\n* pylast 2.0 - 2.1 supports python 2.7.10+, 3.4-3.6.\n* pylast 1.7 - 1.9 supports python 2.7, 3.3-3.6.\n* pylast 1.0 - 1.6 supports python 2.7, 3.3-3.4.\n* pylast 0.5 supports python 2, 3.\n* pylast < 0.5 supports python 2.\n\n## features\n\n * simple public interface.\n * access to all the data exposed by the last.fm web services.\n * scrobbling support.\n * full object-oriented design.\n * proxy support.\n * internal caching support for some web services calls (disabled by default).\n * support for other api-compatible networks like libre.fm.\n\n\n## getting started\n\nhere's some simple code example to get you started. in order to create any object from\npylast, you need a `network` object which represents a social music network that is\nlast.fm or any other api-compatible one. you can obtain a pre-configured one for last.fm\nand use it as follows:\n\n```python\nimport pylast\n\n# you have to have your own unique two values for api_key and api_secret\n# obtain yours from https://www.last.fm/api/account/create for last.fm\napi_key = \"b25b959554ed76058ac220b7b2e0a026\"  # this is a sample key\napi_secret = \"425b55975eed76058ac220b7b4e8a054\"\n\n# in order to perform a write operation you need to authenticate yourself\nusername = \"your_user_name\"\npassword_hash = pylast.md5(\"your_password\")\n\nnetwork = pylast.lastfmnetwork(\n    api_key=api_key,\n    api_secret=api_secret,\n    username=username,\n    password_hash=password_hash,\n)\n```\n\nalternatively, instead of creating `network` with a username and password,\nyou can authenticate with a session key:\n\n```python\nimport pylast\n\nsession_key_file = os.path.join(os.path.expanduser(\"~\"), \".session_key\")\nnetwork = pylast.lastfmnetwork(api_key, api_secret)\nif not os.path.exists(session_key_file):\n    skg = pylast.sessionkeygenerator(network)\n    url = skg.get_web_auth_url()\n\n    print(f\"please authorize this script to access your account: {url}\\n\")\n    import time\n    import webbrowser\n\n    webbrowser.open(url)\n\n    while true:\n        try:\n            session_key = skg.get_web_auth_session_key(url)\n            with open(session_key_file, \"w\") as f:\n                f.write(session_key)\n            break\n        except pylast.wserror:\n            time.sleep(1)\nelse:\n    session_key = open(session_key_file).read()\n\nnetwork.session_key = session_key\n```\n\nand away we go:\n\n```python\n# now you can use that object everywhere\ntrack = network.get_track(\"iron maiden\", \"the nomad\")\ntrack.love()\ntrack.add_tags((\"awesome\", \"favorite\"))\n\n# type help(pylast.lastfmnetwork) or help(pylast) in a python interpreter\n# to get more help about anything and see examples of how it works\n```\n\n\nmore examples in\n<a href=\"https://github.com/hugovk/lastfm-tools\">hugovk/lastfm-tools</a> and\n[tests/](https://github.com/pylast/pylast/tree/main/tests).\n\n## testing\n\nthe [tests/](https://github.com/pylast/pylast/tree/main/tests) directory contains\nintegration and unit tests with last.fm, and plenty of code examples.\n\nfor integration tests you need a test account at last.fm that will become cluttered with\ntest data, and an api key and secret. either copy\n[example_test_pylast.yaml](example_test_pylast.yaml) to test_pylast.yaml and fill out\nthe credentials, or set them as environment variables like:\n\n```sh\nexport pylast_username=todo_enter_yours_here\nexport pylast_password_hash=todo_enter_yours_here\nexport pylast_api_key=todo_enter_yours_here\nexport pylast_api_secret=todo_enter_yours_here\n```\n\nto run all unit and integration tests:\n\n```sh\npython3 -m pip install -e \".[tests]\"\npytest\n```\n\nor run just one test case:\n\n```sh\npytest -k test_scrobble\n```\n\nto run with coverage:\n\n```sh\npytest -v --cov pylast --cov-report term-missing\ncoverage report # for command-line report\ncoverage html   # for html report\nopen htmlcov/index.html\n```\n\n## logging\n\nto enable from your own code:\n\n```python\nimport logging\nimport pylast\n\nlogging.basicconfig(level=logging.info)\n\n\nnetwork = pylast.lastfmnetwork(...)\n```\n\nto enable from pytest:\n\n```sh\npytest --log-cli-level info -k test_album_search_images\n```\n\nto also see data returned from the api, use `level=logging.debug` or\n`--log-cli-level debug` instead.\n",
+  "docs_url": null,
+  "keywords": "last.fm,music,scrobble,scrobbling",
+  "license": "apache-2.0",
+  "name": "pylast",
+  "package_url": "https://pypi.org/project/pylast/",
+  "project_url": "https://pypi.org/project/pylast/",
+  "project_urls": {
+    "Changelog": "https://github.com/pylast/pylast/releases",
+    "Homepage": "https://github.com/pylast/pylast",
+    "Source": "https://github.com/pylast/pylast"
+  },
+  "release_url": "https://pypi.org/project/pylast/5.2.0/",
+  "requires_dist": [
+    "httpx",
+    "flaky; extra == 'tests'",
+    "pytest; extra == 'tests'",
+    "pytest-cov; extra == 'tests'",
+    "pytest-random-order; extra == 'tests'",
+    "pyyaml; extra == 'tests'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "a python interface to last.fm and libre.fm",
+  "version": "5.2.0",
+  "releases": [],
+  "developers": [
+    "amr.hassan@gmail.com",
+    "hugo_van_kemenade"
+  ],
+  "kwds": "test_pylast pylast example_test_pylast pylast_username pylast_api_secret",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_pylast",
+  "homepage": "",
+  "release_count": 80,
+  "dependency_ids": [
+    "pypi_flaky",
+    "pypi_httpx",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_random_order",
+    "pypi_pyyaml"
+  ]
+}

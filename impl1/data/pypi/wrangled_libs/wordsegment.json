@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.2",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6"
+  ],
+  "description": "python word segmentation\n========================\n\n`wordsegment`_ is an apache2 licensed module for english word\nsegmentation, written in pure-python, and based on a trillion-word corpus.\n\nbased on code from the chapter \"`natural language corpus data`_\" by peter\nnorvig from the book \"`beautiful data`_\" (segaran and hammerbacher, 2009).\n\ndata files are derived from the `google web trillion word corpus`_, as\ndescribed by thorsten brants and alex franz, and `distributed`_ by the\nlinguistic data consortium. this module contains only a subset of that\ndata. the unigram data includes only the most common 333,000 words. similarly,\nbigram data includes only the most common 250,000 phrases. every word and\nphrase is lowercased with punctuation removed.\n\n.. _`wordsegment`: http://www.grantjenks.com/docs/wordsegment/\n.. _`natural language corpus data`: http://norvig.com/ngrams/\n.. _`beautiful data`: http://oreilly.com/catalog/9780596157111/\n.. _`google web trillion word corpus`: http://googleresearch.blogspot.com/2006/08/all-our-n-gram-are-belong-to-you.html\n.. _`distributed`: https://catalog.ldc.upenn.edu/ldc2006t13\n\nfeatures\n--------\n\n- pure-python\n- fully documented\n- 100% test coverage\n- includes unigram and bigram data\n- command line interface for batch processing\n- easy to hack (e.g. different scoring, new data, different language)\n- developed on python 2.7\n- tested on cpython 2.6, 2.7, 3.2, 3.3, 3.4, 3.5, 3.6 and pypy, pypy3\n- tested on windows, mac os x, and linux\n- tested using travis ci and appveyor ci\n\n.. image:: https://api.travis-ci.org/grantjenks/python-wordsegment.svg\n    :target: http://www.grantjenks.com/docs/wordsegment/\n\n.. image:: https://ci.appveyor.com/api/projects/status/github/grantjenks/python-wordsegment?branch=master&svg=true\n    :target: http://www.grantjenks.com/docs/wordsegment/\n\nquickstart\n----------\n\ninstalling `wordsegment`_ is simple with\n`pip <http://www.pip-installer.org/>`_::\n\n    $ pip install wordsegment\n\nyou can access documentation in the interpreter with python's built-in help\nfunction::\n\n    >>> import wordsegment\n    >>> help(wordsegment)\n\ntutorial\n--------\n\nin your own python programs, you'll mostly want to use `segment` to divide a\nphrase into a list of its parts::\n\n    >>> from wordsegment import load, segment\n    >>> load()\n    >>> segment('thisisatest')\n    ['this', 'is', 'a', 'test']\n\nthe `load` function reads and parses the unigrams and bigrams data from\ndisk. loading the data only needs to be done once.\n\n`wordsegment`_ also provides a command-line interface for batch\nprocessing. this interface accepts two arguments: in-file and out-file. lines\nfrom in-file are iteratively segmented, joined by a space, and written to\nout-file. input and output default to stdin and stdout respectively. ::\n\n    $ echo thisisatest | python -m wordsegment\n    this is a test\n\nif you want to run `wordsegment`_ as a kind of server process then use python's\n``-u`` option for unbuffered output. you can also set ``pythonunbuffered=1`` in\nthe environment. ::\n\n    >>> import subprocess as sp\n    >>> wordsegment = sp.popen(\n            ['python', '-um', 'wordsegment'],\n            stdin=sp.pipe, stdout=sp.pipe, stderr=sp.stdout)\n    >>> wordsegment.stdin.write('thisisatest\\n')\n    >>> wordsegment.stdout.readline()\n    'this is a test\\n'\n    >>> wordsegment.stdin.write('workswithotherlanguages\\n')\n    >>> wordsegment.stdout.readline()\n    'works with other languages\\n'\n    >>> wordsegment.stdin.close()\n    >>> wordsegment.wait()  # process exit code.\n    0\n\nthe maximum segmented word length is 24 characters. neither the unigram nor\nbigram data contain words exceeding that length. the corpus also excludes\npunctuation and all letters have been lowercased. before segmenting text,\n`clean` is called to transform the input to a canonical form::\n\n    >>> from wordsegment import clean\n    >>> clean('she said, \"python rocks!\"')\n    'shesaidpythonrocks'\n    >>> segment('she said, \"python rocks!\"')\n    ['she', 'said', 'python', 'rocks']\n\nsometimes its interesting to explore the unigram and bigram counts\nthemselves. these are stored in python dictionaries mapping word to count. ::\n\n    >>> import wordsegment as ws\n    >>> ws.load()\n    >>> ws.unigrams['the']\n    23135851162.0\n    >>> ws.unigrams['gray']\n    21424658.0\n    >>> ws.unigrams['grey']\n    18276942.0\n\nabove we see that the spelling `gray` is more common than the spelling `grey`.\n\nbigrams are joined by a space::\n\n    >>> import heapq\n    >>> from pprint import pprint\n    >>> from operator import itemgetter\n    >>> pprint(heapq.nlargest(10, ws.bigrams.items(), itemgetter(1)))\n    [('of the', 2766332391.0),\n     ('in the', 1628795324.0),\n     ('to the', 1139248999.0),\n     ('on the', 800328815.0),\n     ('for the', 692874802.0),\n     ('and the', 629726893.0),\n     ('to be', 505148997.0),\n     ('is a', 476718990.0),\n     ('with the', 461331348.0),\n     ('from the', 428303219.0)]\n\nsome bigrams begin with `<s>`. this is to indicate the start of a bigram::\n\n    >>> ws.bigrams['<s> where']\n    15419048.0\n    >>> ws.bigrams['<s> what']\n    11779290.0\n\nthe unigrams and bigrams data is stored in the `wordsegment` directory in\nthe `unigrams.txt` and `bigrams.txt` files respectively.\n\nuser guide\n----------\n\n* `word segment api reference`_\n* `using a different corpus`_\n* `python: load dict fast from file`_\n\n.. _`word segment api reference`: http://www.grantjenks.com/docs/wordsegment/api.html\n.. _`using a different corpus`: http://www.grantjenks.com/docs/wordsegment/using-a-different-corpus.html\n.. _`python: load dict fast from file`: http://www.grantjenks.com/docs/wordsegment/python-load-dict-fast-from-file.html\n\nreferences\n----------\n\n* `wordsegment documentation`_\n* `wordsegment at pypi`_\n* `wordsegment at github`_\n* `wordsegment issue tracker`_\n\n.. _`wordsegment documentation`: http://www.grantjenks.com/docs/wordsegment/\n.. _`wordsegment at pypi`: https://pypi.python.org/pypi/wordsegment\n.. _`wordsegment at github`: https://github.com/grantjenks/python-wordsegment\n.. _`wordsegment issue tracker`: https://github.com/grantjenks/python-wordsegment/issues\n\nwordsegment license\n-------------------\n\ncopyright 2018 grant jenks\n\nlicensed under the apache license, version 2.0 (the \"license\");\nyou may not use this file except in compliance with the license.\nyou may obtain a copy of the license at\n\n    http://www.apache.org/licenses/license-2.0\n\nunless required by applicable law or agreed to in writing, software\ndistributed under the license is distributed on an \"as is\" basis,\nwithout warranties or conditions of any kind, either express or implied.\nsee the license for the specific language governing permissions and\nlimitations under the license.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2.0",
+  "name": "wordsegment",
+  "package_url": "https://pypi.org/project/wordsegment/",
+  "project_url": "https://pypi.org/project/wordsegment/",
+  "project_urls": {
+    "Homepage": "http://www.grantjenks.com/docs/wordsegment/"
+  },
+  "release_url": "https://pypi.org/project/wordsegment/1.3.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "english word segmentation.",
+  "version": "1.3.1",
+  "releases": [],
+  "developers": [
+    "contact@grantjenks.com",
+    "grant_jenks"
+  ],
+  "kwds": "corpus wordsegment dictionaries gram linguistic",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_wordsegment",
+  "homepage": "http://www.grantjenks.com/docs/wordsegment/",
+  "release_count": 17,
+  "dependency_ids": []
+}

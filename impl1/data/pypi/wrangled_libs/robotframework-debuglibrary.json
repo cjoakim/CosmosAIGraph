@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: utilities"
+  ],
+  "description": "debug library for robot framework\n=================================\n\n.. contents::\n   :local:\n\nintroduction\n------------\n\nrobotframework-debuglibrary is a debug library for `robotframework`_,\nwhich can be used as an interactive shell(repl) also.\n\n.. _`robotframework`: http://robotframework.org/\n\n.. image:: https://api.codeclimate.com/v1/badges/5201026ff11b63530cf5/maintainability\n   :target: https://codeclimate.com/github/xyb/robotframework-debuglibrary/maintainability\n   :alt: maintainability\n\n.. image:: https://api.codeclimate.com/v1/badges/5201026ff11b63530cf5/test_coverage\n   :target: https://codeclimate.com/github/xyb/robotframework-debuglibrary/test_coverage\n   :alt: test coverage\n\n.. image:: https://github.com/xyb/robotframework-debuglibrary/workflows/test/badge.svg?branch=master\n   :target: https://github.com/xyb/robotframework-debuglibrary\n   :alt: test\n\n.. image:: https://img.shields.io/pypi/v/robotframework-debuglibrary.svg\n   :target: https://pypi.org/project/robotframework-debuglibrary/\n   :alt: latest version\n\n.. image:: https://img.shields.io/badge/robotframework-3.0%20%7c%203.1%20%7c%203.2-blue\n   :target: https://github.com/xyb/robotframework-debuglibrary\n   :alt: support robotframework versions\n\n.. image:: https://img.shields.io/pypi/pyversions/robotframework-debuglibrary\n   :target: https://github.com/xyb/robotframework-debuglibrary\n   :alt: support python versions\n\n.. image:: https://img.shields.io/pypi/dm/robotframework-debuglibrary\n   :target: https://pypi.org/project/robotframework-debuglibrary/\n   :alt: pypi downloads\n\n.. image:: https://img.shields.io/pypi/l/robotframework-debuglibrary.svg\n   :target: https://github.com/xyb/robotframework-debuglibrary/blob/master/license\n   :alt: license\n\n\ninstallation\n------------\n\nto install using ``pip``::\n\n    pip install robotframework-debuglibrary\n\nnotice: 2.0 is not compatible with python 2\n*******************************************\n\n``debuglibrary`` >= 2.0.0 supports python versions 3.x only.\nif you still using python 2.7, please use ``debuglibrary`` < 2.0.0 ::\n\n    pip install 'robotframework-debuglibrary<2'\n\nusage\n-----\n\nyou can use this as a library, import ``debuglibrary`` and call ``debug``\nor ``debug if`` keywords in your test files like this::\n\n    *** settings ***\n    library         debuglibrary\n\n    ** test case **\n    some test\n        # some keywords...\n        debug\n        # some else...\n        ${count} =  get element count  name:div_name\n        debug if  ${count} < 1\n\nor you can run it standalone as a ``robotframework`` shell::\n\n    $ rfdebug\n    [...snap...]\n    >>>>> enter interactive shell\n    > help\n    input robotframework keywords, or commands listed below.\n    use \"libs\" or \"l\" to see available libraries,\n    use \"keywords\" or \"k\" to see the list of library keywords,\n    use the tab keyboard key to autocomplete keywords.\n\n    documented commands (type help <topic>):\n    ========================================\n    eof  continue  docs  help  keywords  libs  ll        n     pdb  selenium\n    c    d         exit  k     l         list  longlist  next  s    step\n    > log  hello\n    > get time\n    < '2011-10-13 18:50:31'\n    > # use tab to auto complete commands\n    > builtin.get time\n    < '2011-10-13 18:50:39'\n    > import library  string\n    > get substring  helloworld  5  8\n    < 'wor'\n    > # define variables as you wish\n    > ${secs} =  get time  epoch\n    # ${secs} = 1474814470\n    > log to console  ${secs}\n    1474814470\n    > @{list} =  create list    hello    world\n    # @{list} = ['hello', 'world']\n    > log to console  ${list}\n    ['hello', 'world']\n    > &{dict} =  create dictionary    name=admin    email=admin@test.local\n    # &{dict} = {'name': 'admin', 'email': 'admin@test.local'}\n    > log  ${dict.name}\n    > # print value if you input variable name only\n    > ${list}\n    [u'hello', u'world']\n    > ${dict.name}\n    admin\n    > # start a selenium server quickly\n    > help selenium\n    start a selenium webdriver and open url in browser you expect.\n\n            s(elenium)  [<url>]  [<browser>]\n\n            default url is google.com, default browser is firefox.\n    > selenium  google.com  chrome\n    # import library  seleniumlibrary\n    # open browser  http://google.com  chrome\n    < 1\n    > close all browsers\n    > ctrl-d\n    >>>>> exit shell.\n\nthe interactive shell support auto-completion for robotframework keywords and\ncommands. try input ``builtin.`` then type ``<tab>`` key to feeling it.\nthe history will save at ``~/.rfdebug_history`` default or any file\ndefined in environment variable ``rfdebug_history``.\n\nin case you don't remember the name of keyword during using ``rfdebug``,\nthere are commands ``libs`` or ``ls`` to list the imported libraries and\nbuilt-in libraries, and ``keywords <lib name>`` or ``k`` to list\nkeywords of a library.\n\n``rfdebug`` accept any ``pybot`` arguments, but by default, ``rfdebug``\ndisabled all logs with ``-l none -x none -o none -l none -r none``.\n\nstep debugging\n**************\n\n``debuglibrary`` support step debugging since version ``2.1.0``.\nyou can use ``step``/``s``, ``next``/``n``, ``continue``/``c``,\n``list``/``l`` and ``longlist``/``ll`` to trace and view the code\nstep by step like in ``pdb``::\n\n    $ robot some.robot\n    [...snap...]\n    >>>>> enter interactive shell\n    > l\n    please run `step` or `next` command first.\n    > s\n    .> /users/xyb/some.robot(7)\n    -> log to console  hello\n    => builtin.log to console  hello\n    > l\n      2   \tlibrary  debuglibrary\n      3\n      4   \t** test case **\n      5   \ttest\n      6   \t    debug\n      7 ->\t    log to console  hello\n      8   \t    log to console  world\n    > n\n    hello\n    .> /users/xyb/some.robot(8)\n    -> log to console  world\n    => builtin.log to console  world\n    > c\n    >>>>> exit shell.\n    world\n\nnote: single-step debugging does not support ``for`` loops currently.\n\nsubmitting issues\n-----------------\n\nbugs and enhancements are tracked in the `issue tracker\n<https://github.com/xyb/robotframework-debuglibrary/issues>`_.\n\nbefore submitting a new issue, it is always a good idea to check is the\nsame bug or enhancement already reported. if it is, please add your comments\nto the existing issue instead of creating a new one.\n\nlicense\n-------\n\nthis software is licensed under the ``new bsd license``. see the ``license``\nfile in the top distribution directory for the full license text.\n\n.. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround\n\n\n",
+  "docs_url": null,
+  "keywords": "robotframework,debug,shell,repl",
+  "license": "new bsd",
+  "name": "robotframework-debuglibrary",
+  "package_url": "https://pypi.org/project/robotframework-debuglibrary/",
+  "project_url": "https://pypi.org/project/robotframework-debuglibrary/",
+  "project_urls": {
+    "Homepage": "https://github.com/xyb/robotframework-debuglibrary/"
+  },
+  "release_url": "https://pypi.org/project/robotframework-debuglibrary/2.3.0/",
+  "requires_dist": [
+    "prompt-toolkit (<3,>=2)",
+    "robotframework (>=3.0)"
+  ],
+  "requires_python": "",
+  "summary": "robotframework debug library and an interactive shell",
+  "version": "2.3.0",
+  "releases": [],
+  "developers": [
+    "xie_yanbo",
+    "xieyanbo@gmail.com"
+  ],
+  "kwds": "robotframework robot debugging pybot debug",
+  "license_kwds": "new bsd",
+  "libtype": "pypi",
+  "id": "pypi_robotframework_debuglibrary",
+  "homepage": "https://github.com/xyb/robotframework-debuglibrary/",
+  "release_count": 33,
+  "dependency_ids": [
+    "pypi_prompt_toolkit",
+    "pypi_robotframework"
+  ]
+}

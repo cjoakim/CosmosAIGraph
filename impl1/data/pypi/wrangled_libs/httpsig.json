@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: internet :: www/http",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "httpsig\n=======\n\n.. image:: https://travis-ci.org/ahknight/httpsig.svg?branch=master\n    :target: https://travis-ci.org/ahknight/httpsig\n\n.. image:: https://travis-ci.org/ahknight/httpsig.svg?branch=develop\n    :target: https://travis-ci.org/ahknight/httpsig\n\nsign http requests with secure signatures according to the ietf http signatures specification (`draft 8`_).  this is a fork of the original module_ to fully support both rsa and hmac schemes as well as unit test both schemes to prove they work.  it's being used in production and is actively-developed.\n\nsee the original project_, original python module_, original spec_, and `current ietf draft`_ for more details on the signing scheme.\n\n.. _project: https://github.com/joyent/node-http-signature\n.. _module: https://github.com/zzsnzmn/py-http-signature\n.. _spec: https://github.com/joyent/node-http-signature/blob/master/http_signing.md\n.. _`current ietf draft`: https://datatracker.ietf.org/doc/draft-cavage-http-signatures/\n.. _`draft 8`: http://tools.ietf.org/html/draft-cavage-http-signatures-08\n\nrequirements\n------------\n\n* python 2.7, 3.4-3.7\n* pycryptodome_\n\noptional:\n\n* requests_\n\n.. _pycryptodome: https://pypi.python.org/pypi/pycryptodome\n.. _requests: https://pypi.python.org/pypi/requests\n\nfor testing:\n\n* tox\n* pyenv (optional, handy way to access multiple versions)\n    $ for vers in 2.7.15 3.4.9 3.5.6 3.6.7 3.7.1; do pyenv install -s $vers; done\n\nusage\n-----\n\nreal documentation is forthcoming, but for now this should get you started.\n\nfor simple raw signing:\n\n.. code:: python\n\n    import httpsig\n\n    secret = open('rsa_private.pem', 'rb').read()\n\n    sig_maker = httpsig.signer(secret=secret, algorithm='rsa-sha256')\n    sig_maker.sign('hello world!')\n\nfor general use with web frameworks:\n\n.. code:: python\n\n    import httpsig\n\n    key_id = \"some key id\"\n    secret = b'some big secret'\n\n    hs = httpsig.headersigner(key_id, secret, algorithm=\"hmac-sha256\", headers=['(request-target)', 'host', 'date'])\n    signed_headers_dict = hs.sign({\"date\": \"tue, 01 jan 2014 01:01:01 gmt\", \"host\": \"example.com\"}, method=\"get\", path=\"/api/1/object/1\")\n\nfor use with requests:\n\n.. code:: python\n\n    import json\n    import requests\n    from httpsig.requests_auth import httpsignatureauth\n\n    secret = open('rsa_private.pem', 'rb').read()\n\n    auth = httpsignatureauth(key_id='test', secret=secret)\n    z = requests.get('https://api.example.com/path/to/endpoint', \n                             auth=auth, headers={'x-api-version': '~6.5'})\n\nclass initialization parameters\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nnote that keys and secrets should be bytes objects.  at attempt will be made to convert them, but if that fails then exceptions will be thrown.\n\n.. code:: python\n\n    httpsig.signer(secret, algorithm='rsa-sha256')\n\n``secret``, in the case of an rsa signature, is a string containing private rsa pem. in the case of hmac, it is a secret password.  \n``algorithm`` is one of the six allowed signatures: ``rsa-sha1``, ``rsa-sha256``, ``rsa-sha512``, ``hmac-sha1``, ``hmac-sha256``, \n``hmac-sha512``.\n\n\n.. code:: python\n\n    httpsig.requests_auth.httpsignatureauth(key_id, secret, algorithm='rsa-sha256', headers=none)\n\n``key_id`` is the label by which the server system knows your rsa signature or password.  \n``headers`` is the list of http headers that are concatenated and used as signing objects. by default it is the specification's minimum, the ``date`` http header.  \n``secret`` and ``algorithm`` are as above.\n\ntests\n-----\n\nto run tests::\n\n    python setup.py test\n\nor::\n\n    tox\n\nknown limitations\n-----------------\n\n1. multiple values for the same header are not supported. new headers with the same name will overwrite the previous header. it might be possible to replace the caseinsensitivedict with the collection that the email package uses for headers to overcome this limitation.\n2. keyfiles with passwords are not supported. there has been zero vocal demand for this so if you would like it, a pr would be a good way to get it in.\n3. draft 2 added support for ecdsa-sha256. this is available in pycryptodome but has not been added to httpsig. prs welcome.\n\n\nlicense\n-------\n\nboth this module and the original module_ are licensed under the mit license.\n\n\nhttpsig changes\n---------------\n\n1.3.0 (2019-nov-28)\n-------------------\n\n* relax pycryptodome requirements (pr#14 by cveilleux)\n* ability to supply another signature header like signature (pr#15 by rbignon)\n* fixed #2; made signer.sign() public\n* dropped python 3.3, added python 3.7.\n\n1.2.0 (2018-mar-28)\n-------------------\n\n* switched to pycryptodome instead of pycrypto (pr#11 by iandouglas)\n* updated tests with the test data from draft 8 and verified it still passes.\n* dropped official python 3.2 support (pip dropped it so it can't be properly tested)\n* cleaned up the code to be more pep8-like.\n\n1.1.2 (2015-feb-11)\n-------------------\n\n* hmac verification is now constant-time.\n\n1.1.1 (2015-feb-11)\n-------------------\n\n* (pulled)\n\n1.1.0 (2014-jul-24)\n-------------------\n\n* changed \"(request-line)\" to \"(request-target)\" to comply with draft 3.\n\n1.0.3 (2014-jul-09)\n-------------------\n\n* unified the default signing algo under one setting. setting httpsig.sign.default_sign_algorithm changes it for all future instances.\n* handle invalid params a little better.\n\n1.0.2 (2014-jul-02)\n-------------------\n\n* ensure we treat headers as ascii strings.\n* handle a case in the authorization header where there's garbage (non-keypairs) after the method name.\n\n1.0.1 (2014-jul-02)\n~~~~~~~~~~~~~~~~~~~\n\n* python 3 support (2.7 + 3.2-3.4)\n* updated tox and travis ci configs to test the supported python versions.\n* updated readme.\n\n1.0.0 (2014-jul-01)\n~~~~~~~~~~~~~~~~~~~\n* written against http://tools.ietf.org/html/draft-cavage-http-signatures-02\n* added \"setup.py test\" and tox support.\n* added sign/verify unit tests for all currently-supported algorithms.\n* headersigner and headerverifier now share the same message-building logic.\n* the http method in the message is now properly lower-case.\n* resolved unit test failures.\n* updated verifier and headerverifier to handle verifying both rsa and hmac sigs.\n* updated versioneer.\n* updated contact/author info.\n* removed stray keypair in test dir.\n* removed ssh agent support.\n* removed suport for reading keyfiles from disk as this is a huge security hole if this is used in a server framework like drf-httpsig.\n\n1.0b1 (2014-jun-23)\n~~~~~~~~~~~~~~~~~~~~~~\n* removed http version from request-line, per spec (breaks backwards compatability).\n* removed auto-generation of missing date header (ensures client compatability).\n\n\nhttp-signature (previous)\n-------------------------\n\n0.2.0 (unreleased)\n~~~~~~~~~~~~~~~~~~\n\n* update to newer spec (incompatible with prior version).\n* handle `request-line` meta-header.\n* allow secret to be a pem encoded string.\n* add test cases from spec.\n\n0.1.4 (2012-10-03)\n~~~~~~~~~~~~~~~~~~\n\n* account for ssh now being re-merged into paramiko: either package is acceptable (but paramiko should ideally be >= 1.8.0)\n\n0.1.3 (2012-10-02)\n~~~~~~~~~~~~~~~~~~\n\n* stop enabling `allow_agent` by default\n* stop requiring `ssh` package by default -- it is imported only when `allow_agent=true`\n* changed logic around ssh-agent: if one key is available, don't bother with any other authentication method\n* changed logic around key file usage: if decryption fails, prompt for password\n* bug fix: ssh-agent resulted in a nonsensical error if it found no correct keys (thanks, petervolpe)\n* introduce versioneer.py\n\n\n",
+  "docs_url": null,
+  "keywords": "http,authorization,api,web",
+  "license": "mit",
+  "name": "httpsig",
+  "package_url": "https://pypi.org/project/httpsig/",
+  "project_url": "https://pypi.org/project/httpsig/",
+  "project_urls": {
+    "Homepage": "https://github.com/ahknight/httpsig"
+  },
+  "release_url": "https://pypi.org/project/httpsig/1.3.0/",
+  "requires_dist": [
+    "pycryptodome (<4,>=3)",
+    "six"
+  ],
+  "requires_python": "",
+  "summary": "secure http request signing using the http signature draft specification",
+  "version": "1.3.0",
+  "releases": [],
+  "developers": [
+    "adam@movq.us",
+    "adam_knight"
+  ],
+  "kwds": "http_signing httpsignatureauth requests_auth signed_headers_dict signature",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_httpsig",
+  "homepage": "https://github.com/ahknight/httpsig",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_pycryptodome",
+    "pypi_six"
+  ]
+}

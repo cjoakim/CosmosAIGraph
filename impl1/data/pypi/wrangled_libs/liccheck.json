@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: software development :: build tools"
+  ],
+  "description": ".. image:: https://badge.fury.io/py/liccheck.svg\n    :target: https://badge.fury.io/py/liccheck\n.. image:: https://github.com/dhatim/python-license-check/workflows/build/badge.svg\n    :target: https://github.com/dhatim/python-license-check/actions\n.. image:: https://codecov.io/gh/dhatim/python-license-check/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/dhatim/python-license-check\n\npython license checker\n======================\n\ncheck python packages listed in a ``requirements.txt`` file and report license issues.\n\nabout\n=====\n\nyou can define a list of authorized licenses, unauthorized licenses and authorized packages.\n\nthe tool will check the ``requirements.txt`` file, check packages and their\ndependencies and return an error if some packages are not compliant\nagainst the given strategy.\n\nthe tool has 3 levels of checks to select from:\n\nstandard (default):\n    a package is considered as compliant when at least one of its licenses is\n    in the authorized license list, or if the package is in the list of\n    authorized packages.\n\ncautious:\n    same as *standard*, but a package is **not** considered compliant when one\n    or more of its licenses is in the unauthorized license list, even if it\n    also has a license in the authorized license list. a package is still\n    compliant if present in the authorized packages list.\n\nparanoid:\n    all licenses listed for a package must be in the authorised license list\n    for the package to be considered compliant. a package is still\n    compliant if present in the authorized packages list.\n\nassumption\n==========\nthe tool requires to be installed in the same python (virtual) environment as the packages. this, because it uses\n``pkg_resources`` to access the packages resources and thus, their licenses information.\n\nhow to install\n==============\n\n::\n\n\t$ pip install liccheck\n\n\nhow to use\n==========\n\n``liccheck`` will read the ``requirements.txt`` and verify compliance of packages against a strategy defined in the ``ini`` file.\nif the requirements file is not specified on the command line, it will search for ``requirements.txt`` in the current folder.\nyou have to setup an ``ini`` file with an authorized license list, unauthorized license list and authorized package list. the packages from your ``requirements.txt`` need to all be installed in the same python environment/virtualenv as ``liccheck``.\nif the ``ini`` file is not specified on the command line, it will search for ``liccheck.ini`` in the current folder.\n\nhere is an example of a ``liccheck.ini`` file:\n::\n\n\t# authorized and unauthorized licenses in lower case\n\t[licenses]\n\tauthorized_licenses:\n\t\tbsd\n\t\tnew bsd\n\t\tbsd license\n\t\tnew bsd license\n\t\tsimplified bsd\n\t\tapache\n\t\tapache 2.0\n\t\tapache software license\n\t\tgnu lgpl\n\t\tlgpl with exceptions or zpl\n\t\tisc license\n\t\tisc license (iscl)\n\t\tmit\n\t\tmit license\n\t\tpython software foundation license\n\t\tzpl 2.1\n\n\tunauthorized_licenses:\n\t\tgpl v3\n\n\t[authorized packages]\n\t# python software license (see http://zesty.ca/python/uuid.readme.txt)\n\tuuid: 1.30\n\nnote: versions of authorized packages can be defined using `pep-0440 version specifiers <https://www.python.org/dev/peps/pep-0440/#version-specifiers>`_, such as ``>=1.3,<1.4``. the implementation uses the nice package `semantic_version <https://pypi.org/project/semantic_version/>`_.\n\nfor demo purpose, let's say your ``requirements.txt`` file contains this:\n::\n\n\tflask>=0.12.1\n\tflask_restful\n\tjsonify\n\tpsycopg2>=2.7.1\n\tnose\n\tscipy\n\tscikit-learn\n\tpandas\n\tnumpy\n\targparse\n\tuuid\n\tsqlbuilder\n\tproboscis\n\tpyyaml>=3.12\n\nthe execution will output this:\n::\n\n    $ liccheck -s my_strategy.ini -r my_project/required.txt\n    gathering licenses...23 packages and dependencies.\n    check forbidden packages based on licenses...none\n    check authorized packages based on licenses...19 packages.\n    check authorized packages...4 packages.\n    check unknown licenses...none\n\nif some dependencies are unknown or are not matching the strategy, the output will be something like:\n::\n\n    $ liccheck -s my_strategy.ini -r my_project/requirements.txt\n\tgathering licenses...32 packages and dependencies.\n\tcheck forbidden packages based on licenses...1 forbidden packages :\n\t    unidecode (0.4.21) : gpl ['gnu general public license v2 or later (gplv2+)']\n\t      dependency:\n\t          unidecode << python-slugify << yoyo-migrations\n\n\tcheck authorized packages based on licenses...24 packages.\n\tcheck authorized packages...6 packages.\n\tcheck unknown licenses...1 unknown packages :\n\t    feedparser (5.2.1) : unknown []\n\t      dependency:\n\t          feedparser\n\nalso supports pyproject.toml like:\n::\n\n    [project]\n    dependencies = [\n        \"flask>=0.12.1\",\n        \"flask_restful\",\n        \"jsonify\",\n        \"psycopg2>=2.7.1\",\n        \"nose\",\n        \"scipy\",\n        \"scikit-learn\",\n        \"pandas\",\n        \"numpy\",\n        \"argparse\",\n        \"uuid\",\n        \"sqlbuilder\",\n        \"proboscis\",\n        \"pyyaml>=3.12\",\n    ]\n\n    [project.optional-dependencies]\n    test = [\n        \"pytest>=3.6.3\",\n    ]\n\n    [tool.liccheck]\n    authorized_licenses = [\n        \"bsd\",\n        \"new bsd\",\n        \"bsd license\",\n        \"new bsd license\",\n        \"simplified bsd\",\n        \"apache\",\n        \"apache 2.0\",\n        \"apache software license\",\n        \"gnu lgpl\",\n        \"lgpl with exceptions or zpl\",\n        \"isc license\",\n        \"isc license (iscl)\",\n        \"mit\",\n        \"mit license\",\n        \"python software foundation license\",\n        \"zpl 2.1\",\n    ]\n    unauthorized_licenses = [\n        \"gpl v3\",\n    ]\n    # strategy_ini_file = \"./liccheck.ini\"\n    # level = \"standard\"\n    # requirement_txt_file = \"./requirements.txt\" # ignored if dependencies or optional_dependencies are defined\n    # reporting_txt_file = \"path/to/reporting.txt file\" # by default is none\n    # no_deps = false\n    dependencies = true # to load [project.dependencies]\n    optional_dependencies = [\"test\"] # to load extras from [project.optional-dependencies]\n\n    [tool.liccheck.authorized_packages]\n    uuid = \"1.30\"\n\nby default, exact matching is required between each package's license and one of the license of the authorized or unauthorized list.\nyou can also provide regular expressions to match licenses by using the ``as_regex`` boolean flag. for instance, to exclude gpl licenses,\none could define the following configuration in ``pyproject.toml``:\n\n::\n\n    ...\n\n    unauthorized_licenses = [\n        '\\bgpl'\n    ]\n    as_regex = true\n    \n\nusing liccheck with pre-commit\n==============================\n\nadd this to your .pre-commit-config.yaml:\n::\n\n    - repo: https://github.com/dhatim/python-license-check\n      rev: master\n      hooks:\n      - id: liccheck\n        language: system\n\ncontributing\n============\n\nto run the tests:\n::\n\n    $ tox -p all\n\nlicensing\n=========\n\n-  see `license <license>`__\n\n\n",
+  "docs_url": null,
+  "keywords": "license check build tool",
+  "license": "apache software license",
+  "name": "liccheck",
+  "package_url": "https://pypi.org/project/liccheck/",
+  "project_url": "https://pypi.org/project/liccheck/",
+  "project_urls": {
+    "Homepage": "https://github.com/dhatim/python-license-check"
+  },
+  "release_url": "https://pypi.org/project/liccheck/0.9.2/",
+  "requires_dist": [
+    "semantic-version (>=2.7.0)",
+    "toml"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "check python packages from requirement.txt and report issues",
+  "version": "0.9.2",
+  "releases": [],
+  "developers": [
+    "contact@dhatim.com",
+    "dhatim"
+  ],
+  "kwds": "authorized_licenses unauthorized_licenses authorized_packages licenses license",
+  "license_kwds": "apache software license",
+  "libtype": "pypi",
+  "id": "pypi_liccheck",
+  "homepage": "https://github.com/dhatim/python-license-check",
+  "release_count": 44,
+  "dependency_ids": [
+    "pypi_semantic_version",
+    "pypi_toml"
+  ]
+}

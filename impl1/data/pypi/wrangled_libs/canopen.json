@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3 :: only",
+    "topic :: scientific/engineering"
+  ],
+  "description": "canopen for python\n==================\n\na python implementation of the canopen_ standard.\nthe aim of the project is to support the most common parts of the cia 301\nstandard in a simple pythonic interface. it is mainly targeted for testing and\nautomation tasks rather than a standard compliant master implementation.\n\nthe library supports python 3.6+.\n\n\nfeatures\n--------\n\nthe library is mainly meant to be used as a master.\n\n* nmt master\n* sdo client\n* pdo producer/consumer\n* sync producer\n* emcy consumer\n* time producer\n* lss master\n* object dictionary from eds\n* 402 profile support\n\nincomplete support for creating slave nodes also exists.\n\n* sdo server\n* pdo producer/consumer\n* nmt slave\n* emcy producer\n* object dictionary from eds\n\n\ninstallation\n------------\n\ninstall from pypi_ using pip::\n\n    $ pip install canopen\n\ninstall from latest master on github::\n\n    $ pip install https://github.com/christiansandberg/canopen/archive/master.zip\n\nif you want to be able to change the code while using it, clone it then install\nit in `develop mode`_::\n\n    $ git clone https://github.com/christiansandberg/canopen.git\n    $ cd canopen\n    $ pip install -e .\n\nunit tests can be run using the pytest_ framework::\n\n    $ pip install pytest\n    $ pytest -v\n\ndocumentation\n-------------\n\ndocumentation can be found on read the docs:\n\nhttp://canopen.readthedocs.io/en/latest/\n\nit can also be generated from a local clone using sphinx_::\n\n    $ python setup.py build_sphinx\n\n\nhardware support\n----------------\n\nthis library supports multiple hardware and drivers through the python-can_ package.\nsee `the list of supported devices <https://python-can.readthedocs.io/en/stable/configuration.html#interface-names>`_.\n\nit is also possible to integrate this library with a custom backend.\n\n\nquick start\n-----------\n\nhere are some quick examples of what you can do:\n\nthe pdos can be access by three forms:\n\n**1st:** :code:`node.tpdo[n]` or :code:`node.rpdo[n]`\n\n**2nd:** :code:`node.pdo.tx[n]` or :code:`node.pdo.rx[n]`\n\n**3rd:** :code:`node.pdo[0x1a00]` or :code:`node.pdo[0x1600]`\n\nthe :code:`n` is the pdo index (normally 1 to 4). the second form of access is for backward compatibility.\n\n.. code-block:: python\n\n    import canopen\n\n    # start with creating a network representing one can bus\n    network = canopen.network()\n\n    # add some nodes with corresponding object dictionaries\n    node = canopen.remotenode(6, '/path/to/object_dictionary.eds')\n    network.add_node(node)\n\n    # connect to the can bus\n    # arguments are passed to python-can's can.bus() constructor\n    # (see https://python-can.readthedocs.io/en/latest/bus.html).\n    network.connect()\n    # network.connect(bustype='socketcan', channel='can0')\n    # network.connect(bustype='kvaser', channel=0, bitrate=250000)\n    # network.connect(bustype='pcan', channel='pcan_usbbus1', bitrate=250000)\n    # network.connect(bustype='ixxat', channel=0, bitrate=250000)\n    # network.connect(bustype='vector', app_name='canalyzer', channel=0, bitrate=250000)\n    # network.connect(bustype='nican', channel='can0', bitrate=250000)\n\n    # read a variable using sdo\n    device_name = node.sdo['manufacturer device name'].raw\n    vendor_id = node.sdo[0x1018][1].raw\n\n    # write a variable using sdo\n    node.sdo['producer heartbeat time'].raw = 1000\n\n    # read pdo configuration from node\n    node.tpdo.read()\n    node.rpdo.read()\n    # re-map tpdo[1]\n    node.tpdo[1].clear()\n    node.tpdo[1].add_variable('statusword')\n    node.tpdo[1].add_variable('velocity actual value')\n    node.tpdo[1].add_variable('some group', 'some subindex')\n    node.tpdo[1].trans_type = 254\n    node.tpdo[1].event_timer = 10\n    node.tpdo[1].enabled = true\n    # save new pdo configuration to node\n    node.tpdo[1].save()\n\n    # transmit sync every 100 ms\n    network.sync.start(0.1)\n\n    # change state to operational (nmt start)\n    node.nmt.state = 'operational'\n\n    # read a value from tpdo[1]\n    node.tpdo[1].wait_for_reception()\n    speed = node.tpdo[1]['velocity actual value'].phys\n    val = node.tpdo['some group.some subindex'].raw\n\n    # disconnect from can bus\n    network.sync.stop()\n    network.disconnect()\n\n\ndebugging\n---------\n\nif you need to see what's going on in better detail, you can increase the\nlogging_ level:\n\n.. code-block:: python\n\n    import logging\n    logging.basicconfig(level=logging.debug)\n\n\n.. _pypi: https://pypi.org/project/canopen/\n.. _canopen: https://www.can-cia.org/canopen/\n.. _python-can: https://python-can.readthedocs.org/en/stable/\n.. _sphinx: http://www.sphinx-doc.org/\n.. _develop mode: https://packaging.python.org/distributing/#working-in-development-mode\n.. _logging: https://docs.python.org/3/library/logging.html\n.. _pytest: https://docs.pytest.org/\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "canopen",
+  "package_url": "https://pypi.org/project/canopen/",
+  "project_url": "https://pypi.org/project/canopen/",
+  "project_urls": {
+    "Documentation": "http://canopen.readthedocs.io/en/stable/",
+    "Source Code": "https://github.com/christiansandberg/canopen"
+  },
+  "release_url": "https://pypi.org/project/canopen/2.2.0/",
+  "requires_dist": [
+    "python-can >=3.0.0"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "canopen stack implementation",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "christian_sandberg",
+    "christiansandberg@me.com"
+  ],
+  "kwds": "canopen_ _canopen canopen _python pip",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_canopen",
+  "homepage": "",
+  "release_count": 40,
+  "dependency_ids": [
+    "pypi_python_can"
+  ]
+}

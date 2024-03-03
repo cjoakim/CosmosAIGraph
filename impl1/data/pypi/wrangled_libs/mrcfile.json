@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: bio-informatics",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "mrcfile.py\n==========\n\n|build-status| |readthedocs| |python-versions| |pypi-version| |conda-forge-version|\n\n.. |build-status| image:: https://app.travis-ci.com/ccpem/mrcfile.svg?branch=master\n    :target: https://app.travis-ci.com/github/ccpem/mrcfile\n    :alt: build status\n\n.. |readthedocs| image:: https://readthedocs.org/projects/mrcfile/badge/\n    :target: http://mrcfile.readthedocs.org\n    :alt: documentation\n    \n.. |python-versions| image:: https://img.shields.io/pypi/pyversions/mrcfile.svg\n    :target: https://pypi.python.org/pypi/mrcfile\n    :alt: python versions\n\n.. |pypi-version| image:: https://img.shields.io/pypi/v/mrcfile.svg\n    :target: https://pypi.python.org/pypi/mrcfile\n    :alt: python package index\n\n.. |conda-forge-version| image:: https://img.shields.io/conda/vn/conda-forge/mrcfile.svg\n    :target: https://anaconda.org/conda-forge/mrcfile\n    :alt: conda-forge\n\n.. start_of_main_text\n\n``mrcfile`` is a python implementation of the `mrc2014 file format`_, which\nis used in structural biology to store image and volume data.\n\nit allows mrc files to be created and opened easily using a very simple api,\nwhich exposes the file's header and data as `numpy`_ arrays. the code runs in\npython 2 and 3 and is fully unit-tested.\n\n.. _mrc2014 file format: http://www.ccpem.ac.uk/mrc_format/mrc2014.php\n.. _numpy: http://www.numpy.org/\n\nthis library aims to allow users and developers to read and write\nstandard-compliant mrc files in python as easily as possible, and with no\ndependencies on any compiled libraries except `numpy`_. you can use it\ninteractively to inspect files, correct headers and so on, or in scripts and\nlarger software packages to provide basic mrc file i/o functions.\n\nkey features\n------------\n\n* clean, simple api for access to mrc files\n* easy to install and use\n* validation of files according to the mrc2014 format\n* seamless support for gzip and bzip2 files\n* memory-mapped file option for fast random access to very large files\n* asynchronous opening option for background loading of multiple files\n* runs in python 2 & 3, on linux, mac os x and windows\n\ninstallation\n------------\n\nthe ``mrcfile`` library is available from the `python package index`_::\n\n    pip install mrcfile\n\nor from `conda-forge`_::\n\n    conda install --channel conda-forge mrcfile\n\nit is also included in the ``ccpem-python`` environment in the  `ccp-em`_\nsoftware suite.\n\n.. _ccp-em: http://www.ccpem.ac.uk\n\nthe source code (including the full test suite) can be found `on github`_.\n\n.. _python package index: https://pypi.org/project/mrcfile\n.. _conda-forge: https://anaconda.org/conda-forge/mrcfile\n.. _on github: https://github.com/ccpem/mrcfile\n\nbasic usage\n-----------\n\nthe easiest way to open a file is with the `mrcfile.open`_ and `mrcfile.new`_\nfunctions. these return an `mrcfile`_ object which represents an mrc file on\ndisk.\n\n.. _mrcfile.open: http://mrcfile.readthedocs.io/en/latest/source/mrcfile.html#mrcfile.open\n.. _mrcfile.new: http://mrcfile.readthedocs.io/en/latest/source/mrcfile.html#mrcfile.new\n.. _mrcfile: http://mrcfile.readthedocs.io/en/latest/usage_guide.html#using-mrcfile-objects\n\nto open an mrc file and read a slice of data::\n\n    >>> import mrcfile\n    >>> with mrcfile.open('tests/test_data/emd-3197.map') as mrc:\n    ...     mrc.data[10,10]\n    ... \n    array([ 2.58179283,  3.1406002 ,  3.64495397,  3.63812137,  3.61837363,\n            4.0115056 ,  3.66981959,  2.07317996,  0.1251585 , -0.87975615,\n            0.12517013,  2.07319379,  3.66982722,  4.0115037 ,  3.61837196,\n            3.6381247 ,  3.64495087,  3.14059472,  2.58178973,  1.92690361], dtype=float32)\n\nto create a new file with a 2d data array, and change some values::\n\n    >>> array = np.zeros((5, 5), dtype=np.int8)\n    >>> with mrcfile.new('tmp.mrc') as mrc:\n    ...     mrc.set_data(array)\n    ...     mrc.data[1:4,1:4] = 10\n    ...     mrc.data\n    ... \n    array([[ 0,  0,  0,  0,  0],\n           [ 0, 10, 10, 10,  0],\n           [ 0, 10, 10, 10,  0],\n           [ 0, 10, 10, 10,  0],\n           [ 0,  0,  0,  0,  0]], dtype=int8)\n\nthe data will be saved to disk when the file is closed, either automatically at\nthe end of the ``with`` block (like a normal python file object) or manually by\ncalling ``close()``. you can also call ``flush()`` to write any changes to disk\nand keep the file open.\n\nto validate an mrc file::\n\n    >>> mrcfile.validate('tests/test_data/emd-3197.map')\n    file does not declare mrc format version 20140 or 20141: nversion = 0\n    false\n\n    >>> mrcfile.validate('tmp.mrc')\n    true\n\ndocumentation\n-------------\n\nfull documentation is available on `read the docs`_.\n\n.. _read the docs: http://mrcfile.readthedocs.org\n\nciting mrcfile\n--------------\n\nif you find ``mrcfile`` useful in your work, please cite:\n\nburnley t, palmer c & winn m (2017) recent developments in the ccp-em\nsoftware suite. *acta cryst.* d\\ **73**:469--477.\n`doi: 10.1107/s2059798317007859`_\n\n.. _`doi: 10.1107/s2059798317007859`: https://doi.org/10.1107/s2059798317007859\n\ncontributing\n------------\n\nplease use the `github issue tracker`_ for bug reports and feature requests, or\n`email ccp-em`_.\n\n.. _github issue tracker: https://github.com/ccpem/mrcfile/issues\n.. _email ccp-em: ccpem@stfc.ac.uk\n\ncode contributions are also welcome, please submit pull requests to the\n`github repository`_.\n\n.. _github repository: https://github.com/ccpem/mrcfile\n\nto run the test suite, go to the top-level project directory (which contains\nthe ``mrcfile`` and ``tests`` packages) and run ``python -m unittest tests``.\n(or, if you have `tox`_ installed, run ``tox``.)\n\n.. _tox: http://tox.readthedocs.org\n\nlicence\n-------\n\nthe project is released under the bsd licence.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "mrcfile",
+  "package_url": "https://pypi.org/project/mrcfile/",
+  "project_url": "https://pypi.org/project/mrcfile/",
+  "project_urls": {
+    "Download": "https://github.com/ccpem/mrcfile/releases",
+    "Homepage": "https://github.com/ccpem/mrcfile"
+  },
+  "release_url": "https://pypi.org/project/mrcfile/1.4.3/",
+  "requires_dist": [
+    "numpy (>=1.16.0)"
+  ],
+  "requires_python": "",
+  "summary": "mrc file i/o library",
+  "version": "1.4.3",
+  "releases": [],
+  "developers": [
+    "colin.palmer@stfc.ac.uk",
+    "colin_palmer"
+  ],
+  "kwds": "mrcfile _mrcfile pyversions mrc_format _github",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_mrcfile",
+  "homepage": "https://github.com/ccpem/mrcfile",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_numpy"
+  ]
+}

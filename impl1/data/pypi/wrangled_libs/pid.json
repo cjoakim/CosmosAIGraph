@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "pid\n===\n\n.. image:: https://travis-ci.org/trbs/pid.svg?branch=master\n    :target: https://travis-ci.org/trbs/pid\n\n.. image:: https://coveralls.io/repos/trbs/pid/badge.png\n    :target: https://coveralls.io/r/trbs/pid\n\n.. image:: https://img.shields.io/pypi/v/pid.svg\n    :target: https://pypi.python.org/pypi/pid/\n    :alt: latest pypi version\n\n.. image:: https://img.shields.io/pypi/dm/pid.svg\n    :target: https://pypi.python.org/pypi/pid/\n    :alt: number of pypi downloads\n\npidfile class featuring:\n\n - stale detection\n - pidfile locking (fcntl)\n - chmod (default is 0o644)\n - chown\n - custom exceptions\n\ncontext manager, daemons and logging\n------------------------------------\n\npidfile can be used as a context manager::\n\n  from pid import pidfile\n  import os\n\n  with pidfile('foo') as p:\n    print(p.pidname) # -> 'foo'\n    print(p.piddir) # -> '/var/run' but you can modify it when initialize pidfile.\n    print(os.listdir('/var/run')) # -> ['foo.pid']\n\n  # pid file will delete after 'with' literal.\n\n|\n\nlogging to file is also possible when using pidfile with a daemon context manager\n(e.g. `python-daemon <https://pypi.python.org/pypi/python-daemon/>`_). this requires some care in\nhandling the open files when the daemon starts to avoid closing them, which causes problems with the\nlogging. in particular, the open handlers should be preserved::\n\n  import sys\n  import logging\n  import logging.config\n\n  import daemon\n  from pid impor pidfile\n\n  logging.config.fileconfig(fname=\"logging.conf\", disable_existing_loggers=false)\n  log = logging.getlogger(__name__)\n\n  pidname = \"/tmp/mydaemon.pid\"\n\n  def get_logging_handles(logger):\n      handles = []\n      for handler in logger.handlers:\n          handles.append(handler.stream.fileno())\n      if logger.parent:\n          handles += get_logging_handles(logger.parent)\n      return handles\n\n  def daemonize():\n    file_preserve = get_logging_handles(logging.root)\n    pid_file = pidfile(pidname=pidname)\n\n    with daemon.daemoncontext(stdout=sys.stdout,\n                              stderr=sys.stderr,\n                              stdin=sys.stdin,\n                              pidfile=_pid_file,\n                              files_preserve=files_preserve):\n\n      run_daemon_job()\n    print(\"done!\")\n\n  if __name__ == \"__main__\":\n    daemonize()\n\nthis assumes a `logging.conf` file has been created, see e.g. `basic tutorial\n<https://docs.python.org/3/howto/logging.html#logging-basic-tutorial>`_ for logging.\n\n\ndecorator\n---------\n\npidfile can also be used a a decorator::\n\n  from pid.decorator import pidfile\n\n  @pidfile()\n  def main():\n    pass\n\n  if __name__ == \"__main__\":\n    main()\n\n\nexception order\n---------------\n\nin default mode pidfile will try to acquire a file lock before anything else.\nthis means that normally you get a pidfilealreadylockederror instead of the\npidfilealreadyrunningerror when running a program twice.\n\nif you just want to know if a program is already running its easiest to catch\njust pidfileerror since it will capture all possible pidfile exceptions.\n\nbehaviour\n---------\n\nchanges in version 2.0.0 and going forward:\n\n* pid is now friendly with daemon context managers such as\n  `python-daemon <https://pypi.python.org/pypi/python-daemon/>`_ where\n  the pidfile context manager is passed as a parameter. the\n  new corrected behaviour will ensure the process environment is\n  determined at the time of acquiring/checking the lock. prior\n  behaviour would determine the process environment when\n  instancing the class which may result in incorrect determination\n  of the pid in the case of a process forking after instancing\n  pidfile.\n\n\\\n\n* cleanup of pidfile on termination is done using `atexit` module.\n  the default sigterm handler doesn't cleanly exit and therefore\n  the atexit registered functions will not execute. a custom\n  handler which triggers the atexit registered functions for cleanup\n  will override the default sigterm handler. if a prior signal handler\n  has been configured, then it will not be overridden.\n\n\n",
+  "docs_url": null,
+  "keywords": "pid pidfile context manager decorator",
+  "license": "asl",
+  "name": "pid",
+  "package_url": "https://pypi.org/project/pid/",
+  "project_url": "https://pypi.org/project/pid/",
+  "project_urls": {
+    "Homepage": "https://github.com/trbs/pid/"
+  },
+  "release_url": "https://pypi.org/project/pid/3.0.4/",
+  "requires_dist": [
+    "psutil (>=5.4.8) ; sys_platform == \"win32\""
+  ],
+  "requires_python": "",
+  "summary": "pidfile featuring stale detection and file-locking, can also be used as context-manager or decorator",
+  "version": "3.0.4",
+  "releases": [],
+  "developers": [
+    "trbs",
+    "trbs@trbs.net"
+  ],
+  "kwds": "_pid_file pid_file pidfile pidfileerror pidfilealreadyrunningerror",
+  "license_kwds": "asl",
+  "libtype": "pypi",
+  "id": "pypi_pid",
+  "homepage": "https://github.com/trbs/pid/",
+  "release_count": 24,
+  "dependency_ids": [
+    "pypi_psutil"
+  ]
+}

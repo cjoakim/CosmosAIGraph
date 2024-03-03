@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: apache airflow",
+    "framework :: apache airflow :: provider",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# apache airflow provider for great expectations\na set of airflow operators for [great expectations](https://greatexpectations.io/), a python library for testing and validating data.\n\n### version warning:\ndue to apply_default decorator removal, this version of the provider requires airflow 2.1.0+. if your airflow version is < 2.1.0, and you want to install this provider version, first upgrade airflow to at least version 2.1.0. otherwise, your airflow package version will be upgraded automatically, and you will have to manually run airflow upgrade db to complete the migration.\n\n### notes on compatibility\n* this operator currently works with the great expectations v3 batch request api only. if you would like to use the operator in conjunction with the v2 batch kwargs api, you must use a version below 0.1.0\n* this operator uses great expectations checkpoints instead of the former validationoperators.\n* because of the above, this operator requires great expectations >=v0.13.9, which is pinned in the requirements.txt starting with release 0.0.5.\n* great expectations version 0.13.8 contained a bug that would make this operator not work.\n* great expectations version 0.13.7 and below will work with version 0.0.4 of this operator and below.\n\nthis package has been most recently unit tested with `apache-airflow=2.4.3` and `great-expectation=0.15.34`.\n\n[comment]: <> (the example dag has been most recently tested in the `quay.io/astronomer/astro-runtime:6.0.4` docker image using the [astro cli]&#40;https://www.astronomer.io/docs/cloud/stable/develop/cli-quickstart&#41;, with `great-expectation=0.15.34` and `sqlalchemy=1.4.44`)\n\n**formerly, there was a separate operator for bigquery, to facilitate the use of gcp stores. this functionality is now baked into the core great expectations library, so the generic operator will work with any back-end and sql dialect for which you have a working data context and datasources.**\n\n\n## installation\n\npre-requisites: an environment running `great-expectations` and `apache-airflow`- these are requirements of this package that will be installed as dependencies.\n\n```\npip install airflow-provider-great-expectations\n```\n\ndepending on your use-case, you might need to add `env airflow__core__enable_xcom_pickling=true` to your dockerfile to enable xcom to pass data between tasks.\n\n## usage\n\nthe operator requires a datacontext to run which can be specified either as:\n   1. a path to a directory in which a yaml-based datacontext configuration is located\n   2. a great expectations datacontextconfig object\n\nadditonally, a checkpoint may be supplied, which can be specified either as:\n   1. the name of a checkpoint already located in the checkpoint store of the specified datacontext\n   2. a great expectations checkpointconfig object\n\nalthough if no checkpoint is supplied, a default one will be built.\n\nthe operator also enables you to pass in a python dictionary containing kwargs which will be added/substituted to the checkpoint at runtime.\n\n## modules\n\n[great expectations base operator](https://github.com/great-expectations/airflow-provider-great-expectations/blob/main/great_expectations_provider/operators/great_expectations.py): a base operator for great expectations. import into your dag via:\n\n```\nfrom great_expectations_provider.operators.great_expectations import greatexpectationsoperator\n```\n\n### previously available email alert functionality\n\nthe email alert functionality available in version `0.0.7` has been removed, in order to keep the purpose of the operator more narrow and related to running the great expectations validations, etc.  there is now a `validation_failure_callback` parameter to the base operator's constructor, which can be used for any kind of notification upon failure, given that the notification mechanisms provided by the great expectations framework itself doesn't suffice.\n\n## examples\n\nsee the [**example_dags**](https://github.com/great-expectations/airflow-provider-great-expectations/tree/main/great_expectations_provider/example_dags) directory for an example dag with some sample tasks that demonstrate operator functionality.\n\nthe example dag can be exercised in one of two ways:\n\n**with the open-source astro cli (recommended):**\n1. initialize a project with the [astro cli](https://www.astronomer.io/docs/cloud/stable/develop/cli-quickstart)\n2. copy the example dag into the `dags/` folder of your astro project\n3. copy the directories in the `include` folder of this repository into the `include` directory of your astro project\n4. copy your gcp `credentials.json` file into the base directory of your astro project\n5. add the following to your `dockerfile` to install the `airflow-provider-great-expectations` package, enable xcom pickling, and add the required airflow variables and connection to run the example dag:\n\n   ```\n   run pip install --user airflow_provider_great_expectations\n   env airflow__core__enable_xcom_pickling=true\n   env google_application_credentials=/usr/local/airflow/credentials.json\n   env airflow_var_my_project=<your_gcp_project_id>\n   env airflow_var_my_bucket=<your_gcs_bucket>\n   env airflow_var_my_dataset=<your_bq_dataset>\n   env airflow_var_my_table=<your_bq_table>\n   env airflow_conn_my_bigquery_conn_id='google-cloud-platform://?extra__google_cloud_platform__scope=https%3a%2f%2fwww.googleapis.com%2fauth%2fbigquery&extra__google_cloud_platform__project=bombora-dev&extra__google_cloud_platform__key_path=%2fusr%2flocal%2fairflow%2fairflow-gcp.bombora-dev.iam.gserviceaccount.com.json'\n   ```\n\n6. run `astro dev start` to view the dag on a local airflow instance (you will need docker running)\n\n**with a vanilla airflow installation**:\n1. add the example dag to your `dags/` folder\n2. make the `great_expectations` and `data` directories in `include/` available in your environment.\n3. change the `data_file` and `ge_root_dir` paths in your dag file to point to the appropriate places.\n4. change the paths in `great-expectations/checkpoints/*.yml` to point to the absolute path of your data files.\n5. change the value of [`enable_xcom_pickling`](https://github.com/apache/airflow/blob/master/airflow/config_templates/default_airflow.cfg#l181) to `true` in your airflow.cfg\n6. set the appropriate airflow variables and connection as detailed in the above instructions for using the `astro` cli\n\n## development\n\n### setting up the virtual environment\n\nany virtual environment tool can be used, but the simplest approach is likely using the `venv` tool included\nin the python standard library.\n\nfor example, creating a virtual environment for development against this package can be done with the following\n(assuming `bash`):\n\n```\n# create the virtual environment using venv:\n$ python -m venv --prompt my-af-ge-venv .venv\n\n# activate the virtual environment:\n$ . .venv/bin/activate\n\n# install the package and testing dependencies:\n(my-af-ge-venv) $ pip install -e '.[tests]'\n```\n\n### running unit, integration, and functional tests\n\nonce the above is done, running the unit and integration tests can be done with either of the following approaches.\n\n#### using `pytest`\n\nthe `pytest` library and cli is preferred by this project, and many python developers, because of its\nrich api, and the additional control it gives you over things like test output, test markers, etc.\nit is included as a dependency in `requirements.txt`.\n\nthe simple command `pytest -p no:warnings`, when run in the virtual environment created with the above\nprocess, provides a concise output when all tests pass, filtering out deprecation warnings that may be\nissued by airflow, and a only as detailed as necessary output when they dont:\n\n```\n(my-af-ge-venv) $ pytest -p no:warnings\n=========================================================================================== test session starts ============================================================================================\nplatform darwin -- python 3.7.4, pytest-6.2.4, py-1.10.0, pluggy-0.13.1\nrootdir: /users/jpayne/repos-bombora/bombora-airflow-provider-great-expectations, configfile: pytest.ini, testpaths: tests\nplugins: anyio-3.3.0\ncollected 7 items\n\ntests/operators/test_great_expectations.py .......                                                                                                                                                   [100%]\n\n============================================================================================ 7 passed in 11.99s ============================================================================================\n```\n\n#### functional testing\n\nfunctional testing entails simply running the example dag using, for instance, one of the approaches outlined above, only with the adjustment that the local development package be installed in the target airflow environment.\n\nagain, the recommended approach is to use the [astro cli](https://www.astronomer.io/docs/cloud/stable/develop/cli-quickstart)\n\n**this operator is in early stages of development! feel free to submit issues, prs, or join the #integration-airflow channel in the [great expectations slack](http://greatexpectations.io/slack) for feedback. thanks to [pete dejoy](https://github.com/petedejoy) and the [astronomer.io](https://www.astronomer.io/) team for the support.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "airflow-provider-great-expectations",
+  "package_url": "https://pypi.org/project/airflow-provider-great-expectations/",
+  "project_url": "https://pypi.org/project/airflow-provider-great-expectations/",
+  "project_urls": {
+    "Changelog": "https://github.com/astronomer/airflow-provider-great-expectations/blob/main/CHANGELOG.md",
+    "Homepage": "https://github.com/astronomer/airflow-provider-great-expectations",
+    "Source Code": "https://github.com/astronomer/airflow-provider-great-expectations"
+  },
+  "release_url": "https://pypi.org/project/airflow-provider-great-expectations/0.2.7/",
+  "requires_dist": [
+    "apache-airflow >=2.1",
+    "great-expectations >=0.15.34",
+    "sqlalchemy >=1.3.16",
+    "parameterized ; extra == 'tests'",
+    "pytest ; extra == 'tests'",
+    "pytest-mock ; extra == 'tests'",
+    "apache-airflow-providers-snowflake >=3.3.0 ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "an apache airflow provider for great expectations",
+  "version": "0.2.7",
+  "releases": [],
+  "developers": [
+    "great_expectations",
+    "humans@astronomer.io"
+  ],
+  "kwds": "airflow_provider_great_expectations default_airflow airflow_conn_my_bigquery_conn_id airflow_var_my_project test_great_expectations",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_airflow_provider_great_expectations",
+  "homepage": "https://github.com/astronomer/airflow-provider-great-expectations",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_apache_airflow",
+    "pypi_apache_airflow_providers_snowflake",
+    "pypi_great_expectations",
+    "pypi_parameterized",
+    "pypi_pytest",
+    "pypi_pytest_mock",
+    "pypi_sqlalchemy"
+  ]
+}

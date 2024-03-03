@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "=================\ndependency parser\n=================\n\n\n.. image:: https://img.shields.io/pypi/v/dparse.svg\n        :target: https://pypi.python.org/pypi/dparse\n\n.. image:: https://img.shields.io/travis/pyupio/dparse.svg\n        :target: https://travis-ci.org/pyupio/dparse\n\n.. image:: https://codecov.io/gh/pyupio/dparse/branch/master/graph/badge.svg\n  :target: https://codecov.io/gh/pyupio/dparse\n\n\na parser for python dependency files\n\n\nsupported files\n---------------\n\n+------------------+------------+-----------+\n| file             | parse      | update    |\n+==================+============+===========+\n| requirements.txt | yes        | yes       |\n+------------------+------------+-----------+\n| conda.yml        | yes        | yes       |\n+------------------+------------+-----------+\n| tox.ini          | yes        | yes       |\n+------------------+------------+-----------+\n| pipfile          | yes        | yes       |\n+------------------+------------+-----------+\n| pipfile.lock     | yes        | yes       |\n+------------------+------------+-----------+\n| poetry.lock      | yes        | no        |\n+------------------+------------+-----------+\n| setup.py         | no (# 2_)  | no (# 2_) |\n+------------------+------------+-----------+\n| zc.buildout      | no (# 3_)  | no (# 3_) |\n+------------------+------------+-----------+\n| setup.cfg        | no (# 4_)  | no (# 4_) |\n+------------------+------------+-----------+\n\n.. _2: https://github.com/pyupio/dparse/issues/2\n.. _3: https://github.com/pyupio/dparse/issues/3\n.. _4: https://github.com/pyupio/dparse/issues/8\n\n************\ninstallation\n************\n\nto install dparse, run:\n\n.. code-block:: console\n\n    $ pip install dparse\n\nif you want to update pipfiles, install the pipenv extra:\n\n.. code-block:: console\n\n    $ pip install dparse[pipenv]\n\nif you want to parse conda yml files, install the conda extra:\n\n.. code-block:: console\n\n    $ pip install dparse[conda]\n\n*****\nusage\n*****\n\nto use dparse in a python project::\n\n    from dparse import parse, filetypes\n\n    content = \"\"\"\n    south==1.0.1 --hash=sha256:abcdefghijklmno\n    pycrypto>=2.6\n    \"\"\"\n\n    df = parse(content, file_type=filetypes.requirements_txt)\n\n    print(df.json())\n\n\n\n\n    {\n      \"file_type\": \"requirements.txt\",\n      \"content\": \"\\nsouth==1.0.1 --hash=sha256:abcdefghijklmno\\npycrypto>=2.6\\n\",\n      \"path\": null,\n      \"sha\": null,\n      \"dependencies\": [\n        {\n          \"name\": \"south\",\n          \"specs\": [\n            [\n              \"==\",\n              \"1.0.1\"\n            ]\n          ],\n          \"line\": \"south==1.0.1 --hash=sha256:abcdefghijklmno\",\n          \"source\": \"pypi\",\n          \"meta\": {},\n          \"line_numbers\": null,\n          \"index_server\": null,\n          \"hashes\": [\n            \"--hash=sha256:abcdefghijklmno\"\n          ],\n          \"dependency_type\": \"requirements.txt\",\n          \"extras\": []\n        },\n        {\n          \"name\": \"pycrypto\",\n          \"specs\": [\n            [\n              \">=\",\n              \"2.6\"\n            ]\n          ],\n          \"line\": \"pycrypto>=2.6\",\n          \"source\": \"pypi\",\n          \"meta\": {},\n          \"line_numbers\": null,\n          \"index_server\": null,\n          \"hashes\": [],\n          \"dependency_type\": \"requirements.txt\",\n          \"extras\": []\n        }\n      ]\n    }\n\n**********\npython 2.7\n**********\n\nthis tool requires latest python patch versions starting with version 3.5. we\ndid support python 2.7 in the past but, as for other python 3.x minor versions,\nit reached its end-of-life and as such we are not able to support it anymore.\n\nwe understand you might still have python 2.7 projects running. at the same\ntime, safety itself has a commitment to encourage developers to keep their\nsoftware up-to-date, and it would not make sense for us to work with officially\nunsupported python versions, or even those that reached their end of life.\n\nif you still need to use safety with python 2.7, please use version 0.4.1 of\ndparse available at pypi. alternatively, you can run safety from a python 3\nenvironment to check the requirements file for your python 2.7 project.\n\n\n=======\nhistory\n=======\n\n0.6.3 (2023-06-26)\n------------------\n\n* use the modern tomli/tomllib to parse toml files. (thanks @mgorny)\n* drop python 3.5 from our ci.\n\n0.6.2 (2022-09-19)\n------------------\n\n* fixed bug: always call the parent from the path in the resolve_file function.\n\n0.6.1 (2022-09-19)\n------------------\n\n* fixed a bug in the resolve_file function.\n\n0.6.0 (2022-09-09)\n------------------\n\n* adds support for parsing poetry.lock files\n* adds a way to resolve all the linked dependencies in one dependency file\n* throws exceptions if found in the parsing process (this may be a breaking change)\n\n0.5.2 (2022-08-09)\n------------------\n\n* install pyyaml only when asked for with extras (conda extra)\n* add support for piptools requirements.in\n* use configparser directly\n* removed a regex used in the index server validation, fixing a possible redos security issue\n\n0.5.1 (2020-04-26)\n------------------\n\n* fixed package metadata removing 2.7 support\n* install pipenv only when asked for with extras\n\n0.5.0 (2020-03-14)\n------------------\n\na bug with this package allows it to be installed on python 2.7 environments,\neven though it should not work on such version. you should stick with version\n0.4.1 version instead for python 2.7 support.\n\n* dropped python 2.7, 3.3, 3.4 support\n* removed six package\n* removed pinned dependencies of tests\n* dropped setup.py tests support in favor of tox\n\n0.4.1 (2018-04-06)\n------------------\n\n* fixed a packaging error.\n\n0.4.0 (2018-04-06)\n------------------\n\n* pipenv is now an optional dependency that's only used when updating a pipfile. install it with dparse[pipenv]\n* added support for invalid toml pipfiles (thanks @pombredanne)\n\n\n0.3.0 (2018-03-01)\n------------------\n\n* added support for setup.cfg files (thanks @kexepal)\n* dependencies from pipfiles now include the section (thanks @paulortman)\n* multiline requirements are now ignored if they are marked\n* added experimental support for pipfiles\n\n0.2.1 (2017-07-19)\n------------------\n\n* internal refactoring\n\n0.2.0 (2017-07-19)\n------------------\n\n* removed setuptools dependency\n\n\n0.1.1 (2017-07-14)\n------------------\n\n* fixed a bug that was causing the parser to throw errors on invalid requirements.\n\n0.1.0 (2017-07-11)\n------------------\n\n* initial, not much to see here.\n",
+  "docs_url": null,
+  "keywords": "dparse",
+  "license": "mit license",
+  "name": "dparse",
+  "package_url": "https://pypi.org/project/dparse/",
+  "project_url": "https://pypi.org/project/dparse/",
+  "project_urls": {
+    "Homepage": "https://github.com/pyupio/dparse"
+  },
+  "release_url": "https://pypi.org/project/dparse/0.6.3/",
+  "requires_dist": [
+    "packaging",
+    "tomli ; python_version < \"3.11\"",
+    "pyyaml ; extra == 'conda'",
+    "pipenv (<=2022.12.19) ; extra == 'pipenv'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "a parser for python dependency files",
+  "version": "0.6.3",
+  "releases": [],
+  "developers": [
+    "jannis_gebauer",
+    "support@pyup.io"
+  ],
+  "kwds": "dparse dependency_type pipfile pipfiles dependencies",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_dparse",
+  "homepage": "https://github.com/pyupio/dparse",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_packaging",
+    "pypi_pipenv",
+    "pypi_pyyaml",
+    "pypi_tomli"
+  ]
+}

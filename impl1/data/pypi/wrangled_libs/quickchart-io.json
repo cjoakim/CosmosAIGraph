@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# quickchart-python\n[![build status](https://travis-ci.com/typpo/quickchart-python.svg?branch=master)](https://travis-ci.com/typpo/quickchart-python)\n![pypi](https://img.shields.io/pypi/v/quickchart.io)\n![pypi - license](https://img.shields.io/pypi/l/quickchart.io)\n\na python client for the [quickchart.io](https://quickchart.io/) image charts web service.\n\n# installation\n\nuse the `quickchart.py` library in this project, or install through [pip](https://pypi.org/project/quickchart.io/):\n\n```\npip install quickchart.io\n```\n\n# usage\n\nthis library provides a `quickchart` class.  import and instantiate it.  then set properties on it and specify a [chart.js](https://chartjs.org) config:\n\n```python\nfrom quickchart import quickchart\n\nqc = quickchart()\nqc.width = 500\nqc.height = 300\nqc.config = {\n    \"type\": \"bar\",\n    \"data\": {\n        \"labels\": [\"hello world\", \"test\"],\n        \"datasets\": [{\n            \"label\": \"foo\",\n            \"data\": [1, 2]\n        }]\n    }\n}\n```\n\nuse `get_url()` on your quickchart object to get the encoded url that renders your chart:\n\n```python\nprint(qc.get_url())\n# https://quickchart.io/chart?c=%7b%22chart%22%3a+%7b%22type%22%3a+%22bar%22%2c+%22data%22%3a+%7b%22labels%22%3a+%5b%22hello+world%22%2c+%22test%22%5d%2c+%22datasets%22%3a+%5b%7b%22label%22%3a+%22foo%22%2c+%22data%22%3a+%5b1%2c+2%5d%7d%5d%7d%7d%7d&w=600&h=300&bkg=%23ffffff&devicepixelratio=2.0&f=png\n```\n\nif you have a long or complicated chart, use `get_short_url()` to get a fixed-length url using the quickchart.io web service (note that these urls only persist for a short time unless you have a subscription):\n\n```python\nprint(qc.get_short_url())\n# https://quickchart.io/chart/render/f-a1d3e804-dfea-442c-88b0-9801b9808401\n```\n\nthe urls will render an image of a chart:\n\n<img src=\"https://quickchart.io/chart?c=%7b%22type%22%3a+%22bar%22%2c+%22data%22%3a+%7b%22labels%22%3a+%5b%22hello+world%22%2c+%22test%22%5d%2c+%22datasets%22%3a+%5b%7b%22label%22%3a+%22foo%22%2c+%22data%22%3a+%5b1%2c+2%5d%7d%5d%7d%7d&w=600&h=300&bkg=%23ffffff&devicepixelratio=2.0&f=png\" width=\"500\" />\n\n# using javascript functions in your chart\n\nchart.js sometimes relies on javascript functions (e.g. for formatting tick labels).  there are a couple approaches:\n\n  - build chart configuration as a string instead of a python object.  see `examples/simple_example_with_function.py`.\n  - build chart configuration as a python object and include a placeholder string for the javascript function.  then, find and replace it.\n  - use the provided `quickchartfunction` class.  see `examples/using_quickchartfunction.py` for a full example.\n\na short example using `quickchartfunction`:\n```py\nqc = quickchart()\nqc.config = {\n    \"type\": \"bar\",\n    \"data\": {\n        \"labels\": [\"a\", \"b\"],\n        \"datasets\": [{\n            \"label\": \"foo\",\n            \"data\": [1, 2]\n        }]\n    },\n    \"options\": {\n        \"scales\": {\n            \"yaxes\": [{\n                \"ticks\": {\n                    \"callback\": quickchartfunction('(val) => val + \"k\"')\n                }\n            }],\n            \"xaxes\": [{\n                \"ticks\": {\n                    \"callback\": quickchartfunction('''function(val) {\n                      return val + '???';\n                    }''')\n                }\n            }]\n        }\n    }\n}\n\nprint(qc.get_url())\n```\n\n# customizing your chart\n\nyou can set the following properties:\n\n### config: dict or str\nthe actual chart.js chart configuration.\n\n### width: int\nwidth of the chart image in pixels.  defaults to 500\n\n### height: int\nheight of the chart image  in pixels.  defaults to 300\n\n### format: str\nformat of the chart. defaults to png. svg is also valid.\n\n### background_color: str\nthe background color of the chart. any valid html color works. defaults to #ffffff (white). also takes rgb, rgba, and hsl values.\n\n### device_pixel_ratio: float\nthe device pixel ratio of the chart. this will multiply the number of pixels by the value. this is usually used for retina displays. defaults to 1.0.\n\n### version: str\nthe version of chart.js to use. acceptable values are documented [here](https://quickchart.io/documentation/#parameters). usually used to select chart.js 3+.\n\n### host\noverride the host of the chart render server. defaults to quickchart.io.\n\n### key\nset an api key that will be included with the request.\n\n## getting urls\n\nthere are two ways to get a url for your chart object.\n\n### get_url(): str\n\nreturns a url that will display the chart image when loaded.\n\n### get_short_url(): str\n\nuses the quickchart.io web service to create a fixed-length chart url that displays the chart image.  returns a url such as `https://quickchart.io/chart/render/f-a1d3e804-dfea-442c-88b0-9801b9808401`.\n\nnote that short urls expire after a few days for users of the free service.  you can [subscribe](https://quickchart.io/pricing/) to keep them around longer.\n\n## other functionality\n\n### get_bytes()\n\nreturns the bytes representing the chart image.\n\n### to_file(path: str)\n\nwrites the chart image to a file path.\n\n## more examples\n\ncheckout the `examples` directory to see other usage.\n",
+  "docs_url": null,
+  "keywords": "chart api,chart image,charts",
+  "license": "mit",
+  "name": "quickchart-io",
+  "package_url": "https://pypi.org/project/quickchart-io/",
+  "project_url": "https://pypi.org/project/quickchart-io/",
+  "project_urls": {
+    "Homepage": "https://quickchart.io/",
+    "Repository": "https://github.com/typpo/quickchart-python"
+  },
+  "release_url": "https://pypi.org/project/quickchart-io/2.0.0/",
+  "requires_dist": [
+    "requests (>=2.28.1,<3.0.0)"
+  ],
+  "requires_python": ">=3.7,<4",
+  "summary": "a client for quickchart.io, a service that generates static chart images",
+  "version": "2.0.0",
+  "releases": [],
+  "developers": [
+    "ian_webster",
+    "ianw_pypi@ianww.com"
+  ],
+  "kwds": "quickchart quickchartfunction using_quickchartfunction chartjs charts",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_quickchart_io",
+  "homepage": "https://quickchart.io/",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

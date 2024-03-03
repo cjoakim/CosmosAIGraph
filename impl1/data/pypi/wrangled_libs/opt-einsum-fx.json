@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# opt_einsum_fx\n\n[![documentation status](https://readthedocs.org/projects/opt-einsum-fx/badge/?version=latest)](https://opt-einsum-fx.readthedocs.io/en/latest/?badge=latest)\n\noptimizing einsums and functions involving them using [`opt_einsum`](https://optimized-einsum.readthedocs.io/en/stable/) and pytorch [fx](https://pytorch.org/docs/stable/fx.html) compute graphs.\n\nissues, questions, prs, and any thoughts about further optimizing these kinds of operations are welcome!\n\nfor more information please see [the docs](https://opt-einsum-fx.readthedocs.io/en/stable/).\n\n## installation\n\n### pypi\n\nthe latest release can be installed from pypi:\n```bash\n$ pip install opt_einsum_fx\n```\n\n### source\n\nto get the latest code, run:\n\n```bash\n$ git clone https://github.com/linux-cpp-lisp/opt_einsum_fx.git\n```\nand install it by running\n```bash\n$ cd opt_einsum_fx/\n$ pip install .\n```\n\nyou can run the tests with\n```bash\n$ pytest tests/\n```\n\n## minimal example\n\n```python\nimport torch\nimport torch.fx\nimport opt_einsum_fx\n\ndef einmatvecmul(a, b, vec):\n    \"\"\"batched matrix-matrix-vector product using einsum\"\"\"\n    return torch.einsum(\"zij,zjk,zk->zi\", a, b, vec)\n\ngraph_mod = torch.fx.symbolic_trace(einmatvecmul)\nprint(\"original code:\\n\", graph_mod.code)\ngraph_opt = opt_einsum_fx.optimize_einsums_full(\n    model=graph_mod,\n    example_inputs=(\n        torch.randn(7, 4, 5),\n        torch.randn(7, 5, 3),\n        torch.randn(7, 3)\n    )\n)\nprint(\"optimized code:\\n\", graph_opt.code)\n```\noutputs\n```\noriginal code:\nimport torch\ndef forward(self, a, b, vec):\n    einsum_1 = torch.functional.einsum('zij,zjk,zk->zi', a, b, vec);  a = b = vec = none\n    return einsum_1\n\noptimized code:\nimport torch\ndef forward(self, a, b, vec):\n    einsum_1 = torch.functional.einsum('cb,cab->ca', vec, b);  vec = b = none\n    einsum_2 = torch.functional.einsum('cb,cab->ca', einsum_1, a);  einsum_1 = a = none\n    return einsum_2\n```\n\nwe can measure the performance improvement (this is on a cpu):\n```python\nfrom torch.utils.benchmark import timer\n\nbatch = 1000\na, b, vec = torch.randn(batch, 4, 5), torch.randn(batch, 5, 8), torch.randn(batch, 8)\n\ng = {\"f\": graph_mod, \"a\": a, \"b\": b, \"vec\": vec}\nt_orig = timer(\"f(a, b, vec)\", globals=g)\nprint(t_orig.timeit(10_000))\n\ng[\"f\"] = graph_opt\nt_opt = timer(\"f(a, b, vec)\", globals=g)\nprint(t_opt.timeit(10_000))\n```\ngives ~2x improvement:\n```\nf(a, b, vec)\n  276.58 us\n  1 measurement, 10000 runs , 1 thread\n\nf(a, b, vec)\n  118.84 us\n  1 measurement, 10000 runs , 1 thread\n```\ndepending on your function and dimensions you may see even larger improvements.\n\n## license\n\n`opt_einsum_fx` is distributed under an [mit license](license).\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "opt-einsum-fx",
+  "package_url": "https://pypi.org/project/opt-einsum-fx/",
+  "project_url": "https://pypi.org/project/opt-einsum-fx/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/Linux-cpp-lisp/opt_einsum_fx/issues",
+    "Homepage": "https://github.com/Linux-cpp-lisp/opt_einsum_fx"
+  },
+  "release_url": "https://pypi.org/project/opt-einsum-fx/0.1.4/",
+  "requires_dist": [
+    "torch (>=1.8.0)",
+    "opt-einsum",
+    "packaging"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "einsum optimization using opt_einsum and pytorch fx",
+  "version": "0.1.4",
+  "releases": [],
+  "developers": [
+    "linux"
+  ],
+  "kwds": "opt_einsum_fx opt_einsum optimize_einsums_full graph_opt einsum_2",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_opt_einsum_fx",
+  "homepage": "https://github.com/linux-cpp-lisp/opt_einsum_fx",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_opt_einsum",
+    "pypi_packaging",
+    "pypi_torch"
+  ]
+}

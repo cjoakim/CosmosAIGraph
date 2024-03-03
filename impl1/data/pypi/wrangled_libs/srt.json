@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: multimedia :: video",
+    "topic :: software development :: libraries",
+    "topic :: text processing"
+  ],
+  "description": "|ghactions| |coveralls|\n\n.. |ghactions| image:: https://img.shields.io/github/actions/workflow/status/cdown/srt/ci.yml?branch=develop\n  :target: https://github.com/cdown/srt/actions?query=branch%3adevelop\n  :alt: tests\n\n.. |coveralls| image:: https://img.shields.io/coveralls/cdown/srt/develop.svg?label=test%20coverage\n  :target: https://coveralls.io/github/cdown/srt?branch=develop\n  :alt: coverage\n\nsrt is a tiny but featureful python library for parsing, modifying, and\ncomposing `srt files`_. take a look at the quickstart_ for a basic overview of\nthe library. `detailed api documentation`_ is also available.\n\nwant to see some examples of its use? take a look at the `tools shipped with\nthe library`_. this library is also used internally by projects like\n`subsync`_, `nvidia rad-tts`_, `manim`_, `kinobot`_, `bw_plex`_, and many more.\n\n.. _subsync: https://github.com/smacke/subsync\n.. _`nvidia rad-tts`: https://github.com/nvidia/radtts\n.. _bw_plex: https://github.com/hellowlol/bw_plex\n.. _manim: https://github.com/manimcommunity/manim\n.. _kinobot: https://github.com/vitiko98/kinobot\n\nwhy choose this library?\n------------------------\n\n- can parse many broken srt files which other srt libraries cannot, and fix them\n- extremely lightweight, ~200 lines of code excluding docstrings\n- simple, intuitive api\n- high quality test suite using hypothesis_\n- `100% test coverage`_ (including branches)\n- `well documented api`_, at both a high and low level\n- `~30% faster than pysrt on typical workloads`_\n- full support for `pypy`_\n- no dependencies outside of the standard library\n- tolerant of many common errors found in real-world srt files\n- support for asian-style srt formats (ie. \"fullwidth\" srt format)\n- completely unicode compliant\n- released under a highly permissive license (mit)\n- real world tested \u2014 used in production to process thousands of srt files\n  every day\n- portable \u2014 runs on linux, osx, and windows\n- tools included \u2014 contains lightweight tools to perform generic tasks with the\n  library\n\n.. _quickstart: http://srt.readthedocs.org/en/latest/quickstart.html\n.. _`srt files`: https://en.wikipedia.org/wiki/subrip#subrip_text_file_format\n.. _hypothesis: https://github.com/drmaciver/hypothesis\n.. _`100% test coverage`: https://coveralls.io/github/cdown/srt?branch=develop\n.. _`well documented api`: http://srt.readthedocs.org/en/latest/index.html\n.. _pypy: http://pypy.org/\n.. _`~30% faster than pysrt on typical workloads`: https://paste.pound-python.org/raw/8nqkbdw0rowvs7boeab3/\n\nusage\n-----\n\ntools\n=====\n\nthere are a number of `tools shipped with the library`_ to manipulate, process,\nand fix srt files. here's an example using `hanzidentifier`_ to strip out\nnon-chinese lines:\n\n.. code::\n\n    $ cat pe.srt\n    1\n    00:00:33,843 --> 00:00:38,097\n    only 3% of the water on our planet is fresh.\n    \u5730\u7403\u4e0a\u53ea\u67093%\u7684\u6c34\u662f\u6de1\u6c34\n\n    2\n    00:00:40,641 --> 00:00:44,687\n    yet, these precious waters are rich with surprise.\n    \u53ef\u662f\u8fd9\u4e9b\u73cd\u8d35\u7684\u6de1\u6c34\u4e2d\u5374\u5145\u6ee1\u4e86\u60ca\u5947\n\n    $ srt lines-matching -m hanzidentifier -f hanzidentifier.has_chinese -i pe.srt\n    1\n    00:00:33,843 --> 00:00:38,097\n    \u5730\u7403\u4e0a\u53ea\u67093%\u7684\u6c34\u662f\u6de1\u6c34\n\n    2\n    00:00:40,641 --> 00:00:44,687\n    \u53ef\u662f\u8fd9\u4e9b\u73cd\u8d35\u7684\u6de1\u6c34\u4e2d\u5374\u5145\u6ee1\u4e86\u60ca\u5947\n\n\nthese tools are easy to chain together, for example, say you have one subtitle\nwith chinese and english, and other with french, but you want chinese and\nfrench only. oh, and the chinese one is 5 seconds later than it should be.\nthat's easy enough to sort out:\n\n.. code::\n\n   $ srt lines-matching -m hanzidentifier -f hanzidentifier.has_chinese -i chs+eng.srt |\n   >     srt fixed-timeshift --seconds -5 |\n   >     srt mux --input - --input fra.srt\n\nsee the srt_tools/ directory for more information.\n\n.. _hanzidentifier: https://github.com/tsroten/hanzidentifier\n\nlibrary\n=======\n\n`detailed api documentation`_ is available, but here are the basics.\n\nhere's how you convert srt input to subtitle objects which you can manipulate:\n\n.. code:: python\n\n    >>> data = '''\\\n    1\n    00:00:33,843 --> 00:00:38,097\n    \u5730\u7403\u4e0a\u53ea\u67093%\u7684\u6c34\u662f\u6de1\u6c34\n\n    2\n    00:00:40,641 --> 00:00:44,687\n    \u53ef\u662f\u8fd9\u4e9b\u73cd\u8d35\u7684\u6de1\u6c34\u4e2d\u5374\u5145\u6ee1\u4e86\u60ca\u5947\n\n    3\n    00:00:57,908 --> 00:01:03,414\n    \u6240\u6709\u9646\u5730\u751f\u547d\u5f52\u6839\u7ed3\u5e95\u90fd\u4f9d\u8d56\u65bc\u6de1\u6c34\n\n    '''\n    >>> for sub in srt.parse(data):\n    ...     print(sub)\n    subtitle(index=1, start=datetime.timedelta(seconds=33, microseconds=843000), end=datetime.timedelta(seconds=38, microseconds=97000), content='\u5730\u7403\u4e0a\u53ea\u67093%\u7684\u6c34\u662f\u6de1\u6c34', proprietary='')\n    subtitle(index=2, start=datetime.timedelta(seconds=40, microseconds=641000), end=datetime.timedelta(seconds=44, microseconds=687000), content='\u53ef\u662f\u8fd9\u4e9b\u73cd\u8d35\u7684\u6de1\u6c34\u4e2d\u5374\u5145\u6ee1\u4e86\u60ca\u5947', proprietary='')\n    subtitle(index=3, start=datetime.timedelta(seconds=57, microseconds=908000), end=datetime.timedelta(seconds=63, microseconds=414000), content='\u6240\u6709\u9646\u5730\u751f\u547d\u5f52\u6839\u7ed3\u5e95\u90fd\u4f9d\u8d56\u65bc\u6de1\u6c34', proprietary='')\n\nand here's how you go back from subtitle objects to srt output:\n\n.. code:: python\n\n    >>> subs = list(srt.parse(data))\n    >>> subs[1].content = \"changing subtitle data is easy!\"\n    >>> print(srt.compose(subs))\n    1\n    00:00:33,843 --> 00:00:38,097\n    \u5730\u7403\u4e0a\u53ea\u67093%\u7684\u6c34\u662f\u6de1\u6c34\n\n    2\n    00:00:40,641 --> 00:00:44,687\n    changing subtitle data is easy!\n\n    3\n    00:00:57,908 --> 00:01:03,414\n    \u6240\u6709\u9646\u5730\u751f\u547d\u5f52\u6839\u7ed3\u5e95\u90fd\u4f9d\u8d56\u65bc\u6de1\u6c34\n\ninstallation\n------------\n\nto install the latest stable version from pypi:\n\n.. code::\n\n    pip install -u srt\n\nto install the latest development version directly from github:\n\n.. code::\n\n    pip install -u git+https://github.com/cdown/srt.git@develop\n\ntesting\n-------\n\n.. code::\n\n   tox\n\n.. _tox: https://tox.readthedocs.org\n.. _`detailed api documentation`: http://srt.readthedocs.org/en/latest/api.html\n.. _`tools shipped with the library`: https://github.com/cdown/srt/tree/develop/srt_tools\n\n\n",
+  "docs_url": null,
+  "keywords": "srt",
+  "license": "mit",
+  "name": "srt",
+  "package_url": "https://pypi.org/project/srt/",
+  "project_url": "https://pypi.org/project/srt/",
+  "project_urls": {
+    "Homepage": "https://github.com/cdown/srt"
+  },
+  "release_url": "https://pypi.org/project/srt/3.5.3/",
+  "requires_dist": [],
+  "requires_python": ">=2.7",
+  "summary": "a tiny library for parsing, modifying, and composing srt files.",
+  "version": "3.5.3",
+  "releases": [],
+  "developers": [
+    "chris@chrisdown.name",
+    "chris_down"
+  ],
+  "kwds": "srt_tools srt documentation github git",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_srt",
+  "homepage": "https://github.com/cdown/srt",
+  "release_count": 30,
+  "dependency_ids": []
+}

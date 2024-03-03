@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 6 - mature",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "=====\nmt940\n=====\n\n.. image:: https://github.com/wolph/mt940/actions/workflows/main.yml/badge.svg?branch=master\n    :alt: mt940 test status\n    :target: https://github.com/wolph/mt940/actions/workflows/main.yml\n\n.. image:: https://badge.fury.io/py/mt-940.svg\n    :alt: mt940 pypi version\n    :target: https://pypi.python.org/pypi/mt-940\n\n.. image:: https://coveralls.io/repos/wolph/mt940/badge.svg?branch=master\n    :alt: mt940 code coverage\n    :target: https://coveralls.io/r/wolph/mt940?branch=master\n\n.. image:: https://img.shields.io/pypi/pyversions/mt-940.svg\n\n``mt940`` - a library to parse mt940 files and returns smart python collections\nfor statistics and manipulation.\n\nlinks\n-----\n\n* documentation\n    - http://mt940.readthedocs.org/en/latest/\n* source\n    - https://github.com/wolph/mt940\n* bug reports \n    - https://github.com/wolph/mt940/issues\n* package homepage\n    - https://pypi.python.org/pypi/mt-940\n* my blog\n    - http://wol.ph/\n\ninstall\n-------\n\nto install the latest release:\n\n.. code-block:: bash\n\n    pip install mt-940\n\nor if `pip` is not available:\n    \n.. code-block:: bash\n\n    easy_install mt-940\n   \nto install the latest development release:\n\n.. code-block:: bash\n\n    git clone --branch develop https://github.com/wolph/mt940.git mt940\n    cd ./mt940\n    virtualenv .env\n    source .env/bin/activate\n    pip install -e .\n\nto run the tests you can use the `py.test` command or just run `tox` to test\neverything in all supported python versions.\n\nusage\n-----\n\nbasic parsing:\n\n.. code-block:: python\n\n   import mt940\n   import pprint\n\n   transactions = mt940.parse('mt940_tests/jejik/abnamro.sta')\n\n   print('transactions:')\n   print(transactions)\n   pprint.pprint(transactions.data)\n\n   print()\n   for transaction in transactions:\n       print('transaction: ', transaction)\n       pprint.pprint(transaction.data)\n\n\nset opening / closing balance information on each transaction:\n\n.. code-block:: python\n\n   import mt940\n   import pprint\n\n   mt940.tags.balancebase.scope = mt940.models.transaction\n\n   # the currency has to be set manually when setting the balancebase scope to transaction.\n   transactions = mt940.models.transactions(processors=dict(\n       pre_statement=[\n           mt940.processors.add_currency_pre_processor('eur'),\n       ],\n   ))\n\n   with open('mt940_tests/jejik/abnamro.sta') as f:\n       data = f.read()\n\n   transactions.parse(data)\n\n   for transaction in transactions:\n       print('transaction: ', transaction)\n       pprint.pprint(transaction.data)\n\nsimple json encoding:\n\n.. code-block:: python\n\n    import json\n    import mt940\n\n\n    transactions = mt940.parse('mt940_tests/jejik/abnamro.sta')\n\n    print(json.dumps(transactions, indent=4, cls=mt940.jsonencoder))\n\nparsing statements from the dutch bank asn where tag 61 does not follow the swift specifications:\n\n.. code-block:: python\n\n    def asnb_mt940_data():\n        with open('mt940_tests/asnb/0708271685_09022020_164516.940.txt') as fh:\n            return fh.read()\n\n    def test_asnb_tags(asnb_mt940_data):\n        tag_parser = mt940.tags.statementasnb()\n        trs = mt940.models.transactions(tags={\n            tag_parser.id: tag_parser\n        })\n\n    trs.parse(asnb_mt940_data)\n    trs_data = pprint.pformat(trs.data, sort_dicts=false)\n    print(trs_data)\n\ncontributing\n------------\n\nhelp is greatly appreciated, just please remember to clone the **development**\nbranch and to run `tox` before creating pull requests.\n\ntravis tests for `flake8` support and test coverage so it's always good to\ncheck those before creating a pull request.\n\ndevelopment branch: https://github.com/wolph/mt940/tree/develop\n\nto run the tests:\n\n.. code-block:: shell\n\n    pip install -r mt940_tests/requirements.txt\n    py.test\n\nor to run the tests on all available python versions:\n\n.. code-block:: shell\n\n    pip install tox\n    tox\n\ninfo\n----\n\n==============  ==========================================================\npython support  python 2.7, >= 3.3\nblog            http://wol.ph/\nsource          https://github.com/wolph/mt940\ndocumentation   http://mt940.rtfd.org\nchangelog       http://mt940.readthedocs.org/en/latest/history.html\napi             http://mt940.readthedocs.org/en/latest/modules.html\nissues/roadmap  https://github.com/wolph/mt940/issues\ntravis          http://travis-ci.org/wolph/mt940\ntest coverage   https://coveralls.io/r/wolph/mt940\npypi            https://pypi.python.org/pypi/mt-940\nohloh           https://www.ohloh.net/p/mt-940\nlicense         `bsd`_.\ngit repo        .. code-block:: bash\n\n                    $ git clone https://github.com/wolph/mt940.git\ninstall dev     .. code-block:: bash\n\n                    $ git clone https://github.com/wolph/mt940.git mt940\n                    $ cd ./mt940\n                    $ virtualenv .env\n                    $ source .env/bin/activate\n                    $ pip install -e .\ntests           .. code-block:: bash\n\n                    $ py.test\n==============  ==========================================================\n\n.. _bsd: http://opensource.org/licenses/bsd-3-clause\n.. _documentation: http://mt940.readthedocs.org/en/latest/\n.. _api: http://mt940.readthedocs.org/en/latest/modules.html\n",
+  "docs_url": null,
+  "keywords": "mt940",
+  "license": "bsd",
+  "name": "mt-940",
+  "package_url": "https://pypi.org/project/mt-940/",
+  "project_url": "https://pypi.org/project/mt-940/",
+  "project_urls": {
+    "Homepage": "https://github.com/WoLpH/mt940"
+  },
+  "release_url": "https://pypi.org/project/mt-940/4.30.0/",
+  "requires_dist": [
+    "sphinx (>=1.7.2) ; extra == 'docs'",
+    "GitPython (>=2.1.9) ; extra == 'docs'",
+    "sphinx2rst ; extra == 'docs'",
+    "pyyaml ; extra == 'tests'",
+    "pytest ; extra == 'tests'",
+    "pytest-cache ; extra == 'tests'",
+    "pytest-cover ; extra == 'tests'",
+    "pytest-flake8 ; extra == 'tests'",
+    "flake8 ; extra == 'tests'"
+  ],
+  "requires_python": "",
+  "summary": "a library to parse mt940 files and returns smart python collections for statistics and manipulation.",
+  "version": "4.30.0",
+  "releases": [],
+  "developers": [
+    "rick_van_hattem",
+    "wolph@wol.ph"
+  ],
+  "kwds": "mt940_tests mt940 badge _documentation py",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_mt_940",
+  "homepage": "https://github.com/wolph/mt940",
+  "release_count": 45,
+  "dependency_ids": [
+    "pypi_flake8",
+    "pypi_gitpython",
+    "pypi_pytest",
+    "pypi_pytest_cache",
+    "pypi_pytest_cover",
+    "pypi_pytest_flake8",
+    "pypi_pyyaml",
+    "pypi_sphinx",
+    "pypi_sphinx2rst"
+  ]
+}

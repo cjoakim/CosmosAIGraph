@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: database :: front-ends"
+  ],
+  "description": "# apache drill dialect for sqlalchemy.\n\n---\n\nthe primary purpose of this is to have a working dialect for apache drill that can be used with apache superset.\n\nhttps://superset.incubator.apache.org\n\nobviously, a working, robust dialect for drill serves other purposes as well, but most of the iterative planning for this repo will be based on working with superset. other changes will gladly be incorporated, as long as it doesn't hurt superset integration.\n\n## installation\n\ninstalling the dialect is straightforward. simply:\n\n```\npip install sqlalchemy-drill\n```\n\nalternatively, you can download the latest release from github and install from here:\n\n```python\npython3 -m pip install git+https://github.com/johnomernik/sqlalchemy-drill.git\n```\n\n## usage with rest\n\ndrill's rest api can execute queries with results streamed to json returned over chunked http for drill >= 1.19, otherwise with results buffered and then returned in a conventional http response.  a sqlalchemy url to connect to drill over rest looks like the following.\n\n```\ndrill+sadrill://<username>:<password>@<host>:<port>/<storage_plugin>?use_ssl=true\n```\n\nto connect to drill running on a local machine running in embedded mode you can use the following connection string.\n\n```\ndrill+sadrill://localhost:8047/dfs?use_ssl=false\n```\n\n### supported url query parameters\n\n| parameter                 | type    | description                                                    |\n| ------------------------- | ------- | -------------------------------------------------------------- |\n| use_ssl                   | boolean | whether to connect to drill using https                        |\n| verify_ssl                | boolean | whether to verify the server's tls certificate                 |\n| impersonation_target\\[1\\] | string  | username of a drill user to be impersonated by this connection |\n\n[1] requires a build of drill that incorporates the fix for drill-8168.\n\n### trailing metadata\n\nquery result metadata returned by the drill rest api is stored in the `result_md` field of the db-api cursor object.  note that any trailing metadata, i.e. metadata which comes after result row data, will only be populated after you have iterated through all of the returned rows.  if you need this trailing metadata you can make the cursor object reachable after it has been completely iterated by obtaining a reference to it beforehand, as follows.\n\n```python\nr = engine.execute('select current_timestamp')\nr.cursor.result_md  # access metadata, but only leading metadata\ncur = r.cursor      # obtain a reference for use later\nr.fetchall()        # iterate through all result data\ncur.result_md       # access metadata, including trailing metadata\ndel cur             # optionally delete the reference when done\n```\n\n### drill < 1.19\n\nin versions of drill earlier than 1.19, all data values are serialised to json strings and column type metadata comes after the data itself.  as a result, for these versions of drill, the drill+sadrill dialect returns every data value as a string.  to convert non-string data to its native type you need to typecast it yourself.\n\n### drill >= 1.19\n\nin drill 1.19 the rest api began making use of numeric types in json for numbers and times, the latter via a unix time representation while column type metadata was moved ahead of the result data.  because of this, the drill+sadrill dialect is able to return appropriate types for numbers and times when used with drill >= 1.19.\n\n## usage with jdbc\n\nconnecting to drill via jdbc is a little more complicated than a local installation and complete instructions can be found on the drill documentation here: https://drill.apache.org/docs/using-the-jdbc-driver/.\n\nin order to configure sqlalchemy to work with drill via jdbc you must:\n\n- download the latest jdbc driver available here: http://apache.osuosl.org/drill/\n- copy this driver to your classpath or other known path\n- set an environment variable called `drill_jdbc_driver_path` to the full path of your driver location\n- set an environment variable called `drill_jdbc_jar_name` to the name of the `.jar` file for the drill driver.\n\nadditionally, you will need to install `jaydebeapi` as well as jpype version 0.6.3.\nthese modules are listed as optional dependencies and will not be installed by the default installer.\n\nif the jdbc driver is not available, the dialect will throw errors when trying\nto connect. in addition, sqlalchemy-drill will not launch a jvm for you so you\nneed to do this yourself with a call to jpype like the following. see the file\ntest-jdbc.py in this repo for a working example.\n\n```python\njpype.startjvm(\"-ea\", classpath=\"lib/*\")\n```\n\n```\ndrill+jdbc://<username>:<passsword>@<host>:<port>\n```\n\nfor a simple installation, this might look like:\n\n```\ndrill+jdbc://admin:password@localhost:31010\n```\n\n## usage with odbc\n\nin order to configure sqlalchemy to work with drill via odbc you must:\n\n- install latest drill odbc driver: https://drill.apache.org/docs/installing-the-driver-on-linux/\n- ensure that you have odbc support in your system (`unixodbc` package for redhat-based systems).\n- install `pyodbc` python package.\n  this module is listed as an optional dependency and will not be installed by the default installer.\n\nto connect to drill with sqlalchemy use the following connection string:\n\n```\ndrill+odbc:///?<odbc connection parameters>\n```\n\nconnection properties are available in the official documentation: https://drill.apache.org/docs/odbc-configuration-reference/\n\nfor a simple installation, this might look like:\n\n```\ndrill+odbc:///?driver=/opt/mapr/drill/lib/64/libdrillodbc_sb64.so&connectiontype=direct&host=localhost&port=31010&authenticationtype=plain&uid=admin&pwd=password\n```\n\nor for the case when you have dsn configured in `odbc.ini`:\n\n```\ndrill+odbc:///?dsn=drill_dsn_name\n```\n\n**note:** it's better to avoid using connection string with `hostname:port` or `username`/`password`, like 'drill+odbc://admin:password@localhost:31010/' but use only odbc properties instead to avoid any misinterpretation between these parameters.\n\n## usage with superset\n\nfor a complete tutorial on how to use superset with drill, read the tutorial on @cgivre's blog available here: http://thedataist.com/visualize-anything-with-superset-and-drill/.\n\n## current status/development approach\n\ncurrently we can connect to drill, and issue queries for most visualizations and get results. we also enumerate table columns for some times of tables. here are things that are working as some larger issues to work out. (individual issues are tracked under issues)\n\n- connection to drill via the databases tab in superset succeeds\n- you can do basic queries for most types of viz/tables\n- there may be issues with advanced queries/joins. as you learn about new ones, please track in issues\n\n### many thanks\n\nto drillpy and pydrill for code used in creating the original `drilldbapi.py` code for connecting!\n\n### docker\n\nit is recommended to extend [the official docker image](https://hub.docker.com/r/apache/superset) to include this apache drill driver:\n\n```dockerfile\nfrom apache/superset\n# switching to root to install the required packages\nuser root\nrun pip install git+https://github.com/johnomernik/sqlalchemy-drill.git\n# switching back to using the `superset` user\nuser superset\n```\n",
+  "docs_url": null,
+  "keywords": "sqlalchemy apache drill",
+  "license": "mit",
+  "name": "sqlalchemy-drill",
+  "package_url": "https://pypi.org/project/sqlalchemy-drill/",
+  "project_url": "https://pypi.org/project/sqlalchemy-drill/",
+  "project_urls": {
+    "Download": "https://github.com/JohnOmernik/sqlalchemy-drill/archive/1.1.4.tar.gz",
+    "Homepage": "https://github.com/JohnOmernik/sqlalchemy-drill"
+  },
+  "release_url": "https://pypi.org/project/sqlalchemy-drill/1.1.4/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "apache drill for sqlalchemy",
+  "version": "1.1.4",
+  "releases": [],
+  "developers": [
+    "cgivre@thedataist.com",
+    "davide.miceli.dap@gmail.com",
+    "james@somecomputer.xyz",
+    "john@omernik.com",
+    "john_omernik",
+    "massimo.martiradonna.dap@gmail.com"
+  ],
+  "kwds": "sqlalchemy drilldbapi drill_jdbc_driver_path drill_jdbc_jar_name drill_dsn_name",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_sqlalchemy_drill",
+  "homepage": "https://github.com/johnomernik/sqlalchemy-drill",
+  "release_count": 10,
+  "dependency_ids": []
+}

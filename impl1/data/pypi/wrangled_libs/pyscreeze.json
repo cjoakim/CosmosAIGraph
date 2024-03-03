@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: macos x",
+    "environment :: win32 (ms windows)",
+    "environment :: x11 applications",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "pyscreeze\r\n=========\r\n\r\npyscreeze is a simple, cross-platform screenshot module for python 3.\r\n\r\nabout\r\n-----\r\n\r\npyscreeze can take screenshots, save them to files, and locates images within the screen. this is useful if you have a small image of, say, a button that needs to be clicked and want to locate it on the screen.\r\n\r\nnote - pyscreeze depends on pillow for screenshots, whose older versions have security issues. the only secure versions of pillow are 8.3.2 and later. however, pillow 8.3.2 only supports python as far back as python 3.6. if you are installing pyscreeze for python 3.5 or earlier, be aware that there may be security issues with the version of pillow it uses.\r\n\r\nif pillow is unavailable, there are fallback methods for each os (screencapture for macos, gnome-screenshot for linux, etc.)\r\n\r\nspecial notes about ubuntu\r\n==========================\r\n\r\nif your ubuntu system uses the older x11 window system, you must install xlib by running `sudo apt install python3-xlib`. this will require the admin password for your computer.\r\n\r\nthe screenshot() function\r\n=========================\r\n\r\ncalling `screenshot()` will return an image object (see the pillow or pil module documentation for details). passing a string of a filename will save the screenshot to a file as well as return it as an image object.\r\n\r\n    >>> import pyscreeze\r\n    >>> im1 = pyscreeze.screenshot()\r\n    >>> im2 = pyscreeze.screenshot('my_screenshot.png')\r\n\r\non a 1920 x 1080 screen, the `screenshot()` function takes roughly 100 milliseconds - it's not fast but it's not slow.\r\n\r\nthere is also an optional `region` keyword argument, if you do not want a screenshot of the entire screen. you can pass a four-integer tuple of the left, top, width, and height of the region to capture:\r\n\r\n    >>> import pyscreeze\r\n    >>> im = pyscreeze.screenshot(region=(0,0, 300, 400))\r\n\r\nthe locate functions\r\n====================\r\n\r\nyou can visually locate something on the screen if you have an image file of it. you can call the `locateonscreen('calc7key.png')` function to get the screen coordinates of the 7 button for a calculator app. the return value is a 4-integer tuple: (left, top, width, height). this tuple can be passed to `center()` to get the x and y coordinates at the center of this region. if the image can't be found on the screen, `locateonscreen()` returns `none`. (pyautogui is a module that simulates mouse clicks.)\r\n\r\n    >>> import pyscreeze, pyautogui\r\n    >>> button7location = pyscreeze.locateonscreen('calc7key.png')\r\n    >>> button7location\r\n    (1416, 562, 50, 41)\r\n    >>> button7x, button7y = pyscreeze.center(button7location)\r\n    >>> button7x, button7y\r\n    (1441, 582)\r\n    >>> pyautogui.click(button7x, button7y)  # clicks the center of where the 7 button was found\r\n\r\nthe `locatecenteronscreen()` function is probably the one you want to use most often:\r\n\r\n    >>> import pyscreeze, pyautogui\r\n    >>> x, y = pyscreeze.locatecenteronscreen('calc7key.png')\r\n    >>> pyautogui.click(x, y)\r\n\r\non a 1920 x 1080 screen, the locate function calls take about 1 or 2 seconds. this may be too slow for action video games, but works for most purposes and applications.\r\n\r\nif speed is important, install the optional opencv library (`pip install cv2`). the `locateall` computation will use it if available, and take less than 1 millisecond to find all matches in a full-screen search. (this does not include the time required to capture a screenshot.)\r\n\r\nthere are several \"locate\" functions. they all start looking at the top-left corner of the screen (or image) and look to the left and then down. the arguments can either be a\r\n\r\n- `locateonscreen(image, grayscale=false)` - returns (left, top, width, height) coordinate of first found instance of the `image` on the screen. returns none if not found on the screen.\r\n\r\n- `locatecenteronscreen(image, grayscale=false)` - returns (x, y) coordinates of the center of the first found instance of the `image` on the screen. returns none if not found on the screen.\r\n\r\n- `locateallonscreen(image, grayscale=false)` - returns a generator that yields (left, top, width, height) tuples for where the image is found on the screen.\r\n\r\n- `locate(needleimage, haystackimage, grayscale=false)` - returns (left, top, width, height) coordinate of first found instance of `needleimage` in `haystackimage`. returns none if not found on the screen.\r\n\r\n- `locateall(needleimage, haystackimage, grayscale=false)` - returns a generator that yields (left, top, width, height) tuples for where `needleimage` is found in `haystackimage`.\r\n\r\nthe \"locate all\" functions can be used in for loops or passed to `list()`:\r\n\r\n    >>> import pyscreeze\r\n    >>> for pos in pyscreeze.locateallonscreen('somebutton.png')\r\n    ...   print(pos)\r\n    ...\r\n    (1101, 252, 50, 50)\r\n    (59, 481, 50, 50)\r\n    (1395, 640, 50, 50)\r\n    (1838, 676, 50, 50)\r\n    >>> list(pyscreeze.locateallonscreen('somebutton.png'))\r\n    [(1101, 252, 50, 50), (59, 481, 50, 50), (1395, 640, 50, 50), (1838, 676, 50, 50)]\r\n\r\ngrayscale matching\r\n------------------\r\n\r\noptionally, you can pass `grayscale=true` to the locate functions to give a slight speedup (about 30%-ish). this desaturates the color from the images and screenshots, speeding up the locating but potentially causing false-positive matches.\r\n\r\n    >>> import pyscreeze\r\n    >>> button7location = pyscreeze.locateonscreen('calc7key.png', grayscale=true)\r\n    >>> button7location\r\n    (1416, 562, 50, 41)\r\n\r\npixel matching\r\n--------------\r\n\r\nto obtain the rgb color of a pixel in a screenshot, use the image object's `getpixel()` method:\r\n\r\n    >>> import pyscreeze\r\n    >>> im = pyscreeze.screenshot()\r\n    >>> im.getpixel((100, 200))\r\n    (130, 135, 144)\r\n\r\nor as a single function, call the `pixel()` pyscreeze function, which is a wrapper for the previous calls:\r\n\r\n    >>> import pyscreeze\r\n    >>> pyscreeze.pixel(100, 200)\r\n    (130, 135, 144)\r\n\r\nif you just need to verify that a single pixel matches a given pixel, call the `pixelmatchescolor()` function, passing it the x coordinate, y coordinate, and rgb tuple of the color it represents:\r\n\r\n    >>> import pyscreeze\r\n    >>> pyscreeze.pixelmatchescolor(100, 200, (130, 135, 144))\r\n    true\r\n    >>> pyscreeze.pixelmatchescolor(100, 200, (0, 0, 0))\r\n    false\r\n\r\nthe optional `tolerance` keyword argument specifies how much each of the red, green, and blue values can vary while still matching:\r\n\r\n    >>> import pyscreeze\r\n    >>> pyscreeze.pixelmatchescolor(100, 200, (130, 135, 144))\r\n    true\r\n    >>> pyscreeze.pixelmatchescolor(100, 200, (140, 125, 134))\r\n    false\r\n    >>> pyscreeze.pixelmatchescolor(100, 200, (140, 125, 134), tolerance=10)\r\n    true\r\n\r\nsupport\r\n-------\r\n\r\nif you find this project helpful and would like to support its development, [consider donating to its creator on patreon](https://www.patreon.com/alsweigart).\r\n",
+  "docs_url": null,
+  "keywords": "screenshot screen screencap capture scrot screencapture image",
+  "license": "mit",
+  "name": "pyscreeze",
+  "package_url": "https://pypi.org/project/PyScreeze/",
+  "project_url": "https://pypi.org/project/PyScreeze/",
+  "project_urls": {
+    "Homepage": "https://github.com/asweigart/pyscreeze"
+  },
+  "release_url": "https://pypi.org/project/PyScreeze/0.1.30/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "a simple, cross-platform screenshot module for python 2 and 3.",
+  "version": "0.1.30",
+  "releases": [],
+  "developers": [
+    "al@inventwithpython.com",
+    "al_sweigart"
+  ],
+  "kwds": "screencapture screencap my_screenshot python3 screenshots",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pyscreeze",
+  "homepage": "https://github.com/asweigart/pyscreeze",
+  "release_count": 27,
+  "dependency_ids": []
+}

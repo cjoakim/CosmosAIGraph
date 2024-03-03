@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: utilities"
+  ],
+  "description": "========\noverview\n========\n\n\n\na fast and thorough lazy object proxy.\n\n* free software: bsd 2-clause license\n\nnote that this is based on `wrapt`_'s objectproxy with one big change: it calls a function the first time the proxy object is\nused, while `wrapt.objectproxy` just forwards the method calls to the target object.\n\nin other words, you use `lazy-object-proxy` when you only have the object way later and you use `wrapt.objectproxy` when you\nwant to override few methods (by subclassing) and forward everything else to the target object.\n\nexample::\n\n    import lazy_object_proxy\n\n    def expensive_func():\n        from time import sleep\n        print('starting calculation')\n        # just as example for a very slow computation\n        sleep(2)\n        print('finished calculation')\n        # return the result of the calculation\n        return 10\n\n    obj = lazy_object_proxy.proxy(expensive_func)\n    # function is called only when object is actually used\n    print(obj)  # now expensive_func is called\n\n    print(obj)  # the result without calling the expensive_func\n\ninstallation\n============\n\n::\n\n    pip install lazy-object-proxy\n\ndocumentation\n=============\n\nhttps://python-lazy-object-proxy.readthedocs.io/\n\ndevelopment\n===========\n\nto run all the tests run::\n\n    tox\n\nacknowledgements\n================\n\nthis project is based on some code from `wrapt`_ as you can see in the git history.\n\n.. _wrapt: https://github.com/grahamdumpleton/wrapt\n\n\nchangelog\n=========\n\n1.10.0 (2023-12-15)\n-------------------\n\n* added python 3.12 wheels.\n* dropped support for python 3.7.\n* applied some reformatting and lint fixes using ruff to the codebase (mostly more python 2 leftover cleanups).\n\n1.9.0 (2023-01-04)\n------------------\n\n* added support for matrix multiplication operator (``@``).\n* should have all the wheels now (including the manylinux ones).\n* bumped minimum version requirements for setuptools and setuptools-scm.\n* switched the default pure python fallback implementation to the \"simple\" one (when you ``from lazy_object_proxy import proxy``\n  and the c extension is not available).\n  previously the \"slots\" implementation was used but as it turns out it is slower on python 3.\n\n1.8.0 (2022-10-26)\n------------------\n\n* cleaned up use of cpickle. contributed by sandro tosi in `#62 <https://github.com/ionelmc/python-lazy-object-proxy/pull/62>`_.\n* cleaned up more dead python 2 code.\n* added python 3.11 wheels.\n* dropped support for python 3.6.\n\n1.7.1 (2021-12-15)\n------------------\n\n* removed most of the python 2 support code and fixed ``python_requires`` to require at least python 3.6.\n\n  note that 1.7.0 has been yanked because it could not install on python 2.7.\n  installing lazy-object-proxy on python 2.7 should automatically fall back to the 1.6.0 release now.\n\n1.7.0 (2021-12-15)\n------------------\n\n* switched ci to github actions, this has a couple consequences:\n\n  * support for python 2.7 is dropped. you can still install it there but it's not tested anymore and\n    python 2 specific handling will be removed at some point.\n  * linux wheels are now provided in `musllinux` and `manylinux2014` variants.\n\n* fixed ``__index__`` to fallback to ``int`` if the wrapped object doesn't have an ``__index__`` method.\n  this prevents situations where code using a proxy would otherwise likely just call ``int`` had the object\n  not have an ``__index__`` method.\n\n1.6.0 (2021-03-22)\n------------------\n\n* added support for async special methods (``__aiter__``, ``__anext__``,\n  ``__await__``, ``__aenter__``, ``__aexit__``).\n  these are used in the ``async for``, ``await` and ``async with`` statements.\n\n  note that ``__await__`` returns a wrapper that tries to emulate the crazy\n  stuff going on in the ceval loop, so there will be a small performance overhead.\n* added the ``__resolved__`` property. you can use it to check if the factory has\n  been called.\n\n1.5.2 (2020-11-26)\n------------------\n\n* added python 3.9 wheels.\n* removed python 2.7 windows wheels\n  (not supported on newest image with python 3.9).\n\n1.5.1 (2020-07-22)\n------------------\n\n* added arm64 wheels (manylinux2014).\n\n1.5.0 (2020-06-05)\n------------------\n\n* added support for ``__fspath__``.\n* dropped support for python 3.4.\n\n1.4.3 (2019-10-26)\n------------------\n\n* added binary wheels for python 3.8.\n* fixed license metadata.\n\n1.4.2 (2019-08-22)\n------------------\n\n* included a ``pyproject.toml`` to allow users install the sdist with old python/setuptools, as the\n  setuptools-scm dep will be fetched by pip instead of setuptools.\n  fixes `#30 <https://github.com/ionelmc/python-lazy-object-proxy/issues/30>`_.\n\n1.4.1 (2019-05-10)\n------------------\n\n* fixed wheels being built with ``-coverage`` cflags. no more issues about bogus ``cext.gcda`` files.\n* removed useless c file from wheels.\n* changed ``setup.py`` to use setuptools-scm.\n\n1.4.0 (2019-05-05)\n------------------\n\n* fixed ``__mod__`` for the slots backend. contributed by ran benita in\n  `#28 <https://github.com/ionelmc/python-lazy-object-proxy/pull/28>`_.\n* dropped support for python 2.6 and 3.3. contributed by \"hugovk\" in\n  `#24 <https://github.com/ionelmc/python-lazy-object-proxy/pull/24>`_.\n\n1.3.1 (2017-05-05)\n------------------\n\n* fix broken release (``sdist`` had a broken ``manifest.in``).\n\n1.3.0 (2017-05-02)\n------------------\n\n* speed up arithmetic operations involving ``cext.proxy`` subclasses.\n\n1.2.2 (2016-04-14)\n------------------\n\n* added `manylinux <https://www.python.org/dev/peps/pep-0513/>`_ wheels.\n* minor cleanup in readme.\n\n1.2.1 (2015-08-18)\n------------------\n\n* fix a memory leak (the wrapped object would get bogus references). contributed by astrum kuo in\n  `#10 <https://github.com/ionelmc/python-lazy-object-proxy/pull/10>`_.\n\n1.2.0 (2015-07-06)\n------------------\n\n* don't instantiate the object when __repr__ is called. this aids with debugging (allows one to see exactly in\n  what state the proxy is).\n\n1.1.0 (2015-07-05)\n------------------\n\n* added support for pickling. the pickled value is going to be the wrapped object *without* any proxy container.\n* fixed a memory management issue in the c extension (reference cycles weren't garbage collected due to improper\n  handling in the c extension). contributed by alvin chow in\n  `#8 <https://github.com/ionelmc/python-lazy-object-proxy/pull/8>`_.\n\n1.0.2 (2015-04-11)\n-----------------------------------------\n\n* first release on pypi.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-2-clause",
+  "name": "lazy-object-proxy",
+  "package_url": "https://pypi.org/project/lazy-object-proxy/",
+  "project_url": "https://pypi.org/project/lazy-object-proxy/",
+  "project_urls": {
+    "Changelog": "https://python-lazy-object-proxy.readthedocs.io/en/latest/changelog.html",
+    "Documentation": "https://python-lazy-object-proxy.readthedocs.io/",
+    "Homepage": "https://github.com/ionelmc/python-lazy-object-proxy",
+    "Issue Tracker": "https://github.com/ionelmc/python-lazy-object-proxy/issues"
+  },
+  "release_url": "https://pypi.org/project/lazy-object-proxy/1.10.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "a fast and thorough lazy object proxy.",
+  "version": "1.10.0",
+  "releases": [],
+  "developers": [
+    "contact@ionelmc.ro"
+  ],
+  "kwds": "lazy_object_proxy objectproxy proxy lazy expensive_func",
+  "license_kwds": "bsd-2-clause",
+  "libtype": "pypi",
+  "id": "pypi_lazy_object_proxy",
+  "homepage": "https://github.com/ionelmc/python-lazy-object-proxy",
+  "release_count": 24,
+  "dependency_ids": []
+}

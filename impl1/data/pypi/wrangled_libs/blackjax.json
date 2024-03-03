@@ -1,0 +1,60 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos",
+    "operating system :: posix",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.9",
+    "topic :: education",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: scientific/engineering :: mathematics"
+  ],
+  "description": "# blackjax\n![ci](https://github.com/blackjax-devs/blackjax/workflows/run%20tests/badge.svg?branch=main)\n[![codecov](https://codecov.io/gh/blackjax-devs/blackjax/branch/main/graph/badge.svg)](https://codecov.io/gh/blackjax-devs/blackjax)\n\n\n## what is blackjax?\n\nblackjax is a library of samplers for [jax](https://github.com/google/jax) that\nworks on cpu as well as gpu.\n\nit is *not* a probabilistic programming library. however it integrates really\nwell with ppls as long as they can provide a (potentially unnormalized)\nlog-probability density function compatible with jax.\n\n## who should use blackjax?\n\nblackjax should appeal to those who:\n- have a logpdf and just need a sampler;\n- need more than a general-purpose sampler;\n- want to sample on gpu;\n- want to build upon robust elementary blocks for their research;\n- are building a probabilistic programming language;\n- want to learn how sampling algorithms work.\n\n## quickstart\n\n### installation\n\nyou can install blackjax using `pip`:\n\n```bash\npip install blackjax\n```\n\nor via conda-forge:\n\n```bash\nconda install -c conda-forge blackjax\n```\n\nnightly builds (bleeding edge) of blackjax can also be installed using `pip`:\n\n```bash\npip install blackjax-nightly\n```\n\nblackjax is written in pure python but depends on xla via jax. by default, the\nversion of jax that will be installed along with blackjax will make your code\nrun on cpu only. **if you want to use blackjax on gpu/tpu** we recommend you follow\n[these instructions](https://github.com/google/jax#installation) to install jax\nwith the relevant hardware acceleration support.\n\n### example\n\nlet us look at a simple self-contained example sampling with nuts:\n\n```python\nimport jax\nimport jax.numpy as jnp\nimport jax.scipy.stats as stats\nimport numpy as np\n\nimport blackjax\n\nobserved = np.random.normal(10, 20, size=1_000)\ndef logdensity_fn(x):\n  logpdf = stats.norm.logpdf(observed, x[\"loc\"], x[\"scale\"])\n  return jnp.sum(logpdf)\n\n# build the kernel\nstep_size = 1e-3\ninverse_mass_matrix = jnp.array([1., 1.])\nnuts = blackjax.nuts(logdensity_fn, step_size, inverse_mass_matrix)\n\n# initialize the state\ninitial_position = {\"loc\": 1., \"scale\": 2.}\nstate = nuts.init(initial_position)\n\n# iterate\nrng_key = jax.random.prngkey(0)\nfor _ in range(100):\n    rng_key, nuts_key = jax.random.split(rng_key)\n    state, _ = nuts.step(nuts_key, state)\n```\n\nsee [the documentation](https://blackjax-devs.github.io/blackjax/index.html) for more examples of how to use the library: how to write inference loops for one or several chains, how to use the stan warmup, etc.\n\n## philosophy\n\n### what is blackjax?\n\nblackjax bridges the gap between \"one liner\" frameworks and modular, customizable\nlibraries.\n\nusers can import the library and interact with robust, well-tested and performant\nsamplers with a few lines of code. these samplers are aimed at ppl developers,\nor people who have a logpdf and just need a sampler that works.\n\nbut the true strength of blackjax lies in its internals and how they can be used\nto experiment quickly on existing or new sampling schemes. this lower level\nexposes the building blocks of inference algorithms: integrators, proposal,\nmomentum generators, etc and makes it easy to combine them to build new\nalgorithms. it provides an opportunity to accelerate research on sampling\nalgorithms by providing robust, performant and reusable code.\n\n### why blackjax?\n\nsampling algorithms are too often integrated into ppls and not decoupled from\nthe rest of the framework, making them hard to use for people who do not need\nthe modeling language to build their logpdf. their implementation is most of\nthe time monolithic and it is impossible to reuse parts of the algorithm to\nbuild custom kernels. blackjax solves both problems.\n\n### how does it work?\n\nblackjax allows to build arbitrarily complex algorithms because it is built\naround a very general pattern. everything that takes a state and returns a state\nis a transition kernel, and is implemented as:\n\n```python\nnew_state, info =  kernel(rng_key, state)\n```\n\nkernels are stateless functions and all follow the same api; state and\ninformation related to the transition are returned separately. they can thus be\neasily composed and exchanged. we specialize these kernels by closure instead of\npassing parameters.\n\n## contributions\n\nplease follow our [short guide](https://github.com/blackjax-devs/blackjax/blob/main/contributing.md).\n\n## citing blackjax\n\nto cite this repository:\n\n```\n@software{blackjax2020github,\n  author = {lao, junpeng and louf, r\\'emi},\n  title = {{b}lackjax: a sampling library for {jax}},\n  url = {http://github.com/blackjax-devs/blackjax},\n  version = {<insert current release tag>},\n  year = {2020},\n}\n```\nin the above bibtex entry, names are in alphabetical order, the version number should be the last tag on the `main` branch.\n\n## acknowledgements\n\nsome details of the nuts implementation were largely inspired by\n[numpyro](https://github.com/pyro-ppl/numpyro)'s.\n",
+  "docs_url": null,
+  "keywords": "probability,machine learning,statistics,mcmc,sampling",
+  "license": "apache license 2.0",
+  "name": "blackjax",
+  "package_url": "https://pypi.org/project/blackjax/",
+  "project_url": "https://pypi.org/project/blackjax/",
+  "project_urls": {
+    "documentation": "https://blackjax-devs.github.io/blackjax/",
+    "homepage": "https://github.com/blackjax-devs/blackjax",
+    "repository": "https://github.com/blackjax-devs/blackjax"
+  },
+  "release_url": "https://pypi.org/project/blackjax/1.0.0/",
+  "requires_dist": [
+    "fastprogress >=1.0.0",
+    "jax >=0.4.16",
+    "jaxlib >=0.4.16",
+    "jaxopt >=0.8",
+    "optax >=0.1.7",
+    "typing-extensions >=4.4.0"
+  ],
+  "requires_python": ">=3.9",
+  "summary": "flexible and fast sampling in python",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "remi@thetypicalset.com"
+  ],
+  "kwds": "blackjax probabilistic sampler samplers sampling",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_blackjax",
+  "homepage": "",
+  "release_count": 20,
+  "dependency_ids": [
+    "pypi_fastprogress",
+    "pypi_jax",
+    "pypi_jaxlib",
+    "pypi_jaxopt",
+    "pypi_optax",
+    "pypi_typing_extensions"
+  ]
+}

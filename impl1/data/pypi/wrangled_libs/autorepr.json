@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "topic :: software development",
+    "topic :: utilities"
+  ],
+  "description": "``autorepr``: makes civilized string representations\n====================================================\n\n.. image:: https://travis-ci.org/wolever/autorepr.svg?branch=master\n    :target: https://travis-ci.org/wolever/autorepr\n\nnow with python 3 support!\n\noverview\n--------\n\npython makes classes easy, but ``__repr__`` methods hard. did you forget to\nreference ``self`` again? probably. did have you thought to yourself \"eh, this\nclass is real simple, it doesn't need a repr\"? without a doubt. was production\ntaken down three times last week because your ``__str__`` returned unicode? ...\nno? maybe that's just me.\n\n``autorepr`` makes it simple to build expressive, safe, and correct,\n``__repr__``, ``__str__``, ``__unicode__``, and ``__bytes__`` methods in a\nsingle line each.\n\nwith ``autorepr``, you get the repers you want, without worrying about the\nfiddly bits (like encoding and decoding), leaving you to focus on your project:\n\n.. code:: python\n\n    >>> from autorepr import autorepr, autotext\n    >>> class person(object):\n    ...     name = u\"alex \u2603\"\n    ...     height = 123.456\n    ...\n    ...     __repr__ = autorepr([\"name\", \"height:0.1f\"])\n    ...     __str__, __unicode__ = autotext(\"{self.name} ({self.height:0.0f} cm)\")\n    ...\n    >>> p = person()\n    >>> repr(p)\n    \"<__main__.person name=u'alex \\\\u2603' height=123.5 at 0x...>\"\n    >>> unicode(p)\n    u'alex \\u2603 (123 cm)'\n    >>> str(p)\n    'alex \\xe2\\x98\\x83 (123 cm)'\n\n\ninstallation\n------------\n\n::\n\n    $ pip install autorepr\n\n\nusage\n-----\n\n``autorepr`` exposes two main functions:\n\n- ``autorepr``, which builds a python-esque ``__repr__`` string by passing\n  either a ``str.format``-style string, or a list of attributes which should be\n  included in a ``name=value`` list::\n\n    autorepr([\"name\", \"height:0.1f\"]) -->\n        \"<pkg.person name=u'alex \\u2603' height=123.5 at 0x...>\"\n    autorepr(\"{self.id} name={self.name!r}\") -->\n        \"<pkg.person 123 name=u'alex \\u2603' at 0x...>\"\n\n- ``autotext``, which uses ``autostr`` and ``autounicode`` to create\n  ``__str__`` and ``__unicode__`` methods in a python 2 + 3 friendly way::\n\n    __str__, __unicode__ = autotext(\"{self.name} ({self.height!d} cm)\") -->\n        str: 'alex \\xe2\\x98\\x83 (123cm)'\n        unicode: u'alex \\u2603 (123cm)'\n\nand three secondary functions - ``autostr``, ``autounicode``, and\n``autobytes`` - which build ``__str__``, ``__unicode__``, and ``__bytes__``\nfunctions, respectively. the functions will do their best to avoid unicode\nencoding / decoding errors, and will generally do the right thing, even if the\ninputs aren't necessarily sensible.\n\nnote: the examples shown here are python 2, but everything works equally well\nunder python 3.\n\n.. code:: python\n\n    >>> from autorepr import autorepr, autotext, autostr, autounicode\n    >>> class person(object):\n    ...     name = u\"alex \u2603\"\n    ...     height = 123.456\n    ...\n    ...     __repr__ = autorepr([\"name\", \"height:0.1f\"])\n    ...     __str__, __unicode__ = autotext(\"{self.name} ({self.height:0.0f} cm)\")\n    ...\n    >>> p = person()\n    >>> repr(p)\n    \"<__main__.person name=u'alex \\\\u2603' height=123.5 at 0x...>\"\n    >>> unicode(p)\n    u'alex \\u2603 (123 cm)'\n    >>> str(p)\n    'alex \\xe2\\x98\\x83 (123 cm)'\n\n\nnotice that ``autostr`` and ``autorepr`` (as called here through ``autotext``)\nare intelligent about converting to/from unicode (decoding/encoding as utf-8)\nas necessary:\n\n.. code:: python\n\n    >>> p.name = u\"unicode: \u2603\"\n    >>> unicode(p)\n    u'unicode: \\u2603 (123 cm)'\n    >>> str(p)\n    'unicode: \\xe2\\x98\\x83 (123 cm)'\n    >>> p.name = 'utf-8 bytes: \\xe2\\x98\\x83'\n    >>> unicode(p)\n    u'utf-8 bytes: \\u2603 (123 cm)'\n    >>> str(p)\n    'utf-8 bytes: \\xe2\\x98\\x83 (123 cm)'\n\n*note*: ``autostr`` and ``autorepr`` won't crash on invalid utf-8 (for example,\nif ``autounicode`` is asked to turn binary data into unicode), but the result\nis *undefined* and may not be desirable.\n\nadditional properties can be passed in as ``kwargs``, which will be called with\nthe instance as a parameter:\n\n.. code:: python\n\n    >>> name_with_len = autostr(\"{self.name} length={len}\",\n    ...                         len=lambda self: len(self.name))\n    ...\n    >>> p.name = 'alex'\n    >>> name_with_len(p)\n    'alex length=4'\n\nthis works with ``autorepr``'s list mode too:\n\n.. code:: python\n\n    >>> repr_with_len = autorepr([\"name\", \"len\"],\n    ...                          len=lambda self: len(self.name))\n    ...\n    >>> repr_with_len(p)\n    \"<__main__.person name='alex' len=4 at 0x...>\"\n\nif a regular format string is passed to ``autorepr``, it will use that instead\nof the generated string:\n\n.. code:: python\n\n    >>> repr_with_str = autorepr(\"{self.name!r}\")\n    >>> repr_with_str(p)\n    \"<__main__.person 'alex' at 0x...>\"\n\nand of course, if you don't want your ``__repr__`` to be wrapped in\n``<classname ...>``, you can use ``autostr``:\n\n.. code:: python\n\n    >>> repr_with_autostr = autostr(\"person({self.name!r})\")\n    >>> repr_with_autostr(p)\n    \"person('alex')\"\n\n\nformat specifications can also be passed to ``autorepr`` if the default of\n``!r`` is undesirable (for example, truncating floats):\n\n.. code:: python\n\n    >>> with_fmt_spec = autorepr([\"duration:0.1f\", \"addr:x\", \"type!s\"],\n    ...                          duration=lambda x: 123.456,\n    ...                          addr=lambda x: 0xabc123,\n    ...                          type=lambda x: \"foo\")\n    >>> with_fmt_spec(none)\n    '<....nonetype duration=123.5 addr=abc123 type=foo at 0x...>'\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "autorepr",
+  "package_url": "https://pypi.org/project/autorepr/",
+  "project_url": "https://pypi.org/project/autorepr/",
+  "project_urls": {
+    "Homepage": "https://github.com/wolever/autorepr"
+  },
+  "release_url": "https://pypi.org/project/autorepr/0.3.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "makes civilized __repr__, __str__, and __unicode__ methods",
+  "version": "0.3.0",
+  "releases": [],
+  "developers": [
+    "david@wolever.net",
+    "david_wolever"
+  ],
+  "kwds": "repr_with_autostr repr_with_str autorepr autostr repr_with_len",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_autorepr",
+  "homepage": "https://github.com/wolever/autorepr",
+  "release_count": 4,
+  "dependency_ids": []
+}

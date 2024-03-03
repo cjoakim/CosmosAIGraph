@@ -1,0 +1,64 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "framework :: trio",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "license :: osi approved :: mit license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: bsd",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": ".. image:: https://img.shields.io/pypi/v/trio-typing.svg\n   :target: https://pypi.org/project/trio-typing\n   :alt: latest pypi version\n\n.. image:: https://travis-ci.org/python-trio/trio-typing.svg?branch=master\n   :target: https://travis-ci.org/python-trio/trio-typing\n   :alt: automated test status\n\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg\n   :target: https://github.com/ambv/black\n   :alt: code style: black\n\n.. image:: http://www.mypy-lang.org/static/mypy_badge.svg\n   :target: http://www.mypy-lang.org/\n   :alt: checked with mypy\n\ntrio-typing: static typing for trio and related projects\n========================================================\n\nthis repository provides:\n\n* pep 561 typing stubs packages for the trio project packages:\n\n  * `trio <https://github.com/python-trio/trio>`__ (``trio-stubs``)\n\n  * `outcome <https://github.com/python-trio/outcome>`__ (``outcome-stubs``)\n\n  * `async_generator <https://github.com/python-trio/async_generator>`__\n    (``async_generator-stubs``)\n\n* a package ``trio_typing`` containing types that trio programs often want\n  to refer to (``asyncgenerator[y, s]`` and ``taskstatus[t]``)\n  (``nursery`` is exported publicly by mainline trio as of version 0.12.0.)\n\n* a mypy plugin that smooths over some limitations in the basic type hints.\n\n\nsupported platforms\n~~~~~~~~~~~~~~~~~~~\n\nlike trio, we require python 3.7 or later. both pypy and cpython are\nsupported at runtime, but type checking must occur on cpython (due to\nlimitations of mypy).  we test on linux using the latest releases\nfrom the 3.7, 3.8, 3.9, and 3.10 branches. we're\nnot knowingly doing anything os-specific, so other oses should work\ntoo.\n\ntype checkers other than mypy are not supported, but might work.\nexperience reports and patches to add support are welcome.\n\n\nquickstart\n~~~~~~~~~~\n\nruntime only\n------------\n\ninstall with::\n\n    pip install trio-typing\n\nthen import some typing names from ``trio_typing``, like ``taskstatus``;\nsee below for more details.\n\n\nwith mypy support\n-----------------\n\ninstall trio-typing with mypy extras::\n\n    pip install trio-typing[mypy]\n\nnote that due to recent plugin api changes, trio-typing 0.10.0+ requires mypy 1.0+.\n\nenable the plugin in your ``mypy.ini``::\n\n    [mypy]\n    plugins = trio_typing.plugin\n\nstart running mypy on your trio code!\n\nnote: ``trio-typing`` is the correct dependency to list in the requirements\n  of your own library using the ``trio_typing`` module.  don't use\n  ``trio-typing[mypy]``, since that would needlessly add a mypy dependency to\n  every app having a transitive dependency on your library.\n\n\nwhat's in the box?\n~~~~~~~~~~~~~~~~~~\n\nthe stubs packages provide types for all public non-deprecated apis of\n``trio``, ``outcome``, and ``async_generator``, as of the release date\nof the corresponding ``trio-typing`` distribution. you don't need to\nexplicitly configure these; just say ``import trio`` (for example)\nand mypy will know to look in ``trio-stubs`` for the type information.\n\nthe ``trio_typing`` package provides:\n\n* ``taskstatus[t]``, the type of the object passed as the ``task_status``\n  argument to a task started with ``nursery.start()``. the type parameter\n  ``t`` is the type of the value the task provides to be returned from\n  ``nursery.start()``. this is implemented as an abc, and the actual\n  private types inside trio are registered as virtual subclasses\n  of it. so, you can't instantiate ``trio_typing.taskstatus``, but\n  ``isinstance(task_status, trio_typing.taskstatus)`` where ``task_status``\n  is a trio task status object does return true.\n\n* (previous versions of ``trio_typing`` provided an analogous abc for\n  ``nursery``, but the actual class is available as ``trio.nursery`` as of\n  trio 0.12.0; you should use that instead.)\n\n* a backport of ``typing.asyncgenerator[yieldt, sendt]`` to python 3.5.\n  (``yieldt`` is the type of values yielded by the generator, and\n  ``sendt`` is the type of values it accepts as an argument to ``asend()``.)\n  this is an abstract class describing the async generator interface:\n  ``asynciterator`` plus ``asend``, ``athrow``, ``aclose``, and the\n  ``ag_*`` introspection attributes. on 3.6+, ``trio_typing.asyncgenerator``\n  is just a reexport of ``typing.asyncgenerator``.\n\n* ``compatasyncgenerator[yieldt, sendt, returnt]``,\n  a name for the otherwise-anonymous concrete async generator type\n  returned by ``@async_generator`` functions. it is a subtype of\n  ``asyncgenerator[yieldt, sendt]`` and provides the same methods.\n  (native async generators don't have a ``returnt``; it is only relevant\n  in determining the return type of ``await async_generator.yield_from_()``.)\n\n* a few types that are only useful with the mypy plugin: ``yieldtype[t]``,\n  ``sendtype[t]``, and the decorator ``@takes_callable_and_args``.\n\nthe ``trio_typing.plugin`` mypy plugin provides:\n\n* inference of more specific ``trio.open_file()`` and ``trio.path.open()``\n  return types based on constant ``mode`` and ``buffering`` arguments, so\n  ``await trio.open_file(\"foo\", \"rb\", 0)`` returns an unbuffered async\n  file object in binary mode and ``await trio.open_file(\"bar\")`` returns\n  an async file object in text mode\n\n* boilerplate reduction for functions that take parameters ``(fn, *args)``\n  and ultimately invoke ``fn(*args)``: just write::\n\n      from mypy_extensions import vararg\n\n      @trio_typing.takes_callable_and_args\n      def start_soon(\n          async_fn: callable[[vararg()], awaitable[t]],\n          *args: any,\n          other_keywords: str = are_ok_too,\n      ):\n          # your implementation here\n\n  ``start_soon(async_fn, *args)`` will raise an error if ``async_fn(*args)``\n  would do so. you can also make the callable take some non-splatted\n  arguments; the ``*args`` get inserted at whatever position in the\n  argument list you write ``vararg()``.\n\n  the above example will always fail when the plugin is not being\n  used. if you want to always pass in such cases, you can use a union::\n\n      @trio_typing.takes_callable_and_args\n      def start_soon(\n          async_fn: union[\n              callable[..., awaitable[t]],\n              callable[[vararg()], awaitable[t]],\n          ],\n          *args: any,\n          other_keywords: str = are_ok_too,\n      ):\n          # your implementation here\n\n  without the plugin, this type-checks fine (and allows inference of\n  ``t``), since any callable will match the ``callable[...,\n  awaitable[t]]`` option. with the plugin, the entire union will be\n  replaced with specific argument types.\n\n  note: due to mypy limitations, we only support a maximum of 5\n  positional arguments, and keyword arguments can't be passed in this way;\n  ``nursery.start_soon(functools.partial(...))`` will pass the type checker\n  but won't be able to actually check the argument types.\n\n* mostly-full support for type checking ``@async_generator`` functions.\n  you write the decorated function as if it returned a union of its actual\n  return type, its yield type wrapped in ``yieldtype[]``, and its send\n  type wrapped in ``sendtype[]``::\n\n      from trio_typing import yieldtype, sendtype\n      @async_generator\n      async def sleep_and_sqrt() -> union[none, sendtype[int], yieldtype[float]]:\n          next_yield = 0.0\n          while true:\n              amount = await yield_(next_yield)  # amount is an int\n              if amount < 0:\n                  return none\n              await trio.sleep(amount)\n              next_yield = math.sqrt(amount)\n\n      # prints: compatasyncgenerator[float, int, none]\n      reveal_type(sleep_and_sqrt())\n\n  calls to ``yield_`` and ``yield_from_`` inside an ``@async_generator``\n  function are type-checked based on these declarations. if you leave\n  off *either* the yield type or send type, the missing one is assumed\n  to be ``none``; if you leave off *both* (writing just\n  ``async def sleep_and_sqrt() -> none:``, like you would if you weren't\n  using the plugin), they're both assumed to be ``any``.\n\n  note the explicit ``return none``; mypy won't accept ``return`` or\n  falling off the end of the function, unless you run it with\n  ``--no-warn-no-return``.\n\n\nlimitations\n~~~~~~~~~~~\n\n* calls to variadic trio functions like ``trio.run()``,\n  ``nursery.start_soon()``, and so on, only can type-check up to five\n  positional arguments. (this number could be increased easily, but\n  only at the cost of slower typechecking for everyone; mypy's current\n  architecture requires that we generate overload sets initially for\n  every arity we want to be able to use.) you can work around this with\n  a ``# type: ignore`` comment.\n\n* ``outcome.capture()`` and ``outcome.acapture()`` currently don't typecheck\n  their arguments at all.\n\n\nrunning the tests\n~~~~~~~~~~~~~~~~~\n\n``trio-typing`` comes with a fairly extensive testsuite; it doesn't test all\nthe mechanical parts of the stubs, but does exercise most of the interesting\nplugin behavior. you can run it after installing, with::\n\n    pytest -p trio_typing._tests.datadriven --pyargs trio_typing\n\n\nlicense\n~~~~~~~\n\nyour choice of mit or apache 2.0.\n",
+  "docs_url": null,
+  "keywords": "async,trio,mypy",
+  "license": "mit -or- apache license 2.0",
+  "name": "trio-typing",
+  "package_url": "https://pypi.org/project/trio-typing/",
+  "project_url": "https://pypi.org/project/trio-typing/",
+  "project_urls": {
+    "Homepage": "https://github.com/python-trio/trio-typing"
+  },
+  "release_url": "https://pypi.org/project/trio-typing/0.10.0/",
+  "requires_dist": [
+    "trio (>=0.16.0)",
+    "typing-extensions (>=3.7.4)",
+    "mypy-extensions (>=0.4.2)",
+    "async-generator",
+    "packaging",
+    "importlib-metadata",
+    "mypy (>=1.0) ; extra == 'mypy'"
+  ],
+  "requires_python": "",
+  "summary": "static type checking support for trio and related projects",
+  "version": "0.10.0",
+  "releases": [],
+  "developers": [
+    "joshua_oreman",
+    "oremanj@gmail.com"
+  ],
+  "kwds": "trio_typing mypy_extensions mypy_badge cpython python",
+  "license_kwds": "mit -or- apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_trio_typing",
+  "homepage": "https://github.com/python-trio/trio-typing",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_async_generator",
+    "pypi_importlib_metadata",
+    "pypi_mypy",
+    "pypi_mypy_extensions",
+    "pypi_packaging",
+    "pypi_trio",
+    "pypi_typing_extensions"
+  ]
+}

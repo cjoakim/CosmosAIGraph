@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "intended audience :: science/research",
+    "programming language :: fortran",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: chemistry",
+    "topic :: scientific/engineering :: physics"
+  ],
+  "description": "python binding for tblite\n=========================\n\nthis directory contains the python api of the *tblite* project.\n\nthis interface provides access to the c-api of ``tblite`` via the cffi module.\nthe low-level cffi interface is available in the ``tblite.library`` module and only required for implementing other interfaces.\na more pythonic interface is provided in the ``tblite.interface`` module which can be used to build more specific interfaces.\n\n.. code:: python\n\n   from tblite.interface import calculator\n   import numpy as np\n   numbers = np.array([1, 1, 6, 5, 1, 15, 8, 17, 13, 15, 5, 1, 9, 15, 1, 15])\n   positions = np.array([  # coordinates in bohr\n       [+2.79274810283778, +3.82998228828316, -2.79287054959216],\n       [-1.43447454186833, +0.43418729987882, +5.53854345129809],\n       [-3.26268343665218, -2.50644032426151, -1.56631149351046],\n       [+2.14548759959147, -0.88798018953965, -2.24592534506187],\n       [-4.30233097423181, -3.93631518670031, -0.48930754109119],\n       [+0.06107643564880, -3.82467931731366, -2.22333344469482],\n       [+0.41168550401858, +0.58105573172764, +5.56854609916143],\n       [+4.41363836635653, +3.92515871809283, +2.57961724984000],\n       [+1.33707758998700, +1.40194471661647, +1.97530004949523],\n       [+3.08342709834868, +1.72520024666801, -4.42666116106828],\n       [-3.02346932078505, +0.04438199934191, -0.27636197425010],\n       [+1.11508390868455, -0.97617412809198, +6.25462847718180],\n       [+0.61938955433011, +2.17903547389232, -6.21279842416963],\n       [-2.67491681346835, +3.00175899761859, +1.05038813614845],\n       [-4.13181080289514, -2.34226739863660, -3.44356159392859],\n       [+2.85007173009739, -2.64884892757600, +0.71010806424206],\n   ])\n   calc = calculator(\"gfn2-xtb\", numbers, positions)\n   res = calc.singlepoint()\n   print(res.get(\"energy\"))  # results in atomic units\n   # => -31.716159156026254\n\n\nbuilding the extension module\n-----------------------------\n\nthe python bindings can be built against an existing installation of ``tblite`` or free-standing.\nthe free-standing implementation will select a matching version of the shared library, when building against an existing ``tblite`` library the api version of the two parts must match.\n\n\nsetuptools build\n~~~~~~~~~~~~~~~~\n\nthis project support installation with pip as an easy way to build the python api.\n\n- c compiler to build the c-api and compile the extension module (the compiler name should be exported in the ``cc`` environment variable)\n- python 3.6 or newer\n- the following python packages are required additionally\n\n  - `cffi <https://cffi.readthedocs.io/>`_\n  - `numpy <https://numpy.org/>`_\n  - `pkgconfig <https://pypi.org/project/pkgconfig/>`_ (setup only)\n\nensure that you can find ``tblite`` via\n\n.. code:: sh\n\n   pkg-config --modversion tblite\n\nadjust the ``pkg_config_path`` environment variable to include the correct directories to find the installation if necessary.\nalternatively, you can set the ``tblite_prefix`` environment variable to point to the installation of the library.\n\nmake sure to have your c compiler set to the ``cc`` environment variable\n\n.. code:: sh\n\n   export cc=gcc\n\ninstall the project with pip\n\n.. code:: sh\n\n   pip install .\n\n\nusing meson\n~~~~~~~~~~~\n\nthis directory contains a separate meson build file to allow the out-of-tree build of the cffi extension module.\nthe out-of-tree build requires\n\n- c compiler to build the c-api and compile the extension module\n- `meson <https://mesonbuild.com>`_ version 0.57.2 or newer\n- a build-system backend, *i.e.* `ninja <https://ninja-build.org>`_ version 1.7 or newer\n- python 3.6 or newer with the `cffi <https://cffi.readthedocs.io/>`_ package installed\n\nto make a free-standing build you can provide the main repository as subproject to the python bindings *without* having to build the shared library first.\nthis can be done for example by symlinking the main repository to the subprojects directory.\n\n.. code:: sh\n\n   mkdir subprojects\n   ln -s $(realpath ..) subprojects/tblite\n\nnote that this step is not needed if you built against an existing ``tblite`` installation.\n\nsetup a build with\n\n.. code:: sh\n\n   meson setup _build -dpython_version=$(which python3) --prefix=/path/to/install\n\nthe python version can be used to select a different python version, it defaults to ``'python3'``.\npython 2 is not supported with this project, the python version key is meant to select between several local python 3 versions.\n\ncompile the project with\n\n.. code:: sh\n\n   meson compile -c _build\n\nthe extension module is now available in ``_build/tblite/_libtblite.*.so``.\nyou can install as usual with\n\n.. code:: sh\n\n   meson install -c _build\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "lgpl-3.0-or-later",
+  "name": "tblite",
+  "package_url": "https://pypi.org/project/tblite/",
+  "project_url": "https://pypi.org/project/tblite/",
+  "project_urls": {
+    "Documentation": "https://tblite.readthedocs.io",
+    "Repository": "https://github.com/tblite/tblite"
+  },
+  "release_url": "https://pypi.org/project/tblite/0.3.0/",
+  "requires_dist": [
+    "cffi",
+    "numpy",
+    "ase; extra == \"ase\"",
+    "pytest; extra == \"test\"",
+    "pytest-cov; extra == \"test\""
+  ],
+  "requires_python": ">=3.7",
+  "summary": "light-weight tight-binding framework",
+  "version": "0.3.0",
+  "releases": [],
+  "developers": [],
+  "kwds": "numpy tblite python3 tblite_prefix python",
+  "license_kwds": "lgpl-3.0-or-later",
+  "libtype": "pypi",
+  "id": "pypi_tblite",
+  "homepage": "",
+  "release_count": 2,
+  "dependency_ids": [
+    "pypi_ase",
+    "pypi_cffi",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_pytest_cov"
+  ]
+}

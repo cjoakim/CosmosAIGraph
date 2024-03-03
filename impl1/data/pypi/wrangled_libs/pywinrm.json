@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: clustering",
+    "topic :: system :: distributed computing",
+    "topic :: system :: systems administration"
+  ],
+  "description": "pywinrm\n=======\n\npywinrm is a python client for the windows remote management (winrm)\nservice. it allows you to invoke commands on target windows machines\nfrom any machine that can run python.\n\n|license| |test workflow| |coverage| |pypi|\n\nwinrm allows you to perform various management tasks remotely. these\ninclude, but are not limited to: running batch scripts, powershell\nscripts, and fetching wmi variables.\n\nused by `ansible <https://www.ansible.com/>`__ for windows support.\n\nfor more information on winrm, please visit `microsoft\u2019s winrm\nsite <http://msdn.microsoft.com/en-us/library/aa384426.aspx>`__.\n\nrequirements\n------------\n\n-  linux, mac os x or windows\n-  cpython 2.6-2.7, 3.3-3.5 or pypy2\n-  `requests-kerberos <http://pypi.python.org/pypi/requests-kerberos>`__\n   and\n   `requests-credssp <https://github.com/jborean93/requests-credssp>`__\n   is optional\n\ninstallation\n------------\n\nto install pywinrm with support for basic, certificate, and ntlm auth, simply\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code:: bash\n\n   $ pip install pywinrm\n\nto use kerberos authentication you need these optional dependencies\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code:: bash\n\n   # for debian/ubuntu/etc:\n   $ sudo apt-get install gcc python-dev libkrb5-dev\n   $ pip install pywinrm[kerberos]\n\n   # for rhel/centos/etc:\n   $ sudo yum install gcc python-devel krb5-devel krb5-workstation python-devel\n   $ pip install pywinrm[kerberos]\n\nto use credssp authentication you need these optional dependencies\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code:: bash\n\n   # for debian/ubuntu/etc:\n   $ sudo apt-get install gcc python-dev libssl-dev\n   $ pip install pywinrm[credssp]\n\n   # for rhel/centos/etc:\n   $ sudo yum install gcc python-devel openssl-devel\n   $ pip install pywinrm[credssp]\n\nexample usage\n-------------\n\nrun a process on a remote host\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code:: python\n\n   import winrm\n\n   s = winrm.session('windows-host.example.com', auth=('john.smith', 'secret'))\n   r = s.run_cmd('ipconfig', ['/all'])\n   >>> r.status_code\n   0\n   >>> r.std_out\n   windows ip configuration\n\n      host name . . . . . . . . . . . . : windows-host\n      primary dns suffix  . . . . . . . :\n      node type . . . . . . . . . . . . : hybrid\n      ip routing enabled. . . . . . . . : no\n      wins proxy enabled. . . . . . . . : no\n   ...\n   >>> r.std_err\n\nnote: pywinrm will try and guess the correct endpoint url from the\nfollowing formats:\n\n-  windows-host -> http://windows-host:5985/wsman\n-  windows-host:1111 -> http://windows-host:1111/wsman\n-  http://windows-host -> http://windows-host:5985/wsman\n-  http://windows-host:1111 -> http://windows-host:1111/wsman\n-  http://windows-host:1111/wsman -> http://windows-host:1111/wsman\n\nrun powershell script on remote host\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code:: python\n\n   import winrm\n\n   ps_script = \"\"\"$strcomputer = $host\n   clear\n   $ram = wmiobject win32_computersystem\n   $mb = 1048576\n\n   \"installed memory: \" + [int]($ram.totalphysicalmemory /$mb) + \" mb\" \"\"\"\n\n   s = winrm.session('windows-host.example.com', auth=('john.smith', 'secret'))\n   r = s.run_ps(ps_script)\n   >>> r.status_code\n   0\n   >>> r.std_out\n   installed memory: 3840 mb\n\n   >>> r.std_err\n\npowershell scripts will be base64 utf16 little-endian encoded prior to\nsending to the windows host. error messages are converted from the\npowershell clixml format to a human readable format as a convenience.\n\nrun process with low-level api with domain user, disabling https cert validation\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code:: python\n\n   from winrm.protocol import protocol\n\n   p = protocol(\n       endpoint='https://windows-host:5986/wsman',\n       transport='ntlm',\n       username=r'somedomain\\someuser',\n       password='secret',\n       server_cert_validation='ignore')\n   shell_id = p.open_shell()\n   command_id = p.run_command(shell_id, 'ipconfig', ['/all'])\n   std_out, std_err, status_code = p.get_command_output(shell_id, command_id)\n   p.cleanup_command(shell_id, command_id)\n   p.close_shell(shell_id)\n\nvalid transport options\n~~~~~~~~~~~~~~~~~~~~~~~\n\npywinrm supports various transport methods in order to authenticate with\nthe winrm server. the options that are supported in the ``transport``\nparameter are; \\* ``basic``: basic auth only works for local windows\naccounts not domain accounts. credentials are base64 encoded when\nsending to the server. \\* ``plaintext``: same as basic auth. \\*\n``certificate``: authentication is done through a certificate that is\nmapped to a local windows account on the server. \\* ``ssl``: when used\nin conjunction with ``cert_pem`` and ``cert_key_pem`` it will use a\ncertificate as above. if not will revert to basic auth over https. \\*\n``kerberos``: will use kerberos authentication for domain accounts which\nonly works when the client is in the same domain as the server and the\nrequired dependencies are installed. currently a kerberos ticket needs\nto be initialized outside of pywinrm using the ``kinit`` command. \\*\n``ntlm``: will use ntlm authentication for both domain and local\naccounts. \\* ``credssp``: will use credssp authentication for both\ndomain and local accounts. allows double hop authentication. this only\nworks over a https endpoint and not http.\n\nencryption\n~~~~~~~~~~\n\nby default, winrm will not accept unencrypted communication with a\nclient. there are two ways to enable encrypted communication with\npywinrm:\n\n1. use an https endpoint instead of http (recommended)\n2. use ntlm, kerberos, or credssp as the transport auth\n\nusing an https endpoint is recommended, as it will encrypt all the data\nsent to the server (including all headers), works securely with all auth\ntypes, and can properly verify remote host identity (when used with\ncertificates signed by a verifiable certificate authority). you can use\n`this\nscript <https://github.com/ansible/ansible/blob/devel/examples/scripts/configureremotingforansible.ps1>`__\nto easily set up a https endpoint on winrm with a self-signed\ncertificate, but the use of a verifiable certificate authority is\nrecommended in production environments.\n\nthe second option is to use ntlm, kerberos, or credssp, and set the\n``message_encryption`` arg to protocol to ``auto`` (the default value)\nor ``always``. this will use the authentication gss-api wrap and unwrap\nmethods to encrypt the message contents sent to the server. this form of\nencryption is independent of the transport layer, and the strength of\nthe encryption used varies with the underlying authentication type\nselected (ntlm generally being the weakest and credssp the strongest).\n\nto configure message encryption you can use the ``message_encryption``\nargument when initialising protocol. this option has 3 values that can\nbe set as shown below.\n\n-  ``auto``: default, will only use message encryption if it is\n   available for the auth method and https isn\u2019t used.\n-  ``never``: will never use message encryption even when not over\n   https.\n-  ``always``: will always use message encryption even when running over\n   https (fails if encryption support is unavailable on the selected\n   auth method).\n\nif you set the value to ``always`` and the transport opt doesn\u2019t support\nmessage encryption (e.g., ``basic`` auth or an old version of\n``pykerberos`` without message encryption support is installed), pywinrm\nwill throw an exception.\n\nif you do not use an https endpoint or message encryption, a\ndefault-configured winrm server will automatically reject requests from\npywinrm. server settings can be modified allow unencrypted messages and\ncredentials, but this is highly insecure and should only be used for\ndiagnostic purposes. to allow unencrypted communications, run the\nfollowing on the winrm server (cmd and powershell versions provided):\n\n::\n\n   # from cmd\n   winrm set winrm/config/service @{allowunencrypted=\"true\"}\n\n   # or from powershell\n   set-item -path \"wsman:\\localhost\\service\\allowunencrypted\" -value $true\n\nagain, this should *not* be used in production environments, as your\ncredentials and winrm messages can be trivially recovered.\n\nenabling winrm on remote host\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nenable winrm over http and https with self-signed certificate (includes\nfirewall rules):\n\n::\n\n   # from powershell:\n   invoke-expression ((new-object system.net.webclient).downloadstring('https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/configureremotingforansible.ps1'))\n\nenable winrm over http for test usage (includes firewall rules):\n\n::\n\n   winrm quickconfig\n\nenable winrm basic authentication. for domain users, it is necessary to\nuse ntlm, kerberos, or credssp authentication (kerberos and ntlm\nauthentication are enabled by default, credssp is not).\n\n::\n\n   # from cmd:\n   winrm set winrm/config/service/auth @{basic=\"true\"}\n\nenable winrm credssp authentication. this allows double hop support so\nyou can authenticate with a network service when running command son the\nremote host. this command is run in powershell.\n\n.. code:: powershell\n\n   enable-wsmancredssp -role server -force\n   set-item -path \"wsman:\\localhost\\service\\auth\\credssp\" -value $true\n\ncontributors (alphabetically)\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n-  alessandro pilotti\n-  alexey diyan\n-  chris church\n-  david cournapeau\n-  gema gomez\n-  jijo varghese\n-  jordan borean\n-  juan j. martinez\n-  lukas bednar\n-  manuel sabban\n-  matt clark\n-  matt davis\n-  maxim kovgan\n-  nir cohen\n-  patrick dunnigan\n-  reina abolofia\n\nwant to help - send a pull request. i will accept good pull requests for\nsure.\n\n.. |license| image:: https://img.shields.io/badge/license-mit-blue.svg\n   :target: https://github.com/diyan/pywinrm/blob/master/license\n.. |test workflow| image:: https://github.com/diyan/pywinrm/workflows/test%20pywinrm/badge.svg\n   :target: https://github.com/diyan/pywinrm/actions/workflows/ci.yml\n.. |coverage| image:: https://coveralls.io/repos/diyan/pywinrm/badge.svg\n   :target: https://coveralls.io/r/diyan/pywinrm\n.. |pypi| image:: https://img.shields.io/pypi/dm/pywinrm.svg\n   :target: https://pypi.python.org/pypi/pywinrm\n\n\n",
+  "docs_url": null,
+  "keywords": "winrm,ws-man,devops,ws-management",
+  "license": "mit license",
+  "name": "pywinrm",
+  "package_url": "https://pypi.org/project/pywinrm/",
+  "project_url": "https://pypi.org/project/pywinrm/",
+  "project_urls": {
+    "Homepage": "http://github.com/diyan/pywinrm/"
+  },
+  "release_url": "https://pypi.org/project/pywinrm/0.4.3/",
+  "requires_dist": [
+    "xmltodict",
+    "requests (>=2.9.1)",
+    "requests-ntlm (>=1.1.0)",
+    "six",
+    "requests-credssp (>=1.0.0) ; extra == 'credssp'",
+    "pykerberos (<2.0.0,>=1.2.1) ; (sys_platform!=\"win32\") and extra == 'kerberos'",
+    "winkerberos (>=0.5.0) ; (sys_platform==\"win32\") and extra == 'kerberos'"
+  ],
+  "requires_python": "",
+  "summary": "python library for windows remote management",
+  "version": "0.4.3",
+  "releases": [],
+  "developers": [
+    "alexey.diyan@gmail.com",
+    "alexey_diyan"
+  ],
+  "kwds": "pywinrm ansible winrm powershell run_cmd",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_pywinrm",
+  "homepage": "http://github.com/diyan/pywinrm/",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_pykerberos",
+    "pypi_requests",
+    "pypi_requests_credssp",
+    "pypi_requests_ntlm",
+    "pypi_six",
+    "pypi_winkerberos",
+    "pypi_xmltodict"
+  ]
+}

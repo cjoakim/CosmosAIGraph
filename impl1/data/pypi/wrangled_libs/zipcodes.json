@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: build tools"
+  ],
+  "description": "# zipcodes\n\nzipcodes is a simple library for querying u.s. zipcodes.\n\nthe python `sqlite3` module is not required in order to use this package.\n\n```python\n>>> import zipcodes\n>>> assert zipcodes.is_real('77429')\n>>> assert len(zipcodes.similar_to('7742')) != 0\n>>> exact_zip = zipcodes.matching('77429')[0]\n>>> filtered_zips = zipcodes.filter_by(city=\"cypress\", state=\"tx\") \n>>> assert exact_zip in filtered_zips\n>>> pprint.pprint(exact_zip)\n{'acceptable_cities': [],\n  'active': true,\n  'area_codes': ['281', '832'],\n  'city': 'cypress',\n  'country': 'us',\n  'county': 'harris county',\n  'lat': '29.9857',\n  'long': '-95.6548',\n  'state': 'tx',\n  'timezone': 'america/chicago',\n  'unacceptable_cities': [],\n  'world_region': 'na',\n  'zip_code': '77429',\n  'zip_code_type': 'standard'}[\n```\n\n\u26a0\ufe0f the zipcode data was last updated on: **oct. 3, 2021** \u26a0\ufe0f\n\n[![downloads](https://pepy.tech/badge/zipcodes/month)](https://pepy.tech/project/zipcodes/month)\n[![supported versions](https://img.shields.io/pypi/pyversions/zipcodes.svg)](https://pypi.org/project/zipcodes)\n[![contributors](https://img.shields.io/github/contributors/seanpianka/zipcodes.svg)](https://github.com/seanpianka/zipcodes/graphs/contributors)\n\n\n## installation\n\nzipcodes is available on pypi:\n\n```console\n$ python -m pip install zipcodes\n```\n\nzipcodes supports python 2.6+ and python 3.2+.\n\n### compiling with pyinstaller\n\nadd a data file to your pyinstaller bundle with the [`--add-data`](https://pyinstaller.readthedocs.io/en/stable/spec-files.html#adding-data-files) flag.\n\n\n#### linux and macos\n`--add-data \"<path-to-package-install>/zipcodes/zips.json.bz2:zipcodes\"`\n\n#### windows\n`--add-data \"<path-to-package-install>\\zipcodes\\zips.json.bz2;zipcodes\"`\n\n## zipcode data\n\nthe build script for the zipcode data outputs a json file containing all the zipcode data and zipped using bzip2. the data sources are stored under `build/app/data`. \n\nbuild the zipcode data for distribution: \n\n```shell script\n$ build/app/__init__.py # outputs `zipcodes/zips.json.bz2`\n```\n\n\n## tests\n\nthe tests are defined in a declarative, table-based format that generates test\ncases. \n\nrun the tests directly:\n\n```shell script\n$ python tests/__init__.py \n```\n\n## examples\n\n```python\n>>> from pprint import pprint\n>>> import zipcodes\n\n>>> # simple zip-code matching.\n>>> pprint(zipcodes.matching('77429'))\n[{'acceptable_cities': [],\n  'active': true,\n  'area_codes': ['281', '832'],\n  'city': 'cypress',\n  'country': 'us',\n  'county': 'harris county',\n  'lat': '29.9857',\n  'long': '-95.6548',\n  'state': 'tx',\n  'timezone': 'america/chicago',\n  'unacceptable_cities': [],\n  'world_region': 'na',\n  'zip_code': '77429',\n  'zip_code_type': 'standard'}]\n\n\n>>> # handles of zip+4 zip-codes nicely. :)\n>>> pprint(zipcodes.matching('77429-1145'))\n[{'acceptable_cities': [],\n  'active': true,\n  'area_codes': ['281', '832'],\n  'city': 'cypress',\n  'country': 'us',\n  'county': 'harris county',\n  'lat': '29.9857',\n  'long': '-95.6548',\n  'state': 'tx',\n  'timezone': 'america/chicago',\n  'unacceptable_cities': [],\n  'world_region': 'na',\n  'zip_code': '77429',\n  'zip_code_type': 'standard'}]\n\n>>> # will try to handle invalid zip-codes gracefully...\n>>> print(zipcodes.matching('06463'))\n[]\n\n>>> # until it cannot.\n>>> zipcodes.matching('0646a')\ntraceback (most recent call last):\n  ...\ntypeerror: invalid characters, zipcode may only contain digits and \"-\".\n\n>>> zipcodes.matching('064690')\ntraceback (most recent call last):\n  ...\ntypeerror: invalid format, zipcode must be of the format: \"#####\" or \"#####-####\"\n\n>>> zipcodes.matching(none)\ntraceback (most recent call last):\n  ...\ntypeerror: invalid type, zipcode must be a string.\n\n>>> # whether the zip-code exists within the database.\n>>> print(zipcodes.is_real('06463'))\nfalse\n\n>>> # how handy!\n>>> print(zipcodes.is_real('06469'))\ntrue\n\n>>> # search for zipcodes that begin with a pattern.\n>>> pprint(zipcodes.similar_to('1018'))\n[{'acceptable_cities': [],\n  'active': false,\n  'area_codes': ['212'],\n  'city': 'new york',\n  'country': 'us',\n  'county': 'new york county',\n  'lat': '40.71',\n  'long': '-74',\n  'state': 'ny',\n  'timezone': 'america/new_york',\n  'unacceptable_cities': ['j c penney'],\n  'world_region': 'na',\n  'zip_code': '10184',\n  'zip_code_type': 'unique'},\n {'acceptable_cities': [],\n  'active': true,\n  'area_codes': ['212'],\n  'city': 'new york',\n  'country': 'us',\n  'county': 'new york county',\n  'lat': '40.7143',\n  'long': '-74.0067',\n  'state': 'ny',\n  'timezone': 'america/new_york',\n  'unacceptable_cities': [],\n  'world_region': 'na',\n  'zip_code': '10185',\n  'zip_code_type': 'po box'}]\n\n>>> # use filter_by to filter a list of zip-codes by specific attribute->value pairs.\n>>> pprint(zipcodes.filter_by(city=\"old saybrook\"))\n[{'acceptable_cities': [],\n  'active': true,\n  'area_codes': ['860'],\n  'city': 'old saybrook',\n  'country': 'us',\n  'county': 'middlesex county',\n  'lat': '41.3015',\n  'long': '-72.3879',\n  'state': 'ct',\n  'timezone': 'america/new_york',\n  'unacceptable_cities': ['fenwick'],\n  'world_region': 'na',\n  'zip_code': '06475',\n  'zip_code_type': 'standard'}]\n\n>>> # arbitrary nesting of similar_to and filter_by calls, allowing for great precision while filtering.\n>>> pprint(zipcodes.similar_to('2', zips=zipcodes.filter_by(active=true, city='windsor')))\n[{'acceptable_cities': [],\n  'active': true,\n  'area_codes': ['757'],\n  'city': 'windsor',\n  'country': 'us',\n  'county': 'isle of wight county',\n  'lat': '36.8628',\n  'long': '-76.7143',\n  'state': 'va',\n  'timezone': 'america/new_york',\n  'unacceptable_cities': [],\n  'world_region': 'na',\n  'zip_code': '23487',\n  'zip_code_type': 'standard'},\n {'acceptable_cities': ['askewville'],\n  'active': true,\n  'area_codes': ['252'],\n  'city': 'windsor',\n  'country': 'us',\n  'county': 'bertie county',\n  'lat': '35.9942',\n  'long': '-76.9422',\n  'state': 'nc',\n  'timezone': 'america/new_york',\n  'unacceptable_cities': [],\n  'world_region': 'na',\n  'zip_code': '27983',\n  'zip_code_type': 'standard'},\n {'acceptable_cities': [],\n  'active': true,\n  'area_codes': ['803'],\n  'city': 'windsor',\n  'country': 'us',\n  'county': 'aiken county',\n  'lat': '33.4730',\n  'long': '-81.5132',\n  'state': 'sc',\n  'timezone': 'america/new_york',\n  'unacceptable_cities': [],\n  'world_region': 'na',\n  'zip_code': '29856',\n  'zip_code_type': 'standard'}]\n\n>>> # have any other ideas? make a pull request and start contributing today!\n>>> # made with love by sean pianka\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "zipcode zip code us state query filter validate sqlite",
+  "license": "mit",
+  "name": "zipcodes",
+  "package_url": "https://pypi.org/project/zipcodes/",
+  "project_url": "https://pypi.org/project/zipcodes/",
+  "project_urls": {
+    "Homepage": "https://github.com/seanpianka/zipcodes"
+  },
+  "release_url": "https://pypi.org/project/zipcodes/1.2.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "query u.s. state zipcodes without sqlite.",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "pianka@eml.cc",
+    "sean_pianka"
+  ],
+  "kwds": "zip_code zip_code_type filtered_zips zipcode zipcodes",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_zipcodes",
+  "homepage": "https://github.com/seanpianka/zipcodes",
+  "release_count": 8,
+  "dependency_ids": []
+}

@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "hazelcast python client\n=======================\n\n.. image:: https://img.shields.io/pypi/v/hazelcast-python-client\n    :target: https://pypi.org/project/hazelcast-python-client/\n    :alt: pypi\n.. image:: https://img.shields.io/readthedocs/hazelcast\n    :target: https://hazelcast.readthedocs.io\n    :alt: read the docs\n.. image:: https://img.shields.io/badge/slack-chat-green.svg\n    :target: https://slack.hazelcast.com\n    :alt: join the community on slack\n.. image:: https://img.shields.io/pypi/l/hazelcast-python-client\n    :target: https://github.com/hazelcast/hazelcast-python-client/blob/master/license.txt\n    :alt: license\n\n----\n\n`hazelcast <https://hazelcast.com/>`__ is an open-source distributed\nin-memory data store and computation platform that provides a wide\nvariety of distributed data structures and concurrency primitives.\n\nhazelcast python client is a way to communicate to hazelcast clusters\nand access the cluster data. the client provides a future-based\nasynchronous api suitable for wide ranges of use cases.\n\ninstallation\n------------\n\nhazelcast\n~~~~~~~~~\n\nhazelcast python client requires a working hazelcast cluster to run.\nthis cluster handles the storage and manipulation of the user data.\n\na hazelcast cluster consists of one or more cluster members. these\nmembers generally run on multiple virtual or physical machines and are\nconnected to each other via the network. any data put on the cluster is\npartitioned to multiple members transparent to the user. it is therefore\nvery easy to scale the system by adding new members as the data grows.\nhazelcast cluster also offers resilience. should any hardware or\nsoftware problem causes a crash to any member, the data on that member\nis recovered from backups and the cluster continues to operate without\nany downtime.\n\nthe quickest way to start a single member cluster for development\npurposes is to use our `docker\nimages <https://hub.docker.com/r/hazelcast/hazelcast/>`__.\n\n.. code:: bash\n\n   docker run -p 5701:5701 hazelcast/hazelcast:5.3.0\n\nyou can also use our zip or tar\n`distributions <https://hazelcast.com/open-source-projects/downloads/>`__.\nonce you have downloaded, you can start the hazelcast member using\nthe ``bin/hz-start`` script.\n\nclient\n~~~~~~\n\n.. code:: bash\n\n   pip install hazelcast-python-client\n\noverview\n--------\n\nusage\n~~~~~\n\n.. code:: python\n\n    import hazelcast\n\n    # connect to hazelcast cluster.\n    client = hazelcast.hazelcastclient()\n\n    # get or create the \"distributed-map\" on the cluster.\n    distributed_map = client.get_map(\"distributed-map\")\n\n    # put \"key\", \"value\" pair into the \"distributed-map\" and wait for\n    # the request to complete.\n    distributed_map.set(\"key\", \"value\").result()\n\n    # try to get the value associated with the given key from the cluster\n    # and attach a callback to be executed once the response for the\n    # get request is received. note that, the set request above was\n    # blocking since it calls \".result()\" on the returned future, whereas\n    # the get request below is non-blocking.\n    get_future = distributed_map.get(\"key\")\n    get_future.add_done_callback(lambda future: print(future.result()))\n\n    # do other operations. the operations below won't wait for\n    # the get request above to complete.\n\n    print(\"map size:\", distributed_map.size().result())\n\n    # shutdown the client.\n    client.shutdown()\n\n\nif you are using hazelcast and the python client on the same machine,\nthe default configuration should work out-of-the-box. however,\nyou may need to configure the client to connect to cluster nodes that\nare running on different machines or to customize client properties.\n\nconfiguration\n~~~~~~~~~~~~~\n\n.. code:: python\n\n    import hazelcast\n\n    client = hazelcast.hazelcastclient(\n        cluster_name=\"cluster-name\",\n        cluster_members=[\n            \"10.90.0.2:5701\",\n            \"10.90.0.3:5701\",\n        ],\n        lifecycle_listeners=[\n            lambda state: print(\"lifecycle event >>>\", state),\n        ]\n    )\n\n    print(\"connected to cluster\")\n    client.shutdown()\n\n\nrefer to `the documentation <https://hazelcast.readthedocs.io>`__\nto learn more about supported configuration options.\n\nfeatures\n--------\n\n-  distributed, partitioned and queryable in-memory key-value store\n   implementation, called **map**\n-  eventually consistent cache implementation to store a subset of the\n   map data locally in the memory of the client, called **near cache**\n-  additional data structures and simple messaging constructs such as\n   **set**, **multimap**, **queue**, **topic**\n-  cluster-wide unique id generator, called **flakeidgenerator**\n-  distributed, crdt based counter, called **pncounter**\n-  distributed concurrency primitives from cp subsystem such as\n   **fencedlock**, **semaphore**, **atomiclong**\n-  integration with `hazelcast viridian <https://viridian.hazelcast.com/>`__\n-  support for serverless and traditional web service architectures with\n   **unisocket** and **smart** operation modes\n-  ability to listen to client lifecycle, cluster state, and distributed\n   data structure events\n-  and `many\n   more <https://hazelcast.com/clients/python/#client-features>`__\n\ngetting help\n------------\n\nyou can use the following channels for your questions and\ndevelopment/usage issues:\n\n-  `github\n   repository <https://github.com/hazelcast/hazelcast-python-client/issues/new>`__\n-  `documentation <https://hazelcast.readthedocs.io>`__\n-  `slack <https://slack.hazelcast.com>`__\n-  `google groups <https://groups.google.com/g/hazelcast>`__\n-  `stack\n   overflow <https://stackoverflow.com/questions/tagged/hazelcast>`__\n\ncontributing\n------------\n\nwe encourage any type of contribution in the form of issue reports or\npull requests.\n\nissue reports\n~~~~~~~~~~~~~\n\nfor issue reports, please share the following information with us to\nquickly resolve the problems:\n\n-  hazelcast and the client version that you use\n-  general information about the environment and the architecture you\n   use like python version, cluster size, number of clients, java\n   version, jvm parameters, operating system etc.\n-  logs and stack traces, if any\n-  detailed description of the steps to reproduce the issue\n\npull requests\n~~~~~~~~~~~~~\n\ncontributions are submitted, reviewed and accepted using the pull\nrequests on github. for an enhancement or larger feature, please\ncreate a github issue first to discuss.\n\ndevelopment\n^^^^^^^^^^^\n\n1. clone the `github repository\n   <https://github.com/hazelcast/hazelcast-python-client>`__.\n2. run ``python setup.py install`` to install the python client.\n\nif you are planning to contribute:\n\n1. run ``pip install -r requirements-dev.txt`` to install development\n   dependencies.\n2. use `black <https://pypi.org/project/black/>`__ to reformat the code\n   by running the ``black --config black.toml .`` command.\n3. use `mypy <https://pypi.org/project/mypy/>`__ to check type annotations\n   by running the ``mypy hazelcast`` command.\n4. make sure that tests are passing by following the steps described\n   in the next section.\n\ntesting\n^^^^^^^\n\nin order to test hazelcast python client locally, you will need the\nfollowing:\n\n-  java 8 or newer\n-  maven\n\nfollowing commands starts the tests:\n\n.. code:: bash\n\n    python run_tests.py\n\ntest script automatically downloads ``hazelcast-remote-controller`` and\nhazelcast. the script uses maven to download those.\n\nlicense\n-------\n\n`apache 2.0 license <license>`__.\n\ncopyright\n---------\n\ncopyright (c) 2008-2023, hazelcast, inc.\u00a0all rights reserved.\n\nvisit `hazelcast.com <https://hazelcast.com>`__ for more\ninformation.\n\n\n",
+  "docs_url": null,
+  "keywords": "hazelcast,hazelcast client,in-memory data grid,distributed computing",
+  "license": "apache 2.0",
+  "name": "hazelcast-python-client",
+  "package_url": "https://pypi.org/project/hazelcast-python-client/",
+  "project_url": "https://pypi.org/project/hazelcast-python-client/",
+  "project_urls": {
+    "Homepage": "https://github.com/hazelcast/hazelcast-python-client"
+  },
+  "release_url": "https://pypi.org/project/hazelcast-python-client/5.3.0/",
+  "requires_dist": [
+    "psutil ; extra == 'stats'"
+  ],
+  "requires_python": "",
+  "summary": "hazelcast python client",
+  "version": "5.3.0",
+  "releases": [],
+  "developers": [
+    "hazelcast@googlegroups.com",
+    "hazelcast_inc"
+  ],
+  "kwds": "hazelcastclient hazelcast slack distributed_map cluster_name",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_hazelcast_python_client",
+  "homepage": "https://github.com/hazelcast/hazelcast-python-client",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_psutil"
+  ]
+}

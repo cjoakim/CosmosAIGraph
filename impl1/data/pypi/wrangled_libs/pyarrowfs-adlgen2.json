@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "pyarrowfs-adlgen2\n==\n\npyarrowfs-adlgen2 is an implementation of a pyarrow filesystem for azure data lake gen2.\n\nit allows you to use pyarrow and pandas to read parquet datasets directly from azure without the need to copy files to local storage first.\n\ninstallation\n--\n\n`pip install pyarrowfs-adlgen2`\n\nreading datasets\n--\n\nexample usage with pandas dataframe:\n\n```python\nimport azure.identity\nimport pandas as pd\nimport pyarrow.fs\nimport pyarrowfs_adlgen2\n\nhandler = pyarrowfs_adlgen2.accounthandler.from_account_name(\n    'your_account_name', azure.identity.defaultazurecredential())\nfs = pyarrow.fs.pyfilesystem(handler)\ndf = pd.read_parquet('container/dataset.parq', filesystem=fs)\n```\n\nexample usage with arrow tables:\n\n```python\nimport azure.identity\nimport pyarrow.dataset\nimport pyarrow.fs\nimport pyarrowfs_adlgen2\n\nhandler = pyarrowfs_adlgen2.accounthandler.from_account_name(\n    'your_account_name', azure.identity.defaultazurecredential())\nfs = pyarrow.fs.pyfilesystem(handler)\nds = pyarrow.dataset.dataset('container/dataset.parq', filesystem=fs)\ntable = ds.to_table()\n```\n\nconfiguring timeouts\n--\n\ntimeouts are passed to azure-storage-file-datalake sdk methods. the timeout unit is in seconds.\n\n```python\nimport azure.identity\nimport pyarrowfs_adlgen2\n\nhandler = pyarrowfs_adlgen2.accounthandler.from_account_name(\n    'your_account_name',\n    azure.identity.defaultazurecredential(),\n    timeouts=pyarrowfs_adlgen2.timeouts(file_system_timeout=10)\n)\n# or mutate it:\nhandler.timeouts.file_client_timeout = 20\n```\n\nwriting datasets\n--\n\nwith pyarrow version 3 or greater, you can write datasets from arrow tables:\n\n```python\nimport pyarrow as pa\nimport pyarrow.dataset\n\npyarrow.dataset.write_dataset(\n    table,\n    'name.pq',\n    format='parquet',\n    partitioning=pyarrow.dataset.partitioning(\n        schema=pyarrow.schema([('year', pa.int32())]), flavor='hive'\n    ),\n    filesystem=pyarrow.fs.pyfilesystem(handler)\n)\n```\n\nwith earlier versions, files must be opened/written one at a time:\n\nas of pyarrow version 1.0.1, `pyarrow.parquet.parquetwriter` does not support `pyarrow.fs.pyfilesystem`, but data can be written to open files:\n\n```python\nwith fs.open_output_stream('container/out.parq') as out:\n    df.to_parquet(out)\n```\n\nor with arrow tables:\n\n```python\nimport pyarrow.parquet\n\nwith fs.open_output_stream('container/out.parq') as out:\n    pyarrow.parquet.write_table(table, out)\n```\n\naccessing only a single container/file-system\n--\n\nif you do not want, or can't access the whole storage account as a single filesystem, you can use `pyarrowfs_adlgen2.filesystemhandler` to view a single file system within an account:\n\n```python\nimport azure.identity\nimport pyarrowfs_adlgen2\n\nhandler = pyarrowfs_adlgen2.filesystemhandler.from_account_name(\n   \"storage_account\", \"fs_name\", azure.identity.defaultazurecredential())\n```\n\nall access is done through the file system within the storage account.\n\nset http headers for files for pyarrow >= 5\n--\n\nyou can set headers for any output files by using the `metadata` argument to `handler.open_output_stream`:\n\n```python\nimport pyarrowfs_adlgen2\n\nfs = pyarrowfs_adlgen2.accounthandler.from_account_name(\"theaccount\").to_fs()\nmetadata = {\"content_type\": \"application/json\"}\nwith fs.open_output_stream(\"container/data.json\", metadata) as out:\n    out.write(\"{}\")\n```\n\nnote that the spelling is different than you might expect! for a list of valid keys, see\n[contentsettings](https://docs.microsoft.com/en-us/python/api/azure-storage-file-datalake/azure.storage.filedatalake.contentsettings?view=azure-python).\n\nyou can do this for pyarrow >= 5 when using `pyarrow.fs.pyfilesystem`, and for any pyarrow if using the handlers\nfrom pyarrowfs_adlgen2 directly.\n\n\nrunning tests\n--\n\nto run the integration tests, you need:\n\n- azure storage account v2 with hierarchial namespace enabled (data lake gen2 account)\n- to configure azure login (f. ex. use `$ az login` or set up environment variables, see ` azure.identity.defaultazurecredential`)\n- install pytest, f. ex. `pip install pytest`\n\n**nb! all data in the storage account is deleted during testing, use an empty account**\n\n```\nazurearrowfs_test_act=thestorageaccount pytest\n```\n",
+  "docs_url": null,
+  "keywords": "azure datalake filesystem pyarrow parquet",
+  "license": "mit",
+  "name": "pyarrowfs-adlgen2",
+  "package_url": "https://pypi.org/project/pyarrowfs-adlgen2/",
+  "project_url": "https://pypi.org/project/pyarrowfs-adlgen2/",
+  "project_urls": {
+    "Homepage": "https://github.com/kaaveland/pyarrowfs-adlgen2"
+  },
+  "release_url": "https://pypi.org/project/pyarrowfs-adlgen2/0.2.4/",
+  "requires_dist": [
+    "pyarrow (>=1.0.0)",
+    "azure-storage-file-datalake",
+    "pandas ; extra == 'dev'",
+    "pytest ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "use pyarrow with azure data lake gen2",
+  "version": "0.2.4",
+  "releases": [],
+  "developers": [
+    "kaaveland@gmail.com"
+  ],
+  "kwds": "read_parquet azurearrowfs_test_act pyarrowfs_adlgen2 datalake pyarrowfs",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pyarrowfs_adlgen2",
+  "homepage": "https://github.com/kaaveland/pyarrowfs-adlgen2",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_azure_storage_file_datalake",
+    "pypi_pandas",
+    "pypi_pyarrow",
+    "pypi_pytest"
+  ]
+}

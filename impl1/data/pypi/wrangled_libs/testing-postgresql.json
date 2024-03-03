@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.2",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "topic :: database",
+    "topic :: software development",
+    "topic :: software development :: testing"
+  ],
+  "description": "about\n=====\n``testing.postgresql`` automatically setups a postgresql instance in a temporary directory, and destroys it after testing.\n\n.. image:: https://travis-ci.org/tk0miya/testing.postgresql.svg?branch=master\n   :target: https://travis-ci.org/tk0miya/testing.postgresql\n\n.. image:: https://coveralls.io/repos/tk0miya/testing.postgresql/badge.png?branch=master\n   :target: https://coveralls.io/r/tk0miya/testing.postgresql?branch=master\n\n.. image:: https://codeclimate.com/github/tk0miya/testing.postgresql/badges/gpa.svg\n   :target: https://codeclimate.com/github/tk0miya/testing.postgresql\n\n\ndocumentation\n  https://github.com/tk0miya/testing.postgresql\nissues\n  https://github.com/tk0miya/testing.postgresql/issues\ndownload\n  https://pypi.python.org/pypi/testing.postgresql\n\ninstall\n=======\nuse pip::\n\n   $ pip install testing.postgresql\n\nand ``testing.postgresql`` requires postgresql server in your path.\n\n\nusage\n=====\ncreate postgresql instance using ``testing.postgresql.postgresql``::\n\n  import testing.postgresql\n  from sqlalchemy import create_engine\n\n  # lanuch new postgresql server\n  with testing.postgresql.postgresql() as postgresql:\n      # connect to postgresql\n      engine = create_engine(postgresql.url())\n\n      # if you use postgresql or other drivers:\n      #   import psycopg2\n      #   db = psycopg2.connect(**postgresql.dsn())\n\n      #\n      # do any tests using postgresql...\n      #\n\n  # postgresql server is terminated here\n\n\n``testing.postgresql.postgresql`` executes ``initdb`` and ``postgres`` on instantiation.\non deleting postgresql object, it terminates postgresql instance and removes temporary directory.\n\nif you want a database including tables and any fixtures for your apps,\nuse ``copy_data_from`` keyword::\n\n  # uses a copy of specified data directory of postgresql.\n  postgresql = testing.postgresql.postgresql(copy_data_from='/path/to/your/database')\n\n\nfor example, you can setup new postgresql server for each testcases on setup() method::\n\n  import unittest\n  import testing.postgresql\n\n  class mytestcase(unittest.testcase):\n      def setup(self):\n          self.postgresql = testing.postgresql.postgresql()\n\n      def teardown(self):\n          self.postgresql.stop()\n\n\nto make your tests faster\n-------------------------\n\n``testing.postgresql.postgresql`` invokes ``initdb`` command on every instantiation.\nthat is very simple. but, in many cases, it is very waste that generating brandnew database for each testcase.\n\nto optimize the behavior, use ``testing.postgresql.postgresqlfactory``.\nthe factory class is able to cache the generated database beyond the testcases,\nand it reduces the number of invocation of ``initdb`` command::\n\n  import unittest\n  import testing.postgresql\n\n  # generate postgresql class which shares the generated database\n  postgresql = testing.postgresql.postgresqlfactory(cache_initialized_db=true)\n\n\n  def teardownmodule(self):\n      # clear cached database at end of tests\n      postgresql.clear_cache()\n\n\n  class mytestcase(unittest.testcase):\n      def setup(self):\n          # use the generated postgresql class instead of testing.postgresql.postgresql\n          self.postgresql = postgresql()\n\n      def teardown(self):\n          self.postgresql.stop()\n\nif you want to insert fixtures to the cached database, use ``initdb_handler`` option::\n\n  # create initial data on create as fixtures into the database\n  def handler(postgresql):\n      conn = psycopg2.connect(**postgresql.dsn())\n      cursor = conn.cursor()\n      cursor.execute(\"create table hello(id int, value varchar(256))\")\n      cursor.execute(\"insert into hello values(1, 'hello'), (2, 'ciao')\")\n      cursor.close()\n      conn.commit()\n      conn.close()\n\n  # use `handler()` on initialize database\n  postgresql = testing.postgresql.postgresqlfactory(cache_initialized_db=true,\n                                                    on_initialized=handler)\n\n\nrequirements\n============\n* python 2.6, 2.7, 3.2, 3.3, 3.4, 3.5\n* pg8000 1.10\n\nlicense\n=======\napache license 2.0\n\n\nhistory\n=======\n\n1.3.0 (2016-02-03)\n-------------------\n* add testing.postgresql.postgresqlfactory\n* depend on ``testing.common.database`` package\n\n1.2.1 (2015-08-22)\n-------------------\n* fix bug:\n\n  - close #3 fix attributeerror on end of tests\n\n1.2.0 (2015-05-17)\n-------------------\n* use `pg8000` for connector to create test database\n* connect to `postgres` to create test database (instead of `template1`)\n\n1.1.2 (2015-04-06)\n-------------------\n* fix bugs:\n\n  - do not call os.getpid() on destructor (if not needed)\n  - raise detailed runtimeerror if initdb exits non-zero\n\n1.1.1 (2015-01-18)\n-------------------\n* disable logging_collector feature (for fedora)\n* fix bugs:\n\n  - macports default path is /opt/local/lib/postgresql*, no dash\n\n1.1.0 (2014-12-20)\n-------------------\n* invoke 'postgres' command instead of 'postmaster'\n\n1.0.6 (2014-07-19)\n-------------------\n* fix #1 dirty postmaster shut down\n\n1.0.5 (2014-07-19)\n-------------------\n* fix path for postgresql\n* use absolute path for which command\n\n1.0.4 (2014-06-19)\n-------------------\n* fix timeout on terminating postgresql\n* support postgresql on /usr/local/bin (cf. freebsd ports)\n* fix bugs\n\n1.0.3 (2014-06-11)\n-------------------\n* fix importerror if caught sigint on py3\n\n1.0.2 (2013-12-06)\n-------------------\n* change behavior: postgresql#stop() cleans workdir\n* fix caught attributeerror on object deletion\n\n1.0.1 (2013-12-05)\n-------------------\n* add @skipifnotinstalled decorator (alias of skipifnotfound)\n* suport python 2.6 and 3.2\n\n1.0.0 (2013-12-04)\n-------------------\n* add @skipifnotfound decorator\n\n0.1.0 (2013-11-26)\n-------------------\n* first release",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "testing.postgresql",
+  "package_url": "https://pypi.org/project/testing.postgresql/",
+  "project_url": "https://pypi.org/project/testing.postgresql/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "https://github.com/tk0miya/testing.postgresql"
+  },
+  "release_url": "https://pypi.org/project/testing.postgresql/1.3.0/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "automatically setups a postgresql instance in a temporary directory, and destroys it after testing",
+  "version": "1.3.0",
+  "releases": [],
+  "developers": [
+    "takeshi_komiya"
+  ],
+  "kwds": "travis postgres postgresql temporary cache_initialized_db",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_testing.postgresql",
+  "homepage": "https://github.com/tk0miya/testing.postgresql",
+  "release_count": 14,
+  "dependency_ids": []
+}

@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: c++",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: text processing :: linguistic"
+  ],
+  "description": "# pycld2 - python bindings to cld2\n\npython bindings for the compact langauge detect 2 (cld2).\n\n[![downloads](https://img.shields.io/pypi/dm/pycld2.svg)](https://pypi.python.org/pypi/pycld2)\n[![latest version](https://img.shields.io/pypi/v/pycld2.svg)](https://pypi.python.org/pypi/pycld2)\n[![supported python versions](https://img.shields.io/pypi/pyversions/pycld2.svg)](https://pypi.python.org/pypi/pycld2)\n[![development status](https://img.shields.io/pypi/status/pycld2.svg)](https://pypi.python.org/pypi/pycld2)\n[![download format](https://img.shields.io/pypi/format/pycld2.svg)](https://pypi.python.org/pypi/pycld2)\n[![build status](https://travis-ci.org/abosamoor/pycld2.png?branch=master)](https://travis-ci.org/abosamoor/pycld2)\n\nthis package contains forks of:\n\n- the [`cld2` c++ library](https://github.com/cld2owners/cld2), developed by dick sites\n- the [`chromium-compact-language-detector` c++ extension module](https://github.com/mikemccand/chromium-compact-language-detector),\n  originally created by mike mccandless, which has been modified post-fork.\n  these bindings, among other changes, make the support of over 165 languages\n  the default.\n\nthe goal of this project is to consolidate the upstream library with its bindings, so the user can `pip install` one package instead of two.\n\nthe license is the same as chromium's license and is included in the\nlicense file for reference.\n\n## installing\n\n```bash\n$ python -m pip install -u pycld2\n```\n\n## example\n\n```python\nimport pycld2 as cld2\n\nisreliable, textbytesfound, details = cld2.detect(\n    \"\u0430 \u043d\u0435\u043f\u0440\u0430\u0432\u0438\u043b\u044c\u043d\u044b\u0439 \u0444\u043e\u0440\u043c\u0430\u0442 \u0438\u0434\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0442\u043e\u0440\u0430 \u0434\u043d \u043d\u0430\u0437\u0430\u0434\"\n)\n\nprint(isreliable)\n# true\ndetails[0]\n# ('russian', 'ru', 98, 404.0)\n\nfr_en_latn = \"\"\"\\\nfrance is the largest country in western europe and the third-largest in europe as a whole.\na acc\u00e8s aux chiens et aux frontaux qui lui ont \u00e9t\u00e9 il peut consulter et modifier ses collections\net exporter cet article concerne le pays europ\u00e9en aujourd\u2019hui appel\u00e9 r\u00e9publique fran\u00e7aise.\npour d\u2019autres usages du nom france, pour une aide rapide et effective, veuiller trouver votre aide\ndans le menu ci-dessus.\nmotoring events began soon after the construction of the first successful gasoline-fueled automobiles.\nthe quick brown fox jumped over the lazy dog.\"\"\"\n\nisreliable, textbytesfound, details, vectors = cld2.detect(\n    fr_en_latn, returnvectors=true\n)\nprint(vectors)\n# ((0, 94, 'english', 'en'), (94, 329, 'french', 'fr'), (423, 139, 'english', 'en'))\n```\n\n## api\n\nthis package exports one function, `detect()`. see `help(detect)` for the full docstring.\n\nthe first parameter (`utf8bytes`) is the text for which you want to detect language.\n\n`utf8bytes` may be either:\n\n- `str` (example: `\"\u00bc cup of flour\"`)\n- `bytes` that have been encoded using utf-8 (example: `\"\u00bc cup of flour\".encode(\"utf-8\")`)\n\nbytes that are *not* utf-8 encoded will raise a `pycld2.error`.  for example, passing\nb\"\\xbc cup of flour\" (which is `\"\u00bc cup of flour\".encode(\"latin-1\")`) will raise.\n\nall other parameters are optional:\n\n| parameter | type/default | use |\n| --------- | ------------ | --- |\n| `utf8bytes` | `str` or `bytes`\\* | the text to detect language for. |\n| `isplaintext` | `bool`, default `false` | if `false`, then the input is html and cld will skip html tags, expand html entities, detect html `<lang ...>` tags, etc. |\n| `hinttopleveldomain` | `str` | e.g., `'id'` boosts indonesian. |\n| `hintlanguage` | `str` | e.g., `'italian'` or `'it'` boosts italian; see `cld.languages` for all known languages. |\n| `hintlanguagehttpheaders` | `str` | e.g., `'mi,en'` boosts maori and english. |\n| `hintencoding` | `str` | e.g, `'sjs'` boosts japanese; see `cld.encodings` for all known encodings. |\n| `returnvectors` |  `bool`, default `false` | if `true`, then the vectors indicating which language was detected in which byte range are returned in addition to details.  the vectors are a sequence of `(bytesoffset, byteslength, languagename, languagecode)`, in order. `bytesoffset` is the start of the vector, `byteslength `is the length of the vector.  note that there is some added cpu cost if this is true.  (approx. 2x performance hit.) |\n| `debugscoreasquads` | `bool`, default `false` | normally, several languages are detected solely by their unicode script.  combined with appropritate lookup tables, this flag forces them instead to be detected via quadgrams. this can be a useful refinement when looking for meaningful text in these languages, instead of just character sets. the default tables do not support this use. |\n| `debughtml` | `bool`, default `false` | for each detection call, write an html file to stderr, showing the text chunks and their detected languages. see `cld2/docs/interpretingcld2unittestoutput.pdf` to interpret this output. |\n| `debugcr` | `bool`, default `false` | in that html file, force a new line for each chunk. |\n| `debugverbose` | `bool`, default `false` | in that html file, show every lookup entry. |\n| `debugquiet` | `bool`, default `false` | in that html file, suppress most of the output detail. |\n| `debugecho` | `bool`, default `false` | echo every input buffer to stderr. |\n| `besteffort` | `bool`, default `false` | if `true`, then allow low-quality results for short text, rather than forcing the result to `\"unknown_language\"`.  this may be of use for those desiring approximate results on short input text, but there is no claim that these result are very good. |\n\n<sup>\\*if `bytes`, must be utf-8 encoded bytes.</sup>\n\n## constants\n\nthis package exports these global constants:\n\n| constant | description |\n| -------- | ----------- |\n| `pycld2.encodings` | list of the encoding names cld recognizes (if you provide `hintencoding`, it must be one of these names). |\n| `pycld2.languages` | list of languages and their codes (if you provide `hintlanguagecode`, it must be one of the codes from these codes). |\n| `pycld2.external_languages` | list of external languages and their codes. |\n| `pycld2.detected_languages` | list of all detectable languages. |\n\n## what about cld3?\n\npython bindings for [cld3](https://github.com/google/cld3/) are available as a separate project, [`pycld3`](https://github.com/bsolomon1124/pycld3).",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache2",
+  "name": "pycld2",
+  "package_url": "https://pypi.org/project/pycld2/",
+  "project_url": "https://pypi.org/project/pycld2/",
+  "project_urls": {
+    "Homepage": "https://github.com/aboSamoor/pycld2"
+  },
+  "release_url": "https://pypi.org/project/pycld2/0.41/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python bindings around google chromium's embedded compact language detection library (cld2)",
+  "version": "0.41",
+  "releases": [],
+  "developers": [
+    "brad.solomon.1124@gmail.com",
+    "brad_solomon",
+    "rami_al",
+    "rmyeid@gmail.com"
+  ],
+  "kwds": "pycld2 pycld3 cld2 pyversions cld3",
+  "license_kwds": "apache2",
+  "libtype": "pypi",
+  "id": "pypi_pycld2",
+  "homepage": "https://github.com/abosamoor/pycld2",
+  "release_count": 6,
+  "dependency_ids": []
+}

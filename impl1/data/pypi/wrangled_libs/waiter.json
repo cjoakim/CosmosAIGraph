@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.13",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "typing :: typed"
+  ],
+  "description": "[![image](https://img.shields.io/pypi/v/waiter.svg)](https://pypi.org/project/waiter/)\n![image](https://img.shields.io/pypi/pyversions/waiter.svg)\n[![image](https://pepy.tech/badge/waiter)](https://pepy.tech/project/waiter)\n![image](https://img.shields.io/pypi/status/waiter.svg)\n[![image](https://github.com/coady/waiter/workflows/build/badge.svg)](https://github.com/coady/waiter/actions)\n[![image](https://codecov.io/gh/coady/waiter/branch/main/graph/badge.svg)](https://codecov.io/gh/coady/waiter/)\n[![image](https://github.com/coady/waiter/workflows/codeql/badge.svg)](https://github.com/coady/waiter/security/code-scanning)\n[![image](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)\n[![image](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)\n\ndoes python need yet another retry / poll library? it needs at least one that isn't coupled to decorators and functions. decorators prevent the caller from customizing delay options, and organizing the code around functions hinders any custom handling of failures.\n\nwaiter is built around iteration instead, because the foundation of retrying / polling is a slowly executing loop. the resulting interface is both easier to use and more flexible, decoupling the delay algorithms from the application logic.\n\n## usage\n### creation\nsupply a number of seconds to repeat endlessly, or any iterable of seconds.\n\n```python\nfrom waiter import wait\n\nwait(1)                 # 1, 1, 1, 1, ...\nwait([1] * 3)           # 1, 1, 1\nwait([0.5, 0.5, 60])    # circuit breaker\n```\n\niterable delays can express any waiting strategy, and constructors for common algorithms are also provided.\n\n```python\nwait.count(1)           # incremental backoff 1, 2, 3, 4, 5, ...\nwait(1) + 1             # alternate syntax 1, 2, 3, 4, 5, ...\nwait.fibonacci(1)       # 1, 1, 2, 3, 5, ...\nwait.polynomial(2)      # 0, 1, 4, 9, 16, ...\n\nwait.exponential(2)     # exponential backoff 1, 2, 4, 8, ...\nbackoff = wait(1) * 2   # alternate syntax 1, 2, 4, 8, ...\nbackoff[:3]             # limit attempt count 1, 2, 4\nbackoff <= 5            # set maximum delay   1, 2, 4, 5, 5, 5, ...\nbackoff.random(-1, 1)   # add random jitter\n```\n\n### iteration\nthen simply use the `wait` object like any iterable, yielding the amount of elapsed time. timeouts also supported of course.\n\n```python\nfrom waiter import wait, suppress, first\n\nfor elapsed in wait(delays):            # first iteration is immediate\n    with suppress(exception):           # then each subsequent iteration sleeps as necessary\n        ...\n        break\n\nfor _ in wait(delays, timeout):         # standard convention for ignoring a loop variable\n    ...                                 # won't sleep past the timeout\n    if ...:\n        break\n\nresults = (... for _ in wait(delays))   # expressions are even easier\nfirst(predicate, results[, default])    # filter for first true item\nassert any(results)                     # perfect for tests too\n```\n\n### functions\nyes, functional versions are provided, as well as being trivial to implement.\n\n```python\nwait(...).throttle(iterable)                      # generate items from iterable\nwait(...).repeat(func, *args, **kwargs)           # generate successive results\nwait(...).retry(exception, func, *args, **kwargs) # return first success or re-raise exception\nwait(...).poll(predicate, func, *args, **kwargs)  # return first success or raise stopiteration\n```\n\nthe decorator variants are simply partial applications of the corresponding methods. note decorator syntax doesn't support arbitrary expressions.\n\n```python\nbackoff = wait(0.1) * 2\n@backoff.repeating\n@backoff.retrying(exception)\n@backoff.polling(predicate)\n```\n\nbut in the real world:\n* the function may not exist or be succinctly written as a lambda\n* the predicate may not exist or be succinctly written as a lambda\n* logging may be required\n* there may be complex handling of different exceptions or results\n\nso consider the block form, just as decorators don't render `with` blocks superfluous. also note `wait` objects are re-iterable provided their original delays were.\n\n### async\nwaiters also support async iteration. `throttle` optionally accepts an async iterable. `repeat`, `retry`, and `poll` optionally accept coroutine functions.\n\n### statistics\nwaiter objects have a `stats` attribute for aggregating statistics about the calls made. the base implementation provides `total` and `failure` counts. the interface of the `stats` object itself is considered provisional for now, but can be extended by overriding the `stats` class attribute. this also allows customization of the iterable values; elapsed time is the default.\n\n## installation\n```console\n% pip install waiter\n```\n\n## dependencies\n* multimethod\n\n## tests\n100% branch coverage.\n\n```console\n% pytest [--cov]\n```\n",
+  "docs_url": null,
+  "keywords": "wait,retry,poll,delay,sleep,timeout,incremental,exponential,backoff,async",
+  "license": "copyright 2022 aric coady  licensed under the apache license, version 2.0 (the \"license\"); you may not use this file except in compliance with the license. you may obtain a copy of the license at  http://www.apache.org/licenses/license-2.0  unless required by applicable law or agreed to in writing, software distributed under the license is distributed on an \"as is\" basis, without warranties or conditions of any kind, either express or implied. see the license for the specific language governing permissions and limitations under the license. ",
+  "name": "waiter",
+  "package_url": "https://pypi.org/project/waiter/",
+  "project_url": "https://pypi.org/project/waiter/",
+  "project_urls": {
+    "Changelog": "https://github.com/coady/waiter/blob/main/CHANGELOG.md",
+    "Documentation": "https://coady.github.io/waiter",
+    "Homepage": "https://github.com/coady/waiter",
+    "Issues": "https://github.com/coady/waiter/issues"
+  },
+  "release_url": "https://pypi.org/project/waiter/1.4/",
+  "requires_dist": [
+    "multimethod >=1"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "delayed iteration for polling and retries.",
+  "version": "1.4",
+  "releases": [],
+  "developers": [
+    "aric.coady@gmail.com"
+  ],
+  "kwds": "workflows badge mypy_badge pytest pypi",
+  "license_kwds": "copyright license licensed licenses apache",
+  "libtype": "pypi",
+  "id": "pypi_waiter",
+  "homepage": "",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_multimethod"
+  ]
+}

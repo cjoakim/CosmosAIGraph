@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "programming language :: rust"
+  ],
+  "description": "# mitmproxy_wireguard\n\n[![pypi](https://img.shields.io/pypi/v/mitmproxy_wireguard)](https://pypi.org/project/mitmproxy-wireguard/)\n![pypi - license](https://img.shields.io/pypi/l/mitmproxy_wireguard)\n![pypi - status](https://img.shields.io/pypi/status/mitmproxy_wireguard)\n![pypi - python version](https://img.shields.io/pypi/pyversions/mitmproxy_wireguard)\n![pypi - wheel](https://img.shields.io/pypi/wheel/mitmproxy_wireguard)\n[![ci](https://github.com/decathorpe/mitmproxy_wireguard/actions/workflows/ci.yml/badge.svg)](https://github.com/decathorpe/mitmproxy_wireguard/actions/workflows/ci.yml)\n\ntransparently proxy any device that can be configured as a wireguard client!\n\n## done\n\n* multithreaded / asynchronous wireguard server using tokio:\n  * one worker thread for the user-space wireguard server\n  * one worker thread for the user-space network stack\n  * one worker thread for communicating with the python runtime\n* full support for ipv4 packets (tcp and udp)\n* partial support for ipv6 packets (tcp and udp)\n* python interface similar to the python `asyncio` module\n* integration tests in mitmproxy\n\n## todo\n\n* more complete ipv6 support\n* various other small `todo` and `fixme` items\n\n## architecture support\n\n`mitmproxy_wireguard` should work on most architectures / targets - including,\nbut not limited to windows, macos, and linux, running on x86_64 (x64) and\naarch64 (arm64) cpus.\n\nbinary wheels for the following targets are available from pypi:\n\n- windows / x64 (`x86_64-windows-msvc`)\n- macos / intel (`x86_64-apple-darwin`)\n- macos / apple silicon (`aarch64-apple-darwin`) via \"universal 2\" binaries\n- linux / x86_64 (`x86_64-unknown-linux-gnu`)\n- linux / aarch64 (`aarch64-unknown-linux-gnu`), i.e. for raspberry pi 2+ and similar devices\n\n## requirements\n\n`mitmproxy_wireguard` currently requires python 3.7 or newer at runtime, since\nthat is the oldest version of python that is still supported by pyo3 v0.16.\nmitmproxy already requires python 3.9 or newer, so this should not be a problem.\n\nadditionally, `mitmproxy_wireguard` currently has the following requirements at\nbuild-time:\n\n- python 3.7+ (range of python versions that is supported by pyo3 v0.16)\n- rust 1.58.0+ (the oldest supported version of rust / msrv is 1.58.0)\n- maturin 0.13.x\n\n## architecture\n\n![library architecture](architecture.png)\n\n## interface\n\nthe api interface of the pyo3 module is documented in `mitmproxy_wireguard.pyi`:\n\n- `server` class: a running wireguard server instance, with methods for\n  - graceful shutdown (`close` / `wait_closed`)\n  - sending udp packets\n- `tcpstream` class: an established tcp connection (provides apis identical to\n  python's)\n  `asyncio.streamreader` and `asyncio.streamwriter`)\n- `start_server` coroutine: initialize, start, and return a `server` instance\n\n## hacking\n\nsetting up the development environment is relatively straightforward,\nas only a rust toolchain and python 3 are required:\n\n```shell\n# set up a new venv\npython3 -m venv venv\n\n# enter venv (use the activation script for your shell)\nsource ./venv/bin/activate\n\n# install maturin and pdoc\npip install maturin pdoc\n```\n\ncompiling the native rust module then becomes easy:\n\n```shell\n# compile native rust module and install it in venv\nmaturin develop\n\n# compile native rust module with optimizations\nmaturin develop --release\n```\n\nonce that's done (phew! rust sure does take a while to compile!), the test\necho server should work correctly. it will print instructions for connecting to\nit over a wireguard vpn:\n\n```shell\npython3 ./echo_test_server.py\n```\n\nthe included `mitm-wg-test-client` binary can be used to test this echo test\nserver, which can be built by running `cargo build` inside the `test-client`\ndirectory, and launched from `target/debug/mitm-wg-test-client`.\n\n## docs\n\ndocumentation for the python module can be built with `pdoc`.\n\nthe documentation is built from the `mitmproxy_wireguard.pyi` type stubs and the\nrustdoc documentation strings themselves. so to generate the documentation, the\nnative module needs to be rebuilt, as well:\n\n```shell\nmaturin develop\npdoc mitmproxy_wireguard\n```\n\nby default, this will build the documentation in html format and serve it on\n<http://localhost:8080>.\n\n**note**: this requires version `>=11.2.0` of pdoc. it is the first version that\nsupports generating documentation for \"native-only\" python modules (like our\n`mitmproxy_wireguard` pyo3 module).\n\n## introspecting the tokio runtime\n\nthe asynchronous runtime can be introspected using `tokio-console` if the crate\nwas built with the `tracing` feature:\n\n```shell\ntokio-console http://localhost:6669\n```\n\nthere should be no task that is busy when the program is idle, i.e. there should\nbe no busy waiting.\n\n**note**: this requires `maturin>=0.12.15`, as earlier versions accidentally\nclobbered the `rustflags` that were passed to the rust compiler, breaking use\nof the `console_subscriber` for `tokio-console`, which requires using the\n`--cfg tokio_unstable` flag.\n\n## code style\n\nthe format for rust code is enforced by `rustfmt`.\nto apply the formatting rules, use:\n\n```shell\ncargo fmt\n```\n\nthe format for python code (i.e. the test echo server and the type stubs in\n`mitmproxy_wireguard.pyi`) is enforced with `black` and can be applied with:\n\n```shell\nblack echo_test_server.py mitmproxy_wireguard.pyi benches/*.py\n```\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "mitmproxy-wireguard",
+  "package_url": "https://pypi.org/project/mitmproxy-wireguard/",
+  "project_url": "https://pypi.org/project/mitmproxy-wireguard/",
+  "project_urls": {
+    "Source Code": "https://github.com/decathorpe/mitmproxy_wireguard"
+  },
+  "release_url": "https://pypi.org/project/mitmproxy-wireguard/0.1.23/",
+  "requires_dist": [],
+  "requires_python": ">=3.7",
+  "summary": "wireguard interface for mitmproxy",
+  "version": "0.1.23",
+  "releases": [],
+  "developers": [
+    "cargo@maximilianhils.com",
+    "decathorpe@gmail.com"
+  ],
+  "kwds": "mitmproxy_wireguard wireguard mitmproxy pypi badge",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_mitmproxy_wireguard",
+  "homepage": "",
+  "release_count": 31,
+  "dependency_ids": []
+}

@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: system :: monitoring"
+  ],
+  "description": "|header|\n\n.. |header| image:: https://github.com/newrelic/open-source-office/raw/master/examples/categories/images/community_project.png\n    :target: https://github.com/newrelic/open-source-office/blob/master/examples/categories/index.md#category-community-project\n\nnew relic telemetry sdk\n=======================\n\n|ci| |coverage| |docs| |black|\n\n.. |ci| image:: https://github.com/newrelic/newrelic-telemetry-sdk-python/workflows/tests/badge.svg\n    :target: https://github.com/newrelic/newrelic-telemetry-sdk-python/actions?query=workflow%3atests\n\n.. |coverage| image:: https://img.shields.io/codecov/c/github/newrelic/newrelic-telemetry-sdk-python/main\n    :target: https://codecov.io/gh/newrelic/newrelic-telemetry-sdk-python\n\n.. |docs| image:: https://img.shields.io/badge/docs-available-brightgreen.svg\n    :target: https://newrelic.github.io/newrelic-telemetry-sdk-python/\n\n.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg\n    :target: https://github.com/psf/black\n\n`newrelic-telemetry-sdk-python <https://docs.newrelic.com/docs/data-ingest-apis/get-data-new-relic/new-relic-sdks/telemetry-sdks-send-custom-telemetry-data-new-relic>`_ provides a python library for sending data into `new relic <https://newrelic.com>`_ using the python `urllib3 <https://urllib3.readthedocs.io>`_ library.\n\nsee dimensional `metrics`_, `events`_, `logs`_, and `spans/traces`_ in new relic, without having to use an agent!\n\n.. _metrics: https://docs.newrelic.com/docs/data-ingest-apis/get-data-new-relic/metric-api/introduction-metric-api#find-data\n.. _events: https://docs.newrelic.com/docs/insights/insights-data-sources/custom-data/introduction-event-api#find-data\n.. _logs: https://docs.newrelic.com/docs/logs/log-management/ui-data/explore-your-data-log-analytics\n.. _spans/traces: https://docs.newrelic.com/docs/understand-dependencies/distributed-tracing/trace-api/introduction-trace-api#view-data\n\n\ninstalling newrelic_telemetry_sdk\n---------------------------------\n\nto start, the ``newrelic-telemetry-sdk`` package must be installed. to install\nthrough pip:\n\n.. code-block:: bash\n\n    $ pip install newrelic-telemetry-sdk\n\nif that fails, download the library from its github page and install it using:\n\n.. code-block:: bash\n\n    $ python setup.py install\n\n\nreporting your first metric\n---------------------------\n\nthere are 3 different types of metrics:\n\n* gaugemetric\n* countmetric\n* summarymetric\n\nmetric descriptions\n^^^^^^^^^^^^^^^^^^^\n\n+-------------+----------+----------------------------------------------------+-----------------------------------------------+\n| metric type | interval | description                                        | example                                       |\n|             | required |                                                    |                                               |\n+=============+==========+====================================================+===============================================+\n| gauge       | no       | a single value at a single point in time.          | room temperature.                             |\n+-------------+----------+----------------------------------------------------+-----------------------------------------------+\n| count       | yes      | track the total number of occurrences of an event. | number of errors that have occurred.          |\n+-------------+----------+----------------------------------------------------+-----------------------------------------------+\n| summary     | yes      | track count, sum, min, and max values over time.   | the summarized duration of 100 http requests. |\n+-------------+----------+----------------------------------------------------+-----------------------------------------------+\n\nexample\n^^^^^^^\nthe example code assumes you've set the following environment variables:\n\n* ``new_relic_license_key``\n\n.. code-block:: python\n\n    import os\n    import time\n    from newrelic_telemetry_sdk import gaugemetric, countmetric, summarymetric, metricclient\n\n    metric_client = metricclient(os.environ[\"new_relic_license_key\"])\n\n    temperature = gaugemetric(\"temperature\", 78.6, {\"units\": \"farenheit\"})\n\n    # record that there have been 5 errors in the last 2 seconds\n    errors = countmetric(name=\"errors\", value=5, interval_ms=2000)\n\n    # record a summary of 10 response times over the last 2 seconds\n    summary = summarymetric(\n        \"responses\", count=10, min=0.2, max=0.5, sum=4.7, interval_ms=2000\n    )\n\n    batch = [temperature, errors, summary]\n    response = metric_client.send_batch(batch)\n    response.raise_for_status()\n    print(\"sent metrics successfully!\")\n\nreporting your first event\n--------------------------\n\nevents represent a record of something that has occurred on a system being monitored.\nthe example code assumes you've set the following environment variables:\n\n* ``new_relic_license_key``\n\n.. code-block:: python\n\n    import os\n    import time\n    from newrelic_telemetry_sdk import event, eventclient\n\n    # record that a rate limit has been applied to an endpoint for an account\n    event = event(\n        \"ratelimit\", {\"path\": \"/v1/endpoint\", \"accountid\": 1000, \"rejectratio\": 0.1}\n    )\n\n    event_client = eventclient(os.environ[\"new_relic_license_key\"])\n    response = event_client.send(event)\n    response.raise_for_status()\n    print(\"event sent successfully!\")\n\nreporting your first log message\n--------------------------------\n\nlog messages are generated by applications, usually via the python logging\nmodule. these messages are used to audit and diagnose issues with an operating\napplication. the example code assumes you've set the following environment variables:\n\n* ``new_relic_license_key``\n\n.. code-block:: python\n\n    import os\n\n    from newrelic_telemetry_sdk import log, logclient\n\n    log = log(\"hello world!\")\n\n    log_client = logclient(os.environ[\"new_relic_license_key\"])\n    response = log_client.send(log)\n    response.raise_for_status()\n    print(\"log sent successfully!\")\n\n\nreporting your first span\n-------------------------\n\nspans provide an easy way to time components of your code.\nthe example code assumes you've set the following environment variables:\n\n* ``new_relic_license_key``\n\n.. code-block:: python\n\n    import os\n    import time\n    from newrelic_telemetry_sdk import span, spanclient\n\n    with span(name=\"sleep\") as span:\n        time.sleep(0.5)\n\n    span_client = spanclient(os.environ[\"new_relic_license_key\"])\n    response = span_client.send(span)\n    response.raise_for_status()\n    print(\"span sleep sent successfully!\")\n\nfind and use data\n-----------------\n\ntips on how to find and query your data in new relic:\n\n* `find metric data <https://docs.newrelic.com/docs/data-ingest-apis/get-data-new-relic/metric-api/introduction-metric-api#find-data>`_\n* `find event data <https://docs.newrelic.com/docs/insights/insights-data-sources/custom-data/introduction-event-api#find-data>`_\n* `find log data <https://docs.newrelic.com/docs/logs/log-management/ui-data/explore-your-data-log-analytics>`_\n* `find trace/span data <https://docs.newrelic.com/docs/understand-dependencies/distributed-tracing/trace-api/introduction-trace-api#view-data>`_\n\nfor general querying information, see:\n\n* `query new relic data <https://docs.newrelic.com/docs/using-new-relic/data/understand-data/query-new-relic-data>`_\n* `intro to nrql <https://docs.newrelic.com/docs/query-data/nrql-new-relic-query-language/getting-started/introduction-nrql>`_\n\nlimitations\n-----------\nthe new relic telemetry apis are rate limited. please reference the documentation for `new relic metrics api <https://docs.newrelic.com/docs/introduction-new-relic-metric-api>`_ and `new relic trace api requirements and limits <https://docs.newrelic.com/docs/apm/distributed-tracing/trace-api/trace-api-general-requirements-limits>`_ on the specifics of the rate limits.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "newrelic-telemetry-sdk",
+  "package_url": "https://pypi.org/project/newrelic-telemetry-sdk/",
+  "project_url": "https://pypi.org/project/newrelic-telemetry-sdk/",
+  "project_urls": {
+    "Homepage": "https://newrelic.github.io/newrelic-telemetry-sdk-python",
+    "Source": "https://github.com/newrelic/newrelic-telemetry-sdk-python"
+  },
+  "release_url": "https://pypi.org/project/newrelic-telemetry-sdk/0.5.0/",
+  "requires_dist": [
+    "urllib3 (<2,>=1.7)"
+  ],
+  "requires_python": "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7",
+  "summary": "new relic telemetry sdk",
+  "version": "0.5.0",
+  "releases": [],
+  "developers": [
+    "new_relic",
+    "open-source@newrelic.com"
+  ],
+  "kwds": "newrelic_telemetry_sdk documentation workflows github coverage",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_newrelic_telemetry_sdk",
+  "homepage": "https://newrelic.github.io/newrelic-telemetry-sdk-python",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_urllib3"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: multimedia :: graphics",
+    "topic :: multimedia :: graphics :: graphics conversion"
+  ],
+  "description": "readme\n======\n\n.. image:: https://travis-ci.org/libvips/pyvips.svg?branch=master\n    :alt: build status\n    :target: https://travis-ci.org/libvips/pyvips\n\npypi package:\n\nhttps://pypi.python.org/pypi/pyvips\n\nconda package:\n\nhttps://anaconda.org/conda-forge/pyvips\n\nwe have formatted docs online here:\n\nhttps://libvips.github.io/pyvips/\n\nthis module wraps the libvips image processing library:\n\nhttps://libvips.github.io/libvips/\n\nthe libvips docs are also very useful:\n\nhttps://libvips.github.io/libvips/api/current/\n\nif you have the development headers for libvips installed and have a working c\ncompiler, this module will use cffi api mode to try to build a libvips \nbinary extension for your python. \n\nif it is unable to build a binary extension, it will use cffi abi mode\ninstead and only needs the libvips shared library. this takes longer to\nstart up and is typically ~20% slower in execution.  you can find out how\npyvips installed with ``pip show pyvips``.\n\nthis binding passes the vips test suite cleanly and with no leaks under\npython2.7 - python3.6, pypy and pypy3 on windows, macos and linux. \n\nhow it works\n------------\n\nprograms that use ``pyvips`` don't manipulate images directly, instead\nthey create pipelines of image processing operations building on a source\nimage. when the end of the pipe is connected to a destination, the whole\npipeline executes at once, streaming the image in parallel from source to\ndestination a section at a time.\n\nbecause ``pyvips`` is parallel, it's quick, and because it doesn't need to\nkeep entire images in memory, it's light.  for example, the libvips \nspeed and memory use benchmark:\n\nhttps://github.com/libvips/libvips/wiki/speed-and-memory-use\n\nloads a large tiff image, shrinks by 10%, sharpens, and saves again. on this\ntest ``pyvips`` is typically 3x faster than imagemagick and needs 5x less\nmemory. \n\nthere's a handy chapter in the docs explaining how libvips opens files,\nwhich gives some more background.\n\nhttp://libvips.github.io/libvips/api/current/how-it-opens-files.md.html\n\nconda install\n-------------\n\nthe conda package includes a matching libvips binary, so just enter:\n\n.. code-block:: shell\n\n    $ conda install --channel conda-forge pyvips\n\nnon-conda install\n-----------------\n\nfirst, you need the libvips shared library on your library search path, version\n8.2 or later, though at least version 8.9 is required for all features to work. \non linux and macos, you can just install via your package manager; on windows you\ncan download a pre-compiled binary from the libvips website.\n\nhttps://libvips.github.io/libvips/install.html\n\nnext, install this package, perhaps:\n\n.. code-block:: shell\n\n    $ pip install --user pyvips\n\non windows, you'll need a 64-bit python. the official one works well. \nyou will also need to add ``vips-dev-x.y\\bin`` to your ``path`` so\nthat pyvips can find all the dlls it needs. you can either do this in the\n**advanced system settings** control panel, or you can just change\n``path`` in your python program.\n\nif you set the path environment variable in the control panel, you can use\nthe ``vips`` command-line tools, which i find useful. however, this will add\na lot of extra dlls to your search path and they might conflict with other\nprograms, so it's usually safer just to set ``path`` in your program.\n\nto set ``path`` from within python, you need something like this at the start:\n\n.. code-block:: python\n\n    import os\n    vipshome = 'c:\\\\vips-dev-8.7\\\\bin'\n    os.environ['path'] = vipshome + ';' + os.environ['path']\n\nnow when you import pyvips, it should be able to find the dlls.\n\nexample\n-------\n\nthis sample program loads a jpg image, doubles the value of every green pixel,\nsharpens, and then writes the image back to the filesystem again:\n\n.. code-block:: python\n\n    import pyvips\n\n    image = pyvips.image.new_from_file('some-image.jpg', access='sequential')\n    image *= [1, 2, 1]\n    mask = pyvips.image.new_from_array([[-1, -1, -1],\n                                        [-1, 16, -1],\n                                        [-1, -1, -1]\n                                       ], scale=8)\n    image = image.conv(mask, precision='integer')\n    image.write_to_file('x.jpg')\n\n\nnotes\n-----\n\nlocal user install:\n\n.. code-block:: shell\n\n    $ pip3 install -e .\n    $ pypy -m pip --user -e .\n\nrun all tests:\n\n.. code-block:: shell\n\n    $ tox \n\nrun test suite:\n\n.. code-block:: shell\n\n    $ pytest\n\nrun a specific test:\n\n.. code-block:: shell\n\n    $ pytest tests/test_saveload.py\n\nrun perf tests:\n\n.. code-block:: shell\n\n   $ cd tests/perf\n   $ ./run.sh\n\nstylecheck:\n\n.. code-block:: shell\n\n    $ flake8\n\ngenerate html docs in ``doc/build/html``:\n\n.. code-block:: shell\n\n    $ cd doc; sphinx-build -bhtml . build/html\n\nregenerate enums:\n\nmake sure you have installed a libvips with all optional packages enabled,\nthen\n\n.. code-block:: shell\n\n    $ cd examples; \\\n      ./gen-enums.py ~/git/libvips/libvips/vips-8.0.gir > enums.py\n\nthen check and move `enums.py` into `pyvips/`.\n\nregenerate autodocs:\n\nmake sure you have installed a libvips with all optional packages enabled,\nthen\n\n.. code-block:: shell\n\n    $ cd doc; \\\n      python3 -c \"import pyvips; pyvips.operation.generate_sphinx_all()\" > x \n\nand copy-paste ``x`` into the obvious place in ``doc/vimage.rst``. \n\nupdate version number:\n\n.. code-block:: shell\n\n    $ vi pyvips/version.py\n    $ vi doc/conf.py\n\nupdate pypi package:\n\n.. code-block:: shell\n\n    $ python3 setup.py sdist\n    $ twine upload dist/*\n    $ git tag -a v2.2.0 -m \"as uploaded to pypi\"\n    $ git push origin v2.2.0\n\n\n\n",
+  "docs_url": null,
+  "keywords": "image processing",
+  "license": "mit",
+  "name": "pyvips",
+  "package_url": "https://pypi.org/project/pyvips/",
+  "project_url": "https://pypi.org/project/pyvips/",
+  "project_urls": {
+    "Homepage": "https://github.com/libvips/pyvips"
+  },
+  "release_url": "https://pypi.org/project/pyvips/2.2.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "binding for the libvips image processing library, api mode",
+  "version": "2.2.1",
+  "releases": [],
+  "developers": [
+    "jcupitt@gmail.com",
+    "john_cupitt"
+  ],
+  "kwds": "pyvips libvips vimage imagemagick pypy3",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pyvips",
+  "homepage": "https://github.com/libvips/pyvips",
+  "release_count": 24,
+  "dependency_ids": []
+}

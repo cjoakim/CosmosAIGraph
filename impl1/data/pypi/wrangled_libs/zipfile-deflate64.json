@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: system :: archiving",
+    "topic :: system :: archiving :: compression"
+  ],
+  "description": "# zipfile-deflate64\n[![pypi](https://img.shields.io/pypi/v/zipfile-deflate64)](https://pypi.org/project/zipfile-deflate64/)\n\nextract deflate64 zip archives with python's `zipfile` api.\n\n## installation\n```bash\npip install zipfile-deflate64\n```\n\npython 3.6, 3.7, 3.8, 3.9, and 3.10 are supported,\nwith [manylinux2014](https://github.com/pypa/manylinux), macos and windows wheels published to pypi.\n\n## usage\nanywhere in a python codebase:\n```python\nimport zipfile_deflate64  # this has the side effect of patching the zipfile module to support deflate64\n```\n\nalternatively, `zipfile_deflate64` re-exports the `zipfile` api, as a convenience:\n```python\nimport zipfile_deflate64 as zipfile\n\nzipfile.zipfile(...)\n...\n```\n\n## design rationale\n### the problem\nrecent versions of microsoft windows explorer\n[use deflate64 compression when creating zip files larger than 2gb](https://github.com/dotnet/runtime/issues/17802#issuecomment-231808916).\nwith the ubiquity of windows and the ease of using \"sent to compressed folder\", a majority of newly-created large\nzip files use deflate64 compression.\n\nhowever, **support for deflate64 in the open-source ecosystem is very poor**!\nmost zip libraries have declined to implement deflate64,\nciting [its proprietary nature](https://en.wikipedia.org/wiki/deflate#deflate64/enhanced_deflate).\n\nin the .net ecosystem, the [`ziparchive` api supports decompression only](https://github.com/dotnet/corefx/pull/11264).\nin java, the [apache commons compress apis support both compression and decompression](https://commons.apache.org/proper/commons-compress/examples.html#archivers_and_compressors).\n\nthe 7-zip project probably provides the best general-purpose support for compressing and decompressing\ndeflate64, but there are several obstacles to general usability:\n* [7-zip itself](https://www.7-zip.org/) is a windows-only gui application\n  * 7-zip is still issuing new releases, but has declined to implement certain new compression formats,\n    so the [mcmilk/7-zip-zstd](https://github.com/mcmilk/7-zip-zstd) fork is notable.\n* [p7zip, the posix-compatible cli version](http://p7zip.sourceforge.net/) (which does include deflate64),\n  [has not had a release since 2016 and is likely unmaintained](https://github.com/jinfeihan57/p7zip/issues/114#issuecomment-761551564).\n* p7zip does not build an api for external software to invoke for decompression.\n* p7zip seems to now be living on as the [jinfeihan57/p7zip](https://github.com/jinfeihan57/p7zip) fork,\n  which is packaged by arch linux, amongst others.\n  * this seems to be active, and now can be built with cmake, but there's no support for building an external api.\n* many re-implementations of 7-zip, such as [py7zr](https://github.com/miurahr/py7zr) for python, do not support\n  deflate64.\n\nin the python ecosystem in particular, there have been several unfulfilled requests (\n[[1]](https://github.com/ucl-shippinggroup/pyrate/issues/33)\n[[2]](https://www.reddit.com/r/learnpython/comments/iqr6eb/zip_files_with_compression_type_9_deflate64/)\n[[3]](https://stackoverflow.com/a/12809847)\n) for deflate64 decompression support.\n\n### a solution\nthe best hope seems to be the [infback9](https://github.com/madler/zlib/tree/master/contrib/infback9) extension\nto zlib. this was developed in 2003 by mark adler, an original author of zlib, and is kept in the source repository\nof zlib, but it is not officially supported and contains no build tooling and is not distributed with zlib packages.\nadditionally, infback9 provides only low-level support for working with deflate64 bitstreams, with no support for\nthe zip archive format (which is out of scope for zlib).\n\ninfback9's c-language api is relatively simple, but requires a non-trivial struct and function pointers for\ninitialization and some explicit memory management operations (resizing allocated buffers and proving a\npython-friendly `malloc`) to operate efficiently, so wrapping it with only\n[ctypes](https://docs.python.org/3/library/ctypes.html) seems to be inadequate.\n\nto manage zip archive extraction operations, the python standard library\n[zipfile](https://docs.python.org/3/library/zipfile.html) module provides the essential features and is already\nubiquitous in availability and usage. however, zipfile is difficult to extend, as it hardcodes many conditionals for\ncompression formats and does not provide capabilities for easily augmenting or replacing parts of it. monkey-patching\ncan overcome some of these problems, and the promise of a drop-in, api-compatible patch to a standard library module\noutweighed the engineering benefits of basing a solution off a more naturally extensible third-party zip manipulation\npackage.\n\n\n",
+  "docs_url": null,
+  "keywords": "zip zipfile deflate deflate64",
+  "license": "apache 2.0",
+  "name": "zipfile-deflate64",
+  "package_url": "https://pypi.org/project/zipfile-deflate64/",
+  "project_url": "https://pypi.org/project/zipfile-deflate64/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/brianhelba/zipfile-deflate64/issues",
+    "Homepage": "https://github.com/brianhelba/zipfile-deflate64",
+    "Source": "https://github.com/brianhelba/zipfile-deflate64"
+  },
+  "release_url": "https://pypi.org/project/zipfile-deflate64/0.2.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "extract deflate64 zip archives with python's zipfile api.",
+  "version": "0.2.0",
+  "releases": [],
+  "developers": [
+    "kitware",
+    "kitware@kitware.com"
+  ],
+  "kwds": "zipfile_deflate64 zip_files_with_compression_type_9_deflate64 zipfile deflate64 p7zip",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_zipfile_deflate64",
+  "homepage": "https://github.com/brianhelba/zipfile-deflate64",
+  "release_count": 8,
+  "dependency_ids": []
+}

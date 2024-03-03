@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7"
+  ],
+  "description": "python-xxhash-cffi\n==================\n\n.. image:: https://travis-ci.org/ifduyue/python-xxhash-cffi.svg?branch=master\n    :target: https://travis-ci.org/ifduyue/python-xxhash-cffi\n    :alt: travis ci build status\n\n.. image:: https://ci.appveyor.com/api/projects/status/si9lt6bteol5op7q/branch/master?svg=true\n    :target: https://ci.appveyor.com/project/duyue/python-xxhash-cffi\n    :alt: appveyor build status\n\n.. image:: https://img.shields.io/pypi/v/xxhash-cffi.svg\n    :target: https://pypi.org/project/xxhash-cffi/\n    :alt: latest version\n\n.. image:: https://img.shields.io/pypi/pyversions/xxhash-cffi.svg\n    :target: https://pypi.org/project/xxhash-cffi/\n    :alt: supported python versions\n\n.. image:: https://img.shields.io/pypi/l/xxhash-cffi.svg\n    :target: https://pypi.org/project/xxhash-cffi/\n    :alt: license\n\n\n.. _hmac: http://en.wikipedia.org/wiki/hash-based_message_authentication_code\n.. _xxhash: https://github.com/cyan4973/xxhash\n.. _cyan4973: https://github.com/cyan4973\n\n\nxxhash-cffi is a python binding for the xxhash_ library by `yann collet`__.\n\n__ cyan4973_\n\ninstallation\n------------\n\n.. code-block:: bash\n\n   $ pip install xxhash-cffi\n\ninstallation prerequisites\n~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nif you're installing xxhash-cffi from source, you probably want to install the following packages.\n\non debian/ubuntu:\n\n.. code-block:: bash\n\n   $ apt-get install libcffi-dev python-dev gcc\n\non centos/fedora:\n\n.. code-block:: bash\n\n   $ yum install libcffi-devel python-devel gcc redhat-rpm-config\n\n\nusage\n--------\n\nmodule version and its backend xxhash library version can be retrieved using\nthe module properties ``version`` and ``xxhash_version`` respectively.\n\n.. code-block:: python\n\n    >>> import xxhash_cffi as xxhash\n    >>> xxhash.version\n    '1.0.1'\n    >>> xxhash.xxhash_version\n    '0.6.2'\n\nthis module is hashlib-compliant, which means you can use it in the same way as ``hashlib.md5``.\n\n    | update() -- update the current digest with an additional string\n    | digest() -- return the current digest value\n    | hexdigest() -- return the current digest as a string of hexadecimal digits\n    | intdigest() -- return the current digest as an integer\n    | copy() -- return a copy of the current xxhash object\n    | reset() -- reset state\n\nmd5 digest returns bytes, but the original xxh32 and xxh64 c apis return integers.\nwhile this module is made hashlib-compliant, ``intdigest()`` is also provided to\nget the integer digest.\n\nconstructors for hash algorithms provided by this module are ``xxh32()`` and ``xxh64()``.\n\nfor example, to obtain the digest of the byte string ``b'nobody inspects the spammish repetition'``:\n\n.. code-block:: python\n\n    >>> import xxhash_cffi as xxhash\n    >>> x = xxhash.xxh32()\n    >>> x.update(b'nobody inspects')\n    >>> x.update(b' the spammish repetition')\n    >>> x.digest()\n    b'\\xe2);/'\n    >>> x.digest_size\n    4\n    >>> x.block_size\n    16\n\nmore condensed:\n\n.. code-block:: python\n\n    >>> xxhash.xxh32(b'nobody inspects the spammish repetition').hexdigest()\n    'e2293b2f'\n    >>> xxhash.xxh32(b'nobody inspects the spammish repetition').digest() == x.digest()\n    true\n\nan optional seed (default is 0) can be used to alter the result predictably:\n\n.. code-block:: python\n\n    >>> import xxhash_cffi as xxhash\n    >>> xxhash.xxh64('xxhash').hexdigest()\n    '32dd38952c4bc720'\n    >>> xxhash.xxh64('xxhash', seed=20141025).hexdigest()\n    'b559b98d844e0635'\n    >>> x = xxhash.xxh64(seed=20141025)\n    >>> x.update('xxhash')\n    >>> x.hexdigest()\n    'b559b98d844e0635'\n    >>> x.intdigest()\n    13067679811253438005\n\nbe careful that xxh32 takes an unsigned 32-bit integer as seed, while xxh64\ntakes an unsigned 64-bit integer. although unsigned integer overflow is\ndefined behavior, it's better to not to let it happen:\n\n.. code-block:: python\n\n    >>> xxhash.xxh32('i want an unsigned 32-bit seed!', seed=0).hexdigest()\n    'f7a35af8'\n    >>> xxhash.xxh32('i want an unsigned 32-bit seed!', seed=2**32).hexdigest()\n    'f7a35af8'\n    >>> xxhash.xxh32('i want an unsigned 32-bit seed!', seed=1).hexdigest()\n    'd8d4b4ba'\n    >>> xxhash.xxh32('i want an unsigned 32-bit seed!', seed=2**32+1).hexdigest()\n    'd8d4b4ba'\n    >>>\n    >>> xxhash.xxh64('i want an unsigned 64-bit seed!', seed=0).hexdigest()\n    'd4cb0a70a2b8c7c1'\n    >>> xxhash.xxh64('i want an unsigned 64-bit seed!', seed=2**64).hexdigest()\n    'd4cb0a70a2b8c7c1'\n    >>> xxhash.xxh64('i want an unsigned 64-bit seed!', seed=1).hexdigest()\n    'ce5087f12470d961'\n    >>> xxhash.xxh64('i want an unsigned 64-bit seed!', seed=2**64+1).hexdigest()\n    'ce5087f12470d961'\n\n\n``digest()`` returns bytes of the **big-endian** representation of the integer\ndigest:\n\n.. code-block:: python\n\n    >>> import xxhash_cffi as xxhash\n    >>> h = xxhash.xxh64()\n    >>> h.digest()\n    b'\\xeff\\xdb7q\\xd8\\xe9\\x99'\n    >>> h.intdigest().to_bytes(8, 'big')\n    b'\\xeff\\xdb7q\\xd8\\xe9\\x99'\n    >>> h.hexdigest()\n    'ef46db3751d8e999'\n    >>> format(h.intdigest(), '016x')\n    'ef46db3751d8e999'\n    >>> h.intdigest()\n    17241709254077376921\n    >>> int(h.hexdigest(), 16)\n    17241709254077376921\n\nbesides xxh32/xxh64 mentioned above, oneshot functions are also provided.\nby using oneshot functions we can avoid allocating xxh32/64_state on heap:\n\n    | xxh32_digest(bytes, seed=0)\n    | xxh32_intdigest(bytes, seed=0)\n    | xxh32_hexdigest(bytes, seed=0)\n    | xxh64_digest(bytes, seed=0)\n    | xxh64_intdigest(bytes, seed=0)\n    | xxh64_hexdigest(bytes, seed=0)\n\n.. code-block:: python\n\n    >>> import xxhash_cffi as xxhash\n    >>> xxhash.xxh64('a').digest() == xxhash.xxh64_digest('a')\n    true\n    >>> xxhash.xxh64('a').intdigest() == xxhash.xxh64_intdigest('a')\n    true\n    >>> xxhash.xxh64('a').hexdigest() == xxhash.xxh64_hexdigest('a')\n    true\n    >>> xxhash.xxh64_hexdigest('xxhash', seed=20141025)\n    'b559b98d844e0635'\n    >>> xxhash.xxh64_intdigest('xxhash', seed=20141025)\n    13067679811253438005l\n    >>> xxhash.xxh64_digest('xxhash', seed=20141025)\n    '\\xb5y\\xb9\\x8d\\x84n\\x065'\n\n\ncaveats\n-------\n\nseed overflow\n~~~~~~~~~~~~~~\n\nxxh32 takes an unsigned 32-bit integer as seed, and xxh64 takes\nan unsigned 64-bit integer as seed. make sure that the seed is greater than\nor equal to ``0``.\n\ndont use xxhash in hmac\n~~~~~~~~~~~~~~~~~~~~~~~\nthough you can use xxhash as an hmac_ hash function, but it's\nhighly recommended not to.\n\nxxhash is **not** a cryptographic hash function, it is a\nnon-cryptographic hash algorithm aimed at speed and quality.\ndo not put xxhash in any position where cryptographic hash\nfunctions are required.\n\n\ncopyright and license\n---------------------\n\ncopyright (c) 2014-2018 yue du - https://github.com/ifduyue\n\nlicensed under `bsd 2-clause license <http://opensource.org/licenses/bsd-2-clause>`_\n\nv1.3.0 2018-12-16\n~~~~~~~~~~~~~~~~~\n\n- wheels are now built automatically\n- split cffi variant into a separate package `ifduyue/python-xxhash-cffi <https://github.com/ifduyue/python-xxhash-cffi>`_\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "xxhash-cffi",
+  "package_url": "https://pypi.org/project/xxhash-cffi/",
+  "project_url": "https://pypi.org/project/xxhash-cffi/",
+  "project_urls": {
+    "Homepage": "https://github.com/ifduyue/python-xxhash-cffi"
+  },
+  "release_url": "https://pypi.org/project/xxhash-cffi/1.3.0/",
+  "requires_dist": [
+    "cffi"
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+  "summary": "python binding for xxhash",
+  "version": "1.3.0",
+  "releases": [],
+  "developers": [
+    "ifduyue@gmail.com",
+    "yue_du"
+  ],
+  "kwds": "xxhash_cffi xxhash_version pyversions travis pip",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_xxhash_cffi",
+  "homepage": "https://github.com/ifduyue/python-xxhash-cffi",
+  "release_count": 1,
+  "dependency_ids": [
+    "pypi_cffi"
+  ]
+}

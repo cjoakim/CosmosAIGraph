@@ -1,0 +1,34 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# npyappendarray\n\ncreate numpy `.npy` files by appending on the growth axis (0 for c order, -1\nfor fortran order). it behaves like `numpy.concatenate` with the difference\nthat the result is stored out-of-memory in a `.npy` file and can be reused for\nfurther appending. after creation, the file can then be read with memory\nmapping (e.g. by adding `mmap_mode=\"r\"`) which altogether allows to create and\nread files (optionally) larger than the machine's main memory.\n\nsome possible applications:\n1. efficiently create large `.npy` (optionally database-like) files\n   * handling of offsets not included, can be done in an extra array\n   * large legacy files can be made appendable by calling `ensure_appendable`\n       * can (optionally) be performed in-place to minimize disk space usage\n2. create binary log files (optionally on low-memory embedded devices)\n   * check the option `rewrite_header_on_append=false` for extra efficiency\n   * binary log files can be accessed very efficiently without parsing\n   * incomplete files can be recovered efficiently by calling `recover`\n\nanother feature of this library is the (above mentioned) `recover` function,\nwhich makes incomplete `.npy` files readable by `numpy.load` again, no matter\nwhether they should be appended to or not.\n\nincomplete files can be the result of broken downloads or unfinished writes.\nrecovery works by rewriting the header and inferring the growth axis (see\nabove) by the file size. as the data length may not be evenly divisible by the\nnon-append-axis shape, incomplete entries can either be ignored\n(`zerofill_incomplete=false`), which probably makes sense in most scenarios.\nalternatively, to squeeze out the as much information from the file as\npossible, `zerofill_incomplete=true` can be used, which fills the incomplete\nlast append axis item with zeros.\n\nraises `valueerror` instead of `typeerror` since version 0.9.14 to be more\nconsistent with numpy.\n\nnpyappendarray can be used in multithreaded environments.\n\n## installation\n```bash\nconda install -c conda-forge npy-append-array\n```\nor\n```bash\npip install npy-append-array\n```\n## usage\n\n```python\nfrom npy_append_array import npyappendarray\nimport numpy as np\n\narr1 = np.array([[1,2],[3,4]])\narr2 = np.array([[1,2],[3,4],[5,6]])\n\nfilename = 'out.npy'\n\nwith npyappendarray(filename) as npaa:\n    npaa.append(arr1)\n    npaa.append(arr2)\n    npaa.append(arr2)\n    \ndata = np.load(filename, mmap_mode=\"r\")\n\nprint(data)\n```\n\n## concurrency\nconcurrency can be achieved by multithreading: a single `npyappendarray`\nobject (per file) needs to be created. then, `append` can be called from\nmultiple threads and locks will ensure that file writes do not happen in\nparallel. when using with a `with` statement, make sure the `join` happens\nwithin it, compare `test.py`.\n\nmultithreaded writes are not the pinnacle of what is technically possible with\nmodern operating systems. it would be highly desirable to use `async` file\nwrites. however, although modules like `aiofile` exist, this is currently not\nsupported natively by python or numpy, compare\n\nhttps://github.com/python/cpython/issues/76742\n\n## implementation details\nnpyappendarray contains a modified, partial version of `format.py` from the\nnumpy package. it ensures that array headers are created with 21\n(`=len(str(8*2**64-1))`) bytes of spare space. this allows to fit an array of\nmaxed out dimensions (for a 64 bit machine) without increasing the array\nheader size. this allows to simply rewrite the header as we append data to the\nend of the `.npy` file.\n\n## supported systems\ntestes with ubuntu linux, macos and windows.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "npy-append-array",
+  "package_url": "https://pypi.org/project/npy-append-array/",
+  "project_url": "https://pypi.org/project/npy-append-array/",
+  "project_urls": {
+    "Homepage": "https://github.com/xor2k/npy-append-array"
+  },
+  "release_url": "https://pypi.org/project/npy-append-array/0.9.16/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "create numpy .npy files by appending on the growth axis",
+  "version": "0.9.16",
+  "releases": [],
+  "developers": [
+    "michael.siebert2k@gmail.com",
+    "michael_siebert"
+  ],
+  "kwds": "npy_append_array memory numpy fortran binary",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_npy_append_array",
+  "homepage": "https://github.com/xor2k/npy-append-array",
+  "release_count": 15,
+  "dependency_ids": []
+}

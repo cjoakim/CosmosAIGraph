@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: software development :: build tools"
+  ],
+  "description": "<picture>\n  <!-- these are also used for https://github.com/conan-io/.github/blob/main/profile/readme.md -->\n  <source media=\"(prefers-color-scheme: dark)\" srcset=\"https://raw.githubusercontent.com/conan-io/conan/develop2/.github/conan2-logo-for-dark.svg\">\n  <source media=\"(prefers-color-scheme: light)\" srcset=\"https://raw.githubusercontent.com/conan-io/conan/develop2/.github/conan2-logo-for-light.svg\">\n  <img alt=\"jfrog | conan 2.0 logo\" src=\"https://raw.githubusercontent.com/conan-io/conan/develop2/.github/conan2-logo-with-bg.svg\">\n</picture>\n\n# conan\n\ndecentralized, open-source (mit), c/c++ package manager.\n\n- homepage: https://conan.io/\n- github: https://github.com/conan-io/conan\n- docs: https://docs.conan.io\n- slack: https://cpplang.slack.com (#conan channel. please, click [here](https://join.slack.com/t/cpplang/shared_invite/zt-1snzdn6rp-rouxf3166oz1_11tr5h~xg) to get an invitation)\n- twitter: https://twitter.com/conan_io\n\n\nconan is a package manager for c and c++ developers:\n\n- it is fully decentralized. users can host their packages on their servers, privately. integrates with artifactory and bintray.\n- portable. works across all platforms, including linux, osx, windows (with native and first-class support, wsl, mingw),\n  solaris, freebsd, embedded and cross-compiling, docker, wsl\n- manage binaries. it can create, upload and download binaries for any configuration and platform,\n  even cross-compiling, saving lots of time in development and continuous integration. the binary compatibility can be configured\n  and customized. manage all your artifacts in the same way on all platforms.\n- integrates with any build system, including any proprietary and custom one. provides tested support for major build systems\n  (cmake, msbuild, makefiles, meson, etc).\n- extensible: its python-based recipes, together with extension points allow for great power and flexibility.\n- large and active community, especially in github (https://github.com/conan-io/conan) and slack (https://cppalliance.org/slack/ #conan channel).\n  this community also creates and maintains packages in conancenter and bincrafters repositories in bintray.\n- stable. used in production by many companies, since 1.0 there is a commitment not to break package recipes and documented behavior.\n\n\nthis is the **developer/maintainer** documentation. for user documentation, go to https://docs.conan.io\n\n\n| **develop2**            |\n|-------------------------|\n| [![build status develop](https://ci.conan.io/buildstatus/icon?job=conantestsuite/develop)](https://ci.conan.io/blue/organizations/jenkins/conantestsuitev2/activity)  |\n\n\n\n## setup\n\nyou can run conan from source in windows, macos, and linux:\n\n- **install pip following** [pip docs](https://pip.pypa.io/en/stable/installation/).\n\n- **clone conan repository:**\n\n  ```bash\n  $ git clone https://github.com/conan-io/conan.git conan-io\n  ```\n\n  > **note**: repository directory name matters, some directories are known to be problematic to run tests (e.g. `conan`). `conan-io` directory name was tested and guaranteed to be working.\n\n- **install in editable mode**\n\n  ```bash\n  $ cd conan-io && sudo pip install -e .\n  ```\n\n  if you are in windows, using ``sudo`` is not required. some linux distros won't allow you to put python packages in editable mode in the root python installation, and creating a virtual environment ``venv`` first, is mandatory.\n\n- **you are ready, try to run conan:**\n\n  ```bash\n  $ conan --help\n\n  consumer commands\n    install    installs the requirements specified in a recipe (conanfile.py or conanfile.txt).\n    ...\n\n    conan commands. type \"conan <command> -h\" for help\n  ```\n\n## contributing to the project\n\n\nfeedback and contribution are always welcome in this project.\nplease read our [contributing guide](https://github.com/conan-io/conan/blob/develop/.github/contributing.md).\nalso, if you plan to contribute, please add some testing for your changes. you can read the [conan\ntests guidelines section](https://github.com/conan-io/conan/blob/develop/conans/test/readme.md) for\nsome advice on how to write tests for conan.\n\n### running the tests\n\n\n**install python requirements**\n\n```bash\n$ python -m pip install -r conans/requirements_server.txt\n$ python -m pip install -r conans/requirements_dev.txt\n```\n\nif you are not on windows and you are not using a python virtual environment, you will need to run these\ncommands using `sudo`.\n\nbefore you can run the tests, you need to set a few environment variables first.\n\n```bash\n$ export pythonpath=$pythonpath:$(pwd)\n```\n\non windows it would be (while being in the conan root directory):\n\n```bash\n$ set pythonpath=.\n```\n\nconan test suite defines and configures some required tools (cmake, ninja, etc) in the\n``conftest.py`` and allows to define a custom ``conftest_user.py``.\nsome specific versions, like cmake>=3.15 are necessary.\n\n\nyou can run the tests like this:\n\n```bash\n$ python -m pytest .\n```\n\na few minutes later it should print ``ok``:\n\n```bash\n............................................................................................\n----------------------------------------------------------------------\nran 146 tests in 50.993s\n\nok\n```\n\nto run specific tests, you can specify the test name too, something like:\n\n```bash\n$ python -m pytest conans/test/unittests/client/cmd/export_test.py::exporttest::test_export_warning -s\n```\n\nthe `-s` argument can be useful to see some output that otherwise is captured by *pytest*.\n\nalso, you can run tests against an instance of artifactory. those tests should add the attribute\n`artifactory_ready`.\n\n```bash\n$ python -m pytest . -m artifactory_ready\n```\n\nsome environment variables have to be defined to run them. for example, for an\nartifactory instance that is running on the localhost with default user and password configured, the\nvariables could take the values:\n\n```bash\n$ export conan_test_with_artifactory=1\n$ export artifactory_default_url=http://localhost:8081/artifactory\n$ export artifactory_default_user=admin\n$ export artifactory_default_password=password\n```\n\n`artifactory_default_url` is the base url for the artifactory repo, not one for a specific\nrepository. running the tests with a real artifactory instance will create repos on the fly so please\nuse a separate server for testing purposes.\n\n## license\n\n[mit license](license.md)",
+  "docs_url": null,
+  "keywords": "c/c++,package,libraries,developer,manager,dependency,tool,c,c++,cpp",
+  "license": "mit",
+  "name": "conan",
+  "package_url": "https://pypi.org/project/conan/",
+  "project_url": "https://pypi.org/project/conan/",
+  "project_urls": {
+    "Documentation": "https://docs.conan.io",
+    "Homepage": "https://conan.io",
+    "Source": "https://github.com/conan-io/conan",
+    "Tracker": "https://github.com/conan-io/conan/issues"
+  },
+  "release_url": "https://pypi.org/project/conan/2.0.16/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "conan c/c++ package manager",
+  "version": "2.0.16",
+  "releases": [],
+  "developers": [
+    "jfrog_ltd",
+    "luism@jfrog.com"
+  ],
+  "kwds": "conanfile conantestsuitev2 conan_io conan2 conancenter",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_conan",
+  "homepage": "https://conan.io",
+  "release_count": 296,
+  "dependency_ids": []
+}

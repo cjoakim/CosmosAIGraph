@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "programming language :: rust"
+  ],
+  "description": "# kornia-rs: low level implementations for computer vision in rust.\n\n[![continuous integration](https://github.com/kornia/kornia-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/kornia/kornia-rs/actions/workflows/ci.yml)\n[![pypi version](https://badge.fury.io/py/kornia-rs.svg)](https://badge.fury.io/py/kornia-rs)\n[![license](https://img.shields.io/badge/license-apache%202.0-blue.svg)](licence)\n[![slack](https://img.shields.io/badge/slack-4a154b?logo=slack&logocolor=white)](https://join.slack.com/t/kornia/shared_invite/zt-csobk21g-cnydwe5fmvkcktierfgceq)\n\nthis project provides low level functionality for computer vision written in [rust](https://www.rust-lang.org/) to be consumed by machine learning and data-science frameworks, specially those working with images. we mainly aim to provide i/o functionality for images (future: video, cameras), and visualisation in future.\n\n- the library is written in [rust](https://www.rust-lang.org/).\n- python bindings are created with [pyo3/maturin](https://github.com/pyo3/maturin).\n- we package with support for linux [amd64/arm64], macos and windows.\n- supported python versions are 3.7/3.8/3.9/3.10/3.11\n\n## basic usage\n\nload an image, that is converted to `cv::tensor` wich is a centric structure to the dlpack protocol to share tensor data across frameworks with a zero-copy cost.\n\n```python\n    import kornia_rs as k\n    from kornia_rs import tensor as cvtensor\n\n    # load an image with rust `image-rs` as backend library\n    cv_tensor: cvtensor = k.read_image_rs(\"dog.jpeg\")\n    assert cv_tensor.shape == [195, 258, 3]\n\n    # convert to dlpack to import to torch\n    th_tensor = torch.utils.dlpack.from_dlpack(cv_tensor)\n    assert th_tensor.shape == (195, 258, 3)\n    assert np_tensor.shape == (195, 258, 3)\n\n    # or to numpy with same interface\n    np_tensor = np.from_dlpack(cv_tensor)\n```\n\n## advanced usage\n\nencode or decoda image streams using the `turbojpeg` backend\n\n```python\n# load image using turbojpeg\ncv_tensor = k.read_image_jpeg(\"dog.jpeg\")\nimage: np.ndarray = np.from_dlpack(cv_tensor)  # hxwx3\n\n# encode the image with jpeg\nimage_encoder = k.imageencoder()\nimage_encoder.set_quality(95)  # set the encoding quality\n\n# get the encoded stream\nimage_encoded: list[int] = image_encoder.encode(image.tobytes(), image.shape)\n\n# write to disk the encoded stream\nk.write_image_jpeg(\"dog_encoded.jpeg\", image_encoded)\n\n# decode back the image\nimage_decoder = k.imagedecoder()\n\ndecoded_tensor = image_decoder.decode(bytes(image_encoded))\ndecoded_image: np.ndarray = np.from_dlpack(decoded_tensor)  # hxwx3\n```\n\n## todo: short/mid-terrm\n\n- [x] [infra] automate packaging for manywheels.\n- [x] [kornia] integrate with the new `image` api\n- [x] [dlpack] move dlpack implementation to dlpack-rs.\n- [x] [dlpack] implement test for torch and numpy.\n- [ ] [dlpack] update dlpack version >=0.8\n- [ ] [dlpack] implement `dlpack` to `cv::tensor`.\n\n## todo: not priority for now\n\n- [ ] [io] implement image encoding and explore video.\n- [ ] [viz] fix minor issues and implement a full `vizmanager` to work on the browser.\n- [ ] [tensor] implement basic functionality to test: add, sub, mul, etc.\n- [ ] [tensor] explore xnnpack and openvino integration.\n\n## development\n\nto test the project in lyour local machine use the following instructions:\n\n1. clone the repository in your local directory\n\n```bash\ngit clone https://github.com/kornia/kornia-rs.git\n```\n\n2.1 (optional) build the `devel.dockerfile`\n\nlet's prepare the development environment with docker.\nmake sure you have docker in your system: https://docs.docker.com/engine/install/ubuntu/\n\n```bash\ncd ./docker && ./build_devel.sh\nkornia_rs_devel_image=\"kornia_rs/devel:local\" ./devel.sh\n```\n\n2.2 enter to the `devel` docker container.\n\n```bash\n./devel.sh\n```\n\n3. build the project\n\n(you should now be inside the docker container)\n\n```bash\n# maturin needs you to be a `venv`\npython3 -m venv .venv\nsource .venv/bin/activate\n\n# build and generate linked wheels\nmaturin develop --extras dev\n```\n\n4. run the tests\n\n```bash\npytest test/\n```\n\n## contributing\n\nthis is a child project of [kornia](https://github.com/kornia/kornia). join the community to get in touch with us, or just sponsor the project: https://opencollective.com/kornia\n\n",
+  "docs_url": null,
+  "keywords": "computer vision,rust",
+  "license": "",
+  "name": "kornia-rs",
+  "package_url": "https://pypi.org/project/kornia-rs/",
+  "project_url": "https://pypi.org/project/kornia-rs/",
+  "project_urls": {
+    "documentation": "https://kornia.readthedocs.io",
+    "homepage": "https://www.kornia.org",
+    "repository": "https://github.com/kornia/kornia-rs"
+  },
+  "release_url": "https://pypi.org/project/kornia-rs/0.0.8/",
+  "requires_dist": [
+    "pytest; extra == 'dev'",
+    "pytest-asyncio; extra == 'dev'",
+    "kornia==0.6.3; extra == 'dev'",
+    "numpy==1.23.0; extra == 'dev'",
+    "jax[cpu]; extra == 'dev'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "low level implementations for computer vision in rust",
+  "version": "0.0.8",
+  "releases": [],
+  "developers": [
+    "edgar@kornia.org",
+    "edgar_riba"
+  ],
+  "kwds": "kornia_rs_devel_image kornia_rs svg slack kornia",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_kornia_rs",
+  "homepage": "",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_jax",
+    "pypi_kornia",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_pytest_asyncio"
+  ]
+}

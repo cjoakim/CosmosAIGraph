@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "<p align=\"center\">\n  <img src=\"https://raw.githubusercontent.com/sonic0/cron-converter/main/logo.png\" title=\"cron-converter\">\n</p>\n\ncron-converter provides a cron string parser ( from string/lists to string/lists ) and iteration for the datetime object with a cron like format.<br>\nthis project would be a transposition in python of js [cron-converter](https://github.com/roccivic/cron-converter) by [roccivic](https://github.com/roccivic). \n\n[![mit license badge](https://img.shields.io/badge/license-mit-blue.svg)](https://github.com/sonic0/cron-converter/blob/master/licence)\n![unit and integration tests](https://github.com/sonic0/cron-converter/workflows/unit%20and%20integration%20tests/badge.svg)\n[![codebeat badge](https://codebeat.co/badges/33cfdde8-34ce-4fcc-85b6-2031d919639f)](https://codebeat.co/projects/github-com-sonic0-cron-converter-main)\n\n## install\n\n#### pip\n```bash\npip install cron-converter\n```\n\n## use\n```python\nfrom cron_converter import cron\n```\n\n### create a new instance\n```python\ncron_instance = cron()\n```\nor\n```python\ncron_instance = cron('*/10 9-17 1 * *')\n```\nor (with constructor options)\n```python\ncron_instance = cron('*/10 9-17 1 * *', {\n  'output_weekday_names': true,\n  'output_month_names': true\n})\n```\n\n### parse a cron string\n```python\n# every 10 mins between 9am and 5pm on the 1st of every month\n# in the case of the second or third creation method this step is not required\ncron_instance.from_string('*/10 9-17 1 * *')\n\n# prints: '*/10 9-17 1 * *'\nprint(cron_instance.to_string())\n# alternatively, you could print directly the object obtaining the same result:\n# print(cron_instance) # prints: '*/10 9-17 1 * *'\n\n# prints:\n# [\n#   [ 0, 10, 20, 30, 40, 50 ],\n#   [ 9, 10, 11, 12, 13, 14, 15, 16, 17 ],\n#   [ 1 ],\n#   [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ],\n#   [ 0, 1, 2, 3, 4, 5, 6 ]\n# ]\nprint(cron_instance.to_list())\n```\n\n### parse an array\n```python\ncron_instance.from_list([[0], [1], [1], [5], [0,2,4,6]])\n\n# prints: '0 1 1 5 */2'\nprint(cron_instance.to_string())\n```\n\n### constructor options\npossible options:\n- output_weekday_names: false (default)\n- output_month_names: false (default)\n- output_hashes: false (default)\n\n#### output_weekday_names and output_month_names\n```python\ncron_instance = cron(none, {\n  'output_weekday_names': true,\n  'output_month_names': true\n})\ncron_instance.from_string('*/5 9-17/2 * 1-3 1-5')\n# prints: '*/5 9-17/2 * jan-mar mon-fri'\nprint(cron_instance)\n```\nor\n```python\ncron_instance = cron('*/5 9-17/2 * 1-3 1-5', {\n  'output_weekday_names': true,\n  'output_month_names': true\n})\n# prints: '*/5 9-17/2 * jan-mar mon-fri'\nprint(cron_instance)\n```\n\n#### output_hashes\n```python\ncron_instance = cron('*/5 9-17/2 * 1-3 1-5', {\n  'output_hashes': true\n})\n# prints: 'h/5 h(9-17)/2 h 1-3 1-5'\nprint(cron_instance.to_string())\n```\n\n### get the schedule execution times. example with raw datetime\n```python\n# parse a string to init a schedule\ncron_instance.from_string('*/5 * * * *')\n\n# raw datetime without timezone info (not aware)\nreference = datetime.now()\n# get the iterator, initialised to now\nschedule = cron_instance.schedule(reference)\n\n# calls to .next() and .prev()\n# return a datetime object\n\n# examples with time now: '2021-01-01t09:32:00\n# prints: '2021-01-01t09:35:00'\nprint(schedule.next().isoformat())\n# prints: '2021-01-01t09:40:00'\nprint(schedule.next().isoformat())\n\n# reset\nschedule.reset()\n\n# prints: '2021-01-01t09:30:00'\nprint(schedule.prev().isoformat())\n# prints: '2021-01-01t09:25:00'\nprint(schedule.prev().isoformat())\n```\n\n## about dst\nbe sure to init your cron-converter instance with a tz aware datetime for this to work!\n\na scheduler has two optional mutually exclusive arguments: `start_date` or `timezone_str`. \nby default (no parameters), a scheduler start count with a utc datetime ( _utcnow()_ ) if you not specify any `start_date` datetime object. \nif you provide `timezone_str` the scheduler will start count from a localized now datetime ( _datetime.now(tz_object)_ ). \n\nexample starting from localized now datetime\n```python\nfrom cron_converter import cron\n\ncron = cron('0 0 * * *')\nschedule = cron.schedule(timezone_str='europe/rome')\n# prints: result datetime + utc offset\nprint(schedule.next())\n```\n\nexample using pytz:\n```python\nfrom pytz import timezone\nfrom datetime import datetime\nfrom cron_converter import cron\n\ntz = timezone('europe/rome')\nlocal_date = tz.localize(datetime(2021, 1, 1))\ncron = cron('0 0 * * *')\nschedule = cron.schedule(start_date=local_date)\nnext_schedule = schedule.next()\nnext_next_schedule = schedule.next()\n# prints: '2021-01-01t00:00:00+01:00'\nprint(next_schedule.isoformat())\n# prints: '2021-01-02t00:00:00+01:00'\nprint(next_next_schedule.isoformat())\n```\nexample using python_dateutil:\n```python\nimport dateutil.tz\nfrom datetime import datetime\nfrom cron_converter import cron\n\ntz = dateutil.tz.gettz('asia/tokyo')\nlocal_date = datetime(2021, 1, 1, tzinfo=tz)\ncron = cron('0 0 * * *')\nschedule = cron.schedule(start_date=local_date)\nnext_schedule = schedule.next()\nnext_next_schedule = schedule.next()\n# prints: '2021-01-01t00:00:00+09:00'\nprint(next_schedule.isoformat())\n# prints: '2021-01-02t00:00:00+09:00'\nprint(next_next_schedule.isoformat())\n```\n\n## about cron schedule times frequency\nit's possible to compare the cron object schedules frequency. thanks [@zevaverbach](https://github.com/zevaverbach).\n```python\n# hours\ncron('0 1 * * 1-5') == cron('0 2 * * 1-5') # true\ncron('0 1,2,3 * * 1-5') > cron('0 1,23 * * 1-5') # true\n# minutes\ncron('* 1 * * 1-5') == cron('0-59 1 * * 1-5') # true\ncron('1-30 1 * * 1-5') > cron('1-29 1 * * 1-5') # true\n# days\ncron('* 1 1 * 1-5') == cron('0-59 1 2 * 1-5') # true\ncron('* 1 1,2 * 1-5') > cron('* 1 6 * 1-5') # true\n# month\ncron('* 1 1 11 1-5') == cron('* 1 1 1 1-5') # true\ncron('* 1 6 * 1-5') > cron('* 1 6 1 1-5') # true\n# weekday\ncron('* 1 1 11 *') == cron('* 1 1 11 0-6') # true\ncron('* 1 6 * 1-5') > cron('* 1 6 * 1-4') # true\n```\n\n## about seconds repeats\ncron-converter is not able to do second repetition crontabs form.\n\n## develop & tests\n```bash\ngit clone https://github.com/sonic0/cron-converter\ncd cron-converter\n...\npython -m unittest discover -s tests/unit\npython -m unittest discover -s tests/integration\n```\n\n## project info\nthis repo is part of a projects group, called _cron-converter_.\nits related repositories:\n\n- [local-crontab](https://github.com/sonic0/local-crontab)\n- [local-crontab-ansible-filter](https://github.com/sonic0/local-crontab-ansible-filter)\n- [local-crontab-serverless-infrastructure](https://github.com/sonic0/local-crontab-serverless-infrastructure)\n- [local-crontab-web-converter](https://github.com/sonic0/local-crontab-web-converter)\n",
+  "docs_url": null,
+  "keywords": "cron",
+  "license": "mit license",
+  "name": "cron-converter",
+  "package_url": "https://pypi.org/project/cron-converter/",
+  "project_url": "https://pypi.org/project/cron-converter/",
+  "project_urls": {
+    "Homepage": "https://github.com/Sonic0/cron-converter"
+  },
+  "release_url": "https://pypi.org/project/cron-converter/1.0.2/",
+  "requires_dist": [
+    "python-dateutil",
+    "unittest ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "cron string parser and scheduler for python",
+  "version": "1.0.2",
+  "releases": [],
+  "developers": [
+    "andrea.salvatori92@gmail.com",
+    "andrea_salvatori"
+  ],
+  "kwds": "cron_converter crontab cron cron_instance _cron",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_cron_converter",
+  "homepage": "https://github.com/sonic0/cron-converter",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_python_dateutil",
+    "pypi_unittest"
+  ]
+}

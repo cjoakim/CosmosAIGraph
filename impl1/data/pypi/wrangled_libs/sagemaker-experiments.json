@@ -1,0 +1,64 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": ".. image:: https://github.com/aws/sagemaker-experiments/raw/main/branding/icon/sagemaker-banner.png\n    :height: 100px\n    :alt: sagemaker\n    :target: https://aws.amazon.com/sagemaker/\n\n**note:** use the sagemaker `sdk <https://sagemaker.readthedocs.io/en/v2.125.0/experiments/sagemaker.experiments.html>`_ to use sagemaker experiments. this repository will not be up to date with the latest product improvements. link to `developer guide <https://docs.aws.amazon.com/sagemaker/latest/dg/experiments.html>`_. \n\n================================\nsagemaker experiments python sdk\n================================\n\n.. image:: https://img.shields.io/pypi/v/sagemaker-experiments.svg\n    :target: https://pypi.python.org/pypi/sagemaker-experiments\n    :alt: latest version\n\n.. image:: https://img.shields.io/pypi/pyversions/sagemaker-experiments.svg\n    :target: https://pypi.python.org/pypi/sagemaker-experiments\n    :alt: supported python versions\n\n.. image:: https://img.shields.io/pypi/l/sagemaker-experiments\n    :target: https://github.com/aws/sagemaker-experiments/blob/main/license\n    :alt: license\n\n.. image:: https://img.shields.io/pypi/dm/sagemaker-experiments\n    :target: https://pypi.python.org/pypi/sagemaker-experiments\n    :alt: pypi - downloads\n\n.. image:: https://codecov.io/gh/aws/sagemaker-experiments/branch/main/graph/badge.svg\n   :target: https://codecov.io/gh/aws/sagemaker-experiments\n   :alt: codecov\n\n.. image:: https://img.shields.io/pypi/status/sagemaker-experiments\n    :target: https://github.com/aws/sagemaker-experiments\n    :alt: pypi - status\n\n.. image:: https://img.shields.io/pypi/format/coverage.svg\n    :target: https://pypi.org/project/coverage/\n    :alt: kit format\n\n.. image:: https://img.shields.io/github/workflow/status/aws/sagemaker-experiments/main\n    :target: https://github.com/aws/sagemaker-experiments/actions\n    :alt: github workflow status\n\n.. image:: https://img.shields.io/github/stars/aws/sagemaker-experiments.svg?logo=github\n    :target: https://github.com/aws/sagemaker-experiments/stargazers\n    :alt: github stars\n\n.. image:: https://img.shields.io/github/forks/aws/sagemaker-experiments.svg?logo=github\n    :target: https://github.com/aws/sagemaker-experiments/network/members\n    :alt: github forks\n\n.. image:: https://img.shields.io/github/contributors/aws/sagemaker-experiments.svg?logo=github\n    :target: https://github.com/aws/sagemaker-experiments/graphs/contributors\n    :alt: contributors\n\n.. image:: https://img.shields.io/github/search/aws/sagemaker-experiments/sagemaker\n    :target: https://github.com/aws/sagemaker-experiments\n    :alt: github search hit counter\n\n.. image:: https://img.shields.io/badge/code_style-black-000000.svg\n    :target: https://github.com/python/black\n    :alt: code style: black\n\n.. image:: https://readthedocs.org/projects/sagemaker-experiments/badge/?version=latest\n    :target: https://readthedocs.org/projects/sagemaker-experiments/\n    :alt: read the docs - sagemaker experiments\n\n.. image:: https://mybinder.org/badge_logo.svg\n    :target: https://mybinder.org/v2/gh/aws/amazon-sagemaker-examples/main?filepath=sagemaker-experiments%2fmnist-handwritten-digits-classification-experiment.ipynb\n\n\n\nexperiment tracking in sagemaker training jobs, processing jobs, and notebooks.\n\noverview\n--------\nsagemaker experiments is an aws service for tracking machine learning experiments. the sagemaker experiments python sdk is a high-level interface to this service that helps you track experiment information using python.\n\nexperiment tracking powers the machine learning integrated development environment `amazon sagemaker studio <https://docs.aws.amazon.com/sagemaker/latest/dg/gs-studio.html>`_.\n\nfor detailed api reference please go to: `read the docs <https://sagemaker-experiments.readthedocs.io>`_\n\nconcepts\n--------\n\n- **experiment**: a collection of related trials. add trials to an experiment that you wish to compare together.\n- **trial**: a description of a multi-step machine learning workflow. each step in the workflow is described by a trial component. there is no relationship between trial components such as ordering.\n- **trial component**: a description of a single step in a machine learning workflow.  for example data cleaning, feature extraction, model training, model evaluation, etc...\n- **tracker**: a python context-manager for logging information about a single trialcomponent.\n\nfor more information see `amazon sagemaker experiments - organize, track, and compare your machine learning trainings <https://aws.amazon.com/blogs/aws/amazon-sagemaker-experiments-organize-track-and-compare-your-machine-learning-trainings/>`_\n\nusing the sdk\n-------------\nyou can use this sdk to:\n\n- manage experiments, trials, and trial components within python scripts, programs, and notebooks.\n- add tracking information to a sagemaker notebook, allowing you to model your notebook in sagemaker experiments as a multi-step ml workflow.\n- record experiment information from inside your running sagemaker training and processing jobs.\n\ninstallation\n------------\n\n.. code-block:: bash\n\n    pip install sagemaker-experiments\n\nexamples\n--------\n\n.. code-block:: python\n\n    import boto3\n    import pickle, gzip, numpy, json, os\n    import io\n    import numpy as np\n    import sagemaker.amazon.common as smac\n    import sagemaker\n    from sagemaker import get_execution_role\n    from sagemaker import analytics\n    from smexperiments import experiment\n\n    # specify training container\n    from sagemaker.amazon.amazon_estimator import get_image_uri\n    container = get_image_uri(boto3.session().region_name, 'linear-learner')\n\n    # load the dataset\n    s3 = boto3.client(\"s3\")\n    s3.download_file(\"sagemaker-sample-files\", \"datasets/image/mnist/mnist.pkl.gz\", \"mnist.pkl.gz\")\n    with gzip.open('mnist.pkl.gz', 'rb') as f:\n        train_set, valid_set, test_set = pickle.load(f, encoding='latin1')\n\n    vectors = np.array([t.tolist() for t in train_set[0]]).astype('float32')\n    labels = np.where(np.array([t.tolist() for t in train_set[1]]) == 0, 1, 0).astype('float32')\n\n    buf = io.bytesio()\n    smac.write_numpy_to_dense_tensor(buf, vectors, labels)\n    buf.seek(0)\n\n    key = 'recordio-pb-data'\n    bucket = sagemaker.session.session().default_bucket()\n    prefix = 'sagemaker/demo-linear-mnist'\n    boto3.resource('s3').bucket(bucket).object(os.path.join(prefix, 'train', key)).upload_fileobj(buf)\n    s3_train_data = 's3://{}/{}/train/{}'.format(bucket, prefix, key)\n    output_location = 's3://{}/{}/output'.format(bucket, prefix)\n\n    my_experiment = experiment.experiment.create(experiment_name='mnist')\n    my_trial = my_experiment.create_trial(trial_name='linear-learner')\n\n    role = get_execution_role()\n    sess = sagemaker.session()\n\n    linear = sagemaker.estimator.estimator(container,\n                                        role, \n                                        train_instance_count=1, \n                                        train_instance_type='ml.c4.xlarge',\n                                        output_path=output_location,\n                                        sagemaker_session=sess)\n    linear.set_hyperparameters(feature_dim=784,\n                            predictor_type='binary_classifier',\n                            mini_batch_size=200)\n\n    linear.fit(inputs={'train': s3_train_data}, experiment_config={\n                \"experimentname\": my_experiment.experiment_name,\n                \"trialname\": my_trial.trial_name,\n                \"trialcomponentdisplayname\": \"mnist-linear-learner\",\n            },)\n    \n    trial_component_analytics = analytics.experimentanalytics(experiment_name=my_experiment.experiment_name)\n\n    analytic_table = trial_component_analytics.dataframe()\n    analytic_table\n\nfor more examples, check out: `sagemaker-experiments <https://github.com/aws/amazon-sagemaker-examples/tree/master/sagemaker-experiments>`_ in `aws labs amazon sagemaker examples <https://github.com/aws/amazon-sagemaker-examples>`_.\n\nlicense\n-------\nthis library is licensed under the apache 2.0 license.\n\nrunning tests\n-------------\n\n**unit tests**\n\n.. code-block:: bash\n\n    tox tests/unit\n\n**integration tests**\n\nto run the integration tests, the following prerequisites must be met:\n\n- aws account credentials are available in the environment for the boto3 client to use.\n- the aws account has an iam role with sagemaker permissions.\n\n.. code-block:: bash\n\n    tox tests/integ\n\n- test against different regions\n\n.. code-block:: bash\n\n    tox -e py39 -- --region cn-north-1\n    \n**docker based integration tests**\n\nseveral integration tests rely on docker to push an image to ecr which is then used for training.\n\ndocker setup\n\n1. install docker\n2. set aws cred helper in docker config (~/.docker/config.json)\n\n.. code-block:: javascript\n\n    # docker config example\n    {\n        \"stackorchestrator\": \"swarm\",\n        \"credsstore\": \"desktop\",\n        \"auths\": {\n            \"https://index.docker.io/v1/\": {}\n        },\n        \"credhelpers\": {\n            \"aws_account_id.dkr.ecr.region.amazonaws.com\": \"ecr-login\"\n        },\n        \"experimental\": \"disabled\"\n    }\n\n\n.. code-block:: bash\n\n    # run only docker based tests\n    tox -e py39 -- tests/integ -m 'docker'\n    \n    # exclude docker based tests\n    tox -e py39 -- tests/integ -m 'not docker'\n\n\n\ngenerate docs\n-------------\n\n.. code-block:: bash\n\n    tox -e docs\n",
+  "docs_url": null,
+  "keywords": "ml amazon aws ai tensorflow mxnet",
+  "license": "apache license 2.0",
+  "name": "sagemaker-experiments",
+  "package_url": "https://pypi.org/project/sagemaker-experiments/",
+  "project_url": "https://pypi.org/project/sagemaker-experiments/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/sagemaker-experiment-tracking/"
+  },
+  "release_url": "https://pypi.org/project/sagemaker-experiments/0.1.45/",
+  "requires_dist": [
+    "boto3 (>=1.16.27)",
+    "tox (==3.13.1) ; extra == 'test'",
+    "flake8 ; extra == 'test'",
+    "pytest ; extra == 'test'",
+    "pytest-cov ; extra == 'test'",
+    "pytest-coverage ; extra == 'test'",
+    "pytest-rerunfailures ; extra == 'test'",
+    "pytest-xdist ; extra == 'test'",
+    "docker ; extra == 'test'",
+    "pandas ; extra == 'test'",
+    "scikit-learn ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "open source library for experiment tracking in sagemaker jobs and notebooks",
+  "version": "0.1.45",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "sagemaker tensorflow sagemaker_session write_numpy_to_dense_tensor amazon_estimator",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_sagemaker_experiments",
+  "homepage": "https://github.com/aws/sagemaker-experiment-tracking/",
+  "release_count": 40,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_docker",
+    "pypi_flake8",
+    "pypi_pandas",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_coverage",
+    "pypi_pytest_rerunfailures",
+    "pypi_pytest_xdist",
+    "pypi_scikit_learn",
+    "pypi_tox"
+  ]
+}

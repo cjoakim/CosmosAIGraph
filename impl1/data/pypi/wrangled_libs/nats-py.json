@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# nats - python3 client for asyncio\n\nan [asyncio](https://docs.python.org/3/library/asyncio.html) python client for the [nats messaging system](https://nats.io).\n\n[![docs](https://img.shields.io/static/v1?label=docs&message=docs&color=informational)](https://nats-io.github.io/nats.py/)\n[![pypi](https://img.shields.io/pypi/v/nats-py.svg)](https://pypi.org/project/nats-py)\n[![build status](https://travis-ci.com/nats-io/nats.py.svg?branch=main)](http://travis-ci.com/nats-io/nats.py)\n[![versions](https://img.shields.io/pypi/pyversions/nats-py.svg)](https://pypi.org/project/nats-py)\n[![license apache 2.0](https://img.shields.io/badge/license-apache2-blue.svg)](https://www.apache.org/licenses/license-2.0)\n\n## supported platforms\n\nshould be compatible with at least [python +3.7](https://docs.python.org/3.7/library/asyncio.html).\n\n## installing\n\n```bash\npip install nats-py\n```\n\n## getting started\n\n```python\nimport asyncio\nimport nats\nfrom nats.errors import connectionclosederror, timeouterror, noserverserror\n\nasync def main():\n    # it is very likely that the demo server will see traffic from clients other than yours.\n    # to avoid this, start your own locally and modify the example to use it.\n    nc = await nats.connect(\"nats://demo.nats.io:4222\")\n\n    # you can also use the following for tls against the demo server.\n    #\n    # nc = await nats.connect(\"tls://demo.nats.io:4443\")\n\n    async def message_handler(msg):\n        subject = msg.subject\n        reply = msg.reply\n        data = msg.data.decode()\n        print(\"received a message on '{subject} {reply}': {data}\".format(\n            subject=subject, reply=reply, data=data))\n\n    # simple publisher and async subscriber via coroutine.\n    sub = await nc.subscribe(\"foo\", cb=message_handler)\n\n    # stop receiving after 2 messages.\n    await sub.unsubscribe(limit=2)\n    await nc.publish(\"foo\", b'hello')\n    await nc.publish(\"foo\", b'world')\n    await nc.publish(\"foo\", b'!!!!!')\n\n    # synchronous style with iterator also supported.\n    sub = await nc.subscribe(\"bar\")\n    await nc.publish(\"bar\", b'first')\n    await nc.publish(\"bar\", b'second')\n\n    try:\n        async for msg in sub.messages:\n            print(f\"received a message on '{msg.subject} {msg.reply}': {msg.data.decode()}\")\n            await sub.unsubscribe()\n    except exception as e:\n        pass\n\n    async def help_request(msg):\n        print(f\"received a message on '{msg.subject} {msg.reply}': {msg.data.decode()}\")\n        await nc.publish(msg.reply, b'i can help')\n\n    # use queue named 'workers' for distributing requests\n    # among subscribers.\n    sub = await nc.subscribe(\"help\", \"workers\", help_request)\n\n    # send a request and expect a single response\n    # and trigger timeout if not faster than 500 ms.\n    try:\n        response = await nc.request(\"help\", b'help me', timeout=0.5)\n        print(\"received response: {message}\".format(\n            message=response.data.decode()))\n    except timeouterror:\n        print(\"request timed out\")\n\n    # remove interest in subscription.\n    await sub.unsubscribe()\n\n    # terminate connection to nats.\n    await nc.drain()\n\nif __name__ == '__main__':\n    asyncio.run(main())\n```\n\n## jetstream\n\nstarting v2.0.0 series, the client now has jetstream support:\n\n```python\nimport asyncio\nimport nats\nfrom nats.errors import timeouterror\n\nasync def main():\n    nc = await nats.connect(\"localhost\")\n\n    # create jetstream context.\n    js = nc.jetstream()\n\n    # persist messages on 'foo's subject.\n    await js.add_stream(name=\"sample-stream\", subjects=[\"foo\"])\n\n    for i in range(0, 10):\n        ack = await js.publish(\"foo\", f\"hello world: {i}\".encode())\n        print(ack)\n\n    # create pull based consumer on 'foo'.\n    psub = await js.pull_subscribe(\"foo\", \"psub\")\n\n    # fetch and ack messagess from consumer.\n    for i in range(0, 10):\n        msgs = await psub.fetch(1)\n        for msg in msgs:\n            await msg.ack()\n            print(msg)\n\n    # create single ephemeral push based subscriber.\n    sub = await js.subscribe(\"foo\")\n    msg = await sub.next_msg()\n    await msg.ack()\n\n    # create single push based subscriber that is durable across restarts.\n    sub = await js.subscribe(\"foo\", durable=\"myapp\")\n    msg = await sub.next_msg()\n    await msg.ack()\n\n    # create deliver group that will be have load balanced messages.\n    async def qsub_a(msg):\n        print(\"qsub a:\", msg)\n        await msg.ack()\n\n    async def qsub_b(msg):\n        print(\"qsub b:\", msg)\n        await msg.ack()\n    await js.subscribe(\"foo\", \"workers\", cb=qsub_a)\n    await js.subscribe(\"foo\", \"workers\", cb=qsub_b)\n\n    for i in range(0, 10):\n        ack = await js.publish(\"foo\", f\"hello world: {i}\".encode())\n        print(\"\\t\", ack)\n\n    # create ordered consumer with flow control and heartbeats\n    # that auto resumes on failures.\n    osub = await js.subscribe(\"foo\", ordered_consumer=true)\n    data = bytearray()\n\n    while true:\n        try:\n            msg = await osub.next_msg()\n            data.extend(msg.data)\n        except timeouterror:\n            break\n    print(\"all data in stream:\", len(data))\n\n    await nc.close()\n\nif __name__ == '__main__':\n    asyncio.run(main())\n```\n\n## tls\n\ntls connections can be configured with an [ssl context](https://docs.python.org/3/library/ssl.html#context-creation)\n\n```python\nssl_ctx = ssl.create_default_context(purpose=ssl.purpose.server_auth)\nssl_ctx.load_verify_locations('ca.pem')\nssl_ctx.load_cert_chain(certfile='client-cert.pem',\n                        keyfile='client-key.pem')\nawait nats.connect(servers=[\"tls://127.0.0.1:4443\"], tls=ssl_ctx, tls_hostname=\"localhost\")\n```\n\nsetting the scheme to `tls` in the connect url will make the client create a [default ssl context](https://docs.python.org/3/library/ssl.html#ssl.create_default_context) automatically:\n\n```python\nimport asyncio\nimport ssl\nfrom nats.aio.client import client as nats\n\nasync def run():\n    nc = nats()\n    await nc.connect(\"tls://demo.nats.io:4443\")\n```\n\n*note*: if getting ssl certificate errors in os x, try first installing the `certifi` certificate bundle. if using python 3.7 for example, then run:\n\n```ps\n$ /applications/python\\ 3.7/install\\ certificates.command\n -- pip install --upgrade certifi\ncollecting certifi\n...\n -- removing any existing file or link\n -- creating symlink to certifi certificate bundle\n -- setting permissions\n -- update complete\n```\n\n## nkeys and jwt user credentials\n\nsince [v0.9.0](https://github.com/nats-io/nats.py/releases/tag/v0.9.0) release,\nyou can also optionally install [nkeys](https://github.com/nats-io/nkeys.py) in order to use\nthe new nats v2.0 auth features:\n\n```sh\npip install nats-py[nkeys]\n```\n\nusage:\n\n```python\nawait nats.connect(\"tls://connect.ngs.global:4222\", user_credentials=\"/path/to/secret.creds\")\n```\n\n## development\n\n1. [install nats server](https://docs.nats.io/running-a-nats-service/introduction/installation).\n1. make sure the server is available in your path: `nats-server -v`.\n1. install dependencies: `python3 -m pipenv install --dev`.\n1. run tests: `python3 -m pytest`.\n\n## license\n\nunless otherwise noted, the nats source files are distributed under\nthe apache version 2.0 license found in the license file.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2 license",
+  "name": "nats-py",
+  "package_url": "https://pypi.org/project/nats-py/",
+  "project_url": "https://pypi.org/project/nats-py/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/nats-io/nats.py/issues",
+    "Homepage": "https://github.com/nats-io/nats.py"
+  },
+  "release_url": "https://pypi.org/project/nats-py/2.6.0/",
+  "requires_dist": [
+    "nkeys; extra == \"nkeys\"",
+    "aiohttp; extra == \"aiohttp\"",
+    "fast-mail-parser; extra == \"fast-parse\""
+  ],
+  "requires_python": ">=3.7",
+  "summary": "nats client for python",
+  "version": "2.6.0",
+  "releases": [],
+  "developers": [
+    "wally@synadia.com"
+  ],
+  "kwds": "asyncio nats python3 pytest pyversions",
+  "license_kwds": "apache 2 license",
+  "libtype": "pypi",
+  "id": "pypi_nats_py",
+  "homepage": "",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_fast_mail_parser",
+    "pypi_nkeys"
+  ]
+}

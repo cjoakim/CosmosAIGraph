@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: x11 applications",
+    "environment :: x11 applications :: gnome",
+    "framework :: asyncio",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: desktop environment :: gnome",
+    "topic :: software development :: embedded systems",
+    "typing :: typed"
+  ],
+  "description": "\n# python-dbus-next\n\nthe next great dbus library for python.\n\n[documentation](https://python-dbus-next.readthedocs.io/en/latest/)\n\n[chat](https://discord.gg/udbxhvx)\n\npython-dbus-next is a python library for dbus that aims to be a fully featured high level library primarily geared towards integration of applications into linux desktop and mobile environments.\n\ndesktop application developers can use this library for integrating their applications into desktop environments by implementing common dbus standard interfaces or creating custom plugin interfaces.\n\ndesktop users can use this library to create their own scripts and utilities to interact with those interfaces for customization of their desktop environment.\n\npython-dbus-next plans to improve over other dbus libraries for python in the following ways:\n\n* zero dependencies and pure python 3.\n* support for multiple io backends including asyncio and the glib main loop.\n* nonblocking io suitable for gui development.\n* target the latest language features of python for beautiful services and clients.\n* complete implementation of the dbus type system without ever guessing types.\n* integration tests for all features of the library.\n* completely documented public api.\n\n## installing\n\nthis library is available on pypi as [dbus-next](https://pypi.org/project/dbus-next/).\n\n```\npip3 install dbus-next\n```\n\n## the client interface\n\nto use a service on the bus, the library constructs a proxy object you can use to call methods, get and set properties, and listen to signals.\n\nfor more information, see the [overview for the high-level client](https://python-dbus-next.readthedocs.io/en/latest/high-level-client/index.html).\n\nthis example connects to a media player and controls it with the [mpris](https://specifications.freedesktop.org/mpris-spec/latest/) dbus interface.\n\n```python\nfrom dbus_next.aio import messagebus\n\nimport asyncio\n\nloop = asyncio.get_event_loop()\n\n\nasync def main():\n    bus = await messagebus().connect()\n    # the introspection xml would normally be included in your project, but\n    # this is convenient for development\n    introspection = await bus.introspect('org.mpris.mediaplayer2.vlc', '/org/mpris/mediaplayer2')\n\n    obj = bus.get_proxy_object('org.mpris.mediaplayer2.vlc', '/org/mpris/mediaplayer2', introspection)\n    player = obj.get_interface('org.mpris.mediaplayer2.player')\n    properties = obj.get_interface('org.freedesktop.dbus.properties')\n\n    # call methods on the interface (this causes the media player to play)\n    await player.call_play()\n\n    volume = await player.get_volume()\n    print(f'current volume: {volume}, setting to 0.5')\n\n    await player.set_volume(0.5)\n\n    # listen to signals\n    def on_properties_changed(interface_name, changed_properties, invalidated_properties):\n        for changed, variant in changed_properties.items():\n            print(f'property changed: {changed} - {variant.value}')\n\n    properties.on_properties_changed(on_properties_changed)\n\n    await loop.create_future()\n\nloop.run_until_complete(main())\n```\n\n## the service interface\n\nto define a service on the bus, use the `serviceinterface` class and decorate class methods to specify dbus methods, properties, and signals with their type signatures.\n\nfor more information, see the [overview for the high-level service](https://python-dbus-next.readthedocs.io/en/latest/high-level-service/index.html).\n\n```python\nfrom dbus_next.service import serviceinterface, method, dbus_property, signal, variant\nfrom dbus_next.aio messagebus\n\nimport asyncio\n\nclass exampleinterface(serviceinterface):\n    def __init__(self, name):\n        super().__init__(name)\n        self._string_prop = 'kevin'\n\n    @method()\n    def echo(self, what: 's') -> 's':\n        return what\n\n    @method()\n    def getvariantdict() -> 'a{sv}':\n        return {\n            'foo': variant('s', 'bar'),\n            'bat': variant('x', -55),\n            'a_list': variant('as', ['hello', 'world'])\n        }\n\n    @dbus_property()\n    def string_prop(self) -> 's':\n        return self._string_prop\n\n    @string_prop.setter\n    def string_prop_setter(self, val: 's'):\n        self._string_prop = val\n\n    @signal()\n    def signal_simple(self) -> 's':\n        return 'hello'\n\nasync def main():\n    bus = await messagebus().connect()\n    interface = exampleinterface('test.interface')\n    bus.export('/test/path', interface)\n    # now that we are ready to handle requests, we can request name from d-bus\n    await bus.request_name('test.name')\n    # wait indefinitely\n    await asyncio.get_event_loop().create_future()\n\nasyncio.get_event_loop().run_until_complete(main())\n```\n\n## the low-level interface\n\nthe low-level interface works with dbus messages directly.\n\nfor more information, see the [overview for the low-level interface](https://python-dbus-next.readthedocs.io/en/latest/low-level-interface/index.html).\n\n```python\nfrom dbus_next.message import message, messagetype\nfrom dbus_next.aio import messagebus\n\nimport asyncio\nimport json\n\nloop = asyncio.get_event_loop()\n\n\nasync def main():\n    bus = await messagebus().connect()\n\n    reply = await bus.call(\n        message(destination='org.freedesktop.dbus',\n                path='/org/freedesktop/dbus',\n                interface='org.freedesktop.dbus',\n                member='listnames'))\n\n    if reply.message_type == messagetype.error:\n        raise exception(reply.body[0])\n\n    print(json.dumps(reply.body[0], indent=2))\n\n\nloop.run_until_complete(main())\n```\n\n## projects that use python-dbus-next\n\n* the [playerctl](https://github.com/altdesktop/playerctl) test suite\n* [i3-dstatus](https://github.com/altdesktop/i3-dstatus)\n\n## contributing\n\ncontributions are welcome. development happens on [github](https://github.com/altdesktop/python-dbus-next).\n\nbefore you commit, run `make` to run the linter, code formatter, and the test suite.\n\n# copyright\n\nyou can use this code under an mit license (see license).\n\n\u00a9 2019, tony crisci\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "dbus-next",
+  "package_url": "https://pypi.org/project/dbus-next/",
+  "project_url": "https://pypi.org/project/dbus-next/",
+  "project_urls": {
+    "Homepage": "https://github.com/altdesktop/python-dbus-next"
+  },
+  "release_url": "https://pypi.org/project/dbus-next/0.2.3/",
+  "requires_dist": [],
+  "requires_python": ">=3.6.0",
+  "summary": "a zero-dependency dbus library for python with asyncio support",
+  "version": "0.2.3",
+  "releases": [],
+  "developers": [
+    "tony@dubstepdish.com",
+    "tony_crisci"
+  ],
+  "kwds": "dbus_next dbus python dbus_property gui",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_dbus_next",
+  "homepage": "https://github.com/altdesktop/python-dbus-next",
+  "release_count": 8,
+  "dependency_ids": []
+}

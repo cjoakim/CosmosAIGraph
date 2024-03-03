@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "opentelemetry httpx instrumentation\n===================================\n\n|pypi|\n\n.. |pypi| image:: https://badge.fury.io/py/opentelemetry-instrumentation-httpx.svg\n   :target: https://pypi.org/project/opentelemetry-instrumentation-httpx/\n\nthis library allows tracing http requests made by the\n`httpx <https://www.python-httpx.org/>`_ library.\n\ninstallation\n------------\n\n::\n\n     pip install opentelemetry-instrumentation-httpx\n\n\nusage\n-----\n\ninstrumenting all clients\n*************************\n\nwhen using the instrumentor, all clients will automatically trace requests.\n\n.. code-block:: python\n\n     import httpx\n     from opentelemetry.instrumentation.httpx import httpxclientinstrumentor\n\n     url = \"https://some.url/get\"\n     httpxclientinstrumentor().instrument()\n\n     with httpx.client() as client:\n          response = client.get(url)\n\n     async with httpx.asyncclient() as client:\n          response = await client.get(url)\n\ninstrumenting single clients\n****************************\n\nif you only want to instrument requests for specific client instances, you can\nuse the `instrument_client` method.\n\n\n.. code-block:: python\n\n    import httpx\n    from opentelemetry.instrumentation.httpx import httpxclientinstrumentor\n\n    url = \"https://some.url/get\"\n\n    with httpx.client(transport=telemetry_transport) as client:\n        httpxclientinstrumentor.instrument_client(client)\n        response = client.get(url)\n\n    async with httpx.asyncclient(transport=telemetry_transport) as client:\n        httpxclientinstrumentor.instrument_client(client)\n        response = await client.get(url)\n\n\nuninstrument\n************\n\nif you need to uninstrument clients, there are two options available.\n\n.. code-block:: python\n\n    import httpx\n    from opentelemetry.instrumentation.httpx import httpxclientinstrumentor\n\n    httpxclientinstrumentor().instrument()\n    client = httpx.client()\n\n    # uninstrument a specific client\n    httpxclientinstrumentor.uninstrument_client(client)\n\n    # uninstrument all clients\n    httpxclientinstrumentor().uninstrument()\n\n\nusing transports directly\n*************************\n\nif you don't want to use the instrumentor class, you can use the transport classes directly.\n\n\n.. code-block:: python\n\n    import httpx\n    from opentelemetry.instrumentation.httpx import (\n        asyncopentelemetrytransport,\n        syncopentelemetrytransport,\n    )\n\n    url = \"https://some.url/get\"\n    transport = httpx.httptransport()\n    telemetry_transport = syncopentelemetrytransport(transport)\n\n    with httpx.client(transport=telemetry_transport) as client:\n        response = client.get(url)\n\n    transport = httpx.asynchttptransport()\n    telemetry_transport = asyncopentelemetrytransport(transport)\n\n    async with httpx.asyncclient(transport=telemetry_transport) as client:\n        response = await client.get(url)\n\n\nrequest and response hooks\n***************************\n\nthe instrumentation supports specifying request and response hooks. these are functions that get called back by the instrumentation right after a span is created for a request\nand right before the span is finished while processing a response.\n\n.. note::\n\n    the request hook receives the raw arguments provided to the transport layer. the response hook receives the raw return values from the transport layer.\n\nthe hooks can be configured as follows:\n\n\n.. code-block:: python\n\n    from opentelemetry.instrumentation.httpx import httpxclientinstrumentor\n\n    def request_hook(span, request):\n        # method, url, headers, stream, extensions = request\n        pass\n\n    def response_hook(span, request, response):\n        # method, url, headers, stream, extensions = request\n        # status_code, headers, stream, extensions = response\n        pass\n\n    async def async_request_hook(span, request):\n        # method, url, headers, stream, extensions = request\n        pass\n\n    async def async_response_hook(span, request, response):\n        # method, url, headers, stream, extensions = request\n        # status_code, headers, stream, extensions = response\n        pass\n\n    httpxclientinstrumentor().instrument(\n        request_hook=request_hook,\n        response_hook=response_hook,\n        async_request_hook=async_request_hook,\n        async_response_hook=async_response_hook\n    )\n\n\nor if you are using the transport classes directly:\n\n\n.. code-block:: python\n\n    from opentelemetry.instrumentation.httpx import syncopentelemetrytransport, asyncopentelemetrytransport\n\n    def request_hook(span, request):\n        # method, url, headers, stream, extensions = request\n        pass\n\n    def response_hook(span, request, response):\n        # method, url, headers, stream, extensions = request\n        # status_code, headers, stream, extensions = response\n        pass\n\n    async def async_request_hook(span, request):\n        # method, url, headers, stream, extensions = request\n        pass\n\n    async def async_response_hook(span, request, response):\n        # method, url, headers, stream, extensions = request\n        # status_code, headers, stream, extensions = response\n        pass\n\n    transport = httpx.httptransport()\n    telemetry_transport = syncopentelemetrytransport(\n        transport,\n        request_hook=request_hook,\n        response_hook=response_hook\n    )\n\n    async_transport = httpx.asynchttptransport()\n    async_telemetry_transport = asyncopentelemetrytransport(\n        async_transport,\n        request_hook=async_request_hook,\n        response_hook=async_response_hook\n    )\n\n\nreferences\n----------\n\n* `opentelemetry httpx instrumentation <https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/httpx/httpx.html>`_\n* `opentelemetry project <https://opentelemetry.io/>`_\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "opentelemetry-instrumentation-httpx",
+  "package_url": "https://pypi.org/project/opentelemetry-instrumentation-httpx/",
+  "project_url": "https://pypi.org/project/opentelemetry-instrumentation-httpx/",
+  "project_urls": {
+    "Homepage": "https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation/opentelemetry-instrumentation-httpx"
+  },
+  "release_url": "https://pypi.org/project/opentelemetry-instrumentation-httpx/0.43b0/",
+  "requires_dist": [
+    "opentelemetry-api~=1.12",
+    "opentelemetry-instrumentation==0.43b0",
+    "opentelemetry-semantic-conventions==0.43b0",
+    "httpx>=0.18.0; extra == 'instruments'",
+    "opentelemetry-instrumentation-httpx[instruments]; extra == 'test'",
+    "opentelemetry-sdk~=1.12; extra == 'test'",
+    "opentelemetry-test-utils==0.43b0; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "opentelemetry httpx instrumentation",
+  "version": "0.43b0",
+  "releases": [],
+  "developers": [
+    "cncf-opentelemetry-contributors@lists.cncf.io"
+  ],
+  "kwds": "httpxclientinstrumentor httpx httptransport http instrument_client",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_opentelemetry_instrumentation_httpx",
+  "homepage": "",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_httpx",
+    "pypi_opentelemetry_api",
+    "pypi_opentelemetry_instrumentation",
+    "pypi_opentelemetry_instrumentation_httpx",
+    "pypi_opentelemetry_sdk",
+    "pypi_opentelemetry_semantic_conventions",
+    "pypi_opentelemetry_test_utils"
+  ]
+}

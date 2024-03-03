@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "quart-cors\n==========\n\n|build status| |pypi| |python| |license|\n\nquart-cors is an extension for `quart\n<https://github.com/pgjones/quart>`_ to enable and control `cross\norigin resource sharing <http://www.w3.org/tr/cors/>`_, cors (also\nknown as access control).\n\ncors is required to share resources in browsers due to the `same\norigin policy <https://en.wikipedia.org/wiki/same-origin_policy>`_\nwhich prevents resources being used from a different origin. an origin\nin this case is defined as the scheme, host and port combined and a\nresource corresponds to a path.\n\nin practice the same origin policy means that a browser visiting\n``http://quart.com`` will prevent the response of ``get\nhttp://api.com`` being read. it will also prevent requests such as\n``post http://api.com``. note that cors applies to browser initiated\nrequests, non-browser clients such as ``requests`` are not subject to\ncors restrictions.\n\ncors allows a server to indicate to a browser that certain resources\ncan be used, contrary to the same origin policy. it does so via\naccess-control headers that inform the browser how the resource can be\nused. for get requests these headers are sent in the response. for\nnon-get requests the browser must ask the server for the\naccess-control headers before sending the actual request, it does so\nvia a preflight options request.\n\nthe same origin policy does not apply to websockets, and hence there\nis no need for cors. instead the server alone is responsible for\ndeciding if the websocket is allowed and it should do so by inspecting\nthe websocket-request origin header.\n\nsimple (get) requests should return cors headers specifying the\norigins that are allowed to use the resource (response). this can be\nany origin, ``*`` (wildcard), or a list of specific origins. the\nresponse should also include a cors header specifying whether\nresponse-credentials e.g. cookies can be used. note that if credential\nsharing is allowed the allowed origins must be specific and not a\nwildcard.\n\npreflight requests should return cors headers specifying the origins\nallowed to use the resource, the methods and headers allowed to be\nsent in a request to the resource, whether response credentials can be\nused, and finally which response headers can be used.\n\nnote that certain actions are allowed in the same origin policy such\nas embedding e.g. ``<img src=\"http://api.com/img.gif\">`` and simple\nposts. for the purposes of this readme though these complications are\nignored.\n\nthe cors access control response headers are,\n\n================================ ===========================================================\nheader name                      meaning\n-------------------------------- -----------------------------------------------------------\naccess-control-allow-origin      origins that are allowed to use the resource.\naccess-control-allow-credentials can credentials be shared.\naccess-control-allow-methods     methods that may be used in requests to the resource.\naccess-control-allow-headers     headers that may be sent in requests to the resource.\naccess-control-expose-headers    headers that may be read in the response from the resource.\naccess-control-max-age           maximum age to cache the cors headers for the resource.\n================================ ===========================================================\n\nquart-cors uses the same naming (without the access-control prefix)\nfor it's arguments and settings when they relate to the same meaning.\n\nusage\n-----\n\nto add cors access control headers to all of the routes in the\napplication, simply apply the ``cors`` function to the application, or\nto a specific blueprint,\n\n.. code-block:: python\n\n    app = quart(__name__)\n    app = cors(app, **settings)\n\n    blueprint = blueprint(__name__)\n    blueprint = cors(blueprint, **settings)\n\nalternatively if you wish to add cors selectively by resource, apply\nthe ``route_cors`` function to a route, or the ``websocket_cors``\nfunction to a websocket,\n\n.. code-block:: python\n\n    @app.route('/')\n    @route_cors(**settings)\n    async def handler():\n        ...\n\n    @app.websocket('/')\n    @websocket_cors(allow_origin=...)\n    async def handler():\n        ...\n\nthe ``settings`` are these arguments,\n\n================= ====================================================\nargument          type\n----------------- ----------------------------------------------------\nallow_origin      union[set[union[pattern, str]], union[pattern, str]]\nallow_credentials bool\nallow_methods     union[set[str], str]\nallow_headers     union[set[str], str]\nexpose_headers    union[set[str], str]\nmax_age           union[int, flot, timedelta]\n================= ====================================================\n\nwhich correspond to the cors headers noted above. note that all\nsettings are optional and defaults can be specified in the application\nconfiguration,\n\n============================ ========================\nconfiguration key            type\n---------------------------- ------------------------\nquart_cors_allow_origin      set[union[pattern, str]]\nquart_cors_allow_credentials bool\nquart_cors_allow_methods     set[str]\nquart_cors_allow_headers     set[str]\nquart_cors_expose_headers    set[str]\nquart_cors_max_age           float\n============================ ========================\n\nthe ``websocket_cors`` decorator only takes an ``allow_origin``\nargument which defines the origins that are allowed to use the\nwebsocket. a websocket request from a disallowed origin will be\nresponded to with a 400 response.\n\nthe ``allow_origin`` origins should be the origin only (no path, query\nstrings or fragments) i.e. ``https://quart.com`` not\n``https://quart.com/``.\n\nthe ``cors_exempt`` decorator can be used in conjunction with ``cors``\nto exempt a websocket handler or view function from cors.\n\nsimple examples\n~~~~~~~~~~~~~~~\n\nto allow an app to be used from any origin (not recommended as it is\ntoo permissive),\n\n.. code-block:: python\n\n    app = quart(__name__)\n    app = cors(app, allow_origin=\"*\")\n\nto allow a route or websocket to be used from another specific domain,\n``https://quart.com``,\n\n.. code-block:: python\n\n    @app.route('/')\n    @route_cors(allow_origin=\"https://quart.com\")\n    async def handler():\n        ...\n\n    @app.websocket('/')\n    @websocket_cors(allow_origin=\"https://quart.com\")\n    async def handler():\n        ...\n\nto allow a route or websocket to be used from any subdomain (but not\nthe domain itself) of ``quart.com``,\n\n.. code-block:: python\n\n    @app.route('/')\n    @route_cors(allow_origin=re.compile(r\"https:\\/\\/.*\\.quart\\.com\"))\n    async def handler():\n        ...\n\n    @app.websocket('/')\n    @websocket_cors(allow_origin=re.compile(r\"https:\\/\\/.*\\.quart\\.com\"))\n    async def handler():\n        ...\n\nto allow a json post request to an api route, from ``https://quart.com``,\n\n.. code-block:: python\n\n    @app.route('/', methods=[\"post\"])\n    @route_cors(\n        allow_headers=[\"content-type\"],\n        allow_methods=[\"post\"],\n        allow_origin=[\"https://quart.com\"],\n    )\n    async def handler():\n        data = await request.get_json()\n        ...\n\ncontributing\n------------\n\nquart-cors is developed on `github\n<https://github.com/pgjones/quart-cors>`_. you are very welcome to\nopen `issues <https://github.com/pgjones/quart-cors/issues>`_ or\npropose `merge requests\n<https://github.com/pgjones/quart-cors/merge_requests>`_.\n\ntesting\n~~~~~~~\n\nthe best way to test quart-cors is with tox,\n\n.. code-block:: console\n\n    $ pip install tox\n    $ tox\n\nthis will check the code style and run the tests.\n\nhelp\n----\n\nthis readme is the best place to start, after that try opening an\n`issue <https://github.com/pgjones/quart-cors/issues>`_.\n\n\n.. |build status| image:: https://github.com/pgjones/quart-cors/actions/workflows/ci.yml/badge.svg\n   :target: https://github.com/pgjones/quart-cors/commits/main\n\n.. |pypi| image:: https://img.shields.io/pypi/v/quart-cors.svg\n   :target: https://pypi.python.org/pypi/quart-cors/\n\n.. |python| image:: https://img.shields.io/pypi/pyversions/quart-cors.svg\n   :target: https://pypi.python.org/pypi/quart-cors/\n\n.. |license| image:: https://img.shields.io/badge/license-mit-blue.svg\n   :target: https://github.com/pgjones/quart-cors/blob/main/license\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "quart-cors",
+  "package_url": "https://pypi.org/project/quart-cors/",
+  "project_url": "https://pypi.org/project/quart-cors/",
+  "project_urls": {
+    "Homepage": "https://github.com/pgjones/quart-cors/",
+    "Repository": "https://github.com/pgjones/quart-cors/"
+  },
+  "release_url": "https://pypi.org/project/quart-cors/0.7.0/",
+  "requires_dist": [
+    "quart (>=0.15)",
+    "typing_extensions ; python_version < \"3.10\""
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a quart extension to provide cross origin resource sharing, access control, support",
+  "version": "0.7.0",
+  "releases": [],
+  "developers": [
+    "pgjones",
+    "philip.graham.jones@googlemail.com"
+  ],
+  "kwds": "quart_cors_allow_origin quart_cors_allow_credentials quart_cors_allow_headers quart_cors_expose_headers quart_cors_allow_methods",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_quart_cors",
+  "homepage": "https://github.com/pgjones/quart-cors/",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_quart",
+    "pypi_typing_extensions"
+  ]
+}

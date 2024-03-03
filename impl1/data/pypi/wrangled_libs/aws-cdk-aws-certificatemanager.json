@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws certificate manager construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\naws certificate manager (acm) handles the complexity of creating, storing, and renewing public and private ssl/tls x.509 certificates and keys that\nprotect your aws websites and applications. acm certificates can secure singular domain names, multiple specific domain names, wildcard domains, or\ncombinations of these. acm wildcard certificates can protect an unlimited number of subdomains.\n\nthis package provides constructs for provisioning and referencing acm certificates which can be used with cloudfront and elb.\n\nafter requesting a certificate, you will need to prove that you own the\ndomain in question before the certificate will be granted. the cloudformation\ndeployment will wait until this verification process has been completed.\n\nbecause of this wait time, when using manual validation methods, it's better\nto provision your certificates either in a separate stack from your main\nservice, or provision them manually and import them into your cdk application.\n\n**note:** there is a limit on total number of acm certificates that can be requested on an account and region within a year.\nthe default limit is 2000, but this limit may be (much) lower on new aws accounts.\nsee https://docs.aws.amazon.com/acm/latest/userguide/acm-limits.html for more information.\n\n## dns validation\n\ndns validation is the preferred method to validate domain ownership, as it has a number of advantages over email validation.\nsee also [validate with dns](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html)\nin the aws certificate manager user guide.\n\nif amazon route 53 is your dns provider for the requested domain, the dns record can be\ncreated automatically:\n\n```python\nmy_hosted_zone = route53.hostedzone(self, \"hostedzone\",\n    zone_name=\"example.com\"\n)\nacm.certificate(self, \"certificate\",\n    domain_name=\"hello.example.com\",\n    validation=acm.certificatevalidation.from_dns(my_hosted_zone)\n)\n```\n\nif route 53 is not your dns provider, the dns records must be added manually and the stack will not complete\ncreating until the records are added.\n\n```python\nacm.certificate(self, \"certificate\",\n    domain_name=\"hello.example.com\",\n    validation=acm.certificatevalidation.from_dns()\n)\n```\n\nwhen working with multiple domains, use the `certificatevalidation.fromdnsmultizone()`:\n\n```python\nexample_com = route53.hostedzone(self, \"examplecom\",\n    zone_name=\"example.com\"\n)\nexample_net = route53.hostedzone(self, \"examplenet\",\n    zone_name=\"example.net\"\n)\n\ncert = acm.certificate(self, \"certificate\",\n    domain_name=\"test.example.com\",\n    subject_alternative_names=[\"cool.example.com\", \"test.example.net\"],\n    validation=acm.certificatevalidation.from_dns_multi_zone({\n        \"test.example.com\": example_com,\n        \"cool.example.com\": example_com,\n        \"test.example.net\": example_net\n    })\n)\n```\n\n## email validation\n\nemail-validated certificates (the default) are validated by receiving an\nemail on one of a number of predefined domains and following the instructions\nin the email.\n\nsee [validate with email](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-email.html)\nin the aws certificate manager user guide.\n\n```python\nacm.certificate(self, \"certificate\",\n    domain_name=\"hello.example.com\",\n    validation=acm.certificatevalidation.from_email()\n)\n```\n\n## cross-region certificates\n\nacm certificates that are used with cloudfront -- or higher-level constructs which rely on cloudfront -- must be in the `us-east-1` region.\nthe `dnsvalidatedcertificate` construct exists to facilitate creating these certificates cross-region. this resource can only be used with\nroute53-based dns validation.\n\n```python\n# my_hosted_zone: route53.hostedzone\n\nacm.dnsvalidatedcertificate(self, \"crossregioncertificate\",\n    domain_name=\"hello.example.com\",\n    hosted_zone=my_hosted_zone,\n    region=\"us-east-1\"\n)\n```\n\n## requesting private certificates\n\naws certificate manager can create [private certificates](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-private.html) issued by [private certificate authority (pca)](https://docs.aws.amazon.com/acm-pca/latest/userguide/pcawelcome.html). validation of private certificates is not necessary.\n\n```python\nimport aws_cdk.aws_acmpca as acmpca\n\n\nacm.privatecertificate(self, \"privatecertificate\",\n    domain_name=\"test.example.com\",\n    subject_alternative_names=[\"cool.example.com\", \"test.example.net\"],  # optional\n    certificate_authority=acmpca.certificateauthority.from_certificate_authority_arn(self, \"ca\", \"arn:aws:acm-pca:us-east-1:123456789012:certificate-authority/023077d8-2bfa-4eb0-8f22-05c96deade77\")\n)\n```\n\n## importing\n\nif you want to import an existing certificate, you can do so from its arn:\n\n```python\narn = \"arn:aws:...\"\ncertificate = acm.certificate.from_certificate_arn(self, \"certificate\", arn)\n```\n\n## sharing between stacks\n\nto share the certificate between stacks in the same cdk application, simply\npass the `certificate` object between the stacks.\n\n## metrics\n\nthe `daystoexpiry` metric is available via the `metricdaystoexpiry` method for\nall certificates. this metric is emitted by aws certificates manager once per\nday until the certificate has effectively expired.\n\nan alarm can be created to determine whether a certificate is soon due for\nrenewal ussing the following code:\n\n```python\nimport aws_cdk.aws_cloudwatch as cloudwatch\n\n# my_hosted_zone: route53.hostedzone\n\ncertificate = acm.certificate(self, \"certificate\",\n    domain_name=\"hello.example.com\",\n    validation=acm.certificatevalidation.from_dns(my_hosted_zone)\n)\ncertificate.metric_days_to_expiry().create_alarm(self, \"alarm\",\n    comparison_operator=cloudwatch.comparisonoperator.less_than_threshold,\n    evaluation_periods=1,\n    threshold=45\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-certificatemanager",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-certificatemanager/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-certificatemanager/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-certificatemanager/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-acmpca (==1.204.0)",
+    "aws-cdk.aws-cloudwatch (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-lambda (==1.204.0)",
+    "aws-cdk.aws-route53 (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::certificatemanager",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk certificates certificatemanager certificate_authority certificate",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_certificatemanager",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_acmpca",
+    "pypi_aws_cdk.aws_cloudwatch",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_lambda",
+    "pypi_aws_cdk.aws_route53",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

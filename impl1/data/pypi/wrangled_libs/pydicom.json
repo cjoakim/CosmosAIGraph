@@ -1,0 +1,68 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: healthcare industry",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: medical science apps.",
+    "topic :: scientific/engineering :: physics",
+    "topic :: software development :: libraries"
+  ],
+  "description": "[![unit-tests](https://github.com/pydicom/pydicom/workflows/unit-tests/badge.svg)](https://github.com/pydicom/pydicom/actions?query=workflow%3aunit-tests)\n[![type-hints](https://github.com/pydicom/pydicom/workflows/type-hints/badge.svg)](https://github.com/pydicom/pydicom/actions?query=workflow%3atype-hints)\n[![doc-build](https://circleci.com/gh/pydicom/pydicom/tree/master.svg?style=shield)](https://circleci.com/gh/pydicom/pydicom/tree/master)\n[![test-coverage](https://codecov.io/gh/pydicom/pydicom/branch/master/graph/badge.svg)](https://codecov.io/gh/pydicom/pydicom)\n[![python version](https://img.shields.io/pypi/pyversions/pydicom.svg)](https://img.shields.io/pypi/pyversions/pydicom.svg)\n[![pypi version](https://badge.fury.io/py/pydicom.svg)](https://badge.fury.io/py/pydicom)\n[![doi](https://zenodo.org/badge/doi/10.5281/zenodo.6394735.svg)](https://doi.org/10.5281/zenodo.6394735)\n\n# *pydicom*\n\n*pydicom* is a pure python package for working with [dicom](https://www.dicomstandard.org/) files.\nit lets you read, modify and write dicom data in an easy \"pythonic\" way. as a pure python package,\n*pydicom* can run anywhere python runs without any other requirements, although if you're working \nwith *pixel data* then we recommend you also install [numpy](http://www.numpy.org).\n\nnote that *pydicom* is a general-purpose dicom framework concerned with \nreading and writing dicom datasets. in order to keep the \nproject manageable, it does not handle the specifics of individual sop classes\nor other aspects of dicom. other libraries both inside and outside the\n[pydicom organization](https://github.com/pydicom) are based on *pydicom* \nand provide support for other aspects of dicom, and for more \nspecific applications.\n\nexamples are [pynetdicom](https://github.com/pydicom/pynetdicom), which \nis a python library for dicom networking, and [deid](https://github.com/pydicom/deid),\nwhich supports the anonymization of dicom files.\n\n\n## installation\n\nusing [pip](https://pip.pypa.io/en/stable/):\n```\npip install pydicom\n```\nusing [conda](https://docs.conda.io/en/latest/):\n```\nconda install -c conda-forge pydicom\n```\n\nfor more information, including installation instructions for the development version, see the [installation guide](https://pydicom.github.io/pydicom/stable/tutorials/installation.html).\n\n\n## documentation\n\nthe *pydicom* [user guide](https://pydicom.github.io/pydicom/stable/old/pydicom_user_guide.html), [tutorials](https://pydicom.github.io/pydicom/stable/tutorials/index.html), [examples](https://pydicom.github.io/pydicom/stable/auto_examples/index.html) and [api reference](https://pydicom.github.io/pydicom/stable/reference/index.html) documentation is available for both the [current release](https://pydicom.github.io/pydicom/stable) and the [development version](https://pydicom.github.io/pydicom/dev) on github pages.\n\n## *pixel data*\n\ncompressed and uncompressed *pixel data* is always available to\nbe read, changed and written as [bytes](https://docs.python.org/3/library/stdtypes.html#bytes-objects):\n```python\n>>> from pydicom import dcmread\n>>> from pydicom.data import get_testdata_file\n>>> path = get_testdata_file(\"ct_small.dcm\")\n>>> ds = dcmread(path)\n>>> type(ds.pixeldata)\n<class 'bytes'>\n>>> len(ds.pixeldata)\n32768\n>>> ds.pixeldata[:2]\nb'\\xaf\\x00'\n\n```\n\nif [numpy](http://www.numpy.org) is installed, *pixel data* can be converted to an [ndarray](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html) using the [dataset.pixel_array](https://pydicom.github.io/pydicom/stable/reference/generated/pydicom.dataset.dataset.html#pydicom.dataset.dataset.pixel_array) property:\n\n```python\n>>> arr = ds.pixel_array\n>>> arr.shape\n(128, 128)\n>>> arr\narray([[175, 180, 166, ..., 203, 207, 216],\n       [186, 183, 157, ..., 181, 190, 239],\n       [184, 180, 171, ..., 152, 164, 235],\n       ...,\n       [906, 910, 923, ..., 922, 929, 927],\n       [914, 954, 938, ..., 942, 925, 905],\n       [959, 955, 916, ..., 911, 904, 909]], dtype=int16)\n```\n### compressed *pixel data*\n#### jpeg, jpeg-ls and jpeg 2000\nconverting jpeg compressed *pixel data* to an ``ndarray`` requires installing one or more additional python libraries. for information on which libraries are required, see the [pixel data handler documentation](https://pydicom.github.io/pydicom/stable/old/image_data_handlers.html#guide-compressed).\n\ncompressing data into one of the jpeg formats is not currently supported.\n\n#### rle\nencoding and decoding rle *pixel data* only requires numpy, however it can\nbe quite slow. you may want to consider [installing one or more additional\npython libraries](https://pydicom.github.io/pydicom/stable/old/image_data_compression.html) to speed up the process.\n\n## examples\nmore [examples](https://pydicom.github.io/pydicom/stable/auto_examples/index.html) are available in the documentation.\n\n**change a patient's id**\n```python\nfrom pydicom import dcmread\n\nds = dcmread(\"/path/to/file.dcm\")\n# edit the (0010,0020) 'patient id' element\nds.patientid = \"12345678\"\nds.save_as(\"/path/to/file_updated.dcm\")\n```\n\n**display the pixel data**\n\nwith [numpy](http://www.numpy.org) and [matplotlib](https://matplotlib.org/)\n```python\nimport matplotlib.pyplot as plt\nfrom pydicom import dcmread\nfrom pydicom.data import get_testdata_file\n\n# the path to a pydicom test dataset\npath = get_testdata_file(\"ct_small.dcm\")\nds = dcmread(path)\n# `arr` is a numpy.ndarray\narr = ds.pixel_array\n\nplt.imshow(arr, cmap=\"gray\")\nplt.show()\n```\n\n## contributing\n\nwe are all volunteers working on *pydicom* in our free time. as our \nresources are limited, we very much value your contributions, be it bug fixes, new \ncore features, or documentation improvements. for more information, please\nread our [contribution guide](https://github.com/pydicom/pydicom/blob/master/contributing.md).\n\nif you have examples or extensions of *pydicom* that don't belong with the \ncore software, but that you deem useful to others, you can add them to our \ncontribution repository:\n[contrib-pydicom](https://www.github.com/pydicom/contrib-pydicom).\n\n",
+  "docs_url": null,
+  "keywords": "dicom, python, medical, imaging",
+  "license": "",
+  "name": "pydicom",
+  "package_url": "https://pypi.org/project/pydicom/",
+  "project_url": "https://pypi.org/project/pydicom/",
+  "project_urls": {
+    "documentation": "https://pydicom.github.io/pydicom",
+    "download": "https://github.com/pydicom/pydicom/archive/master.zip",
+    "homepage": "https://github.com/pydicom/pydicom",
+    "repository": "https://github.com/pydicom/pydicom"
+  },
+  "release_url": "https://pypi.org/project/pydicom/2.4.4/",
+  "requires_dist": [
+    "numpy ; extra == \"docs\"",
+    "numpydoc ; extra == \"docs\"",
+    "matplotlib ; extra == \"docs\"",
+    "pillow ; extra == \"docs\"",
+    "sphinx ; extra == \"docs\"",
+    "sphinx_rtd_theme ; extra == \"docs\"",
+    "sphinx-gallery ; extra == \"docs\"",
+    "sphinxcontrib-napoleon ; extra == \"docs\"",
+    "sphinx-copybutton ; extra == \"docs\""
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a pure python package for reading and writing dicom data",
+  "version": "2.4.4",
+  "releases": [],
+  "developers": [
+    "darcymason@gmail.com"
+  ],
+  "kwds": "workflows workflow pydicom_user_guide documentation tests",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pydicom",
+  "homepage": "",
+  "release_count": 38,
+  "dependency_ids": [
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_numpydoc",
+    "pypi_pillow",
+    "pypi_sphinx",
+    "pypi_sphinx_copybutton",
+    "pypi_sphinx_gallery",
+    "pypi_sphinx_rtd_theme",
+    "pypi_sphinxcontrib_napoleon"
+  ]
+}

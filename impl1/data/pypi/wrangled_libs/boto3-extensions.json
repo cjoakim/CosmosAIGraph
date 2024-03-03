@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# boto3 extensions\n\n## overview\n\nthis module adds more resource files to the boto3 library and includes some functionality enhancements.\n\n## quick start\n\nfirst, install the library:\n\n```bash\n$ pip install boto3_extensions\n```\n\nfollow the boto3 docs on setting up your region and credentials (https://github.com/boto/boto3).\n\nthen, from a python interpreter:\n\n```python\nimport boto3\nimport boto3_extensions\n\nr = boto3.resource('cloudtrail', region_name='us-east-1')\nfor trail in r.trails.all():\n    print(trail.trail_arn)\n```\n\n## resource files\n\nthe following resource files are **added** to the boto3 library.\n\n  * acm\n  * autoscaling\n  * cloudfront\n  * cloudtrail\n  * cur\n  * datapipeline\n  * directconnect\n  * elasticache\n  * elb\n  * elbv2\n  * emr\n  * glue\n  * health\n  * kinesis\n  * lambda\n  * rds\n  * redshift\n  * route53\n  * support\n\nthe following resource files are **updated** in the boto3 library.\n\n  * dynamodb\n  * ec2\n  * iam\n  * s3\n\n## refreshableassumeroleprovider\n\nif your code needs to assumerole into another role before performing actions against the aws api (be it in the same or another aws account), you run the risk that the credentials you are using expire during their use. you can either add code to your application to constantly check the credential expiry time or using this extension offload the credential refresh to boto3 itself. by using the connectionmanager in boto3_extensions not only will it automattically assumerole when the credentials get below 15 mins left, but it will also cache the credentials. this means that if your application is calling boto3 to get credentials for another role more than once the connectionmanager will cache the first call and then hand out the same session for the subsequent calls.\n\n```python\nrole_arn = 'arn:aws:iam::1234567890:role/test-role'\nrole_session_name = 'test'\nconnections = boto3_extensions.connectionmanager(region_name='us-east-1')\nsession = connections.get_session(role_arn=role_arn, role_session_name=role_session_name)\n\nr = session.resource('cloudtrail', region_name='us-east-1')\nfor trail in r.trails.all():\n    print(trail.trail_arn)\n```\n\n## arn patch\n\nit would be nice to have a consistent way to get the arn of resources. the arn patch feature of boto3_extensions allows you to get the arn from resources via an arn attribute.\n\n```python\nimport boto3\nimport boto3_extensions\nfrom imp import reload\nboto3_extensions.arn_patch_boto3()\nreload(boto3)\n\nr = boto3.resource('rds', region_name='us-east-1')\nfor db in r.db_instances.all():\n    print(db.arn)\n```\n\n## session caching\n\nthere is basic session caching builtin that simply stores the `session` for a each assumed role into a dict, but if you require another caching mechanism you can monkey patch the `boto3_extensions.cache` class, as long as you supply the `cache.get()` and `cache.set()` methods.\n\n```python\nimport boto3\nimport boto3_extensions\nfrom boto3_extensions import connectionmanager\n\nclass mycache:\n    def __init__(self):\n        self._cache = {}\n\n    def get(self, role_arn, role_session_name):\n        print(\"inside mycache.get()\")\n        return self._cache.get((role_arn, role_session_name), none)\n\n    def set(self, role_arn, role_session_name, session):\n        print(\"inside mycache.set()\")\n        self._cache[(role_arn, role_session_name)] = session\n\nboto3_extensions.cache = mycache\nconnections = connectionmanager()\n\nconnections.get_session(role_arn=\"arn:aws:iam::012345678912:role/test_role\", role_session_name=\"testing\")\ninside mycache.get()\ninside mycache.set()\n\nconnections.get_session(role_arn=\"arn:aws:iam::012345678912:role/test_role\", role_session_name=\"testing\")\ninside mycache.get()\n```\n\nin the above we monkey patch the `cache` class and call `get_session()` twice. the output shows that the first time we have a cache get which results in a cache miss and thena cache set after the credential is retrieved from sts. we then run `get_session()` a second time and as the `session` is now cached we only see a cache get resulting in a cache hit.\n\n## getting help\n\nplease raise issue ticket inside our bitbucket repo: https://bitbucket.org/atlassian/boto3_extensions/issues\n\n## license\n\ncopyright (c) 2023 atlassian us., inc.\napache 2.0 licensed, see [license](license) file.\n\n## developing\n\nto develop this library, you will need to install the following:\n\n  * python 3.7\n  * poetry (https://poetry.eustace.io/docs/)\n\n```bash\n# install development environment and setup pre-commit hooks\n$ make setup\n```\n\n[![with thanks from atlassian](https://raw.githubusercontent.com/atlassian-internal/oss-assets/master/banner-with-thanks-light.png)](https://www.atlassian.com)\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "boto3-extensions",
+  "package_url": "https://pypi.org/project/boto3-extensions/",
+  "project_url": "https://pypi.org/project/boto3-extensions/",
+  "project_urls": {
+    "Documentation": "https://bitbucket.org/atlassian/boto3_extensions/",
+    "Homepage": "https://bitbucket.org/atlassian/boto3_extensions/",
+    "Issues": "https://bitbucket.org/atlassian/boto3_extensions/issues",
+    "Repository": "https://bitbucket.org/atlassian/boto3_extensions/"
+  },
+  "release_url": "https://pypi.org/project/boto3-extensions/0.23.0/",
+  "requires_dist": [
+    "boto3 (>=1.17.24)",
+    "botocore (>=1.20.24)"
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "extensions to the aws sdk for python",
+  "version": "0.23.0",
+  "releases": [],
+  "developers": [
+    "cloud-team@atlassian.com",
+    "cloud_engineering"
+  ],
+  "kwds": "boto3_extensions boto3 trails trail arn_patch_boto3",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_boto3_extensions",
+  "homepage": "https://bitbucket.org/atlassian/boto3_extensions/",
+  "release_count": 32,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_botocore"
+  ]
+}

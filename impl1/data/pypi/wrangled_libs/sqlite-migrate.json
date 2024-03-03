@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 2 - pre-alpha"
+  ],
+  "description": "# sqlite-migrate\n\n[![pypi](https://img.shields.io/pypi/v/sqlite-migrate.svg)](https://pypi.org/project/sqlite-migrate/)\n[![changelog](https://img.shields.io/github/v/release/simonw/sqlite-migrate?include_prereleases&label=changelog)](https://sqlite-migrate.datasette.io/en/stable/changelog.html)\n[![tests](https://github.com/simonw/sqlite-migrate/workflows/test/badge.svg)](https://github.com/simonw/sqlite-migrate/actions?query=workflow%3atest)\n[![license](https://img.shields.io/badge/license-apache%202.0-blue.svg)](https://github.com/simonw/sqlite-migrate/blob/main/license)\n\na simple database migration system for sqlite, based on [sqlite-utils](https://sqlite-utils.datasette.io/).\n\n**this project is an early alpha. expect breaking changes.**\n\n## installation\n\nthis tool works as a plugin for `sqlite-utils`. first [install that](https://sqlite-utils.datasette.io/en/stable/installation.html):\n\n```bash\npip install sqlite-utils\n```\nthen install this plugin like so:\n```bash\nsqlite-utils install sqlite-migrate\n```\n## migration files\n\nthis tool works against migration files. a migration file looks like this:\n\n```python\nfrom sqlite_migrate import migrations\n\n# pick a unique name here - it must not clash with other migration sets that\n# the user might run against the same database.\n\nmigration = migrations(\"creatures\")\n\n# use this decorator against functions that implement migrations\n@migration()\ndef m001_create_table(db):\n    # db is a sqlite-utils database instance\n    db[\"creatures\"].create(\n        {\"id\": int, \"name\": str, \"species\": str},\n        pk=\"id\"\n    )\n\n@migration()\ndef m002_add_weight(db):\n    # db is a sqlite-utils database instance\n    db[\"creatures\"].add_column(\"weight\", float)\n```\nhere is [documentation on the database instance](https://sqlite-utils.datasette.io/en/stable/python-api.html) passed to each migration function.\n\n## running migrations\n\nrunning this command will execute those migrations in sequence against the specified database file.\n\ncall `migrate` with a path to your database and a path to the migrations file you want to apply:\n```bash\nsqlite-utils migrate creatures.db path/to/migrations.py\n```\nrunning this multiple times will have no additional affect, unless you add more migration functions to the file.\n\nif you call it without arguments it will search for and apply any `migrations.py` files in the current directory or any of its subdirectories.\n\nyou can also pass the path to a directory, in which case all `migrations.py` files in that directory and its subdirectories will be applied:\n\n```bash\nsqlite-utils migrate creatures.db path/to/parent/\n```\nwhen applying a single migrations file you can use the `--stop-before` option to apply all migrations up to but excluding the specified migration:\n\n```bash\nsqlite-utils migrate creatures.db path/to/migrations.py --stop-before m002_add_weight\n```\n\n## listing migrations\n\nadd `--list` to list migrations without running them, for example:\n\n```bash\nsqlite-utils migrate creatures.db --list\n```\nthe output will look something like this:\n```\nmigrations for: creatures\n\n  applied:\n    m001_create_table - 2023-07-23 04:09:40.324002\n    m002_add_weight - 2023-07-23 04:09:40.324649\n    m003_add_age - 2023-07-23 04:09:44.441616\n    m003_cleanup - 2023-07-23 04:09:44.443394\n    m004_cleanup - 2023-07-23 04:09:44.444184\n    m005_cleanup - 2023-07-23 04:09:44.445389\n    m006_cleanup - 2023-07-23 04:09:44.446742\n    m007_cleanup - 2023-07-23 04:16:02.529983\n\n  pending:\n    m008_cleanup\n```\n\n## verbose mode\n\nadd `-v` or `--verbose` for verbose output, which will show the schema before and after the migrations were applied along with a diff:\n\n```bash\nsqlite-utils migrate creatures.db --verbose\n```\nexample output:\n```\nmigrating creatures.db\n\nschema before:\n\n  create table \"_sqlite_migrations\" (\n     [migration_set] text,\n     [name] text,\n     [applied_at] text,\n     primary key ([migration_set], [name])\n  );\n  create table [creatures] (\n     [id] integer primary key,\n     [name] text,\n     [species] text\n  , [weight] float);\n\nschema after:\n\n  create table \"_sqlite_migrations\" (\n     [migration_set] text,\n     [name] text,\n     [applied_at] text,\n     primary key ([migration_set], [name])\n  );\n  create table \"creatures\" (\n     [id] integer primary key,\n     [name] text,\n     [species] text,\n     [weight] float,\n     [age] integer,\n     [shoe_size] integer\n  );\n\nschema diff:\n\n    [applied_at] text,\n    primary key ([migration_set], [name])\n  );\n-create table [creatures] (\n+create table \"creatures\" (\n    [id] integer primary key,\n    [name] text,\n-   [species] text\n-, [weight] float);\n+   [species] text,\n+   [weight] float,\n+   [age] integer,\n+   [shoe_size] integer\n+);\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "sqlite-migrate",
+  "package_url": "https://pypi.org/project/sqlite-migrate/",
+  "project_url": "https://pypi.org/project/sqlite-migrate/",
+  "project_urls": {
+    "Changelog": "https://github.com/simonw/sqlite-migrate/releases",
+    "Homepage": "https://github.com/simonw/sqlite-migrate",
+    "Issues": "https://github.com/simonw/sqlite-migrate/issues"
+  },
+  "release_url": "https://pypi.org/project/sqlite-migrate/0.1b0/",
+  "requires_dist": [
+    "sqlite-utils",
+    "pytest ; extra == 'test'",
+    "mypy ; extra == 'test'",
+    "black ; extra == 'test'",
+    "ruff ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "a simple database migration system for sqlite, based on sqlite-utils",
+  "version": "0.1b0",
+  "releases": [],
+  "developers": [
+    "simon_willison"
+  ],
+  "kwds": "_sqlite_migrations sqlite_migrate sqlite migrate migrations",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_sqlite_migrate",
+  "homepage": "",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_mypy",
+    "pypi_pytest",
+    "pypi_ruff",
+    "pypi_sqlite_utils"
+  ]
+}

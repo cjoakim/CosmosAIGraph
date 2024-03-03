@@ -1,0 +1,60 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: hatch",
+    "framework :: setuptools plugin",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: build tools",
+    "topic :: software development :: version control",
+    "topic :: software development :: version control :: git",
+    "topic :: software development :: version control :: mercurial",
+    "typing :: typed"
+  ],
+  "description": ".. image:: https://www.repostatus.org/badges/latest/active.svg\n    :target: https://www.repostatus.org/#active\n    :alt: project status: active \u2014 the project has reached a stable, usable\n          state and is being actively developed.\n\n.. image:: https://github.com/jwodder/versioningit/actions/workflows/test.yml/badge.svg\n    :target: https://github.com/jwodder/versioningit/actions/workflows/test.yml\n    :alt: ci status\n\n.. image:: https://codecov.io/gh/jwodder/versioningit/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/jwodder/versioningit\n\n.. image:: https://img.shields.io/pypi/pyversions/versioningit.svg\n    :target: https://pypi.org/project/versioningit/\n\n.. image:: https://img.shields.io/conda/vn/conda-forge/versioningit.svg\n    :target: https://anaconda.org/conda-forge/versioningit\n    :alt: conda version\n\n.. image:: https://img.shields.io/github/license/jwodder/versioningit.svg\n    :target: https://opensource.org/licenses/mit\n    :alt: mit license\n\n`github <https://github.com/jwodder/versioningit>`_\n| `pypi <https://pypi.org/project/versioningit/>`_\n| `documentation <https://versioningit.readthedocs.io>`_\n| `issues <https://github.com/jwodder/versioningit/issues>`_\n| `changelog <https://github.com/jwodder/versioningit/blob/master/changelog.md>`_\n\n``versioningit`` \u2014 *versioning it with your version in git*\n\n``versioningit`` is yet another python packaging plugin for automatically\ndetermining your package's version based on your version control repository's\ntags.  unlike others, it allows easy customization of the version format and\neven lets you easily override the separate functions used for version\nextraction & calculation.\n\n**features:**\n\n- works with both setuptools and hatch_\n\n  .. _hatch: https://hatch.pypa.io\n\n- installed & configured through :pep:`518`'s ``pyproject.toml``\n\n- supports git, modern git archives, and mercurial\n\n- formatting of the final version uses format template strings, with fields for\n  basic vcs information and separate template strings for distanced vs. dirty\n  vs. distanced-and-dirty repository states\n\n- can optionally write the final version and other details to a file for\n  loading at runtime\n\n- provides custom hooks for inserting the final version and other details into\n  a source file at build time\n\n- the individual methods for vcs querying, tag-to-version calculation, version\n  bumping, version formatting, and writing the version to a file can all be\n  customized using either functions defined alongside one's project code or via\n  publicly-distributed entry points\n\n- can alternatively be used as a library for use in ``setup.py`` or the like,\n  in case you don't want to or can't configure it via ``pyproject.toml``\n\n- the only thing it does is calculate your version and optionally write it to a\n  file; there's no overriding of your sdist contents based on what's in your\n  git repository, especially not without a way to turn it off, because that\n  would just be rude.\n\n\ninstallation & setup\n====================\n``versioningit`` requires python 3.7 or higher.  just use `pip\n<https://pip.pypa.io>`_ for python 3 (you have pip, right?) to install\n``versioningit`` and its dependencies::\n\n    python3 -m pip install versioningit\n\nhowever, usually you won't need to install ``versioningit`` in your environment\ndirectly.  instead, you specify it in your project's ``pyproject.toml`` file in\nthe ``build-system.requires`` key, like so:\n\n.. code:: toml\n\n    # if using setuptools:\n    [build-system]\n    requires = [\n        \"setuptools\",\n        \"versioningit\",\n    ]\n    build-backend = \"setuptools.build_meta\"\n\n    # if using hatch:\n    [build-system]\n    requires = [\n        \"hatchling\",\n        \"versioningit\",\n    ]\n    build-backend = \"hatchling.build\"\n\n    # this setting is also required if you're using hatch:\n    [tool.hatch.version]\n    source = \"versioningit\"\n\nthen, you configure ``versioningit`` by adding a ``[tool.versioningit]`` table\nto your ``pyproject.toml``.  see `the documentation`__ for details, but you\ncan get up & running with just the minimal configuration, an empty table:\n\n__ https://versioningit.readthedocs.io/en/stable/configuration.html\n\n.. code:: toml\n\n    [tool.versioningit]\n\n``versioningit`` eliminates the need to list an explicit version in\n``setup.py``, ``setup.cfg``, or ``pyproject.toml`` (and any explicit version\nyou do list will be ignored when using ``versioningit``), so you should remove\nany such settings in order to reduce confusion.\n\n**note:** if you're specifying your project metadata via a ``[project]`` table\nin ``pyproject.toml``, you need to set ``project.dynamic = [\"version\"]`` in\norder for ``versioningit`` to work.\n\nonce you have a ``[tool.versioningit]`` table in your ``pyproject.toml`` \u2014 and\nonce your repository has at least one tag \u2014 building your project with build_\nor similar will result in your project's version automatically being set based\non the latest tag in your git repository.  you can test your configuration and\nsee what the resulting version will be using the ``versioningit`` command (`see\nthe documentation`__).\n\n.. _build: https://github.com/pypa/build\n\n__ https://versioningit.readthedocs.io/en/stable/command.html\n\n\nexample configurations\n======================\n\none of ``versioningit``'s biggest strengths is its ability to configure the\nversion format using placeholder strings.  the default format configuration\nlooks like this:\n\n.. code:: toml\n\n    [tool.versioningit.format]\n    # format used when there have been commits since the most recent tag:\n    distance = \"{base_version}.post{distance}+{vcs}{rev}\"\n    # example formatted version: 1.2.3.post42+ge174a1f\n\n    # format used when there are uncommitted changes:\n    dirty = \"{base_version}+d{build_date:%y%m%d}\"\n    # example formatted version: 1.2.3+d20230922\n\n    # format used when there are both commits and uncommitted changes:\n    distance-dirty = \"{base_version}.post{distance}+{vcs}{rev}.d{build_date:%y%m%d}\"\n    # example formatted version: 1.2.3.post42+ge174a1f.d20230922\n\nother format configurations of interest include:\n\n- the default format used by setuptools_scm_:\n\n  .. code:: toml\n\n      [tool.versioningit.next-version]\n      method = \"smallest\"\n\n      [tool.versioningit.format]\n      distance = \"{next_version}.dev{distance}+{vcs}{rev}\"\n      # example formatted version: 1.2.4.dev42+ge174a1f\n\n      dirty = \"{base_version}+d{build_date:%y%m%d}\"\n      # example formatted version: 1.2.3+d20230922\n\n      distance-dirty = \"{next_version}.dev{distance}+{vcs}{rev}.d{build_date:%y%m%d}\"\n      # example formatted version: 1.2.4.dev42+ge174a1f.d20230922\n\n- the format used by versioneer_:\n\n  .. code:: toml\n\n      [tool.versioningit.format]\n      distance = \"{base_version}+{distance}.{vcs}{rev}\"\n      # example formatted version: 1.2.3+42.ge174a1f\n\n      dirty = \"{base_version}+{distance}.{vcs}{rev}.dirty\"\n      # example formatted version: 1.2.3+42.ge174a1f.dirty\n\n      distance-dirty = \"{base_version}+{distance}.{vcs}{rev}.dirty\"\n      # example formatted version: 1.2.3+42.ge174a1f.dirty\n\n- the format used by vcversioner_:\n\n  .. code:: toml\n\n      [tool.versioningit.format]\n      distance = \"{base_version}.post{distance}\"\n      # example formatted version: 1.2.3.post42\n\n      dirty = \"{base_version}\"\n      # example formatted version: 1.2.3\n\n      distance-dirty = \"{base_version}.post{distance}\"\n      # example formatted version: 1.2.3.post42\n\n.. _setuptools_scm: https://github.com/pypa/setuptools_scm\n.. _versioneer: https://github.com/python-versioneer/python-versioneer\n.. _vcversioner: https://github.com/habnabit/vcversioner\n",
+  "docs_url": null,
+  "keywords": "git,mercurial,vcs,packaging,version",
+  "license": "",
+  "name": "versioningit",
+  "package_url": "https://pypi.org/project/versioningit/",
+  "project_url": "https://pypi.org/project/versioningit/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/jwodder/versioningit/issues",
+    "Documentation": "https://versioningit.readthedocs.io",
+    "Source Code": "https://github.com/jwodder/versioningit"
+  },
+  "release_url": "https://pypi.org/project/versioningit/3.0.0/",
+  "requires_dist": [
+    "importlib-metadata>=3.6; python_version < '3.10'",
+    "packaging>=17.1",
+    "tomli<3.0,>=1.2; python_version < '3.11'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "versioning it with your version in git",
+  "version": "3.0.0",
+  "releases": [],
+  "developers": [
+    "versioningit@varonathe.org"
+  ],
+  "kwds": "versioningit commits pyversions versioneer_ _vcversioner",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_versioningit",
+  "homepage": "",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_importlib_metadata",
+    "pypi_packaging",
+    "pypi_tomli"
+  ]
+}

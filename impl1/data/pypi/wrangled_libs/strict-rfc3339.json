@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu general public license v3 (gplv3)",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3"
+  ],
+  "description": "strict, simple, lightweight rfc3339 functions\n=============================================\n\ngoals\n-----\n\n - convert unix timestamps to and from rfc3339.\n - either produce rfc3339 strings with a utc offset (z) or with the offset\n   that the c time module reports is the local timezone offset.\n - simple with minimal dependencies/libraries.\n - avoid timezones as much as possible.\n - be very strict and follow rfc3339.\n\ncaveats\n-------\n\n - leap seconds are not quite supported, since timestamps do not support them,\n   and it requires access to timezone data.\n - you may be limited by the size of `time_t` on 32 bit systems.\n\nin both cases, see 'notes' below.\n\nrationale\n---------\n\n - a lot of libraries have trouble with dst transitions and ambiguous times.\n - generally, using the python datetime object causes trouble, introducing\n   problems with timezones.\n - the excellent `pytz` library seems to achieve timezone perfection, however\n   it didn't (at the time of writing) have a method for getting the local\n   timezone or the 'now' time in the local zone.\n - i saw a lot of problems ultimately due to information lost when converting\n   or transferring between two libraries (e.g., `time` -> `datetime` loses dst\n   info in the tuple)\n\nusage\n-----\n\nvalidation:\n\n    >>> strict_rfc3339.validate_rfc3339(\"some rubbish\")\n    false\n    >>> strict_rfc3339.validate_rfc3339(\"2013-03-25t12:42:31+00:32\")\n    true\n\nindeed, we can then:\n\n    >>> strict_rfc3339.rfc3339_to_timestamp(\"2013-03-25t12:42:31+00:32\")\n    1364213431\n    >>> tuple(time.gmtime(1364213431))[:6]\n    (2013, 3, 25, 12, 10, 31)\n\nno need for two function calls:\n\n    >>> strict_rfc3339.rfc3339_to_timestamp(\"some rubbish\")\n    traceback [...]\n    strict_rfc3339.invalidrfc3339error\n\nproducing strings (for this example `tz=america/new_york`):\n\n    >>> strict_rfc3339.timestamp_to_rfc3339_utcoffset(1364213431)\n    '2013-03-25t12:10:31z'\n    >>> strict_rfc3339.timestamp_to_rfc3339_localoffset(1364213431)\n    '2013-03-25t08:10:31-04:00'\n\nand with `tz=europe/london`:\n\n    >>> strict_rfc3339.timestamp_to_rfc3339_localoffset(1364213431)\n    '2013-03-25t12:10:31+00:00'\n\nconvenience functions:\n\n    >>> strict_rfc3339.now_to_rfc3339_utcoffset()\n    '2013-03-25t21:39:35z'\n    >>> strict_rfc3339.now_to_rfc3339_localoffset()\n    '2013-03-25t17:39:39-04:00'\n\nfloats:\n\n    >>> strict_rfc3339.now_to_rfc3339_utcoffset(integer=true) # the default\n    '2013-03-25t22:04:01z'\n    >>> strict_rfc3339.now_to_rfc3339_utcoffset(integer=false)\n    '2013-03-25t22:04:01.04399z'\n    >>> strict_rfc3339.rfc3339_to_timestamp(\"2013-03-25t22:04:10.04399z\")\n    1364249050.0439899\n\nbehind the scenes\n-----------------\n\nthese functions are essentially string formatting and arithmetic only.  a very\nsmall number of functions do the heavy lifting. these come from two modules:\n`time` and `calendar`.\n\n`time` is a thin wrapper around the c time functions. i'm working on the\nassumption that these are usually of high quality and are correct. from the\n`time` module, `strict_rfc3339` uses:\n\n - `time`: (actually calls `gettimeofday`) to get the current timestamp / \"now\"\n - `gmtime`: splits a timestamp into a utc time tuple\n - `localtime`: splits a timestamp into a local time tuple\n\nbased on the assumption that they are correct, we can use the difference\nbetween the values returned by `gmtime` and `localtime` to find the local\noffset.  as clunky as it sounds, it's far easier than using a fully fledged\ntimezone library.\n\n`calendar` is implemented in python. from `calendar`, `strict_rfc3339` uses:\n\n - `timegm`: turns a utc time tuple into a timestamp. this essentially just\n   multiplies each number in the tuple by the number of seconds in it. it does\n   use `datetime.date` to work out the number of days between jan 1 1970 and the\n   y-m-d in the tuple, but this is fine. it does not perform much validation at\n   all.\n - `monthrange`: gives the number of days in a (year, month). i checked and\n   (at least in my copy of python 2.6) the function used for leap years is\n   identical to the one specified in rfc3339 itself.\n\nnotes\n-----\n\n - rfc3339 specifies an offset, not a timezone, and the difference is\n   important. timezones are evil.\n - it is perhaps simpler to think of a rfc3339 string as a human readable\n   method of specifying a moment in time (only). these functions merely provide\n   access to the one-to-many timestamp-to-rfc3339 mapping.\n - timestamps don't support leap seconds: a day is always 86400 \"long\".\n   also, validating leap seconds is particularly fiddly, because not only do\n   you need some data, but it must be kept up to date.\n   for this reason, `strict_rfc3339` does not support leap seconds: in validation,\n   `seconds == 60` or `seconds == 61` is rejected.\n   in the case of reverse leap seconds, calendar.timegm will blissfully accept\n   it. the result would be about as correct as you could get.\n - rfc3339 generation using `gmtime` or `localtime` may be limited by the size\n   of `time_t` on the system: if it is 32 bit, you're limited to dates between\n   (approx) 1901 and 2038. this does not affect `rfc3339_to_timestamp`.",
+  "docs_url": null,
+  "keywords": "",
+  "license": "gnu general public license version 3",
+  "name": "strict-rfc3339",
+  "package_url": "https://pypi.org/project/strict-rfc3339/",
+  "project_url": "https://pypi.org/project/strict-rfc3339/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "http://www.danielrichman.co.uk/libraries/strict-rfc3339.html"
+  },
+  "release_url": "https://pypi.org/project/strict-rfc3339/0.7/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "strict, simple, lightweight rfc3339 functions",
+  "version": "0.7",
+  "releases": [],
+  "developers": [
+    "daniel_richman",
+    "main@danielrichman.co.uk"
+  ],
+  "kwds": "timestamp_to_rfc3339_utcoffset rfc3339_to_timestamp now_to_rfc3339_utcoffset timestamp_to_rfc3339_localoffset utc",
+  "license_kwds": "gnu general public license version 3",
+  "libtype": "pypi",
+  "id": "pypi_strict_rfc3339",
+  "homepage": "http://www.danielrichman.co.uk/libraries/strict-rfc3339.html",
+  "release_count": 7,
+  "dependency_ids": []
+}

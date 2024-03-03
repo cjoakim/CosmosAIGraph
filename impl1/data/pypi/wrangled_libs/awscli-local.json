@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: testing"
+  ],
+  "description": "# localstack aws cli\n\n[![pypi version][pypi-version]][pypi]\n\nthis package provides the `awslocal` command, which is a thin wrapper around the `aws`\ncommand line interface for use with [localstack](https://github.com/localstack/localstack).\n\n## installation\n\nyou can install the `awslocal` command via `pip`:\n\n```console\npip install awscli-local[ver1]\n```\n\nnote that the command above also installs the latest version of the underlying aws cli version 1 (`awscli`) package. use this command if you prefer to manage your own version of `awscli` (e.g., `v1`/`v2`) and install the wrapper script only:\n```console\npip install awscli-local\n```\n\n**note:** automatic installation of aws cli version 2 is currently not supported yet (at the time of writing there is no official pypi package for `v2` available), but the `awslocal` technically also works with aws cli v2 (see [this section](#limitations) for more details).\n\n## usage\n\nthe `awslocal` command has the same usage as the `aws` command. for detailed usage, please refer to the manual pages of `aws help`.\n\n## example\n\ninstead of the following command ...\n\n```console\naws --endpoint-url=http://localhost:4566 kinesis list-streams\n```\n\n... you can simply use this:\n\n```console\nawslocal kinesis list-streams\n```\n\n## configurations\n\nyou can use the following environment variables for configuration:\n\n* `aws_endpoint_url`: the endpoint url to connect to (takes precedence over `use_ssl`/`localstack_host` below).\n  useful when you have localstack bound to a different host (e.g., within docker-compose).\n* `localstack_host` (deprecated): a <hostname>:<port> variable defining where to find localstack (default: localhost:4566).\n* `use_ssl` (deprecated): whether to use ssl when connecting to localstack (default: false).\n\n## completion\n\n`awscli` provides a neat command completion feature which is compatible with most modern shells which can also be used with `awslocal`.\n\n### usage instructions\n\nthe command completion will automatically suggest commands and parameters when using the completion key (which is typically the _tab_ key):\n\n```sh\n$ awslocal dynamodb d<tab>\ndelete-backup                        describe-global-table\ndelete-item                          describe-global-table-settings\ndelete-table                         describe-limits\ndescribe-backup                      describe-table\ndescribe-continuous-backups          describe-table-replica-auto-scaling\ndescribe-contributor-insights        describe-time-to-live\ndescribe-endpoints\n```\n\n### configuration\n\n- follow the official guide on setting up the command completion for the `aws` cli: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-completion.html\n- while enabling the command completion for your shell, **make sure to register the completion for `awslocal` as well**.\n\n  for example, if you are using `bash`, you would add the following commands to your `~/.bashrc`:\n  ```sh\n  complete -c '/usr/local/bin/aws_completer' aws\n  complete -c '/usr/local/bin/aws_completer' awslocal\n  ```\n- follow the instructions for the shell you are using. for some shells you might need to register a different command or enable certain compatibility plugins (like `zsh`).\n\n## limitations\n\n* please note that there is a known limitation for using the `cloudformation package ...` command with the aws cli v2. currently it is not possible to specify the s3 endpoint url, and this issue is [not yet resolved](https://github.com/aws/aws-cli/pull/3309) on aws side. the problem is that the aws cli v2 is [not available as a package on pypi.org](https://github.com/aws/aws-cli/issues/4947), but is instead shipped as a binary package that cannot be easily patched from `awslocal`. to work around this issue, you have 2 options:\n\n   - downgrade to the v1 aws cli (this is the recommended approach)\n   - there is an inofficial way to install aws cli v2 from sources. we do not recommend this, but it is technically possible. also, you should install these libraries in a python virtualenv, to avoid version clashes with other libraries on your system:\n```sh\nvirtualenv .venv\n. .venv/bin/activate\npip install https://github.com/boto/botocore/archive/v2.zip https://github.com/aws/aws-cli/archive/v2.zip\n```\n\n## change log\n\n* v0.21.1: introducing semantic versioning and list of services without endpoints\n* v0.21: use placeholder credentials and region only if boto cannot not find them, fix output streaming for logs tail call\n* v0.20: small fixes for python 2.x backward compatibility\n* v0.19: patch botocore to skip adding `data-` host prefixes to endpoint urls\n* v0.18: pass `systemroot` env variable to fix \"_py_hashrandomization_init\" error on windows\n* v0.17: remove obsolete/erroneous force_v2 flag\n* v0.16: minor fix reading addressing_style in profile config\n* v0.15: fix lookup of v1/v2 aws cli version, apply --s3-endpoint-url only for v1\n* v0.14: quote file name for windows to allow folder names with spaces\n* v0.13: fix extra requires for newer pip versions\n* v0.12: support v1 and v2 of underlying `awscli` installation\n* v0.9: add `--s3-endpoint-url` by default to fix \"cloudformation package\" command\n* v0.9: support for `default_region` environment variable\n* v0.8: switch to using edge port for all service endpoints by default\n* v0.7: apply runtime patch to aws-cli to enable `--s3-endpoint-url` cloudformation parameter\n* v0.6: start `aws` cli command in-memory instead of calling external process\n* v0.5: support piping binary files to stdout; add .bat file for windows\n* v0.4: minor fix for python 3 compatibility\n* v0.3: add support for additional service endpoints\n* v0.2: enable ssl connections; refactor code\n* v0.1: initial release\n\n## alternative\n\nthis package can be replaced by a single bash alias, except for `cloudformation package ...` as this command requires an additional `--s3-endpoint-url` parameter:\n```console\nalias awslocal=\"aws_access_key_id=test aws_secret_access_key=test aws_default_region=${default_region:-$aws_default_region} aws --endpoint-url=http://${localstack_host:-localhost}:4566\"\n```\n\n## license\n\nthis software library is released under the apache license, version 2.0 (see `license`).\n\n[pypi-version]: https://img.shields.io/pypi/v/awscli-local.svg\n[pypi]: https://pypi.org/project/awscli-local/\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "awscli-local",
+  "package_url": "https://pypi.org/project/awscli-local/",
+  "project_url": "https://pypi.org/project/awscli-local/",
+  "project_urls": {
+    "Homepage": "https://github.com/localstack/awscli-local"
+  },
+  "release_url": "https://pypi.org/project/awscli-local/0.21.1/",
+  "requires_dist": [
+    "localstack-client",
+    "awscli; extra == \"ver1\""
+  ],
+  "requires_python": "",
+  "summary": "thin wrapper around the \"aws\" command line interface for use with localstack",
+  "version": "0.21.1",
+  "releases": [],
+  "developers": [
+    "info@localstack.cloud",
+    "localstack_team"
+  ],
+  "kwds": "awslocal awscli aws_completer aws_default_region aws_secret_access_key",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_awscli_local",
+  "homepage": "https://github.com/localstack/awscli-local",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_awscli",
+    "pypi_localstack_client"
+  ]
+}

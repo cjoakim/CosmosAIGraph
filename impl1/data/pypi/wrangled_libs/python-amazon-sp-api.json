@@ -1,0 +1,43 @@
+{
+  "classifiers": [],
+  "description": "# python-amazon-sp-api\n\n\n## amazon selling-partner api\n\na wrapper to access **amazon's selling partner api** with an easy-to-use interface.\n\n##### supports [data kiosk](https://developer-docs.amazon.com/sp-api/v0/docs/data-kiosk-api-v2023-11-15-use-case-guide)\n\n---\n\n### version 1 upgrade notice\n\nversion 1 removes aws iam or aws signature version 4 authentication.\nyou can now use the library without aws credentials.\nfor compatibility reasons, you can still pass aws credentials, but they are silently ignored.\n\n### q & a\n\nif you have questions, please ask them in github discussions \n\n[![discussions](https://img.shields.io/badge/github-discussions-brightgreen?style=for-the-badge&logo=github)](https://github.com/saleweaver/python-amazon-sp-api/discussions)\n\nor\n\n[![join on slack](https://img.shields.io/badge/slack-join%20on%20slack-orange?style=for-the-badge&logo=slack)](https://join.slack.com/t/sellingpartnerapi/shared_invite/zt-zovn6tch-810j9dbpqtjsvw7lexsuaq)\n\n---\n\n### donate\n\n\n[:heart: donate](https://github.com/sponsors/saleweaver)\n\n\n### installation\n[![badge](https://img.shields.io/pypi/v/python-amazon-sp-api?style=for-the-badge)](https://pypi.org/project/python-amazon-sp-api/)\n```\npip install python-amazon-sp-api\npip install \"python-amazon-sp-api[aws]\" # if you want to use aws secret manager authentication.\npip install \"python-amazon-sp-api[aws-caching]\" # if you want to use the cached secrets from aws\n```\n\n---\n### usage\n\n```python\nfrom sp_api.api import orders\nfrom sp_api.api import reports\nfrom sp_api.api import datakiosk\nfrom sp_api.api import feeds\nfrom sp_api.base import sellingapiexception\nfrom sp_api.base.reporttypes import reporttype\nfrom datetime import datetime, timedelta\n\n# data kiosk api\nclient = datakiosk()\n\nres = client.create_query(query=\"{analytics_salesandtraffic_2023_11_15{salesandtrafficbyasin(startdate:\\\"2022-09-01\\\" enddate:\\\"2022-09-30\\\" aggregateby:sku marketplaceids:[\\\"atvpdkikx0der\\\"]){childasin enddate marketplaceid parentasin sales{orderedproductsales{amount currencycode}totalorderitems totalorderitemsb2b}sku startdate traffic{browserpageviews browserpageviewsb2b browserpageviewspercentage browserpageviewspercentageb2b browsersessionpercentage unitsessionpercentageb2b unitsessionpercentage}}}}\")\nprint(res)\n\n# orders api\ntry:\n    res = orders().get_orders(createdafter=(datetime.utcnow() - timedelta(days=7)).isoformat())\n    print(res.payload)  # json data\nexcept sellingapiexception as ex:\n    print(ex)\n\n\n# report request     \ncreatereportresponse = reports().create_report(reporttype=reporttype.get_merchant_listings_all_data)\n\n# submit feed\n# feeds can be submitted like explained in amazon's docs, or simply by calling submit_feed\n\nfeeds().submit_feed(<feed_type>, <file_or_bytes_io>, content_type='text/tsv', **kwargs)\n\n# pii data\n\norders(restricted_data_token='<token>').get_orders(createdafter=(datetime.utcnow() - timedelta(days=7)).isoformat())\n\n# or use the shortcut\norders = orders().get_orders(\n    restrictedresources=['buyerinfo', 'shippingaddress'],\n    lastupdatedafter=(datetime.utcnow() - timedelta(days=1)).isoformat()\n)\n```\n\n---\n\n### documentation\n\ndocumentation is available [here](https://python-amazon-sp-api.readthedocs.io/en/latest/)\n\n[![documentation status](https://img.shields.io/readthedocs/python-amazon-sp-api?style=for-the-badge)](https://python-amazon-sp-api.readthedocs.io/en/latest/index.html)\n\n\n### new endpoints\n\nyou can create a new endpoint file by running `make_endpoint <model_json_url>`\n\n```bash\nmake_endpoint https://raw.githubusercontent.com/amzn/selling-partner-api-models/main/models/listings-restrictions-api-model/listingsrestrictions_2021-08-01.json\n```\n\nthis creates a ready to use client. please consider creating a pull request with the new code.\n\n\n### advertising api\n\nyou can use nearly the same client for the amazon advertising api. [@denisneuf](https://github.com/denisneuf) has built [python-amazon-advertising-api](https://github.com/denisneuf/python-amazon-ad-api) on top of this client.\ncheck it out [here](https://github.com/denisneuf/python-amazon-ad-api)\n\n### disclaimer\n\nwe are not affiliated with amazon\n\n\n### license\n\n![license](https://img.shields.io/github/license/saleweaver/python-amazon-sp-api?style=for-the-badge)\n\n---\n\n### base client\n\nthe client is pretty extensible and can be used for any other api. check it out here:\n\n[api client](https://github.com/saleweaver/rapid_rest_client)\n\n---\n[![quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=saleweaver_python-amazon-sp-api)](https://sonarcloud.io/summary/new_code?id=saleweaver_python-amazon-sp-api)\n\n[![maintainability rating](https://sonarcloud.io/api/project_badges/measure?project=saleweaver_python-amazon-sp-api&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=saleweaver_python-amazon-sp-api)\n[![reliability rating](https://sonarcloud.io/api/project_badges/measure?project=saleweaver_python-amazon-sp-api&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=saleweaver_python-amazon-sp-api)\n[![coverage](https://sonarcloud.io/api/project_badges/measure?project=saleweaver_python-amazon-sp-api&metric=coverage)](https://sonarcloud.io/summary/new_code?id=saleweaver_python-amazon-sp-api)\n\n\n[![bugs](https://sonarcloud.io/api/project_badges/measure?project=saleweaver_python-amazon-sp-api&metric=bugs)](https://sonarcloud.io/summary/new_code?id=saleweaver_python-amazon-sp-api)\n\n[//]: # ([![code smells]&#40;https://sonarcloud.io/api/project_badges/measure?project=saleweaver_python-amazon-sp-api&metric=code_smells&#41;]&#40;https://sonarcloud.io/summary/new_code?id=saleweaver_python-amazon-sp-api&#41;)\n\n[//]: # ([![technical debt]&#40;https://sonarcloud.io/api/project_badges/measure?project=saleweaver_python-amazon-sp-api&metric=sqale_index&#41;]&#40;https://sonarcloud.io/summary/new_code?id=saleweaver_python-amazon-sp-api&#41;)\n\n[![security rating](https://sonarcloud.io/api/project_badges/measure?project=saleweaver_python-amazon-sp-api&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=saleweaver_python-amazon-sp-api)\n[![lines of code](https://sonarcloud.io/api/project_badges/measure?project=saleweaver_python-amazon-sp-api&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=saleweaver_python-amazon-sp-api)\n[![duplicated lines (%)](https://sonarcloud.io/api/project_badges/measure?project=saleweaver_python-amazon-sp-api&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=saleweaver_python-amazon-sp-api)\n\n---\n[![downloads](https://static.pepy.tech/badge/python-amazon-sp-api)](https://pepy.tech/project/python-amazon-sp-api)\n[![downloads](https://static.pepy.tech/badge/python-amazon-sp-api/month)](https://pepy.tech/project/python-amazon-sp-api)\n[![downloads](https://static.pepy.tech/badge/python-amazon-sp-api/week)](https://pepy.tech/project/python-amazon-sp-api)\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "python-amazon-sp-api",
+  "package_url": "https://pypi.org/project/python-amazon-sp-api/",
+  "project_url": "https://pypi.org/project/python-amazon-sp-api/",
+  "project_urls": {
+    "Homepage": "https://github.com/saleweaver/python-amazon-sp-api"
+  },
+  "release_url": "https://pypi.org/project/python-amazon-sp-api/1.4.0/",
+  "requires_dist": [
+    "requests",
+    "cachetools >=4.2",
+    "confuse >=1.4",
+    "boto3 ; extra == 'aws'",
+    "aws-secretsmanager-caching ; extra == 'aws-caching'",
+    "boto3 ; extra == 'aws-caching'"
+  ],
+  "requires_python": "",
+  "summary": "python wrapper for the amazon selling-partner api",
+  "version": "1.4.0",
+  "releases": [],
+  "developers": [
+    "info@saleweaver.com",
+    "michael"
+  ],
+  "kwds": "aws api sp_api credentials saleweaver_python",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python_amazon_sp_api",
+  "homepage": "https://github.com/saleweaver/python-amazon-sp-api",
+  "release_count": 147,
+  "dependency_ids": [
+    "pypi_aws_secretsmanager_caching",
+    "pypi_boto3",
+    "pypi_cachetools",
+    "pypi_confuse",
+    "pypi_requests"
+  ]
+}

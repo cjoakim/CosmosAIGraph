@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: plugins",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3.7",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# python logging azure workspace oms extension\n\n[![python](https://img.shields.io/pypi/pyversions/logging-azure-rest.svg)](https://pypi.python.org/pypi/logging-azure-rest)\n[![version](http://img.shields.io/pypi/v/logging-azure-rest.svg)](https://pypi.python.org/pypi/logging-azure-rest)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n\nthis package provides an asynchronous solution for uploading application logs to an azure log workspace using their\nprovided rest api, all supplied as a handler and service extension for python builtin `logging` module.\n\nthe service works by instantiating an always-alive (non-daemonized) thread connected to a log request pool in which\nlogs will be queued, then periodically running through the pool in order to send the requests in bulk\nusing the `requests` package. this is all to intend logging safely without interrupting or slowing down the main\nprocess execution as transparently as possible.\n\n## installation\n\nfor installing via the distributed package via pypi:\n\n`$ pip install logging-azure-rest`\n\nor if you which to install from the source, you can checkout the git repository and install using `setuptools`:\n\n`$ python setup.py install`\n\n## usage\n\n### package configuration\n\nthe following environment variables are read to configure the extension and are required:\n\n- `azure_log_customer_id`: customer id for the azure log workspace\n- `azure_log_shared_key`: customer shared key for the azure log workspace\n- `azure_log_default_name`: the default \"log type\" name to indicate where the logs are stored.\nthis will be suffixed with \"_cl\" within the azure log workspace.\n\nthe following environment variables are read to tweak some parameters of the extension,\nthey all have default values and therefore are optional:\n\n- `azure_log_send_frequency`: *default: 5* how many seconds the service thread should wait before sending pooled logs.\n\n### logging configuration\n\nas you would any other handler, you only require to define a handler using the\n`logging_azure.handler.azurelogservicehandler` class:\n\n```python\n[...]\n    \"handlers\": {\n        \"console\": {\"level\": logging.debug, \"class\": \"logging.streamhandler\", \"formatter\": \"colorize\"},\n        \"azure_log_oms\": {\n            \"level\": logging.info, \"class\": \"logging_azure.handler.azurelogservicehandler\", \"formatter\": \"azure\"\n        },\n        \"default\": {\"level\": logging.info, \"class\": \"logging.streamhandler\", \"formatter\": \"default\"},\n    },\n[...]\n```\n\nthen add the handler to your selected logger instance:\n\n```python\n[...]\n    \"loggers\": {\n        logger_name: {\n            \"handlers\": [\"console\"] if is_local_dev_instance else [\"default\", \"azure_log_oms\"],\n            \"level\": log_level,\n            \"propagate\": true,\n        }\n    },\n[...]\n```\n\n## recommendations\n\n### set an appropriate log level minimum\n\nin order to prevent additional cost from azure log oms ingestion for talkative applications, it is recommended to set\nan adequate log_level for your application (avoid `logging.debug` for example).\n\nit is also recommended configuring your loggers appropriately so the `azurelogservivehandler` isn't used during\nlocal development or ci environments for example.\n\nyou are warned.\n\n### set a clear formatter for messages\n\nthis package supplies a decent amount of information already to complement the message in a clean way by reading the\nlog record in order to facilitate azure log oms queries and ingestion, so you may only require using a specific\nformatter that will only format the `message` itself as follows:\n\n```python\n[...]\n    \"formatters\": {\n        \"default\": {\n            \"format\": '[%(asctime)s] %(levelname)s %(name)s %(module)s \"%(message)s\"',\n            \"datefmt\": \"%d/%b/%y %h:%m:%s\",\n        },\n        \"azure\": {\n            \"format\": '%(message)s',\n        },\n[...]\n```\n\nthis provides the following output within the azure portal for example:\n\n![azurelogomsexample](https://github.com/exelscior/logging-azure-rest/blob/master/resources/log_azure_example.jpg)\n\nthis allows for easily creating custom queries and alerts for your application directly from the azure log oms\nsolution.\n\n## useful links\n\n- [create a log analytics workspace in the azure portal](https://docs.microsoft.com/en-us/azure/azure-monitor/learn/quick-create-workspace)\n- [create a log analytics workspace with azure cli 2.0](https://docs.microsoft.com/en-us/azure/azure-monitor/learn/quick-create-workspace-cli)\n- [manage access to log data and workspaces in azure monitor](https://docs.microsoft.com/en-us/azure/azure-monitor/platform/manage-access)\n- [azure monitor pricing](https://azure.microsoft.com/en-us/pricing/details/monitor/)\n\n### package requirements\n\n- [requests](https://github.com/psf/requests)\n- [injector](https://github.com/alecthomas/injector)",
+  "docs_url": null,
+  "keywords": "utils",
+  "license": "mit",
+  "name": "logging-azure-rest",
+  "package_url": "https://pypi.org/project/logging-azure-rest/",
+  "project_url": "https://pypi.org/project/logging-azure-rest/",
+  "project_urls": {
+    "Homepage": "https://github.com/Exelscior/logging-azure-rest"
+  },
+  "release_url": "https://pypi.org/project/logging-azure-rest/1.3.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.7",
+  "summary": "a python threadded logging handler and service extension for azure log workspace oms rest api.",
+  "version": "1.3.0",
+  "releases": [],
+  "developers": [
+    "joshua.logan@exelscior.eu",
+    "joshua_logan"
+  ],
+  "kwds": "logging_azure azure_log_oms log_azure_example azurelogservivehandler azurelogservicehandler",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_logging_azure_rest",
+  "homepage": "https://github.com/exelscior/logging-azure-rest",
+  "release_count": 7,
+  "dependency_ids": []
+}

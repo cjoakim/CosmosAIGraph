@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# data files for skyfield\n\n[![tests](https://github.com/brunobord/skyfield-data/actions/workflows/tests.yml/badge.svg)](https://github.com/brunobord/skyfield-data/actions/workflows/tests.yml)\n\n## rationale\n\n[skyfield](https://rhodesmill.org/skyfield/) is a python library for astronomical computations. it depends on various data files to accurately compute moon phases, planet positions, etc.\n\nseveral issues are raised by these data files:\n\n* if they're not found in the path of the ``loader``, they're **downloaded at runtime**. depending on the archive you're requesting, some files might be very large, causing a long delay (directly related to your network bandwidth). in the case of a web server app, you'd cause a timeout on client's end.\n* they come mainly from 2 sources: nasa's jpl, and the iers. **if one of them is temporarily unavailable**, you couldn't perform any computation.\n* in some countries, or behind some filtering proxies, some hosts may be **blocked**.\n* these files have **an expiration date** (in a more or less distant future). as a consequence, even if the files are already downloaded in the right path, at each runtime you could possibly have to download one or more files before making any computation using them.\n\n### currently known expiration dates\n\n|      file       |    date    |\n|:---------------:|:----------:|\n| finals2000a.all | 2024-06-16 |\n|    de421.bsp    | 2053-10-08 |\n\n\n**deprecation warning**: as of ``python-skyfield>=1.31``, `leap_second.dat`, `deltat.data` and `deltat.preds` files are not used anymore. they were not maintained anymore, and brandon rhodes switched to other source files for \u2206t computations.\n\n## goal for this project\n\n* providing at least the most common of these assets in python package.\n* make regular releases to refresh the files before they expire.\n* provide a warning / logging mechanism when the files are about to expire (or when they are outdated) to still allow you to compute things with the loaded assets, but being informed you need to upgrade.\n\nthis way, you could **install or upgrade** this data package via ``pip``.\n\nonce all the files are on your disk space, you can instantiate your ``skyfield`` loader pointing at their path, without having to worry about anything.\n\n## usage\n\ninstall the packages using:\n\n```sh\npip install skyfield skyfield-data\n```\n\nto create a custom skyfield loader, use the following code:\n\n```python\nfrom skyfield_data import get_skyfield_data_path\nfrom skyfield.api import loader\nload = loader(get_skyfield_data_path())\nplanets = load('de421.bsp')  # this command won't download this file\nts = load.timescale(builtin=false)  # this command won't download the iers file\n```\n\nfor the record, using `buitin=true` as an argument to load the timescale data won't trigger the download of the file, because python-skyfield embeds its own data files as a built-in data source.\n\nif you want to make sure that the data files would **never** be downloaded, you can also use the ``expire`` option like this:\n\n```python\nload = loader(get_skyfield_data_path(), expire=false)\n```\n\nwhenever a file contained in the catalog has expired, you're going to receive a warning when loading the `skyfield-data` path:\n\n```python\n>>> from skyfield_data import get_skyfield_data_path\n>>> from skyfield.api import loader\n>>> load = loader(get_skyfield_data_path())\n/home/[redacted]/skyfield_data/expirations.py:25: runtimewarning: the file de421.bsp has expired. please upgrade your version of `skyfield-data` or expect computation errors\n  runtimewarning\n```\n\nby default, the loading isn't blocked, but it's strongly recommended to upgrade to a more recent version, to make sure you're not going to make wrong astronomical computations.\n\n### custom limit\n\nby default, the ``runtimewarning`` is raised when the file **has** expired. you may want to be aware of this warning **in advance**, that is to say a few days or weeks before, in order to eventually upgrade your version of ``skyfield-data``.\n\nin order to trigger this warning, you can use the ``expiration_limit`` argument, like this:\n\n```python\n>>> from skyfield_data import get_skyfield_data_path\n>>> from skyfield.api import loader\n>>> load = loader(get_skyfield_data_path(expiration_limit=30))\n/home/[redacted]/skyfield_data/expirations.py:25: runtimewarning: the file de421.bsp would expire in less than 30 days. please upgrade your version of `skyfield-data` or expect computation errors\n  runtimewarning\n```\n\n**note:** the ``expiration_limit`` argument should be a positive integer (or zero).\n\n## developers\n\nwe assume that you'll be using a python3.7+ version for all regular operations.\n\nwe're providing a ``makefile`` with basic targets to play around with the toolkit. use ``make help`` to get more details.\n\nin order to be able to run the `download.py` script, we recommend to run it **from a virtualenv** where you'd have installed the \"dev\" dependencies, using:\n\n```sh\nmake install-dev\n```\n\n### python compatibility\n\n*important:* this project is, and should stay compatible with python 2.6, 2.7 and python 3.7+ up to 3.11, to keep the same python compatibility that `skyfield` has.\n\n### hacking\n\nimproving or fixing `skyfield-data` will require you to have at least a virtualenv with `tox` installed on it.\n\nwe'll ask you to add tests along your patch, to make sure that no regression or bug would be introduced by your patch or further ones.\n\nto make a quick'n'dirty test, inside your \"tox-ready\" virtualenv, run:\n\n```sh\nmake test\n```\n\nto launch the python 2.7 and python 3.7+ test jobs.\n\nif you want to test your branch against python 2.6, you'll have to setup a python 2.6-ready tox environment, by doing something similar to:\n\n```sh\nsudo apt install python2.6 python2.6-dev  # dev headers to compile numpy\nmkvirtualenv tox26 --python=`which python2.6`  # you will activate this venv with `workon tox26`\npip install tox\ntox -c tox-py26.ini\n```\n\n**known issues**: on ubuntu, you may be unable to build numpy at this point, due to misplaced c header files in your system. i've had hard times on ubuntu, but your mileage may vary.\n\nnote: at the moment, we can't prove that skyfield-data is 100% compatible with python 2.6, because of a defunct ci. although, we're pretty confident it is. fingers crossed!\n\n### online ci with travis & circle-ci\n\nthe online ci relies on github actions:\n\n[![tests](https://github.com/brunobord/skyfield-data/actions/workflows/tests.yml/badge.svg)](https://github.com/brunobord/skyfield-data/actions/workflows/tests.yml)\n\n## copyright\n\n### data files\n\n* `de421.bsp` is provided by the *jet propulsion laboratory*,\n* `finals2000a.all` is provided by the *international earth rotation and reference systems service*.\n\n### software\n\nthis python package code is published under the terms of the mit license. see the ``copying`` file for more details.\n\n\n",
+  "docs_url": null,
+  "keywords": "astronomy science",
+  "license": "mit",
+  "name": "skyfield-data",
+  "package_url": "https://pypi.org/project/skyfield-data/",
+  "project_url": "https://pypi.org/project/skyfield-data/",
+  "project_urls": {
+    "Homepage": "https://github.com/brunobord/skyfield-data"
+  },
+  "release_url": "https://pypi.org/project/skyfield-data/5.0.0/",
+  "requires_dist": [
+    "jplephem ; extra == 'dev'",
+    "numpy ; extra == 'dev'",
+    "tox ; extra == 'dev'",
+    "colorama ; extra == 'dev'",
+    "termcolor ; extra == 'dev'",
+    "pytest ; extra == 'tests'",
+    "skyfield ; extra == 'tests'",
+    "mock ; extra == 'tests'"
+  ],
+  "requires_python": ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*, <4",
+  "summary": "data package for skyfield",
+  "version": "5.0.0",
+  "releases": [],
+  "developers": [
+    "bruno@jehaisleprintemps.net",
+    "bruno_bord"
+  ],
+  "kwds": "skyfield_data get_skyfield_data_path skyfield astronomy astronomical",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_skyfield_data",
+  "homepage": "https://github.com/brunobord/skyfield-data",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_colorama",
+    "pypi_jplephem",
+    "pypi_mock",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_skyfield",
+    "pypi_termcolor",
+    "pypi_tox"
+  ]
+}

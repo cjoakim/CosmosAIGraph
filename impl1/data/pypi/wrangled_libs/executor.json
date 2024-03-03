@@ -1,0 +1,70 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: system administrators",
+    "license :: osi approved :: mit license",
+    "operating system :: posix",
+    "operating system :: posix :: linux",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: internet",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: networking",
+    "topic :: system :: shells",
+    "topic :: system :: systems administration",
+    "topic :: utilities"
+  ],
+  "description": "executor: programmer friendly subprocess wrapper\n================================================\n\n.. image:: https://travis-ci.org/xolox/python-executor.svg?branch=master\n   :target: https://travis-ci.org/xolox/python-executor\n\n.. image:: https://coveralls.io/repos/github/xolox/python-executor/badge.svg?branch=master\n   :target: https://coveralls.io/github/xolox/python-executor?branch=master\n\nthe `executor` package is a simple wrapper for python's subprocess_ module\nthat makes it very easy to handle subprocesses on unix systems with proper\nescaping of arguments and error checking:\n\n- an object oriented interface is used to execute commands using sane but\n  customizable (and well documented) defaults.\n\n- remote commands (executed over ssh_) are supported using the same object\n  oriented interface, as are commands inside chroots_ (executed using\n  schroot_).\n\n- there's also support for executing a group of commands concurrently in\n  what's called a \"command pool\". the concurrency level can be customized and\n  of course both local and remote commands are supported.\n\nthe package is currently tested on python 2.7, 3.5, 3.6, 3.7, 3.8 and pypy. for\nusage instructions please refer to following sections and the documentation_.\n\n.. contents::\n   :local:\n   :depth: 2\n\ninstallation\n------------\n\nthe `executor` package is available on pypi_ which means installation should be\nas simple as:\n\n.. code-block:: console\n\n   $ pip install executor\n\nthere's actually a multitude of ways to install python packages (e.g. the `per\nuser site-packages directory`_, `virtual environments`_ or just installing\nsystem wide) and i have no intention of getting into that discussion here, so\nif this intimidates you then read up on your options before returning to these\ninstructions ;-).\n\nusage\n-----\n\nthere are two ways to use the `executor` package: as the command line program\n``executor`` and as a python api. the command line interface is described below\nand there are also some examples of simple use cases of the python api.\n\n.. contents::\n   :local:\n   :depth: 1\n\ncommand line\n~~~~~~~~~~~~\n\n.. a dry solution to avoid duplication of the `executor --help' text:\n..\n.. [[[cog\n.. from humanfriendly.usage import inject_usage\n.. inject_usage('executor.cli')\n.. ]]]\n\n**usage:** `executor [options] command ...`\n\neasy subprocess management on the command line based on the python package with\nthe same name. the \"executor\" program runs external commands with support for\ntimeouts, dynamic startup delay (fudge factor) and exclusive locking.\n\nyou can think of \"executor\" as a combination of the \"flock\" and \"timelimit\"\nprograms with some additional niceties (namely the dynamic startup delay and\nintegrated system logging on unix platforms).\n\n**supported options:**\n\n.. csv-table::\n   :header: option, description\n   :widths: 30, 70\n\n\n   \"``-t``, ``--timeout=limit``\",\"set the time after which the given command will be aborted. by default\n   ``limit`` is counted in seconds. you can also use one of the suffixes \"\"s\"\"\n   (seconds), \"\"m\"\" (minutes), \"\"h\"\" (hours) or \"\"d\"\" (days).\"\n   \"``-f``, ``--fudge-factor=limit``\",\"this option controls the dynamic startup delay (fudge factor) which is\n   useful when you want a periodic task to run once per given interval but the\n   exact time is not important. refer to the ``--timeout`` option for acceptable\n   values of ``limit``, this number specifies the maximum amount of time to sleep\n   before running the command (the minimum is zero, otherwise you could just\n   include the command \"\"sleep n && ...\"\" in your command line :-).\"\n   \"``-e``, ``--exclusive``\",\"use an interprocess lock file to guarantee that executor will never run\n   the external command concurrently. refer to the ``--lock-timeout`` option\n   to customize blocking / non-blocking behavior. to customize the name\n   of the lock file you can use the ``--lock-file`` option.\"\n   \"``-t``, ``--lock-timeout=limit``\",\"by default executor tries to claim the lock and if it fails it will exit\n   with a nonzero exit code. this option can be used to enable blocking\n   behavior. refer to the ``--timeout`` option for acceptable values of ``limit``.\"\n   \"``-l``, ``--lock-file=name``\",\"customize the name of the lock file. by default this is the base name of\n   the external command, so if you're running something generic like \"\"bash\"\"\n   or \"\"python\"\" you might want to change this :-).\"\n   \"``-v``, ``--verbose``\",increase logging verbosity (can be repeated).\n   \"``-q``, ``--quiet``\",decrease logging verbosity (can be repeated).\n   \"``-h``, ``--help``\",show this message and exit.\n\n.. [[[end]]]\n\npython api\n~~~~~~~~~~\n\nbelow are some examples of how versatile the `execute()`_ function is. refer to\nthe api documentation on `read the docs`_ for (a lot of) other use cases.\n\n.. contents::\n   :local:\n\nchecking status codes\n+++++++++++++++++++++\n\nby default the status code of the external command is returned as a boolean:\n\n>>> from executor import execute\n>>> execute('true')\ntrue\n\nif an external command exits with a nonzero status code an exception is raised,\nthis makes it easy to do the right thing (never forget to check the status code\nof an external command without having to write a lot of repetitive code):\n\n>>> execute('false')\ntraceback (most recent call last):\n  file \"executor/__init__.py\", line 124, in execute\n    cmd.start()\n  file \"executor/__init__.py\", line 516, in start\n    self.wait()\n  file \"executor/__init__.py\", line 541, in wait\n    self.check_errors()\n  file \"executor/__init__.py\", line 568, in check_errors\n    raise externalcommandfailed(self)\nexecutor.externalcommandfailed: external command failed with exit code 1! (command: bash -c false)\n\nthe externalcommandfailed_ exception exposes ``command`` and ``returncode``\nattributes. if you know a command is likely to exit with a nonzero status code\nand you want `execute()`_ to simply return a boolean you can do this instead:\n\n>>> execute('false', check=false)\nfalse\n\nproviding input\n+++++++++++++++\n\nhere's how you can provide input to an external command:\n\n>>> execute('tr a-z a-z', input='hello world from python!\\n')\nhello world from python!\ntrue\n\ngetting output\n++++++++++++++\n\ngetting the output of external commands is really easy as well:\n\n>>> execute('hostname', capture=true)\n'peter-macbook'\n\nrunning commands as root\n++++++++++++++++++++++++\n\nit's also very easy to execute commands with super user privileges:\n\n>>> execute('echo test > /etc/hostname', sudo=true)\n[sudo] password for peter: **********\ntrue\n>>> execute('hostname', capture=true)\n'test'\n\nenabling logging\n++++++++++++++++\n\nif you're wondering how prefixing the above command with ``sudo`` would\nend up being helpful, here's how it works:\n\n>>> import logging\n>>> logging.basicconfig()\n>>> logging.getlogger().setlevel(logging.debug)\n>>> execute('echo peter-macbook > /etc/hostname', sudo=true)\ndebug:executor:executing external command: sudo bash -c 'echo peter-macbook > /etc/hostname'\n\nrunning remote commands\n+++++++++++++++++++++++\n\nto run a command on a remote system using ssh_ you can use the remotecommand_\nclass, it works as follows:\n\n>>> from executor.ssh.client import remotecommand\n>>> cmd = remotecommand('localhost', 'echo $ssh_connection', capture=true)\n>>> cmd.start()\n>>> cmd.output\n'127.0.0.1 57255 127.0.0.1 22'\n\nrunning remote commands concurrently\n++++++++++++++++++++++++++++++++++++\n\nthe `foreach()`_ function wraps the remotecommand_ and commandpool_ classes to\nmake it very easy to run a remote command concurrently on a group of hosts:\n\n>>> from executor.ssh.client import foreach\n>>> from pprint import pprint\n>>> hosts = ['127.0.0.1', '127.0.0.2', '127.0.0.3', '127.0.0.4']\n>>> commands = foreach(hosts, 'echo $ssh_connection')\n>>> pprint([cmd.output for cmd in commands])\n['127.0.0.1 57278 127.0.0.1 22',\n '127.0.0.1 52385 127.0.0.2 22',\n '127.0.0.1 49228 127.0.0.3 22',\n '127.0.0.1 40628 127.0.0.4 22']\n\ncontact\n-------\n\nthe latest version of `executor` is available on pypi_ and github_. the\ndocumentation is hosted on `read the docs`_ and includes a changelog_. for bug\nreports please create an issue on github_. if you have questions, suggestions,\netc. feel free to send me an e-mail at `peter@peterodding.com`_.\n\nlicense\n-------\n\nthis software is licensed under the `mit license`_.\n\n\u00a9 2020 peter odding.\n\n.. external references:\n.. _changelog: https://executor.readthedocs.io/en/latest/changelog.html\n.. _chroots: http://en.wikipedia.org/wiki/chroot\n.. _commandpool: https://executor.readthedocs.io/en/latest/api.html#executor.concurrent.commandpool\n.. _documentation: https://executor.readthedocs.io\n.. _execute(): http://executor.readthedocs.io/en/latest/api.html#executor.execute\n.. _externalcommandfailed: http://executor.readthedocs.io/en/latest/api.html#executor.externalcommandfailed\n.. _foreach(): https://executor.readthedocs.io/en/latest/api.html#executor.ssh.client.foreach\n.. _github: https://github.com/xolox/python-executor\n.. _mit license: http://en.wikipedia.org/wiki/mit_license\n.. _per user site-packages directory: https://www.python.org/dev/peps/pep-0370/\n.. _peter@peterodding.com: peter@peterodding.com\n.. _pypi: https://pypi.python.org/pypi/executor\n.. _read the docs: https://executor.readthedocs.io/en/latest/api.html#api-documentation\n.. _remotecommand: https://executor.readthedocs.io/en/latest/api.html#executor.ssh.client.remotecommand\n.. _schroot: https://wiki.debian.org/schroot\n.. _ssh: https://en.wikipedia.org/wiki/secure_shell\n.. _subprocess: https://docs.python.org/2/library/subprocess.html\n.. _virtual environments: http://docs.python-guide.org/en/latest/dev/virtualenvs/\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "executor",
+  "package_url": "https://pypi.org/project/executor/",
+  "project_url": "https://pypi.org/project/executor/",
+  "project_urls": {
+    "Homepage": "https://executor.readthedocs.io"
+  },
+  "release_url": "https://pypi.org/project/executor/23.2/",
+  "requires_dist": [
+    "coloredlogs (>=3.5)",
+    "fasteners (>=0.14.1)",
+    "humanfriendly (>=8.0)",
+    "property-manager (>=3.0)",
+    "six (>=1.9.0)"
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+  "summary": "programmer friendly subprocess wrapper",
+  "version": "23.2",
+  "releases": [],
+  "developers": [
+    "peter@peterodding.com",
+    "peter_odding"
+  ],
+  "kwds": "_subprocess subprocess_ subprocesses subprocess interprocess",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_executor",
+  "homepage": "https://executor.readthedocs.io",
+  "release_count": 87,
+  "dependency_ids": [
+    "pypi_coloredlogs",
+    "pypi_fasteners",
+    "pypi_humanfriendly",
+    "pypi_property_manager",
+    "pypi_six"
+  ]
+}

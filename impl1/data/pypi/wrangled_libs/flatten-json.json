@@ -1,0 +1,34 @@
+{
+  "classifiers": [],
+  "description": "[![build status](https://travis-ci.org/amirziai/flatten.svg?branch=master)](https://travis-ci.org/amirziai/flatten) [![pypi version](https://badge.fury.io/py/flatten-json.svg)](https://badge.fury.io/py/flatten-json) [![codacy badge](https://api.codacy.com/project/badge/coverage/7ae779ec4e99462f907c5afecfd5de48)](https://www.codacy.com/app/amirziai/flatten?utm_source=github.com&utm_medium=referral&utm_content=amirziai/flatten&utm_campaign=badge_coverage) \n\n# flatten_json\nflattens json objects in python. ```flatten_json``` flattens the hierarchy in your object which can be useful if you want to force your objects into a table.\n\n## installation\n```bash\npip install flatten_json\n```\n\n## flatten\n\n### usage\nlet's say you have the following object:\n```python\ndic = {\n    \"a\": 1,\n    \"b\": 2,\n    \"c\": [{\"d\": [2, 3, 4], \"e\": [{\"f\": 1, \"g\": 2}]}]\n}\n```\nwhich you want to flatten. just apply ```flatten```:\n```python\nfrom flatten_json import flatten\nflatten(dic)\n```\n\nresults:\n```python\n{'a': 1,\n 'b': 2,\n 'c_0_d_0': 2,\n 'c_0_d_1': 3,\n 'c_0_d_2': 4,\n 'c_0_e_0_f': 1,\n 'c_0_e_0_g': 2}\n```\n\n### usage with pandas\nfor the following object:\n```python\ndic = [\n    {\"a\": 1, \"b\": 2, \"c\": {\"d\": 3, \"e\": 4}},\n    {\"a\": 0.5, \"c\": {\"d\": 3.2}},\n    {\"a\": 0.8, \"b\": 1.8},\n]\n```\nwe can apply `flatten` to each element in the array and then use pandas to capture the output as a dataframe:\n```python\ndic_flattened = [flatten(d) for d in dic]\n```\nwhich creates an array of flattened objects:\n```python\n[{'a': 1, 'b': 2, 'c_d': 3, 'c_e': 4},\n {'a': 0.5, 'c_d': 3.2},\n {'a': 0.8, 'b': 1.8}]\n```\nfinally you can use ```pd.dataframe``` to capture the flattened array:\n```python\nimport pandas as pd\ndf = pd.dataframe(dic_flattened)\n```\nthe final result as a pandas dataframe:\n```\n\ta\tb\tc_d\tc_e\n0\t1\t2\t3\t4\n1\t0.5\tnan\t3.2\tnan\n2\t0.8\t1.8\tnan\tnan\n```\n\n### custom separator\nby default `_` is used to separate nested element. you can change this by passing the desired character:\n```python\nflatten({\"a\": [1]}, '|')\n```\nreturns:\n```python\n{'a|0': 1}\n```\n\n### ignore root keys\nby default `flatten` goes through all the keys in the object. if you are not interested in output from a set of keys you can pass this set as an argument to `root_keys_to_ignore`:\n```python\ndic = {\n    'a': {'a': [1, 2, 3]},\n    'b': {'b': 'foo', 'c': 'bar'},\n    'c': {'c': [{'foo': 5, 'bar': 6, 'baz': [1, 2, 3]}]}\n}\nflatten(dic, root_keys_to_ignore={'b', 'c'})\n```\nreturns:\n```python\n{\n    'a_a_0': 1,\n    'a_a_1': 2,\n    'a_a_2': 3\n}\n```\nthis feature can prevent unnecessary processing which is a concern with deeply nested objects.\n\n## unflatten\nreverses the flattening process. example usage:\n```python\nfrom flatten_json import unflatten\n\ndic = {\n    'a': 1,\n    'b_a': 2,\n    'b_b': 3,\n    'c_a_b': 5\n}\nunflatten(dic)\n```\nreturns:\n```python\n{\n    'a': 1,\n    'b': {'a': 2, 'b': 3},\n    'c': {'a': {'b': 5}}\n}\n```\n\n### unflatten with lists\n`flatten` encodes key for list values with integer indices which makes it ambiguous for reversing the process. consider this flattened dictionary:\n```python\na = {'a': 1, 'b_0': 5}\n```\n\nboth `{'a': 1, 'b': [5]}` and `{'a': 1, 'b': {0: 5}}` are legitimate answers.\n \ncalling `unflatten_list` the dictionary is first unflattened and then in a post-processing step the function looks for a list pattern (zero-indexed consecutive integer keys) and transforms the matched values into a list.\n \nhere's an example:\n```python\nfrom flatten_json import unflatten_list\ndic = {\n    'a': 1,\n    'b_0': 1,\n    'b_1': 2,\n    'c_a': 'a',\n    'c_b_0': 1,\n    'c_b_1': 2,\n    'c_b_2': 3\n}\nunflatten_list(dic)\n```\nreturns:\n```python\n{\n    'a': 1,\n    'b': [1, 2],\n    'c': {'a': 'a', 'b': [1, 2, 3]}\n}\n```\n\n## command line invocation\n```bash\n>>> echo '{\"a\": {\"b\": 1}}' | flatten_json\n{\"a_b\": 1}\n\n>>> echo '{\"a\": {\"b\": 1}}' > test.json\n>>> cat test.json | flatten_json\n{\"a_b\": 1}\n```\n",
+  "docs_url": null,
+  "keywords": "json,flatten,pandas",
+  "license": "mit",
+  "name": "flatten-json",
+  "package_url": "https://pypi.org/project/flatten-json/",
+  "project_url": "https://pypi.org/project/flatten-json/",
+  "project_urls": {
+    "Homepage": "https://github.com/amirziai/flatten"
+  },
+  "release_url": "https://pypi.org/project/flatten-json/0.1.14/",
+  "requires_dist": [
+    "six"
+  ],
+  "requires_python": "",
+  "summary": "flatten json objects",
+  "version": "0.1.14",
+  "releases": [],
+  "developers": [
+    "amir_ziai",
+    "arziai@gmail.com"
+  ],
+  "kwds": "flatten_json json badge_coverage pandas flatten",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flatten_json",
+  "homepage": "https://github.com/amirziai/flatten",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_six"
+  ]
+}

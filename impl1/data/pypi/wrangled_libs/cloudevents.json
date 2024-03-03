@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# python sdk for [cloudevents](https://github.com/cloudevents/spec)\n\n[![pypi version](https://badge.fury.io/py/cloudevents.svg)](https://badge.fury.io/py/cloudevents)\n\n## status\n\nthis sdk is still considered a work in progress, therefore things might (and\nwill) break with every update.\n\nthis sdk current supports the following versions of cloudevents:\n\n- v1.0\n- v0.3\n\n## python sdk\n\npackage **cloudevents** provides primitives to work with cloudevents specification:\nhttps://github.com/cloudevents/spec.\n\n### installing\n\nthe cloudevents sdk can be installed with pip:\n\n```\npip install cloudevents\n```\n\n## sending cloudevents\n\nbelow we will provide samples on how to send cloudevents using the popular\n[`requests`](http://docs.python-requests.org) library.\n\n### binary http cloudevent\n\n```python\nfrom cloudevents.http import cloudevent\nfrom cloudevents.conversion import to_binary\nimport requests\n\n# create a cloudevent\n# - the cloudevent \"id\" is generated if omitted. \"specversion\" defaults to \"1.0\".\nattributes = {\n    \"type\": \"com.example.sampletype1\",\n    \"source\": \"https://example.com/event-producer\",\n}\ndata = {\"message\": \"hello world!\"}\nevent = cloudevent(attributes, data)\n\n# creates the http request representation of the cloudevent in binary content mode\nheaders, body = to_binary(event)\n\n# post\nrequests.post(\"<some-url>\", data=body, headers=headers)\n```\n\n### structured http cloudevent\n\n```python\nfrom cloudevents.conversion import to_structured\nfrom cloudevents.http import cloudevent\nimport requests\n\n# create a cloudevent\n# - the cloudevent \"id\" is generated if omitted. \"specversion\" defaults to \"1.0\".\nattributes = {\n    \"type\": \"com.example.sampletype2\",\n    \"source\": \"https://example.com/event-producer\",\n}\ndata = {\"message\": \"hello world!\"}\nevent = cloudevent(attributes, data)\n\n# creates the http request representation of the cloudevent in structured content mode\nheaders, body = to_structured(event)\n\n# post\nrequests.post(\"<some-url>\", data=body, headers=headers)\n```\n\nyou can find a complete example of turning a cloudevent into a http request\n[in the samples' directory](samples/http-json-cloudevents/client.py).\n\n## receiving cloudevents\n\nthe code below shows how to consume a cloudevent using the popular python web framework\n[flask](https://flask.palletsprojects.com/en/2.2.x/quickstart/):\n\n```python\nfrom flask import flask, request\n\nfrom cloudevents.http import from_http\n\napp = flask(__name__)\n\n\n# create an endpoint at http://localhost:/3000/\n@app.route(\"/\", methods=[\"post\"])\ndef home():\n    # create a cloudevent\n    event = from_http(request.headers, request.get_data())\n\n    # you can access cloudevent fields as seen below\n    print(\n        f\"found {event['id']} from {event['source']} with type \"\n        f\"{event['type']} and specversion {event['specversion']}\"\n    )\n\n    return \"\", 204\n\n\nif __name__ == \"__main__\":\n    app.run(port=3000)\n```\n\nyou can find a complete example of turning a cloudevent into a http request\n[in the samples' directory](samples/http-json-cloudevents/json_sample_server.py).\n\n## sdk versioning\n\nthe goal of this package is to provide support for all released versions of cloudevents,\nideally while maintaining the same api. it will use semantic versioning\nwith following rules:\n\n- major version increments when backwards incompatible changes is introduced.\n- minor version increments when backwards compatible feature is introduced\n  including support for new cloudevents version.\n- patch version increments when a backwards compatible bug fix is introduced.\n\n## community\n\n- there are bi-weekly calls immediately following the [serverless/cloudevents\n  call](https://github.com/cloudevents/spec#meeting-time) at\n  9am pt (us pacific). which means they will typically start at 10am pt, but\n  if the other call ends early then the sdk call will start early as well.\n  see the [cloudevents meeting minutes](https://docs.google.com/document/d/1ovf68rpupk5shihilk9joqlzbbfe91rnzq7u_p7ycde/edit#)\n  to determine which week will have the call.\n- slack: #cloudeventssdk channel under\n  [cncf's slack workspace](https://slack.cncf.io/).\n- email: https://lists.cncf.io/g/cncf-cloudevents-sdk\n- contact for additional information: denis makogon (`@denysmakogon` on slack).\n\neach sdk may have its own unique processes, tooling and guidelines, common\ngovernance related material can be found in the\n[cloudevents `docs`](https://github.com/cloudevents/spec/tree/main/docs)\ndirectory. in particular, in there you will find information concerning\nhow sdk projects are\n[managed](https://github.com/cloudevents/spec/blob/main/docs/governance.md),\n[guidelines](https://github.com/cloudevents/spec/blob/main/docs/sdk-maintainer-guidelines.md)\nfor how pr reviews and approval, and our\n[code of conduct](https://github.com/cloudevents/spec/blob/main/docs/governance.md#additional-information)\ninformation.\n\nif there is a security concern with one of the cloudevents specifications, or\nwith one of the project's sdks, please send an email to\n[cncf-cloudevents-security@lists.cncf.io](mailto:cncf-cloudevents-security@lists.cncf.io).\n\n## additional sdk resources\n\n- [list of current active maintainers](maintainers.md)\n- [how to contribute to the project](contributing.md)\n- [sdk's license](license)\n- [sdk's release process](releasing.md)\n\n## maintenance\n\nwe use [black][black] and [isort][isort] for autoformatting. we set up a [tox][tox]\nenvironment to reformat the codebase.\n\ne.g.\n\n```bash\npip install tox\ntox -e reformat\n```\n\nfor information on releasing version bumps see [releasing.md](releasing.md)\n\n[black]: https://black.readthedocs.io/\n[isort]: https://pycqa.github.io/isort/\n[tox]: https://tox.wiki/\n",
+  "docs_url": null,
+  "keywords": "cloudevents eventing serverless",
+  "license": "https://www.apache.org/licenses/license-2.0",
+  "name": "cloudevents",
+  "package_url": "https://pypi.org/project/cloudevents/",
+  "project_url": "https://pypi.org/project/cloudevents/",
+  "project_urls": {
+    "Homepage": "https://github.com/cloudevents/sdk-python"
+  },
+  "release_url": "https://pypi.org/project/cloudevents/1.10.1/",
+  "requires_dist": [
+    "deprecation <3.0,>=2.0",
+    "pydantic <3.0,>=1.0.0 ; extra == 'pydantic'"
+  ],
+  "requires_python": "",
+  "summary": "cloudevents python sdk",
+  "version": "1.10.1",
+  "releases": [],
+  "developers": [
+    "cncfcloudevents@gmail.com",
+    "the_cloud_events_contributors"
+  ],
+  "kwds": "cloudeventssdk cloudevent cloudevents pip event",
+  "license_kwds": "https://www.apache.org/licenses/license-2.0",
+  "libtype": "pypi",
+  "id": "pypi_cloudevents",
+  "homepage": "https://github.com/cloudevents/sdk-python",
+  "release_count": 24,
+  "dependency_ids": [
+    "pypi_deprecation",
+    "pypi_pydantic"
+  ]
+}

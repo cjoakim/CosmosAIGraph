@@ -1,0 +1,70 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering"
+  ],
+  "description": "pvlib/solarfactors: a fork of sunpower/pvfactors\n================================================\n\nthis repository is a fork of `sunpower/solarfactors <https://github.com/sunpower/pvfactors>`_,\na 2-d view factor model for simulating front- and rear-side irradiance for\nbifacial pv systems.\n\nthis fork exists so that the pvfactors model can continue to be used with\n`pvlib python <https://github.com/pvlib/pvlib-python>`_ even though the original\nrepository is no longer maintained.  the objective is to provide a working\ndependency for the existing pvfactors functionality currently in pvlib python.\nnew features may be added, but don't count on it.\n\ndocumentation for this fork can be found at `read the docs <https://solarfactors.readthedocs.io>`_.\n\nthe project can be installed from pypi using ``pip install solarfactors``.  note\nthat the package is still used from python under the ``pvfactors`` name, i.e.\nwith ``from pvfactors.geometry import orderedpvarray``.\n\nthe original ``pvfactors`` is preserved below:\n\n\npvfactors: irradiance modeling made simple\n==========================================\n\n|logo|\n\n|circleci|  |license|  |pypi-status|  |pypi-versions|\n\npvfactors is a tool used by pv professionals to calculate the\nirradiance incident on surfaces of a photovoltaic array. it relies on the use of\n2d geometries and view factors integrated mathematically into systems of\nequations to account for reflections between all of the surfaces.\n\npvfactors was originally ported from the sunpower developed 'vf_model' package, which was introduced at the ieee pv specialist conference 44 2017 (see [#pvfactors_paper]_ and link_ to paper).\n\n------------------------------------------\n\n.. contents:: table of contents\n   :backlinks: top\n   :local:\n\n\ndocumentation\n-------------\n\nthe documentation can be found `here <https://sunpower.github.io/pvfactors>`_.\nit includes a lot of tutorials_ that describe the different ways of using pvfactors.\n\n\nquick start\n-----------\n\ngiven some timeseries inputs:\n\n\n.. code:: python\n\n   # import external libraries\n   from datetime import datetime\n   import pandas as pd\n\n   # create input data\n   df_inputs = pd.dataframe(\n       {'solar_zenith': [20., 50.],\n        'solar_azimuth': [110., 250.],\n        'surface_tilt': [10., 20.],\n        'surface_azimuth': [90., 270.],\n        'dni': [1000., 900.],\n        'dhi': [50., 100.],\n        'albedo': [0.2, 0.2]},\n       index=[datetime(2017, 8, 31, 11), datetime(2017, 8, 31, 15)])\n   df_inputs\n\n\n+---------------------+--------------+---------------+--------------+-----------------+--------+-------+--------+\n|                     | solar_zenith | solar_azimuth | surface_tilt | surface_azimuth | dni    | dhi   | albedo |\n+=====================+==============+===============+==============+=================+========+=======+========+\n| 2017-08-31 11:00:00 | 20.0         | 110.0         | 10.0         | 90.0            | 1000.0 | 50.0  | 0.2    |\n+---------------------+--------------+---------------+--------------+-----------------+--------+-------+--------+\n| 2017-08-31 15:00:00 | 50.0         | 250.0         | 20.0         | 270.0           | 900.0  | 100.0 | 0.2    |\n+---------------------+--------------+---------------+--------------+-----------------+--------+-------+--------+\n\n\nand some pv array parameters\n\n\n.. code:: python\n\n   pvarray_parameters = {\n       'n_pvrows': 3,            # number of pv rows\n       'pvrow_height': 1,        # height of pvrows (measured at center / torque tube)\n       'pvrow_width': 1,         # width of pvrows\n       'axis_azimuth': 0.,       # azimuth angle of rotation axis\n       'gcr': 0.4,               # ground coverage ratio\n   }\n\nthe user can quickly create a pv array with ``pvfactors``, and manipulate it with the engine\n\n\n.. code:: python\n\n   from pvfactors.geometry import orderedpvarray\n   # create pv array\n   pvarray = orderedpvarray.init_from_dict(pvarray_parameters)\n\n\n\n.. code:: python\n\n   from pvfactors.engine import pvengine\n   # create engine\n   engine = pvengine(pvarray)\n   # fit engine to data\n   engine.fit(df_inputs.index, df_inputs.dni, df_inputs.dhi,\n              df_inputs.solar_zenith, df_inputs.solar_azimuth,\n              df_inputs.surface_tilt, df_inputs.surface_azimuth,\n              df_inputs.albedo)\n\nthe user can then plot the pv array geometry at any given time of the simulation:\n\n\n.. code:: python\n\n   # plot pvarray shapely geometries\n   f, ax = plt.subplots(figsize=(10, 5))\n   pvarray.plot_at_idx(1, ax)\n   plt.show()\n\n.. image:: https://raw.githubusercontent.com/sunpower/pvfactors/master/docs/sphinx/_static/pvarray.png\n\n\nit is then very easy to run simulations using the defined engine:\n\n\n.. code:: python\n\n    pvarray = engine.run_full_mode(fn_build_report=lambda pvarray: pvarray)\n\n\nand inspect the results thanks to the simple geometry api\n\n\n.. code:: python\n\n    print(\"incident irradiance on front surface of middle pv row: {} w/m2\"\n          .format(pvarray.ts_pvrows[1].front.get_param_weighted('qinc')))\n    print(\"reflected irradiance on back surface of left pv row: {} w/m2\"\n          .format(pvarray.ts_pvrows[0].back.get_param_weighted('reflection')))\n    print(\"isotropic irradiance on back surface of right pv row: {} w/m2\"\n          .format(pvarray.ts_pvrows[2].back.get_param_weighted('isotropic')))\n\n\n.. parsed-literal::\n\n    incident irradiance on front surface of middle pv row: [1034.968  886.377] w/m2\n    reflected irradiance on back surface of left pv row: [112.139  86.404] w/m2\n    isotropic irradiance on back surface of right pv row: [0.116 1.849] w/m2\n\n\nthe users can also create a \"report\" while running the simulations that will rely on the simple api shown above, and which will look like whatever the users want.\n\n.. code:: python\n\n    # create a function that will build a report\n    def fn_report(pvarray): return {'total_incident_back': pvarray.ts_pvrows[1].back.get_param_weighted('qinc'),\n                                    'total_absorbed_back': pvarray.ts_pvrows[1].back.get_param_weighted('qabs')}\n\n    # run full mode simulation\n    report = engine.run_full_mode(fn_build_report=fn_report)\n\n    # print results (report is defined by report function passed by user)\n    df_report = pd.dataframe(report, index=df_inputs.index)\n    df_report\n\n\n+---------------------+---------------------+---------------------+\n|                     | total_incident_back | total_absorbed_back |\n+=====================+=====================+=====================+\n| 2017-08-31 11:00:00 |          106.627832 |          103.428997 |\n+---------------------+---------------------+---------------------+\n| 2017-08-31 15:00:00 |          79.668878  |           77.278812 |\n+---------------------+---------------------+---------------------+\n\n\n\ninstallation\n------------\n\npvfactors is currently compatible and tested with 3.6+, and is available in `pypi <https://pypi.org/project/pvfactors/>`_. the easiest way to install pvfactors is to use pip_ as follows:\n\n.. code:: sh\n\n    $ pip install pvfactors\n\nthe package wheel files are also available in the `release section`_ of the github repository.\n\n\nrequirements\n------------\n\nrequirements are included in the ``requirements.txt`` file of the package. here is a list of important dependencies:\n\n* `numpy <https://pypi.python.org/pypi/numpy>`_\n* `pvlib-python <https://pypi.python.org/pypi/pvlib>`_\n* `shapely <https://pypi.python.org/pypi/shapely>`_\n\n\nciting pvfactors\n----------------\n\nwe appreciate your use of pvfactors. if you use pvfactors in a published work, we kindly ask that you cite:\n\n\n.. parsed-literal::\n\n   anoma, m., jacob, d., bourne, b.c., scholl, j.a., riley, d.m. and hansen, c.w., 2017. view factor model and validation for bifacial pv and diffuse shade on single-axis trackers. in 44th ieee photovoltaic specialist conference.\n\n\ncontributing\n------------\n\ncontributions are needed in order to improve pvfactors.\nif you wish to contribute, you can start by forking and cloning the repository, and then installing pvfactors using pip_ in the root folder of the package:\n\n.. code:: sh\n\n    $ pip install .\n\n\nto install the package in editable mode, you can use:\n\n.. code:: sh\n\n    $ pip install -e .\n\nreleasing\n+++++++++\n\nwhen releasing pvfactors, you will need to run a couple of build commands. first make sure to activate your virtual environment if any, then:\n\n- create a tag on the latest master branch commit using `git tag -a vx.x.x`, and write a tag message. you can then push that tag to github so that it will appear there.\n- build the documentation by running `make build-docs`. when done running, you should be able to open `build/sphinx/html/index.html`, and confirm that the version displayed is the same as the one from the git tag. you can deploy by copying the content of of the `build/sphinx/html/` folder into the `gh-pages` branch of the repo (make sure to keep the `.nojekyll` file that's already present).\n- build the release files by running `make build-package`. when done running, you should be able to open `dist/` and see both a whl file and and tar file. make sure that their names include the correct git tag you created. please confirm that the whl file was built correctly by installing it locally and testing the newly released updates. you can deploy by 1) making a github release from the tag you created and pushed, and including the files in `dist/` in the release. 2) the last step is to publish a release in pypi, for which you can use twine and the command `twine upload dist/*`\n\n\n\n\nreferences\n----------\n\n.. [#pvfactors_paper] anoma, m., jacob, d., bourne, b. c., scholl, j. a., riley, d. m., & hansen, c. w. (2017). view factor model and validation for bifacial pv and diffuse shade on single-axis trackers. in 44th ieee photovoltaic specialist conference.\n\n\n.. _link: https://pdfs.semanticscholar.org/ebb2/35e3c3796b158e1a3c45b40954e60d876ea9.pdf\n\n.. _tutorials: https://sunpower.github.io/pvfactors/tutorials/index.html\n\n.. _`full mode`: https://sunpower.github.io/pvfactors/theory/problem_formulation.html#full-simulations\n\n.. _`fast mode`: https://sunpower.github.io/pvfactors/theory/problem_formulation.html#fast-simulations\n\n.. _pip: https://pip.pypa.io/en/stable/\n\n.. _`release section`: https://github.com/sunpower/pvfactors/releases\n\n.. |logo| image:: https://raw.githubusercontent.com/sunpower/pvfactors/master/docs/sphinx/_static/logo.png\n          :target: http://sunpower.github.io/pvfactors/\n\n.. |circleci| image:: https://circleci.com/gh/sunpower/pvfactors.svg?style=shield\n              :target: https://circleci.com/gh/sunpower/pvfactors\n\n.. |license| image:: https://img.shields.io/badge/license-bsd%203--clause-blue.svg\n             :target: https://github.com/sunpower/pvfactors/blob/master/license\n\n.. |pypi-status| image:: https://img.shields.io/pypi/v/pvfactors.svg\n                 :target: https://pypi.org/project/pvfactors\n\n.. |pypi-versions| image:: https://img.shields.io/pypi/pyversions/pvfactors.svg?logo=python&logocolor=white\n                   :target: https://pypi.org/project/pvfactors\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd 3-clause",
+  "name": "solarfactors",
+  "package_url": "https://pypi.org/project/solarfactors/",
+  "project_url": "https://pypi.org/project/solarfactors/",
+  "project_urls": {
+    "Homepage": "https://github.com/pvlib/solarfactors"
+  },
+  "release_url": "https://pypi.org/project/solarfactors/1.5.3/",
+  "requires_dist": [
+    "pvlib (>=0.9.0)",
+    "shapely (<2,>=1.6.4.post2)",
+    "matplotlib",
+    "future",
+    "six",
+    "Sphinx (~=4.0) ; extra == 'doc'",
+    "sphinx-rtd-theme ; extra == 'doc'",
+    "nbsphinx ; extra == 'doc'",
+    "sphinxcontrib-github-alt ; extra == 'doc'",
+    "ipykernel ; extra == 'doc'",
+    "pytest (>=3.2.1) ; extra == 'test'",
+    "pytest-mock (>=1.10.0) ; extra == 'test'",
+    "mock ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "2d view factor model to calculate the irradiance incident on various surfaces of pv arrays",
+  "version": "1.5.3",
+  "releases": [],
+  "developers": [
+    "pvlib-admin@googlegroups.com",
+    "sunpower_and_pvlib_python_developers"
+  ],
+  "kwds": "pvlib pvfactors solarfactors pvfactors_paper pvarray",
+  "license_kwds": "bsd 3-clause",
+  "libtype": "pypi",
+  "id": "pypi_solarfactors",
+  "homepage": "https://github.com/pvlib/solarfactors",
+  "release_count": 1,
+  "dependency_ids": [
+    "pypi_future",
+    "pypi_ipykernel",
+    "pypi_matplotlib",
+    "pypi_mock",
+    "pypi_nbsphinx",
+    "pypi_pvlib",
+    "pypi_pytest",
+    "pypi_pytest_mock",
+    "pypi_shapely",
+    "pypi_six",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_sphinxcontrib_github_alt"
+  ]
+}

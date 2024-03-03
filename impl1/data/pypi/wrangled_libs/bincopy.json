@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "about\n=====\n\nmangling of various file formats that conveys binary information\n(motorola s-record, intel hex, ti-txt, verilog vmem, elf and binary\nfiles).\n\nproject homepage: https://github.com/eerimoq/bincopy\n\ndocumentation: https://bincopy.readthedocs.io\n\ninstallation\n============\n\n.. code-block:: python\n\n    pip install bincopy\n\nexample usage\n=============\n\nscripting\n---------\n\na basic example converting from intel hex to intel hex, srec, binary,\narray and hexdump formats:\n\n.. code-block:: pycon\n\n    >>> import bincopy\n    >>> f = bincopy.binfile(\"tests/files/in.hex\")\n    >>> print(f.as_ihex())\n    :20010000214601360121470136007efe09d219012146017e17c20001ff5f16002148011979\n    :20012000194e79234623965778239eda3f01b2ca3f0156702b5e712b722b7321460134219f\n    :00000001ff\n\n    >>> print(f.as_srec())\n    s32500000100214601360121470136007efe09d219012146017e17c20001ff5f16002148011973\n    s32500000120194e79234623965778239eda3f01b2ca3f0156702b5e712b722b73214601342199\n    s5030002fa\n\n    >>> print(f.as_ti_txt())\n    @0100\n    21 46 01 36 01 21 47 01 36 00 7e fe 09 d2 19 01\n    21 46 01 7e 17 c2 00 01 ff 5f 16 00 21 48 01 19\n    19 4e 79 23 46 23 96 57 78 23 9e da 3f 01 b2 ca\n    3f 01 56 70 2b 5e 71 2b 72 2b 73 21 46 01 34 21\n    q\n\n    >>> print(f.as_verilog_vmem())\n    @00000100 21 46 01 36 01 21 47 01 36 00 7e fe 09 d2 19 01 21 46 01 7e 17 c2 00 01 ff 5f 16 00 21 48 01 19\n    @00000120 19 4e 79 23 46 23 96 57 78 23 9e da 3f 01 b2 ca 3f 01 56 70 2b 5e 71 2b 72 2b 73 21 46 01 34 21\n\n    >>> f.as_binary()\n    bytearray(b'!f\\x016\\x01!g\\x016\\x00~\\xfe\\t\\xd2\\x19\\x01!f\\x01~\\x17\\xc2\\x00\\x01\n    \\xff_\\x16\\x00!h\\x01\\x19\\x19ny#f#\\x96wx#\\x9e\\xda?\\x01\\xb2\\xca?\\x01vp+^q+r+s!\n    f\\x014!')\n    >>> list(f.segments)\n    [segment(address=256, data=bytearray(b'!f\\x016\\x01!g\\x016\\x00~\\xfe\\t\\xd2\\x19\\x01\n    !f\\x01~\\x17\\xc2\\x00\\x01\\xff_\\x16\\x00!h\\x01\\x19\\x19ny#f#\\x96wx#\\x9e\\xda?\\x01\n    \\xb2\\xca?\\x01vp+^q+r+s!f\\x014!'))]\n    >>> f.minimum_address\n    256\n    >>> f.maximum_address\n    320\n    >>> len(f)\n    64\n    >>> f[f.minimum_address]\n    33\n    >>> f[f.minimum_address:f.minimum_address + 1]\n    bytearray(b'!')\n\nsee the `test suite`_ for additional examples.\n\ncommand line tool\n-----------------\n\nthe info subcommand\n^^^^^^^^^^^^^^^^^^^\n\nprint general information about given binary format file(s).\n\n.. code-block:: text\n\n   $ bincopy info tests/files/in.hex\n   file:                    tests/files/in.hex\n   data ranges:\n\n       0x00000100 - 0x00000140 (64 bytes)\n\n   data ratio:              100.0 %\n   layout:\n\n       0x100                                                      0x140\n       ================================================================\n\nthe convert subcommand\n^^^^^^^^^^^^^^^^^^^^^^\n\nconvert file(s) from one format to another.\n\n.. code-block:: text\n\n   $ bincopy convert -i ihex -o srec tests/files/in.hex -\n   s32500000100214601360121470136007efe09d219012146017e17c20001ff5f16002148011973\n   s32500000120194e79234623965778239eda3f01b2ca3f0156702b5e712b722b73214601342199\n   s5030002fa\n   $ bincopy convert -i binary -o hexdump tests/files/in.hex -\n   00000000  3a 32 30 30 31 30 30 30  30 32 31 34 36 30 31 33  |:200100002146013|\n   00000010  36 30 31 32 31 34 37 30  31 33 36 30 30 37 45 46  |60121470136007ef|\n   00000020  45 30 39 44 32 31 39 30  31 32 31 34 36 30 31 37  |e09d219012146017|\n   00000030  45 31 37 43 32 30 30 30  31 46 46 35 46 31 36 30  |e17c20001ff5f160|\n   00000040  30 32 31 34 38 30 31 31  39 37 39 0a 3a 32 30 30  |02148011979.:200|\n   00000050  31 32 30 30 30 31 39 34  45 37 39 32 33 34 36 32  |12000194e7923462|\n   00000060  33 39 36 35 37 37 38 32  33 39 45 44 41 33 46 30  |3965778239eda3f0|\n   00000070  31 42 32 43 41 33 46 30  31 35 36 37 30 32 42 35  |1b2ca3f0156702b5|\n   00000080  45 37 31 32 42 37 32 32  42 37 33 32 31 34 36 30  |e712b722b7321460|\n   00000090  31 33 34 32 31 39 46 0a  3a 30 30 30 30 30 30 30  |134219f.:0000000|\n   000000a0  31 46 46 0a                                       |1ff.            |\n\nconcatenate two or more files.\n\n.. code-block:: text\n\n   $ bincopy convert -o srec tests/files/in.s19 tests/files/convert.s19 -\n   s00f000068656c6c6f202020202000003c\n   s325000000007c0802a6900100049421fff07c6c1b787c8c23783c600000386300004bffffe5f2\n   s32500000020398000007d83637880010014382100107c0803a64e80002048656c6c6f20776f13\n   s30b00000040726c642e0a003a\n   s32500000100214601360121470136007efe09d219012146017e17c20001ff5f16002148011973\n   s32500000120194e79234623965778239eda3f01b2ca3f0156702b5e712b722b73214601342199\n   s5030005f7\n   s70500000000fa\n\nthe pretty subcommand\n^^^^^^^^^^^^^^^^^^^^^\n\neasy to read motorola s-record, intel hex and ti txt files with the\npretty subcommand.\n\n.. image:: https://github.com/eerimoq/bincopy/raw/master/docs/pretty-s19.png\n\n.. image:: https://github.com/eerimoq/bincopy/raw/master/docs/pretty-hex.png\n\n.. image:: https://github.com/eerimoq/bincopy/raw/master/docs/pretty-ti-txt.png\n\nthe fill subcommand\n^^^^^^^^^^^^^^^^^^^\n\nfill empty space between segments. use ``--max-words`` to only fill\ngaps smaller than given size.\n\n.. code-block:: text\n\n   $ bincopy info tests/files/in_exclude_2_4.s19 | grep byte\n       0x00000000 - 0x00000002 (2 bytes)\n       0x00000004 - 0x00000046 (66 bytes)\n   $ bincopy fill tests/files/in_exclude_2_4.s19 filled.s19\n   $ bincopy info filled.s19 | grep byte\n       0x00000000 - 0x00000046 (70 bytes)\n\ncontributing\n============\n\n#. fork the repository.\n\n#. install prerequisites.\n\n   .. code-block:: text\n\n      pip install -r requirements.txt\n\n#. implement the new feature or bug fix.\n\n#. implement test case(s) to ensure that future changes do not break\n   legacy.\n\n#. run the tests.\n\n   .. code-block:: text\n\n      make test\n\n#. create a pull request.\n\nsimilar projects\n================\n\nthese projects provides features similar to bincopy:\n\n- `srecord`_ (``srec_cat`` and ``srec_info``)\n\n- `intelhex`_ (python intelhex library)\n\n- `objutils`_ (process hex files in python)\n\n.. _test suite: https://github.com/eerimoq/bincopy/blob/master/tests/test_bincopy.py\n\n.. _srecord: http://srecord.sourceforge.net/\n\n.. _intelhex: https://github.com/python-intelhex/intelhex\n\n.. _objutils: https://github.com/christoph2/objutils\n",
+  "docs_url": null,
+  "keywords": "srecord,srec,intel hex,binary,.s19,.s28,.s37,.hex",
+  "license": "mit",
+  "name": "bincopy",
+  "package_url": "https://pypi.org/project/bincopy/",
+  "project_url": "https://pypi.org/project/bincopy/",
+  "project_urls": {
+    "Homepage": "https://github.com/eerimoq/bincopy"
+  },
+  "release_url": "https://pypi.org/project/bincopy/20.0.0/",
+  "requires_dist": [
+    "humanfriendly",
+    "argparse-addons >=0.4.0",
+    "pyelftools"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "mangling of various file formats that conveys binary information (motorola s-record, intel hex and binary files).",
+  "version": "20.0.0",
+  "releases": [],
+  "developers": [
+    "erik.moqvist@gmail.com",
+    "erik_moqvist"
+  ],
+  "kwds": "test_bincopy binfile bincopy binary hexdump",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_bincopy",
+  "homepage": "https://github.com/eerimoq/bincopy",
+  "release_count": 98,
+  "dependency_ids": [
+    "pypi_argparse_addons",
+    "pypi_humanfriendly",
+    "pypi_pyelftools"
+  ]
+}

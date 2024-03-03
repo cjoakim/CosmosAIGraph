@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "# conda-package-streaming\n\n[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/conda/conda-package-streaming/main.svg)](https://results.pre-commit.ci/latest/github/conda/conda-package-streaming/main)\n\nan efficient library to read from new and old format .conda and .tar.bz2 conda\npackages.\n\ndownload conda metadata from packages without transferring entire file. get\nmetadata from local `.tar.bz2` packages without reading entire files.\n\nuses enhanced pip `lazy_wheel` to fetch a file out of `.conda` with no more than\n3 range requests, but usually 2.\n\nuses `tar = tarfile.open(fileobj=...)` to stream remote `.tar.bz2`. closes the\nhttp request once desired files have been seen.\n\n# quickstart\n\nthe basic api yields (tarfile, member) tuples from conda files as tarfile is\nneeded to extract member. note the `.tar.bz2` format yields all members, not\njust `info/`, from `stream_conda_info` / `stream_conda_component`, while the\n`.conda` format yields members from the requested inner archive \u2014 allowing the\ncaller to decide when to stop reading.\n\nfrom a url,\n```python\nfrom conda_package_streaming.url import stream_conda_info\n# url = (ends with .conda or .tar.bz2)\nfor tar, member in stream_conda_info(url):\n    if member.name == \"info/index.json\":\n        index_json = json.load(tar.extractfile(member))\n        break\n```\n\nfrom s3,\n```python\nclient = boto3.client(\"s3\")\nfrom conda_package_streaming.s3 import stream_conda_info\n# key = (ends with .conda or .tar.bz2)\nfor tar, member in stream_conda_info(client, bucket, key):\n    if member.name == \"info/index.json\":\n        index_json = json.load(tar.extractfile(member))\n        break\n```\n\nfrom a filename,\n```python\nfrom conda_package_streaming import package_streaming\n# filename = (ends with .conda or .tar.bz2)\nfor tar, member in package_streaming.stream_conda_info(filename):\n    if member.name == \"info/index.json\":\n        index_json = json.load(tar.extractfile(member))\n        break\n```\n\nfrom a file-like object,\n```python\nfrom contextlib import closing\n\nfrom conda_package_streaming.url import conda_reader_for_url\nfrom conda_package_streaming.package_streaming import stream_conda_component\nfilename, conda = conda_reader_for_url(url)\n\n# file object must be seekable for `.conda` format, but merely readable for `.tar.bz2`\nwith closing(conda):\n    for tar, member in stream_conda_component(filename, conda, component=\"info\"):\n        if member.name == \"info/index.json\":\n            index_json = json.load(tar.extractfile(member))\n            break\n```\n\nif you need the entire package, download it first and use the file-based apis.\nthe url-based apis are more efficient if you only need to access package\nmetadata.\n\n# package goals\n\n* extract conda packages (both formats)\n* easy to install from pypi or conda\n* do the least amount of i/o possible (no temporary files, transfer partial packages)\n* open files from the network / standard http / s3\n\n* continue using conda-package-handling to create .conda packages\n\n# generating documentation\n\nuses markdown, furo theme. requires newer mdit-py-plugins.\n\n`pip install conda-package-streaming[docs]`\n\none time:\n`sphinx-apidoc -o docs .`\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "conda-package-streaming",
+  "package_url": "https://pypi.org/project/conda-package-streaming/",
+  "project_url": "https://pypi.org/project/conda-package-streaming/",
+  "project_urls": {
+    "Documentation": "https://conda.github.io/conda-package-streaming/",
+    "Home": "https://github.com/conda/conda-package-streaming"
+  },
+  "release_url": "https://pypi.org/project/conda-package-streaming/0.9.0/",
+  "requires_dist": [
+    "requests",
+    "zstandard >=0.15",
+    "furo ; extra == \"docs\"",
+    "sphinx ; extra == \"docs\"",
+    "myst-parser ; extra == \"docs\"",
+    "mdit-py-plugins>=0.3.0 ; extra == \"docs\"",
+    "pytest >=7 ; extra == \"test\"",
+    "pytest-cov ; extra == \"test\"",
+    "pytest-mock ; extra == \"test\"",
+    "boto3 ; extra == \"test\"",
+    "boto3-stubs[essential] ; extra == \"test\"",
+    "bottle ; extra == \"test\"",
+    "conda ; extra == \"test\"",
+    "conda-package-handling >=2 ; extra == \"test\""
+  ],
+  "requires_python": ">=3.7",
+  "summary": "an efficient library to read from new and old format .conda and .tar.bz2 conda packages.",
+  "version": "0.9.0",
+  "releases": [],
+  "developers": [
+    "conda@continuum.io"
+  ],
+  "kwds": "conda_package_streaming stream_conda_info stream_conda_component conda_reader_for_url conda",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_conda_package_streaming",
+  "homepage": "",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_boto3_stubs",
+    "pypi_bottle",
+    "pypi_conda",
+    "pypi_conda_package_handling",
+    "pypi_furo",
+    "pypi_mdit_py_plugins",
+    "pypi_myst_parser",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_mock",
+    "pypi_requests",
+    "pypi_sphinx",
+    "pypi_zstandard"
+  ]
+}

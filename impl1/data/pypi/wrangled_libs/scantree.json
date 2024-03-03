@@ -1,0 +1,30 @@
+{
+  "classifiers": [],
+  "description": "[![build status](https://travis-ci.com/andhus/scantree.svg?branch=master)](https://travis-ci.com/andhus/scantree)\n[![codecov](https://codecov.io/gh/andhus/scantree/branch/master/graph/badge.svg)](https://codecov.io/gh/andhus/scantree)\n# scantree\nrecursive directory iterator supporting:\n- flexible filtering including wildcard path matching\n- in memory representation of file-tree (for repeated access)\n- efficient access to directory entry properties (`posix.direntry` interface) extended with real path and path relative to the recursion root directory\n- detection and handling of cyclic symlinks\n\n## installation\n```commandline\npip install scantree\n```\n\n## usage\nsee source code for full documentation, some generic examples below.\n\nget matching file paths:\n```python\nfrom scantree import scantree, recursionfilter\n\ntree = scantree('/path/to/dir', recursionfilter(match=['*.txt']))\nprint([path.relative for path in tree.filepaths()])\nprint([path.real for path in tree.filepaths()])\n```\n```\n['d1/d2/file3.txt', 'd1/file2.txt', 'file1.txt']   \n['/path/to/other_dir/file3.txt', '/path/to/dir/d1/file2.txt', '/path/to/dir/file1.txt']   \n```\n\naccess metadata of directory entries in file tree:\n```python\nd2 = tree.directories[0].directories[0]\nprint(type(d2))\nprint(d2.path.absolute)\nprint(d2.path.real)\nprint(d2.path.is_symlink())\nprint(d2.files[0].relative)\n```\n```\nscantree._node.dirnode\n/path/to/dir/d1/d2\n/path/to/other_dir\ntrue\nd1/d2/file3.txt\n```\n\naggregate information by operating on tree:\n```python\nhello_count = tree.apply(\n    file_apply=lambda path: sum([\n        w.lower() == 'hello' for w in\n        path.as_pathlib().read_text().split()\n    ]),\n    dir_apply=lambda dir_: sum(dir_.entries),\n)\nprint(hello_count)\n```\n```\n3\n```\n\n```python\nhello_count_tree =  tree.apply(\n    file_apply=lambda path: {\n        'name': path.name,\n        'count': sum([\n            w.lower() == 'hello'\n            for w in path.as_pathlib().read_text().split()\n        ])\n    },\n    dir_apply=lambda dir_: {\n        'name': dir_.path.name,\n        'count': sum(e['count'] for e in dir_.entries),\n        'sub_counts': [e for e in dir_.entries]\n    },\n)\nfrom pprint import pprint\npprint(hello_count_tree)\n```\n```\n{'count': 3,\n 'name': 'dir',\n 'sub_counts': [{'count': 2, 'name': 'file1.txt'},\n                {'count': 1,\n                 'name': 'd1',\n                 'sub_counts': [{'count': 1, 'name': 'file2.txt'},\n                                {'count': 0,\n                                 'name': 'd2',\n                                 'sub_counts': [{'count': 0,\n                                                 'name': 'file3.txt'}]}]}]}\n```\n\nflexible filtering:\n```python\nwithout_hidden_files = scantree('.', recursionfilter(match=['*', '!.*']))\n\nwithout_palindrome_linked_dirs = scantree(\n    '.',\n    lambda paths: [\n        p for p in paths if not (\n            p.is_dir() and \n            p.is_symlink() and \n            p.name == p.name[::-1]\n        )\n    ]\n)\n```\n\ncomparison:\n```python\ntree = scandir('path/to/dir')\n# make some operations on filesystem, make sure file tree is the same:\nassert tree == scandir('path/to/dir')\n\n# tree contains absolute/real path info:\nimport shutil\nshutil.copytree('path/to/dir', 'path/to/other_dir')   \nnew_tree = scandir('path/to/other_dir')\nassert tree != new_tree\nassert (\n    [p.relative for p in tree.leafpaths()] == \n    [p.relative for p in new_tree.leafpaths()]\n)\n```\n\ninspect symlinks:\n```python\nfrom scantree import cycliclinkeddir\n\nfile_links = []\ndir_links = []\ncyclic_links = []\n\ndef file_apply(path):\n    if path.is_symlink():\n        file_links.append(path)\n\ndef dir_apply(dir_node):\n    if dir_node.path.is_symlink():\n        dir_links.append(dir_node.path)\n    if isinstance(dir_node, cycliclinkeddir):\n        cyclic_links.append((dir_node.path, dir_node.target_path))\n\nscantree('.', file_apply=file_apply, dir_apply=dir_apply)\n```",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "scantree",
+  "package_url": "https://pypi.org/project/scantree/",
+  "project_url": "https://pypi.org/project/scantree/",
+  "project_urls": {
+    "Homepage": "https://github.com/andhus/scantree"
+  },
+  "release_url": "https://pypi.org/project/scantree/0.0.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "flexible recursive directory iterator: scandir meets glob(\"**\", recursive=true)",
+  "version": "0.0.1",
+  "releases": [],
+  "developers": [
+    "anders_huss",
+    "andhus@kth.se"
+  ],
+  "kwds": "scantree dir_node scandir filepaths as_pathlib",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_scantree",
+  "homepage": "https://github.com/andhus/scantree",
+  "release_count": 1,
+  "dependency_ids": []
+}

@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: gnu general public license v3 (gplv3)",
+    "license :: osi approved :: gnu general public license v3 or later (gplv3+)",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "![greenbone logo](https://www.greenbone.net/wp-content/uploads/gb_new-logo_horizontal_rgb_small.png)\n\n# greenbone vulnerability management tools <!-- omit in toc -->\n[![github releases](https://img.shields.io/github/release-pre/greenbone/gvm-tools.svg)](https://github.com/greenbone/gvm-tools/releases)\n[![pypi release](https://img.shields.io/pypi/v/gvm-tools.svg)](https://pypi.org/project/gvm-tools/)\n[![code test coverage](https://codecov.io/gh/greenbone/gvm-tools/branch/master/graph/badge.svg)](https://codecov.io/gh/greenbone/gvm-tools)\n[![build and test](https://github.com/greenbone/gvm-tools/actions/workflows/ci-python.yml/badge.svg)](https://github.com/greenbone/gvm-tools/actions/workflows/ci-python.yml)\n\nthe greenbone vulnerability management tools `gvm-tools` are a collection of\ntools that help with remote controlling a greenbone enterprise appliance and\ngreenbone community edition installations. the tools aid in accessing the\ncommunication protocols gmp (greenbone management protocol) and osp\n(open scanner protocol).\n\nthis module is comprised of interactive and non-interactive clients.\nthe programming language python is supported directly for interactive scripting.\nbut it is also possible to issue remote gmp/osp commands without programming in\npython.\n\n\n## table of contents <!-- omit in toc -->\n- [documentation](#documentation)\n- [installation](#installation)\n  - [requirements](#requirements)\n  - [version](#version)\n- [usage](#usage)\n  - [gvm-cli](#gvm-cli)\n    - [examples](#examples)\n  - [gvm-script](#gvm-script)\n    - [example script](#example-script)\n    - [more example scripts](#more-example-scripts)\n  - [gvm-pyshell](#gvm-pyshell)\n    - [example program use](#example-program-use)\n- [support](#support)\n- [maintainer](#maintainer)\n- [contributing](#contributing)\n- [license](#license)\n\n## documentation\n\nthe documentation for `gvm-tools` can be found at\n[https://greenbone.github.io/gvm-tools/](https://greenbone.github.io/gvm-tools/).\nplease refer to the documentation for more details as this readme just\ngives a short overview.\n\n## installation\n\nsee the [documentation](https://greenbone.github.io/gvm-tools/install.html)\nfor all supported installation options.\n\n### requirements\n\npython 3.9 and later is supported.\n\n### version\n\nplease consider to always use the **newest** version of `gvm-tools` and `python-gvm`.\nwe frequently update this projects to add features and keep them free from bugs.\nthis is why installing `gvm-tools` using pip is recommended.\n\n**to use `gvm-tools` with an old gmp version (7, 8, 9) you must use a release version**\n**that is `<21.06`, combined with an `python-gvm` version `<21.05`.**\n**in the `21.06` release the support of these older versions has been dropped.**\n\n## usage\n\nthere are several clients to communicate via gmp/osp.\n\nall clients have the ability to build a connection in various ways:\n\n* unix socket\n* tls connection\n* ssh connection\n\n### gvm-cli\n\nthis tool sends plain gmp/osp commands and prints the result to the standard\noutput.\n\n#### examples\n\nreturn the current protocol version used by the server:\n\n```bash\ngvm-cli socket --xml \"<get_version/>\"\n```\n\nreturn all tasks visible to the gmp user with the provided credentials:\n\n```bash\ngvm-cli --gmp-username foo --gmp-password bar socket --xml \"<get_tasks/>\"\n```\n\nread a file with gmp commands and return the result:\n\n```bash\ngvm-cli --gmp-username foo --gmp-password bar socket myfile.xml\n```\n\nnote that `gvm-cli` will by default print an error message and exit with a\nnon-zero exit code when a command is rejected by the server. if this kind of\nerror handling is not desired, the unparsed xml response can be requested using\nthe `--raw` parameter:\n\n```bash\ngvm-cli socket --raw --xml \"<authenticate/>\"\n\n```\n\n### gvm-script\n\nthis tool has a lot more features than the simple `gvm-cli` client. you\nhave the possibility to create your own custom gmp or osp scripts with commands\nfrom the [python-gvm library](https://github.com/greenbone/python-gvm) and from\npython 3 itself.\n\n#### example script\n\n```python\n# retrieve current gmp version\nversion = gmp.get_version()\n\n# prints the xml in beautiful form\nfrom gvmtools.helper import pretty_print\npretty_print(version)\n\n# retrieve all tasks\ntasks = gmp.get_tasks()\n\n# get names of tasks\ntask_names = tasks.xpath('task/name/text()')\npretty_print(task_names)\n```\n\n#### more example scripts\n\nthere is a growing collection of gmp-scripts in the\n[\"scripts/\"](scripts/) folder.\nsome of them might be exactly what you need and all of them help writing\nyour own gmp scripts.\n\n### gvm-pyshell\n\nthis tool is for running gmp or osp scripts interactively. it provides the same\napi as [gvm-script](#gvm-script) using the\n[python-gvm library](https://github.com/greenbone/python-gvm).\n\n#### example program use\n\nconnect with given credentials via a unix domain socket and open an interactive\nshell:\n\n```bash\ngvm-pyshell --gmp-username user --gmp-password pass socket\n```\n\nconnect through ssh connection and open the interactive shell:\n\n```bash\ngvm-pyshell --hostname 127.0.0.1 ssh\n```\n\n## support\n\nfor any question on the usage of `gvm-tools` or gmp scripts please use the\n[greenbone community portal](https://community.greenbone.net/c/gmp). if you\nfound a problem with the software, please\n[create an issue](https://github.com/greenbone/gvm-tools/issues) on github.\n\n## maintainer\n\nthis project is maintained by [greenbone ag](https://www.greenbone.net/).\n\n## contributing\n\nyour contributions are highly appreciated. please\n[create a pull request](https://github.com/greenbone/gvm-tools/pulls) on github.\nfor bigger changes, please discuss it first in the\n[issues](https://github.com/greenbone/gvm-tools/issues).\n\nfor development you should use [poetry](https://python-poetry.org/)\nto keep you python packages separated in different environments. first install\npoetry via pip\n\n    python3 -m pip install --user poetry\n\nafterwards run\n\n    poetry install\n\nin the checkout directory of `gvm-tools` (the directory containing the\n`pyproject.toml` file) to install all dependencies including the packages only\nrequired for development.\n\nafterwards active the git hooks for auto-formatting and linting via\n[autohooks](https://github.com/greenbone/autohooks).\n\n    poetry run autohooks activate --force\n\n## license\n\ncopyright (c) 2017-2023 [greenbone ag](https://www.greenbone.net/)\n\nlicensed under the [gnu general public license v3.0 or later](license).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "gpl-3.0-or-later",
+  "name": "gvm-tools",
+  "package_url": "https://pypi.org/project/gvm-tools/",
+  "project_url": "https://pypi.org/project/gvm-tools/",
+  "project_urls": {
+    "Documentation": "https://greenbone.github.io/gvm-tools/",
+    "Homepage": "https://github.com/greenbone/gvm-tools/",
+    "Repository": "https://github.com/greenbone/gvm-tools/"
+  },
+  "release_url": "https://pypi.org/project/gvm-tools/23.11.0/",
+  "requires_dist": [
+    "python-gvm (>=23.4.2)"
+  ],
+  "requires_python": ">=3.9,<4.0",
+  "summary": "tools to control a gsm/gvm over gmp or osp",
+  "version": "23.11.0",
+  "releases": [],
+  "developers": [
+    "greenbone_ag",
+    "info@greenbone.net"
+  ],
+  "kwds": "greenbone gvm svg gvmtools logo",
+  "license_kwds": "gpl-3.0-or-later",
+  "libtype": "pypi",
+  "id": "pypi_gvm_tools",
+  "homepage": "https://github.com/greenbone/gvm-tools/",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_python_gvm"
+  ]
+}

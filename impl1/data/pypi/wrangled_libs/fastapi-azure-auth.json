@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: application frameworks",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "<h1 align=\"center\">\n  <img margin=\"0 10px 0 0\" src=\"https://avatars.githubusercontent.com/u/35199565\" width=\"124px\"/>\n  <img margin=\"0 10px 0 0\" src=\"https://raw.githubusercontent.com/intility/fastapi-azure-auth/main/docs/static/img/global/fastad.png\" width=\"124px\"/><br/>\n  fastapi-azure-auth\n</h1>\n\n<p align=\"center\">\n    <em>azure ad authentication for fastapi apps made easy.</em>\n</p>\n<p align=\"center\">\n    <!-- line 1 -->\n    <a href=\"https://python.org\">\n        <img src=\"https://img.shields.io/badge/python-v3.8+-blue.svg?logo=python&logocolor=white&label=python\" alt=\"python version\">\n    </a>\n    <a href=\"https://fastapi.tiangolo.com/\">\n        <img src=\"https://img.shields.io/badge/fastapi-0.68.0+%20-blue.svg?logo=fastapi&logocolor=white&label=fastapi\" alt=\"fastapi version\">\n    </a>\n    <a href=\"https://pypi.org/pypi/fastapi-azure-auth\">\n        <img src=\"https://img.shields.io/pypi/v/fastapi-azure-auth.svg?logo=pypi&logocolor=white&label=pypi\" alt=\"package version\">\n    </a>\n    <!-- line 2 -->\n    <br/>\n    <a href=\"https://codecov.io/gh/intility/fastapi-azure-auth\">\n        <img src=\"https://codecov.io/gh/intility/fastapi-azure-auth/branch/main/graph/badge.svg?token=btfgii4gyr\" alt=\"codecov\">\n    </a>\n    <a href=\"https://github.com/pre-commit/pre-commit\">\n        <img src=\"https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logocolor=white\" alt=\"pre-commit\">\n    </a>\n    <a href=\"https://github.com/psf/black\">\n        <img src=\"https://img.shields.io/badge/code%20style-black-000000.svg\" alt=\"black\">\n    </a>\n    <a href=\"http://mypy-lang.org\">\n        <img src=\"http://www.mypy-lang.org/static/mypy_badge.svg\" alt=\"mypy\">\n    </a>\n    <a href=\"https://pycqa.github.io/isort/\">\n        <img src=\"https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelcolor=ef8336\" alt=\"isort\">\n    </a>\n    <!-- line 3 -->\n    <br/>\n    <a href=\"https://docs.microsoft.com/en-us/azure/active-directory/develop/single-and-multi-tenant-apps\">\n        <img src=\"https://img.shields.io/badge/single--tenant-supported-blue?logo=microsoft%20azure&logocolor=white\">\n    </a>\n    <a href=\"https://docs.microsoft.com/en-us/azure/active-directory/develop/single-and-multi-tenant-apps\">\n        <img src=\"https://img.shields.io/badge/multi--tenant-supported-blue?logo=microsoft%20azure&logocolor=white\">\n    </a>\n</p>\n\n\n## \ud83d\ude80 description\n\n> fastapi is a modern, fast (high-performance), web framework for building apis with python, based on standard python type hints.\n\nat intility we use fastapi for both internal (single-tenant) and customer-facing (multi-tenant) apis. this package enables our developers (and you \ud83d\ude0a) to create features without worrying about authentication and authorization.\n\nalso, [we're hiring!](https://intility.no/en/career/)\n\n## \ud83d\udcda resources\n\nthe [documentation](https://intility.github.io/fastapi-azure-auth/) contains a full tutorial on how to configure azure ad\nand fastapi for single- and multi-tenant applications as well as b2c apps. it includes examples on how to lock down\nyour apis to certain scopes, tenants, roles etc. for first time users it's strongly advised to set up your\napplication exactly how it's described there, and then alter it to your needs later.\n\n[**mit license**](https://github.com/intility/fastapi-azure-auth/blob/main/license)\n| [**documentation**](https://intility.github.io/fastapi-azure-auth/)\n| [**github**](https://github.com/snok/django-guid)\n\n\n## \u26a1 setup\n\nthis is a tl;dr intended to give you an idea of what this package does and how to use it.\nfor a more in-depth tutorial and settings reference you should read the\n[documentation](https://intility.github.io/fastapi-azure-auth/).\n\n\n#### 1. install this library:\n```bash\npip install fastapi-azure-auth\n# or\npoetry add fastapi-azure-auth\n```\n\n#### 2. configure your fastapi app\ninclude `swagger_ui_oauth2_redirect_url` and `swagger_ui_init_oauth` in your fastapi app initialization:\n\n```python\n# file: main.py\napp = fastapi(\n    ...\n    swagger_ui_oauth2_redirect_url='/oauth2-redirect',\n    swagger_ui_init_oauth={\n        'usepkcewithauthorizationcodegrant': true,\n        'clientid': settings.openapi_client_id,\n    },\n)\n```\n\n#### 3. setup cors\nensure you have cors enabled for your local environment, such as `http://localhost:8000`.\n\n#### 4. configure fastapi-azure-auth\nconfigure either [`singletenantazureauthorizationcodebearer`](https://intility.github.io/fastapi-azure-auth/settings/single_tenant), [`multitenantazureauthorizationcodebearer`](https://intility.github.io/fastapi-azure-auth/settings/multi_tenant) or [`b2cmultitenantauthorizationcodebearer`](https://intility.github.io/fastapi-azure-auth/settings/b2c)\n\n\n```python\n# file: demoproj/api/dependencies.py\nfrom fastapi_azure_auth.auth import singletenantazureauthorizationcodebearer\n\nazure_scheme = singletenantazureauthorizationcodebearer(\n    app_client_id=settings.app_client_id,\n    tenant_id=settings.tenant_id,\n    scopes={\n        f'api://{settings.app_client_id}/user_impersonation': 'user_impersonation',\n    }\n)\n```\nor for multi-tenant applications:\n```python\n# file: demoproj/api/dependencies.py\nfrom fastapi_azure_auth.auth import multitenantazureauthorizationcodebearer\n\nazure_scheme = multitenantazureauthorizationcodebearer(\n    app_client_id=settings.app_client_id,\n    scopes={\n        f'api://{settings.app_client_id}/user_impersonation': 'user_impersonation',\n    },\n    validate_iss=false\n)\n```\nto validate the `iss`, configure an\n[`iss_callable`](https://intility.github.io/fastapi-azure-auth/multi-tenant/accept_specific_tenants_only).\n\n#### 5. configure dependencies\n\nadd `azure_scheme` as a dependency for your views/routers, using either `security()` or `depends()`.\n```python\n# file: main.py\nfrom demoproj.api.dependencies import azure_scheme\n\napp.include_router(api_router, prefix=settings.api_v1_str, dependencies=[security(azure_scheme, scopes=['user_impersonation'])])\n```\n\n#### 6. load config on startup\n\noptional but recommended.\n\n```python\n# file: main.py\n@app.on_event('startup')\nasync def load_config() -> none:\n    \"\"\"\n    load openid config on startup.\n    \"\"\"\n    await azure_scheme.openid_config.load_config()\n```\n\n\n## \ud83d\udcc4 example openapi documentation\nyour openapi documentation will get an `authorize` button, which can be used to authenticate.\n![authorize](docs/static/img/single-and-multi-tenant/fastapi_1_authorize_button.png)\n\nthe user can select which scopes to authenticate with, based on your configuration.\n![scopes](docs/static/img/single-and-multi-tenant/fastapi_3_authenticate.png)\n",
+  "docs_url": null,
+  "keywords": "ad,async,asyncio,authentication,azure,azure ad,azuread,fastapi,multi tenant,oauth2,oidc,security,single tenant,starlette,trio",
+  "license": "",
+  "name": "fastapi-azure-auth",
+  "package_url": "https://pypi.org/project/fastapi-azure-auth/",
+  "project_url": "https://pypi.org/project/fastapi-azure-auth/",
+  "project_urls": {
+    "Documentation": "https://github.com/intility/fastapi-azure-auth",
+    "Homepage": "https://github.com/intility/fastapi-azure-auth",
+    "Repository": "https://github.com/intility/fastapi-azure-auth"
+  },
+  "release_url": "https://pypi.org/project/fastapi-azure-auth/4.3.0/",
+  "requires_dist": [
+    "fastapi (>0.68.0)",
+    "cryptography (>=40.0.1)",
+    "python-jose[cryptography] (>=3.3.0,<4.0.0)",
+    "httpx (>0.18.2)"
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "easy and secure implementation of azure ad for your fastapi apis",
+  "version": "4.3.0",
+  "releases": [],
+  "developers": [
+    "jonas.svensson@intility.no"
+  ],
+  "kwds": "fastapi_azure_auth fastapi_3_authenticate fastapi_1_authorize_button oauth2 swagger_ui_init_oauth",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_fastapi_azure_auth",
+  "homepage": "https://github.com/intility/fastapi-azure-auth",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_cryptography",
+    "pypi_fastapi",
+    "pypi_httpx",
+    "pypi_python_jose"
+  ]
+}

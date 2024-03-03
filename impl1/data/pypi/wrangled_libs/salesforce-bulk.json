@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": ".. figure:: https://travis-ci.org/heroku/salesforce-bulk.svg?branch=main\n   :alt: travis-badge\n\nsalesforce bulk\n===============\n\npython client library for accessing the asynchronous salesforce.com bulk\napi.\n\ninstallation\n------------\n.. code-block:: bash\n\n    pip install salesforce-bulk\n\nauthentication\n--------------\n\nto access the bulk api you need to authenticate a user into salesforce.\nthe easiest way to do this is just to supply ``username``, ``password``\nand ``security_token``. this library will use the ``simple-salesforce``\npackage to handle password based authentication.\n\n.. code-block:: python\n\n    from salesforce_bulk import salesforcebulk\n\n    bulk = salesforcebulk(username=username, password=password, security_token=security_token)\n    ...\n\nalternatively if you run have access to a session id and instance\\_url\nyou can use those directly:\n\n.. code-block:: python\n\n    from urlparse import urlparse\n    from salesforce_bulk import salesforcebulk\n\n    bulk = salesforcebulk(sessionid=sessionid, host=urlparse(instance_url).hostname)\n    ...\n\noperations\n----------\n\nthe basic sequence for driving the bulk api is:\n\n1. create a new job\n2. add one or more batches to the job\n3. close the job\n4. wait for each batch to finish\n\nbulk query\n----------\n\n``bulk.create_query_job(object_name, contenttype='json')``\n\nusing api v39.0 or higher, you can also use the queryall operation:\n\n``bulk.create_queryall_job(object_name, contenttype='json')``\n\nexample\n\n.. code-block:: python\n\n    import json\n    from salesforce_bulk.util import iteratorbytesio\n\n    job = bulk.create_query_job(\"contact\", contenttype='json')\n    batch = bulk.query(job, \"select id,lastname from contact\")\n    bulk.close_job(job)\n    while not bulk.is_batch_done(batch):\n        sleep(10)\n\n    for result in bulk.get_all_results_for_query_batch(batch):\n        result = json.load(iteratorbytesio(result))\n        for row in result:\n            print row # dictionary rows\n\nsame example but for csv:\n\n.. code-block:: python\n\n    import unicodecsv\n    \n    job = bulk.create_query_job(\"contact\", contenttype='csv')\n    batch = bulk.query(job, \"select id,lastname from contact\")\n    bulk.close_job(job)\n    while not bulk.is_batch_done(batch):\n        sleep(10)\n\n    for result in bulk.get_all_results_for_query_batch(batch):\n        reader = unicodecsv.dictreader(result, encoding='utf-8')\n        for row in reader:\n            print(row) # dictionary rows\n\nnote that while csv is the default for historical reasons, json should\nbe prefered since csv has some drawbacks including its handling of null\nvs empty string.\n\npk chunk header\n^^^^^^^^^^^^^^^\n\nif you are querying a large number of records you probably want to turn on `pk chunking\n<https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/async_api_headers_enable_pk_chunking.htm>`_:\n\n``bulk.create_query_job(object_name, contenttype='csv', pk_chunking=true)``\n\nthat will use the default setting for chunk size. you can use a different chunk size by providing a\nnumber of records per chunk:\n\n``bulk.create_query_job(object_name, contenttype='csv', pk_chunking=100000)``\n\nadditionally if you want to do something more sophisticated you can provide a header value:\n\n``bulk.create_query_job(object_name, contenttype='csv', pk_chunking='chunksize=50000; startrow=00130000000xeftmgh')``\n\nbulk insert, update, delete\n---------------------------\n\nall bulk upload operations work the same. you set the operation when you\ncreate the job. then you submit one or more documents that specify\nrecords with columns to insert/update/delete. when deleting you should\nonly submit the id for each record.\n\nfor efficiency you should use the ``post_batch`` method to post each\nbatch of data. (note that a batch can have a maximum 10,000 records and\nbe 1gb in size.) you pass a generator or iterator into this function and\nit will stream data via post to salesforce. for help sending csv\nformatted data you can use the salesforce\\_bulk.csvdictsadapter class.\nit takes an iterator returning dictionaries and returns an iterator\nwhich produces csv data.\n\nfull example:\n\n.. code-block:: python\n\n    from salesforce_bulk import csvdictsadapter\n\n    job = bulk.create_insert_job(\"account\", contenttype='csv')\n    accounts = [dict(name=\"account%d\" % idx) for idx in xrange(5)]\n    csv_iter = csvdictsadapter(iter(accounts))\n    batch = bulk.post_batch(job, csv_iter)\n    bulk.wait_for_batch(job, batch)\n    bulk.close_job(job)\n    print(\"done. accounts uploaded.\")\n\nconcurrency mode\n^^^^^^^^^^^^^^^^\n\nwhen creating the job, pass ``concurrency='serial'`` or\n``concurrency='parallel'`` to set the concurrency mode for the job.",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "salesforce-bulk",
+  "package_url": "https://pypi.org/project/salesforce-bulk/",
+  "project_url": "https://pypi.org/project/salesforce-bulk/",
+  "project_urls": {
+    "Homepage": "https://github.com/heroku/salesforce-bulk"
+  },
+  "release_url": "https://pypi.org/project/salesforce-bulk/2.2.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python interface to the salesforce.com bulk api.",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "scott_persinger",
+    "scottp@heroku.com"
+  ],
+  "kwds": "salesforce_bulk security_token travis heroku authentication",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_salesforce_bulk",
+  "homepage": "https://github.com/heroku/salesforce-bulk",
+  "release_count": 15,
+  "dependency_ids": []
+}

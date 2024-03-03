@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "## aws lambda python runtime interface client\n\nwe have open-sourced a set of software packages, runtime interface clients (ric), that implement the lambda\n [runtime api](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html), allowing you to seamlessly extend your preferred\n  base images to be lambda compatible.\nthe lambda runtime interface client is a lightweight interface that allows your runtime to receive requests from and send requests to the lambda service.\n\nthe lambda python runtime interface client is vended through [pip](https://pypi.org/project/awslambdaric). \nyou can include this package in your preferred base image to make that base image lambda compatible.\n\n## requirements\nthe python runtime interface client package currently supports python versions:\n - 3.7.x up to and including 3.12.x\n\n## usage\n\n### creating a docker image for lambda with the runtime interface client\nfirst step is to choose the base image to be used. the supported linux os distributions are:\n\n - amazon linux 2\n - alpine\n - centos\n - debian\n - ubuntu\n\n\nthen, the runtime interface client needs to be installed. we provide both wheel and source distribution.\nif the os/pip version used does not support [manylinux2014](https://www.python.org/dev/peps/pep-0599/) wheels, you will also need to install the required build dependencies.\nalso, your lambda function code needs to be copied into the image.\n\n```dockerfile\n# include global arg in this stage of the build\narg function_dir\n\n# install aws-lambda-cpp build dependencies\nrun apt-get update && \\\n  apt-get install -y \\\n  g++ \\\n  make \\\n  cmake \\\n  unzip \\\n  libcurl4-openssl-dev\n\n# copy function code\nrun mkdir -p ${function_dir}\ncopy app/* ${function_dir}\n\n# install the function's dependencies\nrun pip install \\\n    --target ${function_dir} \\\n        awslambdaric\n```\n\nthe next step would be to set the `entrypoint` property of the docker image to invoke the runtime interface client and then set the `cmd` argument to specify the desired handler.\n\nexample dockerfile (to keep the image light we use a multi-stage build):\n```dockerfile\n# define custom function directory\narg function_dir=\"/function\"\n\nfrom public.ecr.aws/docker/library/python:buster as build-image\n\n# include global arg in this stage of the build\narg function_dir\n\n# install aws-lambda-cpp build dependencies\nrun apt-get update && \\\n  apt-get install -y \\\n  g++ \\\n  make \\\n  cmake \\\n  unzip \\\n  libcurl4-openssl-dev\n\n# copy function code\nrun mkdir -p ${function_dir}\ncopy app/* ${function_dir}\n\n# install the function's dependencies\nrun pip install \\\n    --target ${function_dir} \\\n        awslambdaric\n\n\nfrom public.ecr.aws/docker/library/python:buster\n\n# include global arg in this stage of the build\narg function_dir\n# set working directory to function root directory\nworkdir ${function_dir}\n\n# copy in the built dependencies\ncopy --from=build-image ${function_dir} ${function_dir}\n\nentrypoint [ \"/usr/local/bin/python\", \"-m\", \"awslambdaric\" ]\ncmd [ \"app.handler\" ]\n```\n\nexample python handler `app.py`:\n```python\ndef handler(event, context):\n    return \"hello world!\"\n```\n\n### local testing\n\nto make it easy to locally test lambda functions packaged as container images we open-sourced a lightweight web-server, lambda runtime interface emulator (rie), which allows your function packaged as a container image to accept http requests. you can install the [aws lambda runtime interface emulator](https://github.com/aws/aws-lambda-runtime-interface-emulator) on your local machine to test your function. then when you run the image function, you set the entrypoint to be the emulator. \n\n*to install the emulator and test your lambda function*\n\n1) from your project directory, run the following command to download the rie from github and install it on your local machine. \n\n```shell script\nmkdir -p ~/.aws-lambda-rie && \\\n    curl -lo ~/.aws-lambda-rie/aws-lambda-rie https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/latest/download/aws-lambda-rie && \\\n    chmod +x ~/.aws-lambda-rie/aws-lambda-rie\n```\n2) run your lambda image function using the docker run command. \n\n```shell script\ndocker run -d -v ~/.aws-lambda-rie:/aws-lambda -p 9000:8080 \\\n    --entrypoint /aws-lambda/aws-lambda-rie \\\n    myfunction:latest \\\n        /usr/local/bin/python -m awslambdaric app.handler\n```\n\nthis runs the image as a container and starts up an endpoint locally at `http://localhost:9000/2015-03-31/functions/function/invocations`. \n\n3) post an event to the following endpoint using a curl command: \n\n```shell script\ncurl -xpost \"http://localhost:9000/2015-03-31/functions/function/invocations\" -d '{}'\n```\n\nthis command invokes the function running in the container image and returns a response.\n\n*alternately, you can also include rie as a part of your base image. see the aws documentation on how to [build rie into your base image](https://docs.aws.amazon.com/lambda/latest/dg/images-test.html#images-test-alternative).*\n\n\n## development\n\n### building the package\nclone this repository and run:\n\n```shell script\nmake init\nmake build\n```\n\n### running tests\n\nmake sure the project is built:\n```shell script\nmake init build\n```\nthen,\n* to run unit tests: `make test`\n* to run integration tests: `make test-integ`\n* to run smoke tests: `make test-smoke`\n\n### troubleshooting\nwhile running integration tests, you might encounter the docker hub rate limit error with the following body:\n```\nyou have reached your pull rate limit. you may increase the limit by authenticating and upgrading: https://www.docker.com/increase-rate-limits\n```\nto fix the above issue, consider authenticating to a docker hub account by setting the docker hub credentials as below codebuild environment variables.\n```shell script\ndockerhub_username=<dockerhub username>\ndockerhub_password=<dockerhub password>\n```\nrecommended way is to set the docker hub credentials in codebuild job by retrieving them from aws secrets manager.\n## security\n\nif you discover a potential security issue in this project we ask that you notify aws/amazon security via our [vulnerability reporting page](http://aws.amazon.com/security/vulnerability-reporting/). please do **not** create a public github issue.\n\n## license\n\nthis project is licensed under the apache-2.0 license.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "awslambdaric",
+  "package_url": "https://pypi.org/project/awslambdaric/",
+  "project_url": "https://pypi.org/project/awslambdaric/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-lambda-python-runtime-interface-client"
+  },
+  "release_url": "https://pypi.org/project/awslambdaric/2.0.8/",
+  "requires_dist": [
+    "simplejson ==3.17.2"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "aws lambda runtime interface client for python",
+  "version": "2.0.8",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "pip aws lambda docker dockerfile",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_awslambdaric",
+  "homepage": "https://github.com/aws/aws-lambda-python-runtime-interface-client",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_simplejson"
+  ]
+}

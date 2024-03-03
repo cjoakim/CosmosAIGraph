@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: cc0 1.0 universal (cc0 1.0) public domain dedication",
+    "license :: osi approved :: python software foundation license",
+    "natural language :: english",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "operating system :: posix :: bsd",
+    "operating system :: posix :: linux",
+    "programming language :: c",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.9",
+    "topic :: security :: cryptography"
+  ],
+  "description": "======\npysha3\n======\n\nsha-3 wrapper (keccak) for python. the package is a wrapper around the\noptimized keccak code package, https://github.com/gvanas/keccakcodepackage .\n\nthe module is a standalone version of my sha-3 module from python 3.6\n(currently under development). the code in sha3module.c has been modified to\nbe compatible with python 2.7 to 3.5. python 2.6 and earlier are not\nsupported.\n\n\nupdates since pysha 0.3\n=======================\n\n**pysha3 1.0 is not compatible with pysha3 0.3!**\n\npysha3 < 1.0 used the old keccak implementation. during the finalization of\nsha3, nist changed the delimiter suffix from 0x01 to 0x06. the keccak sponge\nfunction stayed the same. pysha3 1.0 provides the previous keccak hash, too.\n\n\nplatforms\n=========\n\npysha3 has been successfully tested on several platforms:\n\n - linux (gcc, clang) on x86, x86_64 and armv6 (little endian)\n - windows (vs 2008, vs 2010, vs2015) on x86 and x86_64\n\n\nusage\n=====\n\nthe `sha3` module contains several constructors for hash objects with a\npep 247 compatible interface. the module provides sha3, shake and keccak:\n\n* `sha3_224()`, `sha3_256()`, `sha3_384()`, and `sha3_512()`\n* `shake_128()`, `shake_256()`\n* `keccak_224()`, `keccak_256()`, `keccak_384()`, and `keccak_512()`\n\nthe `sha3` module monkey patches the `hashlib` module . the monkey patch is\nautomatically activated with the first import of the `sha3` module. the\n`hashlib` module of python 3.6 will support the four sha-3 algorithms and\nthe two shake algorithms on all platforms. therefore you shouldn't use the\nsha3 module directly and rather go through the `hashlib` interface::\n\n  >>> import sys\n  >>> import hashlib\n  >>> if sys.version_info < (3, 6):\n  ...    import sha3\n  >>> s = hashlib.sha3_512()\n  >>> s.name\n  'sha3_512'\n  >>> s.digest_size\n  64\n  >>> s.update(b\"data\")\n  >>> s.hexdigest()\n  'ceca4daf960c2bbfb4a9edaca9b8137a801b65bae377e0f534ef9141c8684c0fedc1768d1afde9766572846c42b935f61177eaf97d355fa8dc2bca3fecfa754d'\n\n  >>> s = hashlib.shake_256()\n  >>> s.update(b\"data\")\n  >>> s.hexdigest(4)\n  'c73dbed8'\n  >>> s.hexdigest(8)\n  'c73dbed8527f5ae0'\n  >>> s.hexdigest(16)\n  'c73dbed8527f5ae0568679f30ecc5cb6'\n\n  >>> import sha3\n  >>> k = sha3.keccak_512()\n  >>> k.update(b\"data\")\n  >>> k.hexdigest()\n  '1065aceeded3a5e4412e2187e919bffeadf815f5bd73d37fe00d384fe29f55f08462fdabe1007b993ce5b8119630e7db93101d9425d6e352e22ffe3dcb56b825'\n\nchangelog\n=========\n\npysha3 1.0.3-dev\n----------------\n\n*unreleased*\n\n- fix typo in documentation (sha3_228 -> sha3_224)\n- add manylinux1 builder\n- don't use privat pystrhex.h\n\npysha3 1.0.2\n------------\n\n*release: 05-feb-2017*\n\n- rename internal c extension to _pysha3 to avoild conflict with python 3.6'\n  _sha3 extension.\n\npysha3 1.0.1\n------------\n\n*release: 24-jan-2017*\n\n- fix github.org -> github.com (pi delport)\n\n- fix endianness checks for python 2 (william grant)\n\n- fix changelog, the christmas release was 1.0.0, not 1.1.0\n\npysha3 1.0.0\n------------\n\n*release date: 24-dec-2016*\n\n- synchronize with python 3.6.0 release\n\n- move all backport related additions to backport.inc\n\n- fix flake8 violations\n\n\npysha3 1.0b1\n------------\n\n*release date: 01-may-2016*\n\n- update backend to use the latest keccak code package. pysha3 now implements\n  the official nist standard. the old keccak hashes are available with\n  keccak prefix.\n\n- add shake support.\n\n- all sha3, shake and keccak variants are separate types instead of factory\n  functions that return the same type.\n\n- drop python 2.6 and python 3.0 to 3.3 support.\n\n- fix typo that disabled threading optimization.\n\n- add vector files for additional tests.\n\n- add experimental hmac support based on examples from\n  http://wolfgang-ehrhardt.de/hmac-sha3-testvectors.html .\n\n- test hashing of unaligned data.\n\n- add iso c11 memset_s() function as _py_memset_s() in order to securely\n  wipe memory that holds sensitive data. the page\n  https://www.securecoding.cert.org/confluence/display/seccode/msc06-c.+be+aware+of+compiler+optimization+when+dealing+with+sensitive+data\n  explains the motivation for memset_s().\n\n- add tox support.\n\n- add travis and appveyor integration.\n\n- add _capacity_bits, _rate_bits and _suffix attributes for diagnostic\n  purposes.\n\n\npysha3 0.3\n----------\n\n*release date: 14-oct-2012*\n\n- fix 64bit big endian support\n\n- add workaround for alignment error on 64bit sparc machine by using the opt32\n  implementation.\n\n- block_size now returns notimplemented to prevent users from using pysha3\n  with the hmac module.\n\n\npysha3 0.2.2\n------------\n\n*release date: 07-oct-2012*\n\n- re-add brg_endian.h to fix issue on solaris (big endian platform)\n\n\npysha3 0.2.1\n------------\n\n*release date: 06-oct-2012*\n\n- fix manifest.in to include makefile and tests.py\n\n- add setup.py test command with hack for inplace builds\n\n- enhance readme.txt and fixed its markup\n\n\npysha3 0.2\n----------\n\n*release date: 06-oct-2012*\n\n- change directory struct to use the same directory layout as python 3.4.\n\n- remove c++ comments from keccak sources for ansi c compatibility.\n\n- declare all keccak functions and globals as static to avoid name clashes.\n\n- remove alias sha3() for sha3_512().\n\n- add block_size attribute. keccak has a internal sponge size of 1600 bits.\n\n- release gil around sha3_update() calls.\n\n- monkey patch the hashlib module to support, e.g. hashlib.sha3_512() and\n  hashlib.new(\"sha3_512\")\n\n- release gil around sha3_update() when the data exceeds a certain size.\n\n- fix build on platforms with an unsigned 64bit integer type (uint64_t). the\n  module falls back to 32bit implementation of keccak with interleave tables.\n\n\npysha3 0.1\n----------\n\n*release date: 04-oct-2012*\n\n- first release\n\n- based on keccakreferenceandoptimized-3.2.zip\n\n",
+  "docs_url": null,
+  "keywords": "sha3 sha-3 keccak hash",
+  "license": "psfl (keccak: cc0 1.0 universal)",
+  "name": "safe-pysha3",
+  "package_url": "https://pypi.org/project/safe-pysha3/",
+  "project_url": "https://pypi.org/project/safe-pysha3/",
+  "project_urls": {
+    "Homepage": "https://github.com/5afe/pysha3"
+  },
+  "release_url": "https://pypi.org/project/safe-pysha3/1.0.4/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "sha-3 (keccak) for python 3.9 - 3.11",
+  "version": "1.0.4",
+  "releases": [],
+  "developers": [
+    "christian@python.org",
+    "christian_heimes",
+    "uxio@safe.global"
+  ],
+  "kwds": "sha3_update sha3module keccakcodepackage pysha3 sha3",
+  "license_kwds": "psfl (keccak: cc0 1.0 universal)",
+  "libtype": "pypi",
+  "id": "pypi_safe_pysha3",
+  "homepage": "https://github.com/5afe/pysha3",
+  "release_count": 2,
+  "dependency_ids": []
+}

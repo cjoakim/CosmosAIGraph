@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# tsdownsample\n\n[![pypi latest release](https://img.shields.io/pypi/v/tsdownsample.svg)](https://pypi.org/project/tsdownsample/)\n[![support-version](https://img.shields.io/pypi/pyversions/tsdownsample)](https://img.shields.io/pypi/pyversions/tsdownsample)\n[![downloads](https://pepy.tech/badge/tsdownsample)](https://pepy.tech/project/tsdownsample)\n[![testing](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-downsample_rs.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-downsample_rs.yml)\n[![testing](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml)\n<!-- todo: codecov -->\n\nextremely fast **time series downsampling \ud83d\udcc8** for visualization, written in rust.\n\n## features \u2728\n\n* **fast**: written in rust with pyo3 bindings\n  - leverages optimized [argminmax](https://github.com/jvdd/argminmax) - which is simd accelerated with runtime feature detection\n  - scales linearly with the number of data points\n  <!-- todo check if it scales sublinearly -->\n  - multithreaded with rayon (in rust)\n    <details>\n      <summary><i>why we do not use python multiprocessing</i></summary>\n      citing the <a href=\"https://pyo3.rs/v0.17.3/parallelism.html\">pyo3 docs on parallelism</a>:<br>\n      <blockquote>\n          cpython has the infamous global interpreter lock, which prevents several threads from executing python bytecode in parallel. this makes threading in python a bad fit for cpu-bound tasks and often forces developers to accept the overhead of multiprocessing.\n      </blockquote>\n      in rust - which is a compiled language - there is no gil, so cpu-bound tasks can be parallelized (with <a href=\"https://github.com/rayon-rs/rayon\">rayon</a>) with little to no overhead.\n    </details>\n* **efficient**: memory efficient\n  - works on views of the data (no copies)\n  - no intermediate data structures are created\n* **flexible**: works on any type of data\n    - supported datatypes are \n      - for `x`: `f32`, `f64`, `i16`, `i32`, `i64`, `u16`, `u32`, `u64`, `datetime64`, `timedelta64`\n      - for `y`: `f16`, `f32`, `f64`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `datetime64`, `timedelta64`, `bool`\n    <details>\n      <summary><i>!! \ud83d\ude80 <code>f16</code> <a href=\"https://github.com/jvdd/argminmax\">argminmax</a> is 200-300x faster than numpy</i></summary>\n      in contrast with all other data types above, <code>f16</code> is *not* hardware supported (i.e., no instructions for f16) by most modern cpus!! <br>\n      \ud83d\udc0c programming languages facilitate support for this datatype by either (i) upcasting to <u>f32</u> or (ii) using a software implementation. <br>\n      \ud83d\udca1 as for argminmax, only comparisons are needed - and thus no arithmetic operations - creating a <u>symmetrical ordinal mapping from <code>f16</code> to <code>i16</code></u> is sufficient. this mapping allows to use the hardware supported scalar and simd <code>i16</code> instructions - while not producing any memory overhead \ud83c\udf89 <br>\n      <i>more details are described in <a href=\"https://github.com/jvdd/argminmax/pull/1\">argminmax pr #1</a>.</i>\n    </details>\n* **easy to use**: simple & flexible api\n\n## install\n\n```bash\npip install tsdownsample\n```\n\n## usage\n\n```python\nfrom tsdownsample import minmaxlttbdownsampler\nimport numpy as np\n\n# create a time series\ny = np.random.randn(10_000_000)\nx = np.arange(len(y))\n\n# downsample to 1000 points (assuming constant sampling rate)\ns_ds = minmaxlttbdownsampler().downsample(y, n_out=1000)\n\n# select downsampled data\ndownsampled_y = y[s_ds]\n\n# downsample to 1000 points using the (possible irregularly spaced) x-data\ns_ds = minmaxlttbdownsampler().downsample(x, y, n_out=1000)\n\n# select downsampled data\ndownsampled_x = x[s_ds]\ndownsampled_y = y[s_ds]\n```\n\n## downsampling algorithms & api\n\n### downsampling api \ud83d\udcd1\n\neach downsampling algorithm is implemented as a class that implements a `downsample` method.\nthe signature of the `downsample` method:\n\n```\ndownsample([x], y, n_out, **kwargs) -> ndarray[uint64]\n```\n\n**arguments**:\n- `x` is optional\n- `x` and `y` are both positional arguments\n- `n_out` is a mandatory keyword argument that defines the number of output values<sup>*</sup>\n- `**kwargs` are optional keyword arguments *(see [table below](#downsampling-algorithms-\ud83d\udcc8))*:\n  - `parallel`: whether to use multi-threading (default: `false`)<sup>**</sup>\n  - ...\n\n**returns**: a `ndarray[uint64]` of indices that can be used to index the original data.\n\n<sup>*</sup><i>when there are gaps in the time series, fewer than `n_out` indices may be returned.</i>\n<sup>**</sup><i>`parallel` is not supported for `lttbdownsampler`.</i>\n### downsampling algorithms \ud83d\udcc8\n\nthe following downsampling algorithms (classes) are implemented:\n\n| downsampler | description | `**kwargs` |\n| ---:| --- |--- |\n| `minmaxdownsampler` | selects the **min and max** value in each bin | `parallel` |\n| `m4downsampler` | selects the [**min, max, first and last**](https://dl.acm.org/doi/pdf/10.14778/2732951.2732953) value in each bin | `parallel` |\n| `lttbdownsampler` | performs the [**largest triangle three buckets**](https://skemman.is/bitstream/1946/15343/3/ss_msthesis.pdf) algorithm |\n| `minmaxlttbdownsampler` | (*new two-step algorithm \ud83c\udf89*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **largest triangle three buckets** algorithm | `parallel`, `minmax_ratio`<sup>*</sup> |\n\n<sup>*</sup><i>default value for `minmax_ratio` is 30, which is empirically proven to be a good default. (more details in our upcomming paper)</i>\n\n\n## limitations & assumptions \ud83d\udea8\n\nassumes;\n1. `x`-data is (non-strictly) monotonic increasing (i.e., sorted)\n2. no `nans` in the data\n\n---\n\n<p align=\"center\">\n\ud83d\udc64 <i>jeroen van der donckt</i>\n</p>\n\n",
+  "docs_url": null,
+  "keywords": "time series,downsampling,rust,data science,visualization",
+  "license": "mit",
+  "name": "tsdownsample",
+  "package_url": "https://pypi.org/project/tsdownsample/",
+  "project_url": "https://pypi.org/project/tsdownsample/",
+  "project_urls": {
+    "Homepage": "https://github.com/predict-idlab/tsdownsample",
+    "Repository": "https://github.com/predict-idlab/tsdownsample"
+  },
+  "release_url": "https://pypi.org/project/tsdownsample/0.1.2/",
+  "requires_dist": [
+    "numpy"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "time series downsampling in rust",
+  "version": "0.1.2",
+  "releases": [],
+  "developers": [
+    "jeroen_van_der_donckt"
+  ],
+  "kwds": "tsdownsample m4downsampler lttbdownsampler downsample_rs downsample",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_tsdownsample",
+  "homepage": "",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_numpy"
+  ]
+}

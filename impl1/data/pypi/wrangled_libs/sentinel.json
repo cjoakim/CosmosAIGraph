@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "*************************************************\nsentinel \u2014 create sentinel and singleton objects\n*************************************************\n\n|tests| |pypi version|\n\n.. |tests| image:: https://github.com/eddieantonio/sentinel/workflows/test%20and%20lint/badge.svg\n   :target: https://github.com/eddieantonio/sentinel/actions?query=workflow%3a%22test+and+lint%22\n.. |pypi version| image:: https://img.shields.io/pypi/v/sentinel\n   :target: https://pypi.org/project/sentinel/\n\ncreates simple sentinel objects.\n\n\ninstall\n=======\n\nbasic features::\n\n   pip install sentinel\n\nwith extra magic features powered by python-varname_::\n\n   pip install 'sentinel[varname]'\n\n\nwhat is a sentinel?\n===================\n\nsentinels_ are singleton_ objects that typically represent some\nterminating (end) condition or have a special, symbolic meaning. python's built-in\n``none`` is a sentinel. python also has other sentinels like ``notimplemented`` and\n``ellipsis``.\n\nif you want to create your own sentinels, use this library! make your calls to\n``dict.get()`` more meaningful! you can replace the ``object()`` idiom with a sentinel:\n\n.. code-block:: python\n\n   d = {\"a\": 1, \"b\": none}\n\n   # before sentinel:\n   missing = object()\n   if d.get(\"c\", missing) is missing:\n       ... # do some stuff\n\n   # after sentinel:\n   missing = sentinel.create()\n   if d.get(\"c\", missing) is missing:\n       ... # do some stuff\n\n\nfeatures\n--------\n\n- sentinels are unique\n- sentinels are singletons \u2014 the **only** instance of their own anonymous class\n- sentinels can be used with ``is`` comparisons\n- sentinels can be used with ``pickle``\n- sentinels can be used with ``copy.deepcopy``\n- you can **add** arbitrary attributes and methods to sentinels\n- sentinels have a nice, self-documenting ``__repr__``!\n\n\nusage\n=====\n\ncreate a sentinel:\n\n>>> import sentinel\n>>> mysentinel = sentinel.create(\"mysentinel\")\n>>> mysentinel\nmysentinel\n\nif you have python-varname_ installed, or installed this module using\n``pip install 'sentinel[varname]'``, ``sentinel.create()`` can infer the name\nfrom the assignment expression:\n\n.. code-block:: python\n\n   import sentinel\n\n   mysentinel = sentinel.create()\n\n   print(mysentinel)  # prints `mysentinel`\n\n\n**note**: this will not work in the interactive console!\n\n>>> import sentinel\n>>> #\u00a0fails because varname can't find the source code for the interactive console!\n>>> mysentinel = sentinel.create(\"mysentinel\")\n\nexample\n-------\n\nsentinels are useful when other objects such as ``none``, ``false``,\n``0``, ``-1``, are valid values within some data structure. for example, setting\ndefault values when all other values are valid with:\n``dict.setdefault()``:\n\n.. code-block:: python\n\n   d = {\"stdout\": none, \"stdin\": 0, \"eof\": -1}\n\n   missingentry = sentinel.create()\n\n   [d.setdefault(key, missingentry) for key in (\"stdin\", \"stdout\", \"stderr\")]\n   [0, none, missingentry]\n\nalternatively, using ``dict.get()`` when fetching values:\n\n>>> d = {\"stdout\": none, \"stdin\": 0, \"eof\": -1}\n>>> d.get(\"stdout\", missingentry)\nnone\n>>> d.get(\"stdin\", missingentry)\n0\n>>> d.get(\"stderr\", missingentry)\nmissingentry\n\nsince a new sentinel can never occur in the original dictionary, you can tell which\nentries are missing or unset in a dictionary in a self-documenting way:\n\n.. code-block:: python\n\n   unset = sentinel.create()\n   if d.get(\"stdin\", unset) is unset:\n       stdin = 0  # some reasonable default\n\n\nadding extra methods and class attributes\n-----------------------------------------\n\nsentinels may also inherit from base classes, or implement extra methods.\n\nconsider a binary search tree with two kinds of nodes: interior nodes\n(``node``) which contain some payload and leaves (``leaf``), which simply\nterminate traversal.\n\nto create singleton leaf which implements a ``search`` method and an\n``is_leaf`` property, you may provide any extra class attributes in the\n``cls_dict`` keyword argument. the following is a full example of both\nthe singleton ``leaf`` and its ``node`` counterpart:\n\n.. code-block:: python\n\n    def _search_leaf(self, key):\n        raise keyerror(key)\n\n    leaf = sentinel.create('leaf', cls_dict={\n        'search': _search_leaf,\n        'is_leaf': property(lambda self: true)\n    })\n\n    class node(object):\n        def __init__(self, key, payload, left=leaf, right=leaf):\n            self.left = left\n            self.right = right\n            self.key = key\n            self.payload = payload\n\n        def search(self, key):\n            if key < self.key:\n                return self.left.search(key)\n            elif key > self.key:\n                return self.right.search(key)\n            else:\n                return self.payload\n\n        is_leaf = property(lambda: false)\n\nexample usage:\n\n>>> tree = node(2, 'bar', node(1, 'foo'), node(3, 'baz'))\n>>> tree.search(1)\n'foo'\n>>> tree.search(4)\ntraceback (most recent call last):\n    ...\nkeyerror: 2\n\n\ncontributing\n============\n\nthis project uses poetry_. to contribute to the codebase, make sure to `install poetry`_,\nwith poetry installed, clone then repo, then within the repo directory, install the developer dependencies::\n\n    $ poetry install --extras varname\n\nnext, i recommend you do all development tasks within the ``poetry shell``::\n\n    $ poetry shell\n    (sentinel-nunroccf-py3.9) $ black .\n    (sentinel-nunroccf-py3.9) $ pytest\n\n.. _sentinels: http://en.wikipedia.org/wiki/sentinel_nodes\n.. _singleton: http://en.wikipedia.org/wiki/singleton_pattern\n.. _poetry: https://python-poetry.org/\n.. _install poetry: https://python-poetry.org/docs/#installation\n.. _python-varname: https://github.com/pwwang/python-varname\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "sentinel",
+  "package_url": "https://pypi.org/project/sentinel/",
+  "project_url": "https://pypi.org/project/sentinel/",
+  "project_urls": {
+    "Homepage": "https://github.com/eddieantonio/sentinel",
+    "Repository": "https://github.com/eddieantonio/sentinel.git"
+  },
+  "release_url": "https://pypi.org/project/sentinel/1.0.0/",
+  "requires_dist": [
+    "varname (>=0.1); extra == \"varname\""
+  ],
+  "requires_python": ">=3.6,<4.0",
+  "summary": "create sentinel objects, akin to none, notimplemented, ellipsis",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "eddie_antonio_santos",
+    "hello@eddieantonio.ca"
+  ],
+  "kwds": "sentinel_nodes sentinel sentinels_ sentinels _sentinels",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_sentinel",
+  "homepage": "https://github.com/eddieantonio/sentinel",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_varname"
+  ]
+}

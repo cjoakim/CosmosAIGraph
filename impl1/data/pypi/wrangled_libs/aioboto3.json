@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "========================\nasync aws sdk for python\n========================\n\n\n.. image:: https://img.shields.io/pypi/v/aioboto3.svg\n        :target: https://pypi.python.org/pypi/aioboto3\n\n.. image:: https://github.com/terrycain/aioboto3/actions/workflows/ci.yml/badge.svg\n        :target: https://github.com/terrycain/aioboto3/actions\n\n.. image:: https://readthedocs.org/projects/aioboto3/badge/?version=latest\n        :target: https://aioboto3.readthedocs.io\n        :alt: documentation status\n\n.. image:: https://pyup.io/repos/github/terrycain/aioboto3/shield.svg\n     :target: https://pyup.io/repos/github/terrycain/aioboto3/\n     :alt: updates\n\n**breaking changes for v11: the s3transfer config passed into upload/download_file etc.. has been updated to that it matches what boto3 uses**\n\n**breaking changes for v9: aioboto3.resource and aioboto3.client methods no longer exist, make a session then call session.client etc...**\nthis was done for various reasons but mainly that it prevents the default session living longer than it should as that breaks situations where eventloops are replaced.\n\n**the .client and .resource functions must now be used as async context managers.**\n\nnow that aiobotocore has reached version 1.0.1, a side effect of the work put in to fix various issues like bucket region redirection and\nsupporting web assume role type credentials, the client must now be instantiated using a context manager, which by extension applies to\nthe resource creator. you used to get away with calling ``res = aioboto3.resource('dynamodb')`` but that no longer works. if you really want\nto do that, you can do ``res = await aioboto3.resource('dynamodb').__aenter__()`` but you'll need to remember to call ``__aexit__``.\n\nthere will most likely be some parts that dont work now which i've missed, just make an issue and we'll get them resoved quickly.\n\ncreating service resources must also be async now, e.g.\n\n.. code-block:: python\n\n    async def main():\n        session = aioboto3.session()\n        async with session.resource(\"s3\") as s3:\n            bucket = await s3.bucket('mybucket')  # <----------------\n            async for s3_object in bucket.objects.all():\n                print(s3_object)\n\n\nupdating to aiobotocore 1.0.1 also brings with it support for running inside eks as well as asyncifying ``get_presigned_url``\n\n----\n\nthis package is mostly just a wrapper combining the great work of boto3_ and aiobotocore_.\n\naiobotocore allows you to use near enough all of the boto3 client commands in an async manner just by prefixing the command with ``await``.\n\nwith aioboto3 you can now use the higher level apis provided by boto3 in an asynchronous manner. mainly i developed this as i wanted to use the boto3 dynamodb table object in some async\nmicroservices.\n\nwhile all resources in boto3 should work i havent tested them all, so if what your after is not in the table below then try it out, if it works drop me an issue with a simple test case\nand i'll add it to the table.\n\n+---------------------------+--------------------+\n| services                  | status             |\n+===========================+====================+\n| dynamodb service resource | tested and working |\n+---------------------------+--------------------+\n| dynamodb table            | tested and working |\n+---------------------------+--------------------+\n| s3                        | working            |\n+---------------------------+--------------------+\n| kinesis                   | working            |\n+---------------------------+--------------------+\n| ssm parameter store       | working            |\n+---------------------------+--------------------+\n| athena                    | working            |\n+---------------------------+--------------------+\n\n\nexample\n-------\n\nsimple example of using aioboto3 to put items into a dynamodb table\n\n.. code-block:: python\n\n    import asyncio\n    import aioboto3\n    from boto3.dynamodb.conditions import key\n\n\n    async def main():\n        session = aioboto3.session()\n        async with session.resource('dynamodb', region_name='eu-central-1') as dynamo_resource:\n            table = await dynamo_resource.table('test_table')\n\n            await table.put_item(\n                item={'pk': 'test1', 'col1': 'some_data'}\n            )\n\n            result = await table.query(\n                keyconditionexpression=key('pk').eq('test1')\n            )\n\n            # example batch write\n            more_items = [{'pk': 't2', 'col1': 'c1'}, \\\n                          {'pk': 't3', 'col1': 'c3'}]\n            async with table.batch_writer() as batch:\n                for item_ in more_items:\n                    await batch.put_item(item=item_)\n\n    loop = asyncio.get_event_loop()\n    loop.run_until_complete(main())\n\n    # outputs:\n    #  [{'col1': 'some_data', 'pk': 'test1'}]\n\n\nthings that either dont work or have been patched\n-------------------------------------------------\n\nas this library literally wraps boto3, its inevitable that some things won't magically be async.\n\nfixed:\n\n- ``s3_client.download_file*``  this is performed by the s3transfer module. -- patched with get_object\n- ``s3_client.upload_file*``  this is performed by the s3transfer module. -- patched with custom multipart upload\n- ``s3_client.copy``  this is performed by the s3transfer module. -- patched to use get_object -> upload_fileobject\n- ``dynamodb_resource.table.batch_writer``  this now returns an async context manager which performs the same function\n- resource waiters - you can now await waiters which are part of resource objects, not just client waiters, e.g. ``await dynamodbtable.wait_until_exists()``\n- resource object properties are normally autoloaded, now they are all co-routines and the metadata they come from will be loaded on first await and then cached thereafter.\n- s3 bucket.objects object now works and has been asyncified. examples here - https://aioboto3.readthedocs.io/en/latest/usage.html#s3-resource-objects\n\n\namazon s3 client-side encryption\n--------------------------------\n\nboto3 doesn't support aws client-side encryption so until they do i've added basic support for it. docs here cse_\n\ncse requires the python ``cryptography`` library so if you do ``pip install aioboto3[s3cse]`` that'll also include cryptography.\n\nthis library currently supports client-side encryption using kms-managed master keys performing envelope encryption\nusing either aes/cbc/pkcs5padding or preferably aes/gcm/nopadding. the files generated are compatible with the java encryption sdk\nso i will assume they are compatible with the ruby, php, go and c++ libraries as well.\n\nnon-kms managed keys are not yet supported but if you have use of that, raise an issue and i'll look into it.\n\n\n\ndocumentation\n-------------\n\ndocs are here - https://aioboto3.readthedocs.io/en/latest/\n\nexamples here - https://aioboto3.readthedocs.io/en/latest/usage.html\n\n\nfeatures\n========\n\n* closely mimics the usage of boto3.\n\ntodo\n====\n\n* more examples\n* set up docs\n* look into monkey-patching the aws xray sdk to be more async if it needs to be.\n\n\ncredits\n-------\n\nthis package was created with cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.\nit also makes use of the aiobotocore_ and boto3_ libraries. all the credit goes to them, this is mainly a wrapper with some examples.\n\n.. _aiobotocore: https://github.com/aio-libs/aiobotocore\n.. _boto3: https://github.com/boto/boto3\n.. _cookiecutter: https://github.com/audreyr/cookiecutter\n.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage\n.. _cse: https://aioboto3.readthedocs.io/en/latest/cse.html\n",
+  "docs_url": null,
+  "keywords": "aioboto3,boto3,aws",
+  "license": "apache-2.0",
+  "name": "aioboto3",
+  "package_url": "https://pypi.org/project/aioboto3/",
+  "project_url": "https://pypi.org/project/aioboto3/",
+  "project_urls": {
+    "Documentation": "https://readthedocs.org/projects/aioboto3/",
+    "Homepage": "https://github.com/terrycain/aioboto3",
+    "Repository": "https://github.com/terrycain/aioboto3"
+  },
+  "release_url": "https://pypi.org/project/aioboto3/12.1.0/",
+  "requires_dist": [
+    "aiobotocore[boto3] (==2.8.0)",
+    "cryptography (>=2.3.1) ; extra == \"s3cse\"",
+    "chalice (>=1.24.0) ; extra == \"chalice\""
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "async boto3 wrapper",
+  "version": "12.1.0",
+  "releases": [],
+  "developers": [
+    "terry@terrys-home.co.uk",
+    "terry_cain"
+  ],
+  "kwds": "aioboto3 boto3 aiobotocore_ _boto3 boto3_",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aioboto3",
+  "homepage": "https://github.com/terrycain/aioboto3",
+  "release_count": 61,
+  "dependency_ids": [
+    "pypi_aiobotocore",
+    "pypi_chalice",
+    "pypi_cryptography"
+  ]
+}

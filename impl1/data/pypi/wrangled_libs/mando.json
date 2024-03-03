@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.1",
+    "programming language :: python :: 3.2",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: utilities"
+  ],
+  "description": "mando: cli interfaces for humans!\n=================================\n\n.. image:: https://img.shields.io/travis/rubik/mando\n    :alt: travis-ci badge\n    :target: https://travis-ci.org/rubik/mando\n\n.. image:: https://img.shields.io/coveralls/rubik/mando\n    :alt: coveralls badge\n    :target: https://coveralls.io/r/rubik/mando\n\n.. image:: https://img.shields.io/pypi/implementation/mando?label=%20&logo=python&logocolor=white\n    :alt: pypi - implementation\n\n.. image:: https://img.shields.io/pypi/v/mando\n    :alt: latest release\n    :target: https://pypi.python.org/pypi/mando\n\n.. image:: https://img.shields.io/pypi/l/mando\n    :alt: pypi - license\n    :target: https://pypi.org/project/mando/\n\n.. image:: https://img.shields.io/pypi/pyversions/mando\n    :alt: pypi - python version\n    :target: https://pypi.org/project/mando/\n\n.. image:: https://img.shields.io/pypi/format/mando\n    :alt: download format\n    :target: http://pythonwheels.com/\n\n\nmando is a wrapper around ``argparse``, and allows you to write complete cli\napplications in seconds while maintaining all the flexibility.\n\ninstallation\n------------\n\n.. code-block:: console\n\n    $ pip install mando\n\nthe problem\n-----------\n\nwhile ``argparse`` is great for simple command line applications with only\none, default command, when you have to add multiple commands and manage them\nthings get really messy and long. but don't worry, mando comes to help!\n\nquickstart\n----------\n\n.. code-block:: python\n\n    from mando import command, main\n\n    @command\n    def echo(text, capitalize=false):\n        '''echo the given text.'''\n        if capitalize:\n            text = text.upper()\n        print(text)\n\n    if __name__ == '__main__':\n        main()\n\ngenerated help:\n\n.. code-block:: console\n\n    $ python example.py -h\n    usage: example.py [-h] {echo} ...\n\n    positional arguments:\n      {echo}\n        echo      echo the given text.\n\n    optional arguments:\n      -h, --help  show this help message and exit\n\n    $ python example.py echo -h\n    usage: example.py echo [-h] [--capitalize] text\n\n    echo the given text.\n\n    positional arguments:\n      text\n\n    optional arguments:\n      -h, --help    show this help message and exit\n      --capitalize\n\nactual usage:\n\n.. code-block:: console\n\n    $ python example.py echo spam\n    spam\n    $ python example.py echo --capitalize spam\n    spam\n\n\na *real* example\n----------------\n\nsomething more complex and real-world-*ish*. the code:\n\n.. code-block:: python\n\n    from mando import command, main\n\n\n    @command\n    def push(repository, all=false, dry_run=false, force=false, thin=false):\n        '''update remote refs along with associated objects.\n\n        :param repository: repository to push to.\n        :param --all: push all refs.\n        :param -n, --dry-run: dry run.\n        :param -f, --force: force updates.\n        :param --thin: use thin pack.'''\n\n        print ('pushing to {0}. all: {1}, dry run: {2}, force: {3}, thin: {4}'\n               .format(repository, all, dry_run, force, thin))\n\n\n    if __name__ == '__main__':\n        main()\n\nmando understands sphinx-style ``:param:``'s in the docstring, so it creates\nshort options and their help for you.\n\n.. code-block:: console\n\n    $ python git.py push -h\n    usage: git.py push [-h] [--all] [-n] [-f] [--thin] repository\n\n    update remote refs along with associated objects.\n\n    positional arguments:\n      repository     repository to push to.\n\n    optional arguments:\n      -h, --help     show this help message and exit\n      --all          push all refs.\n      -n, --dry-run  dry run.\n      -f, --force    force updates.\n      --thin         use thin pack.\n\nlet's try it!\n\n.. code-block:: console\n\n    $ python git.py push --all myrepo\n    pushing to myrepo. all: true, dry run: false, force: false, thin: false\n    $ python git.py push --all -f myrepo\n    pushing to myrepo. all: true, dry run: false, force: true, thin: false\n    $ python git.py push --all -fn myrepo\n    pushing to myrepo. all: true, dry run: true, force: true, thin: false\n    $ python git.py push --thin -fn myrepo\n    pushing to myrepo. all: false, dry run: true, force: true, thin: true\n    $ python git.py push --thin\n    usage: git.py push [-h] [--all] [-n] [-f] [--thin] repository\n    git.py push: error: too few arguments\n\namazed uh? yes, mando got the short options and the help from the docstring!\nyou can put much more in the docstring, and if that isn't enough, there's an\n``@arg`` decorator to customize the arguments that get passed to argparse.\n\n\ntype annotations\n----------------\n\nmando understands python 3-style type annotations and will warn the user if the\narguments given to a command are of the wrong type.\n\n.. code-block:: python\n\n    from mando import command, main\n\n\n    @command\n    def duplicate(string, times: int):\n        '''duplicate text.\n\n        :param string: the text to duplicate.\n        :param times: how many times to duplicate.'''\n\n        print(string * times)\n\n\n    if __name__ == '__main__':\n        main()\n\n.. code-block:: console\n\n    $ python3 test.py duplicate \"test \" 5\n    test test test test test\n    $ python3 test.py duplicate \"test \" foo\n    usage: test.py duplicate [-h] string times\n    test.py duplicate: error: argument times: invalid int value: 'foo'\n\n\nmando has lots of other options. for example, it supports different docstring\nstyles (sphinx, google and numpy), supports shell autocompletion via the\n``argcomplete`` package and supports custom format classes. for a complete\ndocumentation, visit https://mando.readthedocs.org/.\n\n\n",
+  "docs_url": null,
+  "keywords": "argparse,argument parser,arguments,cli,command line,commands,decorator,dispatch,flags,getopt,options,optparse,parser,subcommands",
+  "license": "mit",
+  "name": "mando",
+  "package_url": "https://pypi.org/project/mando/",
+  "project_url": "https://pypi.org/project/mando/",
+  "project_urls": {
+    "Download": "https://pypi.python.org/mando/",
+    "Homepage": "https://mando.readthedocs.org/"
+  },
+  "release_url": "https://pypi.org/project/mando/0.7.1/",
+  "requires_dist": [
+    "six",
+    "argparse ; python_version <= \"2.6\"",
+    "funcsigs ; python_version <= \"3.2\"",
+    "rst2ansi ; extra == 'restructuredtext'"
+  ],
+  "requires_python": "",
+  "summary": "create python cli apps with little to no effort at all!",
+  "version": "0.7.1",
+  "releases": [],
+  "developers": [
+    "michele_lacchia",
+    "michelelacchia@gmail.com"
+  ],
+  "kwds": "argparse mando commands cli decorator",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_mando",
+  "homepage": "https://mando.readthedocs.org/",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_argparse",
+    "pypi_funcsigs",
+    "pypi_rst2ansi",
+    "pypi_six"
+  ]
+}

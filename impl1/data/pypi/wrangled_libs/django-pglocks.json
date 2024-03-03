@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "topic :: software development"
+  ],
+  "description": "==============\ndjango-pglocks\n==============\n\ndjango-pglocks provides a useful context manager to manage postgresql advisory locks. it requires django (tested with 1.5), postgresql, and (probably) psycopg2.\n\nadvisory locks\n==============\n\nadvisory locks are application-level locks that are acquired and released purely by the client of the database; postgresql never acquires them on its own. they are very useful as a way of signalling to other sessions that a higher-level resource than a single row is in use, without having to lock an entire table or some other structure.\n\nit's entirely up to the application to correctly acquire the right lock.\n\nadvisory locks are either session locks or transaction locks. a session lock is held until the database session disconnects (or is reset); a transaction lock is held until the transaction terminates.\n\ncurrently, the context manager only creates session locks, as the behavior of a lock persisting after the context body has been exited is surprising, and there's no way of releasing a transaction-scope advisory lock except to exit the transaction.\n\ninstalling\n==========\n\njust use pip::\n\n    pip install django-pglocks\n    \ntransactions\n============\n\nthis assumes you are controlling transactions within the view; do not use this\nif you controlling transactions through the django transation middleware.\n\nusage\n=====\n\nusage example::\n\n    from django_pglocks import advisory_lock\n\n    lock_id = 'some lock'\n\n    with advisory_lock(lock_id) as acquired:\n        # code that should be inside of the lock.\n\nthe context manager attempts to take the lock, and then executes the code inside the context with the lock acquired. the lock is released when the context exits, either normally or via exception.\n\nthe parameters are:\n\n* ``lock_id`` -- the id of the lock to acquire. it can be a string, long, or a tuple of two ints. if it's a string, the hash of the string is used as the lock id (postgresql advisory lock ids are 64 bit values).\n\n* ``shared`` (default false) -- if true, a shared lock is taken. any number of sessions can hold a shared lock; if another session attempts to take an exclusive lock, it will wait until all shared locks are released; if a session is holding a shared lock, it will block attempts to take a shared lock. if false (the default), an exclusive lock is taken.\n\n* ``wait`` (default true) -- if true (the default), the context manager will wait until the lock has been acquired before executing the content; in that case, it always returns true (unless a deadlock occurs, in which case an exception is thrown). if false, the context manager will return immediately even if it cannot take the lock, in which case it returns false. note that the context body is *always* executed; the only way to tell in the ``wait=false`` case whether or not the lock was acquired is to check the returned value.\n\n* ``using`` (default none) -- the database alias on which to attempt to acquire the lock. if none, the default connection is used.\n\ncontributing\n============\n\nto run the test suite, you must create a user and a database::\n\n    $ createuser -s -p django_pglocks\n    enter password for new role: django_pglocks\n    enter it again: django_pglocks\n    $ createdb django_pglocks -o django_pglocks\n\nyou can then run the tests with::\n\n    $ django_settings_module=django_pglocks.test_settings pythonpath=. django-admin.py test\n\nlicense\n=======\n\nit's released under the `mit license <http://opensource.org/licenses/mit-license.php>`_.\n\nchange history 1.0.2\n====================\n\nfixed bug where lock would not be released when acquired with wait=false.\nmany thanks to aymeric augustin for finding this!\n\nchange history 1.0.1\n====================\n\nremoved transaction-level locks, as their behavior was somewhat surprising (having the lock persist after the context manager exited was unexpected behavior).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "django-pglocks",
+  "package_url": "https://pypi.org/project/django-pglocks/",
+  "project_url": "https://pypi.org/project/django-pglocks/",
+  "project_urls": {
+    "Homepage": "https://github.com/Xof/django-pglocks"
+  },
+  "release_url": "https://pypi.org/project/django-pglocks/1.0.4/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "django_pglocks provides useful context managers for advisory locks for postgresql.",
+  "version": "1.0.4",
+  "releases": [],
+  "developers": [
+    "christophe_pettus",
+    "xof@thebuild.com"
+  ],
+  "kwds": "django_pglocks advisory_lock locks pglocks lock",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_django_pglocks",
+  "homepage": "https://github.com/xof/django-pglocks",
+  "release_count": 5,
+  "dependency_ids": []
+}

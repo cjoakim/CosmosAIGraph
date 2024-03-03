@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "operating system :: macos :: macos x",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3.7"
+  ],
+  "description": "# airflow-dbt\n\nthis is a collection of [airflow](https://airflow.apache.org/) operators to provide easy integration with [dbt](https://www.getdbt.com).\n\n```py\nfrom airflow import dag\nfrom airflow_dbt.operators.dbt_operator import (\n    dbtseedoperator,\n    dbtsnapshotoperator,\n    dbtrunoperator,\n    dbttestoperator\n)\nfrom airflow.utils.dates import days_ago\n\ndefault_args = {\n  'dir': '/srv/app/dbt',\n  'start_date': days_ago(0)\n}\n\nwith dag(dag_id='dbt', default_args=default_args, schedule_interval='@daily') as dag:\n\n  dbt_seed = dbtseedoperator(\n    task_id='dbt_seed',\n  )\n\n  dbt_snapshot = dbtsnapshotoperator(\n    task_id='dbt_snapshot',\n  )\n\n  dbt_run = dbtrunoperator(\n    task_id='dbt_run',\n  )\n\n  dbt_test = dbttestoperator(\n    task_id='dbt_test',\n    retries=0,  # failing tests would fail the task, and we don't want airflow to try again\n  )\n\n  dbt_seed >> dbt_snapshot >> dbt_run >> dbt_test\n```\n\n## installation\n\ninstall from pypi:\n\n```sh\npip install airflow-dbt\n```\n\nit will also need access to the `dbt` cli, which should either be on your `path` or can be set with the `dbt_bin` argument in each operator.\n\n## usage\n\nthere are five operators currently implemented:\n\n* `dbtdocsgenerateoperator`\n  * calls [`dbt docs generate`](https://docs.getdbt.com/reference/commands/cmd-docs)\n* `dbtdepsoperator`\n  * calls [`dbt deps`](https://docs.getdbt.com/docs/deps)\n* `dbtseedoperator`\n  * calls [`dbt seed`](https://docs.getdbt.com/docs/seed)\n* `dbtsnapshotoperator`\n  * calls [`dbt snapshot`](https://docs.getdbt.com/docs/snapshot)\n* `dbtrunoperator`\n  * calls [`dbt run`](https://docs.getdbt.com/docs/run)\n* `dbttestoperator`\n  * calls [`dbt test`](https://docs.getdbt.com/docs/test)\n\n\neach of the above operators accept the following arguments:\n\n* `profiles_dir`\n  * if set, passed as the `--profiles-dir` argument to the `dbt` command\n* `target`\n  * if set, passed as the `--target` argument to the `dbt` command\n* `dir`\n  * the directory to run the `dbt` command in\n* `full_refresh`\n  * if set to `true`, passes `--full-refresh`\n* `vars`\n  * if set, passed as the `--vars` argument to the `dbt` command. should be set as a python dictionary, as will be passed to the `dbt` command as yaml\n* `models`\n  * if set, passed as the `--models` argument to the `dbt` command\n* `exclude`\n  * if set, passed as the `--exclude` argument to the `dbt` command\n* `select`\n  * if set, passed as the `--select` argument to the `dbt` command\n* `dbt_bin`\n  * the `dbt` cli. defaults to `dbt`, so assumes it's on your `path`\n* `verbose`\n  * the operator will log verbosely to the airflow logs\n* `warn_error`\n  * if set to `true`, passes `--warn-error` argument to `dbt` command and will treat warnings as errors\n\ntypically you will want to use the `dbtrunoperator`, followed by the `dbttestoperator`, as shown earlier.\n\nyou can also use the hook directly. typically this can be used for when you need to combine the `dbt` command with another task in the same operators, for example running `dbt docs` and uploading the docs to somewhere they can be served from.\n\n## building locally\n\nto install from the repository:\nfirst it's recommended to create a virtual environment:\n```bash\npython3 -m venv .venv\n\nsource .venv/bin/activate\n```\n\ninstall using `pip`:\n```bash\npip install .\n```\n\n## testing\n\nto run tests locally, first create a virtual environment (see [building locally](https://github.com/gocardless/airflow-dbt#building-locally) section)\n\ninstall dependencies:\n```bash\npip install . pytest\n```\n\nrun the tests:\n```bash\npytest tests/\n```\n\n## code style\nthis project uses [flake8](https://flake8.pycqa.org/en/latest/).\n\nto check your code, first create a virtual environment (see [building locally](https://github.com/gocardless/airflow-dbt#building-locally) section):\n```bash\npip install flake8\nflake8 airflow_dbt/ tests/ setup.py\n```\n\n## package management\n\nif you use dbt's package manager you should include all dependencies before deploying your dbt project.\n\nfor docker users, packages specified in `packages.yml` should be included as part your docker image by calling `dbt deps` in your `dockerfile`.\n\n## amazon managed workflows for apache airflow (mwaa)\n\nif you use mwaa, you just need to update the `requirements.txt` file and add `airflow-dbt` and `dbt` to it.\n\nthen you can have your dbt code inside a folder `{dbt_folder}` in the dags folder on s3 and configure the dbt task like below:\n\n```python\ndbt_run =\u00a0dbtrunoperator(\n  task_id='dbt_run',\n  dbt_bin='/usr/local/airflow/.local/bin/dbt',\n  profiles_dir='/usr/local/airflow/dags/{dbt_folder}/',\n  dir='/usr/local/airflow/dags/{dbt_folder}/'\n)\n```\n\n## license & contributing\n\n* this is available as open source under the terms of the [mit license](http://opensource.org/licenses/mit).\n* bug reports and pull requests are welcome on github at https://github.com/gocardless/airflow-dbt.\n\ngocardless \u2665 open source. if you do too, come [join us](https://gocardless.com/about/jobs).\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "airflow-dbt",
+  "package_url": "https://pypi.org/project/airflow-dbt/",
+  "project_url": "https://pypi.org/project/airflow-dbt/",
+  "project_urls": {
+    "Homepage": "https://github.com/gocardless/airflow-dbt"
+  },
+  "release_url": "https://pypi.org/project/airflow-dbt/0.4.0/",
+  "requires_dist": [
+    "apache-airflow (>=1.10.3)"
+  ],
+  "requires_python": "",
+  "summary": "apache airflow integration for dbt",
+  "version": "0.4.0",
+  "releases": [],
+  "developers": [
+    "engineering@gocardless.com",
+    "gocardless"
+  ],
+  "kwds": "airflow_dbt dbt_snapshot dbt_run dbt_operator dbtseedoperator",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_airflow_dbt",
+  "homepage": "https://github.com/gocardless/airflow-dbt",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_apache_airflow"
+  ]
+}

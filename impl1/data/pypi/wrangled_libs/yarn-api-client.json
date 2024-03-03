@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: system :: distributed computing"
+  ],
+  "description": "# hadoop-yarn-api-python-client\n\npython client for apache hadoop\u00ae yarn api\n\n[![latest version](https://img.shields.io/pypi/v/yarn-api-client.svg)](https://pypi.python.org/pypi/yarn-api-client/)\n[![downloads](https://pepy.tech/badge/yarn-api-client/month)](https://pepy.tech/project/yarn-api-client/month)\n[![travis ci build status](https://travis-ci.org/codait/hadoop-yarn-api-python-client.svg?branch=master)](https://travis-ci.org/codait/hadoop-yarn-api-python-client)\n[![latest documentation status](https://readthedocs.org/projects/yarn-api-client-python/badge/?version=latest)](https://yarn-api-client-python.readthedocs.org/en/latest/?badge=latest)\n[![test coverage](https://coveralls.io/repos/toidi/hadoop-yarn-api-python-client/badge.png)](https://coveralls.io/r/toidi/hadoop-yarn-api-python-client)\n\npackage documentation:\n[yarn-api-client-python.readthedocs.org](https://yarn-api-client-python.readthedocs.org/en/latest/)\n\nrest api documentation: [hadoop.apache.org](http://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/webservicesintro.html)\n\n**warning**: cli is outdated & broken. please don't use cli. this will be resolved in future releases.\n\n---\n## compatibility matrix\n\n| yarn-api-client-python | apache hadoop |\n| ------------- | ------------- |\n| 1.0.2  | 3.2.1  |\n| 1.0.3  | 3.3.0, 3.3.1  |\n\nif u have version other than mentioned (or vendored variant like hortonworks), certain apis might be not working or have differences in\nimplementation. if u plan to use certain api long-term, you might want to make sure its not in alpha stage in documentation.\n\n## installation\n\nfrom pypi\n```\npip install yarn-api-client\n```\n\nfrom anaconda (conda forge)\n```\nconda install -c conda-forge yarn-api-client\n```\n\nfrom source code\n```\npip install git+https://github.com/codait/hadoop-yarn-api-python-client.git\n```\n\n## enabling support for simpleauth\n\nsee example below:\n```\nfrom yarn_api_client.auth import simpleauth\nfrom yarn_api_client.history_server import historyserver\nauth = simpleauth('impersonated_account_name')\nhistory_server = historyserver('https://127.0.0.2:5678', auth=auth)\n```\n\n## enabling support for kerberos/spnego security\n1. first option - using `requests_kerberos` package  \n\nto avoid deployment issues on a non kerberized environment, the `requests_kerberos`\ndependency is optional and needs to be explicit installed in order to enable access\nto yarn console protected by kerberos/spnego.\n\n`pip install requests_kerberos`\n\nfrom python code\n```\nfrom yarn_api_client.history_server import historyserver\nfrom requests_kerberos import httpkerberosauth\nhistory_server = historyserver('https://127.0.0.2:5678', auth=httpkerberosauth())\n```\n\nps: you **need** to get valid kerberos ticket in systemwide kerberos cache before running your code, otherwise calls to kerberized environment won't go through (run kinit before proceeding to run code)\n\n2. second option - using `gssapi` package  \n\nif you want to avoid using terminal calls, you have to perform spnego handshake to retrieve ticket yourself. full api documentation: https://pythongssapi.github.io/python-gssapi/latest/\n\n# usage\n\n### cli interface\n\n**warning**: cli is outdated & broken. please don't use cli. this will be resolved in future releases.\n\n1. first way\n```\nbin/yarn_client --help\n```\n\n2. alternative way\n```\npython -m yarn_api_client --help\n```\n\n### programmatic interface\n\n```\nfrom yarn_api_client import applicationmaster, historyserver, nodemanager, resourcemanager\nam = applicationmaster('https://127.0.0.2:5678')\napp_information = am.application_information('application_id')\n```\n\n### changelog\n\n1.0.3 release\n   - drop support of python 2.7 (if you still need it for extreme emergency, look into reverting ab4f71582f8c69e908db93905485ba4d00562dfd)\n   - update of supported hadoop version to 3.3.1\n   - add support for yarn_conf_dir and hadoop_conf_dir\n   - add class for native simpleauth (#106)\n   - add constructor argument for proxies (#109)\n\n1.0.2 release\n   - add support for python 3.8.x\n   - fix https url parsing\n   - fix json body request apis\n   - handle yarn response with empty contents\n   - better logging support\n\n1.0.1 release\n   - passes the authorization instance to the active rm check\n   - establishes a new (working) documentation site in readthedocs.io: yarn-api-client-python.readthedocs.io\n   - adds more python version (3.7 and 3.8) to test matrix and removes 2.6.\n\n1.0.0 release\n   - major cleanup of api.  \n     - address/port parameters have been replaced with complete\n       endpoints (includes scheme [e.g., http or https]).\n     - resourcemanager has been updated to take a list of endpoints for\n       improved ha support.\n     - resourcemanager, applicationmaster, historyserver and nodemanager\n       have been updated with methods corresponding to the latest rest api.\n   - pytest support on windows has been provided.\n   - documentation has been updated.\n\n   **note:** applications using apis relative to releases prior to 1.0 should\n   pin their dependency on yarn-api-client to _less than_ 1.0 and are encouraged\n   to update to 1.0 as soon as possible.\n\n0.3.7 release  \n   - honor configured http policy when no address is provided - enabling\n     using of https in these cases.\n\n0.3.6 release  \n   - extend resourcemanager to allow applications to determine\n     resource availability prior to submission.\n\n0.3.5 release  \n   - hotfix release to fix internal signature mismatch\n\n0.3.4 release  \n   - more flexible support for discovering hadoop configuration\n     including multiple resource managers when ha is configured\n   - properly support yarn post response codes\n\n0.3.3 release  \n   - properly set content-type in put requests\n   - check for hadoop_conf_dir env variable\n\n0.3.2 release  \n   - make kerberos/spnego dependency optional\n\n0.3.1 release  \n   - fix cluster_application_kill api\n\n0.3.0 release  \n   - add support for yarn endpoints protected by kerberos/spnego\n   - moved to `requests` package for rest api invocation\n   - remove `http_con` property, as connections are now managed by `requests` package\n\n0.2.5 release  \n  - fixed history rest api\n\n0.2.4 release  \n  - added compatibility with ha enabled resource manager\n\n### team\n\nyarn api client is developed by an open community, and the current maintainers \nare listed below in alphabetical order:\n\n- [dmitry romanenko](https://github.com/dimon222)\n- [eduard iskandarov](https://github.com/toidi)\n- [kevin bates](https://github.com/kevin-bates)\n- [luciano resende](https://github.com/lresende)\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "yarn-api-client",
+  "package_url": "https://pypi.org/project/yarn-api-client/",
+  "project_url": "https://pypi.org/project/yarn-api-client/",
+  "project_urls": {
+    "Homepage": "https://github.com/CODAIT/hadoop-yarn-api-python-client"
+  },
+  "release_url": "https://pypi.org/project/yarn-api-client/1.0.3/",
+  "requires_dist": [
+    "requests (<3.0,>=2.7)"
+  ],
+  "requires_python": "",
+  "summary": "python client for hadoop\u00ae yarn api",
+  "version": "1.0.3",
+  "releases": [],
+  "developers": [
+    "dmitry@romanenko.in",
+    "dmitry_romanenko",
+    "eduard.iskandarov@ya.ru",
+    "iskandarov_eduard"
+  ],
+  "kwds": "yarn_api_client yarn_client hadoop_conf_dir yarn_conf_dir hadoop",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_yarn_api_client",
+  "homepage": "https://github.com/codait/hadoop-yarn-api-python-client",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# torchlibrosa: pytorch implementation of librosa\n\nthis codebase provides pytorch implementation of some librosa functions. if users previously used for training cpu-extracted features from librosa, but want to add gpu acceleration during training and evaluation, torchlibrosa will provide almost identical features to standard torchlibrosa functions (numerical difference less than 1e-5).\n\n## install\n```bash\n$ pip install torchlibrosa\n```\n\n## examples 1\n\nextract log mel spectrogram with torchlibrosa.\n\n```python\nimport torch\nimport torchlibrosa as tl\n\nbatch_size = 16\nsample_rate = 22050\nwin_length = 2048\nhop_length = 512\nn_mels = 128\n\nbatch_audio = torch.empty(batch_size, sample_rate).uniform_(-1, 1)  # (batch_size, sample_rate)\n\n# torchlibrosa feature extractor the same as librosa.feature.melspectrogram()\nfeature_extractor = torch.nn.sequential(\n    tl.spectrogram(\n        hop_length=hop_length,\n        win_length=win_length,\n    ), tl.logmelfilterbank(\n        sr=sample_rate,\n        n_mels=n_mels,\n        is_log=false, # default is true\n    ))\nbatch_feature = feature_extractor(batch_audio) # (batch_size, 1, time_steps, mel_bins)\n```\n\n## examples 2\n\nextracting spectrogram, then log mel spectrogram, stft and istft with torchlibrosa.\n\n```python\nimport torch\nimport torchlibrosa as tl\n\nbatch_size = 16\nsample_rate = 22050\nwin_length = 2048\nhop_length = 512\nn_mels = 128\n\nbatch_audio = torch.empty(batch_size, sample_rate).uniform_(-1, 1)  # (batch_size, sample_rate)\n\n# spectrogram\nspectrogram_extractor = tl.spectrogram(n_fft=win_length, hop_length=hop_length)\nsp = spectrogram_extractor.forward(batch_audio)   # (batch_size, 1, time_steps, freq_bins)\n\n# log mel spectrogram\nlogmel_extractor = tl.logmelfilterbank(sr=sample_rate, n_fft=win_length, n_mels=n_mels)\nlogmel = logmel_extractor.forward(sp)   # (batch_size, 1, time_steps, mel_bins)\n\n# stft\nstft_extractor = tl.stft(n_fft=win_length, hop_length=hop_length)\n(real, imag) = stft_extractor.forward(batch_audio)\n# real: (batch_size, 1, time_steps, freq_bins), imag: (batch_size, 1, time_steps, freq_bins) #\n\n# istft\nistft_extractor = tl.istft(n_fft=win_length, hop_length=hop_length)\ny = istft_extractor.forward(real, imag, length=batch_audio.shape[-1])    # (batch_size, samples_num)\n```\n\n## example 3\n\ncheck the compability of torchlibrosa to librosa. the numerical difference should be less than 1e-5.\n\n```python\npython3 torchlibrosa/stft.py --device='cuda'    # --device='cpu' | 'cuda'\n```\n\n## contact\nqiuqiang kong, qiuqiangkong@gmail.com\n\n## cite\n[1] qiuqiang kong, yin cao, turab iqbal, yuxuan wang, wenwu wang, and mark d. plumbley. \"panns: large-scale pretrained audio neural networks for audio pattern recognition.\" ieee/acm transactions on audio, speech, and language processing 28 (2020): 2880-2894.\n\n## external links\nother related repos include:\n\ntorchaudio: https://github.com/pytorch/audio\n\nasteroid-filterbanks: https://github.com/asteroid-team/asteroid-filterbanks\n\nkapre: https://github.com/keunwoochoi/kapre\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "torchlibrosa",
+  "package_url": "https://pypi.org/project/torchlibrosa/",
+  "project_url": "https://pypi.org/project/torchlibrosa/",
+  "project_urls": {
+    "Homepage": "https://github.com/qiuqiangkong/torchlibrosa"
+  },
+  "release_url": "https://pypi.org/project/torchlibrosa/0.1.0/",
+  "requires_dist": [
+    "numpy",
+    "librosa (>=0.8.0)"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "pytorch implemention of part of librosa functions.",
+  "version": "0.1.0",
+  "releases": [],
+  "developers": [
+    "qiuqiang_kong",
+    "qiuqiangkong@gmail.com"
+  ],
+  "kwds": "torchlibrosa spectrogram_extractor pytorch torch torchaudio",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_torchlibrosa",
+  "homepage": "https://github.com/qiuqiangkong/torchlibrosa",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_librosa",
+    "pypi_numpy"
+  ]
+}

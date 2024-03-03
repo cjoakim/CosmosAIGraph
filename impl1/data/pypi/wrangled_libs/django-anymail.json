@@ -1,0 +1,73 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 3.0",
+    "framework :: django :: 3.1",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "framework :: django :: 4.1",
+    "framework :: django :: 4.2",
+    "framework :: django :: 5.0",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: communications :: email",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "anymail: django email integration for transactional esps\n========================================================\n\n..  this readme is reused in multiple places:\n    * github: project page, exactly as it appears here\n    * docs: shared-intro section gets included in docs/index.rst\n            quickstart section gets included in docs/quickstart.rst\n    * pypi: project page (via pyproject.toml readme; see also\n            hatch_build.py which edits in the release version number)\n    you can use docutils 1.0 markup, but *not* any sphinx additions.\n    github rst supports code-block, but *no other* block directives.\n\n\n.. default-role:: literal\n\n\n.. _shared-intro:\n\n.. this shared-intro section is also included in docs/index.rst\n\nanymail lets you send and receive email in django using your choice\nof transactional email service providers (esps). it extends the\nstandard `django.core.mail` with many common esp-added features, providing\na consistent api that avoids locking your code to one specific esp\n(and making it easier to change esps later if needed).\n\nanymail currently supports these esps:\n\n* **amazon ses**\n* **brevo** (formerly sendinblue)\n* **mailersend**\n* **mailgun**\n* **mailjet**\n* **mandrill** (mailchimp transactional)\n* **postal** (self-hosted esp)\n* **postmark**\n* **resend**\n* **sendgrid**\n* **sparkpost**\n\nanymail includes:\n\n* integration of each esp's sending apis into\n  `django's built-in email <https://docs.djangoproject.com/en/v10.2/topics/email/>`_\n  package, including support for html, attachments, extra headers,\n  and other standard email features\n* extensions to expose common esp-added functionality, like tags, metadata,\n  and tracking, with code that's portable between esps\n* simplified inline images for html email\n* normalized sent-message status and tracking notification, by connecting\n  your esp's webhooks to django signals\n* \"batch transactional\" sends using your esp's merge and template features\n* inbound message support, to receive email through your esp's webhooks,\n  with simplified, portable access to attachments and other inbound content\n\nanymail maintains compatibility with all django versions that are in mainstream\nor extended support, plus (usually) a few older django versions, and is extensively\ntested on all python versions supported by django. (even-older django versions\nmay still be covered by an anymail extended support release; consult the\n`changelog <https://anymail.dev/en/v10.2/changelog/>`_ for details.)\n\nanymail releases follow `semantic versioning <https://semver.org/>`_.\nthe package is released under the bsd license.\n\n.. end shared-intro\n\n.. image:: https://github.com/anymail/django-anymail/workflows/test/badge.svg?branch=v10.2\n       :target: https://github.com/anymail/django-anymail/actions?query=workflow:test+branch:v10.2\n       :alt:    test status in github actions\n\n.. image:: https://github.com/anymail/django-anymail/workflows/integration-test/badge.svg?branch=v10.2\n       :target: https://github.com/anymail/django-anymail/actions?query=workflow:integration-test+branch:v10.2\n       :alt:    integration test status in github actions\n\n.. image:: https://readthedocs.org/projects/anymail/badge/?version=v10.2\n       :target: https://anymail.dev/en/v10.2/\n       :alt:    documentation build status on readthedocs\n\n**resources**\n\n* full documentation: https://anymail.dev/en/v10.2/\n* help and troubleshooting: https://anymail.dev/en/v10.2/help/\n* package on pypi: https://pypi.org/project/django-anymail/\n* project on github: https://github.com/anymail/django-anymail\n* changelog: https://anymail.dev/en/v10.2/changelog/\n\n\nanymail 1-2-3\n-------------\n\n.. _quickstart:\n\n.. this quickstart section is also included in docs/quickstart.rst\n\nhere's how to send a message.\nthis example uses mailgun, but you can substitute mailjet or postmark or sendgrid\nor sparkpost or any other supported esp where you see \"mailgun\":\n\n1. install anymail from pypi:\n\n   .. code-block:: console\n\n        $ pip install \"django-anymail[mailgun]\"\n\n   (the `[mailgun]` part installs any additional packages needed for that esp.\n   mailgun doesn't have any, but some other esps do.)\n\n\n2. edit your project's ``settings.py``:\n\n   .. code-block:: python\n\n        installed_apps = [\n            # ...\n            \"anymail\",\n            # ...\n        ]\n\n        anymail = {\n            # (exact settings here depend on your esp...)\n            \"mailgun_api_key\": \"<your mailgun key>\",\n            \"mailgun_sender_domain\": 'mg.example.com',  # your mailgun domain, if needed\n        }\n        email_backend = \"anymail.backends.mailgun.emailbackend\"  # or sendgrid.emailbackend, or...\n        default_from_email = \"you@example.com\"  # if you don't already have this in settings\n        server_email = \"your-server@example.com\"  # ditto (default from-email for django errors)\n\n\n3. now the regular `django email functions <https://docs.djangoproject.com/en/v10.2/topics/email/>`_\n   will send through your chosen esp:\n\n   .. code-block:: python\n\n        from django.core.mail import send_mail\n\n        send_mail(\"it works!\", \"this will get sent through mailgun\",\n                  \"anymail sender <from@example.com>\", [\"to@example.com\"])\n\n\n   you could send an html message, complete with an inline image,\n   custom tags and metadata:\n\n   .. code-block:: python\n\n        from django.core.mail import emailmultialternatives\n        from anymail.message import attach_inline_image_file\n\n        msg = emailmultialternatives(\n            subject=\"please activate your account\",\n            body=\"click to activate your account: https://example.com/activate\",\n            from_email=\"example <admin@example.com>\",\n            to=[\"new user <user1@example.com>\", \"account.manager@example.com\"],\n            reply_to=[\"helpdesk <support@example.com>\"])\n\n        # include an inline image in the html:\n        logo_cid = attach_inline_image_file(msg, \"/path/to/logo.jpg\")\n        html = \"\"\"<img alt=\"logo\" src=\"cid:{logo_cid}\">\n                  <p>please <a href=\"https://example.com/activate\">activate</a>\n                  your account</p>\"\"\".format(logo_cid=logo_cid)\n        msg.attach_alternative(html, \"text/html\")\n\n        # optional anymail extensions:\n        msg.metadata = {\"user_id\": \"8675309\", \"experiment_variation\": 1}\n        msg.tags = [\"activation\", \"onboarding\"]\n        msg.track_clicks = true\n\n        # send it:\n        msg.send()\n\n.. end quickstart\n\n\nsee the `full documentation <https://anymail.dev/en/v10.2/>`_\nfor more features and options, including receiving messages and tracking\nsent message status.\n",
+  "docs_url": null,
+  "keywords": "amazon ses,brevo,django,esp,mailersend,mailgun,mailjet,mandrill,postal,postmark,resend,sendgrid,sendinblue,sparkpost,email,email backend,transactional mail",
+  "license": "[the bsd 3-clause license]  copyright (c) anymail contributors. all rights reserved.  redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:  1. redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.  2. redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.  3. neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.  this software is provided by the copyright holders and contributors \"as is\" and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. in no event shall the copyright owner or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.",
+  "name": "django-anymail",
+  "package_url": "https://pypi.org/project/django-anymail/",
+  "project_url": "https://pypi.org/project/django-anymail/",
+  "project_urls": {
+    "Changelog": "https://anymail.dev/en/stable/changelog/",
+    "Documentation": "https://anymail.dev/en/stable/",
+    "Homepage": "https://github.com/anymail/django-anymail",
+    "Source": "https://github.com/anymail/django-anymail",
+    "Tracker": "https://github.com/anymail/django-anymail/issues"
+  },
+  "release_url": "https://pypi.org/project/django-anymail/10.2/",
+  "requires_dist": [
+    "django>=2.0",
+    "requests>=2.4.3",
+    "urllib3>=1.25.0",
+    "boto3; extra == 'amazon-ses'",
+    "cryptography; sys_platform != 'darwin' or platform_machine != 'arm64' or python_version >= '3.9' and extra == 'postal'",
+    "svix; extra == 'resend'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "django email backends and webhooks for amazon ses, brevo (sendinblue),     mailersend, mailgun, mailjet, mandrill, postal, postmark, resend,     sendgrid, and sparkpost",
+  "version": "10.2",
+  "releases": [],
+  "developers": [
+    "anymail_contributors",
+    "medmunds@gmail.com"
+  ],
+  "kwds": "documentation emailmultialternatives email_backend django mailersend",
+  "license_kwds": "copyright liability liable redistributions redistribution",
+  "libtype": "pypi",
+  "id": "pypi_django_anymail",
+  "homepage": "",
+  "release_count": 54,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_cryptography",
+    "pypi_django",
+    "pypi_requests",
+    "pypi_svix",
+    "pypi_urllib3"
+  ]
+}

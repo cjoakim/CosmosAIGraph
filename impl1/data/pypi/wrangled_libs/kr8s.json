@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3"
+  ],
+  "description": "<div style=\"text-align: center; width: 100%;\"><img src=\"branding/logo-wide.png\" style=\"max-height: 200px;\" /></div>\n\n[![test](https://github.com/kr8s-org/kr8s/actions/workflows/test.yaml/badge.svg)](https://github.com/kr8s-org/kr8s/actions/workflows/test.yaml)\n[![codecov](https://img.shields.io/codecov/c/gh/kr8s-org/kr8s?logo=codecov&logocolor=ffffff)](https://app.codecov.io/gh/kr8s-org/kr8s)\n[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/kr8s-org/kr8s/main.svg)](https://results.pre-commit.ci/latest/github/kr8s-org/kr8s/main)\n[![read the docs](https://img.shields.io/readthedocs/kr8s?logo=readthedocs&logocolor=white)](https://docs.kr8s.org/en/stable/)\n[![pypi](https://img.shields.io/pypi/v/kr8s)](https://pypi.org/project/kr8s/)\n[![pypi - python version](https://img.shields.io/pypi/pyversions/kr8s)](https://pypi.org/project/kr8s/)\n[![kubernetes version support](https://img.shields.io/badge/kubernetes%20support-1.26%7c1.27%7c1.28%7c1.29-blue)](https://docs.kr8s.org/en/stable/installation.html#supported-kubernetes-versions)\n[![pypi - wheel](https://img.shields.io/pypi/wheel/kr8s)](https://pypi.org/project/kr8s/)\n[![pypi - license](https://img.shields.io/pypi/l/kr8s)](https://pypi.org/project/kr8s/)\n\na simple, extensible python client library for kubernetes that feels familiar for folks who already know how to use `kubectl`.\n\n## highlights\n\n- api inspired by `kubectl` for a shallow learning curve.\n- [sensible defaults](https://docs.kr8s.org/en/stable/authentication.html) to reduce boiler plate.\n- no swagger generated code, human readable code only.\n- has both a standard and an [async api](https://docs.kr8s.org/en/stable/asyncio.html) that can be used with `asyncio` and `trio`.\n- [client caching](https://docs.kr8s.org/en/stable/client.html#client-caching) to reduce passing api objects around.\n- batteries included by providing [useful utilities and methods](https://docs.kr8s.org/en/stable/examples/pod_operations.html) inspired by `kubectl`.\n\n## quickstart\n\n### installation\n\n```console\n$ pip install kr8s\n```\n\n## examples\n\n> [!tip]\n> see the [examples documentation](https://docs.kr8s.org/en/stable/examples/) for a full set of examples including `asyncio` examples.\n\n### list nodes\n\nprint out all of the node names in the cluster.\n\n```python\nimport kr8s\n\nfor node in kr8s.get(\"nodes\"):\n    print(node.name)\n```\n\n### create a pod\n\ncreate a new pod.\n\n```python\nfrom kr8s.objects import pod\n\npod = pod({\n        \"apiversion\": \"v1\",\n        \"kind\": \"pod\",\n        \"metadata\": {\n            \"name\": \"my-pod\",\n        },\n        \"spec\": {\n            \"containers\": [{\"name\": \"pause\", \"image\": \"gcr.io/google_containers/pause\",}]\n        },\n    })\n\npod.create()\n```\n\n### scale a deployment\n\nscale the deployment `metrics-server` in the namespace `kube-system` to `1` replica.\n\n```python\nfrom kr8s.objects import deployment\n\ndeploy = deployment.get(\"metrics-server\", namespace=\"kube-system\")\ndeploy.scale(1)\n```\n\n### list pods by label selector\n\nget all pods from all namespaces matching a label selector.\n\n```python\nimport kr8s\n\nselector = {'component': 'kube-scheduler'}\n\nfor pod in kr8s.get(\"pods\", namespace=kr8s.all, label_selector=selector):\n    print(pod.namespace, pod.name)\n```\n\n### add a label to a pod\n\nadd the label `foo` with the value `bar` to an existing pod.\n\n```python\nfrom kr8s.objects import pod\n\npod = pod(\"kube-apiserver\", namespace=\"kube-system\")\npod.label({\"foo\": \"bar\"})\n```\n\n### generate a pod\n\ngenerate a simple pod with a couple of keyword arguments.\n\n```python\nfrom kr8s.objects import pod\n\npod = pod.gen(name=\"example-1\", image=\"nginx:latest\")\npod.create()\n```\n\n### cordon a node\n\ncordon a node to mark it as unschedulable.\n\n```python\nfrom kr8s.objects import node\n\nnode = node(\"k8s-node-1\")\n\nnode.cordon()\n```\n\n### pod exec\n\nexec a command in a pod.\n\n```python\nfrom kr8s.objects import pod\n\npod = pod.get(\"my-pod\")\n\ncommand = pod.exec([\"uptime\"])\nprint(command.stdout.decode())\n# 13:49:05 up 23:03,  0 users,  load average: 0.66, 0.87, 0.85\n```\n\n### port forward a pod\n\nopen a port forward to a pod as a background task/thread.\n\n```python\nfrom kr8s.objects import pod\n\npod = pod.get(\"my-pod\")\npf = pod.portforward(remote_port=1234, local_port=5678)\n\n# starts the port forward in a background thread\npf.start()\n\n# your other code goes here\n\n# optionally stop the port forward thread (it will exit with python anyway)\npf.stop()\n```\n\n> [!tip]\n> see the [examples documentation](https://docs.kr8s.org/en/stable/examples/) for a full set of examples including `asyncio` examples.\n",
+  "docs_url": null,
+  "keywords": "kubectl,kubernetes",
+  "license": "bsd-3-clause",
+  "name": "kr8s",
+  "package_url": "https://pypi.org/project/kr8s/",
+  "project_url": "https://pypi.org/project/kr8s/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/kr8s/0.12.10/",
+  "requires_dist": [
+    "aiohttp>=3.8.4",
+    "anyio>=3.7.0",
+    "asyncache>=0.3.1",
+    "cryptography>=35",
+    "exceptiongroup>=1.2.0; python_version < '3.12'",
+    "httpx>=0.24.1",
+    "python-box>=7.0.1",
+    "python-jsonpath>=0.7.1",
+    "pyyaml>=6.0"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "a kubernetes api library",
+  "version": "0.12.10",
+  "releases": [],
+  "developers": [
+    "jacob@tomlinson.email"
+  ],
+  "kwds": "kubectl kubernetes kube badge k8s",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_kr8s",
+  "homepage": "",
+  "release_count": 47,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_anyio",
+    "pypi_asyncache",
+    "pypi_cryptography",
+    "pypi_exceptiongroup",
+    "pypi_httpx",
+    "pypi_python_box",
+    "pypi_python_jsonpath",
+    "pypi_pyyaml"
+  ]
+}

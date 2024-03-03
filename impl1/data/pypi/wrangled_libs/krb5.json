@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# python kerberos 5 library\n\n[![test workflow](https://github.com/jborean93/pykrb5/actions/workflows/ci.yml/badge.svg)](https://github.com/jborean93/pykrb5/actions/workflows/ci.yml)\n[![pypi version](https://badge.fury.io/py/krb5.svg)](https://badge.fury.io/py/krb5)\n[![license](https://img.shields.io/badge/license-mit-blue.svg)](https://github.com/jborean93/pykrb5/blob/main/license)\n\nthis library provides python functions that wraps the kerberos 5 c api.\ndue to the complex nature of this api it is highly recommended to use something like [python-gssapi](https://github.com/pythongssapi/python-gssapi) which exposes the kerberos authentication details through gssapi.\n\n## requirements\n\n* an implementation of the kerberos 5 api - including the header files\n  * [mit kebreros](https://web.mit.edu/kerberos/)\n  * [heimdal](https://github.com/heimdal/heimdal)\n* a c compiler, such as gcc\n* python 3.6+\n\n_note: macos includes their own implementation of heimdal and a compiler isn't needed on that platform if installing from the wheel._\n\n## installation\n\nsimply run:\n\n```bash\npip install krb5\n```\n\nto install from source run the following:\n\n```bash\ngit clone https://github.com/jborean93/pykrb5.git\npython -m pip install build\npython -m build\npip install dist/krb5-*.whl\n```\n\ncompiling the code should automatically pick up the proper paths for the krb5 headers and locations.\nif further customisation is needed, the following environment variables can be set when building the wheel:\n\n* `krb5_krb5config`\n  * the path to `krb5-config` to use for detecting the kerberos library to link to\n  * the compiler and linker args are derived from what this function outputs\n  * defaults to whatever `krb5-config` is on the `path`\n  * freebsd will default to `/usr/local/bin/krb5-config` instead of `/usr/bin/krb5-config`\n* `krb5_main_lib`\n  * the path to the `libkrb5` shared library used to check if any of the optional functions are available\n* `krb5_compiler_args`\n  * compiler flags to use when compiling the extensions\n  * defaults to the output of `krb5-config --cflags krb5` if not set\n* `krb5_linker_args`\n  * linker flags to use when compiling the extensions\n  * defaults to the output of `krb5-config --libs krb5` if not set\n* `krb5_skip_module_check`\n  * skips the checks used to detect if optional functions are available - will treat them all as available\n  * this is only really useful when building the sdist as no implementation provides all these functions\n* `krb5_cython_tracing`\n  * used to generate the cython extensions with line tracing for coverage collection\n* `krb5_macos_heimdal_dir`\n  * used when compiling on macos to point to the heimdal install directory\n  * used to find the heimdal header files as macos does not include, or provide a way to obtain, these header files for their heimdal framework\n  * defaults to `{git_root}/build_helpers/heimdal`\n\n## development\n\nto run the tests or make changes to this repo run the following:\n\n```bash\ngit clone https://github.com/jborean93/pykrb5.git\npip install -r requirements-dev.txt\npre-commit install\n\npython -m pip install -e .\n\n# can compile the krb5 extensions on an adhoc basis\n# python setup.py build_ext --inplace\n```\n\nfrom there an editor like vscode can be used to make changes and run the test suite.\nto recompile the cython files after a change run the `build_ext --inplace` command.\n\n## structure\n\nthis library is merely a wrapper around the kerberos 5 apis.\nthe functions under the `krb5` namespace match the krb5 api specification but with the `krb5_` prefix remove.\nfor example the [krb5_init_context](https://web.mit.edu/kerberos/krb5-devel/doc/appdev/refs/api/krb5_init_context.html) function is called through `krb5.init_context()`.\nerrors are raised as a `krb5error` which contains the message as formatted by the krb5 implementation and the error code for that error.\nsome of the structures returned by these functions are represented by a python class and are freed once they are deallocated once all references to that object is removed.\nsome classes expose an `addr` property that returns the raw pointer address of the structure it is wrapping.\nthis is so the structure can be used in other libraries like `python-gssapi` but great care must be taken that nothing else frees the structure as that could cause a segmentation fault.\n\nnot all the functions exposed in this library are available on every krb5 api implementation.\nto check if a function is available run the following:\n\n```python\nimport krb5\n\nif not hasattr(krb5, \"kt_dup\"):\n    raise exception(\"current implementation does not support krb5_kt_dup\")\n```\n\nthere may also be some difference in behaviour, error codes, error messages, between te different implementations.\nit is up to the caller to paper over these differences when required.\n",
+  "docs_url": null,
+  "keywords": "krb5,kerberos",
+  "license": "mit",
+  "name": "krb5",
+  "package_url": "https://pypi.org/project/krb5/",
+  "project_url": "https://pypi.org/project/krb5/",
+  "project_urls": {
+    "Homepage": "https://github.com/jborean93/pykrb5"
+  },
+  "release_url": "https://pypi.org/project/krb5/0.5.1/",
+  "requires_dist": [],
+  "requires_python": ">=3.7",
+  "summary": "kerberos api bindings for python",
+  "version": "0.5.1",
+  "releases": [],
+  "developers": [
+    "jborean93@gmail.com",
+    "jordan_borean"
+  ],
+  "kwds": "kerberos krb5_cython_tracing badge krb5error krb5",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_krb5",
+  "homepage": "https://github.com/jborean93/pykrb5",
+  "release_count": 9,
+  "dependency_ids": []
+}

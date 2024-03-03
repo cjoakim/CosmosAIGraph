@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "framework :: ipython",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "topic :: system :: shells"
+  ],
+  "description": "a jupyter kernel base class in python which includes core magic functions (including help, command and file path completion, parallel and distributed processing, downloads, and much more).\n\n.. image:: https://badge.fury.io/py/metakernel.png/\n    :target: http://badge.fury.io/py/metakernel\n\n.. image:: https://coveralls.io/repos/calysto/metakernel/badge.png?branch=main\n  :target: https://coveralls.io/r/calysto/metakernel\n\n.. image:: https://github.com/calysto/metakernel/actions/workflows/tests.yml/badge.svg?query=branch%3amain++\n  :target: https://github.com/calysto/metakernel/actions/workflows/tests.yml\n\n.. image:: https://anaconda.org/conda-forge/metakernel/badges/version.svg\n    :target: https://anaconda.org/conda-forge/metakernel\n\n.. image:: https://anaconda.org/conda-forge/metakernel/badges/downloads.svg\n    :target: https://anaconda.org/conda-forge/metakernel\n\n\nsee jupyter's docs on `wrapper kernels\n<http://jupyter-client.readthedocs.io/en/stable/wrapperkernels.html>`_.\n\nadditional magics can be installed within the new kernel package under a `magics` subpackage.\n\n\nfeatures\n-------------\n- basic set of line and cell magics for all kernels.\n    - python magic for accessing python interpreter.\n    - run kernels in parallel.\n    - shell magics.\n    - classroom management magics.\n- tab completion for magics and file paths.\n- help for magics using ? or shift+tab.\n- plot magic for setting default plot behavior.\n\nkernels based on metakernel\n---------------------------\n\n- matlab_kernel, https://github.com/calysto/matlab_kernel\n- octave_kernel, https://github.com/calysto/octave_kernel\n- calysto_scheme, https://github.com/calysto/calysto_scheme\n- calysto_processing, https://github.com/calysto/calysto_processing\n- java9_kernel, https://github.com/bachmann1234/java9_kernel\n- xonsh_kernel, https://github.com/calysto/xonsh_kernel\n- calysto_hy, https://github.com/calysto/calysto_hy\n- gnuplot_kernel, https://github.com/has2k1/gnuplot_kernel\n- spylon_kernel, https://github.com/mariusvniekerk/spylon-kernel\n- wolfram_kernel, https://github.com/mmatera/iwolfram\n- sas_kernel, https://github.com/sassoftware/sas_kernel\n- pysysh_kernel, https://github.com/jaesin/psysh_kernel\n- calysto_bash, https://github.com/calysto/calysto_bash\n\n... and many others.\n\ninstallation\n----------------\nyou can install metakernel through ``pip``:\n\n.. code::bash\n\n pip install metakernel --upgrade\n\ninstalling `metakernel` from the `conda-forge` channel can be achieved by adding `conda-forge` to your channels with:\n\n.. code::bash\n\n conda config --add channels conda-forge\n\nonce the `conda-forge` channel has been enabled, `metakernel` can be installed with:\n\n.. code::bash\n\n conda install metakernel\n\nit is possible to list all of the versions of `metakernel` available on your platform with:\n\n.. code::bash\n\n conda search metakernel --channel conda-forge\n\n\nuse metakernel magics in ipython\n--------------------------------\n\nalthough metakernel is a system for building new kernels, you can use a subset of the magics in the ipython kernel.\n\n.. code:: python\n\n from metakernel import register_ipython_magics\n register_ipython_magics()\n\nput the following in your (or a system-wide) ``ipython_config.py`` file:\n\n.. code:: python\n\n # /etc/ipython/ipython_config.py\n c = get_config()\n startup = [\n    'from metakernel import register_ipython_magics',\n    'register_ipython_magics()',\n ]\n c.interactiveshellapp.exec_lines = startup\n\nuse metakernel languages in parallel\n\nto use a metakernel language in parallel, do the following:\n\n1. make sure that the python module `ipyparallel` is installed. in the shell, type:\n\n.. code:: bash\n\n  pip install ipyparallel\n\n\n2. to enable the extension in the notebook, in the shell, type:\n\n.. code:: bash\n\n  ipcluster nbextension enable\n\n\n3. to start up a cluster, with 10 nodes, on a local ip address, in the shell, type:\n\n.. code:: bash\n\n  ipcluster start --n=10 --ip=192.168.1.108\n\n\n4. initialize the code to use the 10 nodes, inside the notebook from a host kernel ``module`` and ``classname`` (can be any metakernel kernel):\n\n.. code:: bash\n\n  %parallel module classname\n\n\nfor example:\n\n.. code:: bash\n\n  %parallel calysto_scheme calystoscheme\n\n\n5. run code in parallel, inside the notebook, type:\n\nexecute a single line, in parallel:\n\n.. code:: bash\n\n  %px (+ 1 1)\n\n\nor execute the entire cell, in parallel:\n\n.. code:: bash\n\n  %%px\n  (* cluster_rank cluster_rank)\n\n\nresults come back in a python list (scheme vector), in ``cluster_rank`` order. (this will be a json representation in the future).\n\ntherefore, the above would produce the result:\n\n.. code:: bash\n\n  #10(0 1 4 9 16 25 36 49 64 81)\n\nyou can get the results back in any of the parallel magics (``%px``, ``%%px``, or ``%pmap``) in the host kernel by accessing the variable ``_`` (single underscore), or by using the ``--set_variable variable`` flag, like so:\n\n.. code:: bash\n\n  %%px --set_variable results\n  (* cluster_rank cluster_rank)\n\n\nthen, in the next cell, you can access ``results``.\n\nnotice that you can use the variable ``cluster_rank`` to partition parts of a problem so that each node is working on something different.\n\nin the examples above, use ``-e`` to evaluate the code in the host kernel as well. note that ``cluster_rank`` is not defined on the host machine, and that this assumes the host kernel is the same as the parallel machines.\n\n\nconfiguration\n-------------\n``metakernel`` subclasses can be configured by the user.  the\nconfiguration file name is determined by the ``app_name`` property of the subclass.\nfor example, in the ``octave`` kernel, it is ``octave_kernel``.  the user of the kernel can add an ``octave_kernel_config.py`` file to their\n``jupyter`` config path.  the base ``metakernel`` class offers ``plot_settings`` as a configurable trait.  subclasses can define other traits that they wish to make\nconfigurable.\n\nas an example:\n\n.. code:: bash\n\n    cat ~/.jupyter/octave_kernel_config.py\n    # use qt as the default backend for plots\n    c.octavekernel.plot_settings = dict(backend='qt')\n\n\ndocumentation\n-----------------------\n\nexample notebooks can be viewed here_.\n\ndocumentation is available online_. magics have interactive help_ (and online).\n\nfor version information, see the changelog_.\n\n\n.. _here: http://nbviewer.jupyter.org/github/calysto/metakernel/tree/main/examples/\n\n.. _help: https://github.com/calysto/metakernel/blob/main/metakernel/magics/readme.md\n\n.. _online: http://calysto.github.io/metakernel/\n\n.. _changelog: https://github.com/calysto/metakernel/blob/main/changelog.md\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "metakernel",
+  "package_url": "https://pypi.org/project/metakernel/",
+  "project_url": "https://pypi.org/project/metakernel/",
+  "project_urls": {
+    "Homepage": "https://github.com/Calysto/metakernel"
+  },
+  "release_url": "https://pypi.org/project/metakernel/0.30.1/",
+  "requires_dist": [
+    "ipykernel>=5.5.6",
+    "jedi>=0.18",
+    "jupyter-core>=4.9.2",
+    "pexpect>=4.8",
+    "portalocker; extra == 'activity'",
+    "ipyparallel; extra == 'parallel'",
+    "jupyter-kernel-test; extra == 'test'",
+    "pytest; extra == 'test'",
+    "pytest-cov; extra == 'test'",
+    "pytest-timeout; extra == 'test'",
+    "requests; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "",
+  "version": "0.30.1",
+  "releases": [],
+  "developers": [
+    "steven.silvester@ieee.org"
+  ],
+  "kwds": "metakernel register_ipython_magics jupyter pysysh_kernel psysh_kernel",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_metakernel",
+  "homepage": "",
+  "release_count": 99,
+  "dependency_ids": [
+    "pypi_ipykernel",
+    "pypi_ipyparallel",
+    "pypi_jedi",
+    "pypi_jupyter_core",
+    "pypi_jupyter_kernel_test",
+    "pypi_pexpect",
+    "pypi_portalocker",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_timeout",
+    "pypi_requests"
+  ]
+}

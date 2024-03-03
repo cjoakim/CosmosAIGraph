@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "\n# pandas flavor\n**the easy way to write your own flavor of pandas**\n\npandas 0.23 added a (simple) api for registering accessors with pandas objects.\n\npandas-flavor extends pandas' extension api by:\n1. adding support for registering methods as well.\n2. making each of these functions backwards compatible with older versions of pandas.\n\n***what does this mean?***\n\nit is now simpler to add custom functionality to pandas dataframes and series.\n\nimport this package. write a simple python function. register the function using one of the following decorators.\n\n***why?***\n\npandas is super handy. its general purpose is to be a \"flexible and powerful data analysis/manipulation library\".\n\n**pandas flavor** allows you add functionality that tailors pandas to specific fields or use cases.\n\nmaybe you want to add new write methods to the pandas dataframe? maybe you want custom plot functionality? maybe something else?\n\n## register accessors\n\naccessors (in pandas) are objects attached to a attribute on the pandas dataframe/series\nthat provide extra, specific functionality. for example, `pandas.dataframe.plot` is an\naccessor that provides plotting functionality.\n\nadd an accessor by registering the function with the following decorator\nand passing the decorator an accessor name.\n\n\n```python\n# my_flavor.py\n\nimport pandas_flavor as pf\n\n@pf.register_dataframe_accessor('my_flavor')\nclass myflavor(object):\n\n  def __init__(self, data):\n    self._data = data\n\n  def row_by_value(self, col, value):\n    \"\"\"slice out row from dataframe by a value.\"\"\"\n    return self._data[self._data[col] == value].squeeze()\n\n```\n\nevery dataframe now has this accessor as an attribute.\n```python\nimport my_flavor\n\n# dataframe.\ndf = pd.dataframe(data={\n  \"x\": [10, 20, 25],\n  \"y\": [0, 2, 5]\n})\n\n# print dataframe\nprint(df)\n\n# x  y\n# 0  10  0\n# 1  20  2\n# 2  25  5\n\n# access this functionality\ndf.my_flavor.row_by_value('x', 10)\n\n# x    10\n# y     0\n# name: 0, dtype: int64\n```\n\nto see this in action, check out [pdvega](https://github.com/jakevdp/pdvega),\n[phylopandas](https://github.com/zsailer/phylopandas), and [pyjanitor](https://github.com/ericmjl/pyjanitor)!\n\n\n## register methods\n\nusing this package, you can attach functions directly to pandas objects. no\nintermediate accessor is needed.\n\n```python\n# my_flavor.py\n\nimport pandas_flavor as pf\n\n@pf.register_dataframe_method\ndef row_by_value(df, col, value):\n    \"\"\"slice out row from dataframe by a value.\"\"\"\n    return df[df[col] == value].squeeze()\n\n```\n\n```python\nimport pandas as pd\nimport my_flavor\n\n# dataframe.\ndf = pd.dataframe(data={\n  \"x\": [10, 20, 25],\n  \"y\": [0, 2, 5]\n})\n\n# print dataframe\nprint(df)\n\n# x  y\n# 0  10  0\n# 1  20  2\n# 2  25  5\n\n# access this functionality\ndf.row_by_value('x', 10)\n\n# x    10\n# y     0\n# name: 0, dtype: int64\n```\n\n## registered methods tracing\n\nthe pandas_flavor 0.5.0 release introduced [tracing of the registered method calls](/docs/tracing_ext.md). now it is possible to add additional run-time logic around registered method execution which can be used for some support tasks. this extension was introduced\nto allow visualization of [pyjanitor](https://github.com/pyjanitor-devs/pyjanitor) method chains as implemented in [pyjviz](https://github.com/pyjanitor-devs/pyjviz)\n\n\n## available methods\n\n- **register_dataframe_method**: register a method directly with a pandas dataframe.\n- **register_dataframe_accessor**: register an accessor (and it's methods) with a pandas dataframe.\n- **register_series_method**: register a methods directly with a pandas series.\n- **register_series_accessor**: register an accessor (and it's methods) with a pandas series.\n\n## installation\n\nyou can install using **pip**:\n```\npip install pandas_flavor\n```\nor conda (thanks @ericmjl)!\n```\nconda install -c conda-forge pandas-flavor\n```\n\n## contributing\n\npull requests are always welcome! if you find a bug, don't hestitate to open an issue or submit a pr. if you're not sure how to do that, check out this [simple guide](https://github.com/zsailer/guide-to-working-as-team-on-github).\n\nif you have a feature request, please open an issue or submit a pr!\n\n## tl;dr\n\npandas 0.23 introduced a simpler api for [extending pandas](https://pandas.pydata.org/pandas-docs/stable/development/extending.html#extending-pandas). this api provided two key decorators, `register_dataframe_accessor` and `register_series_accessor`, that enable users to register **accessors** with pandas dataframes and series.\n\npandas flavor originated as a library to backport these decorators to older versions of pandas (<0.23). while doing the backporting, it became clear that registering **methods** directly to pandas objects might be a desired feature as well.[*](#footnote)\n\n<a name=\"footnote\">*</a>*it is likely that pandas deliberately chose not implement to this feature. if everyone starts monkeypatching dataframes with their custom methods, it could lead to confusion in the pandas community. the preferred pandas approach is to namespace your methods by registering an accessor that contains your custom methods.*\n\n**so how does method registration work?**\n\nwhen you register a method, pandas flavor actually creates and registers a (this is subtle, but important) **custom accessor class that mimics** the behavior of a method by:\n1. inheriting the docstring of your function\n2. overriding the `__call__` method to call your function.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pandas-flavor",
+  "package_url": "https://pypi.org/project/pandas-flavor/",
+  "project_url": "https://pypi.org/project/pandas-flavor/",
+  "project_urls": {
+    "Homepage": "https://github.com/Zsailer/pandas_flavor"
+  },
+  "release_url": "https://pypi.org/project/pandas-flavor/0.6.0/",
+  "requires_dist": [
+    "pandas (>=0.23)",
+    "xarray"
+  ],
+  "requires_python": "",
+  "summary": "the easy way to write your own pandas flavor.",
+  "version": "0.6.0",
+  "releases": [],
+  "developers": [
+    "zach_sailer",
+    "zachsailer@gmail.com"
+  ],
+  "kwds": "pandas_flavor pandas register_dataframe_accessor register_dataframe_method dataframes",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pandas_flavor",
+  "homepage": "https://github.com/zsailer/pandas_flavor",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_pandas",
+    "pypi_xarray"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "classifiers": [
+    "programming language :: python :: 2",
+    "programming language :: python :: 3"
+  ],
+  "description": "data\n====\n\n``data`` is a small python module that allows you to treat input in a singular\nway and leave it up to the caller to supply a byte-string, a unicode object, a\nfile-like or a filename.\n\n.. code-block:: python\n\n    >>> open('helloworld.txt', 'w').write('hello, world from a file')\n\n    >>> from data import data as i\n    >>> a = i(u'hello, world')\n    >>> b = i(file='helloworld.txt')\n    >>> c = i(open('helloworld.txt'))\n\n    >>> print unicode(a)\n    hello, world\n    >>> print unicode(b)\n    hello, world from a file\n    >>> print unicode(c)\n    hello, world from a file\n\nthis can be made even more convenient using the ``data`` decorator:\n\n.. code-block:: python\n\n    >>> from data.decorators import data\n\n    >>> @data('buf')\n    ... def parse_buffer(buf, magic_mode=false):\n    ...   return 'buf passed in as ' + repr(buf)\n    ...\n\n    >>> parse_buffer('hello')\n    \"buf passed in as data(data='hello', encoding='utf8')\"\n\n    >>> rv = parse_buffer(open('helloworld.txt'))\n    >>> assert 'file=' in rv\n\n\nfitting in\n----------\n\nall instances support methods like ``read`` or ``__str__`` that make it easy to\nfit it into existing apis:\n\n.. code-block:: python\n\n    >>> d = i('some data')\n    >>> d.read(4)\n    u'some'\n    >>> d.read(4)\n    u' dat'\n    >>> d.read(4)\n    u'a'\n    >>> e = i(u'more data')\n    >>> str(e)\n    'more data'\n\nnote how ``read`` returns unicode. additionally, ``readb`` is available:\n\n.. code-block:: python\n\n    >>> f = i(u'i am \\xdcnicode.')\n    >>> f.readb()\n    'i am \\xc3\\x9cnicode.'\n\nevery ``data`` object has an encoding attribute which is used for converting\nfrom and to unicode.\n\n.. code-block:: python\n\n    >>> g = i(u'i am \\xdcnicode.', encoding='latin1')\n    >>> g.readb()\n    'i am \\xdcnicode.'\n\niteration and line reading are also supported:\n\n.. code-block:: python\n\n    >>> h = i('i am\\nof many\\nlines')\n    >>> h.readline()\n    u'i am\\n'\n    >>> h.readlines()\n    [u'of many\\n', u'lines']\n\n    >>> i = i('line one\\nline two\\n')\n    >>> list(iter(i))\n    [u'line one\\n', u'line two\\n']\n\n\nextras\n------\n\nsave_to\n~~~~~~~\n\nsome useful convenience methods are available:\n\n.. code-block:: python\n\n    >>> j = i('example')\n    >>> j.save_to('example.txt')\n\nthe ``save_to`` method will use the most efficient way possible to save the\ndata to a file (``copyfileobj`` or ``write()``). it can also be passed a\nfile-like object:\n\n.. code-block:: python\n\n    >>> k = i('example2')\n    >>> with open('example2.txt', 'wb') as out:\n    ...     k.save_to(out)\n    ...\n\n\ntemp_saved\n~~~~~~~~~~\n\nif you need the output inside a secure temporary file, ``temp_saved`` is\navailable:\n\n.. code-block:: python\n\n    >>> l = i('goes into tmp')\n    >>> with l.temp_saved() as tmp:\n    ...     print tmp.name.startswith('/tmp/tmp')\n    ...     print l.read()\n    ...\n    true\n    goes into tmp\n\n``temp_saved`` functions almost identically to ``tempfile.namedtemporaryfile``,\nwith one difference: there is no ``delete`` argument. the file is removed only\nwhen the context manager exits.\n\n\nwhere it is useful\n------------------\n\n``data`` can be used on both sides of an api, either while passing values in:\n\n.. code-block:: python\n\n    >>> import json\n    >>> from data import data as i\n\n    >>> m = i('{\"this\": \"json\"}')\n    >>> json.load(m)\n    {u'this': u'json'}\n\nor when getting values passed (see the data decorator example above). if\nnecessary, you can also support apis that allow users to pass in filenames:\n\n.. code-block:: python\n\n    >>> class parser(object):\n    ...   @data('input')\n    ...   def parse(self, input, parser_opt=false):\n    ...     return input\n    ...   def parse_file(self, input_file, *args, **kwargs):\n    ...     return self.parse(i(file=input_file), *args, **kwargs)\n    ...\n\n    >>> p = parser()\n    >>> p.parse_file('/dev/urandom')\n    data(file='/dev/urandom', encoding='utf8')\n\n\nsee the documentation at http://pythonhosted.org/data for an api reference.\n\n\npython 2 and 3\n--------------\n\n``data`` works the same on python 2 and 3 thanks to `six\n<https://pypi.python.org/pypi/six>`_, a few compatibility functions and a\ntestsuite.\n\npython 3 is supported from 3.3 onwards, python 2 from 2.6.",
+  "docs_url": "https://pythonhosted.org/data/",
+  "keywords": "",
+  "license": "mit",
+  "name": "data",
+  "package_url": "https://pypi.org/project/data/",
+  "project_url": "https://pypi.org/project/data/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "http://github.com/mbr/data"
+  },
+  "release_url": "https://pypi.org/project/data/0.4/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "work with unicode/non-unicode data from files or strings uniformly.",
+  "version": "0.4",
+  "releases": [],
+  "developers": [
+    "git@marcbrinkmann.de",
+    "marc_brinkmann"
+  ],
+  "kwds": "input_file python unicode parse_buffer encoding",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_data",
+  "homepage": "http://github.com/mbr/data",
+  "release_count": 4,
+  "dependency_ids": []
+}

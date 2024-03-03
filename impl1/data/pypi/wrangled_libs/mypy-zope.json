@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development"
+  ],
+  "description": "# plugin for mypy to support zope.interface\n\n[![build status](https://travis-ci.org/shoobx/mypy-zope.svg?branch=master)](https://travis-ci.org/shoobx/mypy-zope)\n[![coverage status](https://coveralls.io/repos/github/shoobx/mypy-zope/badge.svg)](https://coveralls.io/github/shoobx/mypy-zope)\n[![checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)\n\nthe goal is to be able to make zope interfaces to be treated as types in mypy\nsense.\n\n## usage\n\ninstall both mypy and mypy-zope:\n```sh\npip install mypy-zope\n```\n\nedit `mypy.ini` file in your project to enable the plugin:\n\n```ini\n[mypy]\nnamespace_packages=true\nplugins=mypy_zope:plugin\n```\n\nyou're done! you can now check your project with mypy:\n\n```sh\nmypy your-project-dir\n```\n\n## what is supported?\n\nyou can browse\n[sample files](https://github.com/shoobx/mypy-zope/tree/master/tests/samples)\nto get some sense on what features are supported and how they are handled.\n\n### interface declarations\n\nyou can define the interface and provide implementation:\n\n```python\nclass ianimal(zope.interface.interface):\n    def say() -> none:\n        pass\n\n@zope.interface.implementer(ianimal)\nclass cow(object):\n    def say(self) -> none:\n        print(\"moooo\")\n\nanimal: ianimal = cow()\nanimal.say()\n```\n\nthe interface `ianimal` will be treated as superclass of the implementation\n`cow`: you will be able to pass an implementation to functions accepting an\ninterface and all the usual polymorphism tricks.\n\nit is also possible to declare the implementation using `classimplements`\nfunction  with the same effect as `@imlementer` decorator. this is useful if\nyou do not control the code that defines the implementation class.\n\n```python\nclassimplements(cow, ianimal)\n\nanimal: ianimal = cow()\n```\n\n### schema field type inference\na limited support for defining attributes as `zope.schema.field`s is supported too:\n\n```python\nclass ianimal(zope.interface.interface):\n    number_of_legs = zope.schema.int(title=\"number of legs\")\n\n@zope.interface.implementer(ianimal)\nclass cow(object):\n    number_of_legs = 4\n```\n\nin context of an interface, some known `zope.schema` field types are\nautomatically translated to python types, so the `number_of_legs` attributes is\ngetting the type `int` in the example above. that means mypy will report an\nerror if you try to assign string to that attribute on an instance of `ianimal`\ntype. custom fields or fields not recognized by plugin are given type `any`.\n\n### field properties\n\nsupport for `zope.schema.fieldproperty` is limited, because type information is\nnot transferred from an interface to implementation attribute, but mypy doesn't\nreport errors on sources like this:\n\n```python\nclass ianimal(zope.interface.interface):\n    number_of_legs = zope.schema.int(title=\"number of legs\")\n\n@zope.interface.implementer(ianimal)\nclass cow(object):\n    number_of_legs = zope.schema.fieldproperty(ianimal['number_of_legs'])\n```\n\nthe type of `cow.number_of_legs` will become `any` in this case, even though\n`ianimal.number_of_legs` would be inferred as `int`.\n\n### adaptation pattern\n\nzope interfaces can be \"called\" to lookup an adapter, like this:\n\n```python\nclass ieupowersocket(zope.interface.interface):\n    def fit():\n        pass\n\nadapter = ieupowersocket(us_plug)\nadapter.fit()\n```\n\ntype of the `adapter` variable will be set to `ieupowersocket`.\n\n### conditional type inference\n\nwhen using `zope.interface`'s `implementedby()` and `providedby()` methods\nin an if statement, `mypy` will know which type it is inside those statements.\n\n```python\nif ianimal.providedby(ob):\n    ob.number_of_legs += 2\n\n```\n\n### declaration of overloaded methods in interfaces\n\nsimilarly to regular [overloaded\nfunctions](https://docs.python.org/3/library/typing.html#typing.overload),\n`@overload` declarations are supported in interfaces as well:\n\n```python\nclass ianimal(zope.interface.interface):\n    @overload\n    def say() -> str:\n        ...\n\n    @overload\n    def say(count: int) -> list[str]:\n        ...\n\n    def say(count: int = none) -> union[str, list[str]]:\n        pass\n\n\n@zope.interface.implementer(ianimal)\nclass cow(object):\n    @overload\n    def say(self) -> str:\n        ...\n\n    @overload\n    def say(self, count: int) -> list[str]:\n        ...\n\n    def say(self, count: int = none) -> union[str, list[str]]:\n        if count is none:\n            return \"mooo\"\n        return [\"mooo\"] * count\n```\n\n### type stubs for zope.interface and zope.schema\n\n`mypy-zope` ships with type stubs (`*.pyi` files) for `zope.interface` and\n`zope.schema` packages. they are enabled automatically as soon as plugin is\nenabled.\n\n\n## what is not supported?\n\nthese `zope.interface` features are not supported:\n\n* declaring modules as interface implementers.\n* type inference for `zope.schema.list` and `zope.schema.dict` fields.\n* stub files are largely incomplete\n* interface compatibility checker will not type-check non-method attributes\n\n## ready to use!\n\ncurrently, the project is used in production in various substantially large\nprojects and considered production-grade, however there still might be subtle\nbugs around. suggestions and pull requests are welcomed!\n\n",
+  "docs_url": null,
+  "keywords": "mypy,zope,interfaces,typing",
+  "license": "",
+  "name": "mypy-zope",
+  "package_url": "https://pypi.org/project/mypy-zope/",
+  "project_url": "https://pypi.org/project/mypy-zope/",
+  "project_urls": {
+    "Homepage": "https://github.com/Shoobx/mypy-zope"
+  },
+  "release_url": "https://pypi.org/project/mypy-zope/1.0.3/",
+  "requires_dist": [
+    "mypy <1.9.0,>=1.0.0",
+    "zope.interface",
+    "zope.schema",
+    "pytest >=4.6 ; extra == 'test'",
+    "pytest-cov ; extra == 'test'",
+    "lxml ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "plugin for mypy to support zope interfaces",
+  "version": "1.0.3",
+  "releases": [],
+  "developers": [
+    "andrey.lebedev@gmail.com",
+    "andrey_lebedev"
+  ],
+  "kwds": "mypy_zope mypy zope mypy_badge python",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_mypy_zope",
+  "homepage": "https://github.com/shoobx/mypy-zope",
+  "release_count": 36,
+  "dependency_ids": [
+    "pypi_lxml",
+    "pypi_mypy",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_zope.interface",
+    "pypi_zope.schema"
+  ]
+}

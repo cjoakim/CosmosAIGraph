@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: zope public license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development"
+  ],
+  "description": "=====================================================\r\nzc.customdoctests -- use doctest with other languages\r\n=====================================================\r\n\r\ndoctest (and recently manuel) provide hooks for using custom doctest\r\nparsers.  `zc.customdoctests` helps to leverage this to support other\r\nlanguages, such as javascript::\r\n\r\n    js> function double (x) {\r\n    ...     return x*2;\r\n    ... }\r\n    js> double(2)\r\n    4\r\n\r\nand with `manuel <http://pypi.python.org/pypi/manuel>`_, it\r\nfacilitates doctests that mix multiple languages, such as python,\r\njavascript, and sh.\r\n\r\n.. contents::\r\n\r\n\r\ndetailed documentation\r\n======================\r\n\r\ncustom doctest parsers\r\n----------------------\r\n\r\nzc.customdoctests provides a little bit of help with creating custom\r\ndoctest parsers that work pretty muct like regular doctests, but that\r\nuse an alternate means of evaluating examples.  to use it, you call\r\nzc.customdoctests.doctestparser and pass any of the following options:\r\n\r\nps1\r\n   the first-line prompt, which defaultd to ``'>>>'``.\r\n\r\n   this must be a regular expression that matches exactly 3 characters.\r\n\r\n   (note that you can't override the second-line prompt.)\r\n\r\ncomment_prefix\r\n   the comment prefix regular expression, which defaults to '#'.\r\n\r\ntransform\r\n   a function used to transform example source, which defaults to a\r\n   no-operation function.\r\n\r\nthe js module provides support for using javascript in doctests using\r\n`python-spidermonkey\r\n<http://pypi.python.org/pypi/python-spidermonkey>`_. it provides some\r\nexamples of defining custom doctest parsers.\r\n\r\n\r\njavascript and python-spidermonkey support\r\n------------------------------------------\r\n\r\n.. this file shows some examples of using spidermonkey apis in doctests.\r\n\r\nto wire this up, you'd use something like::\r\n\r\n   import doctest, zc.customdoctests.js\r\n\r\n   test_suite = doctest.doctestsuite(\r\n       parser=zc.customdoctests.js.parser,\r\n       setup=zc.customdoctests.js.spidermonkeysetup)\r\n\r\nor, with manuel::\r\n\r\n    test_suite = manuel.testing.testsuite(\r\n        manuel.doctest.manuel(parser=zc.customdoctests.js.parser) +\r\n        manuel.doctest.manuel(parser=zc.customdoctests.js.eq_parser) +\r\n        manuel.doctest.manuel() +\r\n        manuel.capture.manuel(),\r\n        'spidermonkey.txt',\r\n        setup=zc.customdoctests.js.spidermonkeysetup)\r\n\r\nnote that zc.customdoctests doesn't require spidermonkey, so you need\r\nto install spidermonkey seperately if you want to use it.\r\n\r\nan advantage of using manuel is that you can use multiple parsers in\r\nthe same document.  in the example, above, 2 javascript example\r\nsyntaxes (described below) as well as the standard doctest syntax are\r\nsupported.  this document is run with manuel to allow all 3 syntaxes.\r\n\r\nfor the rest of this document, we'll show examples of javascript\r\ndoctests as well as helper apis used to support javascript and to\r\nintegrate javascript and python.\r\n\r\njavascript doctests use a \"js>\" prompt (as used in rhino and the\r\nspidermonkey interpreter)::\r\n\r\n    js> 2 +\r\n    ... 'hi world' // doctest: +ellipsis\r\n    u'2hi...\r\n\r\nassignments return values.  this can generate annoying output\r\nin doctests::\r\n\r\n    js> ob = {a: 1, b: 2}\r\n    [object object]\r\n\r\nif you're using manuel, you can avoid this by using js!::\r\n\r\n    js! x = 3\r\n\r\nwhich suppresses expression values.\r\n\r\nload and print functions (similar to those found in rhino) are\r\nprovided.  for example, given a javascript file, double.js::\r\n\r\n   function double (x) {\r\n       return x*2;\r\n   }\r\n\r\n.. -> src\r\n\r\n   >>> with open('double.js', 'w') as f:\r\n   ...     f.write(src)\r\n\r\nwe can load the file::\r\n\r\n    js> load('double.js')\r\n    js> double(10)\r\n    20\r\n\r\nwe can print values::\r\n\r\n    js> print('hi')\r\n    hi\r\n\r\na python object provides access to the open function and the os\r\nmodule::\r\n\r\n    js> python.os.path.exists('double.js')\r\n    true\r\n\r\n    js! f = python.open('double.js')\r\n    js> print(f.read())\r\n    function double (x) {\r\n        return x*2;\r\n    }\r\n    <blankline>\r\n\r\n    js> f.close()\r\n\r\n\r\nif you're using manuel, you can intermix python and and javascript\r\nexamples and there are a number of apis to facilitate using python and\r\njavascript together.\r\n\r\nthere's an add_js_global function to copy data from python::\r\n\r\n    >>> add_js_global('y', 1)\r\n\r\n    js> y\r\n    1\r\n\r\nthere's also a js object that provides attribute access to js globals::\r\n\r\n    >>> js.x\r\n    3\r\n\r\n    >>> js.z = 4\r\n\r\n    js> z\r\n    4\r\n\r\nyou can also call this to run js code without returning the resulting value::\r\n\r\n    >>> js('a = x + y')\r\n\r\n    js> a\r\n    4\r\n\r\n\r\nchangelog\r\n=========\r\n\r\n1.0.1 (2013-02-14)\r\n------------------\r\n\r\n- fixed restructuredtext errors on the pypi page.\r\n\r\n\r\n1.0.0 (2013-02-13)\r\n------------------\r\n\r\n- added python 3.3 support.\r\n\r\n- cleanup `setup.py`, add `tox.ini` and manifest.\r\n\r\n\r\n0.1.0 (2011-05-19)\r\n------------------\r\n\r\n- initial release",
+  "docs_url": null,
+  "keywords": "",
+  "license": "zpl 2.1",
+  "name": "zc.customdoctests",
+  "package_url": "https://pypi.org/project/zc.customdoctests/",
+  "project_url": "https://pypi.org/project/zc.customdoctests/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "http://pypi.python.org/pypi/zc.customdoctests"
+  },
+  "release_url": "https://pypi.org/project/zc.customdoctests/1.0.1/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "=====================================================",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "jim@zope.com",
+    "jim_fulton"
+  ],
+  "kwds": "doctestparser doctest doctests doctestsuite customdoctests",
+  "license_kwds": "zpl 2.1",
+  "libtype": "pypi",
+  "id": "pypi_zc.customdoctests",
+  "homepage": "http://pypi.python.org/pypi/zc.customdoctests",
+  "release_count": 3,
+  "dependency_ids": []
+}

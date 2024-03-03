@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "===================\nplaster_pastedeploy\n===================\n\n.. image:: https://img.shields.io/pypi/v/plaster_pastedeploy.svg\n        :target: https://pypi.python.org/pypi/plaster_pastedeploy\n\n.. image:: https://github.com/pylons/plaster_pastedeploy/workflows/build%20and%20test/badge.svg?branch=master\n        :target: https://github.com/pylons/plaster_pastedeploy/actions?query=workflow%3a%22build+and+test%22\n        :alt: master ci status\n\n``plaster_pastedeploy`` is a plaster_ plugin that provides a ``plaster.loader``\nthat can parse ini files according to the standard set by pastedeploy_. it\nsupports the ``wsgi`` plaster protocol, implementing the\n``plaster.protocols.iwsgiprotocol`` interface.\n\nusage\n=====\n\napplications should use ``plaster_pastedeploy`` to load settings from named\nsections in a configuration source (usually a file).\n\n- please look at the documentation for plaster_ on how to integrate this\n  loader into your application.\n\n- please look at the documentation for pastedeploy_ on the specifics of the\n  supported ini file format.\n\nmost applications will want to use\n``plaster.get_loader(uri, protocols=['wsgi'])`` to get this loader. it then\nexposes ``get_wsgi_app``, ``get_wsgi_app_settings``, ``get_wsgi_filter`` and\n``get_wsgi_server``.\n\n.. code-block:: python\n\n    import plaster\n\n    loader = plaster.get_loader('development.ini', protocols=['wsgi'])\n    # to get any section out of the config file\n    settings = loader.get_settings('app:main')\n\n    # to get settings for a wsgi app\n    app_config = loader.get_wsgi_app_settings()  # defaults to main\n\n    # to get an actual wsgi app\n    app = loader.get_wsgi_app()  # defaults to main\n\n    # to get a filter and compose it with an app\n    filter = loader.get_wsgi_filter('filt')\n    app = filter(app)\n\n    # to get a wsgi server\n    server = loader.get_wsgi_server()  # defaults to main\n\n    # to start the wsgi server\n    server(app)\n\nany ``plaster.plasterurl`` options are forwarded as defaults to the loader.\nsome examples are below:\n\n- ``development.ini#myapp``\n\n- ``development.ini?http_port=8080#main``\n\n- ``pastedeploy+ini:///path/to/development.ini``\n\n- ``pastedeploy+ini://development.ini#foo``\n\n- ``egg:myapp?debug=false#foo``\n\n.. _pastedeploy: https://pastedeploy.readthedocs.io/en/latest/\n.. _plaster: https://docs.pylonsproject.org/projects/plaster/en/latest/\n\n1.0.1 (2022-11-06)\n==================\n\n- minor release to cleanup readme.\n\n1.0 (2022-11-06)\n================\n\n- drop support for python 2.7, 3.4, 3.5, 3.6.\n\n- add support for python 3.8, 3.9, 3.10.\n\n- blackify the codebase.\n\n- switch ci to github actions.\n\n0.7 (2019-04-12)\n================\n\n- support python 3.7.\n\n- depend on ``pastedeploy >= 2.0`` to enforce new behavior when overriding\n  defaults. default values passed into the loader will now override values in\n  the ``[default]`` section.\n  see https://github.com/pylons/plaster_pastedeploy/pull/17\n\n0.6 (2018-07-11)\n================\n\n- change ``setup_logging`` to invoke ``logging.config.fileconfig`` with\n  ``disable_existing_loggers=false`` to avoid disabling any loggers that were\n  imported prior to configuration of the logging system.\n  see https://github.com/pylons/plaster_pastedeploy/pull/16\n\n0.5 (2018-03-29)\n================\n\n- removed environment variable support entirely for now. the feature requires\n  bugfixes upstream in pastedeploy which have not been done yet and this was\n  breaking people's environments so it is gone for now.\n  see https://github.com/pylons/plaster_pastedeploy/pull/15\n\n0.4.2 (2017-11-20)\n==================\n\n- fix ``configdict.copy`` so that it works.\n  see https://github.com/pylons/plaster_pastedeploy/pull/14\n\n0.4.1 (2017-07-10)\n==================\n\n- disable environment variable support on python 2. pastedeploy does not\n  support escaping the contents on python 2 which means any variable with\n  a value of the format %(foo)s would break the parser. because this is\n  implicit behavior it was deemed too error prone to support.\n  see https://github.com/pylons/plaster_pastedeploy/pull/10\n\n- escape environment variables such that their contents are not subject to\n  interpolation. see https://github.com/pylons/plaster_pastedeploy/pull/10\n\n- invoke ``logging.basicconfig`` when ``setup_logging`` is called and the\n  config file doesn't contain any logging setup or the uri is using the\n  ``egg:`` protocol. see https://github.com/pylons/plaster_pastedeploy/pull/11\n\n0.4 (2017-07-09)\n================\n\n- fix ``get_settings`` for an arbitrary section to follow the same rules as\n  pastedeploy with regards to the handling of defaults. the goal of this\n  package is to be compliant with pastedeploy's format for all sections in\n  the file such that there are no surprising format changes in various\n  sections.\n\n  supported added for ``set default_foo = bar`` and ``get foo = default_foo``\n  syntax to override a default value and to pull a default value into the\n  settings, respectively. in the above example the value ``foo = bar`` would\n  be returned. any other defaults not pulled into the section via either\n  interpolation or the ``get`` syntax will be ignored.\n\n  see https://github.com/pylons/plaster_pastedeploy/pull/6\n\n- inject environment variables into the defaults automatically. these will\n  be available for interpolation as ``env_<foo>``. for example if environment\n  variable ``app_debug=true`` then ``%(env_app_debug)s`` will work within the\n  ini file. see https://github.com/pylons/plaster_pastedeploy/pull/7\n\n- ``get_settings`` and ``get_wsgi_app_settings`` both return only the local\n  config now. however, the returned object has a ``global_conf`` attribute\n  containing the defaults as well as a ``loader`` attribute pointing at\n  the loader instance.\n  see https://github.com/pylons/plaster_pastedeploy/pull/8\n\n0.3.2 (2017-07-01)\n==================\n\n- resolve an issue in which ``nosectionerror`` would not be properly caught on\n  python 2.7 if the ``configparser`` module was installed from pypi.\n  see https://github.com/pylons/plaster_pastedeploy/issues/5\n\n0.3.1 (2017-06-02)\n==================\n\n- recognize the ``pastedeploy+egg`` scheme as an ``egg`` type.\n\n0.3 (2017-06-02)\n================\n\n- drop the ``ini`` scheme and replace with ``file+ini`` and ``pastedeploy``.\n  also rename ``ini+pastedeploy`` and ``egg+pastedeploy`` to\n  ``pastedeploy+ini`` and ``pastedeploy+egg`` respectively.\n  see https://github.com/pylons/plaster_pastedeploy/pull/4\n\n0.2.1 (2017-03-29)\n==================\n\n- fix a bug in 0.2 in which an exception was raised for an invalid section\n  if the a non-config-file-based protocol was used.\n\n0.2 (2017-03-29)\n================\n\n- no longer raise ``plaster.nosectionerror`` exceptions. empty dictionaries\n  are returned for missing sections and a user should check ``get_sections``\n  for the list of valid sections.\n\n0.1 (2017-03-27)\n================\n\n- initial release.\n",
+  "docs_url": null,
+  "keywords": "plaster,pastedeploy,plaster_pastedeploy,ini,config,egg",
+  "license": "",
+  "name": "plaster-pastedeploy",
+  "package_url": "https://pypi.org/project/plaster-pastedeploy/",
+  "project_url": "https://pypi.org/project/plaster-pastedeploy/",
+  "project_urls": {
+    "Homepage": "https://github.com/Pylons/plaster_pastedeploy"
+  },
+  "release_url": "https://pypi.org/project/plaster-pastedeploy/1.0.1/",
+  "requires_dist": [
+    "PasteDeploy (>=2.0)",
+    "plaster (>=0.5)",
+    "pytest ; extra == 'testing'",
+    "pytest-cov ; extra == 'testing'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a loader implementing the pastedeploy syntax to be used by plaster.",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "hunter_senft",
+    "pylons-discuss@googlegroups.com"
+  ],
+  "kwds": "plaster_pastedeploy plasterurl plaster plaster_ _plaster",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_plaster_pastedeploy",
+  "homepage": "https://github.com/pylons/plaster_pastedeploy",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_pastedeploy",
+    "pypi_plaster",
+    "pypi_pytest",
+    "pypi_pytest_cov"
+  ]
+}

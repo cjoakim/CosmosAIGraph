@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: communications :: chat"
+  ],
+  "description": "#### dependencies\n\nthe [zulip api](https://zulip.com/api) python bindings require the\nfollowing dependencies:\n\n* **python (version >= 3.8)**\n* requests (version >= 0.12.1)\n\n**note**: if you'd like to use the zulip bindings with python 2, we\nrecommend installing version 0.6.4.\n\n#### installing\n\nthis package uses setuptools, so you can just run:\n\n    python setup.py install\n\n#### using the api\n\nfor now, the only fully supported api operation is sending a message.\nthe other api queries work, but are under active development, so\nplease make sure we know you're using them so that we can notify you\nas we make any changes to them.\n\nthe easiest way to use these api bindings is to base your tools off\nof the example tools under zulip/examples/ in this distribution.\n\nif you place your api key in the config file `~/.zuliprc` the python\napi bindings will automatically read it in. the format of the config\nfile is as follows:\n\n    [api]\n    key=<api key from the web interface>\n    email=<your email address>\n    site=<your zulip server's uri>\n    insecure=<true or false, true means do not verify the server certificate>\n    cert_bundle=<path to a file containing ca or server certificates to trust>\n\nif omitted, these settings have the following defaults:\n\n    insecure=false\n    cert_bundle=<the default ca bundle trusted by python>\n\nalternatively, you may explicitly use \"--user\", \"--api-key\", and\n`--site` in our examples, which is especially useful when testing.  if\nyou are running several bots which share a home directory, we\nrecommend using `--config` to specify the path to the `zuliprc` file\nfor a specific bot.  finally, you can control the defaults for all of\nthese variables using the environment variables `zulip_config`,\n`zulip_api_key`, `zulip_email`, `zulip_site`, `zulip_cert`,\n`zulip_cert_key`, and `zulip_cert_bundle`.  command-line options take\nprecedence over environment variables take precedence over the config\nfiles.\n\nthe command line equivalents for other configuration options are:\n\n    --insecure\n    --cert-bundle=<file>\n\nyou can obtain your zulip api key, create bots, and manage bots all\nfrom your zulip settings page; with current zulip there's also a\nbutton to download a `zuliprc` file for your account/server pair.\n\na typical simple bot sending api messages will look as follows:\n\nat the top of the file:\n\n    # make sure the zulip api distribution's root directory is in sys.path, then:\n    import zulip\n    zulip_client = zulip.client(email=\"your-bot@example.com\", client=\"mytestclient/0.1\")\n\nwhen you want to send a message:\n\n    message = {\n      \"type\": \"stream\",\n      \"to\": [\"support\"],\n      \"subject\": \"your subject\",\n      \"content\": \"your content\",\n    }\n    zulip_client.send_message(message)\n\nif you are parsing arguments, you may find it useful to use zulip's\noption group; see any of our api examples for details on how to do this.\n\nadditional examples:\n\n    client.send_message({'type': 'stream', 'content': 'zulip rules!',\n                         'subject': 'feedback', 'to': ['support']})\n    client.send_message({'type': 'private', 'content': 'zulip rules!',\n                         'to': ['user1@example.com', 'user2@example.com']})\n\nsend_message() returns a dict guaranteed to contain the following\nkeys: msg, result.  for successful calls, result will be \"success\" and\nmsg will be the empty string.  on error, result will be \"error\" and\nmsg will describe what went wrong.\n\n#### examples\n\nthe api bindings package comes with several nice example scripts that\nshow how to use the apis; they are installed as part of the api\nbindings bundle.\n\n#### logging\n\nthe zulip api comes with a zulipstream class which can be used with the\nlogging module:\n\n```\nimport zulip\nimport logging\nstream = zulip.zulipstream(type=\"stream\", to=[\"support\"], subject=\"your subject\")\nlogger = logging.getlogger(\"your_logger\")\nlogger.addhandler(logging.streamhandler(stream))\nlogger.setlevel(logging.debug)\nlogger.info(\"this is an info test.\")\nlogger.debug(\"this is a debug test.\")\nlogger.warn(\"this is a warn test.\")\nlogger.error(\"this is a error test.\")\n```\n\n#### sending messages\n\nyou can use the included `zulip-send` script to send messages via the\napi directly from existing scripts.\n\n    zulip-send hamlet@example.com cordelia@example.com -m \\\n        \"conscience doth make cowards of us all.\"\n\nalternatively, if you don't want to use your ~/.zuliprc file:\n\n    zulip-send --user shakespeare-bot@example.com \\\n        --api-key a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5 \\\n        --site https://zulip.example.com \\\n        hamlet@example.com cordelia@example.com -m \\\n        \"conscience doth make cowards of us all.\"\n\n#### working with an untrusted server certificate\n\nif your server has either a self-signed certificate, or a certificate signed\nby a ca that you don't wish to globally trust then by default the api will\nfail with an ssl verification error.\n\nyou can add `insecure=true` to your .zuliprc file.\n\n    [api]\n    site=https://zulip.example.com\n    insecure=true\n\nthis disables verification of the server certificate, so connections are\nencrypted but unauthenticated. this is not secure, but may be good enough\nfor a development environment.\n\n\nyou can explicitly trust the server certificate using `cert_bundle=<filename>`\nin your .zuliprc file.\n\n    [api]\n    site=https://zulip.example.com\n    cert_bundle=/home/bots/certs/zulip.example.com.crt\n\nyou can also explicitly trust a different set of certificate authorities from\nthe default bundle that is trusted by python. for example to trust a company\ninternal ca.\n\n    [api]\n    site=https://zulip.example.com\n    cert_bundle=/home/bots/certs/example.com.ca-bundle\n\nsave the server certificate (or the ca certificate) in its own file,\nconverting to pem format first if necessary.\nverify that the certificate you have saved is the same as the one on the\nserver.\n\nthe `cert_bundle` option trusts the server / ca certificate only for\ninteraction with the zulip site, and is relatively secure.\n\nnote that a certificate bundle is merely one or more certificates combined\ninto a single file.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "zulip",
+  "package_url": "https://pypi.org/project/zulip/",
+  "project_url": "https://pypi.org/project/zulip/",
+  "project_urls": {
+    "Documentation": "https://zulip.com/api",
+    "Homepage": "https://www.zulip.org/",
+    "Source": "https://github.com/zulip/python-zulip-api/"
+  },
+  "release_url": "https://pypi.org/project/zulip/0.9.0/",
+  "requires_dist": [
+    "requests[security] >=0.12.1",
+    "distro",
+    "click",
+    "typing-extensions >=4.5.0"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "bindings for the zulip message api",
+  "version": "0.9.0",
+  "releases": [],
+  "developers": [
+    "zulip-devel@googlegroups.com",
+    "zulip_open_source_project"
+  ],
+  "kwds": "zulip_api_key zulip_client zulip_config zulip zulip_site",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_zulip",
+  "homepage": "https://www.zulip.org/",
+  "release_count": 39,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_distro",
+    "pypi_requests",
+    "pypi_typing_extensions"
+  ]
+}

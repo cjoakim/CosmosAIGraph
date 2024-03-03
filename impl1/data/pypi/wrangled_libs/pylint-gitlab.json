@@ -1,0 +1,70 @@
+{
+  "classifiers": [
+    "license :: osi approved :: gnu general public license v3 (gplv3)",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# pylint-gitlab\n\n[![pipeline status](https://gitlab.com/smueller18/pylint-gitlab/badges/master/pipeline.svg)](https://gitlab.com/smueller18/pylint-gitlab/commits/master)\n[![coverage](https://gitlab.com/smueller18/pylint-gitlab/badges/master/coverage.svg)](https://smueller18.gitlab.io/pylint-gitlab/coverage/)\n[![pylint](https://smueller18.gitlab.io/pylint-gitlab/badges/pylint.svg)](https://smueller18.gitlab.io/pylint-gitlab/lint/)\n[![pip](https://img.shields.io/pypi/v/pylint-gitlab.svg)](https://pypi.org/project/pylint-gitlab/)\n\nthis project provides pylint formatters for a nice integration with gitlab ci.\n\n| formatter | description |\n| --- | --- |\n| `gitlabcodeclimatereporter` | maps the linting result in [code climate format](https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html) |\n| `gitlabcodeclimatereporternohash` | maps the linting result in [code climate format](https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html) but without hashing the fingerprint. needed to work with [nbqa](https://github.com/nbqa-dev/nbqa). |\n| `gitlabpageshtmlreporter` | creates a table in an html page with linting results and links to source code. |\n\n## usage\n\ninstall package `pylint-gitlab`:\n\n```sh\npip install pylint-gitlab\n```\n\nthe `pylint` package is a dependency of `pylint-gitlab` so it will be installed automatically.\n\nnow the formatters can be used by running `pylint` command and setting custom output formats with parameter `--output-format`.\n\n```sh\npylint --exit-zero --output-format=pylint_gitlab.gitlabcodeclimatereporter . > codeclimate.json\npylint --exit-zero --output-format=pylint_gitlab.gitlabpageshtmlreporter . > pylint.html\n```\n\nalternatively, you can load the `pylint_gitlab` plugin and then use the shortened `--output-format` names:\n\n```sh\npylint --exit-zero --load-plugins=pylint_gitlab --output-format=gitlab-codeclimate . > codeclimate.json\npylint --exit-zero --load-plugins=pylint_gitlab --output-format=gitlab-pages-html . > pylint.html\n```\n\n### gitlab ci integration\n\nhere is a minimalistic version for a `.gitlab-ci.yml` file:\n```yaml\npylint:\n  stage: test\n  image: python:3.7-slim\n  before_script:\n    - mkdir -p public/badges public/lint\n    - echo undefined > public/badges/$ci_job_name.score\n    - pip install pylint-gitlab\n  script:\n    - pylint --exit-zero --output-format=text $(find -type f -name \"*.py\" ! -path \"**/.venv/**\") | tee /tmp/pylint.txt\n    - sed -n 's/^your code has been rated at \\([-0-9.]*\\)\\/.*/\\1/p' /tmp/pylint.txt > public/badges/$ci_job_name.score\n    - pylint --exit-zero --output-format=pylint_gitlab.gitlabcodeclimatereporter $(find -type f -name \"*.py\" ! -path \"**/.venv/**\") > codeclimate.json\n    - pylint --exit-zero --output-format=pylint_gitlab.gitlabpageshtmlreporter $(find -type f -name \"*.py\" ! -path \"**/.venv/**\") > public/lint/index.html\n  after_script:\n    - anybadge --overwrite --label $ci_job_name --value=$(cat public/badges/$ci_job_name.score) --file=public/badges/$ci_job_name.svg 4=red 6=orange 8=yellow 10=green\n    - |\n      echo \"your score is: $(cat public/badges/$ci_job_name.score)\"\n  artifacts:\n    paths:\n      - public\n    reports:\n      codequality: codeclimate.json\n    when: always\n\npages:\n  stage: deploy\n  image: alpine:latest\n  script:\n    - echo\n  artifacts:\n    paths:\n      - public\n  only:\n    refs:\n      - master\n```\n\nyou can then use the published badge for linting results.\n\n[![pylint](https://smueller18.gitlab.io/pylint-gitlab/badges/pylint.svg)](https://smueller18.gitlab.io/pylint-gitlab/lint/)\n\n```markdown\n[![pylint](https://<main_group>.gitlab.io/<sub_group>/<project>/badges/pylint.svg)](https://<main_group>.gitlab.io/<sub_group>/<project>/lint/)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "gplv3",
+  "name": "pylint-gitlab",
+  "package_url": "https://pypi.org/project/pylint-gitlab/",
+  "project_url": "https://pypi.org/project/pylint-gitlab/",
+  "project_urls": {
+    "Documentation": "https://gitlab.com/smueller18/pylint-gitlab",
+    "Homepage": "https://gitlab.com/smueller18/pylint-gitlab",
+    "Source": "https://gitlab.com/smueller18/pylint-gitlab",
+    "Tracker": "https://gitlab.com/smueller18/pylint-gitlab/issues"
+  },
+  "release_url": "https://pypi.org/project/pylint-gitlab/2.0.0/",
+  "requires_dist": [
+    "anybadge",
+    "astroid",
+    "dill",
+    "importlib-metadata",
+    "isort",
+    "jinja2",
+    "markupsafe",
+    "mccabe",
+    "packaging",
+    "platformdirs",
+    "pylint",
+    "tomli",
+    "tomlkit",
+    "typing-extensions",
+    "wrapt",
+    "zipp"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "this project provides pylint formatters for a nice integration with gitlab ci.",
+  "version": "2.0.0",
+  "releases": [],
+  "developers": [
+    "mail@stephanmueller.eu"
+  ],
+  "kwds": "pylint_gitlab gitlab pylint pip gitlabpageshtmlreporter",
+  "license_kwds": "gplv3",
+  "libtype": "pypi",
+  "id": "pypi_pylint_gitlab",
+  "homepage": "https://gitlab.com/smueller18/pylint-gitlab",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_anybadge",
+    "pypi_astroid",
+    "pypi_dill",
+    "pypi_importlib_metadata",
+    "pypi_isort",
+    "pypi_jinja2",
+    "pypi_markupsafe",
+    "pypi_mccabe",
+    "pypi_packaging",
+    "pypi_platformdirs",
+    "pypi_pylint",
+    "pypi_tomli",
+    "pypi_tomlkit",
+    "pypi_typing_extensions",
+    "pypi_wrapt",
+    "pypi_zipp"
+  ]
+}

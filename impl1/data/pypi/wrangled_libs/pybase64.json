@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "programming language :: c",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: utilities"
+  ],
+  "description": ".. setup variables\n.. |license-status| image:: https://img.shields.io/badge/license-bsd%202--clause-blue.svg\n  :target: https://github.com/mayeut/pybase64/blob/master/license\n.. |pypi-status| image:: https://img.shields.io/pypi/v/pybase64.svg\n  :target: https://pypi.python.org/pypi/pybase64\n.. |python-versions| image:: https://img.shields.io/pypi/pyversions/pybase64.svg\n.. |rtd-status| image:: https://readthedocs.org/projects/pybase64/badge/?version=stable\n  :target: http://pybase64.readthedocs.io/en/stable/?badge=stable\n  :alt: documentation status\n.. |gha-status| image:: https://github.com/mayeut/pybase64/workflows/build%20and%20upload%20to%20pypi/badge.svg\n  :target: https://github.com/mayeut/pybase64/actions?query=workflow%3a%22build+and+upload+to+pypi%22\n.. |codecov-status| image:: https://codecov.io/gh/mayeut/pybase64/branch/master/graph/badge.svg\n  :target: https://codecov.io/gh/mayeut/pybase64/branch/master\n.. end of setup\n\nfast base64 implementation\n==========================\n\n|license-status| |pypi-status| |python-versions| |rtd-status| |gha-status| |codecov-status|\n\nthis project is a wrapper on `libbase64 <https://github.com/aklomp/base64>`_.\n\nit aims to provide a fast base64 implementation for base64 encoding/decoding.\n\ninstallation\n============\n\n.. code::\n\n    pip install pybase64\n\nusage\n=====\n\n``pybase64`` uses the same api as python base64 \"modern interface\" (introduced in python 2.4) for an easy integration.\n\nto get the fastest decoding, it is recommended to use the ``pybase64.b64decode`` and ``validate=true`` when possible.\n\n.. code:: python\n\n    import pybase64\n\n    print(pybase64.b64encode(b'>>>foo???', altchars='_:'))\n    # b'pj4_zm9vpz8:'\n    print(pybase64.b64decode(b'pj4_zm9vpz8:', altchars='_:', validate=true))\n    # b'>>>foo???'\n\n    # standard encoding helpers\n    print(pybase64.standard_b64encode(b'>>>foo???'))\n    # b'pj4+zm9vpz8/'\n    print(pybase64.standard_b64decode(b'pj4+zm9vpz8/'))\n    # b'>>>foo???'\n\n    # url safe encoding helpers\n    print(pybase64.urlsafe_b64encode(b'>>>foo???'))\n    # b'pj4-zm9vpz8_'\n    print(pybase64.urlsafe_b64decode(b'pj4-zm9vpz8_'))\n    # b'>>>foo???'\n\n.. begin cli\n\na command-line tool is also provided. it has encode, decode and benchmark subcommands.\n\n.. code::\n\n    usage: pybase64 [-h] [-v] {benchmark,encode,decode} ...\n\n    pybase64 command-line tool.\n\n    positional arguments:\n      {benchmark,encode,decode}\n                            tool help\n        benchmark           -h for usage\n        encode              -h for usage\n        decode              -h for usage\n\n    optional arguments:\n      -h, --help            show this help message and exit\n      -v, --version         show program's version number and exit\n\n.. end cli\n\nfull documentation on `read the docs <http://pybase64.readthedocs.io/en/stable/?badge=stable>`_.\n\nbenchmark\n=========\n\n.. begin benchmark\n\nrunning python 3.7.2, apple llvm version 10.0.0 (clang-1000.11.45.5), mac os x 10.14.2 on an intel core i7-4870hq @ 2.50ghz\n\n.. code::\n\n    pybase64 0.5.0 (c extension active - avx2)\n    bench: altchars=none, validate=false\n    pybase64._pybase64.encodebytes:   1734.776 mb/s (13,271,472 bytes -> 17,928,129 bytes)\n    pybase64._pybase64.b64encode:     4039.539 mb/s (13,271,472 bytes -> 17,695,296 bytes)\n    pybase64._pybase64.b64decode:     1854.423 mb/s (17,695,296 bytes -> 13,271,472 bytes)\n    base64.encodebytes:                 78.352 mb/s (13,271,472 bytes -> 17,928,129 bytes)\n    base64.b64encode:                  539.840 mb/s (13,271,472 bytes -> 17,695,296 bytes)\n    base64.b64decode:                  287.826 mb/s (17,695,296 bytes -> 13,271,472 bytes)\n    bench: altchars=none, validate=true\n    pybase64._pybase64.b64encode:     4156.607 mb/s (13,271,472 bytes -> 17,695,296 bytes)\n    pybase64._pybase64.b64decode:     4107.997 mb/s (17,695,296 bytes -> 13,271,472 bytes)\n    base64.b64encode:                  559.342 mb/s (13,271,472 bytes -> 17,695,296 bytes)\n    base64.b64decode:                  143.674 mb/s (17,695,296 bytes -> 13,271,472 bytes)\n    bench: altchars=b'-_', validate=false\n    pybase64._pybase64.b64encode:     2786.776 mb/s (13,271,472 bytes -> 17,695,296 bytes)\n    pybase64._pybase64.b64decode:     1124.136 mb/s (17,695,296 bytes -> 13,271,472 bytes)\n    base64.b64encode:                  322.427 mb/s (13,271,472 bytes -> 17,695,296 bytes)\n    base64.b64decode:                  205.195 mb/s (17,695,296 bytes -> 13,271,472 bytes)\n    bench: altchars=b'-_', validate=true\n    pybase64._pybase64.b64encode:     2806.271 mb/s (13,271,472 bytes -> 17,695,296 bytes)\n    pybase64._pybase64.b64decode:     2740.456 mb/s (17,695,296 bytes -> 13,271,472 bytes)\n    base64.b64encode:                  314.709 mb/s (13,271,472 bytes -> 17,695,296 bytes)\n    base64.b64decode:                  121.803 mb/s (17,695,296 bytes -> 13,271,472 bytes)\n\n.. end benchmark\n\n.. begin changelog\n\nchangelog\n=========\n1.3.1\n-----\n- add missing py.typed marker\n\n1.3.0\n-----\n- update base64 library\n- add avx512-vbmi implementation\n- rework extension build to remove adherence on distutils\n- publish python 3.12 wheels\n- documentation now uses furo theme\n\n1.2.3\n-----\n- update base64 library\n- publish python 3.11 wheels\n\n1.2.2\n-----\n- update base64 library\n- fix c extension build on musl distros\n- publish musllinux wheels\n\n1.2.1\n-----\n- publish pypy 3.8 (pypy38_pp73) wheels\n\n1.2.0\n-----\n- release the gil\n- publish cpython 3.10 wheels\n- drop python 3.5 support\n\n1.1.4\n-----\n- add macos arm64 wheel\n\n1.1.3\n-----\n- github actions: fix build on tag\n\n1.1.2\n-----\n- add pypy wheels\n- add aarch64, ppc64le & s390x manylinux wheels\n\n1.1.1\n-----\n- move ci from travisci/appveyor to github actions\n- fix publication of linux/macos wheels\n\n1.1.0\n-----\n- add b64encode_as_string, same as b64encode but returns a str object instead of a bytes object\n- add b64decode_as_bytearray, same as b64decode but returns a bytarray object instead of a bytes object\n- speed-up decoding from ucs1 strings\n\n1.0.2\n-----\n- update base64 library\n- publish python 3.9 wheels\n\n1.0.1\n-----\n- publish python 3.8 wheels\n\n1.0.0\n-----\n- drop python 3.4 support\n- drop python 2.7 support\n\n0.5.0\n-----\n- publish python 3.7 wheels\n- drop python 3.3 support\n\n0.4.0\n-----\n- speed-up decoding when validate==false\n\n0.3.1\n-----\n- fix deployment issues\n\n0.3.0\n-----\n- add encodebytes function\n\n0.2.1\n-----\n- fixed invalid results on windows\n\n0.2.0\n-----\n- added documentation\n- added subcommands to the main script:\n\n    * help\n    * version\n    * encode\n    * decode\n    * benchmark\n\n0.1.2\n-----\n- updated base64 native library\n\n0.1.1\n-----\n- fixed deployment issues\n\n0.1.0\n-----\n- first public release\n\n.. end changelog\n",
+  "docs_url": null,
+  "keywords": "base64",
+  "license": "bsd-2-clause",
+  "name": "pybase64",
+  "package_url": "https://pypi.org/project/pybase64/",
+  "project_url": "https://pypi.org/project/pybase64/",
+  "project_urls": {
+    "Documentation": "https://pybase64.readthedocs.io/en/stable",
+    "Homepage": "https://github.com/mayeut/pybase64",
+    "Source": "https://github.com/mayeut/pybase64",
+    "Tracker": "https://github.com/mayeut/pybase64/issues"
+  },
+  "release_url": "https://pypi.org/project/pybase64/1.3.1/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "fast base64 encoding/decoding",
+  "version": "1.3.1",
+  "releases": [],
+  "developers": [
+    "matthieu_darbois"
+  ],
+  "kwds": "_pybase64 pybase64 pyversions pypy38_pp73 base64",
+  "license_kwds": "bsd-2-clause",
+  "libtype": "pypi",
+  "id": "pypi_pybase64",
+  "homepage": "https://github.com/mayeut/pybase64",
+  "release_count": 22,
+  "dependency_ids": []
+}

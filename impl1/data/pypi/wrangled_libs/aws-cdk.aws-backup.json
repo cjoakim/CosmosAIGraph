@@ -1,0 +1,73 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws backup construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\naws backup is a fully managed backup service that makes it easy to centralize and automate the\nbackup of data across aws services in the cloud and on premises. using aws backup, you can\nconfigure backup policies and monitor backup activity for your aws resources in one place.\n\n## backup plan and selection\n\nin aws backup, a *backup plan* is a policy expression that defines when and how you want to back up\nyour aws resources, such as amazon dynamodb tables or amazon elastic file system (amazon efs) file\nsystems. you can assign resources to backup plans, and aws backup automatically backs up and retains\nbackups for those resources according to the backup plan. you can create multiple backup plans if you\nhave workloads with different backup requirements.\n\nthis module provides ready-made backup plans (similar to the console experience):\n\n```python\n# daily, weekly and monthly with 5 year retention\nplan = backup.backupplan.daily_weekly_monthly5_year_retention(self, \"plan\")\n```\n\nassigning resources to a plan can be done with `addselection()`:\n\n```python\n# plan: backup.backupplan\n\nmy_table = dynamodb.table.from_table_name(self, \"table\", \"mytablename\")\nmy_cool_construct = construct(self, \"mycoolconstruct\")\n\nplan.add_selection(\"selection\",\n    resources=[\n        backup.backupresource.from_dynamo_db_table(my_table),  # a dynamodb table\n        backup.backupresource.from_tag(\"stage\", \"prod\"),  # all resources that are tagged stage=prod in the region/account\n        backup.backupresource.from_construct(my_cool_construct)\n    ]\n)\n```\n\nif not specified, a new iam role with a managed policy for backup will be\ncreated for the selection. the `backupselection` implements `igrantable`.\n\nto add rules to a plan, use `addrule()`:\n\n```python\n# plan: backup.backupplan\n\nplan.add_rule(backup.backupplanrule(\n    completion_window=duration.hours(2),\n    start_window=duration.hours(1),\n    schedule_expression=events.schedule.cron( # only cron expressions are supported\n        day=\"15\",\n        hour=\"3\",\n        minute=\"30\"),\n    move_to_cold_storage_after=duration.days(30)\n))\n```\n\ncontinuous backup and point-in-time restores (pitr) can be configured.\nproperty `deleteafter` defines the retention period for the backup. it is mandatory if pitr is enabled.\nif no value is specified, the retention period is set to 35 days which is the maximum retention period supported by pitr.\nproperty `movetocoldstorageafter` must not be specified because pitr does not support this option.\nthis example defines an aws backup rule with pitr and a retention period set to 14 days:\n\n```python\n# plan: backup.backupplan\n\nplan.add_rule(backup.backupplanrule(\n    enable_continuous_backup=true,\n    delete_after=duration.days(14)\n))\n```\n\nready-made rules are also available:\n\n```python\n# plan: backup.backupplan\n\nplan.add_rule(backup.backupplanrule.daily())\nplan.add_rule(backup.backupplanrule.weekly())\n```\n\nby default a new [vault](#backup-vault) is created when creating a plan.\nit is also possible to specify a vault either at the plan level or at the\nrule level.\n\n```python\nmy_vault = backup.backupvault.from_backup_vault_name(self, \"vault1\", \"myvault\")\nother_vault = backup.backupvault.from_backup_vault_name(self, \"vault2\", \"othervault\")\n\nplan = backup.backupplan.daily35_day_retention(self, \"plan\", my_vault) # use `myvault` for all plan rules\nplan.add_rule(backup.backupplanrule.monthly1_year(other_vault))\n```\n\nyou can [backup](https://docs.aws.amazon.com/aws-backup/latest/devguide/windows-backups.html)\nvss-enabled windows applications running on amazon ec2 instances by setting the `windowsvss`\nparameter to `true`. if the application has vss writer registered with windows vss,\nthen aws backup creates a snapshot that will be consistent for that application.\n\n```python\nplan = backup.backupplan(self, \"plan\",\n    windows_vss=true\n)\n```\n\n## backup vault\n\nin aws backup, a *backup vault* is a container that you organize your backups in. you can use backup\nvaults to set the aws key management service (aws kms) encryption key that is used to encrypt backups\nin the backup vault and to control access to the backups in the backup vault. if you require different\nencryption keys or access policies for different groups of backups, you can optionally create multiple\nbackup vaults.\n\n```python\nmy_key = kms.key.from_key_arn(self, \"mykey\", \"aaa\")\nmy_topic = sns.topic.from_topic_arn(self, \"mytopic\", \"bbb\")\n\nvault = backup.backupvault(self, \"vault\",\n    encryption_key=my_key,  # custom encryption key\n    notification_topic=my_topic\n)\n```\n\na vault has a default `removalpolicy` set to `retain`. note that removing a vault\nthat contains recovery points will fail.\n\nyou can assign policies to backup vaults and the resources they contain. assigning policies allows\nyou to do things like grant access to users to create backup plans and on-demand backups, but limit\ntheir ability to delete recovery points after they're created.\n\nuse the `accesspolicy` property to create a backup vault policy:\n\n```python\nvault = backup.backupvault(self, \"vault\",\n    access_policy=iam.policydocument(\n        statements=[\n            iam.policystatement(\n                effect=iam.effect.deny,\n                principals=[iam.anyprincipal()],\n                actions=[\"backup:deleterecoverypoint\"],\n                resources=[\"*\"],\n                conditions={\n                    \"stringnotlike\": {\n                        \"aws:userid\": [\"user1\", \"user2\"\n                        ]\n                    }\n                }\n            )\n        ]\n    )\n)\n```\n\nalternativately statements can be added to the vault policy using `addtoaccesspolicy()`.\n\nuse the `blockrecoverypointdeletion` property or the `blockrecoverypointdeletion()` method to add\na statement to the vault access policy that prevents recovery point deletions in your vault:\n\n```python\n# backup_vault: backup.backupvault\nbackup.backupvault(self, \"vault\",\n    block_recovery_point_deletion=true\n)\nbackup_vault.block_recovery_point_deletion()\n```\n\nby default access is not restricted.\n\n## importing existing backup vault\n\nto import an existing backup vault into your cdk application, use the `backupvault.frombackupvaultarn` or `backupvault.frombackupvaultname`\nstatic method. here is an example of giving an iam role permission to start a backup job:\n\n```python\nimported_vault = backup.backupvault.from_backup_vault_name(self, \"vault\", \"myvaultname\")\n\nrole = iam.role(self, \"access role\", assumed_by=iam.serviceprincipal(\"lambda.amazonaws.com\"))\n\nimported_vault.grant(role, \"backup:startbackupjob\")\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-backup",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-backup/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-backup/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-backup/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-dynamodb (==1.204.0)",
+    "aws-cdk.aws-ec2 (==1.204.0)",
+    "aws-cdk.aws-efs (==1.204.0)",
+    "aws-cdk.aws-events (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.aws-rds (==1.204.0)",
+    "aws-cdk.aws-sns (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::backup",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "backups backupresource backup backupplan enable_continuous_backup",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_backup",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 241,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_dynamodb",
+    "pypi_aws_cdk.aws_ec2",
+    "pypi_aws_cdk.aws_efs",
+    "pypi_aws_cdk.aws_events",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.aws_rds",
+    "pypi_aws_cdk.aws_sns",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

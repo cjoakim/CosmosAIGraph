@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: posix :: linux",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: build tools",
+    "topic :: system :: archiving :: packaging",
+    "topic :: system :: software distribution",
+    "topic :: utilities"
+  ],
+  "description": "***\npex\n***\n.. image:: https://github.com/pantsbuild/pex/workflows/ci/badge.svg?branch=main\n    :target: https://github.com/pantsbuild/pex/actions?query=branch%3amain+workflow%3aci\n.. image:: https://img.shields.io/pypi/l/pex.svg\n    :target: https://pypi.org/project/pex/\n.. image:: https://img.shields.io/pypi/v/pex.svg\n    :target: https://pypi.org/project/pex/\n.. image:: https://img.shields.io/pypi/pyversions/pex.svg\n    :target: https://pypi.org/project/pex/\n.. image:: https://img.shields.io/pypi/wheel/pex.svg\n    :target: https://pypi.org/project/pex/#files\n\n.. contents:: **contents**\n\noverview\n========\npex is a library for generating .pex (python executable) files which are\nexecutable python environments in the spirit of `virtualenvs <http://virtualenv.org>`_.\npex is an expansion upon the ideas outlined in\n`pep 441 <https://peps.python.org/pep-0441/>`_\nand makes the deployment of python applications as simple as ``cp``.  pex files may even\ninclude multiple platform-specific python distributions, meaning that a single pex file\ncan be portable across linux and os x.\n\npex files can be built using the ``pex`` tool.  build systems such as `pants\n<http://pantsbuild.org/>`_, `buck <http://facebook.github.io/buck/>`_, and  `{py}gradle <https://github.com/linkedin/pygradle>`_  also\nsupport building .pex files directly.\n\nstill unsure about what pex does or how it works?  watch this quick lightning\ntalk: `wtf is pex? <http://www.youtube.com/watch?v=nmpnghrwsu0>`_.\n\npex is licensed under the apache2 license.\n\n\ninstallation\n============\n\nto install pex, simply\n\n.. code-block:: bash\n\n    $ pip install pex\n\nyou can also build pex in a git clone using tox:\n\n.. code-block:: bash\n\n    $ tox -e package\n    $ cp dist/pex ~/bin\n\nthis builds a pex binary in ``dist/pex`` that can be copied onto your ``$path``.\nthe advantage to this approach is that it keeps your python environment as empty as\npossible and is more in-line with what pex does philosophically.\n\n\nsimple examples\n===============\n\nlaunch an interpreter with ``requests``, ``flask`` and ``psutil`` in the environment:\n\n.. code-block:: bash\n\n    $ pex requests flask 'psutil>2,<3'\n\nsave dependencies from pip\n~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nor instead freeze your current virtualenv via requirements.txt and execute it anywhere:\n\n.. code-block:: bash\n\n    $ pex $(pip freeze) -o my_virtualenv.pex\n    $ deactivate\n    $ ./my_virtualenv.pex\n\nephemeral environments\n~~~~~~~~~~~~~~~~~~~~~~\n\nrun webserver.py in an environment containing ``flask`` as a quick way to experiment:\n\n.. code-block:: bash\n\n    $ pex flask -- webserver.py\n\nlaunch sphinx in an ephemeral pex environment using the sphinx entry point ``sphinx:main``:\n\n.. code-block:: bash\n\n    $ pex sphinx -e sphinx:main -- --help\n\nusing entry points\n~~~~~~~~~~~~~~~~~~\n\nprojects specifying a ``console_scripts`` entry point in their configuration\ncan build standalone executables for those entry points.\n\nto build a standalone ``pex-tools-executable.pex`` binary that runs the\n``pex-tools`` console script found in all pex version ``2.1.35`` and newer distributions:\n\n.. code-block:: bash\n\n    $ pex \"pex>=2.1.35\" --console-script pex-tools --output-file pex-tools-executable.pex\n\nspecifying a specific interpreter\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nyou can also build pex files that use a specific interpreter type:\n\n.. code-block:: bash\n\n    $ pex \"pex>=2.1.35\" -c pex-tools --python=pypy -o pex-tools-pypy-executable.pex\n\nmost pex options compose well with one another, so the above commands can be\nmixed and matched, and equivalent short options are available.\n\nfor a full list of options, just type ``pex --help``.\n\n\nintegrating pex into your workflow\n==================================\n\nif you use tox (and you should!), a simple way to integrate pex into your\nworkflow is to add a packaging test environment to your ``tox.ini``:\n\n.. code-block:: ini\n\n    [testenv:package]\n    deps = pex\n    commands = pex . -o dist/app.pex\n\nthen ``tox -e package`` will produce a relocatable copy of your application\nthat you can copy to staging or production environments.\n\n\ndocumentation\n=============\n\nmore documentation about pex, building .pex files, and how .pex files work\nis available at https://pex.readthedocs.io.\n\n\ndevelopment\n===========\n\npex uses `tox <https://tox.wiki/en/latest/>`_ for test and development automation. to run\nthe test suite, just invoke tox:\n\n.. code-block:: bash\n\n    $ tox\n\nif you don't have tox, you can generate a pex of tox:\n\n.. code-block::\n\n    $ pex tox -c tox -o ~/bin/tox\n\ntox provides many useful commands and options, explained at https://tox.wiki/en/latest/ .\nbelow, we provide some of the most commonly used commands used when working on pex, but the\ndocs are worth acquainting yourself with to better understand how tox works and how to do more\nadvanced commands.\n\nto run a specific environment, identify the name of the environment you'd like to invoke by\nrunning ``tox --listenvs-all``, then invoke like this:\n\n.. code-block::\n\n    $ tox -e format-run\n\nto run mypy:\n\n.. code-block::\n\n    $ tox -e typecheck\n\nall of our tox test environments allow passthrough arguments, which can be helpful to run\nspecific tests:\n\n.. code-block::\n\n    $ tox -e py37-integration -- -k test_reproducible_build\n\nto run pex from source, rather than through what is on your path, invoke via python:\n\n.. code-block::\n\n    $ python -m pex\n\ncontributing\n============\n\nto contribute, follow these instructions: https://www.pantsbuild.org/docs/contributor-overview\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pex",
+  "package_url": "https://pypi.org/project/pex/",
+  "project_url": "https://pypi.org/project/pex/",
+  "project_urls": {
+    "Changelog": "https://github.com/pantsbuild/pex/blob/main/CHANGES.md",
+    "Documentation": "https://pex.readthedocs.io/en/latest/",
+    "Homepage": "https://github.com/pantsbuild/pex"
+  },
+  "release_url": "https://pypi.org/project/pex/2.1.155/",
+  "requires_dist": [
+    "subprocess32>=3.2.7 ; extra == \"subprocess\" and ( python_version<'3')"
+  ],
+  "requires_python": ">=2.7,<3.13,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*",
+  "summary": "the pex packaging toolchain.",
+  "version": "2.1.155",
+  "releases": [],
+  "developers": [
+    "pantsbuild@gmail.com",
+    "the_pex_developers"
+  ],
+  "kwds": "pex pypi svg pypy pygradle",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pex",
+  "homepage": "https://github.com/pantsbuild/pex",
+  "release_count": 244,
+  "dependency_ids": [
+    "pypi_subprocess32"
+  ]
+}

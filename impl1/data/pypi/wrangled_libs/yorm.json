@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: database",
+    "topic :: software development :: libraries",
+    "topic :: software development :: version control",
+    "topic :: system :: filesystems",
+    "topic :: text editors :: text processing"
+  ],
+  "description": "| |build status|\n| |coverage status|\n| |scrutinizer code quality|\n| |pypi version|\n\noverview\n========\n\n| yorm enables automatic, bidirectional, human-friendly mappings of\n  object attributes to yaml files.\n| uses beyond typical object serialization and relational mapping\n  include:\n\n-  bidirectional conversion between basic yaml and python types\n-  attribute creation and type inference for new attributes\n-  storage of content in text files optimized for version control\n-  extensible converters to customize formatting on complex classes\n\nview the talk from `pyohio\n2015 <https://www.youtube.com/watch?v=0wonekf-wao>`__.\n\nrequirements\n------------\n\n-  python 3.5+\n\ninstallation\n------------\n\ninstall yorm with pip:\n\n.. code:: sh\n\n    $ pip install yorm\n\nor directly from the source code:\n\n.. code:: sh\n\n    $ git clone https://github.com/jacebrowning/yorm.git\n    $ cd yorm\n    $ python setup.py install\n\nusage\n=====\n\nsimply take an existing class:\n\n.. code:: python\n\n    class student:\n        def __init__(self, name, school, number, year=2009):\n            self.name = name\n            self.school = school\n            self.number = number\n            self.year = year\n            self.gpa = 0.0\n\nand define an attribute mapping:\n\n.. code:: python\n\n    import yorm\n    from yorm.types import string, integer, float\n\n    @yorm.attr(name=string, year=integer, gpa=float)\n    @yorm.sync(\"students/{self.school}/{self.number}.yml\")\n    class student:\n        ...\n\nmodifications to each object's mapped attributes:\n\n.. code:: python\n\n    >>> s1 = student(\"john doe\", \"gvsu\", 123)\n    >>> s2 = student(\"jane doe\", \"gvsu\", 456, year=2014)\n    >>> s1.gpa = 3\n\nare automatically reflected on the filesytem:\n\n.. code:: sh\n\n    $ cat students/gvsu/123.yml\n    name: john doe\n    gpa: 3.0\n    school: gvsu\n    year: 2009\n\nmodifications and new content in each mapped file:\n\n.. code:: sh\n\n    $ echo \"name: john doe\n    > gpa: 1.8\n    > year: 2010\n    \" > students/gvsu/123.yml\n\nare automatically reflected in their corresponding object:\n\n.. code:: python\n\n    >>> s1.gpa\n    1.8\n\n.. |build status| image:: http://img.shields.io/travis/jacebrowning/yorm/master.svg\n   :target: https://travis-ci.org/jacebrowning/yorm\n.. |coverage status| image:: http://img.shields.io/coveralls/jacebrowning/yorm/master.svg\n   :target: https://coveralls.io/r/jacebrowning/yorm\n.. |scrutinizer code quality| image:: http://img.shields.io/scrutinizer/g/jacebrowning/yorm.svg\n   :target: https://scrutinizer-ci.com/g/jacebrowning/yorm/?branch=master\n.. |pypi version| image:: http://img.shields.io/pypi/v/yorm.svg\n   :target: https://pypi.python.org/pypi/yorm\n\nrevision history\n================\n\n1.6.2 (2019-03-23)\n------------------\n\n-  fixed ``yamlloadwarning`` by using ``yaml.safe_load()``.\n\n1.6.1 (2019-03-22)\n------------------\n\n-  updated ``pyyaml`` to ``5.1`` for security fixes.\n\n1.6 (2018-09-07)\n----------------\n\n-  added ``number`` (and ``nullablenumber``) type for floats that store\n   as integers when possible.\n\n1.5.1 (2018-03-07)\n------------------\n\n-  fixed the ``list`` converter to accept tuples as lists.\n\n1.5 (2017-10-22)\n----------------\n\n-  implemented ``match`` utility (credit:\n   `@astronouth7303 <https://github.com/astronouth7303>`__).\n-  including file contents in parse exceptions.\n-  added sync parameter ``auto_resolve`` to clean up file conflicts\n   automatically.\n\n1.4 (2017-04-02)\n----------------\n\n-  removed warnings about calling save/load unnecessarily.\n-  now allowing keyword arguments to be passed to class construction via\n   ``create`` and ``find`` utilities.\n-  now adding additional attributes from ``__init__`` on\n   ``attributedictionary``.\n\n   -  note: for this feature to work, ``__init__`` must not use\n      positional arguments.\n\n-  **depreciation**: renamed ``modelmixin.new`` to\n   ``modelmixin.create``.\n\n1.3 (2017-01-24)\n----------------\n\n-  optimized the formatting of empty lists to create consistent diffs.\n-  added ``modelmixin`` to add orm methods to mapped classes.\n\n1.2 (2017-01-06)\n----------------\n\n-  updated base class to hide ``pytest`` traceback in wrapped methods.\n\n1.1 (2016-10-22)\n----------------\n\n-  added ``data`` property to ``mapper`` as a hook for other\n   serialization libraries.\n\n1.0.1 (2016-09-23)\n------------------\n\n-  fixed handling of mutation methods on ``list`` and ``dict``.\n\n1.0 (2016-05-22)\n----------------\n\n-  initial stable release.\n\n0.8.1 (2016-04-28)\n------------------\n\n-  now invoking ``__init__`` in ``dictionary`` converters to run custom\n   validations.\n\n0.8 (2016-04-14)\n----------------\n\n-  replaced all utility functions with orm-like tools.\n-  removed the ability to check for existing files in ``sync()``.\n-  renamed and consolidated custom exceptions.\n-  renamed sync parameter ``auto=true`` to ``auto_save=true``.\n-  renamed sync parameter ``strict=true`` to ``auto_track=false``.\n-  added sync parameter ``auto_create`` to defer file creation to orm\n   functions.\n\n0.7.2 (2016-03-30)\n------------------\n\n-  now preserving order of ``attr`` decorators on ``dictionary``\n   converters.\n\n0.7.1 (2016-03-30)\n------------------\n\n-  updated ``string`` to fetch ``true`` and ``false`` as strings.\n\n0.7 (2016-03-29)\n----------------\n\n-  now preserving order of ``attr`` decorators.\n-  now limiting ``attr`` decorator to a single argument.\n-  added ``list.of_type()`` factory to create lists with less\n   boilerplate.\n\n0.6.1 (2015-02-23)\n------------------\n\n-  fixed handling of ``none`` in ``nullablestring``.\n\n0.6 (2015-02-23)\n----------------\n\n-  added preliminary support for json serialization. (credit: @pr0xmeh)\n-  renamed ``yorm.converters`` to ``yorm.types``.\n-  now maintaining the signature on mapped objects.\n-  disabled attribute inference unless ``strict=false``.\n-  fixed formatting of ``string`` to only use quotes if absolutely\n   necessary.\n\n0.5 (2015-09-25)\n----------------\n\n-  renamed ``yorm.base`` to ``yorm.bases``.\n-  stopped creating files on instantiation when ``auto=false``.\n-  now automatically storing on fetch after initial store.\n\n0.4.1 (2015-06-19)\n------------------\n\n-  fixed attribute loss in non-\\ ``dict`` when conversion to ``dict``.\n-  now automatically adding missing attributes to mapped objects.\n\n0.4 (2015-05-16)\n----------------\n\n-  moved all converters into the ``yorm.converters`` package.\n-  renamed ``container`` to ``containers``.\n-  renamed ``converter`` to ``convertible`` for mutable types\n-  added a new ``converter`` class for immutable types\n-  removed the context manager in mapped objects.\n-  fixed automatic mapping of nested attributes.\n\n0.3.2 (2015-04-07)\n------------------\n\n-  fixed object overwrite when calling ``utilities.update``.\n\n0.3.1 (2015-04-06)\n------------------\n\n-  fixed infinite recursion with properties that rely on other mapped\n   attributes.\n\n0.3 (2015-03-10)\n----------------\n\n-  updated mapped objects to only read from the filesystem if there are\n   changes.\n-  renamed ``store`` to ``sync_object``.\n-  renamed ``store_instances`` to ``sync_instances``.\n-  renamed ``map_attr`` to ``attr``.\n-  added ``sync`` to call ``sync_object`` or ``sync_instances`` as\n   needed.\n-  added ``update_object`` and ``update_file`` to force synchronization.\n-  added ``update`` to call ``update_object`` and/or ``update_file`` as\n   needed.\n\n0.2.1 (2015-02-12)\n------------------\n\n-  container types now extend their builtin type.\n-  added ``none<type>`` extended types with ``none`` as a default.\n-  added ``attributedictionary`` with keys available as attributes.\n-  added ``sortedlist`` that sorts when dumped.\n\n0.2 (2014-11-30)\n----------------\n\n-  allowing ``map_attr`` and ``store`` to be used together.\n-  allowing ``dictionary`` containers to be used as attributes.\n-  fixed method resolution order for modified classes.\n-  added a ``yorm.settings.fake`` option to bypass the filesystem.\n\n0.1.1 (2014-10-20)\n------------------\n\n-  fixed typos in examples.\n\n0.1 (2014-09-29)\n----------------\n\n-  initial release.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "yorm",
+  "package_url": "https://pypi.org/project/YORM/",
+  "project_url": "https://pypi.org/project/YORM/",
+  "project_urls": {
+    "Homepage": "https://github.com/jacebrowning/yorm"
+  },
+  "release_url": "https://pypi.org/project/YORM/1.6.2/",
+  "requires_dist": [
+    "PyYAML (<6,>=5.1)",
+    "simplejson (~=3.8)",
+    "parse (~=1.8.0)",
+    "pathlib2 (!=2.3.3)"
+  ],
+  "requires_python": "",
+  "summary": "automatic object-yaml mapping for python.",
+  "version": "1.6.2",
+  "releases": [],
+  "developers": [
+    "jace_browning",
+    "jacebrowning@gmail.com"
+  ],
+  "kwds": "yaml yorm yml yamlloadwarning pip",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_yorm",
+  "homepage": "https://github.com/jacebrowning/yorm",
+  "release_count": 97,
+  "dependency_ids": [
+    "pypi_parse",
+    "pypi_pathlib2",
+    "pypi_pyyaml",
+    "pypi_simplejson"
+  ]
+}

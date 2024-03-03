@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "pygtrie\n=======\n\npygtrie is a pure python implementation of a trie data structure\ncompatible with python 2.x and python 3.x.\n\n`trie data structure <http://en.wikipedia.org/wiki/trie>`_, also known\nas radix or prefix tree, is a tree associating keys to values where\nall the descendants of a node have a common prefix (associated with\nthat node).\n\nthe trie module contains ``trie``, ``chartrie`` and ``stringtrie``\nclasses each implementing a mutable mapping interface, i.e. ``dict``\ninterface.  as such, in most circumstances, ``trie`` could be used as\na drop-in replacement for a ``dict``, but the prefix nature of the\ndata structure is trie\u2019s real strength.\n\nthe module also contains ``prefixset`` class which uses a trie to\nstore a set of prefixes such that a key is contained in the set if it\nor its prefix is stored in the set.\n\nfeatures\n--------\n\n- a full mutable mapping implementation.\n\n- supports iterating over as well as deleting a subtrie.\n\n- supports prefix checking as well as shortest and longest prefix\n  look-up.\n\n- extensible for any kind of user-defined keys.\n\n- a prefixset supports \u201call keys starting with given prefix\u201d logic.\n\n- can store any value including none.\n\ninstallation\n------------\n\nto install pygtrie, simply run::\n\n    pip install pygtrie\n\nor by adding line such as::\n\n    pygtrie == 2.*\n\nto project\u2019s `requirements file\n<https://pip.pypa.io/en/latest/user_guide/#requirements-files>`_.\nalternatively, if installation from source is desired, it can be\nachieved by executing::\n\n    python setup.py install\n\nversion history\n---------------\n\n2.5: tbd\n\n- add ``pygtrie.trie.merge`` method which merges structures of two\n  tries.\n\n- add ``pygtrie.trie.strictly_equals`` method which compares two\n  tries with stricter rules than regular equality operator.  it\u2019s not\n  sufficient that keys and values are the same but the structure of\n  the tries must be the same as well.  for example:\n\n      >>> t0 = stringtrie({'foo/bar.baz': 42}, separator='/')\n      >>> t1 = stringtrie({'foo/bar.baz': 42}, separator='.')\n      >>> t0 == t1\n      true\n      >>> t0.strictly_equals(t1)\n      false\n\n- fix ``pygtrie.trie.__eq__`` implementation such that key values\n  are taken into consideration rather than just looking at trie\n  structure.  to see what this means it\u2019s best to look at a few\n  examples.  firstly:\n\n      >>> t0 = stringtrie({'foo/bar': 42}, separator='/')\n      >>> t1 = stringtrie({'foo.bar': 42}, separator='.')\n      >>> t0 == t1\n      false\n\n  this used to be true since the two tries have the same node\n  structure.  however, as far as mapping interface is concerned, they\n  use different keys, i.e. ```set(t0) != set(t1)``.  secondly:\n\n      >>> t0 = stringtrie({'foo/bar.baz': 42}, separator='/')\n      >>> t1 = stringtrie({'foo/bar.baz': 42}, separator='.')\n      >>> t0 == t1\n      true\n\n  this used to be false since the two tries have different node\n  structures (the first one splits key into ``('foo', 'bar.baz')``\n  while the second into ``('foo/bar', 'baz')``).  however, their keys\n  are the same, i.e. ```set(t0) == set(t1)``.  and lastly:\n\n      >>> t0 = trie({'foo': 42})\n      >>> t1 = chartrie({'foo': 42})\n      >>> t0 == t1\n      false\n\n  this used to be true since the two tries have the same node\n  structure.  however, the two classes return key as different values.\n  ``pygtrie.trie`` returns keys as tuples while\n  ``pygtrie.chartrie`` returns them as strings.\n\n2.4.2: 2021/01/03\n\n- remove use of \u2018super\u2019 in ``setup.py`` to fix compatibility with\n  python 2.7.  this changes build code only; no changes to the library\n  itself.\n\n2.4.1: 2020/11/20\n\n- remove dependency on ``packaging`` module from ``setup.py`` to fix\n  installation on systems without that package.  this changes build\n  code only; no changes to the library itself.  [thanks to eric\n  mclachlan for reporting]\n\n2.4.0: 2020/11/19  [pulled back from pypi]\n\n- change ``children`` argument of the ``node_factory`` passed to\n  ``pygtrie.trie.traverse`` from a generator to an iterator with\n  a custom bool conversion.  this allows checking whether node has\n  children without having to iterate over them (``bool(children)``)\n\n  to test whether this feature is available, one can check whether\n  `trie.traverse.uses_bool_convertible_children` property is true,\n  e.g.: ``getattr(pygtrie.trie.traverse,\n  'uses_bool_convertible_children', false)``.\n\n  [thanks to pallab pain for suggesting the feature]\n\n2.3.3: 2020/04/04\n\n- fix to \u2018``attributeerror``: ``_nochildren`` object has no\n  attribute ``sorted_items``\u2019 failure when iterating over a trie with\n  sorting enabled.  [thanks to pallab pain for reporting]\n\n- add ``value`` property setter to step objects returned by\n  ``pygtrie.trie.walk_towards`` et al.  this deprecates the\n  ``set`` method.\n\n- the module now exports `pygtrie.__version__` making it possible to\n  determine version of the library at run-time.\n\n2.3.2: 2019/07/18\n\n- trivial metadata fix\n\n2.3.1: 2019/07/18  [pulled back from pypi]\n\n- fix to ``pygtrie.prefixset`` initialisation incorrectly storing\n  elements even if their prefixes are also added to the set.\n\n  for example, ``prefixset(('foo', 'foobar'))`` incorrectly resulted\n  in a two-element set even though the interface dictates that only\n  ``foo`` is kept (recall that if ``foo`` is member of the set,\n  ``foobar`` is as well).  [thanks to tal maimon for reporting]\n\n- fix to ``pygtrie.trie.copy`` method not preserving\n  enable-sorting flag and, in case of ``pygtrie.stringtrie``,\n  ``separator`` property.\n\n- add support for the ``copy`` module so ``copy.copy`` can now be\n  used with trie objects.\n\n- leafs and nodes with just one child use more memory-optimised\n  representation which reduces overall memory usage of a trie\n  structure.\n\n- minor performance improvement for adding new elements to\n  a ``pygtrie.prefixset``.\n\n- improvements to string representation of objects which now includes\n  type and, for ``pygtrie.stringtrie`` object, value of separator\n  property.\n\n2.3: 2018/08/10\n\n- new ``pygtrie.trie.walk_towards`` method allows walking a path\n  towards a node with given key accessing each step of the path.\n  compared to `pygtrie.trie.walk_prefixes` method, steps for nodes\n  without assigned values are returned.\n\n- fix to ``pygtrie.prefixset.copy`` not preserving type of backing\n  trie.\n\n- ``pygtrie.stringtrie`` now checks and explicitly rejects empty\n  separators.  previously empty separator would be accepted but lead\n  to confusing errors later on.  [thanks to waren long]\n\n- various documentation improvements, python 2/3 compatibility and\n  test coverage (python-coverage reports 100%).",
+  "docs_url": null,
+  "keywords": "trie,prefix tree,data structure",
+  "license": "apache-2.0",
+  "name": "pygtrie",
+  "package_url": "https://pypi.org/project/pygtrie/",
+  "project_url": "https://pypi.org/project/pygtrie/",
+  "project_urls": {
+    "Download": "https://github.com/mina86/pygtrie/tarball/v2.5.0",
+    "Homepage": "https://github.com/mina86/pygtrie"
+  },
+  "release_url": "https://pypi.org/project/pygtrie/2.5.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "a pure python trie data structure implementation.",
+  "version": "2.5.0",
+  "releases": [],
+  "developers": [
+    "michal_nazarewicz",
+    "mina86@mina86.com"
+  ],
+  "kwds": "trie python dict prefixes walk_prefixes",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_pygtrie",
+  "homepage": "https://github.com/mina86/pygtrie",
+  "release_count": 16,
+  "dependency_ids": []
+}

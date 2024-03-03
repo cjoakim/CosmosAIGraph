@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6"
+  ],
+  "description": "# microsoft azure sdk for python\n\nthis is the microsoft azure service management legacy client library.\n\nall packages in this bundle have been tested with python 2.7, 3.3, 3.4 and 3.5.\n\nfor the newer azure resource management (arm) libraries, see [azure-mgmt](https://pypi.python.org/pypi/azure-mgmt).\n\nfor a more complete set of azure libraries, see the [azure](https://pypi.python.org/pypi/azure) bundle package.\n\n\n# compatibility\n\n**important**: if you have an earlier version of the azure package\n(version < 1.0), you should uninstall it before installing this package.\n\nyou can check the version using pip:\n\n```shell\npip freeze\n```\n\nif you see azure==0.11.0 (or any version below 1.0), uninstall it first:\n\n```shell\npip uninstall azure\n```\n\n# features\n\n-  cloud service management (virtual machines, vm images, os images)\n-  storage accounts management\n-  scheduler management\n-  service bus management\n-  affinity group management\n-  management certificate management\n-  web apps (website) management\n\n\n# installation\n\n## download package\n\nto install via the python package index (pypi), type:\n\n```shell\npip install azure-servicemanagement-legacy\n```\n\n\n## download source code\n\nto get the source code of the sdk via **git** type:\n\n```shell\ngit clone https://github.com/azure/azure-sdk-for-python.git\ncd azure-sdk-for-python\ncd azure-servicemanagement-legacy\npython setup.py install\n```\n\n\n# usage\n\n## authentication\n\n### set-up certificates\n\nyou will need two certificates, one for the server (a .cer file) and one for\nthe client (a .pem file).\n\n### using the azure .publishsettings certificate\n\nyou can download your azure publish settings file and use the certificate that\nis embedded in that file to create the client certificate. the server\ncertificate already exists, so you won't need to upload one.\n\nto do this, download your [publish settings](http://go.microsoft.com/fwlink/?linkid=301775)\nthen use this code to create the .pem file.\n\n```python\nfrom azure.servicemanagement import get_certificate_from_publish_settings\n\nsubscription_id = get_certificate_from_publish_settings(\n    publish_settings_path='myaccount.publishsettings',\n    path_to_write_certificate='mycert.pem',\n    subscription_id='00000000-0000-0000-0000-000000000000',\n)\n```\n\nthe subscription id parameter is optional. if there are more than one\nsubscription in the publish settings, the first one will be used.\n\n### creating and uploading new certificate with openssl\n\nto create the .pem file using [openssl](http://www.openssl.org), execute this:\n\n```shell\nopenssl req -x509 -nodes -days 365 -newkey rsa:1024 -keyout mycert.pem -out mycert.pem\n```\nto create the .cer certificate, execute this:\n\n```shell\nopenssl x509 -inform pem -in mycert.pem -outform der -out mycert.cer\n```\n\nafter you have created the certificate, you will need to upload the .cer\nfile to microsoft azure via the \"upload\" action of the \"settings\" tab of\nthe [management portal](http://manage.windowsazure.com).\n\n\n## servicemanagementservice\n\n### initialization\n\nto initialize the management service, pass in your subscription id and\nthe path to the .pem file.\n\n```python\nfrom azure.servicemanagement import servicemanagementservice\nsubscription_id = '00000000-0000-0000-0000-000000000000'\ncert_file = 'mycert.pem'\nsms = servicemanagementservice(subscription_id, cert_file)\n```\n\n### list available locations\n\n```python\nlocations = sms.list_locations()\nfor location in locations:\n    print(location.name)\n```\n\n### create a storage service\n\nto create a storage service, you need a name for the service (between 3\nand 24 lowercase characters and unique within microsoft azure), a label\n(up to 100 characters, automatically encoded to base-64), and either a\nlocation or an affinity group.\n\n```python\nname = \"mystorageservice\"\ndesc = name\nlabel = name\nlocation = 'west us'\n\nresult = sms.create_storage_account(name, desc, label, location=location)\nsms.wait_for_operation_status(result.request_id, timeout=30)\n```\n\n### create a cloud service\n\na cloud service is also known as a hosted service (from earlier versions\nof microsoft azure). the **create\\_hosted\\_service** method allows you\nto create a new hosted service by providing a hosted service name (which\nmust be unique in microsoft azure), a label (automatically encoded to\nbase-64), and the location *or* the affinity group for your service.\n\n```python\nname = \"myhostedservice\"\ndesc = name\nlabel = name\nlocation = 'west us'\n\nresult = sms.create_hosted_service(name, label, desc, location=location)\nsms.wait_for_operation_status(result.request_id, timeout=30)\n```\n\n### create a virtual machine\n\nto create a virtual machine, you first need to create a cloud service.\nthen create the virtual machine deployment using the\ncreate_virtual_machine_deployment method.\n\n```python\nfrom azure.servicemanagement import linuxconfigurationset, osvirtualharddisk\n\nname = \"myhostedservice\"\n\n# name of an os image as returned by list_os_images\nimage_name = 'openlogic__openlogic-centos-62-20120531-en-us-30gb.vhd'\n\n# destination storage account container/blob where the vm disk\n# will be created\nmedia_link = 'url_to_target_storage_blob_for_vm_hd'\n\n# linux vm configuration, you can use windowsconfigurationset\n# for a windows vm instead\nlinux_config = linuxconfigurationset(\n    'myhostname',\n    'myuser',\n    'mypassword',\n    disable_ssh_password_authentication=true,\n)\n\nos_hd = osvirtualharddisk(image_name, media_link)\n\nresult = sms.create_virtual_machine_deployment(\n    service_name=name,\n    deployment_name=name,\n    deployment_slot='production',\n    label=name,\n    role_name=name,\n    system_config=linux_config,\n    os_virtual_hard_disk=os_hd,\n    role_size='small',\n)\nsms.wait_for_operation_status(result.request_id, timeout=600)\n```\n\n\n# need help?\n\nbe sure to check out the microsoft azure [developer forums on stack\noverflow](http://go.microsoft.com/fwlink/?linkid=234489) if you have\ntrouble with the provided code.\n\n\n# contribute code or provide feedback\n\nif you would like to become an active contributor to this project please\nfollow the instructions provided in [microsoft azure projects\ncontribution\nguidelines](http://azure.github.io/guidelines.html).\n\nif you encounter any bugs with the library please file an issue in the\n[issues](https://github.com/azure/azure-sdk-for-python/issues)\nsection of the project.\n\n\n# learn more\n\n[microsoft azure python developer\ncenter](http://azure.microsoft.com/en-us/develop/python/)\n\n\n![impressions](https://azure-sdk-impressions.azurewebsites.net/api/impressions/azure-sdk-for-python%2fazure-servicemanagement-legacy%2freadme.png)\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "azure-servicemanagement-legacy",
+  "package_url": "https://pypi.org/project/azure-servicemanagement-legacy/",
+  "project_url": "https://pypi.org/project/azure-servicemanagement-legacy/",
+  "project_urls": {
+    "Homepage": "https://github.com/Azure/azure-sdk-for-python"
+  },
+  "release_url": "https://pypi.org/project/azure-servicemanagement-legacy/0.20.7/",
+  "requires_dist": [
+    "azure-common (>=1.1.5)",
+    "requests",
+    "azure-nspkg (>=2.0.0)",
+    "pyopenssl ; extra == 'get_certificate_from_publish_settings'"
+  ],
+  "requires_python": "",
+  "summary": "microsoft azure legacy service management client library for python",
+  "version": "0.20.7",
+  "releases": [],
+  "developers": [
+    "microsoft_corporation",
+    "ptvshelp@microsoft.com"
+  ],
+  "kwds": "azure azurewebsites pip create_virtual_machine_deployment python",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_azure_servicemanagement_legacy",
+  "homepage": "https://github.com/azure/azure-sdk-for-python",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_azure_common",
+    "pypi_azure_nspkg",
+    "pypi_pyopenssl",
+    "pypi_requests"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "topic :: internet :: www/http",
+    "topic :: internet :: www/http :: dynamic content"
+  ],
+  "description": "django-bulk-update\n==================================\n[![build status](https://travis-ci.org/aykut/django-bulk-update.svg?branch=master)](https://travis-ci.org/aykut/django-bulk-update)\n[![coverage status](https://coveralls.io/repos/aykut/django-bulk-update/badge.svg?branch=master)](https://coveralls.io/r/aykut/django-bulk-update?branch=master)\n\nsimple bulk update over django orm or with helper function.\n\nthis project aims to bulk update given objects using **one query** over\n**django orm**.\n\ninstallation\n==================================\n    pip install django-bulk-update\n\nusage\n==================================\nwith manager:\n\n```python\nimport random\nfrom django_bulk_update.manager import bulkupdatemanager\nfrom tests.models import person\n\nclass person(models.model):\n    ...\n    objects = bulkupdatemanager()\n\nrandom_names = ['walter', 'the dude', 'donny', 'jesus']\npeople = person.objects.all()\nfor person in people:\n  person.name = random.choice(random_names)\n\nperson.objects.bulk_update(people, update_fields=['name'])  # updates only name column\nperson.objects.bulk_update(people, exclude_fields=['username'])  # updates all columns except username\nperson.objects.bulk_update(people)  # updates all columns\nperson.objects.bulk_update(people, batch_size=50000)  # updates all columns by 50000 sized chunks\n```\n\n\nwith helper:\n\n```python\nimport random\nfrom django_bulk_update.helper import bulk_update\nfrom tests.models import person\n\nrandom_names = ['walter', 'the dude', 'donny', 'jesus']\npeople = person.objects.all()\nfor person in people:\n  person.name = random.choice(random_names)\n\nbulk_update(people, update_fields=['name'])  # updates only name column\nbulk_update(people, exclude_fields=['username'])  # updates all columns except username\nbulk_update(people, using='someotherdb')  # updates all columns using the given db\nbulk_update(people)  # updates all columns using the default db\nbulk_update(people, batch_size=50000)  # updates all columns by 50000 sized chunks using the default db\n```\n\nnote: you can consider to use `.only('name')` when you only want to update `name`, so that django will only retrieve name data from db.\n\nand consider to use `.defer('username')` when you don't want to update `username`, so django won't retrieve username from db.\nthese optimization can improve the performance even more.\n\nperformance tests:\n==================================\nhere we test the performance of the `bulk_update` function vs. simply calling\n`.save()` on every object update (`dmmy_update`). the interesting metric is the speedup using\nthe `bulk_update` function more than the actual raw times.\n\n\n```python\n# note: sqlite is unable to run the `timeit` tests\n# due to the max number of sql variables\nin [1]: import os\nin [2]: import timeit\nin [3]: import django\n\nin [4]: os.environ['django_settings_module'] = 'tests.test_settings'\nin [5]: django.setup()\n\nin [6]: from tests.fixtures import create_fixtures\n\nin [7]: django.db.connection.creation.create_test_db()\nin [8]: create_fixtures(1000)\n\nin [9]: setup='''\nimport random\nfrom django_bulk_update import helper\nfrom tests.models import person\nrandom_names = ['walter', 'the dude', 'donny', 'jesus']\nids = list(person.objects.values_list('id', flat=true)[:1000])\npeople = person.objects.filter(id__in=ids)\nfor p in people:\n    name = random.choice(random_names)\n    p.name = name\n    p.email = '%s@example.com' % name\nbu_update = lambda: helper.bulk_update(people, update_fields=['name', 'email'])\n'''\n\nin [10]: bu_perf = min(timeit.timer('bu_update()', setup=setup).repeat(7, 100))\n\nin [11]: setup='''\nimport random\nfrom tests.models import person\nfrom django.db.models import f\nrandom_names = ['walter', 'the dude', 'donny', 'jesus']\nids = list(person.objects.values_list('id', flat=true)[:1000])\npeople = person.objects.filter(id__in=ids)\ndef dmmy_update():\n    for p in people:\n        name = random.choice(random_names)\n        p.name = name\n        p.email = '%s@example.com' % name\n        p.save(update_fields=['name', 'email'])\n'''\n\nin [12]: dmmy_perf = min(timeit.timer('dmmy_update()', setup=setup).repeat(7, 100))\nin [13]: print 'bulk update performance: %.2f. dummy update performance: %.2f. speedup: %.2f.' % (bu_perf, dmmy_perf, dmmy_perf / bu_perf)\nbulk update performance: 7.05. dummy update performance: 373.12. speedup: 52.90.\n```\n\nrequirements\n==================================\n- django 1.8+\n\ncontributors\n==================================\n- [aykut](https://github.com/aykut)\n- [daleobrien](https://github.com/daleobrien)\n- [sruon](https://github.com/sruon)\n- [howerhell](https://github.com/hoverhell)\n- [c-nichols](https://github.com/c-nichols)\n- [towr](https://github.com/towr)\n- [joshblum](https://github.com/joshblum)\n- [luzfcb](https://github.com/luzfcb)\n- [torchingloom](https://github.com/torchingloom)\n- [cihann](https://github.com/cihann)\n- [wetneb](https://github.com/wetneb)\n- [tatterdemalion](https://github.com/tatterdemalion)\n- [gabriel-laet](https://github.com/gabriel-laet)\n- [arnau126](https://github.com/arnau126)\n\ntodo\n==================================\n- geometry fields support\n\nlicense\n==================================\ndjango-bulk-update is released under the mit license. see the license file for more details.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "django-bulk-update",
+  "package_url": "https://pypi.org/project/django-bulk-update/",
+  "project_url": "https://pypi.org/project/django-bulk-update/",
+  "project_urls": {
+    "Homepage": "https://github.com/aykut/django-bulk-update"
+  },
+  "release_url": "https://pypi.org/project/django-bulk-update/2.2.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "bulk update using one query over django orm.",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "aykut_ozat",
+    "aykutozat@gmail.com"
+  ],
+  "kwds": "django_bulk_update bulk_update bulkupdatemanager django django_settings_module",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_django_bulk_update",
+  "homepage": "https://github.com/aykut/django-bulk-update",
+  "release_count": 24,
+  "dependency_ids": []
+}

@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.1",
+    "framework :: django :: 4.2",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: systems administration :: authentication/directory :: ldap"
+  ],
+  "description": "================================\ndjango authentication using ldap\n================================\n\n.. image:: https://readthedocs.org/projects/django-auth-ldap/badge/?version=latest\n   :target: https://django-auth-ldap.readthedocs.io/en/latest/\n\n.. image:: https://img.shields.io/pypi/v/django-auth-ldap.svg\n   :target: https://pypi.org/project/django-auth-ldap/\n\n.. image:: https://github.com/django-auth-ldap/django-auth-ldap/workflows/test/badge.svg\n   :target: https://github.com/django-auth-ldap/django-auth-ldap/workflows/test/badge.svg\n\n.. image:: https://img.shields.io/pypi/l/django-auth-ldap.svg\n   :target: https://raw.githubusercontent.com/django-auth-ldap/django-auth-ldap/master/license\n\nthis is a django authentication backend that authenticates against an ldap\nservice. configuration can be as simple as a single distinguished name\ntemplate, but there are many rich configuration options for working with users,\ngroups, and permissions.\n\n* documentation: https://django-auth-ldap.readthedocs.io/\n* pypi: https://pypi.org/project/django-auth-ldap/\n* repository: https://github.com/django-auth-ldap/django-auth-ldap\n* license: bsd 2-clause\n\n.. _`python-ldap`: https://pypi.org/project/python-ldap/\n\n\ninstallation\n============\n\ninstall the package with pip:\n\n.. code-block:: sh\n\n    $ pip install django-auth-ldap\n\nit requires `python-ldap`_ >= 3.1. you'll need the `openldap`_ libraries and\nheaders available on your system.\n\nto use the auth backend in a django project, add\n``'django_auth_ldap.backend.ldapbackend'`` to ``authentication_backends``. do\nnot add anything to ``installed_apps``.\n\n.. code-block:: python\n\n    authentication_backends = [\n        'django_auth_ldap.backend.ldapbackend',\n    ]\n\n``ldapbackend`` should work with custom user models, but it does assume that a\ndatabase is present.\n\n.. note::\n\n    ``ldapbackend`` does not inherit from ``modelbackend``. it is possible to\n    use ``ldapbackend`` exclusively by configuring it to draw group membership\n    from the ldap server. however, if you would like to assign permissions to\n    individual users or add users to groups within django, you'll need to have\n    both backends installed:\n\n    .. code-block:: python\n\n        authentication_backends = [\n            'django_auth_ldap.backend.ldapbackend',\n            'django.contrib.auth.backends.modelbackend',\n        ]\n\n.. _`openldap`: https://www.openldap.org/\n\n\nexample configuration\n=====================\n\nhere is a complete example configuration from ``settings.py`` that exercises\nnearly all of the features. in this example, we're authenticating against a\nglobal pool of users in the directory, but we have a special area set aside for\ndjango groups (``ou=django,ou=groups,dc=example,dc=com``). remember that most\nof this is optional if you just need simple authentication. some default\nsettings and arguments are included for completeness.\n\n.. code-block:: python\n\n    import ldap\n    from django_auth_ldap.config import ldapsearch, groupofnamestype\n\n\n    # baseline configuration.\n    auth_ldap_server_uri = 'ldap://ldap.example.com'\n\n    auth_ldap_bind_dn = 'cn=django-agent,dc=example,dc=com'\n    auth_ldap_bind_password = 'phlebotinum'\n    auth_ldap_user_search = ldapsearch(\n        'ou=users,dc=example,dc=com',\n        ldap.scope_subtree,\n        '(uid=%(user)s)',\n    )\n    # or:\n    # auth_ldap_user_dn_template = 'uid=%(user)s,ou=users,dc=example,dc=com'\n\n    # set up the basic group parameters.\n    auth_ldap_group_search = ldapsearch(\n        'ou=django,ou=groups,dc=example,dc=com',\n        ldap.scope_subtree,\n        '(objectclass=groupofnames)',\n    )\n    auth_ldap_group_type = groupofnamestype(name_attr='cn')\n\n    # simple group restrictions\n    auth_ldap_require_group = 'cn=enabled,ou=django,ou=groups,dc=example,dc=com'\n    auth_ldap_deny_group = 'cn=disabled,ou=django,ou=groups,dc=example,dc=com'\n\n    # populate the django user from the ldap directory.\n    auth_ldap_user_attr_map = {\n        'first_name': 'givenname',\n        'last_name': 'sn',\n        'email': 'mail',\n    }\n\n    auth_ldap_user_flags_by_group = {\n        'is_active': 'cn=active,ou=django,ou=groups,dc=example,dc=com',\n        'is_staff': 'cn=staff,ou=django,ou=groups,dc=example,dc=com',\n        'is_superuser': 'cn=superuser,ou=django,ou=groups,dc=example,dc=com',\n    }\n\n    # this is the default, but i like to be explicit.\n    auth_ldap_always_update_user = true\n\n    # use ldap group membership to calculate group permissions.\n    auth_ldap_find_group_perms = true\n\n    # cache distinguished names and group memberships for an hour to minimize\n    # ldap traffic.\n    auth_ldap_cache_timeout = 3600\n\n    # keep modelbackend around for per-user permissions and maybe a local\n    # superuser.\n    authentication_backends = (\n        'django_auth_ldap.backend.ldapbackend',\n        'django.contrib.auth.backends.modelbackend',\n    )\n\n\ncontributing\n============\n\nif you'd like to contribute, the best approach is to send a well-formed pull\nrequest, complete with tests and documentation. pull requests should be\nfocused: trying to do more than one thing in a single request will make it more\ndifficult to process.\n\nif you have a bug or feature request you can try `logging an issue`_.\n\nthere's no harm in creating an issue and then submitting a pull request to\nresolve it. this can be a good way to start a conversation and can serve as an\nanchor point.\n\n.. _`logging an issue`: https://github.com/django-auth-ldap/django-auth-ldap/issues\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "django-auth-ldap",
+  "package_url": "https://pypi.org/project/django-auth-ldap/",
+  "project_url": "https://pypi.org/project/django-auth-ldap/",
+  "project_urls": {
+    "Changelog": "https://github.com/django-auth-ldap/django-auth-ldap/releases/",
+    "Documentation": "https://django-auth-ldap.readthedocs.io/",
+    "Homepage": "https://github.com/django-auth-ldap/django-auth-ldap",
+    "Source": "https://github.com/django-auth-ldap/django-auth-ldap",
+    "Tracker": "https://github.com/django-auth-ldap/django-auth-ldap/issues"
+  },
+  "release_url": "https://pypi.org/project/django-auth-ldap/4.6.0/",
+  "requires_dist": [
+    "Django >=3.2",
+    "python-ldap >=3.1"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "django ldap authentication backend",
+  "version": "4.6.0",
+  "releases": [],
+  "developers": [
+    "mail@franek.fr",
+    "psagers@ignorare.net"
+  ],
+  "kwds": "django_auth_ldap auth_ldap_user_dn_template auth_ldap_server_uri badge auth_ldap_user_attr_map",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_django_auth_ldap",
+  "homepage": "",
+  "release_count": 61,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_python_ldap"
+  ]
+}

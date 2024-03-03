@@ -1,0 +1,37 @@
+{
+  "classifiers": [],
+  "description": "==========================\nlogging-formatter-anticrlf\n==========================\n--------------------------------------------------------------------------\npython logging formatter for crlf injection (cwe-93 / cwe-117) prevention\n--------------------------------------------------------------------------\n\nlogging formatter to sanitize crlf errors (cwe-93, some forms of cwe-117)\n\nthis class is a drop-in replacement for ``logging.formatter``, and has the\nexact same construction arguments. however, as a final step of formatting a\nlog line, it escapes carriage returns (\\\\r) and linefeeds (\\\\n).\n\nby default, these are replaced with their escaped equivalents (see `examples`_),\nbut the ``replacements`` dictionary can be modified to change this behavior.\n\nthis sanitization should solve cwe-93 errors and crlf-based versions of\ncwe-117. some cwe-117 errors are concerns about e.g. xss flaws in logs that\nare likely to be viewed in a browser; this formatter can't handle every\nform of cwe-117.\n\ninstallation\n============\n\n::\n\n    pip install logging-formatter-anticrlf\n\n\nexamples\n========\n\n::\n\n    import sys\n    import logging\n    import anticrlf\n\n    handler = logging.streamhandler(sys.stderr)\n    handler.setformatter(anticrlf.logformatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))\n\n    logger = logging.getlogger(__name__)\n    logger.addhandler(handler)\n    logger.setlevel(logging.info)\n\n    logger.info(\"example text with a newline\\nhere\")\n\nthis results in::\n\n    2017-02-03 08:43:52,557 - __main__ - info - example text with a newline\\nhere\n\nwhereas with the default ``formatter``, it would be::\n\n    2017-02-03 08:43:52,557 - __main__ - info - example text with a newline\n    here\n\nif you wanted newlines to be replaced with \\\\x0a instead, you could::\n\n    formatter = anticrlf.logformatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')\n    formatter.replacements[\"\\n\"] = \"\\\\x0a\"  # note the double backslash for literal!\n    handler.setformatter(formatter)\n\n\nchanging replacements\n=====================\n\nthe ``replacements`` field of the formatter is a ``substitutionmap`` object that behaves\nlike a ``dict`` with a few exceptions designed to help developers avoid making insecure mistakes.\n\nspecifically:\n\n* an \"empty\" ``substitutionmap`` object will contain the default mappings for cr and lf chars\n* calling ``del`` on either the cr or lf key will *reset the value* rather than *delete* the key\n* any attempt to create a key-value pair that results in any value containing any of the keys\n  will raise an ``unsafesubstitutionerror``\n\nthe rationale for the last item is that the keys of the ``replacements`` field are strings\nthat are considered unsafe. replacing one unsafe string with another defeats the purpose of\nusing this module.\n\nadditionally, if you assign a regular ``dict`` to the ``replacements`` field, and try to log\nsomething using that configuration, ``anticrlf.logformatter`` will reset the ``replacements``\nfield to its default value and issue a ``userwarning`` to that effect.\n\nthat means the following::\n\n    formatter.replacements[\"\\n\"] = \"\\\\x0a\"  # replace lf chars with '\\x0a'\n    del formatter.replacements[\"\\n\"]        # return to replacing lf with '\\n'\n    formatter.replacements[\"\\t\"] = \"\\\\t\"    # replace tabs with '\\t'\n    formatter.replacements[\"\\n\"] = \"<\\t>\"   # raises unsafesubstitutionerror\n\nthe last occurs because the value ``<\\t>`` contains ``\\t``, which was previously created as a key.\n\nand::\n\n    formatter.replacements = { \"\\n\": \"\\r\" }  # this is a mistake!\n    logger.info(\"example\")\n\nwill result, if that logger is using that formatter, in ``replacements`` being returned to its\nsafe default value and a ``userwarning`` about that being issued.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-2-clause",
+  "name": "logging-formatter-anticrlf",
+  "package_url": "https://pypi.org/project/logging-formatter-anticrlf/",
+  "project_url": "https://pypi.org/project/logging-formatter-anticrlf/",
+  "project_urls": {
+    "Homepage": "https://github.com/darrenpmeyer/logging-formatter-anticrlf",
+    "home": "https://github.com/darrenpmeyer/logging-formatter-anticrlf"
+  },
+  "release_url": "https://pypi.org/project/logging-formatter-anticrlf/1.2.1/",
+  "requires_dist": [
+    "tox >=3.8.0 ; extra == 'dev'",
+    "pytest ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "python logging formatter for crlf injection (cwe-93 / cwe-117) prevention",
+  "version": "1.2.1",
+  "releases": [],
+  "developers": [
+    "darren@darrenpmeyer.com",
+    "darren_p_meyer"
+  ],
+  "kwds": "crlf anticrlf logformatter logging formatter",
+  "license_kwds": "bsd-2-clause",
+  "libtype": "pypi",
+  "id": "pypi_logging_formatter_anticrlf",
+  "homepage": "https://github.com/darrenpmeyer/logging-formatter-anticrlf",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_pytest",
+    "pypi_tox"
+  ]
+}

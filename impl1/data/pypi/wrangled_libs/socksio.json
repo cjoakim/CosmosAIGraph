@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: proxy servers"
+  ],
+  "description": "# socksio\n\n[![build status](https://travis-ci.org/sethmlarson/socksio.svg?branch=master)](https://travis-ci.org/sethmlarson/socksio)\n[![codecov](https://codecov.io/gh/sethmlarson/socksio/branch/master/graph/badge.svg)](https://codecov.io/gh/sethmlarson/socksio)\n[![supported python versions](https://img.shields.io/pypi/pyversions/socksio.svg)](https://pypi.org/project/socksio)\n[![pypi](https://img.shields.io/pypi/v/socksio.svg)](https://pypi.org/project/socksio)\n\nclient-side sans-i/o socks proxy implementation.\nsupports socks4, socks4a, and socks5.\n\n`socksio` is a sans-i/o library similar to\n[`h11`](https://github.com/python-hyper/h11) or\n[`h2`](https://github.com/python-hyper/hyper-h2/), this means the library itself\ndoes not handle the actual sending of the bytes through the network, it only\ndeals with the implementation details of the socks protocols so you can use\nit in any i/o library you want.\n\n## current status: stable\n\nfeatures not yet implemented:\n\n- socks5 gss-api authentication.\n- socks5 udp associate requests.\n\n## usage\n\ntl;dr check the [examples directory](examples/).\n\nbeing sans-i/o means that in order to test `socksio` you need an i/o library.\nand the most basic i/o is, of course, the standard library's `socket` module.\n\nyou'll need to know ahead of time the type of socks proxy you want to connect\nto. assuming we have a socks4 proxy running in our machine on port 8080, we\nwill first create a connection to it:\n\n```python\nimport socket\n\nsock = socket.create_connection((\"localhost\", 8080))\n```\n\n`socksio` exposes modules for socks4, socks4a and socks5, each of them includes\na `connection` class:\n\n```python\nfrom socksio import socks4\n\n# the socks4 protocol requires a `user_id` to be supplied.\nconn = socks4.socks4connection(user_id=b\"socksio\")\n```\n\nsince `socksio` is a sans-i/o library, we will use the socket to send and\nreceive data to our socks4 proxy. the raw data, however, will be created and\nparsed by our `socks4connection`.\n\nwe need to tell our connection we want to make a request to the proxy. we do\nthat by first creating a request object.\n\nin socks4 we only need to send a command along with an ip address and port.\n`socksio` exposes the different types of commands as enumerables and a\nconvenience `from_address` class method in the request classes to create a\nvalid request object:\n\n```python\n# socks4 does not allow domain names, below is an ip for google.com\nrequest = socks4.socks4request.from_address(\n    socks4.socks4command.connect, (\"216.58.204.78\", 80))\n```\n\n`from_address` methods are available on all request classes in `socksio`, they\naccept addresses as tuples of `(address, port)` as well as string `address:port`.\n\nnow we ask the connection to send our request:\n\n```python\nconn.send(request)\n```\n\nthe `socks4connection` will then compose the necessary `bytes` in the proper\nformat for us to send to our proxy:\n\n```python\ndata = conn.data_to_send()\nsock.sendall(data)\n```\n\nif all goes well the proxy will have sent reply, we just need to read from the\nsocket and pass the data to the `socks4connection`:\n\n```python\ndata = sock.recv(1024)\nevent = conn.receive_data(data)\n```\n\nthe connection will parse the data and return an event from it, in this case, a\n`socks4reply` that includes attributes for the fields in the socks reply:\n\n```python\nif event.reply_code != socks4.socks4replycode.request_granted:\n    raise exception(\n        \"server could not connect to remote host: {}\".format(event.reply_code)\n    )\n```\n\nif all went well the connection has been established correctly and we can\nstart sending our request directly to the proxy:\n\n```python\nsock.sendall(b\"get / http/1.1\\r\\nhost: google.com\\r\\n\\r\\n\")\ndata = receive_data(sock)\nprint(data)\n# b'http/1.1 301 moved permanently\\r\\nlocation: http://www.google.com/...`\n```\n\nthe same methodology is used for all protocols, check out the\n[examples directory](https://github.com/sethmlarson/socksio/tree/master/examples/)\nfor more information.\n\n## development\n\ninstall the test requirements with `pip install -r test-requirements.txt`.\n\ninstall the project in pseudo-editable mode with `flit install -s`.\n\ntests can be ran directly invoking `pytest`.\n\nthis project uses [`nox`](https://nox.thea.codes/en/stable/) to automate\ntesting and linting tasks. `nox` is installed as part of the test requirements.\ninvoking `nox` will run all sessions, but you may also run only some them, for\nexample `nox -s lint` will only run the linting session.\n\nin order to test against a live proxy server a docker setup is provided based\non the [`dante`](https://www.inet.no/dante/) socks server.\n\na container will start `danted` listening on port 1080. the docker-compose.yml\nwill start the container and map the ports appropriately. to start the container\nin the background:\n\n```\ndocker-compose -f docker/docker-compose.yml up -d\n```\n\nto stop it:\n\n```\ndocker-compose -f docker/docker-compose.yml down\n```\n\nalternatively, remove the `-d` flag to run the containers in the foreground.\n\n## reference documents\n\neach implementation follows the documents as listed below:\n\n- socks4: https://www.openssh.com/txt/socks4.protocol\n- socks4a: https://www.openssh.com/txt/socks4a.protocol\n- socks5: https://www.ietf.org/rfc/rfc1928.txt\n- socks5 username/password authentication: https://www.ietf.org/rfc/rfc1929.txt\n- socks5 gss-api authentication: https://www.ietf.org/rfc/rfc1961.txt\n\n## license\n\nmit\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "socksio",
+  "package_url": "https://pypi.org/project/socksio/",
+  "project_url": "https://pypi.org/project/socksio/",
+  "project_urls": {
+    "Homepage": "https://github.com/sethmlarson/socksio"
+  },
+  "release_url": "https://pypi.org/project/socksio/1.0.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "sans-i/o implementation of socks4, socks4a, and socks5.",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "seth_michael_larson",
+    "sethmichaellarson@gmail.com"
+  ],
+  "kwds": "socksio socks4connection socks4replycode socks4a socks4",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_socksio",
+  "homepage": "https://github.com/sethmlarson/socksio",
+  "release_count": 4,
+  "dependency_ids": []
+}

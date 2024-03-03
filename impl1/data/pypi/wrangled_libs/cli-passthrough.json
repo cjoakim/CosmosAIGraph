@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "topic :: utilities"
+  ],
+  "description": "# readme\n\n## install\n\ninstall with `pip install cli-passthrough` / `pip install -e .` if you have this repo.\n\n\n## how to use\n\n\nfrom the terminal:\n\n```bash\n$ cli-passthrough echo 'hi'\nhi\n$ echo 'hi'\nhi\n$ cli-passthrough python --error\nunknown option: --\nusage: python [option] ... [-c cmd | -m mod | file | -] [arg] ...\ntry `python -h' for more information.\n$ python --error\nunknown option: --\nusage: python [option] ... [-c cmd | -m mod | file | -] [arg] ...\ntry `python -h' for more information.\n```\n\nfrom python:\n```ipython\nin [1]: from cli_passthrough import cli_passthrough\n\nin [2]: cli_passthrough(\"echo 'hi'\")\nhi\nout[2]: 0\n\nin [3]: cli_passthrough(\"python --error\")\nunknown option: --\nusage: python [option] ... [-c cmd | -m mod | file | -] [arg] ...\ntry `python -h' for more information.\nout[3]: 2\n\n```\n\n## what does it do?\n\n\nthis project provides an entry point `cli-passthrough` in the terminal that accepts any amount of parameters, and runs those parameters as it's own command. except in a few special cases, this will output to the terminal exactly what the command would have, including any formatting done with escape sequences. both the combined stdout and stderr are logged, with order preserved, in `logs/history.log`, and the stderr by itself is logged in `/logs/stderr.log`. these log files are written to in realtime. the output to the terminal is also in realtime. the original intent was to dump all output back to the screen, while saving both stdout and stderr. future work will be to return those outputs to python as well.\n\nthis project was motivated by making a wrapper on another application which needed to be used over the cli. i wanted to also use the wrapper from the cli as well. i wanted to see the output of the program i was invoking in real-time, in the same formatting, and log everything. in other words, i wanted the following:\n\n1. any command: run nearly any command given to it.\n2. flexible logging: capture stdout and stderr independently for flexible logging.\n3. order peservation: preserve order of stdout and stderr\n4. realtime output: output to the screen in realtime, i.e. don't wait for the command to exit before dumping to the screen.\n5. exit status: capture exit code\n6. formatting preserved: preserve ansi escape sequences so most things are still formatted as if not run through this passthrough.\n\n\n|                              | 1 | 2 | 3 | 4 | 5 | 6   | note |\n|------------------------------|---|---|---|---|---|-----|------|\n| os.system                    | y | n | y | y | y | y   | doesn't capture output at all |\n| os.popen                     | n | n | y | n | n | y   | deprecated & obsolete |\n| os.exec*                     | y | n | - | n | n | n   | really not the intended use |\n| pexpect                      | y | n | y | y | y | y   | bad logging |\n| subprocess.popen + threads   | y | y | y | n | y | y/n | doesn't have real-time output because it's often dependent on buffer flushes of blocks. |\n| subprocess.popen + pty       | y | y | y | y | y | y   | we got it! |\n\n\n## known limitations\n\nthis implementation of subprocess.popen + pty currently has the following limitations:\n\n1. it doesn't run *every* command. commands that need input from the user do not work, such as `ssh` or `ipython`.\n\n1. it makes assumptions about the terminal size. it would be better if it detected the terminal the python is ran in, and use the same dimensions.\n\nthis is very much largely adapted (copied) from [this so post](https://stackoverflow.com/a/31953436). i just wrapped it up into an importable function, gave it a cli itself, and made basic logging to illustrate the point. feel free to copy/paste/tweek it yourself.\n\n**if you find something better** please let me know! i'd be more than happy to upgrade or replace this. this is simply the best i've found so far.\n\n\n",
+  "docs_url": null,
+  "keywords": "cli utilities logging pty subprocess terminal",
+  "license": "bsd-3-clause",
+  "name": "cli-passthrough",
+  "package_url": "https://pypi.org/project/CLI-passthrough/",
+  "project_url": "https://pypi.org/project/CLI-passthrough/",
+  "project_urls": {
+    "Homepage": "https://github.com/terminal-labs/cli-passthrough"
+  },
+  "release_url": "https://pypi.org/project/CLI-passthrough/0.1.3/",
+  "requires_dist": [
+    "click",
+    "ipdb ; extra == 'dev'",
+    "pre-commit ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "importable cli-passthrough with bells and whistles.",
+  "version": "0.1.3",
+  "releases": [],
+  "developers": [
+    "solutions@terminallabs.com",
+    "terminal_labs"
+  ],
+  "kwds": "cli_passthrough pip subprocess python ipython",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_cli_passthrough",
+  "homepage": "https://github.com/terminal-labs/cli-passthrough",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_ipdb",
+    "pypi_pre_commit"
+  ]
+}

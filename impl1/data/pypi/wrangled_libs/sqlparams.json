@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: database",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: utilities"
+  ],
+  "description": "sql params\n==========\n\n*sqlparams* is a utility package for converting between various sql\nparameter styles. this can simplify the use of sql parameters in queries by\nallowing the use of named parameters where only ordinal are supported. some\n`python db api 2.0`_ compliant modules only support the ordinal *qmark* or\n*format* style parameters (e.g., `pyodbc`_ only supports *qmark*). this\npackage provides a helper class, `sqlparams`_, that is used to convert\nfrom any parameter style (*qmark*, *numeric*, *named*, *format*, *pyformat*;\nand the non-standard *numeric_dollar* and *named_dollar*), and have them\nsafely converted to the desired parameter style.\n\n.. _`python db api 2.0`: http://www.python.org/dev/peps/pep-0249/\n.. _`pyodbc`: https://github.com/mkleehammer/pyodbc\n\n\ntutorial\n--------\n\nyou first create an `sqlparams`_ instance specifying the named\nparameter style you're converting from, and what ordinal style you're\nconverting to. let's convert from *named* to *qmark* style::\n\n  >>> import sqlparams\n  >>> query = sqlparams.sqlparams('named', 'qmark')\n\nnow, lets to convert a simple sql select query using the `sqlparams.format`_\nmethod which accepts an sql query, and a *dict* of parameters::\n\n  >>> sql, params = query.format('select * from users where name = :name;', {'name': \"thorin\"})\n\nthis returns the new sql query using ordinal *qmark* parameters with the\ncorresponding list of ordinal parameters, which can be passed to the\n`.execute()`_ method on a database cursor::\n\n  >>> print sql\n  select * from users where name = ?;\n  >>> print params\n  ['thorin']\n\n.. _`.execute()`: http://www.python.org/dev/peps/pep-0249/#id15\n\n*tuple*\\ s are also supported which allows for safe use of the sql in\noperator::\n\n  >>> sql, params = query.format(\"select * from users where name in :names;\", {'names': (\"dori\", \"nori\", \"ori\")})\n  >>> print sql\n  select * from users where name in (?,?,?);\n  >>> print params\n  ['dori', 'nori', 'ori']\n\nyou can also format multiple parameters for a single, shared query useful with\nthe `.executemany()`_ method of a database cursor::\n\n  >>> sql, manyparams = query.formatmany(\"update users set age = :age where name = :name;\", [{'name': \"dwalin\", 'age': 169}, {'name': \"balin\", 'age': 178}])\n  >>> print sql\n  update users set age = ? where name = ?;\n  >>> print manyparams\n  [[169, 'dwalin'], [178, 'balin']]\n\n.. _`.executemany()`: http://www.python.org/dev/peps/pep-0249/#executemany\n\nplease note that if an expanded *tuple* is used in `sqlparams.formatmany`_,\nthe tuple must be the same size in each of the parameter lists. otherwise, you\nmight well use `sqlparams.format`_ in a for-loop.\n\n\nsource\n------\n\nthe source code for *sqlparams* is available from the github repo\n`cpburnz/python-sql-parameters`_.\n\n.. _`cpburnz/python-sql-parameters`: https://github.com/cpburnz/python-sql-parameters.git\n\n\ninstallation\n------------\n\n*sqlparams* can be installed from source with::\n\n  python setup.py install\n\n*sqlparams* is also available for install through `pypi`_::\n\n  pip install sqlparams\n\n.. _`pypi`: http://pypi.python.org/pypi/sqlparams\n\n\ndocumentation\n-------------\n\ndocumentation for *sqlparams* is available on `read the docs`_.\n\n.. _`read the docs`: https://python-sql-parameters.readthedocs.org\n\n.. _`sqlparams`: https://python-sql-parameters.readthedocs.io/en/latest/sqlparams.html#sqlparams.sqlparams\n.. _`sqlparams.format`: https://python-sql-parameters.readthedocs.io/en/latest/sqlparams.html#sqlparams.sqlparams.format\n.. _`sqlparams.formatmany`: https://python-sql-parameters.readthedocs.io/en/latest/sqlparams.html#sqlparams.sqlparams.formatmany\n\n\n\nchange history\n==============\n\n\n6.0.1 (2023-12-09)\n------------------\n\n- fix documentation.\n\n\n6.0.0 (2023-12-09)\n------------------\n\n- dropped support of eol python 3.7.\n- support python 3.12.\n\n\n5.1.0 (2023-03-14)\n------------------\n\nimprovements:\n\n- support `literalstring`_.\n\n.. _`literalstring`: https://docs.python.org/3/library/typing.html#typing.literalstring\n\n\n5.0.0 (2022-08-11)\n------------------\n\n- dropped support of eol python 3.6.\n- support python 3.11.\n- changed build system to `pyproject.toml`_ and build backend to `setuptools.build_meta`_ which may have unforeseen consequences.\n- safely expand empty tuples. fixes `issue #8`_.\n- add support for stripping comments. this helps prevent expansion of unexpected variables in comments. fixes `issue #9`_.\n- rename github project from `python-sql-parameters`_ to `python-sqlparams`_.\n\n.. _`pyproject.toml`: https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/\n.. _`setuptools.build_meta`: https://setuptools.pypa.io/en/latest/build_meta.html\n.. _`issue #8`: https://github.com/cpburnz/python-sqlparams/issues/8\n.. _`issue #9`: https://github.com/cpburnz/python-sqlparams/issues/9\n.. _`python-sql-parameters`: https://github.com/cpburnz/python-sql-parameters\n.. _`python-sqlparams`: https://github.com/cpburnz/python-sqlparams\n\n\n4.0.0 (2022-06-06)\n------------------\n\n- drop support for eol python 3.5.\n-\t`issue #10`_: when converting to 'format'/'pyformat' types, escape existing '%' characters.\n-\twhen converting from 'format'/'pyformat' types, set `escape_char=true` to unescape double '%' characters.\n\n.. _`issue #10`: https://github.com/cpburnz/python-sqlparams/issues/10\n\n\n\n3.0.0 (2020-04-04)\n------------------\n\n- major changes to internal implementation.\n- support converting any parameter style to any parameter style (all named,\n  numeric, and ordinal styles).\n- renamed attribute `named` to `in_style` on `sqlparams.sqlparams`.\n- renamed attribute `ordinal` to `out_style` on `sqlparams.sqlparams`.\n- removed attributes `match` and `replace` from `sqlparams.sqlparams` which\n  should have been private.\n- named parameters must now be valid identifiers (can no longer start with a\n  digit to help prevent incorrectly matching common strings such as\n  datetimes). fixes `issue #4`_.\n- `issue #7`_: support dollar sign style for numeric and named parameters.\n\n.. _`issue #4`: https://github.com/cpburnz/python-sqlparams/issues/4\n.. _`issue #7`: https://github.com/cpburnz/python-sqlparams/issues/7\n\n\n2.0.0 (2020-02-26)\n------------------\n\n- drop support for eol python 2.7, 3.2, 3.3, 3.4.\n\n\n1.2.0 (2020-02-26)\n------------------\n\n- require setuptools.\n- support up to python 3.8.\n\n\n1.1.2 (2018-05-04)\n------------------\n\n- improved support for byte strings.\n\n\n1.1.1 (2017-09-07)\n------------------\n\n- fixed support for byte strings.\n\n\n1.1.0 (2017-08-30)\n------------------\n\n- support python 3.2+.\n\n\n1.0.3 (2012-12-28)\n------------------\n\n- fixed documentation for `issue 1`_.\n\n.. _`issue 1`: https://github.com/cpburnz/python-sqlparams/issues/1\n\n\n1.0.2 (2012-12-22)\n------------------\n\n- added sphinx documentation.\n\n\n1.0.1 (2012-12-20)\n------------------\n\n- fixed running test as a script.\n\n\n1.0.0 (2012-12-20)\n------------------\n\n- initial release.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "sqlparams",
+  "package_url": "https://pypi.org/project/sqlparams/",
+  "project_url": "https://pypi.org/project/sqlparams/",
+  "project_urls": {
+    "Documentation": "https://python-sql-parameters.readthedocs.io/en/latest/index.html",
+    "Issue Tracker": "https://github.com/cpburnz/python-sqlparams/issues",
+    "Source Code": "https://github.com/cpburnz/python-sqlparams"
+  },
+  "release_url": "https://pypi.org/project/sqlparams/6.0.1/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "convert between various db api 2.0 parameter styles.",
+  "version": "6.0.1",
+  "releases": [],
+  "developers": [
+    "cpburnz@gmail.com"
+  ],
+  "kwds": "sqlparams pyodbc parameters parameter params",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_sqlparams",
+  "homepage": "",
+  "release_count": 15,
+  "dependency_ids": []
+}

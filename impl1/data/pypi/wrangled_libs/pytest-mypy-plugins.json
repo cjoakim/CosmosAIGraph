@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "<img src=\"http://mypy-lang.org/static/mypy_light.svg\" alt=\"mypy logo\" width=\"300px\"/>\n\n# pytest plugin for testing mypy types, stubs, and plugins\n\n[![tests status](https://github.com/typeddjango/pytest-mypy-plugins/actions/workflows/test.yml/badge.svg)](https://github.com/typeddjango/pytest-mypy-plugins/actions/workflows/test.yml)\n[![checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)\n[![gitter](https://badges.gitter.im/mypy-django/lobby.svg)](https://gitter.im/mypy-django/lobby)\n[![pypi](https://img.shields.io/pypi/v/pytest-mypy-plugins?color=blue)](https://pypi.org/project/pytest-mypy-plugins/)\n[![conda version](https://img.shields.io/conda/vn/conda-forge/pytest-mypy-plugins.svg?color=blue)](https://anaconda.org/conda-forge/pytest-mypy-plugins)\n\n## installation\n\nthis package is available on [pypi](https://pypi.org/project/pytest-mypy-plugins/)\n\n```bash\npip install pytest-mypy-plugins\n```\n\nand [conda-forge](https://anaconda.org/conda-forge/pytest-mypy-plugins)\n\n```bash\nconda install -c conda-forge pytest-mypy-plugins\n```\n\n## usage\n\n### running\n\nplugin, after installation, is automatically picked up by `pytest` therefore it is sufficient to\njust execute:\n\n```bash\npytest\n```\n\n### paths\n\nthe `pythonpath` and `mypypath` environment variables, if set, are passed to `mypy` on invocation.\nthis may be helpful if you are testing a local plugin and need to provide an import path to it.\n\nbe aware that when `mypy` is run in a subprocess (the default) the test cases are run in temporary working directories\nwhere relative paths such as `pythonpath=./my_plugin` do not reference the directory which you are running `pytest` from.\nif you encounter this, consider invoking `pytest` with `--mypy-same-process` or make your paths absolute,\ne.g. `pythonpath=$(pwd)/my_plugin pytest`.\n\nyou can also specify `pythonpath`, `mypypath`, or any other environment variable in `env:` section of `yml` spec:\n\n```yml\n- case: mypy_path_from_env\n  main: |\n    from pair import pair\n\n    instance: pair\n    reveal_type(instance)  # n: revealed type is 'pair.pair'\n  env:\n    - mypypath=../fixtures\n```\n\n\n### what is a test case?\n\nin general each test case is just an element in an array written in a properly formatted `yaml` file.\non top of that, each case must comply to following types:\n\n| property        | type                                                   | description                                                                                                         |\n| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |\n| `case`          | `str`                                                  | name of the test case, complies to `[a-za-z0-9]` pattern                                                            |\n| `main`          | `str`                                                  | portion of the code as if written in `.py` file                                                                     |\n| `files`         | `optional[list[file]]=[]`\\*                            | list of extra files to simulate imports if needed                                                                   |\n| `disable_cache` | `optional[bool]=false`                                 | set to `true` disables `mypy` caching                                                                               |\n| `mypy_config`   | `optional[dict[str, union[str, int, bool, float]]]={}` | inline `mypy` configuration, passed directly to `mypy` as `--config-file` option, possibly joined with `--mypy-pyproject-toml-file` or `--mypy-ini-file` contents if they are passed. by default is treated as `ini`, treated as `toml` only if `--mypy-pyproject-toml-file` is passed |\n| `env`           | `optional[dict[str, str]]={}`                          | environmental variables to be provided inside of test run                                                           |\n| `parametrized`  | `optional[list[parameter]]=[]`\\*                       | list of parameters, similar to [`@pytest.mark.parametrize`](https://docs.pytest.org/en/stable/parametrize.html)     |\n| `skip`          | `str`                                                  | expression evaluated with following globals set: `sys`, `os`, `pytest` and `platform`                               |\n| `expect_fail`   | `bool`                                                 | mark test case as an expected failure, like [`@pytest.mark.xfail`](https://docs.pytest.org/en/stable/skipping.html) |\n| `regex`         | `str`                                                  | allow regular expressions in comments to be matched against actual output. defaults to \"no\", i.e. matches full text.|\n\n(*) appendix to **pseudo** types used above:\n\n```python\nclass file:\n    path: str\n    content: optional[str] = none\nparameter = mapping[str, any]\n```\n\nimplementation notes:\n\n- `main` must be non-empty string that evaluates to valid **python** code,\n- `content` of each of extra files must evaluate to valid **python** code,\n- `parametrized` entries must all be the objects of the same _type_. it simply means that each\n  entry must have **exact** same set of keys,\n- `skip` - an expression set in `skip` is passed directly into\n  [`eval`](https://docs.python.org/3/library/functions.html#eval). it is advised to take a peek and\n  learn about how `eval` works.\n\n### example\n\n#### 1. inline type expectations\n\n```yaml\n# typesafety/test_request.yml\n- case: request_object_has_user_of_type_auth_user_model\n  main: |\n    from django.http.request import httprequest\n    reveal_type(httprequest().user)  # n: revealed type is 'myapp.models.myuser'\n    # check that other fields work ok\n    reveal_type(httprequest().method)  # n: revealed type is 'union[builtins.str, none]'\n  files:\n    - path: myapp/__init__.py\n    - path: myapp/models.py\n      content: |\n        from django.db import models\n        class myuser(models.model):\n            pass\n```\n\n#### 2. `@parametrized`\n\n```yaml\n- case: with_params\n  parametrized:\n    - val: 1\n      rt: builtins.int\n    - val: 1.0\n      rt: builtins.float\n  main: |\n    reveal_type({{ val }})  # n: revealed type is '{{ rt }}'\n```\n\nproperties that you can parametrize:\n- `main`\n- `mypy_config`\n- `out`\n\n#### 3. longer type expectations\n\n```yaml\n- case: with_out\n  main: |\n    reveal_type('abc')\n  out: |\n    main:1: note: revealed type is 'builtins.str'\n```\n\n#### 4. regular expressions in expectations\n\n```yaml\n- case: expected_message_regex_with_out\n  regex: yes\n  main: |\n    a = 'abc'\n    reveal_type(a)\n  out: |\n    main:2: note: .*str.*\n```\n\n#### 5. regular expressions specific lines of output.\n\n```yaml\n- case: expected_single_message_regex\n  main: |\n    a = 'hello'\n    reveal_type(a)  # nr: .*str.*\n```\n\n## options\n\n```\nmypy-tests:\n  --mypy-testing-base=mypy_testing_base\n                        base directory for tests to use\n  --mypy-pyproject-toml-file=mypy_pyproject_toml_file\n                        which `pyproject.toml` file to use\n                        as a default config for tests.\n                        incompatible with `--mypy-ini-file`\n  --mypy-ini-file=mypy_ini_file\n                        which `.ini` file to use as a default config for tests.\n                        incompatible with `--mypy-pyproject-toml-file`\n  --mypy-same-process   run in the same process. useful for debugging,\n                        will create problems with import cache\n  --mypy-extension-hook=mypy_extension_hook\n                        fully qualified path to the extension hook function,\n                        in case you need custom yaml keys. has to be top-level\n  --mypy-only-local-stub\n                        mypy will ignore errors from site-packages\n\n```\n\n## further reading\n\n- [testing mypy stubs, plugins, and types](https://sobolevn.me/2019/08/testing-mypy-types)\n\n## license\n\n[mit](https://github.com/typeddjango/pytest-mypy-plugins/blob/master/license)\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pytest-mypy-plugins",
+  "package_url": "https://pypi.org/project/pytest-mypy-plugins/",
+  "project_url": "https://pypi.org/project/pytest-mypy-plugins/",
+  "project_urls": {
+    "Homepage": "https://github.com/TypedDjango/pytest-mypy-plugins"
+  },
+  "release_url": "https://pypi.org/project/pytest-mypy-plugins/3.0.0/",
+  "requires_dist": [
+    "pytest (>=7.0.0)",
+    "mypy (>=1.3)",
+    "decorator",
+    "pyyaml",
+    "Jinja2",
+    "regex",
+    "packaging",
+    "tomlkit (>=0.11)"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "pytest plugin for writing tests for mypy plugins",
+  "version": "3.0.0",
+  "releases": [],
+  "developers": [
+    "mail@sobolevn.me",
+    "maksim_kurnikov",
+    "maxim.kurnikov@gmail.com",
+    "nikita_sobolev"
+  ],
+  "kwds": "pytest mypy_badge py mypy_light mypy_config",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_mypy_plugins",
+  "homepage": "https://github.com/typeddjango/pytest-mypy-plugins",
+  "release_count": 27,
+  "dependency_ids": [
+    "pypi_decorator",
+    "pypi_jinja2",
+    "pypi_mypy",
+    "pypi_packaging",
+    "pypi_pytest",
+    "pypi_pyyaml",
+    "pypi_regex",
+    "pypi_tomlkit"
+  ]
+}

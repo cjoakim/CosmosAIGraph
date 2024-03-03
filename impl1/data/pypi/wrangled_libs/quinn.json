@@ -1,0 +1,37 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# quinn\n\n![ci](https://github.com/mrpowers/quinn/workflows/ci/badge.svg?branch=master)\n\npyspark helper methods to maximize developer productivity.\n\nquinn validates dataframes, extends core classes, defines dataframe transformations, and provides sql functions.\n\n![quinn](https://github.com/mrpowers/quinn/blob/master/quinn.png)\n\n## setup\n\nquinn is [uploaded to pypi](https://pypi.org/project/quinn/) and can be installed with this command:\n\n```\npip install quinn\n```\n\n## pyspark core class extensions\n\n```\nfrom quinn.extensions import *\n```\n\n### column extensions\n\n**isfalsy()**\n\n```python\nsource_df.withcolumn(\"is_stuff_falsy\", f.col(\"has_stuff\").isfalsy())\n```\n\nreturns `true` if `has_stuff` is `none` or `false`.\n\n**istruthy()**\n\n```python\nsource_df.withcolumn(\"is_stuff_truthy\", f.col(\"has_stuff\").istruthy())\n```\n\nreturns `true` unless `has_stuff` is `none` or `false`.\n\n**isnullorblank()**\n\n```python\nsource_df.withcolumn(\"is_blah_null_or_blank\", f.col(\"blah\").isnullorblank())\n```\n\nreturns `true` if `blah` is `null` or blank (the empty string or a string that only contains whitespace).\n\n**isnotin()**\n\n```python\nsource_df.withcolumn(\"is_not_bobs_hobby\", f.col(\"fun_thing\").isnotin(bobs_hobbies))\n```\n\nreturns `true` if `fun_thing` is not included in the `bobs_hobbies` list.\n\n**nullbetween()**\n\n```python\nsource_df.withcolumn(\"is_between\", f.col(\"age\").nullbetween(f.col(\"lower_age\"), f.col(\"upper_age\")))\n```\n\nreturns `true` if `age` is between `lower_age` and `upper_age`.  if `lower_age` is populated and `upper_age` is `null`, it will return `true` if `age` is greater than or equal to `lower_age`.  if `lower_age` is `null` and `upper_age` is populate, it will return `true` if `age` is lower than or equal to `upper_age`.\n\n### sparksession extensions\n\n**create_df()**\n\n```python\nspark.create_df(\n    [(\"jose\", \"a\"), (\"li\", \"b\"), (\"sam\", \"c\")],\n    [(\"name\", stringtype(), true), (\"blah\", stringtype(), true)]\n)\n```\n\ncreates dataframe with a syntax that's less verbose than the built-in `createdataframe` method.\n\n### dataframe extensions\n\n**transform()**\n\n```python\nsource_df\\\n    .transform(lambda df: with_greeting(df))\\\n    .transform(lambda df: with_something(df, \"crazy\"))\n```\n\nallows for multiple dataframe transformations to be run and executed.\n\n## quinn helper functions\n\n```python\nimport quinn\n```\n\n### dataframe validations\n\n**validate_presence_of_columns()**\n\n```python\nquinn.validate_presence_of_columns(source_df, [\"name\", \"age\", \"fun\"])\n```\n\nraises an exception unless `source_df` contains the `name`, `age`, and `fun` column.\n\n**validate_schema()**\n\n```python\nquinn.validate_schema(source_df, required_schema)\n```\n\nraises an exception unless `source_df` contains all the `structfields` defined in the `required_schema`.\n\n**validate_absence_of_columns()**\n\n```python\nquinn.validate_absence_of_columns(source_df, [\"age\", \"cool\"])\n```\n\nraises an exception if `source_df` contains `age` or `cool` columns.\n\n### functions\n\n**single_space()**\n\n```python\nactual_df = source_df.withcolumn(\n    \"words_single_spaced\",\n    quinn.single_space(col(\"words\"))\n)\n```\n\n\nreplaces all multispaces with single spaces (e.g. changes `\"this has   some\"` to `\"this has some\"`.\n\n**remove_all_whitespace()**\n\n```python\nactual_df = source_df.withcolumn(\n    \"words_without_whitespace\",\n    quinn.remove_all_whitespace(col(\"words\"))\n)\n```\n\nremoves all whitespace in a string (e.g. changes `\"this has some\"` to `\"thishassome\"`.\n\n**anti_trim()**\n\n```python\nactual_df = source_df.withcolumn(\n    \"words_anti_trimmed\",\n    quinn.anti_trim(col(\"words\"))\n)\n```\n\nremoves all inner whitespace, but doesn't delete leading or trailing whitespace (e.g. changes `\" this has some \"` to `\" thishassome \"`.\n\n**remove_non_word_characters()**\n\n```python\nactual_df = source_df.withcolumn(\n    \"words_without_nonword_chars\",\n    quinn.remove_non_word_characters(col(\"words\"))\n)\n```\n\nremoves all non-word characters from a string (e.g. changes `\"si%$#@!#$!@#mpsons\"` to `\"simpsons\"`.\n\n**exists()**\n\n```python\nsource_df.withcolumn(\n    \"any_num_greater_than_5\",\n    quinn.exists(lambda n: n > 5)(col(\"nums\"))\n)\n```\n\n`nums` contains lists of numbers and `exists()` returns `true` if any of the numbers in the list are greater than 5.  it's similar to the python `any` function.\n\n**forall()**\n\n```python\nsource_df.withcolumn(\n    \"all_nums_greater_than_3\",\n    quinn.forall(lambda n: n > 3)(col(\"nums\"))\n)\n```\n\n`nums` contains lists of numbers and `forall()` returns `true` if all of the numbers in the list are greater than 3.  it's similar to the python `all` function.\n\n**multi_equals()**\n\n```python\nsource_df.withcolumn(\n    \"are_s1_and_s2_cat\",\n    quinn.multi_equals(\"cat\")(col(\"s1\"), col(\"s2\"))\n)\n```\n\n`multi_equals` returns true if `s1` and `s2` are both equal to `\"cat\"`.\n\n### transformations\n\n**snake_case_col_names()**\n\n```python\nquinn.snake_case_col_names(source_df)\n```\n\nconverts all the column names in a dataframe to snake_case.  it's annoying to write sql queries when columns aren't snake cased.\n\n**sort_columns()**\n\n```python\nquinn.sort_columns(source_df, \"asc\")\n```\n\nsorts the dataframe columns in alphabetical order.  wide dataframes are easier to navigate when they're sorted alphabetically.\n\n### dataframe helpers\n\n**column_to_list()**\n\n```python\nquinn.column_to_list(source_df, \"name\")\n```\n\nconverts a column in a dataframe to a list of values.\n\n**two_columns_to_dictionary()**\n\n```python\nquinn.two_columns_to_dictionary(source_df, \"name\", \"age\")\n```\n\nconverts two columns of a dataframe into a dictionary.  in this example, `name` is the key and `age` is the value.\n\n**to_list_of_dictionaries()**\n\n```python\nquinn.to_list_of_dictionaries(source_df)\n```\n\nconverts an entire dataframe into a list of dictionaries.\n\n## contributing\n\nwe are actively looking for feature requests, pull requests, and bug fixes.\n\nany developer that demonstrates excellence will be invited to be a maintainer of the project.\n",
+  "docs_url": null,
+  "keywords": "apachespark,spark,pyspark",
+  "license": "apache-2.0",
+  "name": "quinn",
+  "package_url": "https://pypi.org/project/quinn/",
+  "project_url": "https://pypi.org/project/quinn/",
+  "project_urls": {
+    "Homepage": "https://github.com/MrPowers/quinn/"
+  },
+  "release_url": "https://pypi.org/project/quinn/0.10.0/",
+  "requires_dist": [],
+  "requires_python": ">3.5",
+  "summary": "pyspark helper methods to maximize developer efficiency",
+  "version": "0.10.0",
+  "releases": [],
+  "developers": [
+    "matthewkevinpowers@gmail.com",
+    "mrpowers"
+  ],
+  "kwds": "pyspark dataframes dataframe create_df pip",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_quinn",
+  "homepage": "https://github.com/mrpowers/quinn/",
+  "release_count": 13,
+  "dependency_ids": []
+}

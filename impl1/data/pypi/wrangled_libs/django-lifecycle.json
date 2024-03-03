@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: django",
+    "framework :: django :: 2.2",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "framework :: django :: 4.1",
+    "framework :: django :: 4.2",
+    "framework :: django :: 5.0",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# django lifecycle hooks\n\n[![package version](https://badge.fury.io/py/django-lifecycle.svg)](https://pypi.python.org/pypi/django-lifecycle)\n[![python versions](https://img.shields.io/pypi/status/django-lifecycle.svg)](https://img.shields.io/pypi/status/django-lifecycle.svg/)\n[![python versions](https://img.shields.io/pypi/pyversions/django-lifecycle.svg)](https://pypi.org/project/django-lifecycle/)\n![pypi - django version](https://img.shields.io/pypi/djversions/django-lifecycle)\n\nthis project provides a `@hook` decorator as well as a base model and mixin to add lifecycle hooks to your django models. django's built-in approach to offering lifecycle hooks is [signals](https://docs.djangoproject.com/en/dev/topics/signals/). however, my team often finds that signals introduce unnecessary indirection and are at odds with django's \"fat models\" approach.\n\n**django lifecycle hooks** supports:\n\n* python 3.7, 3.8, 3.9, 3.10, 3.11, and 3.12\n* django 2.2, 3.2, 4.0, 4.1, 4.2, and 5.0\n\nin short, you can write model code like this:\n\n```python\nfrom django_lifecycle import lifecyclemodel, hook, before_update, after_update\n\n\nclass article(lifecyclemodel):\n    contents = models.textfield()\n    updated_at = models.datetimefield(null=true)\n    status = models.choicefield(choices=['draft', 'published'])\n    editor = models.foreignkey(authuser)\n\n    @hook(before_update, when='contents', has_changed=true)\n    def on_content_change(self):\n        self.updated_at = timezone.now()\n\n    @hook(after_update, when=\"status\", was=\"draft\", is_now=\"published\")\n    def on_publish(self):\n        send_email(self.editor.email, \"an article has published!\")\n```\n\ninstead of overriding `save` and `__init__` in a clunky way that hurts readability:\n\n```python\n    # same class and field declarations as above ...\n\n    def __init__(self, *args, **kwargs):\n        super().__init__(*args, **kwargs)\n        self._orig_contents = self.contents\n        self._orig_status = self.status\n\n\n    def save(self, *args, **kwargs):\n        if self.pk is not none and self.contents != self._orig_contents:\n            self.updated_at = timezone.now()\n\n        super().save(*args, **kwargs)\n\n        if self.status != self._orig_status:\n            send_email(self.editor.email, \"an article has published!\")\n```\n\n---\n\n**documentation**: <a href=\"https://rsinger86.github.io/django-lifecycle/\" target=\"_blank\">https://rsinger86.github.io/django-lifecycle</a>\n\n**source code**: <a href=\"https://github.com/rsinger86/django-lifecycle/\" target=\"_blank\">https://github.com/rsinger86/django-lifecycle</a>\n\n---\n\n# changelog\n\nsee [changelog](changelog.md)\n\n# testing\n\ntests are found in a simplified django project in the `/tests` folder. install the project requirements and do `./manage.py test` to run them.\n\n# license\n\nsee [license](license.md).\n",
+  "docs_url": null,
+  "keywords": "django model lifecycle hooks callbacks",
+  "license": "mit",
+  "name": "django-lifecycle",
+  "package_url": "https://pypi.org/project/django-lifecycle/",
+  "project_url": "https://pypi.org/project/django-lifecycle/",
+  "project_urls": {
+    "Documentation": "https://rsinger86.github.io/django-lifecycle/",
+    "Homepage": "https://github.com/rsinger86/django-lifecycle",
+    "Source": "https://github.com/rsinger86/django-lifecycle"
+  },
+  "release_url": "https://pypi.org/project/django-lifecycle/1.1.2/",
+  "requires_dist": [
+    "Django >=3.2"
+  ],
+  "requires_python": "",
+  "summary": "declarative model lifecycle hooks.",
+  "version": "1.1.2",
+  "releases": [],
+  "developers": [
+    "robert_singer",
+    "robertgsinger@gmail.com"
+  ],
+  "kwds": "django_lifecycle django djangoproject lifecyclemodel lifecycle",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_django_lifecycle",
+  "homepage": "https://github.com/rsinger86/django-lifecycle",
+  "release_count": 39,
+  "dependency_ids": [
+    "pypi_django"
+  ]
+}

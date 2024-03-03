@@ -1,0 +1,40 @@
+{
+  "classifiers": [],
+  "description": "# featuretools-sklearn-transformer\n\n![tests](https://github.com/featurelabs/featuretools-sklearn-transformer/workflows/tests/badge.svg)\n[![coverage status](https://codecov.io/gh/alteryx/featuretools-sklearn-transformer/branch/main/graph/badge.svg)](https://codecov.io/gh/alteryx/featuretools-sklearn-transformer)\n[![pypi version](https://badge.fury.io/py/featuretools-sklearn-transformer.svg?maxage=2592000)](https://badge.fury.io/py/featuretools-sklearn-transformer)\n\n[featuretools](https://github.com/alteryx/featuretools)' dfs as a scikit-learn transformer\n\n### install\n```shell\npip install featuretools_sklearn_transformer\n```\n\n### use\n\nto use the transformer in a pipeline, initialize an instance of the transformer by passing in\nthe parameters you would like to use for calculating features. to fit the model and generate features for\nthe training data, pass in an entityset or list of dataframes and relationships containing only the relevant\ntraining data as the `x` input, along with the training targets as the `y` input. to generate a feature matrix from test data, pass in\nan entityset containing only the relevant test data as the `x` input.\n\nthe input supplied for `x` can take several formats:\n- to use a featuretools entityset without cutoff times, simply pass in the entityset\n- to use a featuretools entityset with a cutoff times dataframe, pass in a tuple of the form (entityset, cutoff_time_df)\n- to use a list dataframes and relationships without cutoff times, pass a tuple of the form (dataframes, relationships)\n- to use a list of dataframes and relationships with a cutoff times dataframe, pass a tuple of the form ((dataframes, relationships), cutoff_time_df)\n\nnote that because this transformer requires a featuretools entityset or dataframes and relationships as input, it does not currently work\nwith certain methods such as `sklearn.model_selection.cross_val_score` or `sklearn.model_selection.gridsearchcv` which expect the `x` values\nto be an iterable which can be split by the method.\n\nthe example below shows how to use the transformer with an entityset, both with and without a cutoff time dataframe.\n\n```python\nimport featuretools as ft\nimport pandas as pd\n\nfrom featuretools.wrappers import dfstransformer\nfrom sklearn.pipeline import pipeline\nfrom sklearn.ensemble import extratreesclassifier\n\n# get example data\ntrain_es = ft.demo.load_mock_customer(return_entityset=true, n_customers=3)\ntest_es = ft.demo.load_mock_customer(return_entityset=true, n_customers=2)\ny = [true, false, true]\n\n# build pipeline\npipeline = pipeline(steps=[\n    ('ft', dfstransformer(target_dataframe_name=\"customers\",\n                          max_features=2)),\n    ('et', extratreesclassifier(n_estimators=100))\n])\n\n# fit and predict\npipeline.fit(x=train_es, y=y) # fit on customers in training entityset\npipeline.predict_proba(test_es) # predict probability of each class on test entityset\npipeline.predict(test_es) # predict on test entityset\n\n# same as above, but using cutoff times\ntrain_ct = pd.dataframe()\ntrain_ct['customer_id'] = [1, 2, 3]\ntrain_ct['time'] = pd.to_datetime(['2014-1-1 04:00',\n                                   '2014-1-2 17:20',\n                                   '2014-1-4 09:53'])\n\npipeline.fit(x=(train_es, train_ct), y=y)\n\ntest_ct = pd.dataframe()\ntest_ct['customer_id'] = [1, 2]\ntest_ct['time'] = pd.to_datetime(['2014-1-4 13:48',\n                                  '2014-1-5 15:32'])\npipeline.predict_proba((test_es, test_ct))\npipeline.predict((test_es, test_ct))\n```\n\n## built at alteryx innovation labs\n\n<a href=\"https://www.alteryx.com/innovation-labs\">\n    <img src=\"https://evalml-web-images.s3.amazonaws.com/alteryx_innovation_labs.png\" alt=\"alteryx innovation labs\" />\n</a>\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd 3-clause",
+  "name": "featuretools-sklearn-transformer",
+  "package_url": "https://pypi.org/project/featuretools-sklearn-transformer/",
+  "project_url": "https://pypi.org/project/featuretools-sklearn-transformer/",
+  "project_urls": {
+    "Homepage": "http://www.featurelabs.com/"
+  },
+  "release_url": "https://pypi.org/project/featuretools-sklearn-transformer/1.0.0/",
+  "requires_dist": [
+    "featuretools (>=1.0.0)",
+    "numpy",
+    "pandas",
+    "scikit-learn (!=0.22,>=0.20.0)"
+  ],
+  "requires_python": ">=3.7, <4",
+  "summary": "featuretools transformer for scikit-learn pipeline use.",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "feature_labs",
+    "support@featurelabs.com"
+  ],
+  "kwds": "featuretools_sklearn_transformer scikit sklearn alteryx_innovation_labs dfstransformer",
+  "license_kwds": "bsd 3-clause",
+  "libtype": "pypi",
+  "id": "pypi_featuretools_sklearn_transformer",
+  "homepage": "http://www.featurelabs.com/",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_featuretools",
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_scikit_learn"
+  ]
+}

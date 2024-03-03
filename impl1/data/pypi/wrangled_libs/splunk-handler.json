@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: macos :: macos x",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: system :: logging"
+  ],
+  "description": "# splunk handler\n\n[![build](https://img.shields.io/travis/zach-taylor/splunk_handler.svg?style=flat-square)](https://travis-ci.org/zach-taylor/splunk_handler)\n[![code climate](https://img.shields.io/codeclimate/maintainability/zach-taylor/splunk_handler.svg?style=flat-square)](https://codeclimate.com/github/zach-taylor/splunk_handler/maintainability)\n[![pypi](https://img.shields.io/pypi/v/splunk_handler.svg?style=flat-square)](https://pypi.python.org/pypi/splunk_handler)\n\n**splunk handler is a python logger for sending logged events to an installation of splunk enterprise.**\n\n*this logger requires the destination splunk enterprise server to have enabled and configured the [splunk http event collector](http://dev.splunk.com/view/event-collector/sp-caaae6m).*\n\n## a note on using with aws lambda\n\n[aws lambda](https://aws.amazon.com/lambda/) has a custom implementation of python threading, and does not signal when the main thread exits. because of this, it is possible to have lambda halt execution while logs are still being processed. to ensure that execution does not terminate prematurely, lambda users will be required to invoke splunk_handler.force_flush directly as the very last call in the lambda handler, which will block the main thread from exiting until all logs have processed.\n~~~python\nfrom splunk_handler import force_flush\n\ndef lambda_handler(event, context):\n    do_work()\n    force_flush()  # flush logs in a blocking manner\n~~~\n\n\n## installation\n\npip:\n\n    pip install splunk_handler\n\nmanual:\n\n    python setup.py install\n\n## usage\n\n    from splunk_handler import splunkhandler\n\nthen use it like any other regular python [logging handler](https://docs.python.org/2/howto/logging.html#handlers).\n\nexample:\n\n~~~python\n    import logging\n    from splunk_handler import splunkhandler\n    splunk = splunkhandler(\n        host='splunk.example.com',\n        port='8088',\n        token='851a5e58-4ef1-7291-f947-f614a76acb21',\n        index='main'\n        #allow_overrides=true # whether to look for _<param in log data (ex: _index)\n        #debug=true # whether to print module activity to stdout, defaults to false\n        #flush_interval=15.0, # send batch of logs every n sec, defaults to 15.0, set '0' to block thread & send immediately\n        #force_keep_ahead=true # sleep instead of dropping logs when queue fills\n        #hostname='hostname', # manually set a hostname parameter, defaults to socket.gethostname()\n        #protocol='http', # set the protocol which will be used to connect to the splunk host\n        #proxies={\n        #           'http': 'http://10.10.1.10:3128',\n        #           'https': 'http://10.10.1.10:1080',\n        #         }, set the proxies for the session request to splunk host\n        #\n        #queue_size=5000, # a throttle to prevent resource overconsumption, defaults to 5000, set to 0 for no max\n        #record_format=true, whether the log format will be json\n        #retry_backoff=1, the requests lib backoff factor, default options will retry for 1 min, defaults to 2.0\n        #retry_count=5, number of retry attempts on a failed/erroring connection, defaults to 5\n        #source='source', # manually set a source, defaults to the log record.pathname\n        #sourcetype='sourcetype', # manually set a sourcetype, defaults to 'text'\n        #verify=true, # turn ssl verification on or off, defaults to true\n        #timeout=60, # timeout for waiting on a 200 ok from splunk server, defaults to 60s\n    )\n\n    logging.getlogger('').addhandler(splunk)\n\n    logging.warning('hello!')\n~~~\n\ni would recommend using a json formatter with this to receive your logs in json format.\nhere is an open source one: https://github.com/madzak/python-json-logger\n\n### logging config\n\nsometimes it's a good idea to create a logging configuration using a python dict\nand the `logging.config.dictconfig` function. this method is used by default in django.\n\nhere is an example dictionary config and how it might be used in a settings file:\n\n~~~python\nimport os\n\n# splunk settings\nsplunk_host = os.getenv('splunk_host', 'splunk.example.com')\nsplunk_port = int(os.getenv('splunk_port', '8088'))\nsplunk_token = os.getenv('splunk_token', '851a5e58-4ef1-7291-f947-f614a76acb21')\nsplunk_index = os.getenv('splunk_index', 'main')\n\nlogging = {\n    'version': 1,\n    'disable_existing_loggers': false,\n    'formatters': {\n        'json': {\n            '()': 'pythonjsonlogger.jsonlogger.jsonformatter',\n            'format': '%(asctime)s %(created)f %(exc_info)s %(filename)s %(funcname)s %(levelname)s %(levelno)s %(lineno)d %(module)s %(message)s %(pathname)s %(process)s %(processname)s %(relativecreated)d %(thread)s %(threadname)s'\n        }\n    },\n    'handlers': {\n        'splunk': {\n            'level': 'debug',\n            'class': 'splunk_handler.splunkhandler',\n            'formatter': 'json',\n            'host': splunk_host,\n            'port': splunk_port,\n            'token': splunk_token,\n            'index': splunk_index,\n            'sourcetype': 'json',\n        },\n        'console': {\n            'level': 'debug',\n            'class': 'logging.streamhandler',\n        }\n    },\n    'loggers': {\n        '': {\n            'handlers': ['console', 'splunk'],\n            'level': 'debug'\n        }\n    }\n}\n~~~\n\nthen, do `logging.config.dictconfig(logging)` to configure your logging.\n\nnote: i included a configuration for the json formatter mentioned above.\n\nhere is an example file config, and how it might be used in a config file:\n\n~~~\n[loggers]\nkeys=root\n\n[handlers]\nkeys=consolehandler,splunkhandler\n\n[formatters]\nkeys=simpleformatter\n\n[logger_root]\nlevel=%(loglevel)s\nhandlers=consolehandler,splunkhandler\n\n[handler_consolehandler]\nclass=streamhandler\nlevel=%(loglevel)s\nformatter=simpleformatter\nargs=(sys.stdout,)\n\n[handler_splunkhandler]\nclass=splunk_handler.splunkhandler\nlevel=%(loglevel)s\nformatter=simpleformatter\nargs=('my-splunk-host.me.com', '', os.environ.get('splunk_token_dev', 'changeme'), 'my_index')\nkwargs={'url':'https://my-splunk-host.me.com/services/collector/event', 'verify': false}\n\n[formatter_simpleformatter]\nformat=[%(asctime)s] %(levelname)s - %(module)s: %(message)s\ndatefmt=%m/%d/%y %i:%m:%s %p %z\n\n~~~\n\n## retry logic\n\nthis library uses the built-in retry logic from urllib3 (a retry\ncounter and a backoff factor). should the defaults not be desireable,\nyou can find more information about how to best configure these\nsettings in the [urllib3 documentation](https://github.com/kennethreitz/requests/blob/b2289cd2d5d21bd31cf4a818a4e0ff6951b2317a/requests/packages/urllib3/util/retry.py#l104).\n\n## contributing\n\nfeel free to contribute an issue or pull request:\n\n1. check for existing issues and prs\n2. fork the repo, and clone it locally\n3. create a new branch for your contribution\n4. push to your fork and submit a pull request\n\n## license\n\nthis project is licensed under the terms of the [mit license](http://opensource.org/licenses/mit).\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "splunk-handler",
+  "package_url": "https://pypi.org/project/splunk-handler/",
+  "project_url": "https://pypi.org/project/splunk-handler/",
+  "project_urls": {
+    "Homepage": "https://github.com/zach-taylor/splunk_handler"
+  },
+  "release_url": "https://pypi.org/project/splunk-handler/3.0.0/",
+  "requires_dist": [
+    "requests (<3.0.0,>=2.6.0)"
+  ],
+  "requires_python": "",
+  "summary": "a python logging handler that sends your logs to splunk",
+  "version": "3.0.0",
+  "releases": [],
+  "developers": [
+    "zach_taylor",
+    "ztaylor234@gmail.com"
+  ],
+  "kwds": "splunk_handler handler_splunkhandler splunk splunk_token splunk_port",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_splunk_handler",
+  "homepage": "https://github.com/zach-taylor/splunk_handler",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

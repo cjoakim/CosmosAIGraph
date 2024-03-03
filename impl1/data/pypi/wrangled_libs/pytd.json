@@ -1,0 +1,72 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: database"
+  ],
+  "description": "pytd\n====\n\n|build status| |pypi version| |docs status|\n\n**pytd** provides user-friendly interfaces to treasure data\u2019s `rest\napis <https://github.com/treasure-data/td-client-python>`__, `presto\nquery\nengine <https://docs.treasuredata.com/display/public/pd/about+presto+distributed+query+engine>`__,\nand `plazma primary\nstorage <https://www.slideshare.net/treasure-data/td-techplazma>`__.\n\nthe seamless connection allows your python code to efficiently\nread/write a large volume of data from/to treasure data. eventually,\npytd makes your day-to-day data analytics work more productive.\n\ninstallation\n------------\n\n.. code:: sh\n\n   pip install pytd\n\nusage\n-----\n\n-  `documentation <https://pytd-doc.readthedocs.io/>`__\n-  `sample usage on google\n   colaboratory <https://colab.research.google.com/drive/1ps_chu-h2fvkenlj1e1fcoebct4ryn11>`__\n\nset your `api\nkey <https://docs.treasuredata.com/display/public/pd/getting+your+api+keys>`__\nand\n`endpoint <https://docs.treasuredata.com/display/public/pd/sites+and+endpoints>`__\nto the environment variables, ``td_api_key`` and ``td_api_server``,\nrespectively, and create a client instance:\n\n.. code:: py\n\n   import pytd\n\n   client = pytd.client(database='sample_datasets')\n   # or, hard-code your api key, endpoint, and/or query engine:\n   # >>> pytd.client(apikey='1/xxx', endpoint='https://api.treasuredata.com/', database='sample_datasets', default_engine='presto')\n\nquery in treasure data\n~~~~~~~~~~~~~~~~~~~~~~\n\nissue presto query and retrieve the result:\n\n.. code:: py\n\n   client.query('select symbol, count(1) as cnt from nasdaq group by 1 order by 1')\n   # {'columns': ['symbol', 'cnt'], 'data': [['aait', 590], ['aal', 82], ['aame', 9252], ..., ['zumz', 2364]]}\n\nin case of hive:\n\n.. code:: py\n\n   client.query('select hivemall_version()', engine='hive')\n   # {'columns': ['_c0'], 'data': [['0.6.0-snapshot-201901-r01']]} (as of feb, 2019)\n\nit is also possible to explicitly initialize ``pytd.client`` for hive:\n\n.. code:: py\n\n   client_hive = pytd.client(database='sample_datasets', default_engine='hive')\n   client_hive.query('select hivemall_version()')\n\nwrite data to treasure data\n~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\ndata represented as ``pandas.dataframe`` can be written to treasure data\nas follows:\n\n.. code:: py\n\n   import pandas as pd\n\n   df = pd.dataframe(data={'col1': [1, 2], 'col2': [3, 10]})\n   client.load_table_from_dataframe(df, 'takuti.foo', writer='bulk_import', if_exists='overwrite')\n\nfor the ``writer`` option, pytd supports three different ways to ingest\ndata to treasure data:\n\n1. **bulk import api**: ``bulk_import`` (default)\n\n   -  convert data into a csv file and upload in the batch fashion.\n\n2. **presto insert into query**: ``insert_into``\n\n   -  insert every single row in ``dataframe`` by issuing an insert into\n      query through the presto query engine.\n   -  recommended only for a small volume of data.\n\n3. `td-spark <https://treasure-data.github.io/td-spark/>`__:\n   ``spark``\n\n   -  local customized spark instance directly writes ``dataframe`` to\n      treasure data\u2019s primary storage system.\n\ncharacteristics of each of these methods can be summarized as follows:\n\n+-----------------------------------+------------------+------------------+-----------+\n|                                   | ``bulk_import``  | ``insert_into``  | ``spark`` |\n+===================================+==================+==================+===========+\n| scalable against data volume      |        \u2713         |                  |     \u2713     |\n+-----------------------------------+------------------+------------------+-----------+\n| write performance for larger data |                  |                  |     \u2713     |\n+-----------------------------------+------------------+------------------+-----------+\n| memory efficient                  |        \u2713         |        \u2713         |           |\n+-----------------------------------+------------------+------------------+-----------+\n| disk efficient                    |                  |        \u2713         |           |\n+-----------------------------------+------------------+------------------+-----------+\n| minimal package dependency        |        \u2713         |        \u2713         |           |\n+-----------------------------------+------------------+------------------+-----------+\n\nenabling spark writer\n^^^^^^^^^^^^^^^^^^^^^\n\nsince td-spark gives special access to the main storage system via\n`pyspark <https://spark.apache.org/docs/latest/api/python/index.html>`__,\nfollow the instructions below:\n\n1. contact support@treasuredata.com to activate the permission to your\n   treasure data account. note that the underlying component, plazma public\n   api, limits its free tier at 100gb read and 100tb write.\n2. install pytd with ``[spark]`` option if you use the third option:\n   ``pip install pytd[spark]``\n\nif you want to use existing td-spark jar file, creating ``sparkwriter``\nwith ``td_spark_path`` option would be helpful.\n\n.. code:: py\n\n   from pytd.writer import sparkwriter\n\n   writer = sparkwriter(td_spark_path='/path/to/td-spark-assembly.jar')\n   client.load_table_from_dataframe(df, 'mydb.bar', writer=writer, if_exists='overwrite')\n\ncomparison between pytd, td-client-python, and pandas-td\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\ntreasure data offers three different python clients on github, and the following list summarizes their characteristics.\n\n1. `td-client-python <https://github.com/treasure-data/td-client-python>`__\n\n   - basic rest api wrapper.\n   - similar functionalities to td-client-{`ruby <https://github.com/treasure-data/td-client-ruby>`__, `java <https://github.com/treasure-data/td-client-java>`__, `node <https://github.com/treasure-data/td-client-node>`__, `go <https://github.com/treasure-data/td-client-go>`__}.\n   - the capability is limited by `what treasure data rest api can do <https://docs.treasuredata.com/display/public/pd/rest+apis+in+treasure+data>`__.\n\n2. **pytd**\n\n   - access to plazma via td-spark as introduced above.\n   - efficient connection to presto based on `presto-python-client <https://github.com/prestodb/presto-python-client>`__.\n   - multiple data ingestion methods and a variety of utility functions.\n\n3. `pandas-td <https://github.com/treasure-data/pandas-td>`__ *(deprecated)*\n\n   - old tool optimized for `pandas <https://pandas.pydata.org>`__ and `jupyter notebook <https://jupyter.org>`__.\n   - **pytd** offers its compatible function set (see below for the detail).\n\nan optimal choice of package depends on your specific use case, but common guidelines can be listed as follows:\n\n- use td-client-python if you want to execute *basic crud operations* from python applications.\n- use **pytd** for (1) *analytical purpose* relying on pandas and jupyter notebook, and (2) achieving *more efficient data access* at ease.\n- do not use pandas-td. if you are using pandas-td, replace the code with pytd based on the following guidance as soon as possible.\n\nhow to replace pandas-td\n^^^^^^^^^^^^^^^^^^^^^^^^\n\n**pytd** offers\n`pandas-td <https://github.com/treasure-data/pandas-td>`__-compatible\nfunctions that provide the same functionalities more efficiently. if you\nare still using pandas-td, we recommend you to switch to **pytd** as\nfollows.\n\nfirst, install the package from pypi:\n\n.. code:: sh\n\n   pip install pytd\n   # or, `pip install pytd[spark]` if you wish to use `to_td`\n\nnext, make the following modifications on the import statements.\n\n*before:*\n\n.. code:: python\n\n   import pandas_td as td\n\n.. code:: python\n\n   in [1]: %%load_ext pandas_td.ipython\n\n*after:*\n\n.. code:: python\n\n   import pytd.pandas_td as td\n\n.. code:: python\n\n   in [1]: %%load_ext pytd.pandas_td.ipython\n\nconsequently, all ``pandas_td`` code should keep running correctly with\n``pytd``. report an issue from\n`here <https://github.com/treasure-data/pytd/issues/new>`__ if you\nnoticed any incompatible behaviors.\n\n.. |build status| image:: https://github.com/treasure-data/pytd/workflows/build/badge.svg\n   :target: https://github.com/treasure-data/pytd/actions/\n.. |pypi version| image:: https://badge.fury.io/py/pytd.svg\n   :target: https://badge.fury.io/py/pytd\n.. |docs status| image:: https://readthedocs.org/projects/pytd-doc/badge/?version=latest\n   :target: https://pytd-doc.readthedocs.io/en/latest/?badge=latest\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "pytd",
+  "package_url": "https://pypi.org/project/pytd/",
+  "project_url": "https://pypi.org/project/pytd/",
+  "project_urls": {
+    "Homepage": "https://github.com/treasure-data/pytd"
+  },
+  "release_url": "https://pypi.org/project/pytd/1.5.1/",
+  "requires_dist": [
+    "urllib3 (>=1.21.1,~=1.26)",
+    "presto-python-client (>=0.6.0)",
+    "pandas (<1.6,>=1.3)",
+    "td-client (>=1.1.0)",
+    "pytz (>=2018.5)",
+    "numpy (<1.24)",
+    "sphinx (>=2.2.0) ; extra == 'doc'",
+    "sphinx-rtd-theme ; extra == 'doc'",
+    "numpydoc ; extra == 'doc'",
+    "ipython ; extra == 'doc'",
+    "td-pyspark (>20.10.0) ; extra == 'spark'",
+    "pyspark (>=3.0.0) ; extra == 'spark'",
+    "pyarrow (>=10.0) ; extra == 'spark'",
+    "pytest ; extra == 'test'"
+  ],
+  "requires_python": "<3.11,>=3.7",
+  "summary": "treasure data driver for python",
+  "version": "1.5.1",
+  "releases": [],
+  "developers": [
+    "support@treasure-data.com",
+    "treasure_data"
+  ],
+  "kwds": "treasuredata treasure pytd ipython pip",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_pytd",
+  "homepage": "https://github.com/treasure-data/pytd",
+  "release_count": 29,
+  "dependency_ids": [
+    "pypi_ipython",
+    "pypi_numpy",
+    "pypi_numpydoc",
+    "pypi_pandas",
+    "pypi_presto_python_client",
+    "pypi_pyarrow",
+    "pypi_pyspark",
+    "pypi_pytest",
+    "pypi_pytz",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_td_client",
+    "pypi_td_pyspark",
+    "pypi_urllib3"
+  ]
+}

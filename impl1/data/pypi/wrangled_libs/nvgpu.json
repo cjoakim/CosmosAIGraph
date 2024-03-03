@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3"
+  ],
+  "description": "# `nvgpu` - nvidia gpu tools\n\nit provides information about gpus and their availability for computation.\n\noften we want to train a ml model on one of gpus installed on a multi-gpu\nmachine. since tensorflow allocates all memory, only one such process can\nuse the gpu at a time. unfortunately `nvidia-smi` provides only a text\ninterface with information about gpus. this packages wraps it with an\neasier to use cli and python interface.\n\nit's a quick and dirty solution calling `nvidia-smi` and parsing its output.\nwe can take one or more gpus availabile for computation based on relative\nmemory usage, ie. it is ok with xorg taking a few mb.\n\nin addition we have a fancy table of gpu with more information taken by\npython binding to nvml.\n\nfor easier monitoring of multiple machines it's possible to deploy agents (that\nprovide the gpu information in json over a rest api) and show the aggregated\nstatus in a web application.\n\n## installing\n\nfor a user:\n\n```bash\npip install nvgpu\n```\n\nor to the system:\n\n```bash\nsudo -h pip install nvgpu\n```\n\n## usage examples\n\ncommand-line interface:\n\n```bash\n# grab all available gpus\ncuda_visible_devices=$(nvgpu available)\n\n# grab at most available gpu\ncuda_visible_devices=$(nvgpu available -l 1)\n```\n\nprint pretty colored table of devices, availability, users, processes:\n\n```\n$ nvgpu list\n    status    type                 util.      temp.    mhz  users    since    pids    cmd\n--  --------  -------------------  -------  -------  -----  -------  ---------------  ------  --------\n 0  [ ]       geforce gtx 1070      0 %          44    139                          \n 1  [~]       geforce gtx 1080 ti   0 %          44    139  alice    2 days ago       19028   jupyter\n 2  [~]       geforce gtx 1080 ti   0 %          44    139  bob      14 hours ago     8479    jupyter\n 3  [~]       geforce gtx 1070     46 %          54   1506  bob      7 days ago       20883   train.py\n 4  [~]       geforce gtx 1070     35 %          64   1480  bob      7 days ago       26228   evaluate.py\n 5  [!]       geforce gtx 1080 ti   0 %          44    139  ?                         9305\n 6  [ ]       geforce gtx 1080 ti   0 %          44    139\n```\n\nor shortcut:\n\n```\n$ nvl\n```\n\npython api:\n\n```python\nimport nvgpu\n\nnvgpu.available_gpus()\n# ['0', '2']\n\nnvgpu.gpu_info()\n[{'index': '0',\n  'mem_total': 8119,\n  'mem_used': 7881,\n  'mem_used_percent': 97.06860450794433,\n  'type': 'geforce gtx 1070',\n  'uuid': 'gpu-3aa99ee6-4a9f-470e-3798-70aaed942689'},\n {'index': '1',\n  'mem_total': 11178,\n  'mem_used': 10795,\n  'mem_used_percent': 96.57362676686348,\n  'type': 'geforce gtx 1080 ti',\n  'uuid': 'gpu-60410ded-5218-7b06-9c7a-124b77a22447'},\n {'index': '2',\n  'mem_total': 11178,\n  'mem_used': 10789,\n  'mem_used_percent': 96.51994990159241,\n  'type': 'geforce gtx 1080 ti',\n  'uuid': 'gpu-d0a77bd4-cc70-ca82-54d6-4e2018cfdca6'},\n  ...\n]\n```\n\n## web application with agents\n\nthere are multiple nodes. agents take info from gpu and provide it in json via\nrest api. master gathers info from other nodes and displays it in a html page.\nagents can also display their status by default.\n\n### agent\n\n```bash\nflask_app=nvgpu.webapp flask run --host 0.0.0.0 --port 1080\n```\n\n### master\n\nset agents into a config file. agent is specified either via a url to a remote\nmachine or `'self'` for direct access to local machine. remove `'self'` if the\nmachine itself does not have any gpu. default is `agents = ['self']`, so that\nagents also display their own status. set `agents = []` to avoid this.\n\n```\n# nvgpu_master.cfg\nagents = [\n         'self', # node01 - master - direct access without using http\n         'http://node02:1080',\n         'http://node03:1080',\n         'http://node04:1080',\n]\n```\n\n```bash\nnvgpu_cluster_cfg=/path/to/nvgpu_master.cfg flask_app=nvgpu.webapp flask run --host 0.0.0.0 --port 1080\n```\n\nopen the master in the web browser: http://node01:1080.\n\n## installing as a service\n\non ubuntu with `systemd` we can install the agents/master as as service to be\nran automatically on system start.\n\n```bash\n# create an unprivileged system user\nsudo useradd -r nvgpu\n```\n\ncopy [nvgpu-agent.service](nvgpu-agent.service) to:\n\n```bash\nsudo vi /etc/systemd/system/nvgpu-agent.service\n```\n\nset agents to the configuration file for the master:\n\n```bash\nsudo vi /etc/nvgpu.conf\n```\n\n```python\nagents = [\n         # direct access without using http\n         'self',\n         'http://node01:1080',\n         'http://node02:1080',\n         'http://node03:1080',\n         'http://node04:1080',\n]\n```\n\nset up and start the service:\n\n```bash\n# enable for automatic startup at boot\nsudo systemctl enable nvgpu-agent.service\n# start\nsudo systemctl start nvgpu-agent.service \n# check the status\nsudo systemctl status nvgpu-agent.service\n```\n\n```bash\n# check the service\nopen http://localhost:1080\n```\n\n## author\n\n- bohum\u00edr z\u00e1me\u010dn\u00edk, [rossum, ltd.](https://rossum.ai/)\n- license: mit\n\n## todo\n\n- order gpus by priority (decreasing power, decreasing free memory)\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "nvgpu",
+  "package_url": "https://pypi.org/project/nvgpu/",
+  "project_url": "https://pypi.org/project/nvgpu/",
+  "project_urls": {
+    "Homepage": "https://github.com/rossumai/nvgpu"
+  },
+  "release_url": "https://pypi.org/project/nvgpu/0.10.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "nvidia gpu tools",
+  "version": "0.10.0",
+  "releases": [],
+  "developers": [
+    "bohumir.zamecnik@rossum.ai",
+    "bohumir_zamecnik"
+  ],
+  "kwds": "gpu_info available_gpus nvgpu_master gpu nvgpu",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_nvgpu",
+  "homepage": "https://github.com/rossumai/nvgpu",
+  "release_count": 13,
+  "dependency_ids": []
+}

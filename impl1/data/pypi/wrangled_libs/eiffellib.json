@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: apache software license",
+    "programming language :: python"
+  ],
+  "description": "#########\neiffellib\n#########\n\n.. image:: https://img.shields.io/badge/stage-sandbox-yellow.svg\n  :target: https://github.com/eiffel-community/community/blob/master/project_lifecycle.md#stage-sandbox\n\neiffellib is a python library for subscribing to and publishing eiffel events to a message-broker.\n\ndescription\n===========\n\neiffellib solves the problem of publishing eiffel events and subscribing to events, removing the need of knowing how to connect to a message-broker or how to utilize the protocol it supplies.\n\nwith eiffellib you can start subscribing to and publish valid eiffel messages quickly and to get a feel for the event protocol.\n\nit is designed to be fast and easy to start using while still being production quality.\n\ndocumentation: https://eiffellib.readthedocs.io/en/latest/\n\nfeatures\n========\n\n- simple subscription and publishing of eiffel events.\n- event building assistance with event validation on receive and publish.\n- following a context link.\n\ninstallation\n============\n\ninstall the project by running:\n\n    pip install eiffellib[rabbitmq]\n\nif you only want to use the eiffel message definitions leave out the optional dependency:\n    pip install eiffellib\n\nexamples\n========\n\nstart rabbitmq\n--------------\n\nin order for these examples to work you need a rabbitmq server:\n\n.. code-block::\n\n   # from https://hub.docker.com/_/rabbitmq\n   docker run -d --hostname my-rabbit --name some-rabbit -p 8080:15672 -p 5672:5672 rabbitmq:3-management\n\nsubscribing to an event\n-----------------------\n\n.. code-block:: python\n\n    import time\n    from eiffellib.subscribers import rabbitmqsubscriber\n\n\n    def callback(event, context):\n        print(event.pretty)\n\n    subscriber = rabbitmqsubscriber(host=\"127.0.0.1\", port=5672, ssl=false,\n                                    queue=\"eiffel\", exchange=\"amq.fanout\")\n    subscriber.subscribe(\"eiffelactivitytriggeredevent\", callback)\n    subscriber.start()\n    while true:\n        time.sleep(0.1)\n\npublishing an event\n-------------------\n\n.. code-block:: python\n\n    from eiffellib.publishers import rabbitmqpublisher\n    from eiffellib.events import eiffelactivitytriggeredevent\n\n    publisher = rabbitmqpublisher(host=\"127.0.0.1\", exchange=\"amq.fanout\", ssl=false,\n                                  port=5672, routing_key=none)\n    publisher.start()\n    activity_triggered = eiffelactivitytriggeredevent()\n    activity_triggered.data.add(\"name\", \"test activity\")\n    publisher.send_event(activity_triggered)\n    publisher.wait_for_unpublished_events()\n\ndeprecation of routing key\n--------------------------\n\nthe \"routing_key\" argument in the rabbitmqpublisher class has been deprecated.\n\nthis deprecation also affects the default value of the \"routing_key\" argument and you will be getting warnings while running.\n\n\nthe reason for this change is due to a misunderstanding of how routing keys are supposed to be used when eiffellib was first created.\n\neach event will now be able to generate their own routing key every time the event is sent.\n\nthis routing key is by default \"eiffel._.$event_type._._\" where the different values are \"eiffel.$family.$event_type.$tag.$domainid\".\n\nplease refer to https://eiffel-community.github.io/eiffel-sepia/rabbitmq-message-broker.html for more information about routing keys.\n\n\nto change to the new routing key behavior (and thus removing the warning), please set \"routing_key\" to \"none\" when initializing a new rabbitmqpublisher.\n\n.. code-block:: python\n\n    publisher = rabbitmqpublisher(host=\"127.0.0.1\", exchange=\"amq.fanout\", ssl=false,\n                                  port=5672, routing_key=none)\n\nin order to change \"$family\", \"$tag\" or \"$domainid\" in the routing key, they have to be set on the events.\n\n.. code-block:: python\n\n    publisher = rabbitmqpublisher(host=\"127.0.0.1\", exchange=\"amq.fanout\", ssl=false,\n                                  port=5672, routing_key=none)\n    event = eiffelactivitytriggeredevent(family=\"myfamily\", tag=\"mytag\", domain_id=\"mydomain\")\n    publisher.send_event(event)\n\ncontribute\n==========\n\n- issue tracker: https://github.com/eiffel-community/eiffel-pythonlib/issues\n- source code: https://github.com/eiffel-community/eiffel-pythonlib\n\nsupport\n=======\n\nif you are having issues, please let us know.\nthere is a mailing list at: eiffel-pythonlib-maintainers@google-groups.com\nor just write an issue.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license, version 2.0",
+  "name": "eiffellib",
+  "package_url": "https://pypi.org/project/eiffellib/",
+  "project_url": "https://pypi.org/project/eiffellib/",
+  "project_urls": {
+    "Homepage": "https://github.com/eiffel-community/eiffel-pythonlib"
+  },
+  "release_url": "https://pypi.org/project/eiffellib/2.4.1/",
+  "requires_dist": [
+    "jsonschema (<4,>=3.0.0)",
+    "importlib-metadata ; python_version < \"3.8\"",
+    "pika (<2,>=1.0.1) ; extra == 'rabbitmq'",
+    "pytest ; extra == 'testing'",
+    "pytest-cov ; extra == 'testing'"
+  ],
+  "requires_python": "",
+  "summary": "python library for sending and receiving eiffel events",
+  "version": "2.4.1",
+  "releases": [],
+  "developers": [
+    "tobias_persson",
+    "tobiaspn@axis.com"
+  ],
+  "kwds": "eiffellib eiffelactivitytriggeredevent eiffel wait_for_unpublished_events send_event",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_eiffellib",
+  "homepage": "https://github.com/eiffel-community/eiffel-pythonlib",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_importlib_metadata",
+    "pypi_jsonschema",
+    "pypi_pika",
+    "pypi_pytest",
+    "pypi_pytest_cov"
+  ]
+}

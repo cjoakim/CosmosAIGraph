@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: apache airflow",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: system :: monitoring"
+  ],
+  "description": "# airflow code editor plugin\na plugin for [apache airflow](https://github.com/apache/airflow) that allows you to edit dags in browser.\nit provides a file managing interface within specified directories and it can be used to edit, upload, and download your files.\nif git support is enabled, the dags are stored in a git repository. you may use it to view git history, review local changes and commit.\n\n[![build status](https://github.com/andreax79/airflow-code-editor/workflows/tests/badge.svg)](https://github.com/andreax79/airflow-code-editor/actions)\n[![pypi version](https://badge.fury.io/py/airflow-code-editor.svg)](https://badge.fury.io/py/airflow-code-editor)\n[![pypi](https://img.shields.io/pypi/pyversions/airflow-code-editor.svg)](https://pypi.org/project/airflow-code-editor)\n[![downloads](https://static.pepy.tech/badge/airflow-code-editor/month)](https://pepy.tech/project/airflow-code-editor)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n\n### system requirements\n\n* airflow versions\n    * 1.10.3 or newer\n* git versions (git is not required if git support is disabled)\n    * 2.0 or newer\n\n### screenshots\n\n#### file manager\n\n![file manager](https://github.com/andreax79/airflow-code-editor/assets/1288154/6d9b09df-4503-45d9-94d4-ff013a86985a)\n\n#### editor\n\n![editor](https://github.com/andreax79/airflow-code-editor/assets/1288154/4ffaed29-390f-4134-bcb4-0b8fb8c59060)\n\n#### search\n\n![search](https://github.com/andreax79/airflow-code-editor/assets/1288154/9ba81166-3823-40ae-8820-116e4e5d2588)\n\n#### git history\n\n![git history](https://github.com/andreax79/airflow-code-editor/assets/1288154/2d6ec31f-3c1c-4d38-8fc6-99d18096cc64)\n\n#### git workspace\n\n![git workspace](https://github.com/andreax79/airflow-code-editor/assets/1288154/eb041a02-3f1e-47a1-b179-072d66e4662d)\n\n\n### install instructions\n\n#### docker images\n\nfor the ease of deployment, use the production-ready reference container image.\nthe image is based on the reference images for apache airflow.\n\nyou can find the following images there:\n* andreax79/airflow-code-editor:**latest** - the latest released airflow code editor image with the latest apache airflow version\n* andreax79/airflow-code-editor:**2.7.0** - the latest released airflow code editor with specific airflow version\n* andreax79/airflow-code-editor:**2.7.0-7.5.0** - specific version of airflow and airflow code editor\n\n#### installing from pypi\n\n1. install the plugin\n\n  ```bash\n    pip install airflow-code-editor\n  ```\n\n2. install optional dependencies\n\n* black - black python code formatter\n* fs-s3fs - s3fs amazon s3 filesystem\n* fs-gcsfs - google cloud storage filesystem\n* ... other filesystems supported by pyfilesystem - see https://www.pyfilesystem.org/page/index-of-filesystems/\n\n  ```bash\n    pip install black fs-s3fs fs-gcsfs\n  ```\n\n3. restart the airflow web server\n\n4. open admin - dags code editor\n\n\n### config options\n\nyou can set options editing the airflow's configuration file or setting environment variables.\nyou can edit your *airflow.cfg* adding any of the following settings in the \\[code_editor\\] section.\nall the settings are optional.\n\n* **enabled**  enable this plugin (default: true).\n* **git_enabled**  enable git support (default: true). if git is not installed, disable this option.\n* **git_cmd**  git command (path)\n* **git_default_args**  git arguments added to each call (default: -c color.ui=true)\n* **git_author_name** human-readable name in the author/committer (default logged user first and last names)\n* **git_author_email** email for the author/committer (default: logged user email)\n* **git_init_repo**  initialize a git repo in dags folder (default: true)\n* **root_directory**  root folder (default: airflow dags folder)\n* **line_length**  python code formatter - max line length (default: 88)\n* **string_normalization**  python code formatter - if true normalize string quotes and prefixes (default: false)\n* **mount**, **mount1**, ...  configure additional folder (mount point) - format: name=xxx,path=yyy\n* **ignored_entries** comma-separated list of entries to be excluded from file/directory list (default: .\\*,\\_\\_pycache\\_\\_)\n\n```\n   [code_editor]\n   enabled = true\n   git_enabled = true\n   git_cmd = /usr/bin/git\n   git_default_args = -c color.ui=true\n   git_init_repo = false\n   root_directory = /home/airflow/dags\n   line_length = 88\n   string_normalization = false\n   mount = name=data,path=/home/airflow/data\n   mount1 = name=logs,path=/home/airflow/logs\n   mount2 = name=data,path=s3://example\n```\n\nmount options:\n\n* **name**: mount name (destination)\n* **path**: local path or pyfilesystem fs urls - see https://docs.pyfilesystem.org/en/latest/openers.html\n\nexample:\n* name=ftp_server,path=ftp://user:pass@ftp.example.org/private\n* name=data,path=s3://example\n* name=tmp,path=/tmp\n\nyou can also set options with the following environment variables:\n\n* airflow__code_editor__enabled\n* airflow__code_editor__git_enabled\n* airflow__code_editor__git_cmd\n* airflow__code_editor__git_default_args\n* airflow__code_editor__git_author_name\n* airflow__code_editor__git_author_email\n* airflow__code_editor__git_init_repo\n* airflow__code_editor__root_directory\n* airflow__code_editor__line_length\n* airflow__code_editor__string_normalization\n* airflow__code_editor__mount, airflow__code_editor__mount1, airflow__code_editor__mount2, ...\n* airflow__code_editor__ignored_entries\n\nexample:\n```\n   export airflow__code_editor__string_normalization=true\n   export airflow__code_editor__mount='name=data,path=/home/airflow/data'\n   export airflow__code_editor__mount1='name=logs,path=/home/airflow/logs'\n   export airflow__code_editor__mount2='name=tmp,path=/tmp'\n```\n\n### development instructions\n\n1. fork the repo\n\n2. clone it on the local machine\n\n  ```bash\n    git clone https://github.com/andreax79/airflow-code-editor.git\n    cd airflow-code-editor\n  ```\n\n3. create dev image\n\n  ```bash\n    make dev-image\n  ```\n\n4. switch node version\n\n  ```bash\n    nvm use\n  ```\n\n5. make changes you need. build npm package with:\n\n  ```bash\n    make npm-build\n  ```\n\n6. you can start airflow webserver with:\n\n  ```bash\n    make webserver\n  ```\n\n7. run tests\n\n  ```bash\n    make test\n  ```\n\n8. commit and push changes\n\n9. create [pull request](https://github.com/andreax79/airflow-code-editor/compare) to the original repo\n\n### links\n\n* [apache airflow](https://github.com/apache/airflow)\n* [codemirror, in-browser code editor](https://github.com/codemirror/codemirror)\n* [git webui, a standalone local web based user interface for git repositories](https://github.com/alberthier/git-webui)\n* [black, the uncompromising code formatter](https://github.com/psf/black)\n* [pss, power-tool for searching source files](https://github.com/eliben/pss)\n* [vue.js](https://github.com/vuejs/vue)\n* [vue-good-table, data table for vuejs](https://github.com/xaksis/vue-good-table)\n* [vue-tree, treeview control for vuejs](https://github.com/grapoza/vue-tree)\n* [vue-universal-modal universal modal plugin for vue@3](https://github.com/hoiheart/vue-universal-modal)\n* [vue-simple-context-menu](https://github.com/johndatserakis/vue-simple-context-menu)\n* [splitpanes](https://github.com/antoniandre/splitpanes)\n* [axios, promise based http client for the browser and node.js](https://github.com/axios/axios)\n* [pyfilesystem2, python's filesystem abstraction layer](https://github.com/pyfilesystem/pyfilesystem2)\n* [amazon s3 pyfilesystem](https://github.com/pyfilesystem/s3fs)\n* [google cloud storage pyfilesystem](https://github.com/othoz/gcsfs)\n",
+  "docs_url": null,
+  "keywords": "airflow,airflow-plugin,apache-airflow,editor",
+  "license": "apache license 2.0",
+  "name": "airflow-code-editor",
+  "package_url": "https://pypi.org/project/airflow-code-editor/",
+  "project_url": "https://pypi.org/project/airflow-code-editor/",
+  "project_urls": {
+    "Bug Tracker": "http://github.com/andreax79/airflow-code-editor/issues",
+    "Homepage": "https://github.com/andreax79/airflow-code-editor",
+    "Source Code": "http://github.com/andreax79/airflow-code-editor"
+  },
+  "release_url": "https://pypi.org/project/airflow-code-editor/7.5.0/",
+  "requires_dist": [
+    "apache-airflow",
+    "fs >=2.4.16",
+    "pss >=1.44",
+    "pytest ; extra == 'test'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "apache airflow code editor and file manager",
+  "version": "7.5.0",
+  "releases": [],
+  "developers": [
+    "andrea.bonomi@gmail.com",
+    "andrea_bonomi"
+  ],
+  "kwds": "airflow__code_editor__git_enabled airflow__code_editor__git_cmd airflow__code_editor__git_default_args airflow__code_editor__root_directory airflow__code_editor__enabled",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_airflow_code_editor",
+  "homepage": "https://github.com/andreax79/airflow-code-editor",
+  "release_count": 49,
+  "dependency_ids": [
+    "pypi_apache_airflow",
+    "pypi_fs",
+    "pypi_pss",
+    "pypi_pytest"
+  ]
+}

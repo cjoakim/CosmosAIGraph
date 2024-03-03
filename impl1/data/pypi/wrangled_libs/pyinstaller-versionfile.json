@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "license :: osi approved :: mit license",
+    "operating system :: microsoft :: windows",
+    "programming language :: python :: 3",
+    "topic :: software development",
+    "topic :: software development :: build tools"
+  ],
+  "description": "# pyinstaller-versionfile\n![github](https://img.shields.io/github/license/dudenr33/pyinstaller-versionfile) \n![pypi](https://img.shields.io/pypi/v/pyinstaller-versionfile)\n![travis (.com) branch](https://img.shields.io/travis/com/dudenr33/pyinstaller-versionfile/master)\n![codecov](https://img.shields.io/codecov/c/github/dudenr33/pyinstaller-versionfile/master)\n![pypi - downloads](https://img.shields.io/pypi/dm/pyinstaller-versionfile)\n![code climate maintainability](https://img.shields.io/codeclimate/maintainability/dudenr33/pyinstaller-versionfile)\n\ncreate a windows version-file from a simple yaml file that can be used by pyinstaller.\n\n## background\npyinstaller provides a way to [capture windows version data](https://pyinstaller.readthedocs.io/en/stable/usage.html#capturing-windows-version-data)\nthrough a so called _version-file_. the process of crafting such a version file, and especially keeping the version number\nupdated, is a bit cumbersome. \nthis package aims to make the creation of such a version file easier.\n\nthe key/value pairs that be specified in the version file and [their official meaning](https://docs.microsoft.com/en-us/windows/win32/menurc/stringfileinfo-block) are shown the following table:\n\n|  parameter name  | description                                                                                                                                                                                                                                 |\n|:----------------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|\n|   companyname    | name of the company that produced the file, for example, \"my imaginary company, inc.\".                                                                                                                                                      |\n| filedescription  | description to be presented to users. it may be displayed when the user is choosing files to install. for example, \"a simple app that does simple things.\".                                                                                 |\n|   internalname   | internal name of the file. if the file has no internal name, this string should be the original filename, without extension. for example, 'simple app\".                                                                                     |\n|  legalcopyright  | copyright notices that apply to the file. this should include the full text of all notices, legal symbols, copyright dates, and so on. for example, \"copyright \u00a9 2000-2022, my imaginary company, inc. all rights reserved.\".               |\n| originalfilename | original name of the file, not including a path. this information enables an application to determine whether a file has been renamed by a user. for example, \"simpleapp.exe\".                                                              |\n|   productname    | name of the product with which the file is distributed, for example, \"simple app\".                                                                                                                                                          |\n|   translation    | combinations of language and character sets supported by the application. see [the documentation](https://learn.microsoft.com/en-us/windows/win32/menurc/varfileinfo-block#remarks) for the codes to use. multiple values can be specified. |\n\n## usage\npyinstaller-versionfile provides both a command line interface and a functional api.\n\n### command line interface\npyinstaller-versionfile provides a command line interface to convert a simple yaml file into a version-file suitable\nto pass to pyinstaller via the `--version-file=` option.\n\na complete yaml configuration looks like this:\n```yaml\nversion: 1.2.3.4\ncompanyname: my imaginary company\nfiledescription: simple app\ninternalname: simple app\nlegalcopyright: \u00a9 my imaginary company. all rights reserved.\noriginalfilename: simpleapp.exe\nproductname: simple app\ntranslation:\n  - langid: 0\n    charsetid: 1200\n  - langid: 1033\n    charsetid: 1252\n```\nthe encoding must be utf-8. all fields are optional, you can choose to specify only those that are of interest to you.\n\nto create version-file from this, simple run:\n```cmd\ncreate-version-file metadata.yml --outfile file_version_info.txt\n```\nwhere metadata.yml is the yaml configuration file from above.\n\n\n#### extracting version information\nas an alternative to specifying the version directly in the yaml file, there are two alternatives which may be more\nsuitable, depending on the use case:\n\n##### link to an external file\ninstead of writing the version string directly into the yaml file, you can also specify the (relative) path to another\nfile. note that this file must only contain the version string and nothing else.\n\n```yaml\nversion: version.txt\ncompanyname: my imaginary company\nfiledescription: simple app\ninternalname: simple app\nlegalcopyright: \u00a9 my imaginary company. all rights reserved.\noriginalfilename: simpleapp.exe\nproductname: simple app\n```\n\n##### setting the version from the command line\nit is also possible to set the version directly over the command line using the `--version` option:\n```cmd\ncreate-version-file metadata.yml --outfile file_version_info.txt --version 0.8.1.5\n```\nthis can be useful if you want to use a ci build number as the version. \n\n### functional api\nyou can also use pyinstaller-versionfile from your own python code by directly calling the functional api.\n``` python\nimport pyinstaller_versionfile\n\npyinstaller_versionfile.create_versionfile_from_input_file(\n    output_file=\"versionfile.txt\",\n    input_file=\"metadata.yml\",\n    version=\"1.2.3.4\"  # optional, can be set to overwrite version information (equivalent to --version when using the cli)\n)\n```\n\nit is not necessary to use a file as input, you can also directly specify the desired values.\nall of them are optional and will be filled with placeholder values if not specified.\n``` python\nimport pyinstaller_versionfile\n\npyinstaller_versionfile.create_versionfile(\n    output_file=\"versionfile.txt\",\n    version=\"1.2.3.4\",\n    company_name=\"my imaginary company\",\n    file_description=\"simple app\",\n    internal_name=\"simple app\",\n    legal_copyright=\"\u00a9 my imaginary company. all rights reserved.\",\n    original_filename=\"simpleapp.exe\",\n    product_name=\"simple app\",\n    translations=[0, 1200]\n)\n```\n\n## contributing\n\nif you think you found a bug, or have a proposal for an enhancement, do not hesitate \nto create a new issue or submit a pull request. i will look into it as soon\nas possible.\n\n\n# changelog\n\n## v2.1.1 (2022-11-21)\n\n### fix\n\n* add new `translations` parameter to functional api. [dudenr33]\n\n## v2.1.0 (2022-11-20)\n\n### new\n\n* add support for *translation* field to specify supported languages and charsets. [dudenr33]\n\n* added a table with the official definition of the parameters in the readme. [mkhoshbin1]\n\n## v2.0.0 (2021-04-06)\n\n### new\n\n* functional api for programmatic use. [dudenr33]\n\n* drop compatibility with python<3.6. [dudenr33]\n\n* definition of metadata and creation of version file are now handled in separate classes, and it is not strictly necessary to use a file as input. [dudenr33]\n\n* use gitchangelog for automatic changelog generation. [dudenr33]\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pyinstaller-versionfile",
+  "package_url": "https://pypi.org/project/pyinstaller-versionfile/",
+  "project_url": "https://pypi.org/project/pyinstaller-versionfile/",
+  "project_urls": {
+    "Homepage": "https://github.com/DudeNr33/pyinstaller-versionfile"
+  },
+  "release_url": "https://pypi.org/project/pyinstaller-versionfile/2.1.1/",
+  "requires_dist": [
+    "Jinja2",
+    "PyYAML",
+    "packaging",
+    "pathlib ; python_version < \"3\""
+  ],
+  "requires_python": ">=3.6",
+  "summary": "create a version file from a simple yaml config file",
+  "version": "2.1.1",
+  "releases": [],
+  "developers": [
+    "andi.finkler@gmail.com",
+    "andreas_finkler"
+  ],
+  "kwds": "pyinstaller_versionfile pyinstaller create_versionfile versionfile file_version_info",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pyinstaller_versionfile",
+  "homepage": "https://github.com/dudenr33/pyinstaller-versionfile",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_jinja2",
+    "pypi_packaging",
+    "pypi_pathlib",
+    "pypi_pyyaml"
+  ]
+}

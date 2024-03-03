@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 2",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws apigatewayv2 integrations\n\n<!--begin stability banner-->---\n\n\n![deprecated](https://img.shields.io/badge/deprecated-critical.svg?style=for-the-badge)\n\n> this api may emit warnings. backward compatibility is not guaranteed.\n\n---\n<!--end stability banner-->\n\nall constructs moved to aws-cdk-lib/aws-apigatewayv2-integrations.\n\n## table of contents\n\n* [http apis](#http-apis)\n\n  * [lambda integration](#lambda)\n  * [http proxy integration](#http-proxy)\n  * [private integration](#private-integration)\n  * [request parameters](#request-parameters)\n* [websocket apis](#websocket-apis)\n\n  * [lambda websocket integration](#lambda-websocket-integration)\n\n## http apis\n\nintegrations connect a route to backend resources. http apis support lambda proxy, aws service, and http proxy integrations. http proxy integrations are also known as private integrations.\n\n### lambda\n\nlambda integrations enable integrating an http api route with a lambda function. when a client invokes the route, the\napi gateway service forwards the request to the lambda function and returns the function's response to the client.\n\nthe api gateway service will invoke the lambda function with an event payload of a specific format. the service expects\nthe function to respond in a specific format. the details on this format are available at [working with aws lambda\nproxy integrations](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html).\n\nthe following code configures a route `get /books` with a lambda proxy integration.\n\n```python\nfrom aws_cdk.aws_apigatewayv2_integrations_alpha import httplambdaintegration\n\n# books_default_fn: lambda.function\n\nbooks_integration = httplambdaintegration(\"booksintegration\", books_default_fn)\n\nhttp_api = apigwv2.httpapi(self, \"httpapi\")\n\nhttp_api.add_routes(\n    path=\"/books\",\n    methods=[apigwv2.httpmethod.get],\n    integration=books_integration\n)\n```\n\n### http proxy\n\nhttp proxy integrations enables connecting an http api route to a publicly routable http endpoint. when a client\ninvokes the route, the api gateway service forwards the entire request and response between the api gateway endpoint\nand the integrating http endpoint. more information can be found at [working with http proxy\nintegrations](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-http.html).\n\nthe following code configures a route `get /books` with an http proxy integration to an http endpoint\n`get-books-proxy.example.com`.\n\n```python\nfrom aws_cdk.aws_apigatewayv2_integrations_alpha import httpurlintegration\n\n\nbooks_integration = httpurlintegration(\"booksintegration\", \"https://get-books-proxy.example.com\")\n\nhttp_api = apigwv2.httpapi(self, \"httpapi\")\n\nhttp_api.add_routes(\n    path=\"/books\",\n    methods=[apigwv2.httpmethod.get],\n    integration=books_integration\n)\n```\n\n### private integration\n\nprivate integrations enable integrating an http api route with private resources in a vpc, such as application load balancers or\namazon ecs container-based applications.  using private integrations, resources in a vpc can be exposed for access by\nclients outside of the vpc.\n\nthe following integrations are supported for private resources in a vpc.\n\n#### application load balancer\n\nthe following code is a basic application load balancer private integration of http api:\n\n```python\nfrom aws_cdk.aws_apigatewayv2_integrations_alpha import httpalbintegration\n\n\nvpc = ec2.vpc(self, \"vpc\")\nlb = elbv2.applicationloadbalancer(self, \"lb\", vpc=vpc)\nlistener = lb.add_listener(\"listener\", port=80)\nlistener.add_targets(\"target\",\n    port=80\n)\n\nhttp_endpoint = apigwv2.httpapi(self, \"httpproxyprivateapi\",\n    default_integration=httpalbintegration(\"defaultintegration\", listener)\n)\n```\n\nwhen an imported load balancer is used, the `vpc` option must be specified for `httpalbintegration`.\n\n#### network load balancer\n\nthe following code is a basic network load balancer private integration of http api:\n\n```python\nfrom aws_cdk.aws_apigatewayv2_integrations_alpha import httpnlbintegration\n\n\nvpc = ec2.vpc(self, \"vpc\")\nlb = elbv2.networkloadbalancer(self, \"lb\", vpc=vpc)\nlistener = lb.add_listener(\"listener\", port=80)\nlistener.add_targets(\"target\",\n    port=80\n)\n\nhttp_endpoint = apigwv2.httpapi(self, \"httpproxyprivateapi\",\n    default_integration=httpnlbintegration(\"defaultintegration\", listener)\n)\n```\n\nwhen an imported load balancer is used, the `vpc` option must be specified for `httpnlbintegration`.\n\n#### cloud map service discovery\n\nthe following code is a basic discovery service private integration of http api:\n\n```python\nimport aws_cdk.aws_servicediscovery as servicediscovery\nfrom aws_cdk.aws_apigatewayv2_integrations_alpha import httpservicediscoveryintegration\n\n\nvpc = ec2.vpc(self, \"vpc\")\nvpc_link = apigwv2.vpclink(self, \"vpclink\", vpc=vpc)\nnamespace = servicediscovery.privatednsnamespace(self, \"namespace\",\n    name=\"boobar.com\",\n    vpc=vpc\n)\nservice = namespace.create_service(\"service\")\n\nhttp_endpoint = apigwv2.httpapi(self, \"httpproxyprivateapi\",\n    default_integration=httpservicediscoveryintegration(\"defaultintegration\", service,\n        vpc_link=vpc_link\n    )\n)\n```\n\n### request parameters\n\nrequest parameter mapping allows api requests from clients to be modified before they reach backend integrations.\nparameter mapping can be used to specify modifications to request parameters. see [transforming api requests and\nresponses](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-parameter-mapping.html).\n\nthe following example creates a new header - `header2` - as a copy of `header1` and removes `header1`.\n\n```python\nfrom aws_cdk.aws_apigatewayv2_integrations_alpha import httpalbintegration\n\n# lb: elbv2.applicationloadbalancer\n\nlistener = lb.add_listener(\"listener\", port=80)\nlistener.add_targets(\"target\",\n    port=80\n)\n\nhttp_endpoint = apigwv2.httpapi(self, \"httpproxyprivateapi\",\n    default_integration=httpalbintegration(\"defaultintegration\", listener,\n        parameter_mapping=apigwv2.parametermapping().append_header(\"header2\", apigwv2.mappingvalue.request_header(\"header1\")).remove_header(\"header1\")\n    )\n)\n```\n\nto add mapping keys and values not yet supported by the cdk, use the `custom()` method:\n\n```python\nfrom aws_cdk.aws_apigatewayv2_integrations_alpha import httpalbintegration\n\n# lb: elbv2.applicationloadbalancer\n\nlistener = lb.add_listener(\"listener\", port=80)\nlistener.add_targets(\"target\",\n    port=80\n)\n\nhttp_endpoint = apigwv2.httpapi(self, \"httpproxyprivateapi\",\n    default_integration=httpalbintegration(\"defaultintegration\", listener,\n        parameter_mapping=apigwv2.parametermapping().custom(\"mykey\", \"myvalue\")\n    )\n)\n```\n\n## websocket apis\n\nwebsocket integrations connect a route to backend resources. the following integrations are supported in the cdk.\n\n### lambda websocket integration\n\nlambda integrations enable integrating a websocket api route with a lambda function. when a client connects/disconnects\nor sends a message specific to a route, the api gateway service forwards the request to the lambda function\n\nthe api gateway service will invoke the lambda function with an event payload of a specific format.\n\nthe following code configures a `sendmessage` route with a lambda integration\n\n```python\nfrom aws_cdk.aws_apigatewayv2_integrations_alpha import websocketlambdaintegration\n\n# message_handler: lambda.function\n\n\nweb_socket_api = apigwv2.websocketapi(self, \"mywsapi\")\napigwv2.websocketstage(self, \"mystage\",\n    web_socket_api=web_socket_api,\n    stage_name=\"dev\",\n    auto_deploy=true\n)\nweb_socket_api.add_route(\"sendmessage\",\n    integration=websocketlambdaintegration(\"sendmessageintegration\", message_handler)\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-apigatewayv2-integrations-alpha",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-apigatewayv2-integrations-alpha/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-apigatewayv2-integrations-alpha/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-apigatewayv2-integrations-alpha/2.114.1a0/",
+  "requires_dist": [
+    "aws-cdk-lib <3.0.0,>=2.114.1",
+    "aws-cdk.aws-apigatewayv2-alpha ==2.114.1.a0",
+    "constructs <11.0.0,>=10.0.0",
+    "jsii <2.0.0,>=1.92.0",
+    "publication >=0.0.3",
+    "typeguard ~=2.13.3"
+  ],
+  "requires_python": "~=3.8",
+  "summary": "this module is deprecated. all constructs are now available under aws-cdk-lib/aws-apigatewayv2-integrations",
+  "version": "2.114.1a0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_apigatewayv2_integrations_alpha aws_cdk apigatewayv2 http_api apigateway",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_apigatewayv2_integrations_alpha",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 169,
+  "dependency_ids": [
+    "pypi_aws_cdk_lib",
+    "pypi_aws_cdk.aws_apigatewayv2_alpha",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

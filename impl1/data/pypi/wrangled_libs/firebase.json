@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3.10"
+  ],
+  "description": "# python interface to the google's firebase rest apis\r\n###### author: [joe tilsed](http://linkedin.com/in/joetilsed) | created: 09.02.2019 | last updated: 22.02.2023 | version 4.0.1\r\n\r\n# firebase\r\n\r\npython interface to the google's firebase rest apis\r\n\r\n[![firebase](https://bitbucket.org/joetilsed/firebase/raw/548eebb31057cddf10a79275711a0657429dcb54/logo.png)](http://www.firebase.com)\r\n\r\n## installation\r\n\r\n    $ pip install firebase\r\n\r\n## getting started\r\n\r\nyou can fetch any of your data in json format by appending '.json' to the end of the url in which your data resides and, then send an https request through your browser. like all other rest specific apis, firebase offers a client to update(patch, put), create(post), or remove(delete) his stored data along with just to fetch it.\r\n\r\nthe library provides all the corresponding methods for those actions in both synchronous and asynchronous manner. you can just start an asynchronous get request with your callback function, and the method\r\n\r\n\r\nto fetch all the users in your storage simply do the following:\r\n\r\n```python\r\nfrom firebase import firebase\r\n\r\nfirebase = firebase.firebaseapplication('https://your_storage.firebaseio.com', none)\r\nresult = firebase.get('/users', none)\r\nprint(result)\r\n\r\n>> {'1': 'joe tilsed', '2': 'sydney cox'}\r\n```\r\n\r\n\r\nthe second argument of **get** method is the name of the snapshot. thus, if you leave it null, you get the data in the url **/users.json**. besides, if you set it to **1**, you get the data in the url **/users/1.json**. in other words, you get the user whose id equals to 1.\r\n\r\n```python\r\nfrom firebase import firebase\r\n\r\nfirebase = firebase.firebaseapplication('https://your_storage.firebaseio.com', none)\r\nresult = firebase.get('/users', '1')\r\nprint(result)\r\n\r\n>> {'1': 'joe tilsed'}\r\n```\r\n\r\nyou can also provide extra query parameters that will be appended to the url or extra key-value pairs sent in the http header.\r\n\r\n```python\r\nfrom firebase import firebase\r\n\r\nfirebase = firebase.firebaseapplication('https://your_storage.firebaseio.com', none)\r\nresult = firebase.get('/users/2', none, {'print': 'pretty'}, {'x_fancy_header': 'very fancy'})\r\nprint(result)\r\n\r\n>> {'2': 'sydney cox'}\r\n```\r\n\r\ncreating new data requires a post or put request. assuming you don't append **print=silent** to the url, if you use post the returning value becomes the name of the snapshot, if put you get the data you just sent. if print=silent is provided, you get just null because the backend never sends an output.\r\n\r\n```python\r\nfrom firebase import firebase\r\n\r\nfirebase = firebase.firebaseapplication('https://your_storage.firebaseio.com', none)\r\nnew_user = 'dave'\r\n\r\nresult = firebase.post('/users', new_user, {'print': 'pretty'}, {'x_fancy_header': 'very fancy'})\r\nprint(result)\r\n\r\n>> {u'name': u'<uid hash>'}\r\n\r\nresult = firebase.post('/users', new_user, {'print': 'silent'}, {'x_fancy_header': 'very fancy'})\r\nprint(result == none)\r\n\r\n>> true\r\n```\r\n\r\ndeleting data is relatively easy compared to other actions. you just set the url and that's all. backend sends no output as a result of a delete operation.\r\n\r\n```python\r\nfrom firebase import firebase\r\n\r\nfirebase = firebase.firebaseapplication('https://your_storage.firebaseio.com', none)\r\nfirebase.delete('/users', '3')\r\n\r\n# dave goes away.\r\n```\r\n\r\n## authentication\r\n\r\nauthentication in firebase is nothing but to simply creating a token that conforms to the jwt standards and, putting it into the querystring with the name **auth**. the library creates that token for you so you never end up struggling with constructing a valid token on your own. if the data has been protected against write/read operations with some security rules, the backend sends an appropriate error message back to the client with the status code **403 forbidden**.\r\n\r\n```python\r\nfrom firebase import firebase\r\n\r\nfirebase = firebase.firebaseapplication('https://your_storage.firebaseio.com', authentication=none)\r\nresult = firebase.get('/users', none, {'print': 'pretty'})\r\n\r\nprint(result)\r\n\r\n>> {'error': 'permission denied.'}\r\n\r\nauthentication = firebase.firebaseauthentication('this_is_my_secret', 'joe@tilsed.com', extra={'id': 123})\r\nfirebase.authentication = authentication\r\nprint(authentication.extra)\r\n\r\n>> {'admin': false, 'debug': false, 'email': 'joe@tilsed.com', 'id': 123, 'provider': 'password'}\r\n\r\nuser = authentication.get_user()\r\nprint(user.firebase_auth_token)\r\n\r\n>> \"eyjhbgcioiaisfmyntyilcaidhlwijogikpxvcj9.eyjhzg1pbii6igzhbhnllcaizgvidwcioibmywxzzswgiml\r\n    hdci6ideznje5ntaxnzqsicjkijogeyjkzwj1zyi6igzhbhnllcaiywrtaw4ioibmywxzzswginbyb3zpzgvyijog\r\n    inbhc3n3b3jkiiwgimlkijognswgimvtywlsijogim96z3vydnraz21hawwuy29tin0sicj2ijogmh0.lq4irvfve\r\n    gqklslols4uiblssjj88ynrlowxvisrgfq\"\r\n\r\nresult = firebase.get('/users', none, {'print': 'pretty'})\r\nprint(result)\r\n\r\n>> {'1': 'joe tilsed', '2': 'sydney cox'}\r\n```\r\n\r\n## concurrency\r\n\r\nthe interface heavily depends on the standart **multiprocessing** library when concurrency comes in. while creating an asynchronous call, an on-demand process pool is created and, the async method is executed by one of the idle process inside the pool. the pool remains alive until the main process dies. so every time you trigger an async call, you always use the same pool. when the method returns, the pool process ships the returning value back to the main process within the callback function provided.\r\n\r\n```python\r\nimport json\r\n\r\nfrom firebase import firebase\r\nfrom firebase import jsonutil\r\n\r\nfirebase = firebase.firebaseapplication('https://your_storage.firebaseio.com', authentication=none)\r\n\r\ndef log_user(response):\r\n    with open('/tmp/users/%s.json' % response.keys()[0], 'w') as users_file:\r\n        users_file.write(json.dumps(response, cls=jsonutil.jsonencoder))\r\n\r\nfirebase.get_async('/users', none, {'print': 'pretty'}, callback=log_user)\r\n```\r\n\r\n###### # that's all folks...\r\n",
+  "docs_url": null,
+  "keywords": "firebase python",
+  "license": "",
+  "name": "firebase",
+  "package_url": "https://pypi.org/project/firebase/",
+  "project_url": "https://pypi.org/project/firebase/",
+  "project_urls": {
+    "Homepage": "https://bitbucket.org/joetilsed/firebase/"
+  },
+  "release_url": "https://pypi.org/project/firebase/4.0.1/",
+  "requires_dist": [
+    "requests"
+  ],
+  "requires_python": "",
+  "summary": "python interface to the google's firebase rest apis",
+  "version": "4.0.1",
+  "releases": [],
+  "developers": [
+    "joe@tilsed.com",
+    "joe_tilsed"
+  ],
+  "kwds": "firebase firebaseio firebaseapplication firebase_auth_token firebaseauthentication",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_firebase",
+  "homepage": "https://bitbucket.org/joetilsed/firebase/",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

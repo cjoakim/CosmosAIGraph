@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "<p align=\"center\">\n  <img src=\".github/wb-logo-lightbg.png#gh-light-mode-only\" width=\"600\" alt=\"weights & biases\"/>\n  <img src=\".github/wb-logo-darkbg.png#gh-dark-mode-only\" width=\"600\" alt=\"weights & biases\"/>\n</p>\n\n# __sweeps__: hyperparameter optimization engine\n\nthis repo contains the routines that generate hyperparameter sweep suggestions in\nthe w&b backend and [client](https://github.com/wandb/client) local controller.\n\nissues are not enabled in this repository.\n__please [open issues related to sweeps in the wandb client library github issues page](https://github.com/wandb/client/issues/new/choose).__\n\n### installation\nto install:\n\n\n```\npip install sweeps\n```\n\n### examples\n\n__get next run in a sweep.__\n\nrequires two arguments, `config`, the config that defines the sweep, and `runs`, the other runs in the sweep\n\n`config`:\n```python\n{\n    \"metric\": {\"name\": \"loss\", \"goal\": \"minimize\"},\n    \"method\": \"bayes\",\n    \"parameters\": {\n        \"v1\": {\"min\": 1, \"max\": 10},\n        \"v2\": {\"min\": 1.0, \"max\": 10.0},\n    },\n}\n```\n\n`runs`:\n```python\n[\n    sweeprun(\n        name=\"b\",\n        state=runstate.finished,\n        history=[\n            {\"loss\": 5.0},\n        ],\n        config={\"v1\": {\"value\": 7}, \"v2\": {\"value\": 6}},\n        summary_metrics={\"zloss\": 1.2},\n    ),\n    sweeprun(\n        name=\"b2\",\n        state=runstate.finished,\n        config={\"v1\": {\"value\": 1}, \"v2\": {\"value\": 8}},\n        summary_metrics={\"loss\": 52.0},\n        history=[],\n    )\n]\n```\n\ncodepath:\n\n```python\nsuggestion = next_run(config, runs)\n```\n`next_run`:\n* validates that sweep config conforms to the jsonschema in `config/schema.json`, if not, it raises a `validationerror`\n* parses the config file and determines the method that it should use to find the next run (in this case `bayes_search_next_run`)\n* calls `bayes_search_next_run(config, runs)` and returns the suggested `sweeprun`\n\n\n\n__return list of runs to stop in a sweep.__\n\nrequires two arguments, `config`, the config that defines the sweep, and `runs`, the other runs in the sweep\n\n`config`:\n```python\n{\n    \"method\": \"grid\",\n    \"metric\": {\"name\": \"loss\", \"goal\": \"minimize\"},\n    \"early_terminate\": {\n        \"type\": \"hyperband\",\n        \"max_iter\": 5,\n        \"eta\": 2,\n        \"s\": 2,\n    },\n    \"parameters\": {\"a\": {\"values\": [1, 2, 3]}},\n}\n```\n\n`runs`:\n```python\n[\n    sweeprun(\n        name=\"a\",\n        state=runstate.finished,  # this is already stopped\n        history=[\n            {\"loss\": 10},\n            {\"loss\": 9},\n        ],\n    ),\n    sweeprun(\n        name=\"b\",\n        state=runstate.running,  # this should be stopped\n        history=[\n            {\"loss\": 10},\n            {\"loss\": 10},\n        ],\n    ),\n    sweeprun(\n        name=\"c\",\n        state=runstate.running,  # this passes band 1 but not band 2\n        history=[\n            {\"loss\": 10},\n            {\"loss\": 8},\n            {\"loss\": 8},\n        ],\n    ),\n    sweeprun(\n        name=\"d\",\n        state=runstate.running,\n        history=[\n            {\"loss\": 10},\n            {\"loss\": 7},\n            {\"loss\": 7},\n        ],\n    ),\n    sweeprun(\n        name=\"e\",\n        state=runstate.finished,\n        history=[\n            {\"loss\": 10},\n            {\"loss\": 6},\n            {\"loss\": 6},\n        ],\n    ),\n]\n```\n\ncodepath:\n\n```python\nto_stop = stop_runs(config, runs)\n```\n`stop_runs`:\n* validates that sweep config conforms to the jsonschema in `config/schema.json`, if not, it raises a `validationerror`\n* parses the config file and determines the method that it should use to early terminate runs (in this case `hyperband_stop_runs`)\n* calls `hyperband_stop_runs(config, runs)` and returns the `sweeprun`s to stop\n\n\n### testing\n\ntests are run using `tox`, the makefile defines convenience commands for short and long tests:\n\n```\nmake test-short\nmake test-full\n```\n\n### contributing\n\n__review the [contributing instructions](https://github.com/wandb/client/blob/master/contributing.md)__\n\ninstall the development requirements:\n\n```\npip install -r requirements.dev.txt\n```\n\ninstall the pre-commit hooks:\n\n```\npre-commit install .\n```\n\nrun formatting and tests:\n\n```\nmake format\nmake test\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "sweeps",
+  "package_url": "https://pypi.org/project/sweeps/",
+  "project_url": "https://pypi.org/project/sweeps/",
+  "project_urls": {
+    "Homepage": "https://github.com/wandb/sweeps"
+  },
+  "release_url": "https://pypi.org/project/sweeps/0.2.0/",
+  "requires_dist": [
+    "numpy (>=1.15)",
+    "scipy (>=1.5.4)",
+    "PyYAML",
+    "jsonschema (>=3.2.0)",
+    "jsonref (>=0.2)",
+    "pydantic (>=1.8.2)",
+    "scikit-learn (>=0.24.2) ; python_version == \"3.6\"",
+    "scikit-learn (>=1.0) ; python_version > \"3.6\""
+  ],
+  "requires_python": ">=3.6",
+  "summary": "weights and biases hyperparameter sweeps engine.",
+  "version": "0.2.0",
+  "releases": [],
+  "developers": [
+    "support@wandb.com",
+    "weights"
+  ],
+  "kwds": "hyperparameter wandb lightbg sweeprun hyperband_stop_runs",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_sweeps",
+  "homepage": "https://github.com/wandb/sweeps",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_jsonref",
+    "pypi_jsonschema",
+    "pypi_numpy",
+    "pypi_pydantic",
+    "pypi_pyyaml",
+    "pypi_scikit_learn",
+    "pypi_scipy"
+  ]
+}

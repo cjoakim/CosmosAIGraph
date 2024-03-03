@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: build tools"
+  ],
+  "description": "|build status| |codecov| |pypi|\n\n.. |build status| image:: https://github.com/r1chardj0n3s/pip-check-reqs/workflows/ci/badge.svg\n   :target: https://github.com/r1chardj0n3s/pip-check-reqs/actions\n.. |codecov| image:: https://codecov.io/gh/r1chardj0n3s/pip-check-reqs/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/r1chardj0n3s/pip-check-reqs\n.. |pypi| image:: https://badge.fury.io/py/pip-check-reqs.svg\n   :target: https://badge.fury.io/py/pip-check-reqs\n\npip-check-reqs\n==============\n\nit happens: you start using a module in your project and it works and you\ndon't realise that it's only being included in your `virtualenv`_ because\nit's a dependency of a package you're using. pip-missing-reqs finds those\nmodules so you can include them in the `requirements.txt`_ for the project.\n\nalternatively, you have a long-running project that has some packages in\nrequirements.txt that are no longer actively used in the codebase. the\npip-extra-reqs tool will find those modules so you can remove them.\n\n.. _`virtualenv`: https://virtualenv.pypa.io/en/latest/\n.. _`requirements.txt`: https://pip.pypa.io/en/latest/user_guide.html#requirements-files\n\nassuming your project follows a layout like the suggested sample project::\n\n    setup.py\n    setup.cfg\n    requirements.txt\n    sample/__init__.py\n    sample/sample.py\n    sample/tests/test_sample.py\n\nbasic usage, running in your project directory::\n\n    <activate virtualenv for your project>\n    pip-missing-reqs --ignore-file=sample/tests/* sample\n\nthis will find all imports in the code in \"sample\" and check that the\npackages those modules belong to are in the requirements.txt file.\n\nadditionally it is possible to check that there are no dependencies in\nrequirements.txt that are then unused in the project::\n\n    <activate virtualenv for your project>\n    pip-extra-reqs --ignore-file=sample/tests/* sample\n\nthis would find anything that is listed in requirements.txt but that is not\nimported by sample.\n\nsample tox.ini configuration\n----------------------------\n\nto make your life easier, copy something like this into your tox.ini::\n\n    [testenv:pip-check-reqs]\n    deps=-rrequirements.txt\n    commands=\n        pip-missing-reqs --ignore-file=sample/tests/* sample\n        pip-extra-reqs --ignore-file=sample/tests/* sample\n\n\nexcluding test files (or others) from this check\n------------------------------------------------\n\nyour test files will sometimes be present in the same directory as your\napplication source (\"sample\" in the above examples). the requirements for\nthose tests generally should not be in the requirements.txt file, and you\ndon't want this tool to generate false hits for those.\n\nyou may exclude those test files from your check using the `--ignore-file`\noption (shorthand is `-f`). multiple instances of the option are allowed.\n\n\nexcluding modules from the check\n--------------------------------\n\nif your project has modules which are conditionally imported, or requirements\nwhich are conditionally included, you may exclude certain modules from the\ncheck by name (or glob pattern) using `--ignore-module` (shorthand is `-m`)::\n\n    # ignore the module spam\n    pip-missing-reqs --ignore-module=spam sample\n    # ignore the whole package spam as well\n    pip-missing-reqs --ignore-module=spam --ignore-module=spam.* sample\n\n\nusing pyproject.toml instead of requirements.txt\n------------------------------------------------\n\nif your project uses `pyproject.toml` instead of `requirements.txt`, you can\nuse an external tool like `pdm` to convert it to `requirements.txt`::\n\n    # requires `pip install pdm`\n    pdm export --pyproject > requirements.txt\n\nthen you can use `pip-missing-reqs` and `pip-extra-reqs` as usual.\n\nwith thanks to\n--------------\n\njosh hesketh -- who refactored code and contributed the pip-extra-reqs tool.\n\nwil cooley -- who handled the removal of normalize_name and fixed some bugs.\n\n\n\nrelease history\n---------------\n\n2.5.2\n\n- performance improvements.\n- add preliminary support for windows.\n\n2.5.1\n\n- fix an issue with importing `__main__`.\n- fix an issue with importing packages with periods in their names.\n\n2.5.0\n\n- support python 3.10.\n- remove support for python 3.8.\n- bump `pip` requirement to 23.2.\n\n2.4.4\n\n- bump `packaging` requirement to >= 20.5. older versions of `pip-check-reqs` may be broken with the previously-specified version requirements.\n\n2.4.3\n\n- improves performance on python 3.11.\n\n2.4.2\n\n- added support for python 3.11.\n- added `python_requires` to metadata; from now on, releases of\n  `pip-check-reqs` are marked as compatible with python 3.8.0 and up.\n- made `--version` flag show interpretter version and path to the package which\n  pip-check-reqs is running from, similar to information shown by `pip\n  --version`.\n- `-v` is now an alias of `--version`.\n\n2.3.2\n\n- fixed support for pip < 21.3\n\n2.3.1\n\n- fixed `--skip-incompatible` skipping other requirements too.\n- support pip >= 21.3\n\n2.3.0\n\n- support pip >= 21.2.1\n\n2.2.2\n\n- ast parsing failures will now report tracebacks with a proper filename for\n  the parsed frame, instead of `<unknown>`.\n\n2.2.1\n\n- python source is now always read using utf-8, even if default encoding for\n  reading files is set otherwise.\n\n2.2.0\n\n- added `--skip-incompatible` flag to `pip-extra-reqs`, which makes it ignore\n  requirements with environment markers that are incompatible with the current\n  environment.\n- added `--requirements-file` flag to `pip-extra-reqs` and `pip-missing-reqs`\n  commands. this flag makes it possible to specify a path to the requirements\n  file. previously, `\"requirements.txt\"` was always used.\n- fixed some of the logs not being visible with `-d` and `-v` flags.\n\n2.1.1\n\n- bug fix: though python 2 support was removed from the source code, the published wheel was still universal.\n  the published wheel now explicitly does not support python 2.\n  please use version 2.0.4 for python 2.\n\n2.1.0\n\n- remove support for python 2.\n  please use an older version of this tool if you require that support.\n- remove requirement for setuptools.\n- support newer versions of pip, including the current version, for more features (20.1.1).\n  thanks to @czaki for important parts of this change.\n\n2.0.1\n\n- handled removal of normalize_name from pip.utils\n- handle packages with no files\n\n2.0 **renamed package to pip_check_reqs**\n\n- added tool pip-extra-reqs to find packages installed but not used\n  (contributed by josh hesketh)\n\n1.2.1\n\n- relax requirement to 6.0+\n\n1.2.0\n\n- bumped pip requirement to 6.0.8+\n- updated use of pip internals to match that version\n\n1.1.9\n\n- test fixes and cleanup\n- remove hard-coded simplejson debugging behaviour\n\n1.1.8\n\n- use os.path.realpath to avoid symlink craziness on debian/ubuntu\n\n1.1.7\n\n- tweak to debug output\n\n1.1.6\n\n- add debug (very verbose) run output\n\n1.1.5\n\n- add header to output to make it clearer when in a larger test run\n- fix tests and self-test\n\n1.1.4\n\n- add --version\n- remove debug print from released code lol\n\n1.1.3\n\n- fix program to generate exit code useful for testing\n\n1.1.2\n\n- corrected version of vendored search_packages_info() from pip\n- handle relative imports\n\n1.1.1\n\n- fixed handling of import from __future__\n- self-tested and added own requirements.txt\n- cleaned up usage to require a file or directory to scan (rather than\n  defaulting to \".\")\n- vendored code from pip 1.6dev which fixes bug in search_packages_info\n  until pip 1.6 is released\n\n1.1.0\n\n- implemented --ignore-module\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pip-check-reqs",
+  "package_url": "https://pypi.org/project/pip-check-reqs/",
+  "project_url": "https://pypi.org/project/pip-check-reqs/",
+  "project_urls": {
+    "Homepage": "https://github.com/r1chardj0n3s/pip-check-reqs"
+  },
+  "release_url": "https://pypi.org/project/pip-check-reqs/2.5.3/",
+  "requires_dist": [
+    "packaging >=20.5",
+    "pip >=23.2",
+    "black ; extra == 'dev'",
+    "ruff ; extra == 'dev'",
+    "mypy ; extra == 'dev'",
+    "pyenchant ; extra == 'dev'",
+    "pylint ; extra == 'dev'",
+    "pyright ; extra == 'dev'",
+    "pytest ; extra == 'dev'",
+    "pytest-cov ; extra == 'dev'",
+    "types-setuptools ; extra == 'dev'",
+    "ruamel.yaml ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.9.0",
+  "summary": "find packages that should or should not be in requirements for a project",
+  "version": "2.5.3",
+  "releases": [],
+  "developers": [
+    "adam_dangoor",
+    "adamdangoor@gmail.com",
+    "r1chardj0n3s@gmail.com",
+    "richard_jones"
+  ],
+  "kwds": "pip_check_reqs pip python_requires badge search_packages_info",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pip_check_reqs",
+  "homepage": "https://github.com/r1chardj0n3s/pip-check-reqs",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_mypy",
+    "pypi_packaging",
+    "pypi_pip",
+    "pypi_pyenchant",
+    "pypi_pylint",
+    "pypi_pyright",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_ruamel.yaml",
+    "pypi_ruff",
+    "pypi_types_setuptools"
+  ]
+}

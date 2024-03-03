@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon fsx construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\n[amazon fsx](https://docs.aws.amazon.com/fsx/?id=docs_gateway) provides fully managed third-party file systems with the\nnative compatibility and feature sets for workloads such as microsoft windows\u2013based storage, high-performance computing,\nmachine learning, and electronic design automation.\n\namazon fsx supports two file system types: [lustre](https://docs.aws.amazon.com/fsx/latest/lustreguide/index.html) and\n[windows](https://docs.aws.amazon.com/fsx/latest/windowsguide/index.html) file server.\n\n## fsx for lustre\n\namazon fsx for lustre makes it easy and cost-effective to launch and run the popular, high-performance lustre file\nsystem. you use lustre for workloads where speed matters, such as machine learning, high performance computing (hpc),\nvideo processing, and financial modeling.\n\nthe open-source lustre file system is designed for applications that require fast storage\u2014where you want your storage\nto keep up with your compute. lustre was built to solve the problem of quickly and cheaply processing the world's\never-growing datasets. it's a widely used file system designed for the fastest computers in the world. it provides\nsubmillisecond latencies, up to hundreds of gbps of throughput, and up to millions of iops. for more information on\nlustre, see the [lustre website](http://lustre.org/).\n\nas a fully managed service, amazon fsx makes it easier for you to use lustre for workloads where storage speed matters.\namazon fsx for lustre eliminates the traditional complexity of setting up and managing lustre file systems, enabling\nyou to spin up and run a battle-tested high-performance file system in minutes. it also provides multiple deployment\noptions so you can optimize cost for your needs.\n\namazon fsx for lustre is posix-compliant, so you can use your current linux-based applications without having to make\nany changes. amazon fsx for lustre provides a native file system interface and works as any file system does with your\nlinux operating system. it also provides read-after-write consistency and supports file locking.\n\n### installation\n\nimport to your project:\n\n```python\nimport aws_cdk.aws_fsx as fsx\n```\n\n### basic usage\n\nsetup required properties and create:\n\n```python\n# vpc: ec2.vpc\n\n\nfile_system = fsx.lustrefilesystem(self, \"fsxlustrefilesystem\",\n    lustre_configuration=fsx.lustreconfiguration(deployment_type=fsx.lustredeploymenttype.scratch_2),\n    storage_capacity_gi_b=1200,\n    vpc=vpc,\n    vpc_subnet=vpc.private_subnets[0]\n)\n```\n\n### connecting\n\nto control who can access the file system, use the `.connections` attribute. fsx has a fixed default port, so you don't\nneed to specify the port. this example allows an ec2 instance to connect to a file system:\n\n```python\n# file_system: fsx.lustrefilesystem\n# instance: ec2.instance\n\n\nfile_system.connections.allow_default_port_from(instance)\n```\n\n### mounting\n\nthe lustrefilesystem construct exposes both the dns name of the file system as well as its mount name, which can be\nused to mount the file system on an ec2 instance. the following example shows how to bring up a file system and ec2\ninstance, and then use user data to mount the file system on the instance at start-up:\n\n```python\nimport aws_cdk.aws_iam as iam\n\n# vpc: ec2.vpc\n\nlustre_configuration = {\n    \"deployment_type\": fsx.lustredeploymenttype.scratch_2\n}\n\nfs = fsx.lustrefilesystem(self, \"fsxlustrefilesystem\",\n    lustre_configuration=lustre_configuration,\n    storage_capacity_gi_b=1200,\n    vpc=vpc,\n    vpc_subnet=vpc.private_subnets[0]\n)\n\ninst = ec2.instance(self, \"inst\",\n    instance_type=ec2.instancetype.of(ec2.instanceclass.t2, ec2.instancesize.large),\n    machine_image=ec2.amazonlinuximage(\n        generation=ec2.amazonlinuxgeneration.amazon_linux_2\n    ),\n    vpc=vpc,\n    vpc_subnets=ec2.subnetselection(\n        subnet_type=ec2.subnettype.public\n    )\n)\nfs.connections.allow_default_port_from(inst)\n\n# need to give the instance access to read information about fsx to determine the file system's mount name.\ninst.role.add_managed_policy(iam.managedpolicy.from_aws_managed_policy_name(\"amazonfsxreadonlyaccess\"))\n\nmount_path = \"/mnt/fsx\"\ndns_name = fs.dns_name\nmount_name = fs.mount_name\n\ninst.user_data.add_commands(\"set -eux\", \"yum update -y\", \"amazon-linux-extras install -y lustre2.10\", f\"mkdir -p {mountpath}\", f\"chmod 777 {mountpath}\", f\"chown ec2-user:ec2-user {mountpath}\", f\"echo \\\"{dnsname}@tcp:/{mountname} {mountpath} lustre defaults,noatime,flock,_netdev 0 0\\\" >> /etc/fstab\", \"mount -a\")\n```\n\n### importing\n\nan fsx for lustre file system can be imported with `fromlustrefilesystemattributes(stack, id, attributes)`. the\nfollowing example lays out how you could import the securitygroup a file system belongs to, use that to import the file\nsystem, and then also import the vpc the file system is in and add an ec2 instance to it, giving it access to the file\nsystem.\n\n```python\nsg = ec2.securitygroup.from_security_group_id(self, \"fsxsecuritygroup\", \"{security-group-id}\")\nfs = fsx.lustrefilesystem.from_lustre_file_system_attributes(self, \"fsxlustrefilesystem\",\n    dns_name=\"{file-system-dns-name}\",\n    file_system_id=\"{file-system-id}\",\n    security_group=sg\n)\n\nvpc = ec2.vpc.from_vpc_attributes(self, \"vpc\",\n    availability_zones=[\"us-west-2a\", \"us-west-2b\"],\n    public_subnet_ids=[\"{us-west-2a-subnet-id}\", \"{us-west-2b-subnet-id}\"],\n    vpc_id=\"{vpc-id}\"\n)\n\ninst = ec2.instance(self, \"inst\",\n    instance_type=ec2.instancetype.of(ec2.instanceclass.t2, ec2.instancesize.large),\n    machine_image=ec2.amazonlinuximage(\n        generation=ec2.amazonlinuxgeneration.amazon_linux_2\n    ),\n    vpc=vpc,\n    vpc_subnets=ec2.subnetselection(\n        subnet_type=ec2.subnettype.public\n    )\n)\n\nfs.connections.allow_default_port_from(inst)\n```\n\n## fsx for windows file server\n\nthe l2 construct for the fsx for windows file server has not yet been implemented. to instantiate an fsx for windows\nfile system, the l1 constructs can be used as defined by cloudformation.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-fsx",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-fsx/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-fsx/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-fsx/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-ec2 (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::fsx",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_fsx aws_cdk amazonfsxreadonlyaccess amazonlinuximage aws",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_fsx",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_ec2",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

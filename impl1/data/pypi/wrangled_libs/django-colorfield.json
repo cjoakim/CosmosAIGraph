@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 3.0",
+    "framework :: django :: 3.1",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "framework :: django :: 4.1",
+    "framework :: django :: 4.2",
+    "framework :: django :: 5.0",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: build tools"
+  ],
+  "description": "[![](https://img.shields.io/pypi/pyversions/django-colorfield.svg?color=3776ab&logo=python&logocolor=white)](https://www.python.org/)\n[![](https://img.shields.io/pypi/djversions/django-colorfield?color=0c4b33&logo=django&logocolor=white&label=django)](https://www.djangoproject.com/)\n\n[![](https://img.shields.io/pypi/v/django-colorfield.svg?color=blue&logo=pypi&logocolor=white)](https://pypi.org/project/django-colorfield/)\n[![](https://static.pepy.tech/badge/django-colorfield/month)](https://pepy.tech/project/django-colorfield)\n[![](https://img.shields.io/github/stars/fabiocaccamo/django-colorfield?logo=github)](https://github.com/fabiocaccamo/django-colorfield/stargazers)\n[![](https://img.shields.io/pypi/l/django-colorfield.svg?color=blue)](https://github.com/fabiocaccamo/django-colorfield/blob/main/license.txt)\n\n[![](https://results.pre-commit.ci/badge/github/fabiocaccamo/django-colorfield/main.svg)](https://results.pre-commit.ci/latest/github/fabiocaccamo/django-colorfield/main)\n[![](https://img.shields.io/github/actions/workflow/status/fabiocaccamo/django-colorfield/test-package.yml?branch=main&label=build&logo=github)](https://github.com/fabiocaccamo/django-colorfield)\n[![](https://img.shields.io/codecov/c/gh/fabiocaccamo/django-colorfield?logo=codecov)](https://codecov.io/gh/fabiocaccamo/django-colorfield)\n[![](https://img.shields.io/codacy/grade/194566618f424a819ce43450ea0af081?logo=codacy)](https://www.codacy.com/app/fabiocaccamo/django-colorfield)\n[![](https://img.shields.io/codeclimate/maintainability/fabiocaccamo/django-colorfield?logo=code-climate)](https://codeclimate.com/github/fabiocaccamo/django-colorfield/)\n[![](https://img.shields.io/badge/code%20style-black-000000.svg?logo=python&logocolor=black)](https://github.com/psf/black)\n[![](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)\n\n# django-colorfield\nsimple color field for your models with a nice color-picker in the admin-interface.\n\n![django-colorfield-hex](https://user-images.githubusercontent.com/7900305/104512324-51ed0f80-55ee-11eb-9144-de03d922c2ce.png)\n![django-colorfield-hexa](https://user-images.githubusercontent.com/7900305/104512063-ec991e80-55ed-11eb-95b6-9174ac3f4f38.png)\n\n---\n\n## installation\n-   run `pip install django-colorfield`\n-   add `colorfield` to `settings.installed_apps`\n-   run `python manage.py collectstatic`\n-   restart your application server\n\n---\n\n## usage\n\n### settings\nthis package doesn't need any setting.\n\n### models\njust add color field(s) to your models like this:\n\n```python\nfrom colorfield.fields import colorfield\nfrom django.db import models\n\nclass mymodel(models.model):\n    color = colorfield(default='#ff0000')\n```\n\n### field options\nthese are the supported custom options: [`format`](#format), [`image_field`](#image_field), [`samples`](#samples)\n\n#### format\n\nthe following formats are supported: `hex` *(default)*, `hexa`, `rgb`, `rgba`.\n\n```python\nfrom colorfield.fields import colorfield\nfrom django.db import models\n\nclass mymodel(models.model):\n    color = colorfield(format=\"hexa\")\n```\n\n#### image_field\n\nit is possible to auto-populate the field value getting the color from an image using the `image_field` option.\n\nthe color will be calculated from the **top-left pixel** color of the image each time the model instance is saved.\n\n```python\nfrom colorfield.fields import colorfield\nfrom django.db import models\n\nclass mymodel(models.model):\n    image = models.imagefield(upload_to=\"images\")\n    color = colorfield(image_field=\"image\")\n```\n\n#### samples\n\nit is possible to provide a palette of colors to choose from to the widget using the `samples` option.\n\nthis option **is not restrictive** (on the contrary of `choices` option), it is also possible to choose another color from the spectrum.\n\n![django-colorfield-samples](https://user-images.githubusercontent.com/7900305/104512178-194d3600-55ee-11eb-8cba-91cca156da06.png)\n\n```python\nfrom colorfield.fields import colorfield\nfrom django.db import models\n\nclass mymodel(models.model):\n\n    color_palette = [\n        (\"#ffffff\", \"white\", ),\n        (\"#000000\", \"black\", ),\n    ]\n\n    # not restrictive, allows the selection of another color from the spectrum.\n    color = colorfield(samples=color_palette)\n\n    # restrictive, it is mandatory to choose a color from the palette\n    color = colorfield(choices=color_palette)\n```\n\n### admin\nthe admin will kindly provide a simple [color picker](http://jscolor.com/) for all color fields. :)\n\n---\n\n## testing\n```bash\n# clone repository\ngit clone https://github.com/fabiocaccamo/django-colorfield.git && cd django-colorfield\n\n# create virtualenv and activate it\npython -m venv venv && . venv/bin/activate\n\n# upgrade pip\npython -m pip install --upgrade pip\n\n# install requirements\npip install -r requirements.txt -r requirements-test.txt\n\n# install pre-commit to run formatters and linters\npre-commit install --install-hooks\n\n# run tests\ntox\n# or\npython runtests.py\n# or\npython -m django test --settings \"tests.settings\"\n```\n---\n\n## credits\noriginally developed by [jared forsyth](https://github.com/jaredly)\n\n---\n\n## license\nreleased under [mit license](license.txt).\n\n---\n\n## supporting\n\n- :star: star this project on [github](https://github.com/fabiocaccamo/django-colorfield)\n- :octocat: follow me on [github](https://github.com/fabiocaccamo)\n- :blue_heart: follow me on [twitter](https://twitter.com/fabiocaccamo)\n- :moneybag: sponsor me on [github](https://github.com/sponsors/fabiocaccamo)\n\n## see also\n\n- [`django-admin-interface`](https://github.com/fabiocaccamo/django-admin-interface) - the default admin interface made customizable by the admin itself. popup windows replaced by modals. \ud83e\uddd9 \u26a1\n\n- [`django-extra-settings`](https://github.com/fabiocaccamo/django-extra-settings) - config and manage typed extra settings using just the django admin. \u2699\ufe0f\n\n- [`django-maintenance-mode`](https://github.com/fabiocaccamo/django-maintenance-mode) - shows a 503 error page when maintenance-mode is on. \ud83d\udea7 \ud83d\udee0\ufe0f\n\n- [`django-redirects`](https://github.com/fabiocaccamo/django-redirects) - redirects with full control. \u21aa\ufe0f\n\n- [`django-treenode`](https://github.com/fabiocaccamo/django-treenode) - probably the best abstract model / admin for your tree based stuff. \ud83c\udf33\n\n- [`python-benedict`](https://github.com/fabiocaccamo/python-benedict) - dict subclass with keylist/keypath support, i/o shortcuts (base64, csv, json, pickle, plist, query-string, toml, xml, yaml) and many utilities. \ud83d\udcd8\n\n- [`python-codicefiscale`](https://github.com/fabiocaccamo/python-codicefiscale) - encode/decode italian fiscal codes - codifica/decodifica del codice fiscale. \ud83c\uddee\ud83c\uddf9 \ud83d\udcb3\n\n- [`python-fontbro`](https://github.com/fabiocaccamo/python-fontbro) - friendly font operations. \ud83e\udde2\n\n- [`python-fsutil`](https://github.com/fabiocaccamo/python-fsutil) - file-system utilities for lazy devs. \ud83e\udddf\u200d\u2642\ufe0f\n",
+  "docs_url": null,
+  "keywords": "django,colorfield,colorpicker,color,field,picker,chooser,admin,python",
+  "license": "mit license  copyright (c) 2013-present jared forsyth / fabio caccamo  permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"software\"), to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, subject to the following conditions:  the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software. ",
+  "name": "django-colorfield",
+  "package_url": "https://pypi.org/project/django-colorfield/",
+  "project_url": "https://pypi.org/project/django-colorfield/",
+  "project_urls": {
+    "Documentation": "https://github.com/fabiocaccamo/django-colorfield#readme",
+    "Download": "https://github.com/fabiocaccamo/django-colorfield/releases",
+    "Funding": "https://github.com/sponsors/fabiocaccamo/",
+    "Homepage": "https://github.com/fabiocaccamo/django-colorfield",
+    "Issues": "https://github.com/fabiocaccamo/django-colorfield/issues",
+    "Twitter": "https://twitter.com/fabiocaccamo"
+  },
+  "release_url": "https://pypi.org/project/django-colorfield/0.11.0/",
+  "requires_dist": [
+    "Pillow >=9.0.0"
+  ],
+  "requires_python": "",
+  "summary": "color field for django models with a nice color-picker in the admin.",
+  "version": "0.11.0",
+  "releases": [],
+  "developers": [
+    "fabio.caccamo@gmail.com",
+    "jared@jaredforsyth.com"
+  ],
+  "kwds": "colorfield django colorpicker imagefield djangoproject",
+  "license_kwds": "copyright license liable liability mit",
+  "libtype": "pypi",
+  "id": "pypi_django_colorfield",
+  "homepage": "",
+  "release_count": 38,
+  "dependency_ids": [
+    "pypi_pillow"
+  ]
+}

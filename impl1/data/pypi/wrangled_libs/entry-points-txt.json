@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: text processing",
+    "typing :: typed"
+  ],
+  "description": ".. image:: http://www.repostatus.org/badges/latest/active.svg\n    :target: http://www.repostatus.org/#active\n    :alt: project status: active \u2014 the project has reached a stable, usable\n          state and is being actively developed.\n\n.. image:: https://github.com/jwodder/entry-points-txt/workflows/test/badge.svg?branch=master\n    :target: https://github.com/jwodder/entry-points-txt/actions?workflow=test\n    :alt: ci status\n\n.. image:: https://codecov.io/gh/jwodder/entry-points-txt/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/jwodder/entry-points-txt\n\n.. image:: https://img.shields.io/pypi/pyversions/entry-points-txt.svg\n    :target: https://pypi.org/project/entry-points-txt/\n\n.. image:: https://img.shields.io/github/license/jwodder/entry-points-txt.svg\n    :target: https://opensource.org/licenses/mit\n    :alt: mit license\n\n`github <https://github.com/jwodder/entry-points-txt>`_\n| `pypi <https://pypi.org/project/entry-points-txt/>`_\n| `issues <https://github.com/jwodder/entry-points-txt/issues>`_\n| `changelog <https://github.com/jwodder/entry-points-txt/blob/master/changelog.md>`_\n\n``entry-points-txt`` provides functions for reading & writing\n``entry_points.txt`` files according to `the spec`_.  that is the one thing it\ndoes, and it endeavors to do it well.\n\n.. _the spec: https://packaging.python.org/specifications/entry-points/\n\ninstallation\n============\n``entry-points-txt`` requires python 3.6 or higher.  just use `pip\n<https://pip.pypa.io>`_ for python 3 (you have pip, right?) to install\n``entry-points-txt``::\n\n    python3 -m pip install entry-points-txt\n\n\napi\n===\n\n``entrypoint``\n--------------\n\n.. code:: python\n\n    class entrypoint(namedtuple)\n\na representation of an entry point as a namedtuple.  instances have the\nfollowing attributes and methods:\n\n``group: str``\n   the name of the entry point group (e.g., ``\"console_scripts\"``)\n\n``name: str``\n   the name of the entry point\n\n``module: str``\n   the module portion of the attribute reference (the part before the colon)\n\n``attr: optional[str]``\n   the attribute/object portion of the attribute reference (the part after the\n   colon), or ``none`` if not specified\n\n``extras: tuple[str, ...]``\n   extras required for the entry point\n\n``load() -> any``\n   returns the object referred to by the entry point\n\n``to_line() -> str``\n   returns the representation of the entry point as a line in\n   ``entry_points.txt``, i.e., a line of the form ``name = module:attr\n   [extras]``\n\n``entrypointset``\n-----------------\n\n.. code:: python\n\n    entrypointset = dict[str, dict[str, entrypoint]]\n\nan alias for the return type of ``load()`` & ``loads()`` and the argument type\nof ``dump()`` & ``dumps()``.  entry points are organized into a ``dict`` that\nmaps group names to sub-``dict``\\s that map entry point names to ``entrypoint``\ninstances.\n\n``load()``\n----------\n\n.. code:: python\n\n    entry_points_txt.load(fp: io[str]) -> entrypointset\n\nparse a file-like object as an ``entry_points.txt``-format file and return the\nresults.\n\nfor example, the following input:\n\n.. code:: ini\n\n    [console_scripts]\n    foo = package.__main__:main\n    bar = package.cli:klass.attr\n\n    [thingy.extension]\n    quux = package.thingy [xtr]\n\nwould be parsed as:\n\n.. code:: python\n\n    {\n        \"console_scripts\": {\n            \"foo\": entrypoint(group=\"console_scripts\", name=\"foo\", module=\"package.__main__\", attr=\"main\", extras=()),\n            \"bar\": entrypoint(group=\"console_scripts\", name=\"bar\", module=\"package.cli\", attr=\"klass.attr\", extras=()),\n        },\n        \"thingy.extension\": {\n            \"quux\": entrypoint(group=\"thingy.extension\", name=\"quux\", module=\"package.thingy\", attr=none, extras=(\"xtr\",)),\n        },\n    }\n\n``loads()``\n-----------\n\n.. code:: python\n\n    entry_points_txt.loads(s: str) -> entrypointset\n\nlike ``load()``, but reads from a string instead of a filehandle\n\n``dump()``\n----------\n\n.. code:: python\n\n    entry_points_txt.dump(eps: entrypointset, fp: io[str]) -> none\n\nwrite a collection of entry points to a file-like object in\n``entry_points.txt`` format.  a ``valueerror`` is raised and nothing is written\nif the group or name key under which an ``entrypoint`` is located does not\nmatch its ``group`` or ``name`` attribute.\n\n``dumps()``\n-----------\n\n.. code:: python\n\n    entry_points_txt.dumps(eps: entrypointset) -> str\n\nlike ``dump()``, but returns a string instead of writing to a filehandle\n\n``dump_list()``\n---------------\n\n.. code:: python\n\n    entry_points_txt.dump_list(eps: iterable[entrypoint], fp: io[str]) -> none\n\nwrite an iterable of entry points to a file-like object in ``entry_points.txt``\nformat.  if two or more entry points have the same group & name, only the last\none will be output.\n\n``dumps_list()``\n----------------\n\n.. code:: python\n\n    entry_points_txt.dumps_list(eps: iterable[entrypoint]) -> str\n\nlike ``dump_list()``, but returns a string instead of writing to a filehandle\n\n``parseerror``\n--------------\n\n.. code:: python\n\n    class parseerror(valueerror)\n\nexception raised by ``load()`` or ``loads()`` when given invalid input\n\n\n",
+  "docs_url": null,
+  "keywords": "entry points,entry_points.txt",
+  "license": "mit",
+  "name": "entry-points-txt",
+  "package_url": "https://pypi.org/project/entry-points-txt/",
+  "project_url": "https://pypi.org/project/entry-points-txt/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/jwodder/entry-points-txt/issues",
+    "Homepage": "https://github.com/jwodder/entry-points-txt",
+    "Source Code": "https://github.com/jwodder/entry-points-txt"
+  },
+  "release_url": "https://pypi.org/project/entry-points-txt/0.2.0/",
+  "requires_dist": [],
+  "requires_python": "~=3.6",
+  "summary": "read & write entry_points.txt files",
+  "version": "0.2.0",
+  "releases": [],
+  "developers": [
+    "entry-points-txt@varonathe.org",
+    "john_thorvald_wodder_ii"
+  ],
+  "kwds": "entry_points_txt entry_points entrypointset badge badges",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_entry_points_txt",
+  "homepage": "https://github.com/jwodder/entry-points-txt",
+  "release_count": 2,
+  "dependency_ids": []
+}

@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "framework :: ipython",
+    "framework :: pytest",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "topic :: software development :: testing"
+  ],
+  "description": "# py.test plugin for validating jupyter notebooks\n\n[![tests](https://github.com/computationalmodelling/nbval/actions/workflows/tests.yml/badge.svg)](https://github.com/computationalmodelling/nbval/actions/workflows/tests.yml)\n[![pypi version](https://badge.fury.io/py/nbval.svg)](https://pypi.python.org/pypi/nbval)\n[![documentation status](https://readthedocs.org/projects/nbval/badge/)](https://nbval.readthedocs.io/)\n\nthe plugin adds functionality to py.test to recognise and collect jupyter\nnotebooks. the intended purpose of the tests is to determine whether execution\nof the stored inputs match the stored outputs of the `.ipynb` file. whilst also\nensuring that the notebooks are running without errors.\n\nthe tests were designed to ensure that jupyter notebooks (especially those for\nreference and documentation), are executing consistently.\n\neach cell is taken as a test, a cell that doesn't reproduce the expected\noutput will fail.\n\nsee [`docs/source/index.ipynb`](http://nbviewer.jupyter.org/github/computationalmodelling/nbval/blob/head/docs/source/index.ipynb) for the full documentation.\n\n## installation\navailable on pypi:\n\n    pip install nbval\n\nor install the latest version from cloning the repository and running:\n\n    pip install .\n\nfrom the main directory. to uninstall:\n\n    pip uninstall nbval\n\n\n## how it works\nthe extension looks through every cell that contains code in an ipython notebook\nand then the `py.test` system compares the outputs stored in the notebook\nwith the outputs of the cells when they are executed. thus, the notebook itself is\nused as a testing function.\nthe output lines when executing the notebook can be sanitized passing an\nextra option and file, when calling the `py.test` command. this file\nis a usual configuration file for the `configparser` library.\n\nregarding the execution, roughly, the script initiates an\nipython kernel with a `shell` and\nan `iopub` sockets. the `shell` is needed to execute the cells in\nthe notebook (it sends requests to the kernel) and the `iopub` provides\nan interface to get the messages from the outputs. the contents\nof the messages obtained from the kernel are organised in dictionaries\nwith different information, such as time stamps of executions,\ncell data types, cell types, the status of the kernel, username, etc.\n\nin general, the functionality of the ipython notebook system is\nquite complex, but a detailed explanation of the messages\nand how the system works, can be found here\n\nhttps://jupyter-client.readthedocs.io/en/latest/messaging.html#messaging\n\n## execution\nto execute this plugin, you need to execute `py.test` with the `nbval` flag\nto differentiate the testing from the usual python files:\n\n    py.test --nbval\n\nyou can also specify `--nbval-lax`, which runs notebooks and checks for\nerrors, but only compares the outputs of cells with a `#nbval_check_output`\nmarker comment.\n\n    py.test --nbval-lax\n\nthe commands above will execute all the `.ipynb` files and 'pytest' tests in the current folder.\nspecify `-p no:python` if you would like to execute notebooks only. alternatively, you can execute a specific notebook:\n\n    py.test --nbval my_notebook.ipynb\n\nby default, each `.ipynb` file will be executed using the kernel\nspecified in its metadata. you can override this behavior by passing\neither `--nbval-kernel-name mykernel` to run all the notebooks using\n`mykernel`, or `--current-env` to use a kernel in the same environment\nin which pytest itself was launched.\n\nif the output lines are going to be sanitized, an extra flag, `--nbval-sanitize-with`\ntogether with the path to a confguration file with regex expressions, must be passed,\ni.e.\n\n    py.test --nbval my_notebook.ipynb --nbval-sanitize-with path/to/my_sanitize_file\n\nwhere `my_sanitize_file` has the following structure.\n\n```\n[section1]\nregex: [a-z]*\nreplace: abcd\n\nregex: [1-9]*\nreplace: 0000\n\n[section2]\nregex: foo\nreplace: bar\n```\n\nthe `regex` option contains the expression that is going to be matched in the outputs, and\n`replace` is the string that will replace the `regex` match. currently, the section\nnames do not have any meaning or influence in the testing system, it will take\nall the sections and replace the corresponding options.\n\n\n### coverage\n\nto use notebooks to generate coverage for imported code, use the pytest-cov plugin.\nnbval should automatically detect the relevant options and configure itself with it.\n\n\n### parallel execution\n\nnbval is compatible with the pytest-xdist plugin for parallel running of tests. it does\nhowever require the use of the `--dist loadscope` flag to ensure that all cells of one\nnotebook are run on the same kernel.\n\n## documentation\n\nthe narrative documentation for nbval can be found at https://nbval.readthedocs.io.\n\n## help\nthe `py.test` system help can be obtained with `py.test -h`, which will\nshow all the flags that can be passed to the command, such as the\nverbose `-v` option. nbval's options can be found under the\n`jupyter notebook validation` section.\n\n\n## acknowledgements\nthis plugin was inspired by andrea zonca's py.test plugin for collecting unit\ntests in the ipython notebooks (https://github.com/zonca/pytest-ipynb).\n\nthe original prototype was based on the template in\nhttps://gist.github.com/timo/2621679 and the code of a testing system\nfor notebooks https://gist.github.com/minrk/2620735 which we\nintegrated and mixed with the `py.test` system.\n\nwe acknowledge financial support from\n\n- opendreamkit horizon 2020 european research infrastructures project (#676541), http://opendreamkit.org\n\n- epsrc's centre for doctoral training in next generation\n  computational modelling, http://ngcm.soton.ac.uk (#ep/l015382/1) and\n  epsrc's doctoral training centre in complex system simulation\n  ((ep/g03690x/1),\n\n- the gordon and betty moore foundation through grant gbmf #4856, by the\n  alfred p. sloan foundation and by the helmsley trust.\n\n\n## authors\n\n2014 - 2017 david cortes-ortuno, oliver laslett, t. kluyver, vidar\nfauske, maximilian albert, minrk, ondrej hovorka, hans fangohr\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "nbval",
+  "package_url": "https://pypi.org/project/nbval/",
+  "project_url": "https://pypi.org/project/nbval/",
+  "project_urls": {
+    "Homepage": "https://github.com/computationalmodelling/nbval"
+  },
+  "release_url": "https://pypi.org/project/nbval/0.10.0/",
+  "requires_dist": [
+    "pytest (>=2.8)",
+    "jupyter-client",
+    "nbformat",
+    "ipykernel",
+    "coverage"
+  ],
+  "requires_python": ">=3.6, <4",
+  "summary": "a py.test plugin to validate jupyter notebooks",
+  "version": "0.10.0",
+  "releases": [],
+  "developers": [
+    "laslett"
+  ],
+  "kwds": "nbval_check_output ipynb ipython tests jupyter",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_nbval",
+  "homepage": "https://github.com/computationalmodelling/nbval",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_ipykernel",
+    "pypi_jupyter_client",
+    "pypi_nbformat",
+    "pypi_pytest"
+  ]
+}

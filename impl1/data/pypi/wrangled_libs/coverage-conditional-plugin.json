@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# coverage-conditional-plugin\n\n[![wemake.services](https://img.shields.io/badge/%20-wemake.services-green.svg?label=%20&logo=data%3aimage%2fpng%3bbase64%2civborw0kggoaaaansuheugaaabaaaaaqcamaaaaolq9taaaabgdbtueaalgpc%2fxhbqaaaafzukdcak7ohokaaaabuexurqaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaap%2f%2f%2f5tvxdiaaaaidfjouwajra8xxanal%2bv0saaaadnjrefugnnjycaiojjrbdbfwmkvqegzchawksjnappzgogaaszpzaehegvslexqwe7yswcb7afzsf3bbaaaaabjru5erkjggg%3d%3d)](https://wemake.services)\n[![build status](https://github.com/wemake-services/coverage-conditional-plugin/workflows/test/badge.svg?branch=master&event=push)](https://github.com/wemake-services/coverage-conditional-plugin/actions?query=workflow%3atest)\n[![codecov](https://codecov.io/gh/wemake-services/coverage-conditional-plugin/branch/master/graph/badge.svg)](https://codecov.io/gh/wemake-services/coverage-conditional-plugin)\n[![python version](https://img.shields.io/pypi/pyversions/coverage-conditional-plugin.svg)](https://pypi.org/project/coverage-conditional-plugin/)\n[![wemake-python-styleguide](https://img.shields.io/badge/style-wemake-000000.svg)](https://github.com/wemake-services/wemake-python-styleguide)\n\nconditional coverage based on any rules you define!\n\nsome projects have different parts that relies on different environments:\n\n- python version, some code is only executed on specific versions and ignored on others\n- os version, some code might be windows, mac, or linux only\n- external packages, some code is only executed when some 3rd party package is installed\n\ncurrent best practice is to use `# pragma: no cover` for this places in our project.\nthis project allows to use configurable pragmas\nthat include code to the coverage if some condition evaluates to true,\nand fallback to ignoring this code when condition is false.\n\nread [the announcing post](https://sobolevn.me/2020/02/conditional-coverage).\n\n\n## installation\n\n```bash\npip install coverage-conditional-plugin\n```\n\nthen you will need to add to your `setup.cfg` or `.coveragerc` file\nsome extra configuration:\n\n```ini\n[coverage:run]\n# here we specify plugins for coverage to be used:\nplugins =\n  coverage_conditional_plugin\n\n[coverage:coverage_conditional_plugin]\n# here we specify files to conditionally omit:\nomit =\n  \"sys_platform == 'win32'\":\n      \"my_project/omit*.py\"\n      \"my_project/win.py\"\n# here we specify our pragma rules:\nrules =\n  \"sys_version_info >= (3, 8)\": py-gte-38\n  \"is_installed('mypy')\": has-mypy\n\n```\n\nor to your `pyproject.toml`:\n\n```toml\n[tool.coverage.run]\n# here we specify plugins for coverage to be used:\nplugins = [\"coverage_conditional_plugin\"]\n\n[tool.coverage.coverage_conditional_plugin.omit]\n# here we specify files to conditionally omit:\n\"my_project/omit*.py\" = \"sys_platform == 'win32'\"\n\n[tool.coverage.coverage_conditional_plugin.rules]\n# here we specify our pragma rules:\npy-gte-38 = \"sys_version_info >= (3, 8)\"\nhas-mypy = \"is_installed('mypy')\"\n```\n\n\nadapt rules to suit your needs!\n\n\n## example\n\nimagine that we have this code:\n\n```python\ntry:  # pragma: has-django\n    import django\nexcept importerror:  # pragma: has-no-django\n    django = none\n\ndef run_if_django_is_installed():\n    if django is not none:  # pragma: has-django\n        ...\n```\n\nand here's the configuration you might use:\n\n```ini\n[coverage:coverage_conditional_plugin]\nrules =\n  \"is_installed('django')\": has-django\n  \"not is_installed('django')\": has-no-django\n\n```\n\nwhen running tests with and without `django` installed\nyou will have `100%` coverage in both cases.\n\nbut, different lines will be included.\nwith `django` installed it will include\nboth `try:` and `if django is not none:` conditions.\n\nwhen running without `django` installed,\nit will include `except importerror:` line.\n\n\n## writing pragma rules\n\nformat for pragma rules is:\n\n```\n\"pragma-condition\": pragma-name\n```\n\ncode inside `\"pragma-condition\"` is evaluted with `eval`.\nmake sure that the input you pass there is trusted!\n`\"pragma-condition\"` must return `bool` value after evaluation.\n\nwe support all environment markers specified in [pep-496](https://www.python.org/dev/peps/pep-0496/).\nsee [strings](https://www.python.org/dev/peps/pep-0496/#strings)\nand [version numbers](https://www.python.org/dev/peps/pep-0496/#version-numbers)\nsections for available values. also, we provide a bunch of additional markers:\n\n- `sys_version_info` is the same as [`sys.version_info`](https://docs.python.org/3/library/sys.html#sys.version_info)\n- `os_environ` is the same as [`os.environ`](https://docs.python.org/3/library/os.html#os.environ)\n- `is_installed` is our custom function that tries to import the passed string, returns `bool` value\n- `package_version` is our custom function that tries to get package version from `pkg_resources` and returns its [parsed version](https://packaging.pypa.io/en/latest/version/#packaging.version.parse)\n\nuse `get_env_info` to get values for the current environment:\n\n```python\nfrom coverage_conditional_plugin import get_env_info\n\nget_env_info()\n```\n\n\n## writing omits\n\nomits allow entire files to be conditionally omitted from coverage measurement.\n\nthe toml format for omits is:\n\n```toml\n[tool.coverage.coverage_conditional_plugin.omit]\n\"pragma-condition\" = [\"project/prefix*.py\", \"project/filename.py\"]\n# or\n\"pragma-condition\" = \"project/filename.py\"\n```\n\n**note**: `ini` format is not supported for `omit` configuration option,\nbecause there's no easy way to parse `ini` complex configuration. \nprs with the fix are welcome!\n\nfile name patterns should follow coverage.py's `[run] omit` syntax.\nsee [coverage.py](https://coverage.readthedocs.io/en/stable/source.html).\n\n\n## license\n\n[mit](https://github.com/wemake.services/coverage-conditional-plugin/blob/master/license)\n",
+  "docs_url": null,
+  "keywords": "coverage,coverage.py,pytest-cov,testing",
+  "license": "mit",
+  "name": "coverage-conditional-plugin",
+  "package_url": "https://pypi.org/project/coverage-conditional-plugin/",
+  "project_url": "https://pypi.org/project/coverage-conditional-plugin/",
+  "project_urls": {
+    "Funding": "https://github.com/sponsors/wemake-services",
+    "Homepage": "https://github.com/wemake-services/coverage-conditional-plugin",
+    "Repository": "https://github.com/wemake-services/coverage-conditional-plugin"
+  },
+  "release_url": "https://pypi.org/project/coverage-conditional-plugin/0.9.0/",
+  "requires_dist": [
+    "coverage (>=7,<8)",
+    "packaging (>=20.4)",
+    "importlib_metadata ; python_version < \"3.10\""
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "conditional coverage based on any rules you define!",
+  "version": "0.9.0",
+  "releases": [],
+  "developers": [
+    "mail@sobolevn.me",
+    "sobolevn"
+  ],
+  "kwds": "coverage_conditional_plugin coveragerc coverage badge 3atest",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_coverage_conditional_plugin",
+  "homepage": "https://github.com/wemake-services/coverage-conditional-plugin",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_importlib_metadata",
+    "pypi_packaging"
+  ]
+}

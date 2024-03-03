@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "<p align=\"center\">\n    <img src=\"https://raw.githubusercontent.com/danielfrg/mkdocs-jupyter/main/docs/logo.png\" width=\"450px\">\n</p>\n\n<p align=\"center\">\n    <a href=\"https://pypi.org/project/mkdocs-jupyter/\">\n        <img src=\"https://img.shields.io/pypi/v/mkdocs-jupyter.svg\">\n    </a>\n    <a href=\"https://pypi.org/project/mkdocs-jupyter/\">\n        <img src=\"https://img.shields.io/pypi/pyversions/mkdocs-jupyter.svg\">\n    </a>\n    <a href=\"https://github.com/danielfrg/mkdocs-jupyter/actions/workflows/test.yml\">\n        <img src=\"https://github.com/danielfrg/mkdocs-jupyter/workflows/test/badge.svg\">\n    </a>\n    <a href=\"https://codecov.io/gh/danielfrg/mkdocs-jupyter?branch=main\">\n        <img src=\"https://codecov.io/gh/danielfrg/mkdocs-jupyter/branch/main/graph/badge.svg\">\n    </a>\n    <a href=\"http://github.com/danielfrg/mkdocs-jupyter/blob/main/license.txt\">\n        <img src=\"https://img.shields.io/:license-apache%202-blue.svg\">\n    </a>\n</p>\n\n# mkdocs-jupyter: use jupyter notebooks in mkdocs\n\n-   [docs demo site](https://mkdocs-jupyter.danielfrg.com/)\n-   add jupyter notebooks directly to the mkdocs navigation\n-   support for multiple formats:\n    -   `.ipynb` and `.py` files (using\n        [jupytext](https://github.com/mwouts/jupytext))\n-   same style as regular jupyter notebooks\n    -   support jupyter themes\n-   option to execute the notebook before converting\n-   support for [ipywidgets](https://github.com/jupyter-widgets/ipywidgets)\n-   support for mkdocs toc\n-   option to include notebook source\n\n<a\nhref=\"https://raw.githubusercontent.com/danielfrg/mkdocs-jupyter/master/docs/mkdocs-theme.png\"><img\nsrc=\"https://raw.githubusercontent.com/danielfrg/mkdocs-jupyter/master/docs/mkdocs-theme.png\"\nalt=\"mkdocs-jupyter default theme\"  width=\"300\"></a> <a\nhref=\"https://raw.githubusercontent.com/danielfrg/mkdocs-jupyter/master/docs/material-theme.png\"><img\nsrc=\"https://raw.githubusercontent.com/danielfrg/mkdocs-jupyter/master/docs/material-theme.png\"\nalt=\"mkdocs-jupyter material theme\"  width=\"300\"></a>\n\n## installation\n\n```shell\npip install mkdocs-jupyter\n```\n\n## configuration\n\nin the `mkdocs.yml` use jupyter notebooks (`.ipynb`) or python scripts (`.py`)\nas pages:\n\n```yaml\nnav:\n    - home: index.md\n    - notebook page: notebook.ipynb\n    - python file: python_script.py\nplugins:\n    - mkdocs-jupyter\n```\n\n### titles and table of contents\n\nthe first h1 header (`#`) in your notebook will be used as the title.\n\n```md\n# this h1 header will be the the title.\n```\n\nthis can be turned off in the configuration (in which case the filename will be\nused as title):\n\n```yaml\nplugins:\n    - mkdocs-jupyter:\n          ignore_h1_titles: true\n```\n\nin order to see the table of contents you need to maintain a hierarchical\nheaders structure in your notebooks. you must use h2 headers (`##`) and not h1\n(`#`)\n\n```md\n## this h2 title will show in the table of contents\n```\n\nif you want to **nest headers** in the toc you need to add additional levels\nlater in the same markdown cell or new bottom markdown cells:\n\n```md\n## this header will show as top level in the table of contents\n\n<content>\n\n### this one will be displayed inside the above level\n```\n\n### including or ignoring files\n\nyou can control which files are included or ignored via lists of glob patterns:\n\n```yaml\nplugins:\n    - mkdocs-jupyter:\n          include: [\"*.ipynb\"] # default: [\"*.py\", \"*.ipynb\"]\n          ignore: [\"some-irrelevant-files/*.ipynb\"]\n```\n\n### execute notebook\n\nyou can tell the plugin to execute the notebook before converting, default is\n`false`:\n\n```yaml\nplugins:\n    - mkdocs-jupyter:\n          execute: true\n```\n\nyou can tell the plugin to ignore the execution of some files (with glob\nmatching):\n\n```yaml\nplugins:\n    - mkdocs-jupyter:\n          execute_ignore:\n              - \"my-secret-files/*.ipynb\"\n```\n\nto fail when notebook execution fails set `allow_errors` to `false`:\n\n```yaml\nplugins:\n    - mkdocs-jupyter:\n          execute: true\n          allow_errors: false\n```\n\n#### kernel\n\nby default the plugin will use the kernel specified in the notebook to execute\nit. you can specify a custom kernel name to use for all the notebooks:\n\n```yaml\nplugins:\n    - mkdocs-jupyter:\n          kernel_name: python3\n```\n\n### ingore code input\n\nby default the plugin will show full code and regular cell output details. you\ncan hide cell code input for all the notebooks:\n\n```yaml\nplugins:\n    - mkdocs-jupyter:\n          show_input: false\n```\n\nyou can also decide to hide the `out[#]` output notation and other cell metadata\nfor all the notebooks:\n\n```yaml\nplugins:\n    - mkdocs-jupyter:\n          no_input: true\n```\n\n### remove cell using tags\n\nby default the plugin will show full code and regular cell output details. you\ncan hide cell code input for specific cells using tags:\n\n```yaml\nplugins:\n    - mkdocs-jupyter:\n          remove_tag_config:\n              remove_input_tags:\n                  - hide_code\n```\n\nmore detailed on removing cell based on tag, see [nbconvert\ncustomization](https://nbconvert.readthedocs.io/en/latest/removing_cells.html))\n\n### jupyter themes\n\nyou can configure the different jupyter themes. for example if using material\nwith `slate` color scheme you can use the jupyter lab `dark` theme:\n\n```yml\nplugins:\n    - mkdocs-jupyter:\n          theme: dark\n\ntheme:\n    name: material\n    palette:\n        scheme: slate\n```\n\n### extra css classes\n\nthis option will add a custom css class to the `div` container that highlights\nthe code cells. this can be useful to add custom styles to the code cells.\n\n```yml\nplugins:\n  - mkdocs-jupyter:\n      highlight_extra_classes: \"custom-css-classes\n```\n\n### requirejs\n\nby default requirejs is not loaded. this is required for plotly.\nyou can enable it with:\n\n```yml\nplugins:\n    - mkdocs-jupyter:\n          include_requirejs: true\n```\n\n### download notebook link\n\nyou can tell the plugin to include the notebook source to make it easy to show a\ndownload button in the theme, default is `false`:\n\n```yml\nplugins:\n    - mkdocs-jupyter:\n          include_source: true\n```\n\nthis setting will also create a `page.nb_url` value that you can use in your\ntheme to make a link in each page.\n\nfor example in `mkdocs-material` (see\n[customization](https://squidfunk.github.io/mkdocs-material/customization/#overriding-template-blocks)),\nyou can create a `main.html` file like this:\n\n```jinja\n{% extends \"base.html\" %}\n\n{% block content %}\n{% if page.nb_url %}\n    <a href=\"{{ page.nb_url }}\" title=\"download notebook\" class=\"md-content__button md-icon\">\n        {% include \".icons/material/download.svg\" %}\n    </a>\n{% endif %}\n\n{{ super() }}\n{% endblock content %}\n```\n\n![download notebook button](https://raw.githubusercontent.com/danielfrg/mkdocs-jupyter/master/docs/download-button.png)\n\n## styles\n\nthis extensions includes the jupyter lab nbconvert css styles and does some\nmodifications to make it as generic as possible in order for it to work with a\nvariety of mkdocs themes. this is not always possible and the theme we test the\nmost is [mkdocs-material](https://squidfunk.github.io/mkdocs-material).\n\nit's possible you might need to do some css changes to make it look as good as\nyou want, for example for the material theme take a look at their [customization\ndocs](https://squidfunk.github.io/mkdocs-material/customization/#overriding-template-blocks).\n\ncreate a `main.html` file like:\n\n```jinja\n{% extends \"base.html\" %}\n\n{% block content %}\n{{ super() }}\n\n<style>\n// do whatever changes you need here\n\n.jp-renderedhtmlcommon p {\n    color: red\n}\n\n</style>\n{% endblock content %}\n```\n\n## mkdocs material notes\n\nany markdown specific features such as\n[admonitions](https://squidfunk.github.io/mkdocs-material/reference/admonitions/)\nwon't work with mkdocs-jupyter because those features are not supported by\njupyter itself and we use [nbconvert](https://nbconvert.readthedocs.io/) to make\nthe conversion.\n\nto use this type of features you have to define the html directly in the\nmarkdown cells:\n\n```html\n<div class=\"admonition note\">\n    <p class=\"admonition-title\">note</p>\n    <p>\n        if two distributions are similar, then their entropies are similar,\n        implies the kl divergence with respect to two distributions will be\n        smaller...\n    </p>\n</div>\n```\n",
+  "docs_url": null,
+  "keywords": "documentation,jupyter,jupyterlab,mkdocs,notebooks",
+  "license": "apache-2.0",
+  "name": "mkdocs-jupyter",
+  "package_url": "https://pypi.org/project/mkdocs-jupyter/",
+  "project_url": "https://pypi.org/project/mkdocs-jupyter/",
+  "project_urls": {
+    "Documentation": "https://github.com/danielfrg/mkdocs-jupyter#readme",
+    "Issues": "https://github.com/danielfrg/mkdocs-jupyter/issues",
+    "Source": "https://github.com/danielfrg/mkdocs-jupyter"
+  },
+  "release_url": "https://pypi.org/project/mkdocs-jupyter/0.24.6/",
+  "requires_dist": [
+    "ipykernel<7.0.0,>6.0.0",
+    "jupytext<2,>1.13.8",
+    "mkdocs-material>9.0.0",
+    "mkdocs<2,>=1.4.0",
+    "nbconvert<8,>=7.2.9",
+    "pygments>2.12.0"
+  ],
+  "requires_python": ">=3.9",
+  "summary": "use jupyter in mkdocs websites",
+  "version": "0.24.6",
+  "releases": [],
+  "developers": [
+    "daniel@danielfrg.com"
+  ],
+  "kwds": "jupyterlab jupyter jupytext python3 python_script",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_mkdocs_jupyter",
+  "homepage": "",
+  "release_count": 35,
+  "dependency_ids": [
+    "pypi_ipykernel",
+    "pypi_jupytext",
+    "pypi_mkdocs",
+    "pypi_mkdocs_material",
+    "pypi_nbconvert",
+    "pypi_pygments"
+  ]
+}

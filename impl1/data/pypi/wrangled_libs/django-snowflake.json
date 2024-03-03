@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: django",
+    "framework :: django :: 5.0",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12"
+  ],
+  "description": "# snowflake backend for django\n\n## install and usage\n\nuse the version of django-snowflake that corresponds to your version of\ndjango. for example, to get the latest compatible release for django 5.0.x:\n\n`pip install django-snowflake==5.0.*`\n\nthe minor release number of django doesn't correspond to the minor release\nnumber of django-snowflake. use the latest minor release of each.\n\nconfigure the django `databases` setting similar to this:\n\n```python\ndatabases = {\n    'default': {\n        'engine': 'django_snowflake',\n        'name': 'my_database',\n        'schema': 'my_schema',\n        'warehouse': 'my_warehouse',\n        'user': 'my_user',\n        'password': 'my_password',\n        'account': 'my_account',\n        # include 'options' if you need to specify any other\n        # snowflake.connector.connect() parameters, documented at:\n        # https://docs.snowflake.com/en/user-guide/python-connector-api.html#connect\n        'options': {\n            # examples:\n            'role': 'my_role',\n            # to use native okta authenticators:\n            # https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-use#native-sso-okta-only\n            'authenticator': 'https://example.okta.com',\n            # to use private key authentication:\n            'private_key_file': '<path>/rsa_key.p8',\n            'private_key_file_pwd': 'my_passphrase',\n        },\n    },\n}\n```\n\n## persistent connections\n\nto use persisent connections, set django's [`conn_max_age`](https://docs.djangoproject.com/en/stable/ref/databases/#persistent-connections)\nand snowflake python connector's [`client_session_keep_alive`](https://docs.snowflake.com/en/sql-reference/parameters#client-session-keep-alive):\n\n```python\ndatabases = {\n    'default': {\n        # ...\n        'conn_max_age': none,\n        'options': {\n            'client_session_keep_alive': true,\n        },\n    },\n}\n```\n\n## notes on django fields\n\n- consistent with [snowflake's convention](https://docs.snowflake.com/en/sql-reference/identifiers-syntax.html),\n  this backend uppercases all database identifiers (table names, column names,\n  etc.) unless they are quoted, e.g. `db_table='\"table_name\"'`.\n\n- snowflake supports defining foreign key and unique constraints, however, it\n  doesn't enforce them. thus, django manages these constraints and `inspectdb`\n  detects them, but django won't raise `integrityerror` if they're violated.\n\n- snowflake doesn't support indexes. thus, django ignores any indexes defined\n  on models or fields.\n\n- snowflake doesn't support check constraints, so the various\n  `positiveintegerfield` model fields allow negative values (though validation\n  at the form level still works).\n\n## notes on django querysets\n\n* snowflake has\n  [limited support for subqueries](https://docs.snowflake.com/en/user-guide/querying-subqueries.html#types-supported-by-snowflake).\n\n* valid values for `queryset.explain()`'s `format` parameter are `'json'`,\n  `'tabular'`, and `'text'`. the default is `'tabular'`.\n\n## known issues and limitations\n\nthis list isn't exhaustive. if you run into a problem, consult\n`django_snowflake/features.py` to see if a similar test is skipped. please\n[create an issue on github](https://github.com/snowflake-labs/django-snowflake/issues/new)\nif you encounter an issue worth documenting.\n\n* snowflake doesn't support `last_insert_id` to retrieve the id of a newly\n  created object. instead, this backend issues the query\n  `select max(pk_name) from table_name` to retrieve the id. this is subject\n  to race conditions if objects are created concurrently. this makes this\n  backend inappropriate for use in web app use cases where multiple clients\n  could be creating objects at the same time. further, you should not manually\n  specify an id (e.g. `mymodel(id=1)`) when creating an object.\n\n* snowflake only supports single layer transactions, but django's `testcase`\n  requires that the database supports nested transactions. therefore, django's\n  `testcase` operates like `transactiontestcase`, without the benefit of\n  transactions to speed it up. a future version of django (5.0 at the earliest)\n  may leverage snowflake's single layer transactions to give some speed up.\n\n* due to snowflake-connector-python's [lack of variant support](https://github.com/snowflakedb/snowflake-connector-python/issues/244),\n  some `jsonfield` queries with complex json parameters [don't work](https://github.com/snowflake-labs/django-snowflake/issues/58).\n\n  for example, if `value` is a `jsonfield`, this won't work:\n  ```python\n  >>> jsonmodel.objects.filter(value__k={\"l\": \"m\"})\n  ```\n  a workaround is:\n  ```python\n  >>> from django.db.models.expressions import rawsql\n  >>> jsonmodel.objects.filter(value__k=rawsql(\"parse_json(%s)\", ('{\"l\": \"m\"}',)))\n  ```\n  in addition, ``queryset.bulk_update()`` isn't supported for `jsonfield`.\n\n* interval math where the interval is a column\n  [is not supported](https://github.com/snowflake-labs/django-snowflake/issues/27).\n\n* interval math with a null interval\n  [crashes](https://github.com/snowflake-labs/django-snowflake/issues/26).\n\n## troubleshooting\n\n### debug logging\n\nto troubleshoot issues with connectivity to snowflake, you can enable\n[snowflake connector for python's logging](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-example#logging)\nusing [django's `logging` setting](https://docs.djangoproject.com/en/stable/topics/logging/).\n\nthis is a minimal addition to django's default `\"loggers\"` configuration that\nenables the connector's `debug` logging:\n\n```python\nlogging = {\n    \u2026\n    \"loggers\": {\n        \u2026\n        \"snowflake.connector\": {\n            \"level\": \"debug\",\n            \"handlers\": [\"console\"],\n        },\n    },\n}\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "django-snowflake",
+  "package_url": "https://pypi.org/project/django-snowflake/",
+  "project_url": "https://pypi.org/project/django-snowflake/",
+  "project_urls": {
+    "Homepage": "https://github.com/Snowflake-Labs/django-snowflake",
+    "Source": "https://github.com/Snowflake-Labs/django-snowflake",
+    "Tracker": "https://github.com/Snowflake-Labs/django-snowflake/issues"
+  },
+  "release_url": "https://pypi.org/project/django-snowflake/5.0/",
+  "requires_dist": [
+    "snowflake-connector-python (>=3.6.0)"
+  ],
+  "requires_python": ">=3.10",
+  "summary": "django backend for snowflake",
+  "version": "5.0",
+  "releases": [],
+  "developers": [
+    "tim_graham",
+    "timograham@gmail.com"
+  ],
+  "kwds": "django_snowflake djangoproject django snowflakedb snowflake",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_django_snowflake",
+  "homepage": "https://github.com/snowflake-labs/django-snowflake",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_snowflake_connector_python"
+  ]
+}

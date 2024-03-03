@@ -1,0 +1,29 @@
+{
+  "classifiers": [],
+  "description": "[![ci](https://github.com/taylorhakes/python-redis-cache/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/taylorhakes/python-redis-cache/actions/workflows/tests.yml/badge.svg?branch=master)\n[![pypi](https://img.shields.io/pypi/v/python-redis-cache.svg)](https://pypi.python.org/pypi/python-redis-cache)\n[![license](https://img.shields.io/github/license/taylorhakes/python-redis-cache.svg)](https://github.com/taylorhakes/python-redis-cache/blob/master/license)\n\n# python-redis-cache\nsimple redis cache for python functions\n\n### requirements\n- redis 5+\n- python 3.8+ (should work in python 3.6+, but not tested)\n\n## how to install\n```\npip install python-redis-cache\n```\n\n## how to use\n```python\nfrom redis import strictredis\nfrom redis_cache import rediscache\n\nclient = strictredis(host=\"redis\", decode_responses=true)\ncache = rediscache(redis_client=client)\n\n\n@cache.cache()\ndef my_func(arg1, arg2):\n    result = some_expensive_operation()\n    return result\n\n# use the function\nmy_func(1, 2)\n\n# call it again with the same arguments and it will use cache\nmy_func(1, 2)\n\n# invalidate a single value\nmy_func.invalidate(1, 2)\n\n# invalidate all values for function\nmy_func.invalidate_all()\n```\n\n## limitations and things to know\narguments and return types must be json serializable by default. you can override the serializer, but be careful with using pickle. make sure you understand the security risks. pickle should not be used with untrusted values.\nhttps://security.stackexchange.com/questions/183966/safely-load-a-pickle-file\n`decode_responses` parameter must be `false` in redis client if you use pickle.\n\n- **ttl** - is based on the time from when it's first inserted in the cache, not based on the last access\n- **limit** - the limit will revoke keys (once it hits the limit) based on fifo, not based on lru\n\n## api\n```python\n# create the redis cache\ncache = rediscache(redis_client, prefix=\"rc\", serializer=dumps, deserializer=loads, key_serializer=none, exception_handler=none)\n\n# cache decorator to go on functions, see above\ncache.cache(ttl=..., limit=..., namespace=...) -> callable[[callable], callable]\n\n# get multiple values from the cache\ncache.mget([{\"fn\": my_func, \"args\": [1,2], \"kwargs\": {}}, ...]) -> list[any]\n\nredis\n\n# cached function api\n\n# returns a cached value, if it exists in cache. saves value in cache if it doesn't exist\ncached_func(*args, *kwargs)\n\n# invalidates a single value\ncached_func.invalidate(*args, **kwargs)\n\n# invalidates all values for cached function\ncached_func.invalidate_all()\n```\n\n- prefix - the string to prefix the redis keys with\n- serializer/deserializer - functions to convert arguments and return value to a string (user json by default)\n- ttl - the time in seconds to cache the return value\n- namespace - the string namespace of the cache. this is useful for allowing multiple functions to use the same cache. by default its `f'{function.__module__}.{function.__file__}'`\n- exception_handler - function to handle redis cache exceptions. this allows you to fall back to calling the original function or logging exceptions. function has the following signature `exception_handler(exception: exception, function: callable, args: list, kwargs: dict) -> any`. if using this handler, reraise the exception in the handler to stop execution of the function. all return results will be used even if `none`. if handler not defined, it will raise the exception and not call the original function.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "python-redis-cache",
+  "package_url": "https://pypi.org/project/python-redis-cache/",
+  "project_url": "https://pypi.org/project/python-redis-cache/",
+  "project_urls": {
+    "Homepage": "http://github.com/taylorhakes/python-redis-cache"
+  },
+  "release_url": "https://pypi.org/project/python-redis-cache/2.2.5/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "basic redis caching for functions",
+  "version": "2.2.5",
+  "releases": [],
+  "developers": [
+    "taylor_hakes"
+  ],
+  "kwds": "redis_cache redis rediscache redis_client cached_func",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python_redis_cache",
+  "homepage": "http://github.com/taylorhakes/python-redis-cache",
+  "release_count": 15,
+  "dependency_ids": []
+}

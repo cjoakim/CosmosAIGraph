@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: asyncio",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: software development"
+  ],
+  "description": "==============================\nasyncio bindings for docker.io\n==============================\n\n.. image:: https://badge.fury.io/py/aiodocker.svg\n   :target: https://badge.fury.io/py/aiodocker\n   :alt: pypi version\n\n.. image:: https://img.shields.io/pypi/pyversions/aiodocker.svg\n   :target: https://pypi.org/project/aiodocker/\n   :alt: python versions\n\n.. image:: https://travis-ci.com/aio-libs/aiodocker.svg?branch=master\n   :target: https://travis-ci.com/aio-libs/aiodocker\n   :alt: build status\n\n.. image:: https://codecov.io/gh/aio-libs/aiodocker/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/aio-libs/aiodocker\n   :alt: code coverage\n\n.. image:: https://badges.gitter.im/join%20chat.svg\n    :target: https://gitter.im/aio-libs/lobby\n    :alt: chat on gitter\n\na simple docker http api wrapper written with asyncio and aiohttp.\n\n\ninstallation\n============\n\n.. code-block:: sh\n\n   pip install aiodocker\n\ndocumentation\n=============\n\nhttp://aiodocker.readthedocs.io\n\n\nexamples\n========\n\n.. code-block:: python\n\n   import asyncio\n   import aiodocker\n\n   async def list_things():\n       docker = aiodocker.docker()\n       print('== images ==')\n       for image in (await docker.images.list()):\n           tags = image['repotags'][0] if image['repotags'] else ''\n           print(image['id'], tags)\n       print('== containers ==')\n       for container in (await docker.containers.list()):\n           print(f\" {container._id}\")\n       await docker.close()\n\n   async def run_container():\n       docker = aiodocker.docker()\n       print('== running a hello-world container ==')\n       container = await docker.containers.create_or_replace(\n           config={\n               'cmd': ['/bin/ash', '-c', 'echo \"hello world\"'],\n               'image': 'alpine:latest',\n           },\n           name='testing',\n       )\n       await container.start()\n       logs = await container.log(stdout=true)\n       print(''.join(logs))\n       await container.delete(force=true)\n       await docker.close()\n\n   if __name__ == '__main__':\n       loop = asyncio.get_event_loop()\n       loop.run_until_complete(list_things())\n       loop.run_until_complete(run_container())\n       loop.close()\n\n=======\nchanges\n=======\n\n..\n    you should *not* be adding new change log entries to this file, this\n    file is managed by towncrier. you *may* edit previous change logs to\n    fix problems like typo corrections or such.\n    to add a new change log entry, please see\n    https://pip.pypa.io/en/latest/development/#adding-a-news-entry\n    we named the news folder \"changes\".\n\n.. towncrier release notes start\n\n0.21.0 (2021-07-23)\n===================\n\nbugfixes\n--------\n\n- use ssl_context passsed to docker constructor for creating underlying connection to docker engine. (#536)\n- fix an error when attach/exec when container stops before close connection to it. (#608)\n\n\n0.20.0 (2021-07-21)\n===================\n\nbugfixes\n--------\n\n- accept auth parameter by `run()` method; it allows auto-pulling absent image from private storages. (#295)\n- fix passing of json params. (#543)\n- fix issue with unclosed response object in attach/exec. (#604)\n\n\n0.19.1 (2020-07-09)\n===================\n\nbugfixes\n--------\n\n- fix type annotations for `exec.start()`, `docker.images.pull()`,\n  `docker.images.push()`. respect default arguments again.\n\n0.19.0 (2020-07-07)\n===================\n\nfeatures\n--------\n\n- run mypy checks on the repo in the non-strict mode. (#466)\n- add ``container.rename()`` method. (#458)\n\n\nbugfixes\n--------\n\n- changed dockernetwork.delete() to return true if successful (#464)\n\n\n0.18.9 (2020-07-07)\n===================\n\nbugfixes\n--------\n\n- fix closing of the task fetching docker's event stream and make it re-openable after closing (#448)\n- fix type annotations for pull() and push() methods. (#465)\n\n\nmisc\n----\n\n- #442\n\n\n0.18.8 (2020-05-04)\n===================\n\nbugfixes\n--------\n\n- don't send ``null`` for empty body.\n\n\n0.18.7 (2020-05-04)\n===================\n\nbugfixes\n--------\n\n- fix some typing errors\n\n\n0.18.1 (2020-04-01)\n===================\n\nbugfixes\n--------\n\n- improve the errror message when connection is closed by docker engine on tcp hijacking. (#424)\n\n\n0.18.0 (2020-03-25)\n===================\n\nfeatures\n--------\n\n- improve the error text message if cannot connect to docker engine. (#411)\n- rename `websocket()` to `attach()` (#412)\n- implement docker exec protocol. (#415)\n- implement container commit, pause and unpause functionality. (#418)\n- implement auto-versioning of the docker api by default. (#419)\n\n\nbugfixes\n--------\n\n- fix volume.delete throwing a typeerror. (#389)\n\n\n0.17.0 (2019-10-15)\n===================\n\nbugfixes\n--------\n\n- fixed an issue when the entire tar archive was stored in ram while building the image. (#352)\n\n\n0.16.0 (2019-09-23)\n===================\n\nbugfixes\n--------\n\n- fix streaming mode for pull, push, build, stats and events. (#344)\n\n\n0.15.0 (2019-09-22)\n===================\n\nfeatures\n--------\n\n- add support for docker 17.12.1 and 18.03.1 (#164)\n- add initial support for nodes. (#181)\n- add initial support for networks. (#189)\n- add support for docker info ando docker swarm join. (#193)\n- add restart method for containers. (#200)\n- feature: add support for registry-auth when you create a service. (#215)\n- feature: add support for docker save and load api methods (#219)\n- pass params to docker events. (#223)\n- add ability to get a docker network by name or id. (#279)\n- always close response after processing, make `.logs(..., follow=true)` async iterator. (#341)\n\n\nbugfixes\n--------\n\n- fix: set timeout for docker events to 0 (no timeout) (#115)\n- fix: prevents multiple listener tasks to be created automatically (#116)\n- fix: if container.start() fails user won't get the id of the container (#128)\n- improve logging when docker socket not available. (#155)\n- fix current project version. (#156)\n- fix `update out of sequence.` (#169)\n- remove asserts used to check auth with docker registry. (#172)\n- fix: fix to parse response of docker load method as a json stream (#222)\n- fix: handle responses with 0 or missing content-length (#237)\n- fix: don't remove non-newline whitespace from multiplexed lines (#246)\n- fix docker_context.tar error (#253)\n\n\ndeprecations and removals\n-------------------------\n\n- docker.images.get has been renamed to docker.images.inspect, remove support for docker 17.06 (#164)\n- drop python 3.5 (#338)\n- drop deprecated container.copy() (#339)\n\n\nmisc\n----\n\n- #28, #167, #192, #286\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2",
+  "name": "aiodocker",
+  "package_url": "https://pypi.org/project/aiodocker/",
+  "project_url": "https://pypi.org/project/aiodocker/",
+  "project_urls": {
+    "Homepage": "https://github.com/aio-libs/aiodocker"
+  },
+  "release_url": "https://pypi.org/project/aiodocker/0.21.0/",
+  "requires_dist": [
+    "aiohttp (>=3.6)",
+    "typing-extensions (>=3.6.5)"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "docker api client for asyncio",
+  "version": "0.21.0",
+  "releases": [],
+  "developers": [
+    "paul_tagliamonte",
+    "paultag@debian.org"
+  ],
+  "kwds": "aiodocker asyncio docker dockernetwork pyversions",
+  "license_kwds": "apache 2",
+  "libtype": "pypi",
+  "id": "pypi_aiodocker",
+  "homepage": "https://github.com/aio-libs/aiodocker",
+  "release_count": 38,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_typing_extensions"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "\n\n<p align=\"center\">\n  <img height=\"100\" src=\"https://github.com/qdrant/qdrant/raw/master/docs/logo.svg\" alt=\"qdrant\">\n</p>\n\n<p align=\"center\">\n    <b>python client library for the <a href=\"https://github.com/qdrant/qdrant\">qdrant</a> vector search engine.</b>\n</p>\n\n\n<p align=center>\n    <a href=\"https://pypi.org/project/qdrant-client/\"><img src=\"https://badge.fury.io/py/qdrant-client.svg\" alt=\"pypi version\" height=\"18\"></a>\n    <a href=\"https://qdrant.github.io/qdrant/redoc/index.html\"><img src=\"https://img.shields.io/badge/docs-openapi%203.0-success\" alt=\"openapi docs\"></a>\n    <a href=\"https://github.com/qdrant/qdrant-client/blob/master/license\"><img src=\"https://img.shields.io/badge/license-apache%202.0-success\" alt=\"apache 2.0 license\"></a>\n    <a href=\"https://qdrant.to/discord\"><img src=\"https://img.shields.io/badge/discord-qdrant-5865f2.svg?logo=discord\" alt=\"discord\"></a>\n    <a href=\"https://qdrant.to/roadmap\"><img src=\"https://img.shields.io/badge/roadmap-2023-bc1439.svg\" alt=\"roadmap 2023\"></a>\n    <a href=\"https://python-client.qdrant.tech/\"><img src=\"docs/images/api-icon.svg\" width=\"30px\"></a>\n</p>\n\n# python qdrant client\n\nclient library and sdk for the [qdrant](https://github.com/qdrant/qdrant) vector search engine. python client api documentation is available [here](https://python-client.qdrant.tech/).\n\nlibrary contains type definitions for all qdrant api and allows to make both sync and async requests.\n\nclient allows calls for all [qdrant api methods](https://qdrant.github.io/qdrant/redoc/index.html) directly.\nit also provides some additional helper methods for frequently required operations, e.g. initial collection uploading.\n\nsee [quickstart](https://qdrant.tech/documentation/quick-start/#create-collection) for more details!\n\n## installation\n\n```\npip install qdrant-client\n```\n\n## features\n\n- type hints for all api methods\n- local mode - use same api without running server\n- rest and grpc support\n- minimal dependencies\n- extensive test coverage\n\n## local mode\n\n<p align=\"center\">\n  <!--- https://github.com/qdrant/qdrant-client/raw/master -->\n  <img max-height=\"180\" src=\"https://github.com/qdrant/qdrant-client/raw/master/docs/images/try-develop-deploy.png\" alt=\"qdrant\">\n</p>\n\npython client allows you to run same code in local mode without running qdrant server.\n\nsimply initialize client like this:\n\n```python\nfrom qdrant_client import qdrantclient\n\nclient = qdrantclient(\":memory:\")\n# or\nclient = qdrantclient(path=\"path/to/db\")  # persists changes to disk\n```\n\nlocal mode is useful for development, prototyping and testing.\n\n- you can use it to run tests in your ci/cd pipeline.\n- run it in colab or jupyter notebook, no extra dependencies required. see an [example](https://colab.research.google.com/drive/1bz8rsvhwnndantdwotfpj0w7ayzsdxz-?usp=sharing)\n- when you need to scale, simply switch to server mode.\n\n## fast embeddings + simpler api\n\n```\npip install qdrant-client[fastembed]\n```\n\nfastembed is a library for creating fast vector embeddings on cpu. it is based on onnx runtime and allows to run inference on cpu with gpu-like performance.\n\nqdrant client can use fastembed to create embeddings and upload them to qdrant. this allows to simplify api and make it more intuitive.\n\n```python\nfrom qdrant_client import qdrantclient\n\n# initialize the client\nclient = qdrantclient(\":memory:\")  # or qdrantclient(path=\"path/to/db\")\n\n# prepare your documents, metadata, and ids\ndocs = [\"qdrant has langchain integrations\", \"qdrant also has llama index integrations\"]\nmetadata = [\n    {\"source\": \"langchain-docs\"},\n    {\"source\": \"linkedin-docs\"},\n]\nids = [42, 2]\n\n# use the new add method\nclient.add(\n    collection_name=\"demo_collection\",\n    documents=docs,\n    metadata=metadata,\n    ids=ids\n)\n\nsearch_result = client.query(\n    collection_name=\"demo_collection\",\n    query_text=\"this is a query document\"\n)\nprint(search_result)\n```\n\n## connect to qdrant server\n\nto connect to qdrant server, simply specify host and port:\n\n```python\nfrom qdrant_client import qdrantclient\n\nclient = qdrantclient(host=\"localhost\", port=6333)\n# or\nclient = qdrantclient(url=\"http://localhost:6333\")\n```\n\nyou can run qdrant server locally with docker:\n\n```bash\ndocker run -p 6333:6333 qdrant/qdrant:latest\n```\n\nsee more launch options in [qdrant repository](https://github.com/qdrant/qdrant#usage).\n\n\n## connect to qdrant cloud\n\nyou can register and use [qdrant cloud](https://cloud.qdrant.io/) to get a free tier account with 1gb ram.\n\nonce you have your cluster and api key, you can connect to it like this:\n\n```python\nfrom qdrant_client import qdrantclient\n\nqdrant_client = qdrantclient(\n    url=\"https://xxxxxx-xxxxx-xxxxx-xxxx-xxxxxxxxx.us-east.aws.cloud.qdrant.io:6333\",\n    api_key=\"<your-api-key>\",\n)\n```\n\n## examples\n\n\ncreate a new collection\n```python\nfrom qdrant_client.models import distance, vectorparams\n\nclient.recreate_collection(\n    collection_name=\"my_collection\",\n    vectors_config=vectorparams(size=100, distance=distance.cosine),\n)\n```\n\ninsert vectors into a collection\n\n```python\nimport numpy as np\nfrom qdrant_client.models import pointstruct\n\nvectors = np.random.rand(100, 100)\nclient.upsert(\n    collection_name=\"my_collection\",\n    points=[\n        pointstruct(\n            id=idx,\n            vector=vector.tolist(),\n            payload={\"color\": \"red\", \"rand_number\": idx % 10}\n        )\n        for idx, vector in enumerate(vectors)\n    ]\n)\n```\n\nsearch for similar vectors\n\n```python\nquery_vector = np.random.rand(100)\nhits = client.search(\n    collection_name=\"my_collection\",\n    query_vector=query_vector,\n    limit=5  # return 5 closest points\n)\n```\n\nsearch for similar vectors with filtering condition\n\n```python\nfrom qdrant_client.models import filter, fieldcondition, range\n\nhits = client.search(\n    collection_name=\"my_collection\",\n    query_vector=query_vector,\n    query_filter=filter(\n        must=[  # these conditions are required for search results\n            fieldcondition(\n                key='rand_number',  # condition based on values of `rand_number` field.\n                range=range(\n                    gte=3  # select only those results where `rand_number` >= 3\n                )\n            )\n        ]\n    ),\n    limit=5  # return 5 closest points\n)\n```\n\nsee more examples in our [documentation](https://qdrant.tech/documentation/)!\n\n### grpc\n\nto enable (typically, much faster) collection uploading with grpc, use the following initialization:\n\n```python\nfrom qdrant_client import qdrantclient\n\nclient = qdrantclient(host=\"localhost\", grpc_port=6334, prefer_grpc=true)\n```\n\n\n## async client\n\nstarting from version 1.6.1, all python client methods are available in async version.\n\nto use it, just import `asyncqdrantclient` instead of `qdrantclient`:\n\n```python\nfrom qdrant_client import asyncqdrantclient, models\nimport numpy as np\nimport asyncio\n\nasync def main():\n    # your async code using qdrantclient might be put here\n    client = asyncqdrantclient(url=\"http://localhost:6333\")\n\n    await client.create_collection(\n        collection_name=\"my_collection\",\n        vectors_config=models.vectorparams(size=10, distance=models.distance.cosine),\n    )\n\n    await client.upsert(\n        collection_name=\"my_collection\",\n        points=[\n            models.pointstruct(\n                id=i,\n                vector=np.random.rand(10).tolist(),\n            )\n            for i in range(100)\n        ],\n    )\n\n    res = await client.search(\n        collection_name=\"my_collection\",\n        query_vector=np.random.rand(10).tolist(),  # type: ignore\n        limit=10,\n    )\n\n    print(res)\n\nasyncio.run(main())\n```\n\nboth, grpc and rest api are supported in async mode.\nmore examples can be found [here](./tests/test_async_qdrant_client.py).\n\n### development\n\nthis project uses git hooks to run code formatters.\n\ninstall `pre-commit` with `pip3 install pre-commit` and set up hooks with `pre-commit install`.\n\n> pre-commit requires python>=3.8\n\n",
+  "docs_url": null,
+  "keywords": "vector,search,neural,matching,client",
+  "license": "apache-2.0",
+  "name": "qdrant-client",
+  "package_url": "https://pypi.org/project/qdrant-client/",
+  "project_url": "https://pypi.org/project/qdrant-client/",
+  "project_urls": {
+    "Homepage": "https://github.com/qdrant/qdrant-client",
+    "Repository": "https://github.com/qdrant/qdrant-client"
+  },
+  "release_url": "https://pypi.org/project/qdrant-client/1.7.0/",
+  "requires_dist": [
+    "fastembed (==0.1.1) ; (python_version < \"3.12\") and (extra == \"fastembed\")",
+    "grpcio (>=1.41.0)",
+    "grpcio-tools (>=1.41.0)",
+    "httpx[http2] (>=0.14.0)",
+    "numpy (<1.21) ; python_version < \"3.8\"",
+    "numpy (>=1.21) ; python_version >= \"3.8\" and python_version < \"3.12\"",
+    "numpy (>=1.26) ; python_version >= \"3.12\"",
+    "portalocker (>=2.7.0,<3.0.0)",
+    "pydantic (>=1.10.8)",
+    "urllib3 (>=1.26.14,<2.0.0)"
+  ],
+  "requires_python": ">=3.8,<3.13",
+  "summary": "client library for the qdrant vector search engine",
+  "version": "1.7.0",
+  "releases": [],
+  "developers": [
+    "andrey@qdrant.tech",
+    "andrey_vasnetsov"
+  ],
+  "kwds": "qdrant_client qdrantclient qdrant svg search",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_qdrant_client",
+  "homepage": "https://github.com/qdrant/qdrant-client",
+  "release_count": 90,
+  "dependency_ids": [
+    "pypi_fastembed",
+    "pypi_grpcio",
+    "pypi_grpcio_tools",
+    "pypi_httpx",
+    "pypi_numpy",
+    "pypi_portalocker",
+    "pypi_pydantic",
+    "pypi_urllib3"
+  ]
+}

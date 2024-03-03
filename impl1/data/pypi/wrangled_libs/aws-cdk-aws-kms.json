@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws key management service construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\ndefine a kms key:\n\n```python\nkms.key(self, \"mykey\",\n    enable_key_rotation=true\n)\n```\n\ndefine a kms key with waiting period:\n\nspecifies the number of days in the waiting period before aws kms deletes a cmk that has been removed from a cloudformation stack.\n\n```python\nkey = kms.key(self, \"mykey\",\n    pending_window=duration.days(10)\n)\n```\n\nadd a couple of aliases:\n\n```python\nkey = kms.key(self, \"mykey\")\nkey.add_alias(\"alias/foo\")\nkey.add_alias(\"alias/bar\")\n```\n\ndefine a key with specific key spec and key usage:\n\nvalid `keyspec` values depends on `keyusage` value.\n\n```python\nkey = kms.key(self, \"mykey\",\n    key_spec=kms.keyspec.ecc_secg_p256k1,  # default to symmetric_default\n    key_usage=kms.keyusage.sign_verify\n)\n```\n\n## sharing keys between stacks\n\nto use a kms key in a different stack in the same cdk application,\npass the construct to the other stack:\n\n```python\n#\n# stack that defines the key\n#\nclass keystack(cdk.stack):\n\n    def __init__(self, scope, id, *, description=none, env=none, stackname=none, tags=none, synthesizer=none, terminationprotection=none, analyticsreporting=none):\n        super().__init__(scope, id, description=description, env=env, stackname=stackname, tags=tags, synthesizer=synthesizer, terminationprotection=terminationprotection, analyticsreporting=analyticsreporting)\n        self.key = kms.key(self, \"mykey\", removal_policy=cdk.removalpolicy.destroy)\n\n#\n# stack that uses the key\n#\nclass usestack(cdk.stack):\n    def __init__(self, scope, id, *, key, description=none, env=none, stackname=none, tags=none, synthesizer=none, terminationprotection=none, analyticsreporting=none):\n        super().__init__(scope, id, key=key, description=description, env=env, stackname=stackname, tags=tags, synthesizer=synthesizer, terminationprotection=terminationprotection, analyticsreporting=analyticsreporting)\n\n        # use the ikey object here.\n        kms.alias(self, \"alias\",\n            alias_name=\"alias/foo\",\n            target_key=key\n        )\n\nkey_stack = keystack(app, \"keystack\")\nusestack(app, \"usestack\", key=key_stack.key)\n```\n\n## importing existing keys\n\n### import key by arn\n\nto use a kms key that is not defined in this cdk app, but is created through other means, use\n`key.fromkeyarn(parent, name, ref)`:\n\n```python\nmy_key_imported = kms.key.from_key_arn(self, \"myimportedkey\", \"arn:aws:...\")\n\n# you can do stuff with this imported key.\nmy_key_imported.add_alias(\"alias/foo\")\n```\n\nnote that a call to `.addtoresourcepolicy(statement)` on `mykeyimported` will not have\nan affect on the key's policy because it is not owned by your stack. the call\nwill be a no-op.\n\n### import key by alias\n\nif a key has an associated alias, the alias can be imported by name and used in place\nof the key as a reference. a common scenario for this is in referencing aws managed keys.\n\n```python\nimport aws_cdk.aws_cloudtrail as cloudtrail\n\n\nmy_key_alias = kms.alias.from_alias_name(self, \"mykey\", \"alias/aws/s3\")\ntrail = cloudtrail.trail(self, \"mycloudtrail\",\n    send_to_cloud_watch_logs=true,\n    kms_key=my_key_alias\n)\n```\n\nnote that calls to `addtoresourcepolicy` and `grant*` methods on `mykeyalias` will be\nno-ops, and `addalias` and `aliastargetkey` will fail, as the imported alias does not\nhave a reference to the underlying kms key.\n\n### lookup key by alias\n\nif you can't use a kms key imported by alias (e.g. because you need access to the key id), you can lookup the key with `key.fromlookup()`.\n\nin general, the preferred method would be to use `alias.fromaliasname()` which returns an `ialias` object which extends `ikey`. however, some services need to have access to the underlying key id. in this case, `key.fromlookup()` allows to lookup the key id.\n\nthe result of the `key.fromlookup()` operation will be written to a file\ncalled `cdk.context.json`. you must commit this file to source control so\nthat the lookup values are available in non-privileged environments such\nas ci build steps, and to ensure your template builds are repeatable.\n\nhere's how `key.fromlookup()` can be used:\n\n```python\nmy_key_lookup = kms.key.from_lookup(self, \"mykeylookup\",\n    alias_name=\"alias/keyalias\"\n)\n\nrole = iam.role(self, \"myrole\",\n    assumed_by=iam.serviceprincipal(\"lambda.amazonaws.com\")\n)\nmy_key_lookup.grant_encrypt_decrypt(role)\n```\n\nnote that a call to `.addtoresourcepolicy(statement)` on `mykeylookup` will not have\nan affect on the key's policy because it is not owned by your stack. the call\nwill be a no-op.\n\n## key policies\n\ncontrolling access and usage of kms keys requires the use of key policies (resource-based policies attached to the key);\nthis is in contrast to most other aws resources where access can be entirely controlled with iam policies,\nand optionally complemented with resource policies. for more in-depth understanding of kms key access and policies, see\n\n* https://docs.aws.amazon.com/kms/latest/developerguide/control-access-overview.html\n* https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html\n\nkms keys can be created to trust iam policies. this is the default behavior for both the kms apis and in\nthe console. this behavior is enabled by the '@aws-cdk/aws-kms:defaultkeypolicies' feature flag,\nwhich is set for all new projects; for existing projects, this same behavior can be enabled by\npassing the `trustaccountidentities` property as `true` when creating the key:\n\n```python\nkms.key(self, \"mykey\", trust_account_identities=true)\n```\n\nwith either the `@aws-cdk/aws-kms:defaultkeypolicies` feature flag set,\nor the `trustaccountidentities` prop set, the key will be given the following default key policy:\n\n```json\n{\n  \"effect\": \"allow\",\n  \"principal\": {\"aws\": \"arn:aws:iam::111122223333:root\"},\n  \"action\": \"kms:*\",\n  \"resource\": \"*\"\n}\n```\n\nthis policy grants full access to the key to the root account user.\nthis enables the root account user -- via iam policies -- to grant access to other iam principals.\nwith the above default policy, future permissions can be added to either the key policy or iam principal policy.\n\n```python\nkey = kms.key(self, \"mykey\")\nuser = iam.user(self, \"myuser\")\nkey.grant_encrypt(user)\n```\n\nadopting the default kms key policy (and so trusting account identities)\nsolves many issues around cyclic dependencies between stacks.\nwithout this default key policy, future permissions must be added to both the key policy and iam principal policy,\nwhich can cause cyclic dependencies if the permissions cross stack boundaries.\n(for example, an encrypted bucket in one stack, and lambda function that accesses it in another.)\n\n### appending to or replacing the default key policy\n\nthe default key policy can be amended or replaced entirely, depending on your use case and requirements.\na common addition to the key policy would be to add other key admins that are allowed to administer the key\n(e.g., change permissions, revoke, delete). additional key admins can be specified at key creation or after\nvia the `grantadmin` method.\n\n```python\nmy_trusted_admin_role = iam.role.from_role_arn(self, \"trustedrole\", \"arn:aws:iam:....\")\nkey = kms.key(self, \"mykey\",\n    admins=[my_trusted_admin_role]\n)\n\nsecond_key = kms.key(self, \"mykey2\")\nsecond_key.grant_admin(my_trusted_admin_role)\n```\n\nalternatively, a custom key policy can be specified, which will replace the default key policy.\n\n> **note**: in applications without the '@aws-cdk/aws-kms:defaultkeypolicies' feature flag set\n> and with `trustedaccountidentities` set to false (the default), specifying a policy at key creation *appends* the\n> provided policy to the default key policy, rather than *replacing* the default policy.\n\n```python\nmy_trusted_admin_role = iam.role.from_role_arn(self, \"trustedrole\", \"arn:aws:iam:....\")\n# creates a limited admin policy and assigns to the account root.\nmy_custom_policy = iam.policydocument(\n    statements=[iam.policystatement(\n        actions=[\"kms:create*\", \"kms:describe*\", \"kms:enable*\", \"kms:list*\", \"kms:put*\"\n        ],\n        principals=[iam.accountrootprincipal()],\n        resources=[\"*\"]\n    )]\n)\nkey = kms.key(self, \"mykey\",\n    policy=my_custom_policy\n)\n```\n\n> **warning:** replacing the default key policy with one that only grants access to a specific user or role\n> runs the risk of the key becoming unmanageable if that user or role is deleted.\n> it is highly recommended that the key policy grants access to the account root, rather than specific principals.\n> see https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html for more information.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-kms",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-kms/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-kms/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-kms/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.cloud-assembly-schema (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "aws-cdk.cx-api (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::kms",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk kms_key aws_cloudtrail cdk aws",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_kms",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.cloud_assembly_schema",
+    "pypi_aws_cdk.core",
+    "pypi_aws_cdk.cx_api",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

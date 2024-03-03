@@ -1,0 +1,54 @@
+{
+  "classifiers": [],
+  "description": "cuv'ner\n=======\n\n\"a commanding view of your test-coverage\"\n\n.. image:: https://readthedocs.org/projects/cuvner/badge/?version=latest\n    :target: https://cuvner.readthedocs.io/en/latest/\n    :alt: readthedocs\n\n\nthe command-line tool ``cuv`` provided by this package gives some\nuseful tools to visualize your project's coverage data. this means you\nmust first run `coverage`_ against your project's test-suite.\n\nonce you have a ``.coverage`` file, you can use the commands\ndocumented below (or just type ``cuv`` to explore the help).\n\nwe utilize several quality open-source packages to achieve this:\n\n - `coverage`_ by ned batchelder\n - `click`_ by armin ronacher / pocoo\n - `pygments`_ by georg brandl / pocoo\n - `ansicolors`_ by giorgos verigakis\n - `unidiff`_ by matias bordese\n - `source code pro`_: the best programming font\n\ncode: https://github.com/meejah/cuvner\ndocs: https://cuvner.readthedocs.org\n\n\nbackground + terminology\n------------------------\n\nthis started out as some experiments in \"whole-project coverage\nvisualization\", and then also grew some console tools that i find\nuseful when working with python code.\n\ni have abandoned the pixel/graphical visualization ideas and\nproofs-of-concepts into a branch and now this tool is `just` the\nconsole visualizations -- which are very useful when working on python\ncode.\n\nas far as my setup, i am using debian with a 256-color and unicode\ncapable shell using solarized dark color schemes. there are probably\nbugs with other setups, and to a reasonable extent i'm happy to accept\npull-reqeusts fixing these. that said, a unicode-capable shell is a\nmust.\n\n\nother neat visualizations\n~~~~~~~~~~~~~~~~~~~~~~~~~\n\nother nice \"coverage visualization\" tools i've run across:\n\n- of course, `coverage.py\n  <http://coverage.readthedocs.org/en/latest/>`_ itself comes with a\n  nice html visualization\n- `emacs-coverage <https://github.com/trezona-lecomte/coverage>`_\n- `codecov.io browser extension\n  <https://github.com/codecov/browser-extension>`_ shows coverage live\n  while browsing github\n\n\nnotes on tox\n------------\n\nif you're using `tox`_ to run tests (and you should, it's great!) your\ncoverage files will -- depending upon setup -- end up in\n``.tox/envname/.coverage`` or similar. so, you will either need to use\n``--coverage`` to point cuv'ner at the right file, or simply move it to\nthe top-level of your project for ease-of-use.\n\n\npro tip(tm)\n-----------\n\nthe \"uncovered\" lines start with a slightly different unicode\ncharacter than the \"covered\" lines, so if you're trying to write tests\nfor uncovered things, you can do this on the \"next file that has\nuncovered things\":\n\n``cuv src/file.py | less -p \u258c -j 4``\n\nthat says (since ``cuv lessopen`` is the \"default\" command) to run\n``cuv lessopen`` on ``src/file.py`` and then , in less, jump to the\nfirst uncovered line and place it 4 lines below the top of the\nscreen. you can then hit ``n`` in less to go to the next one.\n\nthis is precisely what the ``cuv next`` command does.\n\n\nconsole visualizations\n----------------------\n\nthe two main tools usable directly in the console are ``cuv graph``\nand ``cuv lessopen`` (which can be tied directly into ``less`` via the\n``lessopen`` environment variable). for determining coverage of\nbranches or individual commits, use ``cuv diff``. ``cuv spark`` can\nprovide a quick overview of a project's coverage.\n\n\n``cuv graph``\n~~~~~~~~~~~~~\n\n.. image:: ../screenshots/cuvner-graph-txtorcon.png\n    :alt: console graph, showing txtorcon code\n\nthis displays all the files in your project and a histogram-like graph\nof their coverage. each character represents 8 lines of code, and uses\na group of unicode characters (0x2580 through 0x2587) to draw a little\ngraph. so, if those 8 lines are not covered at all, the graph will be\nall red; if they're all covered, it will be all green. if 2 out of the\n8 lines are covered, there will be about 25% green and the rest red.\n\nthe total size of each file can thus be easily seen (by the length of\nthe histogram part, which wraps to subsequent lines if needed) and an\nidea of which parts are covered is given.\n\ntodo:\n\n - testing on more terminal types\n - how does it look when using something besides solarized dark?\n - useful, beyond eye-candy?\n\n\n``cuv lessopen``\n~~~~~~~~~~~~~~~~\n\n.. image:: ../screenshots/cuvner-lessopen-twisted.png\n    :alt: pygments + coverage coloring in console\n\nthis command is intended to be used via the ``lessopen`` environment\nvariable, which lets you pre-process files that are opened with\n``less``. so, once set up (see the help via ``cuv lessopen --help``)\nyou can simply run ``less`` on any file in your project, and it will\nget syntax-highlighted and show you the line-by-line coverage with a\nleading green or red mini-verical bar and red background (for\nuncovered lines).\n\na header appears at the top showing the total coverage for this\nparticular file.\n\ntodo:\n\n - probably the \"proper\" way to do this is via a `pygments`_ plugin or\n   extension of some sort\n - option to change which `pygments`_ style is used\n - dark/light background option?\n\n\n``cuv diff``\n~~~~~~~~~~~~\n\n.. image:: ../screenshots/cuvner-diff-txtorcon.png\n    :alt: showing \"cuv diff\" colouring\n\nyou can pipe a ``git diff`` to this and see a colorized version of the\ndiff in your console. i am using a library called `unidiff`_ to read\nthe actual diff, which so far works quite nicely. that said, i've only\ntried against the output of git, like so::\n\n   git diff | cuv diff | less\n\ntodo:\n\n - colors are unsatisfying, since for added lines they're pretty much\n   the same as git's colored output\n - maybe make it look more like the \"real\" underlying diff?\n   (e.g. re-create the @@ and so forth things)\n - does it work with merge commits?\n\n\n``cuv report``\n~~~~~~~~~~~~~~\n\nanalyzes a diff file (similar to ``cuv diff``) but outputs some brief\nstatistics instead of the whole diff. for example::\n\n   $ git diff master.. | cuv report -\n   98.7%: 986 covered of 999 added lines (leaving 13 missing)\n\n\n``cuv spark``\n~~~~~~~~~~~~~\n\n.. image:: ../screenshots/cuvner-spark-txtorcon.png\n    :alt: spark-line coverage of txtorcon\n\nthis shows a \"spark-line\" sort of thing in the console. it's not very\nuseful for big projects (e.g. twisted), but gives a very quick\noverview of the coverage in a small amount of space. using the same\nunicode characters as ``cuv graph``, this represents each file as a\nsingle character, and its percentage coverage is graphed (so you only\nget granularity down to about 12.5%).\n\n\n.. _tox: https://tox.readthedocs.org/en/latest/\n.. _coverage: https://coverage.readthedocs.org/en/latest/\n.. _pygments: http://pygments.org/\n.. _twisted: https://twistedmatrix.org/\n.. _txtorcon: https://meejah.ca/projects/txtorcon\n.. _click: http://click.pocoo.org/\n.. _source code pro: http://adobe-fonts.github.io/source-code-pro/\n.. _ansicolors: https://github.com/verigak/colors/\n.. _unidiff: https://github.com/matiasb/python-unidiff\n\n\n",
+  "docs_url": null,
+  "keywords": "python,coverage",
+  "license": "mit",
+  "name": "cuvner",
+  "package_url": "https://pypi.org/project/cuvner/",
+  "project_url": "https://pypi.org/project/cuvner/",
+  "project_urls": {
+    "Homepage": "https://meejah.ca/projects/cuvner"
+  },
+  "release_url": "https://pypi.org/project/cuvner/22.4.0/",
+  "requires_dist": [
+    "pygments",
+    "click",
+    "ansicolors (==1.0.2)",
+    "coverage",
+    "six",
+    "incremental",
+    "unidiff",
+    "watchdog",
+    "Sphinx ; extra == 'dev'",
+    "wheel ; extra == 'dev'",
+    "twine ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "a commanding (terminal) view of your test-coverage.",
+  "version": "22.4.0",
+  "releases": [],
+  "developers": [
+    "meejah",
+    "meejah@meejah.ca"
+  ],
+  "kwds": "_coverage coverage tests testing test",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_cuvner",
+  "homepage": "https://meejah.ca/projects/cuvner",
+  "release_count": 28,
+  "dependency_ids": [
+    "pypi_ansicolors",
+    "pypi_click",
+    "pypi_coverage",
+    "pypi_incremental",
+    "pypi_pygments",
+    "pypi_six",
+    "pypi_sphinx",
+    "pypi_twine",
+    "pypi_unidiff",
+    "pypi_watchdog",
+    "pypi_wheel"
+  ]
+}

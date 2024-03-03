@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: system :: logging"
+  ],
+  "description": "# installation\n\n```\npip install splunk-hec-handler\n```\n\n# features\n1. log messages to splunk via http event collector (hec).\nsee [splunk hec documentation](http://docs.splunk.com/documentation/splunk/latest/data/abouthec)\n2. all messages are logged as '_json' sourcetype by default.\n3. a dictionary with 'log_level' and 'message' keys are constructed for logging records of type string.\n\n![string log record representation in splunk](https://github.com/vavarachen/splunk_http_handler/blob/master/resources/str_record.png)\n\n4. dictionary objects are preserved as json.\n\n![dictionary log record representation in splunk](https://github.com/vavarachen/splunk_http_handler/blob/master/resources/dict_record.png)\n\n5. if log record (dict) does not contains a 'time' field,  one is added with the value set to current time.\n\n# examples\n\n## basic\n```python\nimport logging\nfrom splunk_hec_handler import splunkhechandler\nlogger = logging.getlogger('splunkhechandlerexample')\nlogger.setlevel(logging.debug)\n\n# if using self-signed certificate, set ssl_verify to false\n# if using http, set proto to http\nsplunk_handler = splunkhechandler('splunkfw.domain.tld',\n                    'ea33046c-6fec-4dc0-ac66-4326e58b54c3',\n                    port=8888, proto='https', ssl_verify=true,\n                    source=\"hec_example\")\nlogger.addhandler(splunk_handler)\n```\n\nfollowing should result in a splunk entry with _time set to current timestamp.\n\n```python\nlogger.info(\"testing splunk hec info message\")\n```\n\n![basic example](https://github.com/vavarachen/splunk_http_handler/blob/master/resources/basic_example.png)\n\nfollowing should result in a splunk entry of monday, 08/06/2018 4:33:43 am, and contain two\ncustom fields (color, api_endpoint).  custom fields can be seen in verbose mode. \n\n```python\ndict_obj = {'time': 1533530023, 'fields': {'color': 'yellow', 'api_endpoint': '/results'},\n                    'user': 'foobar', 'app': 'my demo', 'severity': 'low', 'error codes': [1, 23, 34, 456]}\nlogger.error(dict_obj)\n```\n\n![fields example](https://github.com/vavarachen/splunk_http_handler/blob/master/resources/fields_example.png)\n\n:warning: in order to use custom fields, 'sourcetype' property must be specified in the event \nand sourcetype definition must enable *indexed field extractions*.\n\n\nsee http://dev.splunk.com/view/event-collector/sp-caaae6p for 'fields'\n\n## advanced\nusing 'fields', many of the metadata fields associated with an event can be changed from the default.  additionally, new\nfields, which are not part of the event, can be also added.\n\nin the following example, we are sending events to two different indexes (see \"select allowed indexes (optional)\" setting)\nand overriding 'host', 'source', 'sourcetype' fields, while adding some new fields ('color', 'api_endpoint').\n\n```python\nimport logging\nfrom splunk_hec_handler import splunkhechandler\n\nlogger = logging.getlogger('splunkhechandlerexample')\nlogger.setlevel(logging.debug)\n\nstream_handler = logging.streamhandler()\nstream_handler.level = logging.debug\nlogger.addhandler(stream_handler)\n\ntoken = \"ea33046c-6fec-4dc0-ac66-4326e58b54c3'\nsplunk_handler = splunkhechandler('splunkfw.domain.tld',\n                                 token, index=\"hec\",\n                                 port=8080, proto='https', ssl_verify=false\n                                 source=\"evtx2json\", sourcetype='xxxxxxxx_json')\nlogger.addhandler(splunk_handler)\n\n\ndict_obj = {'fields': {'color': 'yellow', 'api_endpoint': '/results', 'host': 'app01', 'index':'hec'},\n            'user': 'foobar', 'app': 'my demo', 'severity': 'low', 'error codes': [1, 23, 34, 456]}\nlogger.info(dict_obj)\n\nlog_summary_evt = {'fields': {'index': 'adhoc', 'sourcetype': '_json', 'source': 'adv_example'}, 'exit code': 0, 'events logged': 100}\nlogger.debug(log_summary_evt)\n```\n\n![advanced fields example](https://github.com/vavarachen/splunk_http_handler/blob/master/resources/advanced_example.png)\n\n\n# todo\n1. event acknowledgement support\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "splunk-hec-handler",
+  "package_url": "https://pypi.org/project/splunk-hec-handler/",
+  "project_url": "https://pypi.org/project/splunk-hec-handler/",
+  "project_urls": {
+    "Homepage": "https://github.com/vavarachen/splunk_hec_handler"
+  },
+  "release_url": "https://pypi.org/project/splunk-hec-handler/1.2.0/",
+  "requires_dist": [
+    "requests (<3.0.0,>=2.6.0)",
+    "requests"
+  ],
+  "requires_python": "",
+  "summary": "a python logging handler to sends logs to splunk using http event collector (hec)",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "vavarachen",
+    "vavarachen@gmail.com"
+  ],
+  "kwds": "splunk_hec_handler splunk_handler splunk_http_handler splunk splunkfw",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_splunk_hec_handler",
+  "homepage": "https://github.com/vavarachen/splunk_hec_handler",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

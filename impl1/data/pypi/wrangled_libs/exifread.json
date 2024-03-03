@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: end users/desktop",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: utilities"
+  ],
+  "description": "*******\nexif.py\n*******\n\neasy to use python module to extract exif metadata from digital image files.\n\nsupported formats: tiff, jpeg, png, webp, heic\n\n\ncompatibility\n*************\n\nexif.py is tested and officially supported on python 3.5 to 3.10\n\nstarting with version ``3.0.0``, python2 compatibility is dropped *completely* (syntax errors due to type hinting).\n\nhttps://pythonclock.org/\n\n\ninstallation\n************\n\nstable version\n==============\nthe recommended process is to install the `pypi package <https://pypi.python.org/pypi/exifread>`_,\nas it allows easily staying up to date::\n\n    $ pip install exifread\n\nsee the `pip documentation <https://pip.pypa.io/en/latest/user_guide.html>`_ for more info.\n\nexif.py is mature software and strives for stability.\n\ndevelopment version\n===================\n\nafter cloning the repo, use the provided makefile::\n\n  make venv reqs-install\n\nwhich will install a virtual environment and install development dependencies.\n\nusage\n*****\n\ncommand line\n============\n\nsome examples::\n\n    exif.py image1.jpg\n    exif.py -dc image1.jpg image2.tiff\n    find ~/pictures -name \"*.jpg\" -o -name \"*.tiff\" | xargs exif.py\n\nshow command line options::\n\n    exif.py -h\n\npython script\n=============\n\n.. code-block:: python\n\n    import exifread\n    # open image file for reading (must be in binary mode)\n    f = open(path_name, 'rb')\n\n    # return exif tags\n    tags = exifread.process_file(f)\n\n*note:* to use this library in your project as a git submodule, you should::\n\n    from <submodule_folder> import exifread\n\nreturned tags will be a dictionary mapping names of exif tags to their\nvalues in the file named by path_name.\nyou can process the tags as you wish. in particular, you can iterate through all the tags with:\n\n.. code-block:: python\n\n    for tag in tags.keys():\n        if tag not in ('jpegthumbnail', 'tiffthumbnail', 'filename', 'exif makernote'):\n            print \"key: %s, value %s\" % (tag, tags[tag])\n\nan ``if`` statement is used to avoid printing out a few of the tags that tend to be long or boring.\n\nthe tags dictionary will include keys for all of the usual exif tags, and will also include keys for\nmakernotes used by some cameras, for which we have a good specification.\n\nnote that the dictionary keys are the ifd name followed by the tag name. for example::\n\n    'exif datetimeoriginal', 'image orientation', 'makernote focusmode'\n\n\ntag descriptions\n****************\n\ntags are divided into these main categories:\n\n- ``image``: information related to the main image (ifd0 of the exif data).\n- ``thumbnail``: information related to the thumbnail image, if present (ifd1 of the exif data).\n- ``exif``: exif information (sub-ifd).\n- ``gps``: gps information (sub-ifd).\n- ``interoperability``: interoperability information (sub-ifd).\n- ``makernote``: manufacturer specific information. there are no official published references for these tags.\n\n\nprocessing options\n******************\n\nthese options can be used both in command line mode and within a script.\n\nfaster processing\n=================\n\ndon't process makernote tags, don't extract the thumbnail image (if any).\n\npass the ``-q`` or ``--quick`` command line arguments, or as:\n\n.. code-block:: python\n\n    tags = exifread.process_file(f, details=false)\n\nstop at a given tag\n===================\n\nto stop processing the file after a specified tag is retrieved.\n\npass the ``-t tag`` or ``--stop-tag tag`` argument, or as:\n\n.. code-block:: python\n\n    tags = exifread.process_file(f, stop_tag='tag')\n\nwhere ``tag`` is a valid tag name, ex ``'datetimeoriginal'``.\n\n*the two above options are useful to speed up processing of large numbers of files.*\n\nstrict processing\n=================\n\nreturn an error on invalid tags instead of silently ignoring.\n\npass the ``-s`` or ``--strict`` argument, or as:\n\n.. code-block:: python\n\n    tags = exifread.process_file(f, strict=true)\n\nusage example\n=============\n\nthis example shows how to use the library to correct the orientation of an image\n(using pillow for the transformation) before e.g. displaying it.\n\n.. code-block:: python\n\n    import exifread\n    from pil import image\n    import logging\n    \n    def _read_img_and_correct_exif_orientation(path):\n        im = image.open(path)\n        tags = {}\n        with open(path, 'rb') as f:\n            tags = exifread.process_file(f, details=false)\n        if \"image orientation\" in tags.keys():\n            orientation = tags[\"image orientation\"]\n            logging.basicconfig(level=logging.debug)\n            logging.debug(\"orientation: %s (%s)\", orientation, orientation.values)\n            val = orientation.values\n            if 2 in val:\n                val += [4, 3]\n            if 5 in val:\n                val += [4, 6]\n            if 7 in val:\n                val += [4, 8]\n            if 3 in val:\n                logging.debug(\"rotating by 180 degrees.\")\n                im = im.transpose(image.rotate_180)\n            if 4 in val:\n                logging.debug(\"mirroring horizontally.\")\n                im = im.transpose(image.flip_top_bottom)\n            if 6 in val:\n                logging.debug(\"rotating by 270 degrees.\")\n                im = im.transpose(image.rotate_270)\n            if 8 in val:\n                logging.debug(\"rotating by 90 degrees.\")\n                im = im.transpose(image.rotate_90)\n        return im\n\ncredit\n******\n\na huge thanks to all the contributors over the years!\n\noriginally written by gene cash & thierry bousch.",
+  "docs_url": null,
+  "keywords": "exif image metadata photo",
+  "license": "bsd",
+  "name": "exifread",
+  "package_url": "https://pypi.org/project/ExifRead/",
+  "project_url": "https://pypi.org/project/ExifRead/",
+  "project_urls": {
+    "Homepage": "https://github.com/ianare/exif-py"
+  },
+  "release_url": "https://pypi.org/project/ExifRead/3.0.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "read exif metadata from tiff and jpeg files.",
+  "version": "3.0.0",
+  "releases": [],
+  "developers": [
+    "ianare@gmail.com"
+  ],
+  "kwds": "exif _read_img_and_correct_exif_orientation exifread python python2",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_exifread",
+  "homepage": "https://github.com/ianare/exif-py",
+  "release_count": 19,
+  "dependency_ids": []
+}

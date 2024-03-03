@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "topic :: database",
+    "topic :: software development",
+    "topic :: software development :: testing"
+  ],
+  "description": "about\n=====\n``testing.common.database`` is utilities for testing.* package.\n\n.. image:: https://travis-ci.org/tk0miya/testing.common.database.svg?branch=master\n   :target: https://travis-ci.org/tk0miya/testing.common.database\n\n.. image:: https://codeclimate.com/github/tk0miya/testing.common.database/badges/gpa.svg\n   :target: https://codeclimate.com/github/tk0miya/testing.common.database\n\n\ninstall\n=======\nuse pip::\n\n   $ pip install testing.common.database\n\n\nhelpers\n=======\nclass database(object):\n\n    ``database`` is a base class for database testing packages.\n    to create your database testing class, inherit this class and override methods below.\n\n    def initialize(self):\n\n        handler for initialize database object.\n\n    def get_data_directory(self):\n\n        path to data directory of your databse.\n\n        example::\n\n          def get_data_directory(self):\n              return os.path.join(self.base_dir, 'data')\n\n    def initialize_database(self):\n\n        handler to initialize your database.\n\n        example::\n\n          def initialize_database(self):\n             if not os.path.exists(os.path.join(self.base_dir, 'data', 'pg_version')):\n                 args = ([self.initdb, '-d', os.path.join(self.base_dir, 'data'), '--lc-messages=c'] +\n                         self.settings['initdb_args'].split())\n\n                 try:\n                     p = subprocess.popen(args, stdout=subprocess.pipe, stderr=subprocess.pipe)\n                     output, err = p.communicate()\n                     if p.returncode != 0:\n                         raise runtimeerror(\"initdb failed: %r\" % err)\n                 except oserror as exc:\n                     raise runtimeerror(\"failed to spawn initdb: %s\" % exc)\n\n    def get_server_commandline(self):\n\n        command line to invoke your database server.\n\n        example::\n\n          def get_server_commandline(self):\n              return (['postgres',\n                       '-p', str(self.settings['port']),\n                       '-d', os.path.join(self.base_dir, 'data'),\n                       '-k', os.path.join(self.base_dir, 'tmp')] +\n                      self.settings['postgres_args'].split())\n\n    def prestart(self):\n\n        handler called before invoking your database server.\n\n    def poststart(self):\n\n        hander called after invoking your database server.\n\n    def is_server_available(self):\n\n        methods check your database server available.\n        the ``database`` class uses this method to check the server boots up.\n\n        example::\n\n          try:\n              with closing(pg8000.connect(**self.dsn(database='template1'))):\n                  pass\n          except pg8000.error:\n              return false\n          else:\n              return true\n\n    def is_alive(self):\n\n        methods check the database server is alive.\n\n    @property\n    def server_pid(self):\n\n        process id of the database server.\n\n\nclass databasefactory(object):\n\n    ``databasefactory`` is a factory class for the database class.\n    to create your database factory class, inherit this class and set ``target_class`` variable::\n\n      class postgresqlfactory(databasefactory):\n          target_class = postgresql\n\n    the factory class should work like a ``target_class``::\n\n      # the factory class generates like a ``target_class``, in this case, generates ``postgresql`` class\n      postgresql = postgresqlfactory()\n\n      # the generated class works same as ``target_class``\n      with postgresql() as pgsql:\n          #\n          # do any tests using the database ...\n          #\n\n    it can bypass parameters to the ``target_class`` on every instantiation::\n\n      postgresql = postgresqlfactory(copy_data_from='/path/to/database')\n\n      with postgresql() as pgsql:\n          #\n          # test with ``copy_data_from`` parameter :-)\n          #\n\n    also, it is able to cache the database generated at ``database.initialize_database()``\n    with ``cache_initialized_db`` parameter.\n    it avoids running database initialization on every tests::\n\n      # initialize database once\n      postgresql = postgresqlfactory(cache_initialized_db=true)\n\n      with postgresql() as pgsql:\n          # copy cached database for this test.\n\n    if you want to fixtures to the database, use ``on_initialized`` parameter::\n\n      def handler(pgsql):\n          # inserting fixtures\n\n      # initialize database once, and call ``on_initialized`` handler\n      postgresql = postgresqlfactory(cache_initialized_db=true,\n                                     on_initialized=handler)\n\nclass skipifnotinstalleddecorator(object):\n\n    generates decorator that skips the testcase if database command not found.\n    to create decorator, inherit this class and set ``name`` variable and override ``search_server()`` method.\n\n    example::\n\n      class postgresqlskipifnotinstalleddecorator(skipifnotinstalleddecorator):\n          name = 'postgresql'\n\n          def search_server(self):\n              find_program('postgres', ['bin'])  # raise exception if not found\n\n\n      skipifnotfound = skipifnotinstalled = postgresqlskipifnotinstalleddecorator()\n\n      @skipifnotfound\n      def test():\n          # testcase\n\ndef get_unused_port():\n\n    get free tcp port.\n\ndef get_path_of(name):\n\n    searchs command from search paths. it works like ``which`` command.\n\n\nrequirements\n============\n* python 2.7, 3.4, 3.5, 3.6\n\nlicense\n=======\napache license 2.0\n\nrelease signatures\n==================\nreleases are signed with following keys:\n\n* `498d6b9e <https://pgp.mit.edu/pks/lookup?op=vindex&search=0x102c2c17498d6b9e>`_\n\nhistory\n=======\n\n2.0.3 (2017-10-24)\n-------------------\n* fix a bug:\n\n  - handle exceptions from get_path_of()\n\n2.0.2 (2017-10-08)\n-------------------\n* fix a bug:\n\n  - #18: fix launch when using cache_initialized_db without init_handler \n\n2.0.1 (2017-07-15)\n-------------------\n* #9: database always gets instantiated with correct settings\n* #10: remove explicit path to which\n* #11: make database server kill-timeout more configurable\n\n2.0.0 (2016-08-20)\n-------------------\n* use subprocess.popen() instead of fork & exec\n* support windows platform (experimental)\n* #4: add boot_timeout parameter\n* fix bugs:\n\n  - fix syntax errors for python3\n  - show error messages if rescue from gc failed (ref: #1)\n\n1.1.0 (2016-02-05)\n-------------------\n* add database#server_pid to get pid of the database server\n* add database#is_alive() to check server is alive\n* define boot_timeout as constant\n* fix attributeerror if any exceptions are raised in bootstrap\n\n1.0.0 (2016-02-01)\n-------------------\n* initial release\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "testing.common.database",
+  "package_url": "https://pypi.org/project/testing.common.database/",
+  "project_url": "https://pypi.org/project/testing.common.database/",
+  "project_urls": {
+    "Homepage": "https://github.com/tk0miya/testing.common.database"
+  },
+  "release_url": "https://pypi.org/project/testing.common.database/2.0.3/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "utilities for testing.* packages",
+  "version": "2.0.3",
+  "releases": [],
+  "developers": [
+    "i.tkomiya@gmail.com",
+    "takeshi_komiya"
+  ],
+  "kwds": "initialize_database initdb_args travis cache_initialized_db postgresqlskipifnotinstalleddecorator",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_testing.common.database",
+  "homepage": "https://github.com/tk0miya/testing.common.database",
+  "release_count": 6,
+  "dependency_ids": []
+}

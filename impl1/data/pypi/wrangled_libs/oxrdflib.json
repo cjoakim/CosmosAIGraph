@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: database :: database engines/servers",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "oxrdflib\n========\n\n[![pypi](https://img.shields.io/pypi/v/oxrdflib)](https://pypi.org/project/oxrdflib/)\n![pypi - implementation](https://img.shields.io/pypi/implementation/oxrdflib)\n![pypi - python version](https://img.shields.io/pypi/pyversions/oxrdflib)\n[![actions status](https://github.com/oxigraph/oxrdflib/workflows/build/badge.svg)](https://github.com/oxigraph/oxrdflib/actions)\n[![gitter](https://badges.gitter.im/oxigraph/community.svg)](https://gitter.im/oxigraph/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)\n\noxrdflib provides an [rdflib](https://rdflib.readthedocs.io/) store based on [pyoxigraph](https://oxigraph.org/pyoxigraph/).\nthis store is named `\"oxigraph\"`.\n\nthis store can be used as drop-in replacement of the rdflib default one. it support context but not formulas.\ntransaction support is not implemented yet.\n\nsparql query evaluation is done by pyoxigraph instead of rdflib if the oxigraph store is used.\nsparql update evaluation is still done using rdflib because of [a limitation in rdflib context management](https://github.com/rdflib/rdflib/issues/1396).\n\noxrdflib is [available on pypi](https://pypi.org/project/oxrdflib/) and installable with:\n```bash\npip install oxrdflib\n```\n\nthe oxrdflib store is automatically registered as an rdflib store plugin by setuptools.\n\n*warning:* oxigraph is not stable yet and its storage format might change in the future.\nto migrate to future version you might have to dump and load the store content.\nhowever, oxigraph should be in a good enough shape to power most of use cases if you are not afraid of down time and data loss.\n\n## api\n\nto create a rdflib graph using the oxigraph store use\n```python\nrdflib.graph(store=\"oxigraph\")\n```\ninstead of the usual\n```python\nrdflib.graph()\n```\n\nsimilarly, to get a conjunctive graph, use\n```python\nrdflib.conjunctivegraph(store=\"oxigraph\")\n```\ninstead of the usual\n```python\nrdflib.conjunctivegraph()\n```\nand to get a dataset, use\n\n```python\nrdflib.dataset(store=\"oxigraph\")\n```\ninstead of the usual\n```python\nrdflib.dataset()\n```\n\nif you want to get the store data persisted on disk, use the `open` method on the `graph` object (or `conjunctivegraph` or `dataset`) with the directory where data should be persisted. for example:\n```python\ngraph = rdflib.graph(store=\"oxigraph\", identifier=\"http://example.com\") # without identifier, some blank node will be used\ngraph.open(\"test_dir\")\n```\nthe store is closed with the `close()` method or automatically when python garbage collector collects the store object.\n\nif the `open` method is not called oxigraph will automatically use a ramdisk on linux and a temporary file in the other operating systems.\n\nto do anything else, use the usual rdflib python api.\n\nit is also possible to directly inject a [pyoxigraph `store` object](https://pyoxigraph.readthedocs.io/en/stable/store.html#pyoxigraph.store) directly into an oxrdflib store:\n\n```python\ngraph = rdflib.graph(store=oxrdflib.oxigraphstore(store=pyoxigraph.store(\"test_dir\")))\n```\n\nthis might be handy to e.g. open the database as read-only:\n\n```python\ngraph = rdflib.graph(store=oxrdflib.oxigraphstore(store=pyoxigraph.store.read_only(\"test_dir\")))\n```\n\n\n## differences with rdflib default store\n- relative iris are not supported by oxigraph.\n- just like the `sparqlstore`, oxigraph joins the `initbindings` parameter of the `query` method after the query has been evaluated, instead of injecting them at the beginning of the query.\n- iri prefixes set using the `graph` `bind` method are not persisted on disk but kept in memory. they should be added again each time the store is opened.\n\n## migration guide\n\n### from 0.2 to 0.3\n* the 0.2 stores named `\"oxsled\"` and `\"oxmemory\"` have been merged into the `\"oxigraph\"` store.\n* the on-disk storage system provided by `\"oxsled\"` has been dropped and replaced by a new storage system based on [rocksdb](https://rocksdb.org/).\n  to migrate you need to first dump your data in rdf using `oxrdflib` 0.2 and the `serialize` method, then upgrade to `oxrdflib` 0.3, and finally reload the data using the `parse` method.\n\n## development\n\nto run the test do first `pip install -e .` to register the stores in rdflib plugin registry.\nthen, `cd tests && python -m unittest` should run the tests.\n\nthe code is automatically formatted using [black](https://github.com/psf/black). a [pre-commit](https://pre-commit.com/) configuration is provided.\nrun `pip install pre-commit && pre-commit install` to install pre-commit as a git pre-commit hook in your clone.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-3-clause",
+  "name": "oxrdflib",
+  "package_url": "https://pypi.org/project/oxrdflib/",
+  "project_url": "https://pypi.org/project/oxrdflib/",
+  "project_urls": {
+    "Changelog": "https://github.com/oxigraph/oxrdflib/blob/main/CHANGELOG.md",
+    "Documentation": "https://github.com/oxigraph/oxrdflib/blob/main/README.md",
+    "Homepage": "https://github.com/oxigraph/oxrdflib",
+    "Source": "https://github.com/oxigraph/oxrdflib",
+    "Tracker": "https://github.com/oxigraph/oxrdflib/issues"
+  },
+  "release_url": "https://pypi.org/project/oxrdflib/0.3.6/",
+  "requires_dist": [
+    "pyoxigraph (~=0.3.14)",
+    "rdflib (<8.0,>=6.3)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "rdflib stores based on pyoxigraph",
+  "version": "0.3.6",
+  "releases": [],
+  "developers": [
+    "thomas@pellissier-tanon.fr"
+  ],
+  "kwds": "oxrdflib badge badges pypi actions",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_oxrdflib",
+  "homepage": "",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_pyoxigraph",
+    "pypi_rdflib"
+  ]
+}

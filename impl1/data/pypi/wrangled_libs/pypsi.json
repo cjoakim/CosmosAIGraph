@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: isc license (iscl)",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: application frameworks",
+    "topic :: software development :: user interfaces",
+    "topic :: terminals"
+  ],
+  "description": "pypsi - python pluggable shell interface\n========================================\n\n.. image:: https://coveralls.io/repos/ameily/pypsi/badge.svg?branch=master&service=github\n  :target: https://coveralls.io/github/ameily/pypsi?branch=master\n\n.. image:: https://travis-ci.com/ameily/pypsi.svg?branch=master\n  :target: https://travis-ci.com/ameily/pypsi\n\ndevelop extensible and powerful command line interface shells with minimal code.\n\npython pluggable shell interface, or pypsi, is a framework for developing\ncommand line based shell interfaces, akin to bash or csh. it is intended to be\na replacement for the builtin python ``cmd`` module.\n\npypsi is targeted towards both large scale and rapid prototype interface\nshells. the bootstraping code is very small with very little boilerplate. pypsi\nships with a great deal of capabilities out of the box, all of which can be used\nor ignored. pypsi is pluggable which allows commands, features, and plugins to be\ndeveloped independently in their own source files and/or python classes. this\nresults in a very clean source repository. the actual code to setup and run the\nshell is extremely small, on the order of ~20-50 lines of code.\n\npypsi, at its core, is pluggable. there are many hooks that allow plugin authors\nto extend and modify the core behavior of pypsi. commands are isolated classes\nthat make distribution, sharing, and modification easy.\n\nreleases\n--------\n\nthe pypsi source code is hosted at `github <https://github.com/ameily/pypsi>`_\nand releases are stored at `pypi <https://pypi.python.org/pypi/pypsi>`_. the\nlatest version can also be install via pip:\n\n::\n\n    $ pip install pypsi\n\ndocumentation can be found on `github pages <http://ameily.github.io/pypsi>`_.\n\nfeatures\n--------\n\nthe following capabilities ship with pypsi and are available out of the box.\n\n-  i/o redirection\n-  flexible api\n-  tab completion\n-  multiplatform\n-  minimal dependencies\n-  colors\n-  session tips and message of the day (motd)\n-  automated help, usage messages, and argument parsing\n-  word wrapping\n-  term highlighting (grep)\n-  tables\n-  prompt wizards\n-  ``cmd`` plugin to migrate existing ``cmd`` commands into pypsi\n\ndemo\n----\n\nthe ``demo.py`` source file can be run to demonstrate the base commands and\nfeatures that ship with pypsi (the ``demo.py`` file can be downloaded from the\ngit repo at https://github.com/ameily/pypsi/blob/master/demo.py). the commands\ndisplayed below are all optional: pypsi does not require the use of any command\nor plugin. the ``demo.py`` file is meant to be a reference to the pypsi api and\ndesign. use it as a starting point for your first shell.\n\nvariables\n~~~~~~~~~\n\n::\n\n    pypsi)> var name = \"paul\"\n\n    pypsi)> var house = \"atredis\"\n\n    pypsi)> echo my name is $name, and i belong to house $house\n\n    my name is paul, and i belong to house atredis\n\n    pypsi)> var --list\n\n    name     paul\n    house    atredis\n\n    pypsi)> var -d name\n\n    pypsi)> echo $name\n\n    pypsi)> var name = \"paul $house\"\n\n    pypsi)> echo $name\n\n    paul atredis\n\ni/o redirection\n~~~~~~~~~~~~~~~\n\n::\n\n    pypsi)> echo hello\n\n    hello\n\n    pypsi)> echo hello > output.txt\n\n    pypsi)> echo goodbye\n\n    pypsi)> xargs -i{} \"echo line: {}\" < output.txt\n\n    line: hello\n    line: goodbye\n\n    pypsi)> cat output.txt | grep ll\n\n    hello\n\nsystem commands\n~~~~~~~~~~~~~~~\n\nallows execution of external applications. command mimics python's\n``os.system()`` function.\n\n::\n\n    pypsi)> ls\n\n    pypsi: ls: command not found\n\n    pypsi)> system ls\n\n    include/\n    src/\n    readme.md\n\n    pypsi)> system ls | system grep md\n\n    readme.md\n\nfallback command\n~~~~~~~~~~~~~~~~\n\nallows the developer to set which command gets called if one does not exist in\nthe current shell. this is very useful, for example, if you want to fallback on\nany os installed executables. in this example, the fallback command is\n``system``.\n\n::\n\n    pypsi)> ls\n\n    include/\n    src/\n    readme.md\n\ncommand chaining\n~~~~~~~~~~~~~~~~\n\n::\n\n    pypsi)> echo hello && echo --bad-arg && echo goodbye\n\n    hello\n    echo: unrecgonized arguments: --bad-arg\n\n    pypsi)> echo hello ; echo --bad-arg ; echo goodbye\n\n    hello\n    echo: unrecgonized arguments: --bad-arg\n    goodbye\n\n    pypsi)> echo --bad-arg || echo first failed\n\n    echo: unrecgonized arguments: --bad-arg\n    first failed\n\nmultiline commands\n~~~~~~~~~~~~~~~~~~\n\n::\n\n    pypsi)> echo hello, \\\n    > dave\n\n    hello, dave\n\n    pypsi)> echo this \\\n    > is \\\n    > pypsi \\\n    > and it rocks\n\n    this is pypsi and it rocks\n\nmacros\n~~~~~~\n\nmacros are analogous to functions in bash. they provide the ability to create\nnew commands in the shell.\n\n::\n\n    pypsi)> macro hello\n    > echo hello, $1\n    > echo goodbye from macro $0\n    > end\n\n    pypsi)> hello adam\n\n    hello, adam\n    goodbye from macro hello\n\ntab complete\n~~~~~~~~~~~~\n\ntab completion is easier than ever with pypsi. using the included ``command_completer()``\nfunction, arguments and sub-commands are completed automatically when the ``tab``\nkey is pressed. to get started, add the use of ``command_completer`` to your\ncustom command's complete function:\n\n.. code-block:: python\n\n    def complete(self, shell, args, prefix):\n        from pypsi.completers import command_completer\n        return completions = command_completer(self.parser, shell, args, prefix)\n\njust pass ``command_completer`` the parser you created for the command, along with\nthe standard arguments to the ``complete`` function, and let pypsi work it's magic!\n\n::\n\n    pypsi)> macro -<tab>\n    --delete --help   --list   --show   -d       -h       -l       -s\n\nfor each argument added to a pypsi argument parser, a callback function to get\nthe possible completions can be specified via the `completer` argument.\nthe callback function will be called from ``command_completer`` anytime tab is\npressed while the user is currently entering that argument's value. ex:\n\n.. code-block:: python\n\n    # snippet from macro.py\n    self.parser.add_argument(\n         '-s', '--show', help='print macro body',\n         metavar='name', completer=self.complete_macros\n    )\n    ...\n    def complete_macros(self, shell, args, prefix):\n        # returns a list of macro names in the current shell\n        return list(shell.ctx.macros.keys())\n\n::\n\n    pypsi)> macro --show <tab>\n    hello   goodbye\n\nsee ``tail.py``, ``help.py``, and ``macro.py`` for examples.\n\n\nprompt wizards\n~~~~~~~~~~~~~~\n\nprompt wizards ask the user a series of questions and request input. input is\ntab completed, validated, and returned. the wizard can be used for easy\nconfiguration of components that require a substantial amount of input.\n\n::\n\n    pypsi)> wizard\n    +-----------------------------------------------------------------------------+\n    |                    entering example configuration wizard                    |\n    +-----------------------------------------------------------------------------+\n    shows various examples of wizard steps\n\n    to exit, enter either ctrl+c, ctrl+d, or 'quit'. for help about the current\n    step, enter 'help' or '?'.\n\n    ip address: <enter>\n\n    error: value is required\n    local ip address or host name\n\n    ip address: 192.168.0.10\n\n    tcp port [1337]: <enter>\n\n    file path: /var/lo<tab>\n\n    local/  lock/   log/\n\n    file path: /var/log/<tab>\n\n    xorg.1.log        btmp              faillog           upstart/\n    xorg.1.log.old    dist-upgrade/     fontconfig.log    wtmp\n    alternatives.log  distccd.log       fsck/\n    apt/              dmesg             lastlog\n    bootstrap.log     dpkg.log          mongodb/\n\n    file path: /var/log/dpkg.log\n\n    shell mode [local]: asdf\n\n    error: invalid choice\n\n    mode of the shell\n\n    shell mode [local]: remote\n\n    config id    config value\n    ================================================================================\n    ip_addr      172.16.11.204\n    port         1337\n    path         /var/log/dpkg.log\n    mode         remote\n\nlicense\n-------\n\n``pypsi`` is released under the isc permissive license.\n\n\n",
+  "docs_url": "https://pythonhosted.org/pypsi/",
+  "keywords": "cli,command line,command line interface,shell,terminal,console,term,command prompt",
+  "license": "isc",
+  "name": "pypsi",
+  "package_url": "https://pypi.org/project/pypsi/",
+  "project_url": "https://pypi.org/project/pypsi/",
+  "project_urls": {
+    "Download": "https://pypi.python.org/pypi/pypsi",
+    "Homepage": "https://github.com/ameily/pypsi"
+  },
+  "release_url": "https://pypi.org/project/pypsi/1.4.6/",
+  "requires_dist": [
+    "chardet (>=2.0.1)",
+    "pyreadline (>=2.1) ; platform_system == \"Windows\"",
+    "pytest (>=3.6.2) ; extra == 'dev'",
+    "pytest-cov (>=2.5.1) ; extra == 'dev'",
+    "pylint (<=2.11.1) ; extra == 'dev'",
+    "pycodestyle (>=2.4.0) ; extra == 'dev'",
+    "coverage ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "python pluggable shell interface",
+  "version": "1.4.6",
+  "releases": [],
+  "developers": [
+    "adam_meily",
+    "meily.adam@gmail.com"
+  ],
+  "kwds": "pypsi pypi python shell pip",
+  "license_kwds": "isc",
+  "libtype": "pypi",
+  "id": "pypi_pypsi",
+  "homepage": "https://github.com/ameily/pypsi",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_chardet",
+    "pypi_coverage",
+    "pypi_pycodestyle",
+    "pypi_pylint",
+    "pypi_pyreadline",
+    "pypi_pytest",
+    "pypi_pytest_cov"
+  ]
+}

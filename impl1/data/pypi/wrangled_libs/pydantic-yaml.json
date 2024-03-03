@@ -1,0 +1,72 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3 :: only",
+    "topic :: software development",
+    "typing :: typed"
+  ],
+  "description": "# pydantic-yaml\n\n[![pypi version](https://badge.fury.io/py/pydantic-yaml.svg)](https://badge.fury.io/py/pydantic-yaml) [![documentation status](https://readthedocs.org/projects/pydantic-yaml/badge/?version=latest)](https://pydantic-yaml.readthedocs.io/en/latest/?badge=latest)\n [![unit tests](https://github.com/nowanilfideme/pydantic-yaml/actions/workflows/python-testing.yml/badge.svg)](https://github.com/nowanilfideme/pydantic-yaml/actions/workflows/python-testing.yml)\n\npydantic-yaml adds yaml capabilities to [pydantic](https://pydantic-docs.helpmanual.io/),\nwhich is an _excellent_ python library for data validation and settings management.\nif you aren't familiar with pydantic, i would suggest you first check out their\n[docs](https://pydantic-docs.helpmanual.io/).\n\n[documentation on readthedocs.org](https://pydantic-yaml.readthedocs.io/en/latest/)\n\n## basic usage\n\n```python\nfrom enum import enum\nfrom pydantic import basemodel, validator\nfrom pydantic_yaml import parse_yaml_raw_as, to_yaml_str\n\nclass myenum(str, enum):\n    \"\"\"a custom enumeration that is yaml-safe.\"\"\"\n\n    a = \"a\"\n    b = \"b\"\n\nclass innermodel(basemodel):\n    \"\"\"a normal pydantic model that can be used as an inner class.\"\"\"\n\n    fld: float = 1.0\n\nclass mymodel(basemodel):\n    \"\"\"our custom pydantic model.\"\"\"\n\n    x: int = 1\n    e: myenum = myenum.a\n    m: innermodel = innermodel()\n\n    @validator(\"x\")\n    def _chk_x(cls, v: int) -> int:  # noqa\n        \"\"\"you can add your normal pydantic validators, like this one.\"\"\"\n        assert v > 0\n        return v\n\nm1 = mymodel(x=2, e=\"b\", m=innermodel(fld=1.5))\n\n# this dumps to yaml and json respectively\nyml = to_yaml_str(m1)\njsn = m1.json()\n\n# this parses yaml as the mymodel type\nm2 = parse_yaml_raw_as(mymodel, yml)\nassert m1 == m2\n\n# json is also valid yaml, so this works too\nm3 = parse_yaml_raw_as(mymodel, jsn)\nassert m1 == m3\n\n```\n\nwith pydantic v2, you can also dump dataclasses:\n\n```python\nfrom pydantic import rootmodel\nfrom pydantic.dataclasses import dataclass\nfrom pydantic.version import version as pydantic_version\nfrom pydantic_yaml import to_yaml_str\n\nassert pydantic_version >= \"2\"\n\n@dataclass\nclass yourtype:\n    foo: str = \"bar\"\n\nobj = yourtype(foo=\"wuz\")\nassert to_yaml_str(rootmodel[yourtype](obj)) == 'foo: wuz\\n'\n```\n\n## configuration\n\ncurrently we use the json dumping of pydantic to perform most of the magic.\n\nthis uses the `config` inner class,\n[as in pydantic](https://pydantic-docs.helpmanual.io/usage/model_config/):\n\n```python\nclass mymodel(basemodel):\n    # ...\n    class config:\n        # you can override these fields, which affect json and yaml:\n        json_dumps = my_custom_dumper\n        json_loads = lambda x: mymodel()\n        # as well as other pydantic configuration:\n        allow_mutation = false\n```\n\nyou can control some yaml-specfic options via the keyword options:\n\n```python\nto_yaml_str(model, indent=4)  # makes it wider\nto_yaml_str(model, map_indent=9, sequence_indent=7)  # ... you monster.\n```\n\nyou can additionally pass your own `yaml` instance:\n\n```python\nfrom ruamel.yaml import yaml\nmy_writer = yaml(typ=\"safe\")\nmy_writer.default_flow_style = true\nto_yaml_file(\"foo.yaml\", model, custom_yaml_writer=my_writer)\n```\n\na separate configuration for yaml specifically will be added later, likely in v2.\n\n## breaking changes for `pydantic-yaml` v1\n\nthe api for `pydantic-yaml` version 1.0.0 has been greatly simplified!\n\n### mixin class\n\nthis functionality has currently been removed!\n`yamlmodel` and `yamlmodelmixin` base classes are no longer needed.\nthe plan is to re-add it before v1 fully releases,\nto allow the `.yaml()` or `.parse_*()` methods.\nhowever, this will be availble only for `pydantic<2`.\n\n### versioned models\n\nthis functionality has been removed, as it's questionably useful for most users.\nthere is an [example in the docs](versioned.md) that's available.\n",
+  "docs_url": null,
+  "keywords": "pydantic,yaml",
+  "license": "mit license  copyright (c) 2020 anatoly makarevich  permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"software\"), to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, subject to the following conditions:  the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software. ",
+  "name": "pydantic-yaml",
+  "package_url": "https://pypi.org/project/pydantic-yaml/",
+  "project_url": "https://pypi.org/project/pydantic-yaml/",
+  "project_urls": {
+    "docs": "https://pydantic-yaml.readthedocs.io/en/latest/",
+    "github": "https://github.com/NowanIlfideme/pydantic-yaml"
+  },
+  "release_url": "https://pypi.org/project/pydantic-yaml/1.2.0/",
+  "requires_dist": [
+    "pydantic >=1.8",
+    "ruamel.yaml <0.18.0,>=0.16.0",
+    "importlib-metadata",
+    "typing-extensions >=4.5.0",
+    "setuptools >=61.0.0 ; extra == 'dev'",
+    "setuptools-scm[toml] >=6.2 ; extra == 'dev'",
+    "pre-commit ==2.21.0 ; extra == 'dev'",
+    "ruff ==0.0.291 ; extra == 'dev'",
+    "black ==23.3.0 ; extra == 'dev'",
+    "mypy ==1.5.1 ; extra == 'dev'",
+    "pytest ==7.4.2 ; extra == 'dev'",
+    "mkdocs ; extra == 'docs'",
+    "mkdocs-material ; extra == 'docs'",
+    "mkdocstrings[python] ; extra == 'docs'",
+    "pymdown-extensions ; extra == 'docs'",
+    "pygments ; extra == 'docs'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "adds some yaml functionality to the excellent `pydantic` library.",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "git@nowan.dev"
+  ],
+  "kwds": "pydantic_yaml pydantic_version yaml yamlmodel to_yaml_file",
+  "license_kwds": "copyright license liable noninfringement liability",
+  "libtype": "pypi",
+  "id": "pypi_pydantic_yaml",
+  "homepage": "",
+  "release_count": 30,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_importlib_metadata",
+    "pypi_mkdocs",
+    "pypi_mkdocs_material",
+    "pypi_mkdocstrings",
+    "pypi_mypy",
+    "pypi_pre_commit",
+    "pypi_pydantic",
+    "pypi_pygments",
+    "pypi_pymdown_extensions",
+    "pypi_pytest",
+    "pypi_ruamel.yaml",
+    "pypi_ruff",
+    "pypi_setuptools",
+    "pypi_setuptools_scm",
+    "pypi_typing_extensions"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "topic :: software development"
+  ],
+  "description": "localconfig\n===========\n\na simplified interface to `configparser`_ using dot notion with data type / comment support.\n\nfeature summary\n===============\n\n* simple access to config using dot notion and iterators\n* full compatibility with `configparser`_ ini formats (as that is used as the backend)\n* data type support by intelligently guessing the data types based on value on read.\n* multiple config source input (read from string, file pointer, file, or list of them)\n* full comment support / retention on save\n* lazy reading of config sources for performance (only read when a config value is accessed)\n\n.. _configparser: https://docs.python.org/3/library/configparser.html\n\nquick start tutorial\n====================\n\nto install::\n\n    pip install localconfig\n\nlet's say we have a script named `program` with the following config in `~/.config/program`:\n\n.. code-block:: ini\n\n    [web server]\n    # server host\n    host = 0.0.0.0\n\n    # server port\n    port = 8080\n\n    # debug logging\n    debug = off\n\nto read the config, simply do:\n\n.. code-block:: python\n\n    from localconfig import config\n\n    start_server(config.web_server.host, config.web_server.port, config.web_server.debug)\n\n    # or use get method:\n    # start_server(config.get('web server', 'host'),\n    #              config.get('web server', 'port'),\n    #              config.get('web_server', 'debug'))  # yes, 'web_server' also works here!\n    #\n    # or if the config is in docstring, read from it:\n    # config.read(__doc__)\n    #\n    # or if the config file is elsewhere:\n    # config.read('/etc/path/to/config.ini')  # non-existing file is ignored\n    #\n    # or read from a list of sources\n    # config.read(['string config', file_path, file_pointer, io.stringio('config')])\n    #\n    # or create another instance for another config:\n    # from localconfig import localconfig\n    # config2 = localconfig('/etc/path/to/another/config.ini')\n\nconfigs are read in the order they are called using `config.read()`, but the config file passed to the `localconfig()`\nconstructor (defaults to `~/.config/$script_name`) will be read last before the first access to config values, which\nallows us to read configs from various locations, like default configs from a string that is checked in with the code,\nwhile allowing them to be overrriden from the config file that is passed to the constructor.\n\nnow, let's do some inspection:\n\n.. code-block:: python\n\n    # iterate over sections and their keys/values\n    for section in config:\n      print(section)                   # web server\n\n      for key, value in config.items(section):\n        print(key, value, type(value)) # host 0.0.0.0 <type 'str'>\n                                       # port 8080 <type 'int'>\n                                       # debug false <type 'bool'>\n\n    sections = list(config)            # ['web server']\n\n    # iterate over keys/values\n    for key, value in config.web_server:\n      print(key, value, type(value))    # same output as above config.items()\n\n    items = list(config.web_server)    # [('host', '0.0.0.0'), ('port', 8080), ('debug', false)]\n    items = dict(config.web_server)    # {'host': '0.0.0.0', 'port': 8080, 'debug': false}\n\n    # check if a section or key is set - any non-existing section or key defaults to none.\n    if config.web_server or config.no_such_section:\n      pass\n\n    if config.web_server and (config.web_server.port or config.web_server.no_such_key):\n      pass\n\nto add a section and set a value:\n\n.. code-block:: python\n\n    config.add_section('app server', comment='settings for application server')\n    config.app_server.host = 'localhost'\n\n    # use `set` if you want to set a comment\n    config.set('app server', 'port', 9090, comment='app server port')\n\n    # set value for the default section (default value for all other sections)\n    config.env = 'prod'\n\nto write the config:\n\n.. code-block:: python\n\n    config.save()\n\n    # or simply get the config as a string:\n    # config_str = str(config)\n    #\n    # or save to a different location:\n    # config.save('/path/to/save/to.ini')\n\nif we open `~/.config/program` now, we would see::\n\n    [default]\n\n    env = prod\n\n\n    [web server]\n\n    # server host\n    host = 0.0.0.0\n\n    # server port\n    port = 8080\n\n    # debug logging\n    debug = off\n\n\n    # settings for application server\n    [app server]\n\n    host = localhost\n\n    # app server port\n    port = 9090\n\nsupported data types\n====================\n\ndata type is guessed based on the value and converted on read.\n\nthe following types are supported:\n\n======= ===========================================\ntype    example value\n======= ===========================================\nint     1\nfloat   2.0\nbool    true false yes no on off (case insensitive)\nnone    none (case insensitive)\nstr     any other value not matched by above\n======= ===========================================\n\nremote config\n=============\n\ncheck out: https://pypi.python.org/pypi/remoteconfig\n\nmore\n====\n\n| documentation: http://localconfig.readthedocs.org/\n|\n| pypi package: https://pypi.python.org/pypi/localconfig\n| github source: https://github.com/maxzheng/localconfig\n| report issues/bugs: https://github.com/maxzheng/localconfig/issues\n|\n| connect: https://www.linkedin.com/in/maxzheng\n| contact: maxzheng.os @t gmail.com\n\n\n",
+  "docs_url": null,
+  "keywords": "configuration config configparser data type support",
+  "license": "mit",
+  "name": "localconfig",
+  "package_url": "https://pypi.org/project/localconfig/",
+  "project_url": "https://pypi.org/project/localconfig/",
+  "project_urls": {
+    "Homepage": "https://github.com/maxzheng/localconfig"
+  },
+  "release_url": "https://pypi.org/project/localconfig/1.1.3/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "a simplified interface to configparser using dot notion with data type / comment support.",
+  "version": "1.1.3",
+  "releases": [],
+  "developers": [
+    "max_zheng",
+    "maxzheng.os@tgmail.com"
+  ],
+  "kwds": "_configparser configparser config_str configs config2",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_localconfig",
+  "homepage": "https://github.com/maxzheng/localconfig",
+  "release_count": 8,
+  "dependency_ids": []
+}

@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# text generation\n\nthe hugging face text generation python library provides a convenient way of interfacing with a\n`text-generation-inference` instance running on\n[hugging face inference endpoints](https://huggingface.co/inference-endpoints) or on the hugging face hub.\n\n## get started\n\n### install\n\n```shell\npip install text-generation\n```\n\n### inference api usage\n\n```python\nfrom text_generation import inferenceapiclient\n\nclient = inferenceapiclient(\"bigscience/bloomz\")\ntext = client.generate(\"why is the sky blue?\").generated_text\nprint(text)\n# ' rayleigh scattering'\n\n# token streaming\ntext = \"\"\nfor response in client.generate_stream(\"why is the sky blue?\"):\n    if not response.token.special:\n        text += response.token.text\n\nprint(text)\n# ' rayleigh scattering'\n```\n\nor with the asynchronous client:\n\n```python\nfrom text_generation import inferenceapiasyncclient\n\nclient = inferenceapiasyncclient(\"bigscience/bloomz\")\nresponse = await client.generate(\"why is the sky blue?\")\nprint(response.generated_text)\n# ' rayleigh scattering'\n\n# token streaming\ntext = \"\"\nasync for response in client.generate_stream(\"why is the sky blue?\"):\n    if not response.token.special:\n        text += response.token.text\n\nprint(text)\n# ' rayleigh scattering'\n```\n\ncheck all currently deployed models on the huggingface inference api with `text generation` support:\n\n```python\nfrom text_generation.inference_api import deployed_models\n\nprint(deployed_models())\n```\n\n### hugging face inference endpoint usage\n\n```python\nfrom text_generation import client\n\nendpoint_url = \"https://your_endpoint.endpoints.huggingface.cloud\"\n\nclient = client(endpoint_url)\ntext = client.generate(\"why is the sky blue?\").generated_text\nprint(text)\n# ' rayleigh scattering'\n\n# token streaming\ntext = \"\"\nfor response in client.generate_stream(\"why is the sky blue?\"):\n    if not response.token.special:\n        text += response.token.text\n\nprint(text)\n# ' rayleigh scattering'\n```\n\nor with the asynchronous client:\n\n```python\nfrom text_generation import asyncclient\n\nendpoint_url = \"https://your_endpoint.endpoints.huggingface.cloud\"\n\nclient = asyncclient(endpoint_url)\nresponse = await client.generate(\"why is the sky blue?\")\nprint(response.generated_text)\n# ' rayleigh scattering'\n\n# token streaming\ntext = \"\"\nasync for response in client.generate_stream(\"why is the sky blue?\"):\n    if not response.token.special:\n        text += response.token.text\n\nprint(text)\n# ' rayleigh scattering'\n```\n\n### types\n\n```python\n# request parameters\nclass parameters:\n    # activate logits sampling\n    do_sample: bool\n    # maximum number of generated tokens\n    max_new_tokens: int\n    # the parameter for repetition penalty. 1.0 means no penalty.\n    # see [this paper](https://arxiv.org/pdf/1909.05858.pdf) for more details.\n    repetition_penalty: optional[float]\n    # whether to prepend the prompt to the generated text\n    return_full_text: bool\n    # stop generating tokens if a member of `stop_sequences` is generated\n    stop: list[str]\n    # random sampling seed\n    seed: optional[int]\n    # the value used to module the logits distribution.\n    temperature: optional[float]\n    # the number of highest probability vocabulary tokens to keep for top-k-filtering.\n    top_k: optional[int]\n    # if set to < 1, only the smallest set of most probable tokens with probabilities that add up to `top_p` or\n    # higher are kept for generation.\n    top_p: optional[float]\n    # truncate inputs tokens to the given size\n    truncate: optional[int]\n    # typical decoding mass\n    # see [typical decoding for natural language generation](https://arxiv.org/abs/2202.00666) for more information\n    typical_p: optional[float]\n    # generate best_of sequences and return the one if the highest token logprobs\n    best_of: optional[int]\n    # watermarking with [a watermark for large language models](https://arxiv.org/abs/2301.10226)\n    watermark: bool\n    # get decoder input token logprobs and ids\n    decoder_input_details: bool\n    # return the n most likely tokens at each step\n    top_n_tokens: optional[int] \n\n# decoder input tokens\nclass inputtoken:\n    # token id from the model tokenizer\n    id: int\n    # token text\n    text: str\n    # logprob\n    # optional since the logprob of the first token cannot be computed\n    logprob: optional[float]\n\n\n# generated tokens\nclass token:\n    # token id from the model tokenizer\n    id: int\n    # token text\n    text: str\n    # logprob\n    logprob: float\n    # is the token a special token\n    # can be used to ignore tokens when concatenating\n    special: bool\n\n\n# generation finish reason\nclass finishreason(enum):\n    # number of generated tokens == `max_new_tokens`\n    length = \"length\"\n    # the model generated its end of sequence token\n    endofsequencetoken = \"eos_token\"\n    # the model generated a text included in `stop_sequences`\n    stopsequence = \"stop_sequence\"\n\n\n# additional sequences when using the `best_of` parameter\nclass bestofsequence:\n    # generated text\n    generated_text: str\n    # generation finish reason\n    finish_reason: finishreason\n    # number of generated tokens\n    generated_tokens: int\n    # sampling seed if sampling was activated\n    seed: optional[int]\n    # decoder input tokens, empty if decoder_input_details is false\n    prefill: list[inputtoken]\n    # generated tokens\n    tokens: list[token]\n    # most likely tokens\n    top_tokens: optional[list[list[token]]] \n\n\n# `generate` details\nclass details:\n    # generation finish reason\n    finish_reason: finishreason\n    # number of generated tokens\n    generated_tokens: int\n    # sampling seed if sampling was activated\n    seed: optional[int]\n    # decoder input tokens, empty if decoder_input_details is false\n    prefill: list[inputtoken]\n    # generated tokens\n    tokens: list[token]\n    # most likely tokens\n    top_tokens: optional[list[list[token]]]\n    # additional sequences when using the `best_of` parameter\n    best_of_sequences: optional[list[bestofsequence]]\n\n\n# `generate` return value\nclass response:\n    # generated text\n    generated_text: str\n    # generation details\n    details: details\n\n\n# `generate_stream` details\nclass streamdetails:\n    # generation finish reason\n    finish_reason: finishreason\n    # number of generated tokens\n    generated_tokens: int\n    # sampling seed if sampling was activated\n    seed: optional[int]\n\n\n# `generate_stream` return value\nclass streamresponse:\n    # generated token\n    token: token\n    # most likely tokens\n    top_tokens: optional[list[token]] \n    # complete generated text\n    # only available when the generation is finished\n    generated_text: optional[str]\n    # generation details\n    # only available when the generation is finished\n    details: optional[streamdetails]\n\n# inference api currently deployed model\nclass deployedmodel:\n    model_id: str\n    sha: str\n```",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "text-generation",
+  "package_url": "https://pypi.org/project/text-generation/",
+  "project_url": "https://pypi.org/project/text-generation/",
+  "project_urls": {
+    "Homepage": "https://github.com/huggingface/text-generation-inference",
+    "Repository": "https://github.com/huggingface/text-generation-inference"
+  },
+  "release_url": "https://pypi.org/project/text-generation/0.6.1/",
+  "requires_dist": [
+    "pydantic (>1.10,<3)",
+    "aiohttp (>=3.8,<4.0)",
+    "huggingface-hub (>=0.12,<1.0)"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "hugging face text generation python client",
+  "version": "0.6.1",
+  "releases": [],
+  "developers": [
+    "olivier@huggingface.co",
+    "olivier_dehaene"
+  ],
+  "kwds": "text_generation generated_text inference_api inferenceapiasyncclient inferenceapiclient",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_text_generation",
+  "homepage": "https://github.com/huggingface/text-generation-inference",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_huggingface_hub",
+    "pypi_pydantic"
+  ]
+}

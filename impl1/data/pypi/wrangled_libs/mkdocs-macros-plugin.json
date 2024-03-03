@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.5"
+  ],
+  "description": "<div align=\"center\">\n\n![mkdocs-macros](logo.png)\n\n#  unleash the power of mkdocs with variables and macros\n\n\n\n[![license: mit](https://img.shields.io/badge/license-mit-yellow.svg)](https://opensource.org/licenses/mit) \n![language](https://img.shields.io/github/languages/top/fralau/mkdocs_macros_plugin)\n![pypi](https://img.shields.io/pypi/v/mkdocs-macros-plugin)\n![github](https://img.shields.io/github/v/tag/fralau/mkdocs_macros_plugin?label=github%20tag)\n![macros](https://img.shields.io/pypi/dm/mkdocs-macros-plugin)\n\n:open_file_folder: [used by > 2k repositories on github](https://github.com/fralau/mkdocs_macros_plugin/network/dependents)<br>\n\ud83e\udd47 listed as [high-quality plugin](https://github.com/mkdocs/catalog#-code-execution-variables--templating)\n\n\n**mkdocs-macros-plugin** is a general-purpose plugin for [mkdocs](https://www.mkdocs.org/)<br>that uses  **variables** and **macros** (functions) to  automate tasks, and produce richer and more beautiful pages.\n\n\n\n\n\n```markdown\nthe unit price of product a is {{ unit_price }} eur.\ntaking the standard discount into account,\nthe sale price of 50 units is {{ price(unit_price, 50) }} eur.\n```\n\n\nview the [mkdocs-macro documentation](https://mkdocs-macros-plugin.readthedocs.io/) on read the docs.\n</div>\n\n\n<!-- to update, run the following command:\nmarkdown-toc -i readme.md \n-->\n\n## overview\n**mkdocs-macros-plugin** is a plugin that makes it easier for contributors\nof an [mkdocs](https://www.mkdocs.org/) website to produce richer and more beautiful pages. it transforms the markdown pages\ninto [jinja2](https://jinja.palletsprojects.com/en/2.10.x/) templates\nthat use **variables**, calls to **macros** and custom **filters**.\n\n> **you can also partially replace mkdocs plugins with mkdocs-macros modules,\n> and [pluglets](https://mkdocs-macros-plugin.readthedocs.io/en/latest/pluglets/) \n> (pre-installed modules).**\n\n\n### using variables\nyou can leverage the power of python in markdown thanks to jinja2\nby writing this :\n\n```markdown\nthe unit price of product a is {{ unit_price }} eur.\ntaking the standard discount into account,\nthe sale price of 50 units is {{ price(unit_price, 50) }} eur.\n```\n\nif you defined a `price()` function, this could translate into:\n\n```\nthe unit price of product a is 10.00 eur.\ntaking the standard discount into account,\nthe sale price of 50 units is 450.00 eur.\n```\n\n> the result of a macro can be **html code**:\nthis makes macros especially useful\nto make custom extensions to the syntax of markdown, such as buttons,\ncalls to email, embedding youtube videos, etc.\n\nit is possible to use the wide range of facilities provided by\n[jinja2 templates](http://jinja.pocoo.org/docs/2.10/templates/) such\nas conditions (`{% if ... %}`) and loops (`{% for ... %}`).\n\n### defining variables\n\nregular **variables** can be defined in five ways:\n\n| no | validity | for whom | description |\n| --- | --- | --- | ---- |\n| 1. | global | designer of the website | in the `mkdocs.yml` file, under the `extra` heading |\n| 2. | global | contributor | in external yaml definition files |\n| 3. | global | programmer | in a `main.py` file (python), by adding them to a dictionary |\n| 4. | local (page) | writer | in the yaml header of each markdown page |\n| 5. | local (page) | writer | with a `{%set variable = value %}`  statement |\n\nin addition, predefined objects are provided (local and global), typically\nfor the environment, project, page, git information, etc. \n\n\n### macros and filters\nsimilarly programmers can define their own **macros** and **filters**,\nas python functions in the `main.py` file, \nwhich the users will then be able to\nuse without much difficulty, as jinja2 directives in the markdown page.\n\n\n\n## installation\n\n### prerequisites\n\n  - python version > 3.7\n  - mkdocs version >= 1.0\n    (compatible with post 1.5 versions)\n\n### standard installation\n```\npip install mkdocs-macros-plugin\n```\n\n### \"manual installation\"\nto install the package, download it and run:\n\n```\npip install .\n# or...\npython setup.py install\n```\n\n### development/test installation\nto install the extra dependencies required for testing the package, run:\n\n```\npip install \"mkdocs-macros-plugin[test]\"\n```\n\n### declaration of plugin\ndeclare the plugin in the file `mkdocs.yml`:\n\n```yaml\nplugins:\n    - search\n    - macros\n```\n\n> **note:** if you have no `plugins` entry in your config file yet,\nyou should also add the `search` plugin.\nif no `plugins` entry is set, mkdocs enables `search` by default; but\nif you use it, then you have to declare it explicitly.\n\n### check that it works\nthe recommended way to check that the plugin works properly is to add the \nfollowing command in one of the pages of your site (let's say `info.md`):\n\n```\n{{ macros_info() }}\n```\n\nin the terminal, restart the environment:\n\n```\n> mkdocs serve\n````\nyou will notice that additional information now appears in the terminal:\n\n```\ninfo    -  building documentation...\n[macros] macros arguments: {'module_name': 'main', 'include_yaml': [], 'j2_block_start_string': '', 'j2_block_end_string': '', 'j2_variable_start_string': '', 'j2_variable_end_string': ''}\n```\n\nwithin the browser (e.g. http://127.0.0.1:8000/info), you should\nsee a description of the plugin's environment: \n\n![macros_info()](macros_info.png)\n\nif you see it that information, you should be all set.\n\ngive a good look at the general list, since it gives you an overview\nof what you can do out of the box with the macros plugin.\n\nthe other parts give you more detailed information.\n\n\n## using pluglets\n\n### what are pluglets?\n\n**pluglets** are small, easy-to-write programs\nthat use mkdocs-macro's foundation\nto offer services to mkdocs projects, which would normally\nbe offered by plugins.\n\npluglets are python packages, which can be hosted on github, and \ndistributed through [pypi](https://pypi.org/).\n\n\n### how to add a pluglet to an mkdocs project?\n\ninstall it: \n\n```shell\npip install <pluglet_name>\n```\n\ndeclare it in the project's config (`mkdocs.yml`) file:\n\n```yaml\nplugins:\n  - search\n  - macros:\n      modules:\n        - <pluglet_name> \n```\n\n### how to write a pluglet?\n\n[see instructions in the documentation](https://mkdocs-macros-plugin.readthedocs.io/en/latest/pluglets/).\n\na sample pluglet can be found in [mkdocs-test (github)](https://github.com/fralau/mkdocs-macros-test).\n",
+  "docs_url": null,
+  "keywords": "mkdocs python markdown macros",
+  "license": "mit",
+  "name": "mkdocs-macros-plugin",
+  "package_url": "https://pypi.org/project/mkdocs-macros-plugin/",
+  "project_url": "https://pypi.org/project/mkdocs-macros-plugin/",
+  "project_urls": {
+    "Homepage": "https://github.com/fralau/mkdocs_macros_plugin"
+  },
+  "release_url": "https://pypi.org/project/mkdocs-macros-plugin/1.0.5/",
+  "requires_dist": [
+    "mkdocs (>=0.17)",
+    "jinja2",
+    "termcolor",
+    "pyyaml",
+    "python-dateutil",
+    "mkdocs-macros-test ; extra == 'test'",
+    "mkdocs-material (>=6.2) ; extra == 'test'",
+    "mkdocs-include-markdown-plugin ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "unleash the power of mkdocs with macros and variables",
+  "version": "1.0.5",
+  "releases": [],
+  "developers": [
+    "info@settlenext.com",
+    "laurent_franceschbetti"
+  ],
+  "kwds": "mkdocs_macros_plugin mkdocs markdown macros templates",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_mkdocs_macros_plugin",
+  "homepage": "https://github.com/fralau/mkdocs_macros_plugin",
+  "release_count": 29,
+  "dependency_ids": [
+    "pypi_jinja2",
+    "pypi_mkdocs",
+    "pypi_mkdocs_include_markdown_plugin",
+    "pypi_mkdocs_macros_test",
+    "pypi_mkdocs_material",
+    "pypi_python_dateutil",
+    "pypi_pyyaml",
+    "pypi_termcolor"
+  ]
+}

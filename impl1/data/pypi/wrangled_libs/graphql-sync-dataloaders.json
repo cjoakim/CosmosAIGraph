@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# graphql-sync-dataloaders\n\nuse dataloaders in your python graphql servers that have to run in a sync\ncontext (i.e. django).\n\n## requirements\n\n* python 3.8+\n* graphql-core >=3.2.0\n\n## installation\n\nthis package can be installed from [pypi](https://pypi.python.org/pypi/graphql-sync-dataloaders) by running:\n\n```bash\npip install graphql-sync-dataloaders\n```\n\n## strawberry setup\n\nwhen creating your strawberry schema pass `deferredexecutioncontext` as the\n`execution_context_class` argument:\n\n```python\n# schema.py\nimport strawberry\nfrom graphql_sync_dataloaders import deferredexecutioncontext\n\nschema = strawberry.schema(query, execution_context_class=deferredexecutioncontext)\n```\n\nthen create your dataloaders using the `syncdataloader` class:\n\n```python\nfrom typing import list\n\nfrom graphql_sync_dataloaders import syncdataloader\n\nfrom .app import models  # your django models\n\ndef load_users(keys: list[int]) -> list[user]:\n    qs = models.user.objects.filter(id__in=keys)\n    user_map = {user.id: user for user in qs}\n    return [user_map.get(key, none) for key in keys]\n\nuser_loader = syncdataloader(load_users)\n```\n\nyou can then use the loader in your resolvers and it will automatically be\nbatched to reduce the number of sql queries:\n\n```python\nimport strawberry\n\n@strawberry.type\nclass query:\n    @strawberry.field\n    def get_user(self, id: strawberry.id) -> user:\n        return user_loader.load(id)\n```\n\n**note: you probably want to setup your loaders in context. see\nhttps://strawberry.rocks/docs/guides/dataloaders#usage-with-context for more\ndetails**\n\nthe following query will only make 1 sql query:\n\n```graphql\nfragment userdetails on user {\n  username\n}\n\nquery {\n  user1: getuser(id: '1') {\n    ...userdetails\n  }\n  user2: getuser(id: '2') {\n    ...userdetails\n  }\n  user3: getuser(id: '3') {\n    ...userdetails\n  }\n}\n```\n\n\n## graphene-django setup\n\n**requires graphene-django >=3.0.0b8**\n\nwhen setting up your graphqlview pass `deferredexecutioncontext` as the\n`execution_context_class` argument:\n\n```python\n# urls.py\nfrom django.urls import path\nfrom graphene_django.views import graphqlview\nfrom graphql_sync_dataloaders import deferredexecutioncontext\n\nfrom .schema import schema\n\nurlpatterns = [\n    path(\n        \"graphql\",\n        csrf_exempt(\n            graphqlview.as_view(\n                schema=schema, \n                execution_context_class=deferredexecutioncontext\n            )\n        ),\n    ),\n]\n```\n\nthen create your dataloaders using the `syncdataloader` class:\n\n```python\nfrom typing import list\n\nfrom graphql_sync_dataloaders import syncdataloader\n\nfrom .app import models  # your django models\n\ndef load_users(keys: list[int]) -> list[user]:\n    qs = models.user.objects.filter(id__in=keys)\n    user_map = {user.id: user for user in qs}\n    return [user_map.get(key, none) for key in keys]\n\nuser_loader = syncdataloader(load_users)\n```\n\nyou can then use the loader in your resolvers and it will automatically be\nbatched to reduce the number of sql queries:\n\n```python\nimport graphene\n\nclass query(graphene.objecttype):\n    get_user = graphene.field(user, id=graphene.id)\n\n    def resolve_get_user(root, info, id):\n        return user_loader.load(id)\n```\n\nthe following query will only make 1 sql query:\n\n```graphql\nfragment userdetails on user {\n  username\n}\n\nquery {\n  user1: getuser(id: '1') {\n    ...userdetails\n  }\n  user2: getuser(id: '2') {\n    ...userdetails\n  }\n  user3: getuser(id: '3') {\n    ...userdetails\n  }\n}\n```\n\n## how it works\n\nthis library implements a custom version of the graphql-core\n[executioncontext class](https://github.com/graphql-python/graphql-core/blob/5f6a1944cf6923f6249d1575f5b3aad87e629c66/src/graphql/execution/execute.py#l171)\nthat is aware of the `syncfuture` objects defined in this library. a\n`syncfuture` represents a value that hasn't been resolved to a value yet\n(similiar to asycnio futures or javascript promises) and that is what the\n`syncdataloader` returns when you call the `.load` function.\n\nwhen the custom `executioncontext` encounters a `syncfuture` that gets returned\nfrom a resolver and it keeps track of them. then after the first pass of the\nexection it triggers the `syncfuture` callbacks until there are none left. once\nthere are none left the data is fully resolved and can be returned to the\ncaller synchronously. this allows us to implement a `dataloader` pattern that\nbatches calls to a loader function, and it allows us to do this in a fully\nsynchronously way.\n\n## credits\n\n[@cito](https://github.com/cito) for graphql-core and for implementing the first version of this in https://github.com/graphql-python/graphql-core/pull/155\n",
+  "docs_url": null,
+  "keywords": "graphql,django,strawberry-graphql",
+  "license": "mit",
+  "name": "graphql-sync-dataloaders",
+  "package_url": "https://pypi.org/project/graphql-sync-dataloaders/",
+  "project_url": "https://pypi.org/project/graphql-sync-dataloaders/",
+  "project_urls": {
+    "Homepage": "https://github.com/jkimbo/graphql-sync-dataloaders",
+    "Repository": "https://github.com/jkimbo/graphql-sync-dataloaders"
+  },
+  "release_url": "https://pypi.org/project/graphql-sync-dataloaders/0.1.1/",
+  "requires_dist": [
+    "graphql-core (>=3.2.0,<3.3.0)"
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "use dataloaders in your python graphql servers that have to run in a sync context (i.e. django).",
+  "version": "0.1.1",
+  "releases": [],
+  "developers": [
+    "hello@jkimbo.com",
+    "jonathan_kim"
+  ],
+  "kwds": "graphql_sync_dataloaders graphql graphqlview graphene_django strawberry",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_graphql_sync_dataloaders",
+  "homepage": "https://github.com/jkimbo/graphql-sync-dataloaders",
+  "release_count": 2,
+  "dependency_ids": [
+    "pypi_graphql_core"
+  ]
+}

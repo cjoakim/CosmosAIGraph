@@ -1,0 +1,35 @@
+{
+  "classifiers": [
+    "license :: osi approved :: gnu general public license v3 (gplv3)",
+    "operating system :: os independent",
+    "programming language :: python",
+    "topic :: system :: archiving :: compression"
+  ],
+  "description": "\n# python-zipstream\n\nzipstream.py is a zip archive generator based on python 3.3's zipfile.py. it was created to\ngenerate a zip file generator for streaming (ie web apps). this is beneficial for when you\nwant to provide a downloadable archive of a large collection of regular files, which would be infeasible to\ngenerate the archive prior to downloading or of a very large file that you do not want to store entirely on disk or on memory.\n\nthe archive is generated as an iterator of strings, which, when joined, form\nthe zip archive. for example, the following code snippet would write a zip\narchive containing files from 'path' to a normal file:\n\n```python\nimport zipstream\n\nz = zipstream.zipfile()\nz.write('path/to/files')\n\nwith open('zipfile.zip', 'wb') as f:\n    for data in z:\n        f.write(data)\n```\n\nzipstream also allows to take as input a byte string iterable and to generate\nthe archive as an iterator.\nthis avoids storing large files on disk or in memory.\nto do so you could use something like this snippet:\n\n```python\ndef iterable():\n    for _ in xrange(10):\n        yield b'this is a byte string\\x01\\n'\n\nz = zipstream.zipfile()\nz.write_iter('my_archive_iter', iterable())\n\nwith open('zipfile.zip', 'wb') as f:\n    for data in z:\n        f.write(data)\n```\n\nof course both approach can be combined:\n\n```python\ndef iterable():\n    for _ in xrange(10):\n        yield b'this is a byte string\\x01\\n'\n\nz = zipstream.zipfile()\nz.write('path/to/files', 'my_archive_files')\nz.write_iter('my_archive_iter', iterable())\n\nwith open('zipfile.zip', 'wb') as f:\n    for data in z:\n        f.write(data)\n```\n\nsince recent versions of web.py support returning iterators of strings to be\nsent to the browser, to download a dynamically generated archive, you could\nuse something like this snippet:\n\n```python\ndef get(self):\n    path = '/path/to/dir/of/files'\n    zip_filename = 'files.zip'\n    web.header('content-type' , 'application/zip')\n    web.header('content-disposition', 'attachment; filename=\"%s\"' % (\n        zip_filename,))\n    return zipstream.zipfile(path)\n```\n\nif the zlib module is available, zipstream.zipfile can generate compressed zip\narchives.\n\n## installation\n\n```\npip install zipstream-new\n```\n\n## requirements\n\n  * python 2.6+, 3.2+, pypy\n\n## examples\n\n### flask\n\n```python\nfrom flask import response\n\n@app.route('/package.zip', methods=['get'], endpoint='zipball')\ndef zipball():\n    def generator():\n        z = zipstream.zipfile(mode='w', compression=zipstream.zip_deflated)\n\n        z.write('/path/to/file')\n\n        for chunk in z:\n            yield chunk\n\n    response = response(generator(), mimetype='application/zip')\n    response.headers['content-disposition'] = 'attachment; filename={}'.format('files.zip')\n    return response\n\n# or\n\n@app.route('/package.zip', methods=['get'], endpoint='zipball')\ndef zipball():\n    z = zipstream.zipfile(mode='w', compression=zipstream.zip_deflated)\n    z.write('/path/to/file')\n\n    response = response(z, mimetype='application/zip')\n    response.headers['content-disposition'] = 'attachment; filename={}'.format('files.zip')\n    return response\n\n# partial flushing of the zip before closing\n\n@app.route('/package.zip', methods=['get'], endpoint='zipball')\ndef zipball():\n    def generate_zip_with_manifest():\n        z = zipstream.zipfile(mode='w', compression=zipstream.zip_deflated)\n\n        manifest = []\n        for filename in os.listdir('/path/to/files'):\n            z.write(os.path.join('/path/to/files', filename), arcname=filename)\n            yield from z.flush()\n            manifest.append(filename)\n\n        z.write_str('manifest.json', json.dumps(manifest).encode())\n\n        yield from z\n\n    response = response(z, mimetype='application/zip')\n    response.headers['content-disposition'] = 'attachment; filename={}'.format('files.zip')\n    return response\n```\n\n### django 1.5+\n\n```python\nfrom django.http import streaminghttpresponse\n\ndef zipball(request):\n    z = zipstream.zipfile(mode='w', compression=zipstream.zip_deflated)\n    z.write('/path/to/file')\n\n    response = streaminghttpresponse(z, content_type='application/zip')\n    response['content-disposition'] = 'attachment; filename={}'.format('files.zip')\n    return response\n```\n\n### webpy\n\n```python\ndef get(self):\n    path = '/path/to/dir/of/files'\n    zip_filename = 'files.zip'\n    web.header('content-type' , 'application/zip')\n    web.header('content-disposition', 'attachment; filename=\"%s\"' % (\n        zip_filename,))\n    return zipstream.zipfile(path)\n```\n\n## running tests\n\nwith python version > 2.6, just run the following command: `python -m unittest discover`\n\nalternatively, you can use `nose`.\n\nif you want to run the tests on all supported python versions, run `tox`.\n\n\n",
+  "docs_url": null,
+  "keywords": "zip streaming",
+  "license": "",
+  "name": "zipstream-new",
+  "package_url": "https://pypi.org/project/zipstream-new/",
+  "project_url": "https://pypi.org/project/zipstream-new/",
+  "project_urls": {
+    "Homepage": "https://github.com/arjan-s/python-zipstream"
+  },
+  "release_url": "https://pypi.org/project/zipstream-new/1.1.8/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "zipfile generator that takes input files as well as streams",
+  "version": "1.1.8",
+  "releases": [],
+  "developers": [
+    "arjan5",
+    "arjan@anymore.nl"
+  ],
+  "kwds": "zipstream zipfile zip_filename zip_deflated zip",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_zipstream_new",
+  "homepage": "https://github.com/arjan-s/python-zipstream",
+  "release_count": 4,
+  "dependency_ids": []
+}

@@ -1,0 +1,64 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "![autoray-header](https://github.com/jcmgray/autoray/assets/8982598/c5cb89bf-cc16-4345-8796-e0bd98dc2a15)\n\n[![tests](https://github.com/jcmgray/autoray/actions/workflows/tests.yml/badge.svg)](https://github.com/jcmgray/autoray/actions/workflows/tests.yml) [![codecov](https://codecov.io/gh/jcmgray/autoray/branch/main/graph/badge.svg?token=q5evniut9s)](https://codecov.io/gh/jcmgray/autoray) [![codacy badge](https://app.codacy.com/project/badge/grade/ba896d74c4954dd58da01df30c7bf326)](https://app.codacy.com/gh/jcmgray/autoray/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=badge_grade) [![pypi](https://img.shields.io/pypi/v/autoray?color=teal)](https://pypi.org/project/autoray/) [![anaconda-server badge](https://anaconda.org/conda-forge/autoray/badges/version.svg)](https://anaconda.org/conda-forge/autoray)\n\n[`autoray`](https://autoray.readthedocs.io/en/latest) is a lightweight python automatic-array library for\nabstracting your tensor operations. primarily it provides an\n[*automatic* dispatch mechanism](https://autoray.readthedocs.io/en/latest/automatic_dispatch.html#)\nthat means you can write backend agnostic code that works for:\n\n* [numpy](https://github.com/numpy/numpy)\n* [pytorch](https://pytorch.org/)\n* [jax](https://github.com/google/jax)\n* [cupy](https://github.com/cupy/cupy)\n* [dask](https://github.com/dask/dask)\n* [autograd](https://github.com/hips/autograd)\n* [tensorflow](https://github.com/tensorflow/tensorflow)\n* [sparse](https://sparse.pydata.org/)\n* [mars](https://github.com/mars-project/mars)\n* ... and indeed **any** library that provides a numpy-*ish* api, even if it\n  knows nothing about `autoray`.\n\nbeyond that, abstracting the array interface allows you to:\n\n* *swap [custom versions of functions](https://autoray.readthedocs.io/en/latest/automatic_dispatch.html#functions)\n  for specific backends*\n* *trace through computations [lazily](https://autoray.readthedocs.io/en/latest/lazy_computation.html) without actually\n  running them*\n* *automatically [share intermediates and fold constants](https://autoray.readthedocs.io/en/latest/lazy_computation.html#sharing-intermediates)\n  in computations*\n* *compile functions with a [unified interface](https://autoray.readthedocs.io/en/latest/compilation.html) for different\n  backends*\n\n\n## basic usage\n\nthe main function of `autoray` is\n[`do`](https://autoray.readthedocs.io/en/latest/autoapi/autoray/autoray/index.html#autoray.autoray.do),\nwhich takes a function\nname followed by `*args` and `**kwargs`, and automatically looks up (and\ncaches) the correct function to match the equivalent numpy call:\n\n```python\nfrom autoray as ar\n\ndef noised_svd(x):\n    # automatic dispatch based on supplied array\n    u, s, vh = ar.do('linalg.svd', x)\n\n    # automatic dispatch based on different array\n    sn = s + 0.1 * ar.do('random.normal', size=ar.shape(s), like=s)\n\n    # automatic dispatch for multiple arrays for certain functions\n    return ar.do('einsum', 'ij,j,jk->ik', u, sn, vh)\n\n# explicit backend given by string\nx = ar.do('random.uniform', size=(100, 100), like=\"torch\")\n\n# this function now works for any backend\ny = noised_svd(x)\n\n# explicit inference of backend from array\nar.infer_backend(y)\n# 'torch'\n```\n\nif you don't like the explicit `do` syntax, or simply want a\ndrop-in replacement for existing code, you can also import the `autoray.numpy`\nmodule:\n\n```python\nfrom autoray import numpy as np\n\n# set a temporary default backend\nwith ar.backend_like('cupy'):\n    z = np.ones((3, 4), dtype='float32')\n\nnp.exp(z)\n# array([[2.7182817, 2.7182817, 2.7182817, 2.7182817],\n#        [2.7182817, 2.7182817, 2.7182817, 2.7182817],\n#        [2.7182817, 2.7182817, 2.7182817, 2.7182817]], dtype=float32)\n```\n\ncustom backends and functions can be dynamically registered with:\n\n* [`register_backend`](https://autoray.readthedocs.io/en/latest/autoapi/autoray/autoray/index.html#autoray.autoray.register_backend)\n* [`register_function`](https://autoray.readthedocs.io/en/latest/autoapi/autoray/autoray/index.html#autoray.autoray.register_function)\n\nthe main documentation is available at [autoray.readthedocs.io](https://autoray.readthedocs.io/en/latest/).\n",
+  "docs_url": null,
+  "keywords": "array agnostic numeric numpy cupy dask tensorflow jax autograd",
+  "license": "apache",
+  "name": "autoray",
+  "package_url": "https://pypi.org/project/autoray/",
+  "project_url": "https://pypi.org/project/autoray/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/jcmgray/autoray/issues",
+    "Homepage": "http://github.com/jcmgray/autoray",
+    "Source": "https://github.com/jcmgray/autoray/"
+  },
+  "release_url": "https://pypi.org/project/autoray/0.6.7/",
+  "requires_dist": [
+    "sphinx >=2.0 ; extra == 'docs'",
+    "sphinx-autoapi ; extra == 'docs'",
+    "sphinx-copybutton ; extra == 'docs'",
+    "myst-nb ; extra == 'docs'",
+    "furo ; extra == 'docs'",
+    "setuptools-scm ; extra == 'docs'",
+    "ipython !=8.7.0 ; extra == 'docs'",
+    "numpy ; extra == 'tests'",
+    "coverage ; extra == 'tests'",
+    "pytest ; extra == 'tests'",
+    "pytest-cov ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "abstract your array operations.",
+  "version": "0.6.7",
+  "releases": [],
+  "developers": [
+    "johnnie_gray",
+    "johnniemcgray@gmail.com"
+  ],
+  "kwds": "badge autoray badges badge_grade tensorflow",
+  "license_kwds": "apache",
+  "libtype": "pypi",
+  "id": "pypi_autoray",
+  "homepage": "http://github.com/jcmgray/autoray",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_furo",
+    "pypi_ipython",
+    "pypi_myst_nb",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_setuptools_scm",
+    "pypi_sphinx",
+    "pypi_sphinx_autoapi",
+    "pypi_sphinx_copybutton"
+  ]
+}

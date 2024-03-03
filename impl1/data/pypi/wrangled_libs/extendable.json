@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent"
+  ],
+  "description": "[![ci](https://github.com/lmignon/extendable/actions/workflows/ci.yml/badge.svg)](https://github.com/lmignon/extendable/actions/workflows/ci.yml)\n[![codecov](https://codecov.io/gh/lmignon/extendable/branch/master/graph/badge.svg?token=lxd34t420h)](https://codecov.io/gh/lmignon/extendable)\n# extendable\n\n## about\n\nextendable is a module that aims to provide a way to define extensible python\nclasses. it is designed to provide developers with a convenient and flexible way\nto extend the functionality of their python applications. by leveraging the \"extendable\"\nlibrary, developers can easily create modular and customizable components that\ncan be added or modified without modifying the core codebase. this library utilizes\npython's object-oriented programming features and provides a simple and intuitive\ninterface for extending and customizing applications. it aims to enhance code\nreusability, maintainability, and overall development efficiency. it implements\nthe extension by inheritance and composition pattern. it's inspired by the way\nodoo implements its models. others patterns can be used to make your code pluggable\nand this library doesn't replace them.\n\n## quick start\n\nlet's define a first python class.\n\n```python\nfrom extendable import extendablemeta\n\nclass person(metaclass=extendablemeta):\n\n    def __init__(self, name: str):\n        self.name = name\n\n    def __repr__(self) -> str:\n        return self.name\n\n```\n\nsomeone using the module where the class is defined would need to extend the\nperson definition with a firstname field.\n\n```python\nfrom extendable import extendablemeta\n\nclass personext(person, extends=person):\n    def __init__(self, name: str):\n        super().__init__(name)\n        self._firstname = none\n\n    @property\n    def firstname(self) -> str:\n        return self._firstname\n\n    @firstname.setter\n    def firstname(self, value:str) -> none:\n        self._firstname = value\n\n    def __repr__(self) -> str:\n        res = super().__repr__()\n        return f\"{res}, {self.firstname or ''}\"\n```\nat this time we have defined that `personext` extends the initial definition\nof `person`. to finalyse the process, we need to instruct the runtime that\nall our class declarations are done by building the final class definitions and\nmaking it available into the current execution context.\n\n```python\nfrom extendable import context, registry\n\n_registry = registry.extendableclassesregistry()\ncontext.extendable_registry.set(_registry)\n_registry.init_registry()\n\n```\n\nonce it's done the `person` and `personext` classes can be used interchangeably\ninto your code since both represent the same class...\n\n```python\np = person(\"mignon\")\np.firstname = \"laurent\"\nprint (p)\n#> mignon, laurent\n```\n\n> :warning: this way of extending a predefined behaviour must be used carefully and in\n> accordance with the [liskov substitution principle](https://en.wikipedia.org/wiki/liskov_substitution_principle)\n> it doesn't replace others design patterns that can be used to make your code pluggable.\n\n## how it works\n\n behind the scenes, the \"extendable\" library utilizes several key concepts and\n mechanisms to enable its functionality. overall, the \"extendable\" library leverages\n metaclasses, registry initialization, and dynamic loading to provide a flexible\n and modular approach to extending python classes. by utilizing these mechanisms,\n developers can easily enhance the functionality of their applications without\n the need for extensive modifications to the core codebase.\n\n### metaclasses\n\nthe metaclass do 2 things.\n\n* it collects the definitions of the declared class and gathers information about\n  its attributes, methods, and other characteristics. these definitions are stored\n  in a global registry by module. this registry is a map of module name to a list\n  of class definitions.\n* this information is then used to build a class object that acts as a proxy or\n  blueprint for the actual concrete class that will be created later when the registry\n  is initialized based on the aggregated definition of all the classes declared\n  to extend the initial class...\n\n### registry initialization\n\nthe registry initialization is the process that build the final class definition.\nto make your blueprint class work, you need to initialize the registry. this is\ndone by calling the `init_registry` method of the registry object. this method\nwill build the final class definition by aggregating all the definitions of the\nclasses declared to extend the initial class through a class hierarchy. the\norder of the classes in the hierarchy is important. this order is by default\nthe order in which the classes are loaded by the python interpreter. for advanced\nusage, you can change this order or even the list of definitions used to build the\nfinal class definition. this is done by calling the `init_registry` method with\nthe list of modules[^1] to load as argument.\n\n[^1]: when you specify a module into the list of modules to load, the wildcart\n      character `*` is allowed at the end of the module name to load all the\n      submodules of the module. otherwise, only the module itself is loaded.\n\n```python\nfrom extendable import registry\n\n_registry = registry.extendableclassesregistry()\n_registry.init_registry([\"module1\", \"module2.*\"])\n```\n\nonce the registry is initialized, it must be made available into the current\nexecution context so the blueprint class can use it. to do so you must set the\nregistry into the `extendable_registry` context variable. this is done by\ncalling the `set` method of the `extendable_registry` context variable.\n\n```python\nfrom extendable import context, registry\n\n_registry = registry.extendableclassesregistry()\ncontext.extendable_registry.set(_registry)\n_registry.init_registry()\n```\n\n### dynamic loading\n\nall of this is made possible by the dynamic loading capabilities of python.\nthe concept of dynamic loading in python refers to the ability to load and execute\ncode at runtime, rather than during the initial compilation or execution phase.\nit allows developers to dynamically import and use modules, classes, functions\nor variables based on certain conditions or user input. the dynamic loading\ncan also be applied at class instantiation time. this is the mechanism used by\nthe \"extendable\" library to instantiate the final class definition when you call\nthe constructor of the blueprint class. this is done by implementing the\n`__call__` method into the metaclass to return the final class definition instead\nof the blueprint class itself. the same applies to pretend that the blueprint\nclass is the final class definition through the implementation of the `__subclasscheck__`\nmethod into the metaclass.\n\n## development\n\nto run tests, use `tox`. you will get a test coverage report in `htmlcov/index.html`.\nan easy way to install tox is `pipx install tox`.\n\nthis project uses pre-commit to enforce linting (among which black for code formating,\nisort for sorting imports, and mypy for type checking).\n\nto make sure linters run locally on each of your commits, install pre-commit\n(`pipx install pre-commit` is recommended), and run `pre-commit install` in your\nlocal clone of the extendable repository.\n\nto release:\n\n * run ``bumpversion patch|minor|major` --list`\n * check the `new_version` value returned by the previous command\n * run `towncrier build`.\n * inspect and commit the updated history.rst.\n * `git tag {new_version} ; git push --tags`.\n\n## contributing\n\nall kind of contributions are welcome.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "extendable",
+  "package_url": "https://pypi.org/project/extendable/",
+  "project_url": "https://pypi.org/project/extendable/",
+  "project_urls": {
+    "Changelog": "https://github.com/lmignon/extendable/blob/master/HISTORY.rst",
+    "Source": "https://github.com/lmignon/extendable"
+  },
+  "release_url": "https://pypi.org/project/extendable/1.2.2/",
+  "requires_dist": [
+    "contextvars;python_version<'3.7'",
+    "types-contextvars;python_version<'3.7'",
+    "typing_extensions;python_version<'3.7'",
+    "mypy ; extra == \"mypy\"",
+    "towncrier ; extra == \"release\"",
+    "bumpversion ; extra == \"release\"",
+    "pytest ; extra == \"test\"",
+    "pytest-mock ; extra == \"test\"",
+    "coverage[toml] ; extra == \"test\""
+  ],
+  "requires_python": ">=3.6",
+  "summary": "a lib to define class extendable at runtime.",
+  "version": "1.2.2",
+  "releases": [],
+  "developers": [
+    "laurent.mignon@acsone.eu"
+  ],
+  "kwds": "extendable extendable_registry extendablemeta extending python",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_extendable",
+  "homepage": "",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_bumpversion",
+    "pypi_contextvars",
+    "pypi_coverage",
+    "pypi_mypy",
+    "pypi_pytest",
+    "pypi_pytest_mock",
+    "pypi_towncrier",
+    "pypi_types_contextvars",
+    "pypi_typing_extensions"
+  ]
+}

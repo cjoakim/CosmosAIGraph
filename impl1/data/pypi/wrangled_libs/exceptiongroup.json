@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "typing :: typed"
+  ],
+  "description": ".. image:: https://github.com/agronholm/exceptiongroup/actions/workflows/test.yml/badge.svg\n  :target: https://github.com/agronholm/exceptiongroup/actions/workflows/test.yml\n  :alt: build status\n.. image:: https://coveralls.io/repos/github/agronholm/exceptiongroup/badge.svg?branch=main\n  :target: https://coveralls.io/github/agronholm/exceptiongroup?branch=main\n  :alt: code coverage\n\nthis is a backport of the ``baseexceptiongroup`` and ``exceptiongroup`` classes from\npython 3.11.\n\nit contains the following:\n\n* the  ``exceptiongroup.baseexceptiongroup`` and ``exceptiongroup.exceptiongroup``\n  classes\n* a utility function (``exceptiongroup.catch()``) for catching exceptions possibly\n  nested in an exception group\n* patches to the ``tracebackexception`` class that properly formats exception groups\n  (installed on import)\n* an exception hook that handles formatting of exception groups through\n  ``tracebackexception`` (installed on import)\n* special versions of some of the functions from the ``traceback`` module, modified to\n  correctly handle exception groups even when monkey patching is disabled, or blocked by\n  another custom exception hook:\n\n  * ``traceback.format_exception()``\n  * ``traceback.format_exception_only()``\n  * ``traceback.print_exception()``\n  * ``traceback.print_exc()``\n* a backported version of ``contextlib.suppress()`` from python 3.12.1 which also\n  handles suppressing exceptions inside exception groups\n\nif this package is imported on python 3.11 or later, the built-in implementations of the\nexception group classes are used instead, ``tracebackexception`` is not monkey patched\nand the exception hook won't be installed.\n\nsee the `standard library documentation`_ for more information on exception groups.\n\n.. _standard library documentation: https://docs.python.org/3/library/exceptions.html\n\ncatching exceptions\n===================\n\ndue to the lack of the ``except*`` syntax introduced by `pep 654`_ in earlier python\nversions, you need to use ``exceptiongroup.catch()`` to catch exceptions that are\npotentially nested inside an exception group. this function returns a context manager\nthat calls the given handler for any exceptions matching the sole argument.\n\nthe argument to ``catch()`` must be a dict (or any ``mapping``) where each key is either\nan exception class or an iterable of exception classes. each value must be a callable\nthat takes a single positional argument. the handler will be called at most once, with\nan exception group as an argument which will contain all the exceptions that are any\nof the given types, or their subclasses. the exception group may contain nested groups\ncontaining more matching exceptions.\n\nthus, the following python 3.11+ code:\n\n.. code-block:: python3\n\n    try:\n        ...\n    except* (valueerror, keyerror) as excgroup:\n        for exc in excgroup.exceptions:\n            print('caught exception:', type(exc))\n    except* runtimeerror:\n        print('caught runtime error')\n\nwould be written with this backport like this:\n\n.. code-block:: python3\n\n    from exceptiongroup import exceptiongroup, catch\n\n    def value_key_err_handler(excgroup: exceptiongroup) -> none:\n        for exc in excgroup.exceptions:\n            print('caught exception:', type(exc))\n\n    def runtime_err_handler(exc: exceptiongroup) -> none:\n        print('caught runtime error')\n\n    with catch({\n        (valueerror, keyerror): value_key_err_handler,\n        runtimeerror: runtime_err_handler\n    }):\n        ...\n\n**note**: just like with ``except*``, you cannot handle ``baseexceptiongroup`` or\n``exceptiongroup`` with ``catch()``.\n\nsuppressing exceptions\n======================\n\nthis library contains a backport of the ``contextlib.suppress()`` context manager from\npython 3.12.1. it allows you to selectively ignore certain exceptions, even when they're\ninside exception groups::\n\n    from exceptiongroup import suppress\n\n    with suppress(runtimeerror):\n        raise exceptiongroup(\"\", [runtimeerror(\"boo\")])\n\nnotes on monkey patching\n========================\n\nto make exception groups render properly when an unhandled exception group is being\nprinted out, this package does two things when it is imported on any python version\nearlier than 3.11:\n\n#. the  ``traceback.tracebackexception`` class is monkey patched to store extra\n   information about exception groups (in ``__init__()``) and properly format them (in\n   ``format()``)\n#. an exception hook is installed at ``sys.excepthook``, provided that no other hook is\n   already present. this hook causes the exception to be formatted using\n   ``traceback.tracebackexception`` rather than the built-in rendered.\n\nif ``sys.exceptionhook`` is found to be set to something else than the default when\n``exceptiongroup`` is imported, no monkeypatching is done at all.\n\nto prevent the exception hook and patches from being installed, set the environment\nvariable ``exceptiongroup_no_patch`` to ``1``.\n\nformatting exception groups\n---------------------------\n\nnormally, the monkey patching applied by this library on import will cause exception\ngroups to be printed properly in tracebacks. but in cases when the monkey patching is\nblocked by a third party exception hook, or monkey patching is explicitly disabled,\nyou can still manually format exceptions using the special versions of the ``traceback``\nfunctions, like ``format_exception()``, listed at the top of this page. they work just\nlike their counterparts in the ``traceback`` module, except that they use a separately\npatched subclass of ``tracebackexception`` to perform the rendering.\n\nparticularly in cases where a library installs its own exception hook, it is recommended\nto use these special versions to do the actual formatting of exceptions/tracebacks.\n\n.. _pep 654: https://www.python.org/dev/peps/pep-0654/\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "exceptiongroup",
+  "package_url": "https://pypi.org/project/exceptiongroup/",
+  "project_url": "https://pypi.org/project/exceptiongroup/",
+  "project_urls": {
+    "Changelog": "https://github.com/agronholm/exceptiongroup/blob/main/CHANGES.rst",
+    "Issue Tracker": "https://github.com/agronholm/exceptiongroup/issues",
+    "Source code": "https://github.com/agronholm/exceptiongroup"
+  },
+  "release_url": "https://pypi.org/project/exceptiongroup/1.2.0/",
+  "requires_dist": [
+    "pytest >= 6 ; extra == \"test\""
+  ],
+  "requires_python": ">=3.7",
+  "summary": "backport of pep 654 (exception groups)",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "alex.gronholm@nextday.fi"
+  ],
+  "kwds": "exceptiongroup exceptiongroup_no_patch baseexceptiongroup exceptionhook exceptions",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_exceptiongroup",
+  "homepage": "",
+  "release_count": 20,
+  "dependency_ids": [
+    "pypi_pytest"
+  ]
+}

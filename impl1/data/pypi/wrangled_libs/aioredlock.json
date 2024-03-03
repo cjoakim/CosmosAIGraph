@@ -1,0 +1,64 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "aioredlock\n==========\n\n.. image:: https://github.com/joanvila/aioredlock/workflows/tests/badge.svg\n  :target: https://travis-ci.org/joanvila/aioredlock\n\n.. image:: https://codecov.io/gh/joanvila/aioredlock/branch/master/graph/badge.svg\n  :target: https://codecov.io/gh/joanvila/aioredlock\n\n.. image:: https://badge.fury.io/py/aioredlock.svg\n  :target: https://pypi.python.org/pypi/aioredlock\n\nthe asyncio redlock_ algorithm implementation.\n\nredlock and asyncio\n-------------------\n\nthe redlock algorithm is a distributed lock implementation for redis_. there are many implementations of it in several languages. in this case, this is the asyncio_ compatible implementation for python 3.5+.\n\n\nusage\n-----\n.. code-block:: python\n\n  from aioredlock import aioredlock, lockerror, sentinel\n\n  # define a list of connections to your redis instances:\n  redis_instances = [\n    ('localhost', 6379),\n    {'host': 'localhost', 'port': 6379, 'db': 1},\n    'redis://localhost:6379/2',\n    sentinel(('localhost', 26379), master='leader', db=3),\n    sentinel('redis://localhost:26379/4?master=leader&encoding=utf-8'),\n    sentinel('rediss://:password@localhost:26379/5?master=leader&encoding=utf-8&ssl_cert_reqs=cert_none'),\n  ]\n\n  # create a lock manager:\n  lock_manager = aioredlock(redis_instances)\n\n  # check wether a resourece acquired by any other redlock instance:\n  assert not await lock_manager.is_locked(\"resource_name\")\n\n  # try to acquire the lock:\n  try:\n      lock = await lock_manager.lock(\"resource_name\", lock_timeout=10)\n  except lockerror:\n      print('lock not acquired')\n      raise\n\n  # now the lock is acquired:\n  assert lock.valid\n  assert await lock_manager.is_locked(\"resource_name\")\n\n  # extend lifetime of the lock:\n  await lock_manager.extend(lock, lock_timeout=10)\n  # raises lockerror if the lock manager can not extend the lock lifetime\n  # on more then half of the redis instances.\n\n  # release the lock:\n  await lock_manager.unlock(lock)\n  # raises lockerror if the lock manager can not release the lock\n  # on more then half of redis instances.\n\n  # the released lock become invalid:\n  assert not lock.valid\n  assert not await lock_manager.is_locked(\"resource_name\")\n\n  # or you can use the lock as async context manager:\n  try:\n      async with await lock_manager.lock(\"resource_name\") as lock:\n          assert lock.valid is true\n          # do your stuff having the lock\n          await lock.extend()  # alias for lock_manager.extend(lock)\n          # do more stuff having the lock\n      assert lock.valid is false # lock will be released by context manager\n  except lockerror:\n      print('lock not acquired')\n      raise\n\n  # clear the connections with redis:\n  await lock_manager.destroy()\n\n\nhow it works\n------------\n\nthe aioredlock constructor accepts the following optional parameters:\n\n- ``redis_connections``: a list of connections (dictionary of host and port and kwargs for ``aioredis.create_redis_pool()``, or tuple ``(host, port)``, or string redis uri) where the redis instances are running.  the default value is ``[{'host': 'localhost', 'port': 6379}]``.\n- ``retry_count``: an integer representing number of maximum allowed retries to acquire the lock. the default value is ``3`` times.\n- ``retry_delay_min`` and ``retry_delay_max``: float values representing waiting time (in seconds) before the next retry attempt. the default values are ``0.1`` and ``0.3``, respectively.\n\nin order to acquire the lock, the ``lock`` function should be called. if the lock operation is successful, ``lock.valid`` will be true, if the lock is not acquired then the ``lockerror`` will be raised.\n\nfrom that moment, the lock is valid until the ``unlock`` function is called or when the ``lock_timeout`` is reached.\n\ncall the ``extend`` function to reset lifetime of the lock to ``lock_timeout`` interval.\n\nuse the ``is_locked`` function to check if the resource is locked by other redlock instance.\n\nin order to clear all the connections with redis, the lock_manager ``destroy`` method can be called.\n\nto-do\n-----\n\n\n.. _redlock: https://redis.io/topics/distlock\n.. _redis: https://redis.io\n.. _asyncio: https://docs.python.org/3/library/asyncio.html\n\n\n",
+  "docs_url": null,
+  "keywords": "redis redlock distributed locks asyncio",
+  "license": "mit",
+  "name": "aioredlock",
+  "package_url": "https://pypi.org/project/aioredlock/",
+  "project_url": "https://pypi.org/project/aioredlock/",
+  "project_urls": {
+    "Homepage": "https://github.com/joanvila/aioredlock"
+  },
+  "release_url": "https://pypi.org/project/aioredlock/0.7.3/",
+  "requires_dist": [
+    "aioredis (<2.0.0)",
+    "attrs (>=17.4.0)",
+    "codecov ; extra == 'cicd'",
+    "aiodocker ; extra == 'examples'",
+    "bump2version ; extra == 'package'",
+    "twine ; extra == 'package'",
+    "wheel ; extra == 'package'",
+    "pytest (==6.1.0) ; extra == 'test'",
+    "pytest-asyncio ; extra == 'test'",
+    "pytest-mock ; extra == 'test'",
+    "pytest-cov ; extra == 'test'",
+    "flake8 ; extra == 'test'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "asyncio implemetation of redis distributed locks",
+  "version": "0.7.3",
+  "releases": [],
+  "developers": [
+    "vila.joan94@gmail.com"
+  ],
+  "kwds": "redlock redlock_ _redlock lock_manager is_locked",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_aioredlock",
+  "homepage": "https://github.com/joanvila/aioredlock",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_aiodocker",
+    "pypi_aioredis",
+    "pypi_attrs",
+    "pypi_bump2version",
+    "pypi_codecov",
+    "pypi_flake8",
+    "pypi_pytest",
+    "pypi_pytest_asyncio",
+    "pypi_pytest_cov",
+    "pypi_pytest_mock",
+    "pypi_twine",
+    "pypi_wheel"
+  ]
+}

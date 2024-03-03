@@ -1,0 +1,40 @@
+{
+  "classifiers": [],
+  "description": "## python-socks\n\n[![build status](https://api.travis-ci.com/romis2012/python-socks.svg?branch=master)](https://travis-ci.com/github/romis2012/python-socks)\n[![coverage status](https://coveralls.io/repos/github/romis2012/python-socks/badge.svg?branch=master&_=q)](https://coveralls.io/github/romis2012/python-socks?branch=master)\n[![pypi version](https://badge.fury.io/py/python-socks.svg)](https://badge.fury.io/py/python-socks)\n<!--\n[![downloads](https://pepy.tech/badge/python-socks/month)](https://pepy.tech/project/python-socks)\n-->\n\nthe `python-socks` package provides a core proxy client functionality for python.\nsupports socks4(a), socks5(h), http (tunneling) proxy and provides sync and async (asyncio, trio, curio, anyio) apis.\nyou probably don't need to use `python-socks` directly. \nit is used internally by \n[aiohttp-socks](https://github.com/romis2012/aiohttp-socks) and [httpx-socks](https://github.com/romis2012/httpx-socks) packages.  \n\n## requirements\n- python >= 3.6\n- async-timeout >= 3.0.1 (optional)\n- trio >= 0.16.0 (optional)\n- curio >= 1.4 (optional)\n- anyio >= 3.3.4 (optional)\n\n## installation\n\nonly sync proxy support:\n```\npip install python-socks\n```\n\nto include optional asyncio support:\n```\npip install python-socks[asyncio]\n```\n\nto include optional trio support:\n```\npip install python-socks[trio]\n```\n\nto include optional curio support:\n```\npip install python-socks[curio]\n```\n\nto include optional anyio support:\n```\npip install python-socks[anyio]\n```\n\n## simple usage\nwe are making secure http get request via socks5 proxy\n \n#### sync\n```python\nimport ssl\nfrom python_socks.sync import proxy\n\nproxy = proxy.from_url('socks5://user:password@127.0.0.1:1080')\n\n# `connect` returns standard python socket in blocking mode\nsock = proxy.connect(dest_host='check-host.net', dest_port=443)\n\nsock = ssl.create_default_context().wrap_socket(\n    sock=sock,\n    server_hostname='check-host.net'\n)\n\nrequest = (\n    b'get /ip http/1.1\\r\\n'\n    b'host: check-host.net\\r\\n'\n    b'connection: close\\r\\n\\r\\n'\n)\nsock.sendall(request)\nresponse = sock.recv(4096)\nprint(response)\n```\n\n#### async (asyncio)\n```python\nimport ssl\nimport asyncio\nfrom python_socks.async_.asyncio import proxy\n\nproxy = proxy.from_url('socks5://user:password@127.0.0.1:1080')\n\n# `connect` returns standard python socket in non-blocking mode \n# so we can pass it to asyncio.open_connection(...)\nsock = await proxy.connect(dest_host='check-host.net', dest_port=443)\n\nreader, writer = await asyncio.open_connection(\n    host=none,\n    port=none,\n    sock=sock,\n    ssl=ssl.create_default_context(),\n    server_hostname='check-host.net',\n)\n\nrequest = (\n    b'get /ip http/1.1\\r\\n'\n    b'host: check-host.net\\r\\n'\n    b'connection: close\\r\\n\\r\\n'\n)\n\nwriter.write(request)\nresponse = await reader.read(-1)\nprint(response)\n```\n\n#### async (trio)\n```python\nimport ssl\nimport trio\nfrom python_socks.async_.trio import proxy\n\nproxy = proxy.from_url('socks5://user:password@127.0.0.1:1080')\n\n# `connect` returns trio socket \n# so we can pass it to trio.socketstream\nsock = await proxy.connect(dest_host='check-host.net', dest_port=443)\n\nstream = trio.socketstream(sock)\n\nstream = trio.sslstream(\n    stream, ssl.create_default_context(),\n    server_hostname='check-host.net'\n)\nawait stream.do_handshake()\n\nrequest = (\n    b'get /ip http/1.1\\r\\n'\n    b'host: check-host.net\\r\\n'\n    b'connection: close\\r\\n\\r\\n'\n)\n\nawait stream.send_all(request)\nresponse = await stream.receive_some(4096)\nprint(response)\n```\n\n#### async (curio)\n```python\nimport curio.ssl as curiossl\nfrom python_socks.async_.curio import proxy\n\nproxy = proxy.from_url('socks5://user:password@127.0.0.1:1080')\n# `connect` returns curio.io.socket\nsock = await proxy.connect(\n    dest_host='check-host.net',\n    dest_port=443\n)\n\nrequest = (\n    b'get /ip http/1.1\\r\\n'\n    b'host: check-host.net\\r\\n'\n    b'connection: close\\r\\n\\r\\n'\n)\n\nssl_context = curiossl.create_default_context()\nsock = await ssl_context.wrap_socket(\n    sock, do_handshake_on_connect=false, server_hostname='check-host.net'\n)\n\nawait sock.do_handshake()\n\nstream = sock.as_stream()\n\nawait stream.write(request)\nresponse = await stream.read(1024)\nprint(response)\n```\n\n#### async (anyio)\n```python\nimport ssl\nfrom python_socks.async_.anyio import proxy\n\nproxy = proxy.from_url('socks5://user:password@127.0.0.1:1080')\n\n# `connect` returns anyiosocketstream\nstream = await proxy.connect(\n    dest_host='check-host.net',\n    dest_port=443,\n    dest_ssl=ssl.create_default_context(),\n)\n\nrequest = (\n    b'get /ip http/1.1\\r\\n'\n    b'host: check-host.net\\r\\n'\n    b'connection: close\\r\\n\\r\\n'\n)\n\nawait stream.write_all(request)\nresponse = await stream.read()\nprint(response)\n```\n\n## more complex example\n\n#### a urllib3 poolmanager that routes connections via the proxy\n\n```python\nfrom urllib3 import poolmanager, httpconnectionpool, httpsconnectionpool\nfrom urllib3.connection import httpconnection, httpsconnection\nfrom python_socks.sync import proxy\n\n\nclass proxyhttpconnection(httpconnection):\n    def __init__(self, *args, **kwargs):\n        socks_options = kwargs.pop('_socks_options')\n        self._proxy_url = socks_options['proxy_url']\n        super().__init__(*args, **kwargs)\n\n    def _new_conn(self):\n        proxy = proxy.from_url(self._proxy_url)\n        return proxy.connect(\n            dest_host=self.host,\n            dest_port=self.port,\n            timeout=self.timeout\n        )\n\n\nclass proxyhttpsconnection(proxyhttpconnection, httpsconnection):\n    pass\n\n\nclass proxyhttpconnectionpool(httpconnectionpool):\n    connectioncls = proxyhttpconnection\n\n\nclass proxyhttpsconnectionpool(httpsconnectionpool):\n    connectioncls = proxyhttpsconnection\n\n\nclass proxypoolmanager(poolmanager):\n    def __init__(self, proxy_url, timeout=5, num_pools=10, headers=none,\n                 **connection_pool_kw):\n\n        connection_pool_kw['_socks_options'] = {'proxy_url': proxy_url}\n        connection_pool_kw['timeout'] = timeout\n\n        super().__init__(num_pools, headers, **connection_pool_kw)\n\n        self.pool_classes_by_scheme = {\n            'http': proxyhttpconnectionpool,\n            'https': proxyhttpsconnectionpool,\n        }\n\n\n### and how to use it\nmanager = proxypoolmanager('socks5://user:password@127.0.0.1:1080')\nresponse = manager.request('get', 'https://check-host.net/ip')\nprint(response.data)\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "socks socks5 socks4 http proxy asyncio trio curio anyio",
+  "license": "apache 2",
+  "name": "python-socks",
+  "package_url": "https://pypi.org/project/python-socks/",
+  "project_url": "https://pypi.org/project/python-socks/",
+  "project_urls": {
+    "Homepage": "https://github.com/romis2012/python-socks"
+  },
+  "release_url": "https://pypi.org/project/python-socks/2.4.4/",
+  "requires_dist": [
+    "anyio (<5.0.0,>=3.3.4) ; extra == 'anyio'",
+    "async-timeout (>=3.0.1) ; extra == 'asyncio'",
+    "curio (>=1.4) ; extra == 'curio'",
+    "trio (>=0.16.0) ; extra == 'trio'"
+  ],
+  "requires_python": "",
+  "summary": "core proxy (socks4, socks5, http tunneling) functionality for python",
+  "version": "2.4.4",
+  "releases": [],
+  "developers": [
+    "roman_snegirev",
+    "snegiryev@gmail.com"
+  ],
+  "kwds": "python_socks socks_options _socks_options socks4 socks",
+  "license_kwds": "apache 2",
+  "libtype": "pypi",
+  "id": "pypi_python_socks",
+  "homepage": "https://github.com/romis2012/python-socks",
+  "release_count": 24,
+  "dependency_ids": [
+    "pypi_anyio",
+    "pypi_async_timeout",
+    "pypi_curio",
+    "pypi_trio"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3 :: only",
+    "topic :: games/entertainment",
+    "topic :: multimedia :: graphics",
+    "topic :: multimedia :: graphics :: 3d rendering",
+    "topic :: scientific/engineering :: visualization"
+  ],
+  "description": "[![pypi](https://badge.fury.io/py/glcontext.svg)](https://pypi.python.org/pypi/glcontext)\n\n<img align=\"right\" width=\"300\" height=\"200\" src=\"https://github.com/moderngl/glcontext/raw/master/.github/icon.svg\">\n\n# glcontext\n\n**glcontext** is a library providing opengl implementation for moderngl on multiple platforms.\n\n* [glcontext on github](https://github.com/moderngl/glcontext)\n* [glcontext on pypi](https://pypi.org/project/glcontext)\n* [moderngl](https://github.com/moderngl/moderngl)\n\n## backends\n\na glcontext backend is either an extension or a submodule of the glcontext package.\nthe package itself does not import any of the backends.\nimporting the base package `glcontext` must safe and lightweight.\n\n## structure\n\nevery backend of glcontext must provide a factory function:\n\n```py\ndef create_context(*args, **kwargs) -> glcontext:\n    pass\n```\n\nthe create\\_context method can take any number of positional and keyword arguments.\nthe factory function must return an object supporting the following methods:\n\n```py\ndef load(self, name:str) -> int:\n    pass\n```\n\nthe load method takes an opengl function name as an input and returns a c/c++ function pointer as a python integer.\nthe return value must be 0 for not implemented functions.\n\n```py\ndef __enter__(self, name:str):\n    pass\n```\n\nthe enter method calls `___makecurrent` to make the glcontext the calling thread's current rendering context.\n`___makecurrent` stands for `wglmakecurrent`, `glxmakecurrent`, ...\n\n```py\ndef __exit__(self, exc_type, exc_val, exc_tb):\n    pass\n```\n\nthe exit method calls `___makecurrent` to make the glcontext no longer current.\n\n```py\ndef release(self):\n    pass\n```\n\nthe release method destroys the opengl context.\n\n## development guide\n\nthere are \"empty\" example backends provided for developers to help adding new backends to the library.\nthere is a pure python example in [empty.py](#) and an extension example in [empty.cpp](#).\nbesides their name match, they do not depend on each other, they are independent submodules of glcontext.\n\nan \"portable\" backend implementation must load its dependency at runtime.\nthis rule is for simplifying the build of the entire package.\nif an implementation cannot provide a \"portable\" backend, it will not be added to this library.\nnon \"portable\" backends are welcome as third party libraries.\n\na backend must be lightweight, its size must fit within reasonable limits.\n\nto add support for new platforms one must edit the `setup.py` too.\nplatform specific dependencies are exceptions from the \"portability\" rule.\n\nexample for platform specific dependencies:\n\n- `gdi32.lib` on windows\n- `libdl.a` on linux\n\nplease note that `libgl.so` is loaded dinamically by the backends.\n\n## current backends\n\neach backend supports a `glversion` and `mode` parameters as a minimum.\nthe `glversion` is the minimum opengl version required while `mode`\ndecides how the context is created.\n\nmodes\n\n* `detect`: will detect an existing active opengl context.\n* `standalone`: crates a headless opengl context\n* `share`: creates a new context sharing objects with the currently active context (headless)\n\n### wgl\n\nparameters\n\n* `glversion` (`int`): the minimum opengl version for the context\n* `mode` (`str`): creation mode. `detect` | `standalone` | `share`\n* `libgl` (`str`): name of gl library to load (default: `opengl32.dll`)\n\n### x11\n\nif `libgl` is not passed in the backend will try to locate\nthe gl library using `ctypes.utils.find_library`.\n\nparameters\n\n* `glversion` (`int`): the minimum opengl version for the context\n* `mode` (`str`): creation mode. `detect` | `standalone` | `share`\n* `libgl` (`str`): name of gl library to load (default: `libgl.so`)\n* `libx11` (`str`): name of x11 library to load (default: `libx11.so`)\n\n### darwin\n\nwill create the the highest core context available.\n\nparameters\n\n* `mode` (`str`): creation mode. `detect` | `standalone`\n\n### egl\n\nonly supports standalone mode.\n\nif `libgl` and/or `libegl` is not passed in the backend will try to locate\ngl and/or egl library using `ctypes.utils.find_library`.\n\nparameters\n\n* `glversion` (`int`): the minimum opengl version for the context\n* `mode` (`str`): creation mode. `standalone`\n* `libgl` (`str`): name of gl library to load (default: `libgl.so`)\n* `libegl` (`str`): name of gl library to load (default: `libegl.so`)\n* `device_index` (`int`) the device index to use (default: `0`)\n\n## environment variables\n\nenvironment variables can be set to configure backends.\nthese will get first priority if defined.\n\n```bash\n# override opengl version code. for example: 410 (for opengl 4.1)\nglcontext_glversion\n# override libgl on linux. for example: libgl.1.so\nglcontext_linux_libgl\n# override libx11 on linux. for example\u00f8 libx11.x.so\nglcontext_linux_libx11\n# override libegl on linux. for example\u00f8 libegl.x.so\nglcontext_linux_libegl\n# override gl dll on windows. for example: opengl32_custom.dll\nglcontext_win_libgl\n# override the device index (egl)\nglcontext_device_index\n```\n\n## running tests\n\n```\npip install -r tests/requirements.txt\npytest tests\n```\n\n## contributing\n\ncontribution is welcome.\n\npull requests will be merged if they match the [development guide](#).\n\nfor prototypes, pure python implementations using ctypes are also welcome.\nwe will probably port it to a proper extension in the future.\n\nplease ask questions [here](https://github.com/moderngl/glcontext/issues).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "glcontext",
+  "package_url": "https://pypi.org/project/glcontext/",
+  "project_url": "https://pypi.org/project/glcontext/",
+  "project_urls": {
+    "Homepage": "https://github.com/moderngl/glcontext"
+  },
+  "release_url": "https://pypi.org/project/glcontext/2.5.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "portable opengl context",
+  "version": "2.5.0",
+  "releases": [],
+  "developers": [
+    "cprogrammer1994@gmail.com",
+    "szabolcs_dombi"
+  ],
+  "kwds": "glcontext_linux_libgl glcontext_win_libgl glcontext_linux_libegl opengl moderngl",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_glcontext",
+  "homepage": "https://github.com/moderngl/glcontext",
+  "release_count": 20,
+  "dependency_ids": []
+}

@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: education",
+    "license :: osi approved :: gnu general public license v3 (gplv3)",
+    "operating system :: os independent",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: education :: computer aided instruction (cai)"
+  ],
+  "description": "# olx cleaner\n\n[![build status](https://github.com/openedx/olxcleaner/actions/workflows/ci.yml/badge.svg)](https://github.com/openedx/olxcleaner/actions/workflows/ci.yaml) [![coverage status](https://codecov.io/gh/jolyonb/olxcleaner/branch/master/graphs/badge.svg)](https://codecov.io/gh/jolyonb/olxcleaner)\n\nthis library aims to perform two functions:\n\n* parse the xml code for an edx course, loading it into python objects\n* validate the objects for errors\n\nbased on this, two scripts are provided that leverage the library:\n\n* `edx-cleaner` constructs an error report, course tree and course statistics\n* `edx-reporter` constructs a latex file representation of the course structure\n\ncopyright (c) 2018-2019 jolyon bloomfield\n\ncopyright (c) 2020-2023 the center for reimagining learning, inc. and contributors\n\n## links\n\n* [error listing](errors.md)\n* [wishlist](wishlist.md)\n* [vision](vision.md)\n* [changelog](changelog.md)\n* [license](license)\n\n## installation\n\nthis package may be installed from pypi using `pip install olxcleaner`. it requires python 3.6 or later.\n\n### repository installation (advanced) \n\nclone this repository, and set up a virtual environment for python 3.6 or later. run `pip install -r requirements.txt` to install the libraries, followed by `pytest` to ensure that all tests are passing as expected.\n\n## edx-cleaner usage\n\nused to validate olx (edx xml) code. this is a very light wrapper around the olxcleaner library, but exposes all of the functionality thereof.\n\nbasic usage: run `edx-cleaner` in the directory of the course you want to validate.\n\ncommand-line options:\n\n```text\nedx-cleaner [-h] \n            [-c course]\n            [-p {1,2,3,4,5,6,7,8}] \n            [-t tree] [-l {0,1,2,3,4}]\n            [-q] [-e] [-s] [-s]\n            [-f {0,1,2,3,4}]\n            [-i ignore [ignore ...]]\n```\n\n* `-h`: display help.\n* `-c`: specify the course file to analyze. if not specified, looks for `course.xml` in the current directory. if given a directory, looks for `course.xml` in that directory.\n* `-p`: specify the validation level you wish analyze the course at:\n  * 1: load the course\n  * 2: load the policy and grading policy\n  * 3: validate url_names\n  * 4: merge policy data with course, ensuring that all references are valid\n  * 5: validate the grading policy\n  * 6: have every object validate itself\n  * 7: parse the course for global errors\n  * 8: parse the course for detailed global errors (default)\n* `-t tree`: specify a file to output the tree structure to.\n* `-l`: specify the depth level to output the tree structure to. only used if the `-t` option is set. 0 = course, 1 = chapter, 2 = sequential, 3 = vertical, 4 = content. \n* `-q`: quiet mode. does not output anything to the screen.\n* `-e`: suppress error listing. implied by `-q`.\n* `-s`: suppress summary of errors. implied by `-q`.\n* `-s`: display course statistics (off by default). overridden by `-q`.\n* `-f`: select the error level at which to exit with an error code. 0 = debug, 1 = info, 2 = warning, 3 = error (default), 4 = never. exit code is set to `1` if an error at the specified level or higher is present.\n* `-i`: specify a space-separated list of error names to ignore. see [error listing](errors.md).\n\n## edx-reporter usage\n\nthe olxcleaner library includes modules that parse a course into python objects. this can be useful if you want to scan a course to generate a report. we exploit this in `edx-reporter` to generate a latex report of course structure.\n\nbasic usage: run `edx-reporter` in the directory of the course you want to generate a report about.\n\ncommand-line options:\n\n```text\nedx-reporter.py [-h] \n                [-c course]\n                [-u]\n                [> latexfile.tex]\n```\n\n* `-h`: display help.\n* `-c`: specify the course file to analyze. if not specified, looks for `course.xml` in the current directory. if given a directory, looks for `course.xml` in that directory.\n* `-u`: include url_names for verticals.\n* `> latexfile.tex`: output the report to a file.\n\nif you get an error like ``character cannot be encoded into latex: u+feff - `'``, then you have some bad unicode in your `display_name` entries. look through the latex output for `{\\bfseries ?}`, which is what that character is converted into.\n\nonce you have generated a latex file, you can compile it into a pdf file by running `pdflatex latexfile.tex`. note that the latex file can be modified with any text editor; its format should be self-explanatory.\n\n## library usage\n\nthe workhorse of the library is `olxcleaner.validate`, which validates a course in a number of steps.\n\n```python\nolxcleaner.validate(filename, steps=8, ignore=none, allowed_xblocks=none)\n```\n\n* `filename`: pass in either the course directory or the path of `course.xml` for the course you wish to validate.\n* `steps`: choose how many validation steps you wish to perform:\n    * 1: load the course\n    * 2: load the policy and grading policy\n    * 3: validate `url_name`s\n    * 4: merge policy data with course, ensuring that all references are valid\n    * 5: validate the grading policy\n    * 6: have every object validate itself\n    * 7: parse the course for global errors\n    * 8: parse the course for global errors that may be time-consuming to detect\n* `ignore`: a list of error names to ignore\n* `allowed_xblocks`: a list of all allowed xblocks that course olx may contain.\n\nreturns `edxcourse`, `errorstore`, `url_names` (dictionary `{'url_name': edxobject}`, or `none` if `steps < 3`)\n\nsee examples of how to use `olxcleaner.validate` and the objects it returns in `olxcleaner.entries`.\n\n\n",
+  "docs_url": null,
+  "keywords": "edx",
+  "license": "license",
+  "name": "olxcleaner",
+  "package_url": "https://pypi.org/project/olxcleaner/",
+  "project_url": "https://pypi.org/project/olxcleaner/",
+  "project_urls": {
+    "Homepage": "https://github.com/openedx/olxcleaner"
+  },
+  "release_url": "https://pypi.org/project/olxcleaner/0.2.1/",
+  "requires_dist": [
+    "lxml",
+    "python-dateutil",
+    "pytz",
+    "pylatexenc"
+  ],
+  "requires_python": "~=3.6",
+  "summary": "tool to scan open edx courses for various errors",
+  "version": "0.2.1",
+  "releases": [],
+  "developers": [
+    "jolyon@mit.edu",
+    "jolyon_bloomfield"
+  ],
+  "kwds": "olx olxcleaner openedx edx edxobject",
+  "license_kwds": "license",
+  "libtype": "pypi",
+  "id": "pypi_olxcleaner",
+  "homepage": "https://github.com/openedx/olxcleaner",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_lxml",
+    "pypi_pylatexenc",
+    "pypi_python_dateutil",
+    "pypi_pytz"
+  ]
+}

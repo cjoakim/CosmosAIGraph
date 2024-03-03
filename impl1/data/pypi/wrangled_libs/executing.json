@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# executing\n\n[![build status](https://github.com/alexmojaki/executing/workflows/tests/badge.svg?branch=master)](https://github.com/alexmojaki/executing/actions) [![coverage status](https://coveralls.io/repos/github/alexmojaki/executing/badge.svg?branch=master)](https://coveralls.io/github/alexmojaki/executing?branch=master) [![supports python versions 3.5+, including pypy](https://img.shields.io/pypi/pyversions/executing.svg)](https://pypi.python.org/pypi/executing)\n\nthis mini-package lets you get information about what a frame is currently doing, particularly the ast node being executed.\n\n* [usage](#usage)\n    * [getting the ast node](#getting-the-ast-node)\n    * [getting the source code of the node](#getting-the-source-code-of-the-node)\n    * [getting the `__qualname__` of the current function](#getting-the-__qualname__-of-the-current-function)\n    * [the source class](#the-source-class)\n* [installation](#installation)\n* [how does it work?](#how-does-it-work)\n* [is it reliable?](#is-it-reliable)\n* [which nodes can it identify?](#which-nodes-can-it-identify)\n* [libraries that use this](#libraries-that-use-this)\n\n## usage\n\n### getting the ast node\n\n```python\nimport executing\n\nnode = executing.source.executing(frame).node\n```\n\nthen `node` will be an ast node (from the `ast` standard library module) or none if the node couldn't be identified (which may happen often and should always be checked).\n\n`node` will always be the same instance for multiple calls with frames at the same point of execution.\n\nif you have a traceback object, pass it directly to `source.executing()` rather than the `tb_frame` attribute to get the correct node.\n\n### getting the source code of the node\n\nfor this you will need to separately install the [`asttokens`](https://github.com/gristlabs/asttokens) library, then obtain an `asttokens` object:\n\n```python\nexecuting.source.executing(frame).source.asttokens()\n```\n\nor:\n\n```python\nexecuting.source.for_frame(frame).asttokens()\n```\n\nor use one of the convenience methods:\n\n```python\nexecuting.source.executing(frame).text()\nexecuting.source.executing(frame).text_range()\n```\n\n### getting the `__qualname__` of the current function\n\n```python\nexecuting.source.executing(frame).code_qualname()\n```\n\nor:\n\n```python\nexecuting.source.for_frame(frame).code_qualname(frame.f_code)\n```\n\n### the `source` class\n\neverything goes through the `source` class. only one instance of the class is created for each filename. subclassing it to add more attributes on creation or methods is recommended. the classmethods such as `executing` will respect this. see the source code and docstrings for more detail.\n\n## installation\n\n    pip install executing\n\nif you don't like that you can just copy the file `executing.py`, there are no dependencies (but of course you won't get updates).\n\n## how does it work?\n\nsuppose the frame is executing this line:\n\n```python\nself.foo(bar.x)\n```\n\nand in particular it's currently obtaining the attribute `self.foo`. looking at the bytecode, specifically `frame.f_code.co_code[frame.f_lasti]`, we can tell that it's loading an attribute, but it's not obvious which one. we can narrow down the statement being executed using `frame.f_lineno` and find the two `ast.attribute` nodes representing `self.foo` and `bar.x`. how do we find out which one it is, without recreating the entire compiler in python?\n\nthe trick is to modify the ast slightly for each candidate expression and observe the changes in the bytecode instructions. we change the ast to this:\n\n```python\n(self.foo ** 'longuniqueconstant')(bar.x)\n```\n    \nand compile it, and the bytecode will be almost the same but there will be two new instructions:\n\n    load_const 'longuniqueconstant'\n    binary_power\n\nand just before that will be a `load_attr` instruction corresponding to `self.foo`. seeing that it's in the same position as the original instruction lets us know we've found our match.\n\n## is it reliable?\n\nyes - if it identifies a node, you can trust that it's identified the correct one. the tests are very thorough - in addition to unit tests which check various situations directly, there are property tests against a large number of files (see the filenames printed in [this build](https://travis-ci.org/alexmojaki/executing/jobs/557970457)) with real code. specifically, for each file, the tests:\n \n 1. identify as many nodes as possible from all the bytecode instructions in the file, and assert that they are all distinct\n 2. find all the nodes that should be identifiable, and assert that they were indeed identified somewhere\n\nin other words, it shows that there is a one-to-one mapping between the nodes and the instructions that can be handled. this leaves very little room for a bug to creep in.\n\nfurthermore, `executing` checks that the instructions compiled from the modified ast exactly match the original code save for a few small known exceptions. this accounts for all the quirks and optimisations in the interpreter. \n\n## which nodes can it identify?\n\ncurrently it works in almost all cases for the following `ast` nodes:\n \n - `call`, e.g. `self.foo(bar)`\n - `attribute`, e.g. `point.x`\n - `subscript`, e.g. `lst[1]`\n - `binop`, e.g. `x + y` (doesn't include `and` and `or`)\n - `unaryop`, e.g. `-n` (includes `not` but only works sometimes)\n - `compare` e.g. `a < b` (not for chains such as `0 < p < 1`)\n\nthe plan is to extend to more operations in the future.\n\n## projects that use this\n\n### my projects\n\n- **[`stack_data`](https://github.com/alexmojaki/stack_data)**: extracts data from stack frames and tracebacks, particularly to display more useful tracebacks than the default. also uses another related library of mine: **[`pure_eval`](https://github.com/alexmojaki/pure_eval)**.\n- **[`futurecoder`](https://futurecoder.io/)**: highlights the executing node in tracebacks using `executing` via `stack_data`, and provides debugging with `snoop`.\n- **[`snoop`](https://github.com/alexmojaki/snoop)**: a feature-rich and convenient debugging library. uses `executing` to show the operation which caused an exception and to allow the `pp` function to display the source of its arguments.\n- **[`heartrate`](https://github.com/alexmojaki/heartrate)**: a simple real time visualisation of the execution of a python program. uses `executing` to highlight currently executing operations, particularly in each frame of the stack trace.\n- **[`sorcery`](https://github.com/alexmojaki/sorcery)**: dark magic delights in python. uses `executing` to let special callables called spells know where they're being called from.\n\n### projects i've contributed to\n\n- **[`ipython`](https://github.com/ipython/ipython/pull/12150)**: highlights the executing node in tracebacks using `executing` via [`stack_data`](https://github.com/alexmojaki/stack_data).\n- **[`icecream`](https://github.com/gruns/icecream)**: \ud83c\udf66 sweet and creamy print debugging. uses `executing` to identify where `ic` is called and print its arguments.\n- **[`friendly_traceback`](https://github.com/friendly-traceback/friendly-traceback)**: uses `stack_data` and `executing` to pinpoint the cause of errors and provide helpful explanations.\n- **[`python-devtools`](https://github.com/samuelcolvin/python-devtools)**: uses `executing` for print debugging similar to `icecream`.\n- **[`sentry_sdk`](https://github.com/getsentry/sentry-python)**: add the integration `sentry_sdk.integrations.executingexecutingintegration()` to show the function `__qualname__` in each frame in sentry events.\n- **[`varname`](https://github.com/pwwang/python-varname)**: dark magics about variable names in python. uses `executing` to find where its various magical functions like `varname` and `nameof` are called from.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "executing",
+  "package_url": "https://pypi.org/project/executing/",
+  "project_url": "https://pypi.org/project/executing/",
+  "project_urls": {
+    "Homepage": "https://github.com/alexmojaki/executing"
+  },
+  "release_url": "https://pypi.org/project/executing/2.0.1/",
+  "requires_dist": [
+    "asttokens >=2.1.0 ; extra == 'tests'",
+    "ipython ; extra == 'tests'",
+    "pytest ; extra == 'tests'",
+    "coverage ; extra == 'tests'",
+    "coverage-enable-subprocess ; extra == 'tests'",
+    "littleutils ; extra == 'tests'",
+    "rich ; (python_version >= \"3.11\") and extra == 'tests'"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "get the currently executing ast node of a frame, and other information",
+  "version": "2.0.1",
+  "releases": [],
+  "developers": [
+    "alex.mojaki@gmail.com",
+    "alex_hall"
+  ],
+  "kwds": "pyversions pypy pypi py python",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_executing",
+  "homepage": "https://github.com/alexmojaki/executing",
+  "release_count": 33,
+  "dependency_ids": [
+    "pypi_asttokens",
+    "pypi_coverage",
+    "pypi_coverage_enable_subprocess",
+    "pypi_ipython",
+    "pypi_littleutils",
+    "pypi_pytest",
+    "pypi_rich"
+  ]
+}

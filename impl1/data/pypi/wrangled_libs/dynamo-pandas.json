@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "[![unit-tests-linux](https://github.com/drgfreeman/dynamo-pandas/actions/workflows/linux-checks.yml/badge.svg)](https://github.com/drgfreeman/dynamo-pandas/actions/workflows/linux-checks.yml)\n[![unit-tests-windows](https://github.com/drgfreeman/dynamo-pandas/actions/workflows/windows-checks.yml/badge.svg)](https://github.com/drgfreeman/dynamo-pandas/actions/workflows/windows-checks.yml)\n[![documentation status](https://readthedocs.org/projects/dynamo-pandas/badge/?version=latest)](https://dynamo-pandas.readthedocs.io/en/latest/?badge=latest)\n\n# dynamo-pandas\nmake working with pandas data and aws dynamodb easy.\n\n## motivation\nthis package aims a making the transfer of data between pandas dataframes and dynamodb as simple as possible. to meet this goal, the package offers two key features:\n1. automatic conversion of pandas data types to dynamodb supported data types.\n1. a simple, high level interface to *put* data from a dataframe into a dynamodb table and *get* all or selected items from a table into a dataframe.\n\n\n## documentation\n\nthe project's documentation is available at https://dynamo-pandas.readthedocs.io/.\n\n\n## requirements\n* `python>=3.7`\n* `pandas>=1`\n* `boto3`\n\n## installation\n\n```\npython -m pip install dynamo-pandas\n```\n\nthis will install the package and its dependencies except for `boto3` which is not installed by default to avoid unnecessary installation when building lambda layers.\n\nto include `boto3` as part of the installation, add the `boto3` \"extra\" this way:\n\n```\npython -m pip install dynamo-pandas[boto3]\n```\n\n## example usage\n\nconsider the pandas dataframe below.\n\n\n```python\n>>> print(players_df)\n\n      player_id           last_play       play_time  rating  bonus_points\n0    player_one 2021-01-18 22:47:23 2 days 17:41:55     4.3             3\n1    player_two 2021-01-19 19:07:54 0 days 22:07:34     3.8             1\n2  player_three 2021-01-21 10:22:43 1 days 14:01:19     2.5             4\n3   player_four 2021-01-22 13:51:12 0 days 03:45:49     4.8          <na>\n```\n\nthe columns of the dataframe use different data types, some of which are not natively supported by dynamodb, like numpy.datetime64, timedelta64 and pandas' nullable integers.\n\n\n```python\n>>> players_df.info()\n\n<class 'pandas.core.frame.dataframe'>\nrangeindex: 4 entries, 0 to 3\ndata columns (total 5 columns):\n    #   column        non-null count  dtype          \n---  ------        --------------  -----          \n    0   player_id     4 non-null      object         \n    1   last_play     4 non-null      datetime64[ns] \n    2   play_time     4 non-null      timedelta64[ns]\n    3   rating        4 non-null      float64        \n    4   bonus_points  3 non-null      int8           \ndtypes: int8(1), datetime64[ns](1), float64(1), object(1), timedelta64[ns](1)\nmemory usage: 264.0+ bytes\n```\n\nstoring the rows of this dataframe to dynamodb requires multiple data type conversions.\n\n```python\n>>> from dynamo_pandas import put_df, get_df, keys\n```\n\nthe `put_df` function adds or updates the rows of a dataframe into the specified table, taking care of the required type conversions (the table must be already created and the primary key column(s) be present in the dataframe).\n\n```python\n>>> put_df(players_df, table=\"players\")\n```\n\nthe `get_df` function retrieves the items matching the speficied key(s) from the table into a dataframe.\n\n\n```python\n>>> df = get_df(table=\"players\", keys=[{\"player_id\": \"player_three\"}, {\"player_id\": \"player_one\"}])\n>>> print(df)\n\n   bonus_points     player_id            last_play  rating        play_time\n0             4  player_three  2021-01-21 10:22:43     2.5  1 days 14:01:19\n1             3    player_one  2021-01-18 22:47:23     4.3  2 days 17:41:55\n```\n\nin the case where only a partition key is used, the `keys` function simplifies the generation of the keys list.\n\n\n```python\n>>> df = get_df(table=\"players\", keys=keys(player_id=[\"player_two\", \"player_four\"]))\n>>> print(df)\n\n   bonus_points    player_id            last_play  rating        play_time\n0           1.0   player_two  2021-01-19 19:07:54     3.8  0 days 22:07:34\n1           nan  player_four  2021-01-22 13:51:12     4.8  0 days 03:45:49\n```\n\nthe data types returned by the `get_df` function are basic types and no automatic type conversion is attempted.\n\n\n```python\n>>> df.info()\n\n<class 'pandas.core.frame.dataframe'>\nrangeindex: 2 entries, 0 to 1\ndata columns (total 5 columns):\n    #   column        non-null count  dtype  \n   ---  ------        --------------  -----  \n    0   bonus_points  1 non-null      float64\n    1   player_id     2 non-null      object \n    2   last_play     2 non-null      object \n    3   rating        2 non-null      float64\n    4   play_time     2 non-null      object \ndtypes: float64(2), object(3)\nmemory usage: 208.0+ bytes\n```\n\nthe `dtype` parameter of the `get_df` function allows specifying the desired data types.\n\n```python\n>>> df = get_df(\n...     table=\"players\",\n...     keys=keys(player_id=[\"player_two\", \"player_four\"]),\n...     dtype={\n...         \"bonus_points\": \"int8\",\n...         \"last_play\": \"datetime64[ns, utc]\",\n...         # \"play_time\": \"timedelta64[ns]\"  # see note below.\n...     }\n... )\n```\n\n**note**: due to a known bug in pandas, timedelta strings cannot currently be converted back to timedelta type via this parameter (ref. https://github.com/pandas-dev/pandas/issues/38509). use the pandas.to_timedelta function instead:\n\n\n```python\n>>> df.play_time = pd.to_timedelta(df.play_time)\n>>> df.info()\n\n<class 'pandas.core.frame.dataframe'>\nrangeindex: 2 entries, 0 to 1\ndata columns (total 5 columns):\n    #   column        non-null count  dtype              \n---  ------        --------------  -----              \n    0   bonus_points  1 non-null      int8               \n    1   player_id     2 non-null      object             \n    2   last_play     2 non-null      datetime64[ns, utc]\n    3   rating        2 non-null      float64            \n    4   play_time     2 non-null      timedelta64[ns]    \ndtypes: int8(1), datetime64[ns, utc](1), float64(1), object(1), timedelta64[ns](1)\nmemory usage: 196.0+ bytes\n```\n\nomitting the `keys` parameter performs a scan of the table and returns all the items.\n\n\n```python\n>>> df = get_df(table=\"players\")\n>>> print(df)\n\n       bonus_points     player_id            last_play  rating        play_time\n    0           4.0  player_three  2021-01-21 10:22:43     2.5  1 days 14:01:19\n    1           nan   player_four  2021-01-22 13:51:12     4.8  0 days 03:45:49\n    2           3.0    player_one  2021-01-18 22:47:23     4.3  2 days 17:41:55\n    3           1.0    player_two  2021-01-19 19:07:54     3.8  0 days 22:07:34\n```\n\n## license\n\nreleased under the terms of the [mit license](license).\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "dynamo-pandas",
+  "package_url": "https://pypi.org/project/dynamo-pandas/",
+  "project_url": "https://pypi.org/project/dynamo-pandas/",
+  "project_urls": {
+    "Homepage": "https://github.com/DrGFreeman/dynamo-pandas"
+  },
+  "release_url": "https://pypi.org/project/dynamo-pandas/1.3.0/",
+  "requires_dist": [
+    "pandas (>=1)",
+    "boto3 ; extra == 'boto3'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "make working with pandas dataframe and aws dynamodb easy.",
+  "version": "1.3.0",
+  "releases": [],
+  "developers": [
+    "drgfreeman@tuta.io"
+  ],
+  "kwds": "dynamo_pandas dynamodb dynamo workflows pandas",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_dynamo_pandas",
+  "homepage": "https://github.com/drgfreeman/dynamo-pandas",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_pandas"
+  ]
+}

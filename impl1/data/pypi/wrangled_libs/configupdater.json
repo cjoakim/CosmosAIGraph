@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: os independent",
+    "operating system :: posix :: linux",
+    "operating system :: unix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": ".. image:: https://api.cirrus-ci.com/github/pyscaffold/configupdater.svg?branch=main\n    :alt: built status\n    :target: https://cirrus-ci.com/github/pyscaffold/configupdater\n.. image:: https://readthedocs.org/projects/pyscaffold/badge/?version=latest\n    :alt: readthedocs\n    :target: https://configupdater.readthedocs.io/\n.. image:: https://img.shields.io/coveralls/github/pyscaffold/configupdater/main.svg\n    :alt: coveralls\n    :target: https://coveralls.io/r/pyscaffold/configupdater\n.. image:: https://img.shields.io/pypi/v/configupdater.svg\n    :alt: pypi-server\n    :target: https://pypi.org/project/configupdater/\n.. image:: https://img.shields.io/conda/vn/conda-forge/configupdater.svg\n    :alt: conda-forge\n    :target: https://anaconda.org/conda-forge/configupdater\n.. image:: https://static.pepy.tech/badge/configupdater/month\n    :alt: monthly downloads\n    :target: https://pepy.tech/project/configupdater\n.. image:: https://img.shields.io/static/v1?label=sponsor&message=%e2%9d%a4&logo=github&color=ff69b4\n    :alt: sponsor me\n    :target: https://github.com/sponsors/florianwilhelm\n\n|\n\n.. image:: https://configupdater.readthedocs.io/en/latest/_images/banner-640x323.png\n    :height: 323px\n    :width: 640px\n    :scale: 60 %\n    :alt: config updater\n    :align: center\n\n|\n\nthe sole purpose of `configupdater`_ is to easily update an ini config file\nwith no changes to the original file except the intended ones. this means\ncomments, the ordering of sections and key/value-pairs as wells as their\ncases are kept as in the original file. thus configupdater provides\ncomplementary functionality to python's `configparser`_ which is primarily\nmeant for reading config files and writing *new* ones.\n\nfeatures\n========\n\nthe key differences to `configparser`_ are:\n\n* minimal invasive changes in the update configuration file,\n* proper handling of comments,\n* only a single config file can be updated at a time,\n* the original case of sections and keys are kept,\n* control over the position of a new section/key\n\nfollowing features are **deliberately not** implemented:\n\n* interpolation of values,\n* propagation of parameters from the default section,\n* conversions of values,\n* passing key/value-pairs with ``default`` argument,\n* non-strict mode allowing duplicate sections and keys.\n\nusage\n=====\n\nfirst install the package with either::\n\n    pip install configupdater\n\nor::\n\n    conda install -c conda-forge configupdater\n\nnow we can simply do::\n\n    from configupdater import configupdater\n\n    updater = configupdater()\n    updater.read(\"setup.cfg\")\n\nwhich would read the file ``setup.cfg`` that is found in many projects.\n\nto change the value of an existing key we can simply do::\n\n    updater[\"metadata\"][\"author\"].value = \"alan turing\"\n\nat any point we can print the current state of the configuration file with::\n\n    print(updater)\n\nto update the read-in file just call ``updater.update_file()`` or ``updater.write(open('filename','w'))``\nto write the changed configuration file to another destination. before actually writing,\nconfigupdater will automatically check that the updated configuration file is still valid by\nparsing it with the help of configparser.\n\nmany of configparser's methods still exists and it's best to look them up in the `module reference`_.\nlet's look at some examples.\n\nadding and removing options\n---------------------------\n\nlet's say we have the following configuration in a string::\n\n    cfg = \"\"\"\n    [metadata]\n    author = ada lovelace\n    summary = the analytical engine\n    \"\"\"\n\nwe can add an *license* option, i.e. a key/value pair, in the same way we would do with configparser::\n\n    updater = configupdater()\n    updater.read_string(cfg)\n    updater[\"metadata\"][\"license\"] = \"mit\"\n\na simple ``print(updater)`` will give show you that the new option was appended to the end::\n\n    [metadata]\n    author = ada lovelace\n    summary = the analytical engine\n    license = mit\n\nsince the license is really important to us let's say we want to add it before the ``summary``\nand even add a short comment before it::\n\n    updater = configupdater()\n    updater.read_string(cfg)\n    (updater[\"metadata\"][\"summary\"].add_before\n                                   .comment(\"ada would have loved mit\")\n                                   .option(\"license\", \"mit\"))\n\nwhich would result in::\n\n    [metadata]\n    author = ada lovelace\n    # ada would have loved mit\n    license = mit\n    summary = analytical engine calculating the bernoulli numbers\n\nusing ``add_after`` would give the same result and looks like::\n\n    updater = configupdater()\n    updater.read_string(cfg)\n    (updater[\"metadata\"][\"author\"].add_after\n                                  .comment(\"ada would have loved mit\")\n                                  .option(\"license\", \"mit\"))\n\nlet's say we want to rename `summary` to the more common `description`::\n\n    updater = configupdater()\n    updater.read_string(cfg)\n    updater[\"metadata\"][\"summary\"].key = \"description\"\n\nif we wanted no summary at all, we could just do ``del updater[\"metadata\"][\"summary\"]``.\n\n\nadding and removing sections\n----------------------------\n\nadding and remove sections just works like adding and removing options but on a higher level.\nsticking to our *ada lovelace* example, let's say we want to add a section ``options`` just\nbefore ``metadata`` with a comment and two new lines to separate it from ``metadata``::\n\n    updater = configupdater()\n    updater.read_string(cfg)\n    (updater[\"metadata\"].add_before\n                        .section(\"options\")\n                        .comment(\"some specific project options\")\n                        .space(2))\n\nas expected, this results in::\n\n    [options]\n    # some specific project options\n\n\n    [metadata]\n    author = ada lovelace\n    summary = the analytical engine\n\nwe could now fill the new section with options like we learnt before. if we wanted to rename\nan existing section we could do this with the help of the ``name`` attribute::\n\n    updater[\"metadata\"].name = \"metadata\"\n\nsometimes it might be useful to inject a new section not in a programmatic way but more declarative.\nlet's assume we have thus defined our new section in a multi-line string::\n\n    sphinx_sect_str = \"\"\"\n    [build_sphinx]\n    source_dir = docs\n    build_dir = docs/_build\n    \"\"\"\n\nwith the help of two configupdater objects we can easily inject this section into our example::\n\n    sphinx = configupdater()\n    sphinx.read_string(sphinx_sect_str)\n    sphinx_sect = sphinx[\"build_sphinx\"]\n\n    updater = configupdater()\n    updater.read_string(cfg)\n\n    (updater[\"metadata\"].add_after\n                        .space()\n                        .section(sphinx_sect.detach()))\n\nthe ``detach`` method will remove the ``build_sphinx`` section from the first object\nand add it to the second object. this results in::\n\n    [metadata]\n    author = ada lovelace\n    summary = the analytical engine\n\n    [build_sphinx]\n    source_dir = docs\n    build_dir = docs/_build\n\nalternatively, if you want to preserve ``build_sphinx`` in both\n``configupdater`` objects (i.e., prevent it from being removed from the first\nwhile still adding a copy to the second), you call also rely on stdlib's\n``copy.deepcopy`` function instead of ``detach``::\n\n    from copy import deepcopy\n\n    (updater[\"metadata\"].add_after\n                        .space()\n                        .section(deepcopy(sphinx_sect)))\n\nthis technique can be used for all objects inside configupdater: sections,\noptions, comments and blank spaces.\n\nshallow copies are discouraged in the context of configupdater because each\nconfiguration block keeps a reference to its container to allow easy document\nediting. when doing editions (such as adding or changing options and comments)\nbased on a shallow copy, the results can be unreliable and unexpected.\n\nfor more examples on how the api of configupdater works it's best to take a look into the\n`unit tests`_ and read the references.\n\n\nnotes\n=====\n\nconfigupdater is mainly developed for `pyscaffold`_.\n\n.. _configparser: https://docs.python.org/3/library/configparser.html\n.. _configupdater: https://configupdater.readthedocs.io/\n.. _pyscaffold: https://pyscaffold.org/\n.. _module reference: https://configupdater.readthedocs.io/en/latest/api.html#configupdater.configupdater.configupdater\n.. _unit tests: https://github.com/pyscaffold/configupdater/blob/main/tests/test_configupdater.py\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "configupdater",
+  "package_url": "https://pypi.org/project/ConfigUpdater/",
+  "project_url": "https://pypi.org/project/ConfigUpdater/",
+  "project_urls": {
+    "Changelog": "https://configupdater.readthedocs.io/en/latest/changelog.html",
+    "Conda-Forge": "https://anaconda.org/conda-forge/configupdater",
+    "Documentation": "https://configupdater.readthedocs.io/",
+    "Download": "https://pypi.org/project/configupdater/#files",
+    "Homepage": "https://github.com/pyscaffold/configupdater",
+    "Source": "https://github.com/pyscaffold/configupdater/",
+    "Tracker": "https://github.com/pyscaffold/configupdater/issues"
+  },
+  "release_url": "https://pypi.org/project/ConfigUpdater/3.2/",
+  "requires_dist": [
+    "importlib-metadata ; python_version < \"3.8\"",
+    "sphinx ; extra == 'testing'",
+    "flake8 ; extra == 'testing'",
+    "pytest ; extra == 'testing'",
+    "pytest-cov ; extra == 'testing'",
+    "pytest-xdist ; extra == 'testing'",
+    "pytest-randomly ; extra == 'testing'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "parser like configparser but for updating configuration files",
+  "version": "3.2",
+  "releases": [],
+  "developers": [
+    "florian.wilhelm@gmail.com",
+    "florian_wilhelm"
+  ],
+  "kwds": "pyscaffold _pyscaffold pypi sphinx_sect _configupdater",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_configupdater",
+  "homepage": "https://github.com/pyscaffold/configupdater",
+  "release_count": 25,
+  "dependency_ids": [
+    "pypi_flake8",
+    "pypi_importlib_metadata",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_randomly",
+    "pypi_pytest_xdist",
+    "pypi_sphinx"
+  ]
+}

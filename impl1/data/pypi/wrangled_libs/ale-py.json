@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: science/research",
+    "license :: osi approved :: gnu general public license v2 (gplv2)",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: artificial intelligence"
+  ],
+  "description": "the arcade learning environment\n<a href=\"#the-arcade-learning-environment\">\n  <img alt=\"arcade learning environment\" align=\"right\" src=\"docs/static/ale.svg\" width=75 />\n</a>\n===============================\n\n[![continuous integration](https://github.com/mgbellemare/arcade-learning-environment/actions/workflows/ci.yml/badge.svg)](https://github.com/mgbellemare/arcade-learning-environment/actions/workflows/ci.yml)\n[![pypi version](https://img.shields.io/pypi/v/ale-py)](https://pypi.org/project/ale-py)\n\n\n**the arcade learning environment (ale) is a simple framework that allows researchers and hobbyists to develop ai agents for atari 2600 games.**\nit is built on top of the atari 2600 emulator [stella](https://stella-emu.github.io) and separates the details of emulation from agent design.\nthis [video](https://www.youtube.com/watch?v=nzuiekasxzi) depicts over 50 games currently supported in the ale.\n\nfor an overview of our goals for the ale read [the arcade learning environment: an evaluation platform for general agents](https://jair.org/index.php/jair/article/view/10819).\nif you use ale in your research, we ask that you please cite this paper in reference to the environment. see the [citing](#citing) section for bibtex entries.\n\nfeatures\n--------\n\n- object-oriented framework with support to add agents and games.\n- emulation core uncoupled from rendering and sound generation modules for fast\n  emulation with minimal library dependencies.\n- automatic extraction of game score and end-of-game signal for more than 100\n  atari 2600 games.\n- multi-platform code (compiled and tested under macos, windows, and several linux distributions).\n- python bindings through [pybind11](https://github.com/pybind/pybind11).\n- native support for openai gym.\n- visualization tools.\n\nquick start\n===========\n\nthe ale currently supports three different interfaces: c++, python, and openai gym.\n\n\npython\n------\n\nyou simply need to install the `ale-py` package distributed via pypi:\n\n```shell\npip install ale-py\n```\nnote: make sure you're using an up to date version of `pip` or the install may fail.\n\n\nyou can now import the ale in your python projects with\n```python\nfrom ale_py import aleinterface\n\nale = aleinterface()\n```\n\n### rom management\n\nthe ale doesn't distribute roms but we do provide a couple tools for managing your roms. first is the command line tool `ale-import-roms`. you can simply specify a directory as the first argument to this tool and we'll import all supported roms by the ale.\n\n```shell\nale-import-roms roms/\n\n[supported]       breakout   roms/breakout.bin\n[supported]       freeway    roms/freeway.bin\n\n[not supported]              roms/custom.bin\n\nimported 2/3 roms\n```\nfurthermore, python packages can expose roms for discovery using the special `ale-py.roms` entry point. for more details check out the example [python-rom-package](./examples/python-rom-package).\n\nonce you've imported a supported rom you can simply import the path from the `ale-py.roms` package and load the rom in the ale:\n```py\nfrom ale_py.roms import breakout\n\nale.loadrom(breakout)\n```\n\n## openai gym\n\ngym support is included in `ale-py`. simply install  the python package using the instructions above. you can also install `gym[atari]` which also installs `ale-py` with gym.\n\nas of gym v0.20 and onwards all atari environments are provided via `ale-py`. we do recommend using the new `v5` environments in the `ale` namespace:\n\n```py\nimport gym\n\nenv = gym.make('ale/breakout-v5')\n```\nthe `v5` environments follow the latest methodology set out in [revisiting the arcade learning environment by machado et al.](https://jair.org/index.php/jair/article/view/11182).\n\nthe only major change difference from gym's `atarienv` is that we'd recommend not using the `env.render()` method in favour of supplying the `render_mode` keyword argument during environment initialization. the `human` render mode will give you the advantage of: frame perfect rendering, audio support, and proper resolution scaling. for more information check out [docs/gym-interface.md](./docs/gym-interface.md).\n\nfor more information on changes to the atari environments in openai gym please check out [the following blog post](https://brosa.ca/blog/ale-release-v0.7).\n\nc++\n---\n\nthe following instructions will assume you have a valid c++17 compiler and [`vcpkg`](https://github.com/microsoft/vcpkg) installed.\n\nwe use cmake as a first class citizen, and you can use the ale directly with any cmake project.\nto compile and install the ale you can run\n\n```sh\nmkdir build && cd build\ncmake ../ -dcmake_build_type=release\ncmake --build . --target install\n```\n\nthere are optional flags `-dsdl_support=on/off` to toggle sdl support (i.e., `display_screen` and `sound` support; `off` by default), `-dbuild_cpp_lib=on/off` to build\nthe `ale-lib` c++ target (`on` by default), and `-dbuild_python_lib=on/off` to build the pybind11 wrapper (`on` by default).\n\nfinally, you can link agaisnt the ale in your own cmake project as follows\n\n```cmake\nfind_package(ale required)\ntarget_link_libraries(yourtarget ale::ale-lib)\n```\n\nciting\n======\n\nif you use the ale in your research, we ask that you please cite the following.\n\n*m. g. bellemare, y. naddaf, j. veness and m. bowling. the arcade learning environment: an evaluation platform for general agents, journal of artificial intelligence research, volume 47, pages 253-279, 2013.*\n\nin bibtex format:\n\n```bibtex\n@article{bellemare13arcade,\n    author = {{bellemare}, m.~g. and {naddaf}, y. and {veness}, j. and {bowling}, m.},\n    title = {the arcade learning environment: an evaluation platform for general agents},\n    journal = {journal of artificial intelligence research},\n    year = \"2013\",\n    month = \"jun\",\n    volume = \"47\",\n    pages = \"253--279\",\n}\n```\n\nif you use the ale with sticky actions (flag ``repeat_action_probability``), or if\nyou use the different game flavours (mode and difficulty switches), we ask you\nthat you also cite the following:\n\n*m. c. machado, m. g. bellemare, e. talvitie, j. veness, m. j. hausknecht, m. bowling. revisiting the arcade learning environment: evaluation protocols and open problems for general agents,  journal of artificial intelligence research, volume 61, pages 523-562, 2018.*\n\nin bibtex format:\n\n```bibtex\n@article{machado18arcade,\n    author = {marlos c. machado and marc g. bellemare and erik talvitie and joel veness and matthew j. hausknecht and michael bowling},\n    title = {revisiting the arcade learning environment: evaluation protocols and open problems for general agents},\n    journal = {journal of artificial intelligence research},\n    volume = {61},\n    pages = {523--562},\n    year = {2018}\n}\n```\n",
+  "docs_url": null,
+  "keywords": "reinforcement-learning,arcade-learning-environment,atari",
+  "license": "gplv2",
+  "name": "ale-py",
+  "package_url": "https://pypi.org/project/ale-py/",
+  "project_url": "https://pypi.org/project/ale-py/",
+  "project_urls": {
+    "changelog": "https://github.com/mgbellemare/Arcade-Learning-Environment/blob/master/CHANGELOG.md",
+    "documentation": "https://github.com/mgbellemare/Arcade-Learning-Environment/tree/master/docs",
+    "homepage": "https://github.com/mgbellemare/Arcade-Learning-Environment"
+  },
+  "release_url": "https://pypi.org/project/ale-py/0.8.1/",
+  "requires_dist": [
+    "numpy",
+    "importlib-resources",
+    "importlib-metadata (>=4.10.0) ; python_version < \"3.10\"",
+    "typing-extensions ; python_version < \"3.11\"",
+    "pytest (>=7.0) ; extra == 'test'",
+    "gym (~=0.23) ; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "the arcade learning environment (ale) - a platform for ai research.",
+  "version": "0.8.1",
+  "releases": [],
+  "developers": [
+    "jfarebro@cs.mcgill.ca",
+    "marc_g"
+  ],
+  "kwds": "arcade atari reinforcement ai atarienv",
+  "license_kwds": "gplv2",
+  "libtype": "pypi",
+  "id": "pypi_ale_py",
+  "homepage": "",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_gym",
+    "pypi_importlib_metadata",
+    "pypi_importlib_resources",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_typing_extensions"
+  ]
+}

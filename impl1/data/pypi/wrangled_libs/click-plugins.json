@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: utilities"
+  ],
+  "description": "=============\nclick-plugins\n=============\n\n.. image:: https://travis-ci.org/click-contrib/click-plugins.svg?branch=master\n    :target: https://travis-ci.org/click-contrib/click-plugins?branch=master\n\n.. image:: https://coveralls.io/repos/click-contrib/click-plugins/badge.svg?branch=master&service=github\n    :target: https://coveralls.io/github/click-contrib/click-plugins?branch=master\n\nan extension module for `click <https://github.com/mitsuhiko/click>`_ to register\nexternal cli commands via setuptools entry-points.\n\n\nwhy?\n----\n\nlets say you develop a commandline interface and someone requests a new feature\nthat is absolutely related to your project but would have negative consequences\nlike additional dependencies, major refactoring, or maybe its just too domain\nspecific to be supported directly.  rather than developing a separate standalone\nutility you could offer up a `setuptools entry point <https://pythonhosted.org/setuptools/setuptools.html#dynamic-discovery-of-services-and-plugins>`_\nthat allows others to use your commandline utility as a home for their related\nsub-commands.  you get to choose where these sub-commands or sub-groups can be\nregistered but the plugin developer gets to choose they are registered.  you\ncould have all plugins register alongside the core commands, in a special\nsub-group, across multiple sub-groups, or some combination.\n\n\nenabling plugins\n----------------\n\nfor a more detailed example see the `examples <https://github.com/click-contrib/click-plugins/tree/master/example>`_ section.\n\nthe only requirement is decorating ``click.group()`` with ``click_plugins.with_plugins()``\nwhich handles attaching external commands and groups.  in this case the core cli developer\nregisters cli plugins from ``core_package.cli_plugins``.\n\n.. code-block:: python\n\n    from pkg_resources import iter_entry_points\n\n    import click\n    from click_plugins import with_plugins\n\n\n    @with_plugins(iter_entry_points('core_package.cli_plugins'))\n    @click.group()\n    def cli():\n        \"\"\"commandline interface for yourpackage.\"\"\"\n\n    @cli.command()\n    def subcommand():\n        \"\"\"subcommand that does something.\"\"\"\n\n\ndeveloping plugins\n------------------\n\nplugin developers need to register their sub-commands or sub-groups to an\nentry-point in their ``setup.py`` that is loaded by the core package.\n\n.. code-block:: python\n\n    from setuptools import setup\n\n    setup(\n        name='yourscript',\n        version='0.1',\n        py_modules=['yourscript'],\n        install_requires=[\n            'click',\n        ],\n        entry_points='''\n            [core_package.cli_plugins]\n            cool_subcommand=yourscript.cli:cool_subcommand\n            another_subcommand=yourscript.cli:another_subcommand\n        ''',\n    )\n\n\nbroken and incompatible plugins\n-------------------------------\n\nany sub-command or sub-group that cannot be loaded is caught and converted to\na ``click_plugins.core.brokencommand()`` rather than just crashing the entire\ncli.  the short-help is converted to a warning message like:\n\n.. code-block:: console\n\n    warning: could not load plugin. see ``<cli> <command/group> --help``.\n\nand if the sub-command or group is executed the entire traceback is printed.\n\n\nbest practices and extra credit\n-------------------------------\n\nopening a cli to plugins encourages other developers to independently extend\nfunctionality independently but there is no guarantee these new features will\nbe \"on brand\".  plugin developers are almost certainly already using features\nin the core package the cli belongs to so defining commonly used arguments and\noptions in one place lets plugin developers reuse these flags to produce a more\ncohesive cli.  if the cli is simple maybe just define them at the top of\n``yourpackage/cli.py`` or for more complex packages something like\n``yourpackage/cli/options.py``.  these common options need to be easy to find\nand be well documented so that plugin developers know what variable to give to\ntheir sub-command's function and what object they can expect to receive.  don't\nforget to document non-obvious callbacks.\n\nkeep in mind that plugin developers also have access to the parent group's\n``ctx.obj``, which is very useful for passing things like verbosity levels or\nconfig values around to sub-commands.\n\nhere's some code that sub-commands could re-use:\n\n.. code-block:: python\n\n    from multiprocessing import cpu_count\n\n    import click\n\n    jobs_opt = click.option(\n        '-j', '--jobs', metavar='cores', type=click.intrange(min=1, max=cpu_count()), default=1,\n        show_default=true, help=\"process data across n cores.\"\n    )\n\nplugin developers can access this with:\n\n.. code-block:: python\n\n    import click\n    import parent_cli_package.cli.options\n\n\n    @click.command()\n    @parent_cli_package.cli.options.jobs_opt\n    def subcommand(jobs):\n        \"\"\"i do something domain specific.\"\"\"\n\n\ninstallation\n------------\n\nwith ``pip``:\n\n.. code-block:: console\n\n    $ pip install click-plugins\n\nfrom source:\n\n.. code-block:: console\n\n    $ git clone https://github.com/click-contrib/click-plugins.git\n    $ cd click-plugins\n    $ python setup.py install\n\n\ndeveloping\n----------\n\n.. code-block:: console\n\n    $ git clone https://github.com/click-contrib/click-plugins.git\n    $ cd click-plugins\n    $ pip install -e .\\[dev\\]\n    $ pytest tests --cov click_plugins --cov-report term-missing\n\n\nchangelog\n---------\n\nsee ``changes.txt``\n\n\nauthors\n-------\n\nsee ``authors.txt``\n\n\nlicense\n-------\n\nsee ``license.txt``\n\n",
+  "docs_url": null,
+  "keywords": "click plugin setuptools entry-point",
+  "license": "new bsd",
+  "name": "click-plugins",
+  "package_url": "https://pypi.org/project/click-plugins/",
+  "project_url": "https://pypi.org/project/click-plugins/",
+  "project_urls": {
+    "Homepage": "https://github.com/click-contrib/click-plugins"
+  },
+  "release_url": "https://pypi.org/project/click-plugins/1.1.1/",
+  "requires_dist": [
+    "click (>=4.0)",
+    "pytest (>=3.6) ; extra == 'dev'",
+    "pytest-cov ; extra == 'dev'",
+    "wheel ; extra == 'dev'",
+    "coveralls ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "an extension module for click to enable registering cli commands via setuptools entry-points.",
+  "version": "1.1.1",
+  "releases": [],
+  "developers": [
+    "kevin_wurster",
+    "sean.gillies@gmail.com",
+    "wursterk@gmail.com"
+  ],
+  "kwds": "cli_plugins click_plugins parent_cli_package with_plugins setuptools",
+  "license_kwds": "new bsd",
+  "libtype": "pypi",
+  "id": "pypi_click_plugins",
+  "homepage": "https://github.com/click-contrib/click-plugins",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_coveralls",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_wheel"
+  ]
+}

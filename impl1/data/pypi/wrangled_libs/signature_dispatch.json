@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3"
+  ],
+  "description": "******************\nsignature dispatch\n******************\n\n``signature_dispatch`` is a simple python library for overloading functions \nbased on their call signature and type annotations.\n\n.. image:: https://img.shields.io/pypi/v/signature_dispatch.svg\n   :alt: last release\n   :target: https://pypi.python.org/pypi/signature_dispatch\n\n.. image:: https://img.shields.io/pypi/pyversions/signature_dispatch.svg\n   :alt: python version\n   :target: https://pypi.python.org/pypi/signature_dispatch\n\n.. image:: https://img.shields.io/github/actions/workflow/status/kalekundert/signature_dispatch/test_and_release.yml?branch=master\n   :alt: test status\n   :target: https://github.com/kalekundert/signature_dispatch/actions\n\n.. image:: https://img.shields.io/coveralls/kalekundert/signature_dispatch.svg\n   :alt: test coverage\n   :target: https://coveralls.io/github/kalekundert/signature_dispatch?branch=master\n\n.. image:: https://img.shields.io/github/last-commit/kalekundert/signature_dispatch?logo=github\n   :alt: github last commit\n   :target: https://github.com/kalekundert/signature_dispatch\n\ninstallation\n============\ninstall from pypi::\n\n  $ pip install signature_dispatch\n\nversion numbers follow `semantic versioning`__.\n\n__ https://semver.org/\n\nusage\n=====\nuse the module itself to decorate multiple functions (or methods) that all have \nthe same name::\n\n  >>> import signature_dispatch\n  >>> @signature_dispatch\n  ... def f1(x):\n  ...    return x\n  ...\n  >>> @signature_dispatch\n  ... def f1(x, y):\n  ...    return x, y\n  ...\n\nwhen called, all of the decorated functions will be tested in order to see if \nthey match the given arguments.  the first one that does will be invoked::\n\n  >>> f1(1)\n  1\n  >>> f1(1, 2)\n  (1, 2)\n\na ``typeerror`` will be raised if no matches are found::\n\n  >>> f1(1, 2, 3)\n  traceback (most recent call last):\n      ...\n  typeerror: can't dispatch the given arguments to any of the candidate functions:\n  arguments: 1, 2, 3\n  candidates:\n  (x): too many positional arguments\n  (x, y): too many positional arguments\n\ntype annotations are taken into account when choosing which function to \ninvoke::\n\n  >>> from typing import list\n  >>> @signature_dispatch\n  ... def f2(x: int):\n  ...    return 'int', x\n  ...\n  >>> @signature_dispatch\n  ... def f2(x: list[int]):\n  ...    return 'list', x\n  ...\n\n::\n\n  >>> f2(1)\n  ('int', 1)\n  >>> f2([1, 2])\n  ('list', [1, 2])\n  >>> f2('a')\n  traceback (most recent call last):\n      ...\n  typeerror: can't dispatch the given arguments to any of the candidate functions:\n  arguments: 'a'\n  candidates:\n  (x: int): type of x must be int; got str instead\n  (x: list[int]): type of x must be a list; got str instead\n  >>> f2(['a'])\n  traceback (most recent call last):\n      ...\n  typeerror: can't dispatch the given arguments to any of the candidate functions:\n  arguments: ['a']\n  candidates:\n  (x: int): type of x must be int; got list instead\n  (x: list[int]): type of x[0] must be int; got str instead\n\ndetails\n=======\n- when using the module directly as a decorator, every decorated function must \n  have the same name and must be defined in the same local scope.  if this is \n  not possible (e.g. the implementations are in different modules), every \n  function decorated with ``@signature_dispatch`` provides an ``overload()`` \n  method that can be used to add implementations defined elsewhere::\n\n    >>> @signature_dispatch\n    ... def f3(x):\n    ...    return x\n    ...\n    >>> @f3.overload\n    ... def _(x, y):\n    ...    return x, y\n    ...\n    >>> f3(1)\n    1\n    >>> f3(1, 2)\n    (1, 2)\n\n- by default, the decorated functions are tried in the order they were defined.  \n  if for some reason this order is undesirable, both ``@signature_dispatch`` \n  and ``@*.overload`` accept an optional numeric *priority* argument that can \n  be used to specify a custom order.  functions with higher priorities will be \n  tried before those with lower priorities.  functions with the same priority \n  will be tried in the order they were defined.  the default priority is 0::\n\n    >>> @signature_dispatch\n    ... def f4():\n    ...     return 'first'\n    ...\n    >>> @signature_dispatch(priority=1)\n    ... def f4():\n    ...     return 'second'\n    ...\n    >>> f4()\n    'second'\n\n- the docstring will be taken from the first decorated function.  all other \n  docstrings will be ignored.\n\n- it's possible to use ``@signature_dispatch`` with class/static methods, but \n  doing so is a bit of a special case.  basically, the class/static method must \n  be applied after all of the overloaded implementations have been defined::\n\n    >>> class c:\n    ...\n    ...     @signature_dispatch\n    ...     def m(cls, x):\n    ...         return cls, x\n    ...\n    ...     @signature_dispatch\n    ...     def m(cls, x, y):\n    ...         return cls, x, y\n    ...\n    ...     m = classmethod(m)\n    ...\n    >>> obj = c()\n    >>> obj.m(1)\n    (<class '__main__.c'>, 1)\n    >>> obj.m(1, 2)\n    (<class '__main__.c'>, 1, 2)\n\n  let me know if you find this too annoying.  it would probably be possible to \n  special-case class/static methods so that you could just apply both \n  decorators to all the same functions, but that could be complicated and this \n  work-around seems fine for now.\n\n- calling ``@signature_dispatch`` may be more expensive than you think, because \n  it has to find the scope that it was called from.  this is fast enough that \n  it shouldn't matter in most practical settings, but it does mean that you \n  should take care to not write your code in such a way that, e.g., the \n  ``@signature_dispatch`` decorator is called every time the function is \n  invoked.  instead, decorate your functions once and then call the resulting \n  function as often as you'd like.\n\n- you can get direct access to the core dispatching functionality provided by \n  this library via the ``signature_dispatch.dispatch()`` function.  this will \n  allow you to call one of several functions based on a given set of arguments, \n  without the need to use any decorators::\n\n    >>> import signature_dispatch\n    >>> candidates = [\n    ...         lambda x: x,\n    ...         lambda x, y: (x, y),\n    ... ]\n    >>> signature_dispatch.dispatch(candidates, args=(1,), kwargs={})\n    1\n    >>> signature_dispatch.dispatch(candidates, args=(1, 2), kwargs={})\n    (1, 2)\n\napplications\n============\nwriting decorators that can *optionally* be given arguments is `tricky to get \nright`__, but ``signature_dispatch`` makes it easy.  for example, here is a \ndecorator that prints a message to the terminal every time a function is called \nand optionally accepts an extra message to print::\n\n  >>> import signature_dispatch, functools\n  >>> from typing import optional\n\n  >>> @signature_dispatch\n  ... def log(msg: optional[str]=none):\n  ...     def decorator(f):\n  ...         @functools.wraps(f)\n  ...         def wrapper(*args, **kwargs):\n  ...             print(\"calling:\", f.__name__)\n  ...             if msg: print(msg)\n  ...             return f(*args, **kwargs)\n  ...         return wrapper\n  ...     return decorator\n  ...\n  >>> @signature_dispatch\n  ... def log(f):\n  ...     return log()(f)\n\n__ https://stackoverflow.com/questions/653368/how-to-create-a-python-decorator-that-can-be-used-either-with-or-without-paramet\n\nusing ``@log`` without an argument::\n\n  >>> @log\n  ... def foo():\n  ...     pass\n  >>> foo()\n  calling: foo\n\nusing ``@log`` with an argument::\n\n  >>> @log(\"hello world!\")\n  ... def bar():\n  ...     pass\n  >>> bar()\n  calling: bar\n  hello world!\n\nalternatives\n============\nafter having written this library, i subsequently found several existing \nlibraries that (although it pains me to admit) do a better job of the same \ntask.\n\nfor multiple dispatch in general:\n\n- plum_\n\n- multimethod_\n\nfor the specific task of making decorators:\n\n- decopatch_\n\n.. _dispatching: https://github.com/lucretiel/dispatch\n.. _overloading: https://github.com/bintoro/overloading.py\n.. _plum: https://github.com/wesselb/plum\n.. _decopatch: https://smarie.github.io/python-decopatch/\n.. _multimethod: https://github.com/coady/multimethod\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "signature-dispatch",
+  "package_url": "https://pypi.org/project/signature-dispatch/",
+  "project_url": "https://pypi.org/project/signature-dispatch/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/kalekundert/signature_dispatch/issues",
+    "Continuous Integration": "https://github.com/kalekundert/signature_dispatch/actions",
+    "Documentation": "https://signature_dispatch.readthedocs.io/en/latest/",
+    "Homepage": "https://github.com/kalekundert/signature_dispatch",
+    "Test Coverage": "https://coveralls.io/github/kalekundert/signature_dispatch",
+    "Version Control": "https://github.com/kalekundert/signature_dispatch"
+  },
+  "release_url": "https://pypi.org/project/signature-dispatch/1.0.1/",
+  "requires_dist": [
+    "typeguard~=3.0",
+    "sphinx ; extra == \"doc\"",
+    "sphinx_rtd_theme ; extra == \"doc\"",
+    "autoclasstoc ; extra == \"doc\"",
+    "pytest ; extra == \"test\"",
+    "pytest-cov ; extra == \"test\"",
+    "coveralls ; extra == \"test\""
+  ],
+  "requires_python": "~=3.7",
+  "summary": "execute the first function that matches the given arguments.",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "kale@thekunderts.net",
+    "kale_kundert"
+  ],
+  "kwds": "signature_dispatch signature pyversions _dispatching functools",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_signature_dispatch",
+  "homepage": "https://github.com/kalekundert/signature_dispatch",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_autoclasstoc",
+    "pypi_coveralls",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_typeguard"
+  ]
+}

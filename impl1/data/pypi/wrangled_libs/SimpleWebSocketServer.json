@@ -1,0 +1,35 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3"
+  ],
+  "description": "## a simple websocket server written in python\n\n- rfc 6455 (all latest browsers)\n- tls/ssl out of the box\n- passes autobahns websocket testsuite\n- support for python 2 and 3\n\n#### installation\n\nyou can install simplewebsocketserver by running the following command...\n\n`pip install simplewebsocketserver`\n\nor by downloading the repository and running `sudo python setup.py install`.  \ninstallation via pip is suggested.\n\n#### echo server example\n`````python\nfrom simplewebsocketserver import simplewebsocketserver, websocket\n\nclass simpleecho(websocket):\n\n    def handlemessage(self):\n        # echo message back to client\n        self.sendmessage(self.data)\n\n    def handleconnected(self):\n        print(self.address, 'connected')\n\n    def handleclose(self):\n        print(self.address, 'closed')\n\nserver = simplewebsocketserver('', 8000, simpleecho)\nserver.serveforever()\n`````\n\nopen *websocket.html* and connect to the server.\n\n#### chat server example\n`````python\nfrom simplewebsocketserver import simplewebsocketserver, websocket\n\nclients = []\nclass simplechat(websocket):\n\n    def handlemessage(self):\n       for client in clients:\n          if client != self:\n             client.sendmessage(self.address[0] + u' - ' + self.data)\n\n    def handleconnected(self):\n       print(self.address, 'connected')\n       for client in clients:\n          client.sendmessage(self.address[0] + u' - connected')\n       clients.append(self)\n\n    def handleclose(self):\n       clients.remove(self)\n       print(self.address, 'closed')\n       for client in clients:\n          client.sendmessage(self.address[0] + u' - disconnected')\n\nserver = simplewebsocketserver('', 8000, simplechat)\nserver.serveforever()\n`````\nopen multiple *websocket.html* and connect to the server.\n\n#### want to get up and running faster?\n\nthere is an example which provides a simple echo and chat server\n\necho server\n\n    python simpleexampleserver.py --example echo\n\nchat server (open up multiple *websocket.html* files)\n\n    python simpleexampleserver.py --example chat\n\n\n#### tls/ssl example\n\n1) generate a certificate with key\n\n    openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout key.pem\n\n2) run the secure tls/ssl server (in this case the cert.pem file is in the same directory)\n\n    python simpleexampleserver.py --example chat --ssl 1 --cert ./cert.pem\n\n3) offer the certificate to the browser by serving *websocket.html* through https.\nthe https server will look for cert.pem in the local directory.\nensure the *websocket.html* is also in the same directory to where the server is run.\n\n    sudo python simplehttpsserver.py\n\n4) open a web browser to: *https://localhost:443/websocket.html*\n\n5) change *ws://localhost:8000/* to *wss://localhost:8000* and click connect.\n\nnote: if you are having problems connecting, ensure that the certificate is added in your browser against the exception *https://localhost:8000* or whatever host:port pair you want to connect to.\n\n#### for the programmers\n\nhandleconnected: called when handshake is complete\n - self.address: tcp address port tuple of the endpoint\n\nhandleclose: called when the endpoint is closed or there is an error\n - self.address: tcp address port tuple of the endpoint\n\nhandlemessage: gets called when there is an incoming message from the client endpoint\n - self.address: tcp address port tuple of the endpoint\n - self.opcode: the websocket frame type (stream, text, binary)\n - self.data: bytearray (binary frame) or unicode string payload (text frame)  \n - self.request: http details from the websocket handshake (refer to basehttprequesthandler)\n\nsendmessage: send some text or binary data to the client endpoint\n - sending data as a unicode object will send a text frame\n - sending data as a bytearray object will send a binary frame\n\nsendclose: send close frame to endpoint\n\n\n---------------------\nthe mit license (mit)",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "simplewebsocketserver",
+  "package_url": "https://pypi.org/project/SimpleWebSocketServer/",
+  "project_url": "https://pypi.org/project/SimpleWebSocketServer/",
+  "project_urls": {
+    "Homepage": "https://github.com/dpallot/simple-websocket-server/"
+  },
+  "release_url": "https://pypi.org/project/SimpleWebSocketServer/0.1.2/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "a simple websocket server written in python",
+  "version": "0.1.2",
+  "releases": [],
+  "developers": [
+    "d.e.pallot@gmail.com",
+    "dave_pallot"
+  ],
+  "kwds": "websocket simplewebsocketserver tcp simplehttpsserver tls",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_simplewebsocketserver",
+  "homepage": "https://github.com/dpallot/simple-websocket-server/",
+  "release_count": 2,
+  "dependency_ids": []
+}

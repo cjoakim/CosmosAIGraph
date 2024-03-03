@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: plugins",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: text editors :: integrated development environments (ide)",
+    "topic :: utilities",
+    "typing :: typed"
+  ],
+  "description": "###################################################################\nparso - a python parser\n###################################################################\n\n\n.. image:: https://github.com/davidhalter/parso/workflows/build/badge.svg?branch=master\n    :target: https://github.com/davidhalter/parso/actions\n    :alt: github actions build status\n\n.. image:: https://coveralls.io/repos/github/davidhalter/parso/badge.svg?branch=master\n    :target: https://coveralls.io/github/davidhalter/parso?branch=master\n    :alt: coverage status\n\n.. image:: https://pepy.tech/badge/parso\n    :target: https://pepy.tech/project/parso\n    :alt: pypi downloads\n\n.. image:: https://raw.githubusercontent.com/davidhalter/parso/master/docs/_static/logo_characters.png\n\nparso is a python parser that supports error recovery and round-trip parsing\nfor different python versions (in multiple python versions). parso is also able\nto list multiple syntax errors in your python file.\n\nparso has been battle-tested by jedi_. it was pulled out of jedi to be useful\nfor other projects as well.\n\nparso consists of a small api to parse python and analyse the syntax tree.\n\na simple example:\n\n.. code-block:: python\n\n    >>> import parso\n    >>> module = parso.parse('hello + 1', version=\"3.9\")\n    >>> expr = module.children[0]\n    >>> expr\n    pythonnode(arith_expr, [<name: hello@1,0>, <operator: +>, <number: 1>])\n    >>> print(expr.get_code())\n    hello + 1\n    >>> name = expr.children[0]\n    >>> name\n    <name: hello@1,0>\n    >>> name.end_pos\n    (1, 5)\n    >>> expr.end_pos\n    (1, 9)\n\nto list multiple issues:\n\n.. code-block:: python\n\n    >>> grammar = parso.load_grammar()\n    >>> module = grammar.parse('foo +\\nbar\\ncontinue')\n    >>> error1, error2 = grammar.iter_errors(module)\n    >>> error1.message\n    'syntaxerror: invalid syntax'\n    >>> error2.message\n    \"syntaxerror: 'continue' not properly in loop\"\n\nresources\n=========\n\n- `testing <https://parso.readthedocs.io/en/latest/docs/development.html#testing>`_\n- `pypi <https://pypi.python.org/pypi/parso>`_\n- `docs <https://parso.readthedocs.org/en/latest/>`_\n- uses `semantic versioning <https://semver.org/>`_\n\ninstallation\n============\n\n    pip install parso\n\nfuture\n======\n\n- there will be better support for refactoring and comments. stay tuned.\n- there's a wip pep8 validator. it's however not in a good shape, yet.\n\nknown issues\n============\n\n- `async`/`await` are already used as keywords in python3.6.\n- `from __future__ import print_function` is not ignored.\n\n\nacknowledgements\n================\n\n- guido van rossum (@gvanrossum) for creating the parser generator pgen2\n  (originally used in lib2to3).\n- `salome schneider <https://www.crepes-schnaegg.ch/cr%c3%aapes-schn%c3%a4gg/kunst-f%c3%bcrs-cr%c3%aapes-mobil/>`_\n  for the extremely awesome parso logo.\n\n\n.. _jedi: https://github.com/davidhalter/jedi\n\n\n.. :changelog:\n\nchangelog\n---------\n\nunreleased\n++++++++++\n\n0.8.3 (2021-11-30)\n++++++++++++++++++\n\n- add basic support for python 3.11 and 3.12\n\n0.8.2 (2021-03-30)\n++++++++++++++++++\n\n- various small bugfixes\n\n0.8.1 (2020-12-10)\n++++++++++++++++++\n\n- various small bugfixes\n\n0.8.0 (2020-08-05)\n++++++++++++++++++\n\n- dropped support for python 2.7, 3.4, 3.5\n- it's possible to use ``pathlib.path`` objects now in the api\n- the stubs are gone, we are now using annotations\n- ``namedexpr_test`` nodes are now a proper class called ``namedexpr``\n- a lot of smaller refactorings\n\n0.7.1 (2020-07-24)\n++++++++++++++++++\n\n- fixed a couple of smaller bugs (mostly syntax error detection in\n  ``grammar.iter_errors``)\n\nthis is going to be the last release that supports python 2.7, 3.4 and 3.5.\n\n0.7.0 (2020-04-13)\n++++++++++++++++++\n\n- fix a lot of annoying bugs in the diff parser. the fuzzer did not find\n  issues anymore even after running it for more than 24 hours (500k tests).\n- small grammar change: suites can now contain newlines even after a newline.\n  this should really not matter if you don't use error recovery. it allows for\n  nicer error recovery.\n\n0.6.2 (2020-02-27)\n++++++++++++++++++\n\n- bugfixes\n- add grammar.refactor (might still be subject to change until 0.7.0)\n\n0.6.1 (2020-02-03)\n++++++++++++++++++\n\n- add ``parso.normalizer.issue.end_pos`` to make it possible to know where an\n  issue ends\n\n0.6.0 (2020-01-26)\n++++++++++++++++++\n\n- dropped python 2.6/python 3.3 support\n- del_stmt names are now considered as a definition\n  (for ``name.is_definition()``)\n- bugfixes\n\n0.5.2 (2019-12-15)\n++++++++++++++++++\n\n- add include_setitem to get_definition/is_definition and get_defined_names (#66)\n- fix named expression error listing (#89, #90)\n- fix some f-string tokenizer issues (#93)\n\n0.5.1 (2019-07-13)\n++++++++++++++++++\n\n- fix: some unicode identifiers were not correctly tokenized\n- fix: line continuations in f-strings are now working\n\n0.5.0 (2019-06-20)\n++++++++++++++++++\n\n- **breaking change** comp_for is now called sync_comp_for for all python\n  versions to be compatible with the python 3.8 grammar\n- added .pyi stubs for a lot of the parso api\n- small fileio changes\n\n0.4.0 (2019-04-05)\n++++++++++++++++++\n\n- python 3.8 support\n- fileio support, it's now possible to use abstract file io, support is alpha\n\n0.3.4 (2019-02-13)\n+++++++++++++++++++\n\n- fix an f-string tokenizer error\n\n0.3.3 (2019-02-06)\n+++++++++++++++++++\n\n- fix async errors in the diff parser\n- a fix in iter_errors\n- this is a very small bugfix release\n\n0.3.2 (2019-01-24)\n+++++++++++++++++++\n\n- 20+ bugfixes in the diff parser and 3 in the tokenizer\n- a fuzzer for the diff parser, to give confidence that the diff parser is in a\n  good shape.\n- some bugfixes for f-string\n\n0.3.1 (2018-07-09)\n+++++++++++++++++++\n\n- bugfixes in the diff parser and keyword-only arguments\n\n0.3.0 (2018-06-30)\n+++++++++++++++++++\n\n- rewrote the pgen2 parser generator.\n\n0.2.1 (2018-05-21)\n+++++++++++++++++++\n\n- a bugfix for the diff parser.\n- grammar files can now be loaded from a specific path.\n\n0.2.0 (2018-04-15)\n+++++++++++++++++++\n\n- f-strings are now parsed as a part of the normal python grammar. this makes\n  it way easier to deal with them.\n\n0.1.1 (2017-11-05)\n+++++++++++++++++++\n\n- fixed a few bugs in the caching layer\n- added support for python 3.7\n\n0.1.0 (2017-09-04)\n+++++++++++++++++++\n\n- pulling the library out of jedi. some apis will definitely change.\n\n\n",
+  "docs_url": null,
+  "keywords": "python parser parsing",
+  "license": "mit",
+  "name": "parso",
+  "package_url": "https://pypi.org/project/parso/",
+  "project_url": "https://pypi.org/project/parso/",
+  "project_urls": {
+    "Homepage": "https://github.com/davidhalter/parso"
+  },
+  "release_url": "https://pypi.org/project/parso/0.8.3/",
+  "requires_dist": [
+    "flake8 (==3.8.3) ; extra == 'qa'",
+    "mypy (==0.782) ; extra == 'qa'",
+    "docopt ; extra == 'testing'",
+    "pytest (<6.0.0) ; extra == 'testing'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "a python parser",
+  "version": "0.8.3",
+  "releases": [],
+  "developers": [
+    "david_halter",
+    "davidhalter88@gmail.com"
+  ],
+  "kwds": "parse parser parsing parsed parso",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_parso",
+  "homepage": "https://github.com/davidhalter/parso",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_docopt",
+    "pypi_flake8",
+    "pypi_mypy",
+    "pypi_pytest"
+  ]
+}

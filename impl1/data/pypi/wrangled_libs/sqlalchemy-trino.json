@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: database",
+    "topic :: database :: front-ends"
+  ],
+  "description": "sqlalchemy-trino\n================\n\n## \u26a0\ufe0f deprecation and archive notice\n`sqlalchemy-trino` was developed as _[trino](https://trino.io/) (f.k.a prestosql) dialect for sqlalchemy._\nsince trinodb/trino-python-client#81, all code of `sqlalchemy-trino` is donated and merged into upstream project.\nso now, this project is no longer active and consider as deprecated.\n\n\n## supported trino version\n\ntrino version 352 and higher\n\n## installation\nthe driver can either be installed through pypi or from the source code.\n### through python package index\n```bash\npip install sqlalchemy-trino\n```\n\n### latest from source code\n```bash\npip install git+https://github.com/dungdm93/sqlalchemy-trino\n```\n\n## usage\nto connect from sqlalchemy to trino, use connection string (url) following this pattern:\n```\ntrino://<username>:<password>@<host>:<port>/catalog/[schema]\n```\n\n### jwt authentication\n\nyou can pass the jwt token via either `connect_args` or the query string\nparameter `accesstoken`:\n\n```python\nfrom sqlalchemy.engine import create_engine\nfrom trino.auth import jwtauthentication\n\n# pass access token via connect_args\nengine = create_engine(\n  'trino://<username>@<host>:<port>/',\n  connect_args={'auth': jwtauthentication('a-jwt-token')},\n)\n\n# pass access token via the query string param accesstoken\nengine = create_engine(\n  'trino://<username>@<host>:<port>/?accesstoken=a-jwt-token',\n)\n```\n\n**notice**: when using username and password, it will connect to trino over tls\nconnection automatically.\n\n### user impersonation\n\nit supports user impersonation with username and password based authentication only.\n\nyou can pass the session user (a.k.a., the user that will be impersonated) via\neither [`connect_args`](https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine.params.connect_args)\nor the query string parameter `sessionuser`:\n\n```python\nfrom sqlalchemy.engine import create_engine\n\n# pass session user via connect_args\nengine = create_engine(\n  'trino://<username>:<password>@<host>:<port>/',\n  connect_args={'user': 'user-to-be-impersonated'},\n)\n\n# pass session user via a query string parameter\nengine = create_engine(\n  'trino://<username>:<password>@<host>:<port>/?sessionuser=user-to-be-impersonated',\n)\n```\n\n### pandas support\n```python\nimport pandas as pd\nfrom pandas import dataframe\nimport sqlalchemy_trino\nfrom sqlalchemy.engine import engine, connection\n\ndef trino_pandas_write(engine: engine):\n    df: dataframe = pd.read_csv(\"tests/data/population.csv\")\n    df.to_sql(con=engine, schema=\"default\", name=\"abcxyz\", method=\"multi\", index=false)\n\n    print(df)\n\n\ndef trino_pandas_read(engine: engine):\n    connection: connection = engine.connect()\n    df = pd.read_sql(\"select * from public.foobar\", connection)\n\n    print(df)\n```\n\n**note**: in `df.to_sql` following params is required:\n* `index=false` because index is not supported in trino.\n* `method=\"multi\"`: currently `method=none` (default) is not working because trino dbapi is not support [`executemany`](https://github.com/trinodb/trino-python-client/blob/77adbc48cd5061b2c55e56225d67dd7822284b73/trino/dbapi.py#l410-l411) yet\n\n\n",
+  "docs_url": null,
+  "keywords": "sqlalchemy,trino",
+  "license": "apache 2.0",
+  "name": "sqlalchemy-trino",
+  "package_url": "https://pypi.org/project/sqlalchemy-trino/",
+  "project_url": "https://pypi.org/project/sqlalchemy-trino/",
+  "project_urls": {
+    "Homepage": "https://github.com/dungdm93/sqlalchemy-trino"
+  },
+  "release_url": "https://pypi.org/project/sqlalchemy-trino/0.5.0/",
+  "requires_dist": [
+    "trino[sqlalchemy] (>=0.310)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "trino dialect for sqlalchemy",
+  "version": "0.5.0",
+  "releases": [],
+  "developers": [
+    "dungdm93@live.com"
+  ],
+  "kwds": "sqlalchemy_trino sqlalchemy trinodb trino trino_pandas_read",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_sqlalchemy_trino",
+  "homepage": "https://github.com/dungdm93/sqlalchemy-trino",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_trino"
+  ]
+}

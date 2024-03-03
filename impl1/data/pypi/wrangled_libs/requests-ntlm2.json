@@ -1,0 +1,62 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: isc license (iscl)",
+    "natural language :: english",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: version control :: git"
+  ],
+  "description": "<h1 align=\"center\">requests-ntlm2</h1>\n<div align=\"center\">ntlm authentication plugin for requests</div>\n<br />\n\n[![build status](https://github.com/dopstar/requests-ntlm2/workflows/build/badge.svg?branch=master)](https://github.com/dopstar/requests-ntlm2/actions?query=workflow%3abuild)\n[![codecov](https://codecov.io/gh/dopstar/requests-ntlm2/branch/master/graph/badge.svg)](https://codecov.io/gh/dopstar/requests-ntlm2)\n[![python version](https://img.shields.io/pypi/pyversions/requests-ntlm2.svg)](https://pypi.python.org/pypi/requests-ntlm2)\n[![pypi status](https://img.shields.io/pypi/v/requests-ntlm2.svg)](https://pypi.python.org/pypi/requests-ntlm2)\n[![downloads](https://img.shields.io/pypi/dm/requests-ntlm2.svg)](https://pypi.python.org/pypi/requests-ntlm2)\n[![licence](https://img.shields.io/github/license/dopstar/requests-ntlm2.svg)](https://raw.githubusercontent.com/dopstar/requests-ntlm2/master/license)\n[![code style: black](https://img.shields.io/badge/code%20style-black-101010.svg)](https://github.com/psf/black)\n\nrequests-ntlm2, which is based on [requests-ntlm](https://github.com/requests/requests-ntlm), allows for http ntlm authentication using the requests library.\n\n## installation\n\n```shell\npip install requests-ntlm2\n```\n\n## usage\n\n### basic usage\n`httpntlmauth` extends requests `authbase`, so usage is simple:\n\n```python\nimport requests\nfrom requests_ntlm2 import httpntlmauth\n\nauth=httpntlmauth('domain\\\\username','password')\nrequests.get(\"http://ntlm_protected_site.com\", auth=auth)\n```\n___\n\n### changing ntlm compatibility level\nsee this [ms doc](https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-2000-server/cc960646%28v=technet.10%29) on lm compatibility levels. `requests_ntlm2` defaults to\ncompatibility level 3 which supports ntlmv2 [only]. you can change the compatibility level as follows:\n\n\n```python\nimport requests\nfrom requests_ntlm2 import httpntlmauth, ntlmcompatibility\n\nusername = 'domain\\\\username'\npassword = 'password123'\nntlm_compatibility = ntlmcompatibility.lm_and_ntlmv1_with_ess  # => level 1\nauth=httpntlmauth(username, password, ntlm_compatibility=ntlm_compatibility)\n\nrequests.get(\"http://ntlm_protected_site.com\", auth=auth)\n```\n___\n\n### using with requests session\n`httpntlmauth` can be used in conjunction with a `session` in order to\nmake use of connection pooling. since ntlm authenticates connections,\nthis is more efficient. otherwise, each request will go through a new\nntlm challenge-response.\n\n```python\nimport requests\nfrom requests_ntlm2 import httpntlmauth\n\nsession = requests.session()\nsession.auth = httpntlmauth('domain\\\\username','password')\nsession.get('http://ntlm_protected_site.com')\n```\n___\n\n### http connect usage\nwhen using `requests-ntlm2` to create ssl proxy tunnel via\n[http connect](https://en.wikipedia.org/wiki/http_tunnel#http_connect_method), the so-called\n\"ntlm dance\" - ie, the ntlm authentication handshake - has to be done at the lower level\n(at `httplib` level) at tunnel-creation step. this means that you should use the `httpntlmadapter`\nand requests session. this `httpntlmadapter` is responsible for sending proxy auth information\ndownstream. \n\nhere is a basic example:\n\n```python\nimport requests\nfrom requests_ntlm2 import (\n    httpntlmauth,\n    httpntlmadapter,\n    ntlmcompatibility\n)\n\nusername = '...'\npassword = '...'\nproxy_ip = '...'\nproxy_port = '...'\n\nproxies = {\n    'http': 'http://{}:{}'.format(proxy_ip, proxy_port),\n    'https': 'http://{}:{}'.format(proxy_ip, proxy_port)\n}\n\nntlm_compatibility = ntlmcompatibility.ntlmv2_default\n\nsession = requests.session()\nsession.mount(\n    'https://',\n    httpntlmadapter(\n        username,\n        password,\n        ntlm_compatibility=ntlm_compatibility\n    )\n)\nsession.mount(\n    'http://',\n    httpntlmadapter(\n        username,\n        password,\n        ntlm_compatibility=ntlm_compatibility\n    )\n)\nsession.auth = httpntlmauth(\n    username,\n    password,\n    ntlm_compatibility=ntlm_compatibility\n)\nsession.proxies = proxies\n\nresponse = session.get('http:/foobar.com')\n```\n\n## requirements\n\n- [requests](https://github.com/kennethreitz/requests/)\n- [ntlm-auth](https://github.com/jborean93/ntlm-auth)\n\n\n",
+  "docs_url": null,
+  "keywords": "ntlm,requests,proxy,authorization,ntlm dance",
+  "license": "isc",
+  "name": "requests-ntlm2",
+  "package_url": "https://pypi.org/project/requests-ntlm2/",
+  "project_url": "https://pypi.org/project/requests-ntlm2/",
+  "project_urls": {
+    "Documentation": "https://dopstar.github.io/requests-ntlm2",
+    "Download": "https://github.com/dopstar/requests-ntlm2/archive/6.5.3.tar.gz",
+    "Homepage": "https://github.com/dopstar/requests-ntlm2",
+    "Source": "https://github.com/dopstar/requests-ntlm2",
+    "Tracker": "https://github.com/dopstar/requests-ntlm2/issues"
+  },
+  "release_url": "https://pypi.org/project/requests-ntlm2/6.5.3/",
+  "requires_dist": [
+    "requests (>=2.0.0)",
+    "ntlm-auth (>=1.0.2)",
+    "cryptography (>=1.3)",
+    "six (>=1.10)"
+  ],
+  "requires_python": "",
+  "summary": "the http ntlm proxy and/or server authentication library.",
+  "version": "6.5.3",
+  "releases": [],
+  "developers": [
+    "mkhanyisi_madlavana",
+    "mmadlavana@gmail.com"
+  ],
+  "kwds": "requests_ntlm2 ntlm_compatibility ntlm_protected_site ntlm ntlm2",
+  "license_kwds": "isc",
+  "libtype": "pypi",
+  "id": "pypi_requests_ntlm2",
+  "homepage": "https://github.com/dopstar/requests-ntlm2",
+  "release_count": 61,
+  "dependency_ids": [
+    "pypi_cryptography",
+    "pypi_ntlm_auth",
+    "pypi_requests",
+    "pypi_six"
+  ]
+}

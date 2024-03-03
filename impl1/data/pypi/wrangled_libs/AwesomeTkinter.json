@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "awesometkinter offers some pretty tkinter widgets  \nthese widgets are just a tkinter widgets with custom styles and images.\n\n[![downloads](https://static.pepy.tech/personalized-badge/awesometkinter?period=total&units=international_system&left_color=grey&right_color=blue&left_text=total%20downloads%20(pypi))](https://pepy.tech/project/awesometkinter)\n\nhomepage: https://github.com/aboghazala/awesometkinter\n\n![progressbar](https://user-images.githubusercontent.com/37757246/93717162-3c059b80-fb74-11ea-9998-00fc5ba82ca3.png)\n\n[more screenshots](https://github.com/aboghazala/awesometkinter/issues/1)\n\ncurrent available widgets:\n- radial progressbar (flat or 3d).\n- segment progressbar.\n- scrollable frames.\n- 3d buttons,\n- 3d frames.\n- scrollable text widget\n- radiobutton with better indicator/check mark quality.\n- simple scrollbar \"without arrow heads\"\n- tooltip\n- right click menu\n- auto wrapping label\n- auto fit label\n- alternative filechooser, and folderchooser for linux using zenity or kdialog if installed on target system\n- date picker window\n\nnew widgets are coming soon\n\n# bidi support:\n\ntkinter has no bidi support for rtl languages <br>\nlinux: arabic words shown reversed and not joined <br>\nwindows: bidi support is provided by windows bidi engine, but it is not efficient enough, espicially when writing arabic into \"entry\" widget <br>\n\nthis library help solving these problems in linux and windows, see example below <br>\n![bidi_screenshot](https://user-images.githubusercontent.com/37757246/117579022-63a07880-b0f1-11eb-8295-66942fec4025.png)\n\n```\nimport tkinter as tk\nfrom awesometkinter.bidirender import add_bidi_support, render_text\nroot = tk.tk()\n\ntext = '\u0627\u0644\u0633\u0644\u0627\u0645 \u0639\u0644\u064a\u0643\u0645'\n\n# text display incorrectly on linux without bidi support\ndummyvar = tk.stringvar()\ndummyvar.set(text)\ntk.label(root, textvariable=dummyvar, font='any 20').pack()\n\n# uncomment below to set a rendered text to first label\n# dummyvar.set(render_text(text))\n\nentry = tk.entry(root, font='any 20', justify='right')\nentry.pack()\n\nlbl = tk.label(root, font='any 20')\nlbl.pack()\n\n# adding bidi support for widgets\nadd_bidi_support(lbl)\nadd_bidi_support(entry)\n\n# now there is a new set() and get() methods to set and get text on a widget\nentry.set(text)\nlbl.set('\u0647\u0630\u0627 \u0643\u062a\u0627\u0628 adventure \u0634\u064a\u0642')\n\nroot.mainloop()\n```\n\n\n--------------------------------------------------------------------------------------------------------------------\n\n\n# applications examples that uses awesometkinter:\n- [firedm](https://github.com/firedm/firedm)\n\n![firedm](https://user-images.githubusercontent.com/58998813/112715559-83852f80-8ee9-11eb-8ea3-d8c0f98a0153.png)\n\n# installation:\n`python pip install awesometkinter` on windows  \n`python3 pip install awesometkinter` on linux\n\nfor quick test:\n```\nimport awesometkinter as atk\natk.main()\n```\n\nor from terminal:\n```\npython3 -m awesometkinter\nor just\nawesometkinter\n```\nthis will display a test window\n\n# requirements:\n- minimum python version 3.6\n- tkinter\n- pillow >= 6.0.0\n- python-bidi (for linux)\n\n# limitations:\n- some widgets don't work well with all tkinter themes, it is recommended to \n  set tkinter theme to 'default', 'alt', or 'classic' for things to\n  work fine, so after creating your root you should change\n  theme like example below\n\n\n# example:\n```\nimport tkinter as tk\nfrom tkinter import ttk\nimport awesometkinter as atk\n\n# our root\nroot = tk.tk()\nroot.config(background=atk.default_color)\n\n# it is recommended to select tkinter theme required for things to be right on windows,\n# 'alt', 'default', or 'classic' work fine on windows\ns = ttk.style()\ns.theme_use('default')\n\n# 3d frame\nf1 = atk.frame3d(root)\nf1.pack(side='left', expand=true, fill='both', padx=3, pady=3)\n\n# 3d progressbar\nbar = atk.radialprogressbar3d(f1, fg='cyan', size=120)\nbar.pack(padx=20, pady=20)\nbar.start()\n\n# 3d button\natk.button3d(f1, text='3d button').pack(pady=10)\n\nf2 = atk.frame3d(root)\nf2.pack(side='left', expand=true, fill='both', padx=3, pady=3)\n\n# flat radial progressbar\nbar = atk.radialprogressbar(f2, fg='green')\nbar.pack(padx=30, pady=30)\nbar.start()\n\natk.button3d(f2, text='button2').pack(pady=10)\n\nroot.mainloop()\n```\n\n# tooltip\n\nyou can enable tooltip for tkinter widgets on mouse hover, signature and arguments like below\n\n```python\nclass tooltip:\n    def __init__(self, widget, text, waittime=500, xoffset=10, yoffset=10, **kwargs):\n        \"\"\"\n        tooltip class\n\n        args:\n            widget: any tkinter widget\n            text: tooltip text\n            waittime: time in milliseconds to wait before showing tooltip\n            xoffset(int): x - offset (pixels) of tooltip box from mouse pointer \n            yoffset(int): y - offset (pixels) of tooltip box from mouse pointer \n            kwargs: parameters to be passed to tooltip label, e.g: , background='red', foreground='blue', etc\n\n        \"\"\"\n\n```\n\ntooltip example:\n\n```python\nimport tkinter as tk\nimport awesometkinter as atk\n\nroot = tk.tk()\nbtn = tk.button(root, text=\"hello\", command=root.destroy)\nbtn.pack()\nlbl = tk.label(root, text='my label')\nlbl.pack()\nbtn.tp = tooltip(btn, \"hello world\")\nlbl.tp = tooltip(lbl, \"hello world\")\n\n# we can modify any property thru the widget.tooltip reference\nbtn.tp.waittime = 100\nbtn.tp.text = 'new text'\n\n# also we can dynamically change tooltip as follows:\nlbl.counter = 0\n\ndef foo():\n    # change tooltip every second to mimic progress\n    lbl.counter = lbl.counter + 1 if lbl.counter < 100 else 0\n    lbl.tp.update_tooltip('progress: ' + str(lbl.counter) + '%')  # or use lbl.tp.text='some text'\n    root.after(1000, foo)\n\nfoo()\n\nroot.mainloop()\n\n```\n\nalso, you can use a lot of useful functions that manipulate images, e.g.\nto create a tkinter photoimage from a file but want to change its size\nand color:\n```\nimg = atk.create_image(fp='path to my image file', color='red', size=(150, 100))\n```\n\n# demos:\nhttps://github.com/aboghazala/awesometkinter/tree/master/demos\n\n---\n# author:\nmahmoud elshahat  \n2020-2021\n\n\n",
+  "docs_url": null,
+  "keywords": "tkinter gui python",
+  "license": "",
+  "name": "awesometkinter",
+  "package_url": "https://pypi.org/project/AwesomeTkinter/",
+  "project_url": "https://pypi.org/project/AwesomeTkinter/",
+  "project_urls": {
+    "Homepage": "https://github.com/Aboghazala/AwesomeTkinter",
+    "Releases": "https://github.com/Aboghazala/AwesomeTkinter/releases",
+    "Screenshots": "https://github.com/Aboghazala/AwesomeTkinter/issues/1",
+    "Source": "https://github.com/Aboghazala/AwesomeTkinter",
+    "Tracker": "https://github.com/Aboghazala/AwesomeTkinter/issues"
+  },
+  "release_url": "https://pypi.org/project/AwesomeTkinter/2021.11.8/",
+  "requires_dist": [
+    "pillow (>=6.0.0)",
+    "python-bidi"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "pretty tkinter widgets",
+  "version": "2021.11.8",
+  "releases": [],
+  "developers": [
+    "mahmoud_elshahat"
+  ],
+  "kwds": "awesometkinter progressbar widget tkinter widgets",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_awesometkinter",
+  "homepage": "https://github.com/aboghazala/awesometkinter",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_pillow",
+    "pypi_python_bidi"
+  ]
+}

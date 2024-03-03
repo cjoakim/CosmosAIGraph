@@ -1,0 +1,62 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http",
+    "topic :: software development :: libraries :: application frameworks",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "==================================\njson:api and django rest framework\n==================================\n\n.. image:: https://github.com/django-json-api/django-rest-framework-json-api/workflows/tests/badge.svg\n   :alt: tests\n   :target: https://github.com/django-json-api/django-rest-framework-json-api/actions\n\n.. image:: https://readthedocs.org/projects/django-rest-framework-json-api/badge/?version=latest\n   :alt: read the docs\n   :target: https://django-rest-framework-json-api.readthedocs.org/\n\n.. image:: https://img.shields.io/pypi/v/djangorestframework-jsonapi.svg\n   :alt: pypi version\n   :target: https://pypi.org/project/djangorestframework-jsonapi/\n\n--------\noverview\n--------\n\n**json:api support for django rest framework**\n\n* documentation: https://django-rest-framework-json-api.readthedocs.org/\n* format specification: https://jsonapi.org/format/\n\n\nby default, django rest framework will produce a response like:\n\n.. code:: json\n\n    {\n        \"count\": 20,\n        \"next\": \"https://example.com/api/1.0/identities/?page=3\",\n        \"previous\": \"https://example.com/api/1.0/identities/?page=1\",\n        \"results\": [{\n            \"id\": 3,\n            \"username\": \"john\",\n            \"full_name\": \"john coltrane\"\n        }]\n    }\n\n\nhowever, for an ``identity`` model in json:api format the response should look\nlike the following:\n\n.. code:: json\n\n    {\n        \"links\": {\n            \"prev\": \"https://example.com/api/1.0/identities\",\n            \"self\": \"https://example.com/api/1.0/identities?page=2\",\n            \"next\": \"https://example.com/api/1.0/identities?page=3\",\n        },\n        \"data\": [{\n            \"type\": \"identities\",\n            \"id\": \"3\",\n            \"attributes\": {\n                \"username\": \"john\",\n                \"full-name\": \"john coltrane\"\n            }\n        }],\n        \"meta\": {\n            \"pagination\": {\n              \"count\": 20\n            }\n        }\n    }\n\n\n-----\ngoals\n-----\n\nas a django rest framework json:api (short dja) we are trying to address following goals:\n\n1. support the `json:api`_ spec to compliance\n\n2. be as compatible with `django rest framework`_ as possible\n\n   e.g. issues in django rest framework should be fixed upstream and not worked around in dja\n\n3. have sane defaults to be as easy to pick up as possible\n\n4. be solid and tested with good coverage\n\n5. be performant\n\n.. _json:api: https://jsonapi.org\n.. _django rest framework: https://www.django-rest-framework.org/\n\n------------\nrequirements\n------------\n\n1. python (3.7, 3.8, 3.9, 3.10, 3.11)\n2. django (3.2, 4.0, 4.1, 4.2)\n3. django rest framework (3.13, 3.14)\n\nwe **highly** recommend and only officially support the latest patch release of each python, django and rest framework series.\n\ngenerally python and django series are supported till the official end of life. for django rest framework the last two series are supported.\n\nfor optional dependencies such as django filter only the latest release is officially supported even though lower versions should work as well.\n\n------------\ninstallation\n------------\n\ninstall using ``pip``...\n\n.. code:: sh\n\n    $ pip install djangorestframework-jsonapi\n    $ # for optional package integrations\n    $ pip install djangorestframework-jsonapi['django-filter']\n    $ pip install djangorestframework-jsonapi['django-polymorphic']\n    $ pip install djangorestframework-jsonapi['openapi']\n\n\nor from source...\n\n.. code:: sh\n\n    $ git clone https://github.com/django-json-api/django-rest-framework-json-api.git\n    $ cd django-rest-framework-json-api\n    $ pip install -e .\n\n\nand add ``rest_framework_json_api`` to your ``installed_apps`` setting below ``rest_framework``.\n\n.. code:: python\n\n    installed_apps = [\n        ...\n        'rest_framework',\n        'rest_framework_json_api',\n        ...\n    ]\n\n\nrunning the example app\n^^^^^^^^^^^^^^^^^^^^^^^\n\nit is recommended to create a virtualenv for testing. assuming it is already\ninstalled and activated:\n\n.. code:: sh\n\n    $ git clone https://github.com/django-json-api/django-rest-framework-json-api.git\n    $ cd django-rest-framework-json-api\n    $ pip install -ur requirements.txt\n    $ django-admin migrate --settings=example.settings\n    $ django-admin loaddata drf_example --settings=example.settings\n    $ django-admin runserver --settings=example.settings\n\nbrowse to\n\n* http://localhost:8000 for the list of available collections (in a non-json:api format!),\n* http://localhost:8000/swagger-ui/ for a swagger user interface to the dynamic schema view, or\n* http://localhost:8000/openapi for the schema view's openapi specification document.\n\n\n-----\nusage\n-----\n\n\n``rest_framework_json_api`` assumes you are using class-based views in django\nrest framework.\n\n\nsettings\n^^^^^^^^\n\none can either add ``rest_framework_json_api.parsers.jsonparser`` and\n``rest_framework_json_api.renderers.jsonrenderer`` to each ``viewset`` class, or\noverride ``settings.rest_framework``\n\n.. code:: python\n\n    rest_framework = {\n        'page_size': 10,\n        'exception_handler': 'rest_framework_json_api.exceptions.exception_handler',\n        'default_pagination_class':\n            'rest_framework_json_api.pagination.jsonapipagenumberpagination',\n        'default_parser_classes': (\n            'rest_framework_json_api.parsers.jsonparser',\n            'rest_framework.parsers.formparser',\n            'rest_framework.parsers.multipartparser'\n        ),\n        'default_renderer_classes': (\n            'rest_framework_json_api.renderers.jsonrenderer',\n            'rest_framework_json_api.renderers.browsableapirenderer',\n        ),\n        'default_metadata_class': 'rest_framework_json_api.metadata.jsonapimetadata',\n        'default_filter_backends': (\n            'rest_framework_json_api.filters.queryparametervalidationfilter',\n            'rest_framework_json_api.filters.orderingfilter',\n            'rest_framework_json_api.django_filters.djangofilterbackend',\n            'rest_framework.filters.searchfilter',\n        ),\n        'search_param': 'filter[search]',\n        'test_request_renderer_classes': (\n            'rest_framework_json_api.renderers.jsonrenderer',\n        ),\n        'test_request_default_format': 'vnd.api+json'\n    }\n\nthis package provides much more including automatic inflection of json keys, extra top level data (using nested\nserializers), relationships, links, paginators, filters, and handy shortcuts.\nread more at https://django-rest-framework-json-api.readthedocs.org/\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "djangorestframework-jsonapi",
+  "package_url": "https://pypi.org/project/djangorestframework-jsonapi/",
+  "project_url": "https://pypi.org/project/djangorestframework-jsonapi/",
+  "project_urls": {
+    "Homepage": "https://github.com/django-json-api/django-rest-framework-json-api"
+  },
+  "release_url": "https://pypi.org/project/djangorestframework-jsonapi/6.1.0/",
+  "requires_dist": [
+    "django (>=3.2)",
+    "djangorestframework (>=3.13)",
+    "inflection (>=0.5.0)",
+    "django-filter (>=2.4) ; extra == 'django-filter'",
+    "django-polymorphic (>=3.0) ; extra == 'django-polymorphic'",
+    "pyyaml (>=5.4) ; extra == 'openapi'",
+    "uritemplate (>=3.0.1) ; extra == 'openapi'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a django rest framework api adapter for the json:api spec.",
+  "version": "6.1.0",
+  "releases": [],
+  "developers": [
+    "jerel_unruh"
+  ],
+  "kwds": "djangorestframework rest_framework_json_api django _django django_filters",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_djangorestframework_jsonapi",
+  "homepage": "https://github.com/django-json-api/django-rest-framework-json-api",
+  "release_count": 29,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_django_filter",
+    "pypi_django_polymorphic",
+    "pypi_djangorestframework",
+    "pypi_inflection",
+    "pypi_pyyaml",
+    "pypi_uritemplate"
+  ]
+}

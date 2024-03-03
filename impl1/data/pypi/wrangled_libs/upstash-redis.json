@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: database",
+    "topic :: database :: front-ends",
+    "topic :: software development :: libraries"
+  ],
+  "description": "# upstash redis python sdk\n\nupstash-redis is a connectionless, http-based redis client for python, designed to be used in serverless and serverful environments such as:\n- aws lambda\n- vercel serverless\n- google cloud functions\n- and other environments where http is preferred over tcp.\n\ninspired by other redis clients like [@upstash/redis](https://github.com/upstash/upstash-redis) and [redis-py](https://github.com/redis/redis-py),\nthe goal of this sdk is to provide a simple way to use redis over the [upstash rest api](https://docs.upstash.com/redis/features/restapi).\n\nthe sdk is currently compatible with python 3.8 and above.\n\n<!-- toc -->\n\n- [upstash redis python sdk](#upstash-redis-python-sdk)\n- [quick start](#quick-start)\n  - [install](#install)\n    - [pypi](#pypi)\n  - [usage](#usage)\n    - [bitfield and bitfield\\_ro](#bitfield-and-bitfield_ro)\n    - [custom commands](#custom-commands)\n- [encoding](#encoding)\n- [retry mechanism](#retry-mechanism)\n- [contributing](#contributing)\n  - [preparing the environment](#preparing-the-environment)\n  - [running tests](#running-tests)\n\n<!-- tocstop -->\n\n# quick start\n\n## install\n\n### pypi\n```bash\npip install upstash-redis\n```\n\n## usage\nto be able to use upstash-redis, you need to create a database on [upstash](https://console.upstash.com/)\nand grab `upstash_redis_rest_url` and `upstash_redis_rest_token` from the console.\n\n```python\n# for sync client\nfrom upstash_redis import redis\n\nredis = redis(url=\"upstash_redis_rest_url\", token=\"upstash_redis_rest_token\")\n\n# for async client\nfrom upstash_redis.asyncio import redis\n\nredis = redis(url=\"upstash_redis_rest_url\", token=\"upstash_redis_rest_token\")\n```\n\nor, if you want to automatically load the credentials from the environment:\n\n```python\n# for sync use\nfrom upstash_redis import redis\nredis = redis.from_env()\n\n# for async use\nfrom upstash_redis.asyncio import redis\nredis = redis.from_env()\n```\n\nif you are in a serverless environment that allows it, it's recommended to initialise the client outside the request handler\nto be reused while your function is still hot.\n\nrunning commands might look like this:\n\n```python\nfrom upstash_redis import redis\n\nredis = redis.from_env()\n\ndef main():\n  redis.set(\"a\", \"b\")\n  print(redis.get(\"a\"))\n\n# or for async context:\n\nfrom upstash_redis.asyncio import redis\n\nredis = redis.from_env()\n\nasync def main():  \n  await redis.set(\"a\", \"b\")\n  print(await redis.get(\"a\"))\n```\n\n### bitfield and bitfield_ro\none particular case is represented by these two chained commands, which are available as functions that return an instance of \nthe `bitfield` and, respectively, `bitfield_ro` classes. use the `execute` function to run the commands.\n\n```python\nredis.bitfield(\"test_key\") \\\n  .incrby(encoding=\"i8\", offset=100, increment=100) \\\n  .overflow(\"sat\") \\\n  .incrby(encoding=\"i8\", offset=100, increment=100) \\\n  .execute()\n\nredis.bitfield_ro(\"test_key_2\") \\\n  .get(encoding=\"u8\", offset=0) \\\n  .get(encoding=\"u8\", offset=\"#1\") \\\n  .execute()\n```\n\n### custom commands\nif you want to run a command that hasn't been implemented, you can use the `execute` function of your client instance\nand pass the command as a `list`.\n\n```python\nredis.execute(command=[\"xlen\", \"test_stream\"])\n```\n\n# encoding\nalthough redis can store invalid json data, there might be problems with the deserialization.\nto avoid this, the upstash rest proxy is capable of encoding the data as base64 on the server and then sending it to the client to be\ndecoded. \n\nfor very large data, this can add a few milliseconds in latency. so, if you're sure that your data is valid json, you can set\n`rest_encoding` to `none`.\n\n# retry mechanism\nupstash-redis has a fallback mechanism in case of network or api issues. by default, if a request fails it'll retry once, 3 seconds \nafter the error. if you want to customize that, set `rest_retries` and `rest_retry_interval` (in seconds).\n\n# contributing\n\n## preparing the environment\nthis project uses [poetry](https://python-poetry.org) for packaging and dependency management. make sure you are able to create the poetry shell with relevant dependencies.\n\nyou will also need a database on [upstash](https://console.upstash.com/).\n\n## running tests\nto run all the tests, make sure the poetry virtual environment activated with all \nthe necessary dependencies. set the `upstash_redis_rest_url` and `upstash_redis_rest_token` environment variables and run:\n\n```bash\npoetry run pytest\n```",
+  "docs_url": null,
+  "keywords": "upstash redis,serverless redis",
+  "license": "mit",
+  "name": "upstash-redis",
+  "package_url": "https://pypi.org/project/upstash-redis/",
+  "project_url": "https://pypi.org/project/upstash-redis/",
+  "project_urls": {
+    "Homepage": "https://github.com/upstash/redis-python",
+    "Repository": "https://github.com/upstash/redis-python"
+  },
+  "release_url": "https://pypi.org/project/upstash-redis/1.0.0/",
+  "requires_dist": [
+    "aiohttp (>=3.8.4,<4.0.0)",
+    "requests (>=2.31.0,<3.0.0)"
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "serverless redis sdk from upstash",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "support@upstash.com",
+    "upstash"
+  ],
+  "kwds": "upstash_redis_rest_url upstash_redis_rest_token upstash_redis redis upstash",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_upstash_redis",
+  "homepage": "https://github.com/upstash/redis-python",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_requests"
+  ]
+}

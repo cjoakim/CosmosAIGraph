@@ -1,0 +1,31 @@
+{
+  "classifiers": [
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: rust"
+  ],
+  "description": "# overview\n`vl-convert-python` is a dependency-free python package for converting [vega-lite](https://vega.github.io/vega-lite/) chart specifications into static images (svg or png) or [vega](https://vega.github.io/vega/) chart specifications.\n\n\nsince an altair chart can generate vega-lite, this package can be used to easily create static images from altair charts.\n\ntry it out on binder! \\\n[![binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jonmmease/vl-convert/main?labpath=vl-convert-python%2fnotebooks%2fconvert_vegalite.ipynb)\n\n# installation\n`vl-convert-python` can be installed using pip with\n\n```\n$ pip install vl-convert-python\n```\n\n# usage\nthe `vl-convert-python` package provides a series of conversion functions under the `vl_convert` module.\n\n## convert vega-lite to svg, png, and vega\nthe `vegalite_to_svg` and `vegalite_to_png` functions can be used to convert vega-lite specifications to static svg and png images respectively. the `vegalite_to_vega` function can be used to convert a vega-lite specification to a vega specification.\n\n```python\nimport vl_convert as vlc\nimport json\n\nvl_spec = r\"\"\"\n{\n  \"$schema\": \"https://vega.github.io/schema/vega-lite/v5.json\",\n  \"data\": {\"url\": \"https://raw.githubusercontent.com/vega/vega-datasets/next/data/movies.json\"},\n  \"mark\": \"circle\",\n  \"encoding\": {\n    \"x\": {\n      \"bin\": {\"maxbins\": 10},\n      \"field\": \"imdb rating\"\n    },\n    \"y\": {\n      \"bin\": {\"maxbins\": 10},\n      \"field\": \"rotten tomatoes rating\"\n    },\n    \"size\": {\"aggregate\": \"count\"}\n  }\n}\n\"\"\"\n\n# create svg image string and then write to a file\nsvg_str = vlc.vegalite_to_svg(vl_spec=vl_spec)\nwith open(\"chart.svg\", \"wt\") as f:\n    f.write(svg_str)\n\n# create png image data and then write to a file\npng_data = vlc.vegalite_to_png(vl_spec=vl_spec, scale=2)\nwith open(\"chart.png\", \"wb\") as f:\n    f.write(png_data)\n\n# create low-level vega representation of chart and write to file\nvg_spec = vlc.vegalite_to_vega(vl_spec)\nwith open(\"chart.vg.json\", \"wt\") as f:\n    json.dump(vg_spec, f)\n```\n\n## convert altair chart to svg, png, and vega\nthe altair visualization library provides a pythonic api for generating vega-lite visualizations. as such, `vl-convert-python` can be used to convert altair charts to png, svg, or vega. the `vegalite_*` functions support an optional `vl_version` argument that can be used to specify the particular version of the vega-lite javascript library to use.  version 4.2 of the altair package uses vega-lite version 4.17, so this is the version that should be specified when converting altair charts.\n\n```python\nimport altair as alt\nfrom vega_datasets import data\nimport vl_convert as vlc\nimport json\n\nsource = data.barley()\n\nchart = alt.chart(source).mark_bar().encode(\n    x='sum(yield)',\n    y='variety',\n    color='site'\n)\n\n# create svg image string and then write to a file\nsvg_str = vlc.vegalite_to_svg(chart.to_json(), vl_version=\"4.17\")\nwith open(\"altair_chart.svg\", \"wt\") as f:\n    f.write(svg_str)\n\n# create png image data and then write to a file\npng_data = vlc.vegalite_to_png(chart.to_json(), vl_version=\"4.17\", scale=2)\nwith open(\"altair_chart.png\", \"wb\") as f:\n    f.write(png_data)\n\n# create low-level vega representation of chart and write to file\nvg_spec = vlc.vegalite_to_vega(chart.to_json(), vl_version=\"4.17\")\nwith open(\"altair_chart.vg.json\", \"wt\") as f:\n    json.dump(vg_spec, f)\n```\n# how it works\nthis crate uses [pyo3](https://pyo3.rs/) to wrap the [`vl-convert-rs`](https://crates.io/crates/vl-convert-rs) rust crate as a python library. the `vl-convert-rs` crate is a self-contained rust library for converting [vega-lite](https://vega.github.io/vega-lite/) visualization specifications into various formats.  the conversions are performed using the vega-lite and vega javascript libraries running in a v8 javascript runtime provided by the [`deno_runtime`](https://crates.io/crates/deno_runtime) crate.  font metrics and svg-to-png conversions are provided by the [`resvg`](https://crates.io/crates/resvg) crate.\n\nof note, `vl-convert-python` is fully self-contained and has no dependency on an external web browser or node.js runtime.\n\n# development setup\ncreate development conda environment\n```\n$ conda create -n vl-convert-dev -c conda-forge python=3.10 deno maturin altair pytest black black-jupyter scikit-image\n```\n\nactivate environment and pip install remaining dependencies\n```\n$ conda activate vl-convert-dev\n$ pip install pypdfium2\n```\n\nchange to python package directory\n```\n$ cd vl-convert-python\n\n```\nbuild rust python package with maturin in develop mode\n```\n$ maturin develop --release\n```\n\nrun tests\n```\n$ pytest tests\n```\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-3-clause",
+  "name": "vl-convert-python",
+  "package_url": "https://pypi.org/project/vl-convert-python/",
+  "project_url": "https://pypi.org/project/vl-convert-python/",
+  "project_urls": {
+    "Homepage": "https://github.com/jonmmease/vl-convert",
+    "Source Code": "https://github.com/jonmmease/vl-convert"
+  },
+  "release_url": "https://pypi.org/project/vl-convert-python/1.2.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.7",
+  "summary": "convert vega-lite chart specifications to svg, png, or vega",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [],
+  "kwds": "vegalite_to_svg altair_chart vegalite_to_png vega_datasets vl_convert",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_vl_convert_python",
+  "homepage": "https://github.com/jonmmease/vl-convert",
+  "release_count": 29,
+  "dependency_ids": []
+}

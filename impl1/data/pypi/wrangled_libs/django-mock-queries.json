@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "topic :: software development :: testing",
+    "topic :: software development :: testing :: mocking",
+    "topic :: software development :: testing :: unit"
+  ],
+  "description": "[![latest version](https://img.shields.io/pypi/v/django_mock_queries.svg)](https://pypi.python.org/pypi/django_mock_queries)\n[![build status](https://github.com/stphivos/django-mock-queries/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/stphivos/django-mock-queries/actions/workflows/ci.yml)\n[![code coverage](https://codecov.io/github/stphivos/django-mock-queries/coverage.svg?branch=master)](https://codecov.io/github/stphivos/django-mock-queries?branch=master)\n[![code climate](https://codeclimate.com/github/stphivos/django-mock-queries/badges/gpa.svg)](https://codeclimate.com/github/stphivos/django-mock-queries)\n\n# django mock queries\n\na library for mocking django queryset functions in memory for testing\n\n## features\n\n* queryset style support for method chaining\n* filtering with q objects\n* aggregates generation\n* crud functions\n* field lookups\n* django-rest-framework serializer asserts\n\n## examples\n\n```python\nfrom django.db.models import avg, q\nfrom django_mock_queries.query import mockset, mockmodel\n\nqs = mockset(\n    mockmodel(mock_name='john', email='john@gmail.com'),\n    mockmodel(mock_name='jeff', email='jeff@hotmail.com'),\n    mockmodel(mock_name='bill', email='bill@gmail.com'),\n)\n\nprint([x for x in qs.all().filter(email__icontains='gmail.com').select_related('address')])\n# outputs: [john, bill]\n\nqs = mockset(\n    mockmodel(mock_name='model s', msrp=70000),\n    mockmodel(mock_name='model x', msrp=80000),\n    mockmodel(mock_name='model 3', msrp=35000),\n)\n\nprint(qs.all().aggregate(avg('msrp')))\n# outputs: {'msrp__avg': 61666}\n\nqs = mockset(\n    mockmodel(mock_name='model x', make='tesla', country='usa'),\n    mockmodel(mock_name='s-class', make='mercedes', country='germany'),\n    mockmodel(mock_name='s90', make='volvo', country='sweden'),\n)\n\nprint([x for x in qs.all().filter(q(make__iexact='tesla') | q(country__iexact='germany'))])\n# outputs: [model x, s-class]\n\nqs = mockset(cls=mockmodel)\nprint(qs.create(mock_name='my_object', foo='1', bar='a'))\n# outputs: my_object\n\nprint([x for x in qs])\n# outputs: [my_object]\n```\n\n### test function that uses django queryset:\n\n```python\nfrom unittest import testcase\nfrom unittest.mock import patch\nfrom django_mock_queries.query import mockset, mockmodel\n\n\nclass testapi(testcase):\n    \"\"\"\n    test function applies expected filters by patching django's user model manager or queryset with a mockset.\n    \"\"\"\n    users = mockset()\n    user_objects = patch('django.contrib.auth.models.user.objects', users)\n\n    def active_users(self):\n        \"\"\"\n        query active users.\n        \"\"\"\n        return user.objects.filter(is_active=true).all()\n\n    @user_objects\n    def test_api_active_users_filters_by_is_active_true(self):\n        self.users.add(\n            mockmodel(mock_name='active user', is_active=true),\n            mockmodel(mock_name='inactive user', is_active=false)\n        )\n\n        for user in self.active_users():\n            self.asserttrue(user.is_active)\n```\n\n### test django-rest-framework model serializer:\n\n```python\nclass carserializer(serializers.modelserializer):\n    \"\"\"\n    car model serializer that includes a nested serializer and a method field.\n    \"\"\"\n    make = manufacturerserializer()\n    speed = serializers.serializermethodfield()\n\n    def get_speed(self, obj):\n        return obj.format_speed()\n\n    class meta:\n        model = car\n        fields = ('id', 'make', 'model', 'speed',)\n\n\ndef test_car_serializer_fields(self):\n    \"\"\"\n    test serializer returns fields with expected values and mock the result of nested serializer for field `make`.\n    \"\"\"\n    car = car(id=1, make=manufacturer(id=1, name='vw'), model='golf', speed=300)\n\n    values = {\n        'id': car.id,\n        'model': car.model,\n        'speed': car.formatted_speed(),\n    }\n\n    assert_serializer(carserializer) \\\n        .instance(car) \\\n        .returns('id', 'make', 'model', 'speed') \\\n        .values(**values) \\\n        .mocks('make') \\\n        .run()\n```\n\n### full example\n\nthere is a full django application in the `examples/users` folder. it shows how\nto configure `django_mock_queries` in your tests and run them with or without\nsetting up a django database. running the mock tests without a database can be\nmuch faster when your django application has a lot of database migrations.\n\nto run your django tests without a database, add a new settings file, and call\n`monkey_patch_test_db()`. use a wildcard import to get all the regular settings\nas well.\n\n```python\n# settings_mocked.py\nfrom django_mock_queries.mocks import monkey_patch_test_db\n\nfrom users.settings import *\n\nmonkey_patch_test_db()\n```\n\nthen run your django tests with the new settings file:\n\n    ./manage.py test --settings=users.settings_mocked\n\nhere's the pytest equivalent:\n\n    pytest --ds=users.settings_mocked\n\nthat will run your tests without setting up a test database. all of your tests\nthat use django mock queries should run fine, but what about the tests that\nreally need a database?\n\n    error: test_create (examples.users.analytics.tests.testapi)\n    ----------------------------------------------------------------------\n    traceback (most recent call last):\n      file \"/.../examples/users/analytics/tests.py\", line 28, in test_create\n        start_count = user.objects.count()\n      [...]\n    notsupportederror: mock database tried to execute sql for user model.\n\nif you want to run your tests without a database, you need to tell django\nto skip the tests that need a database. you can do that by putting a skip\ndecorator on the test classes or test methods that need a database.\n\n```python\n@skipifdbfeature('is_mocked')\nclass testapi(testcase):\n    def test_create(self):\n        start_count = user.objects.count()\n\n        user.objects.create(username='bob')\n        final_count = user.objects.count()\n\n        self.assertequal(start_count + 1, final_count)\n```\n\n## installation\n\n```bash\npip install django_mock_queries\n```\n\n## contributing\n\nanything missing or not functioning correctly? prs are always welcome! otherwise, you can create an issue so someone else does it when time allows.\n\nyou can follow these guidelines:\n\n* fork the repo from this page\n* clone your fork:\n```bash\ngit clone https://github.com/{your-username}/django-mock-queries.git\ncd django-mock-queries\ngit checkout -b feature/your_cool_feature\n```\n* implement feature/fix\n* add/modify relevant tests\n* run tox to verify all tests and flake8 quality checks pass\n```bash\ntox\n```\n* commit and push local branch to your origin\n```bash\ngit commit . -m \"new cool feature does this\"\ngit push -u origin head\n```\n* create pull request\n\n## todo\n\n* add docs as a service like readthedocs with examples for every feature\n* add support for missing queryset methods/field lookups/aggregation functions:\n    * methods that return new querysets: `annotate`, `reverse`, `none`, `extra`, `raw`\n    * methods that do not return querysets: `bulk_create`, `in_bulk`, `as_manager`\n    * field lookups: `search`\n    * aggregation functions: `stddev`, `variance`\n\n\n",
+  "docs_url": null,
+  "keywords": "django orm mocking unit-testing tdd",
+  "license": "mit",
+  "name": "django-mock-queries",
+  "package_url": "https://pypi.org/project/django-mock-queries/",
+  "project_url": "https://pypi.org/project/django-mock-queries/",
+  "project_urls": {
+    "Homepage": "https://github.com/stphivos/django-mock-queries"
+  },
+  "release_url": "https://pypi.org/project/django-mock-queries/2.2.0/",
+  "requires_dist": [
+    "Django",
+    "djangorestframework",
+    "model-bakery (>=1.0.0)"
+  ],
+  "requires_python": "",
+  "summary": "a django library for mocking queryset functions in memory for testing",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "phivos_stylianides",
+    "stphivos@gmail.com"
+  ],
+  "kwds": "django_mock_queries mockmodel mocks is_mocked mock",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_django_mock_queries",
+  "homepage": "https://github.com/stphivos/django-mock-queries",
+  "release_count": 42,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_djangorestframework",
+    "pypi_model_bakery"
+  ]
+}

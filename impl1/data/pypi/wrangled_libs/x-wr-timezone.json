@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu lesser general public license v3 or later (lgplv3+)",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: utilities"
+  ],
+  "description": "x-wr-timezone\n=============\n\n.. image:: https://img.shields.io/gitlab/pipeline-status/niccokunzmann/x-wr-timezone?branch=master\n   :target: https://gitlab.com/niccokunzmann/x-wr-timezone/-/jobs\n   :alt: gitlab ci build and test status\n\n.. image:: https://badge.fury.io/py/x-wr-timezone.svg\n   :target: https://pypi.python.org/pypi/x-wr-timezone\n   :alt: python package version on pypi\n\n.. image:: https://img.shields.io/pypi/dm/x-wr-timezone.svg\n   :target: https://pypi.python.org/pypi/x-wr-timezone#downloads\n   :alt: downloads from pypi\n\n.. image:: https://img.shields.io/opencollective/all/open-web-calendar?label=support%20on%20open%20collective\n   :target: https://opencollective.com/open-web-calendar/\n   :alt: support on open collective\n\n\nsome calendar providers introduce the non-standard ``x-wr-timezone`` parameter\nto ics calendar files.\nstrict interpretations according to rfc 5545 ignore the ``x-wr-timezone``\nparameter.\nthis causes the times of the events to differ from those\nwhich make use of ``x-wr-timezone``.\n\nthis module aims to bridge the gap by converting calendars\nusing ``x-wr-timezone`` to a strict rfc 5545 calendars.\nso, let's put our heads together and solve this problem for everyone!\n\nsome features of the module are:\n\n- easy install with python's ``pip``.\n- command line conversion of calendars.\n- piping of calendar files with ``wget`` or ``curl``.\n\nsome of the requirements are:\n\n- calendars without ``x-wr-timezone`` are kept unchanged.\n- passing calendars twice to this module does not change them.\n\ninstall\n-------\n\ninstall using ``pip``:\n\n.. code:: shell\n\n    python3 -m pip install x-wr-timezone\n\nsupport\n-------\n\n- `donate using github sponsors <https://github.com/sponsors/niccokunzmann>`_\n- `donate using open collective <https://opencollective.com/open-web-calendar/>`_\n- `donate using thanks.dev <https://thanks.dev>`_\n\ncommand line usage\n------------------\n\nyou can standardize the calendars using your command line interface.\nthe examples assume that ``in.ics`` is a calendar which may use\n``x-wr-timezone``, whereas ``out.ics`` does not require ``x-wr-timezone``\nfor proper display.\n\n.. code-block:: shell\n\n    cat in.is | x-wr-timezone > out.ics\n    x-wr-timezone in.ics out.ics\n    curl https://example.org/in.ics | x-wr-timezone > out.ics\n    wget -o- https://example.org/in.ics | x-wr-timezone > out.ics\n\nyou can get usage help on the command line:\n\n.. code-block:: shell\n\n    x-wr-timezone --help\n\npython\n------\n\nafter you have installed the library, you can import it.\n\n.. code:: python\n\n    import x_wr_timezone\n\nthe function ``to_standard()`` converts an ``icalendar`` object.\n\n.. code:: python\n\n    x_wr_timezone.to_standard(an_icalendar)\n\nhere is a full example which does about as much as this module is supposed to do:\n\n.. code-block:: python\n\n    import icalendar # installed with x_wr_timezone\n    import x_wr_timezone\n\n    with open(\"in.ics\", 'rb') as file:\n        calendar = icalendar.from_ical(file.read())\n    new_calendar = x_wr_timezone.to_standard(calendar)\n    # you could use the new_calendar variable now\n    with open('out.ics', 'wb') as file:\n        file.write(new_calendar.to_ical())\n\n\n``to_standard(calendar, timezone=none)`` has these parameters:\n\n- ``calendar`` is the ``icalendar.calendar`` object.\n- ``timezone`` is an optional time zone. by default, the time zone in\n  ``calendar['x-wr-timezone']`` is used to check if the calendar needs\n  changing.\n  when ``timezone`` is not ``none`` however, ``calendar['x-wr-timezone']``\n  will not be tested and it is assumed that the ``calendar`` should be\n  changed as if ``calendar['x-wr-timezone']`` had the value of ``timezone``.\n  this does not add or change the value of ``calendar['x-wr-timezone']``.\n  you would need to do that yourself.\n  ``timezone`` can be a string like ``\"utc\"`` or ``\"europe/berlin\"`` or\n  a ``pytz.timezone`` or something that ``datetime`` accepts as a time zone..\n- return value: the ``calendar`` argument is not modified at all. the calendar\n  returned has the attributes and subcomponents of the ``calendar`` only\n  changed and copied where needed to return the proper value. as such,\n  the returned calendar might be identical to the one passed to the\n  function as the ``calendar`` argument. keep that in mind if you modify the\n  return value.\n\n\ndevelopment\n-----------\n\n1. clone the `repository <https://github.com/niccokunzmann/x-wr-timezone>`_ or its fork and ``cd x-wr-timezone``.\n2. optional: install virtualenv and python3 and create a virtual environment:\n\n   .. code-block:: shell\n\n       pip install virtualenv\n       virtualenv -p python3 env\n       source env/bin/activate # you need to do this for each shell\n\n3. install the packages and this module so it can be edited:\n\n   .. code-block:: shell\n\n       pip install -r test-requirements.txt -e .\n\n4. run the tests:\n\n   .. code-block:: shell\n\n       pytest\n\nto test all functions:\n\n   .. code-block:: shell\n\n       pytest --x-wr-timezone all\n\ntesting with ``tox``\n********************\n\nyou can use ``tox`` to test the package in different python versions.\n\n.. code-block:: shell\n\n    tox\n\nthis tests all the different functionalities:\n\n.. code-block:: shell\n\n    tox -- --x-wr-timezone all\n\nnew releases\n------------\n\nto release new versions,\n\n1. edit the changelog section\n2. edit setup.py, the ``__version__`` variable\n3. create a commit and push it\n4. wait for `ci tests <https://gitlab.com/niccokunzmann/x-wr-timezone/-/jobs>`_ to finish the build.\n5. run\n\n   .. code-block:: shell\n\n       python3 setup.py tag_and_deploy\n6. notify the issues about their release\n\ntesting\n*******\n\nthis project's development is driven by tests.\ntests assure a consistent interface and less knowledge lost over time.\nif you like to change the code, tests help that nothing breaks in the future.\nthey are required in that sense.\nexample code and ics files can be transferred into tests and speed up fixing bugs.\n\nyou can view the tests in the `test folder\n<https://github.com/niccokunzmann/x-wr-timezones/tree/master/test>`_.\nif you have a calendar ics file for which this library does not\ngenerate the desired output, you can add it to the ``test/calendars``\nfolder and write tests for what you expect.\nif you like, `open an issue <https://github.com/niccokunzmann/x-wr-timezone/issues>`_ first, e.g. to discuss the changes and\nhow to go about it.\n\nchangelog\n---------\n\n- v0.0.6\n\n  - obsolete python 3.7\n  - support python 3.11\n  - fix localization issue for pytz when datetime has no timezone\n  - run tests on github actions\n  - require icalendar 5.0.11 for tests\n  - fix pytz localization issue when dateime is not in utc and has no time zone.\n\n- v0.0.5\n\n  - revisit readme and cli and fix spelling mistakes.\n  - modified behavior to treat events without time zone found in a calendar using the x-wr-timezone property, see `pull request 7 <https://github.com/niccokunzmann/x-wr-timezone/pull/7>`__\n- v0.0.4\n\n  - test automatic deployment with gitlab ci.\n- v0.0.3\n\n  - use ``tzname()`` function of ``datetime`` to test for utc. this helps support zoneinfo time zones.\n  - split up visitor class and rename it to walker.\n- v0.0.2\n\n  - implement the ``timezone`` argument.\n  - do not modify the value of the ``calendar`` argument and only copy it where needed.\n- v0.0.1\n\n  - initial release supports dtstart, dtend, exdate, rdate, recurrence-id attributes of events.\n  - command line interface as ``x-wr-timezone``.\n\nrelated work\n------------\n\nthis module was reated beause of these issues:\n\n- `icalendar#343 <https://github.com/collective/icalendar/issues/343>`__\n- `python-recurring-ical-events#71 <https://github.com/niccokunzmann/python-recurring-ical-events/issues/71>`__\n\nrelated software\n----------------\n\nthis module uses the ``icalendar`` library for parsing calendars.\nthis library is used by ``python-recurring-ical-events``\nto get events at specific dates.\n\nlicense\n-------\n\nthis software is licensed under lgplv3, see the license file.\n\n\n",
+  "docs_url": null,
+  "keywords": "icalendar",
+  "license": "lgplv3+",
+  "name": "x-wr-timezone",
+  "package_url": "https://pypi.org/project/x-wr-timezone/",
+  "project_url": "https://pypi.org/project/x-wr-timezone/",
+  "project_urls": {
+    "Homepage": "https://github.com/niccokunzmann/x-wr-timezone"
+  },
+  "release_url": "https://pypi.org/project/x-wr-timezone/0.0.6/",
+  "requires_dist": [
+    "icalendar",
+    "pytz"
+  ],
+  "requires_python": "",
+  "summary": "a python module and program to convert calendars using x-wr-timezone to standard ones.",
+  "version": "0.0.6",
+  "releases": [],
+  "developers": [
+    "nicco_kunzmann",
+    "niccokunzmann@rambler.ru"
+  ],
+  "kwds": "x_wr_timezone timezone timezones utc gitlab",
+  "license_kwds": "lgplv3+",
+  "libtype": "pypi",
+  "id": "pypi_x_wr_timezone",
+  "homepage": "https://github.com/niccokunzmann/x-wr-timezone",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_icalendar",
+    "pypi_pytz"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# cg-pytest-reporter\n\na pytest reporter plugin for codegrade autotest v2.\n\nthis plugin writes messages to codegrade autotest v2's structured output channel.\nfor each test that was run a `unit-test` message is written as described in\ncodegrade's documentation. when all tests have finished running, a final message\nis written with the amount of points that were achieved in the test run.\n\n## utility functions\n\nthis plugin comes with a few utility functions to easily modify certain aspects\nof each test case or test suite. all of these are decorators that you can apply\ndirectly to your test functions or classes.\n\n### test suite decorators\n\nthese decorators change properties of an entire test suite. in terms of pytest\nthat is a single file containing test functions, or a single class within such a\nfile.\n\n#### `suite_name`\n\nwith the `suite_name` you can modify the name of a test suite that will be\ndisplayed in the autotest v2 ui.\n\n```python\nfrom cg_pytest_reporter import suite_name\n\n\n@suite_name('my test suite')\nclass testsuite:\n    def test_function():\n        assert true\n```\n\nbecause it is not possible to decorate an entire module, it is possible to\nchange the name of the module-level suite by setting the `__cg_suite_name__`\nvariable on the module.\n\n```python\n__cg_suite_name__ = 'my test suite'\n\n\ndef test_function():\n    assert true\n```\n\n#### `suite_weight`\n\nuse the `suite_weight` decorator to change the weight of an entire suite\nrelative to other suites in your test run.\n\n```python\nfrom cg_pytest_reporter import suite_weight\n\n\n@suite_weight(2)\nclass testsuite:\n    def test_function():\n        assert true\n```\n\nsimilar to the suite name, you can set the weight of the module-level suite with\nthe `__cg_suite_weight__` variable.\n\n```python\n__cg_suite_weight__ = 2\n\n\ndef test_function():\n    assert true\n```\n\n### test function decorators\n\nthese decorators modify the behaviour of a single test case.\n\nalthough they work on the test case level, they can be applied to a class\ncontaining test functions. this works as if the decorator was applied to each\ntest function individually, but each decorator can still be overridden on\nindividual test cases. it is mentioned on each of the decorators where this\nmight be useful.\n\n#### `name`\n\nwith the `name` decorator you can change the name of a single test case.\n\n```python\nfrom cg_pytest_reporter import name\n\n\n@name('my cool test')\ndef test_function():\n    assert true\n```\n\n#### `description`\n\nwith the `description` decorator you can set a description for a single test\ncase. this can be useful if the name of the test function is not descriptive\nenough.\n\n```python\nfrom cg_pytest_reporter import description\n\n\n@description('a somewhat longer description of what is being tested.')\ndef test_function():\n    assert true\n```\n\n#### `weight`\n\nchange the weight of a single test function relative to other test functions\nwithin the same suite.\n\n```python\nfrom cg_pytest_reporter import weight\n\n\n@weight(2)\ndef test_function():\n    assert true\n```\n\nthis decorator can also be applied to a test class, in which case it will set a\ndefault weight for all tests within that class which can still be overridden for\nindividual tests within that class. this can be useful for example if you want\nmost tests within a class not to count towards the score.\n\n```python\nfrom cg_pytest_reporter import weight\n\n\n@weight(0)\nclass testclass:\n    # this test case will have a weight of 0 applied, and as such will not count\n    # towards the achieved score.\n    def test_function():\n        assert true\n\n    # this test case will still count towards the score with the default weight\n    # of 1.\n    @weight(1)\n    def test_something_else():\n        assert true\n```\n\n#### `reason`\n\nchange the reason of failure of the test case. this can be used to give students\na hint where their code is likely to break.\n\n```python\nfrom cg_pytest_reporter import reason\n\nfrom fibonacci import fibonacci\n\n\n@reason('did you start counting at the correct index? (off-by-one error)')\ndef test_fibonacci():\n    assert fibonacci(10) == 55\n```\n\n#### `hide_stdout`\n\nwhen a test fails, the `stdout` that was written while the test was running is\nsent along with the result. with the `hide_stdout` decorator you can prevent the\n`stdout` from being sent.\n\n```python\nfrom cg_pytest_reporter import hide_stdout\n\n\n# the string \"hello world!\" that was printed to `stdout` will not be sent along\n# with the results.\n@hide_stdout\ndef test_failure():\n    print('hello world!')\n    assert false\n```\n\nthis decorator can also be applied to a test class to hide the `stdout` of each\ntest case within it.\n\n```python\nfrom cg_pytest_reporter import hide_stdout\n\n\n@hide_stdout\nclass testclass:\n    def test_failure():\n        print('hello world!')\n        assert false\n\n    def test_ok():\n        print('hello world!')\n```\n\n#### `hide_stderr`\n\nthis works the same as `hide_stdout` except that it will hide the `stderr`\nchannel instead.\n\n```python\nimport sys\n\nfrom cg_pytest_reporter import hide_stderr\n\n\n# the string \"hello world!\" that was printed to `stderr` will not be sent along\n# with the results.\n@hide_stderr\ndef test_failure():\n    print('hello world!', file=sys.stderr)\n    assert false\n```\n\nthis decorator can also be applied to a test class to hide the `stderr` of each\ntest case within it.\n\n```python\nimport sys\n\nfrom cg_pytest_reporter import hide_stderr\n\n\n@hide_stderr\nclass testclass:\n    def test_failure():\n        print('hello world!', file=sys.stderr)\n        assert false\n\n    def test_ok():\n        print('hello world!', file=sys.stderr)\n```\n\n#### `hide_output`\n\na combined version of `hide_stdout` and `hide_stderr`.\n\n```python\nimport sys\n\nfrom cg_pytest_reporter import hide_output\n\n\n# the string \"hello world!\" that was printed to `stdout` or `stderr` will not be\n# sent along with the results.\n@hide_output\ndef test_failure():\n    print('hello world!')\n    print('hello world!', file=sys.stderr)\n    assert false\n```\n\nthis decorator can also be applied to a test class to hide the output of each\ntest case within it.\n\n```python\nimport sys\n\nfrom cg_pytest_reporter import hide_output\n\n\n@hide_output\nclass testclass:\n    def test_failure():\n        print('hello world!', file=sys.stderr)\n        assert false\n\n    def test_ok():\n        print('hello world!')\n```\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "cg-pytest-reporter",
+  "package_url": "https://pypi.org/project/cg-pytest-reporter/",
+  "project_url": "https://pypi.org/project/cg-pytest-reporter/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/cg-pytest-reporter/2023.12.21.1322/",
+  "requires_dist": [
+    "pytest (>=7.0.0)"
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "",
+  "version": "2023.12.21.1322",
+  "releases": [],
+  "developers": [
+    "codegrade",
+    "info@codegrade.com"
+  ],
+  "kwds": "cg_pytest_reporter pytest autotest test_function testclass",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_cg_pytest_reporter",
+  "homepage": "",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_pytest"
+  ]
+}

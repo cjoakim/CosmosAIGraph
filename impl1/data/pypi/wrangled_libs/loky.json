@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "topic :: software development :: libraries",
+    "topic :: utilities"
+  ],
+  "description": "\n<a href=\"https://loky.readthedocs.io\">\n<img src=\"docs/_static/loky_logo.svg\"\nalt=\"loky logo\" width=96/></a>\n\n\n# reusable process pool executor\n[![build status](https://dev.azure.com/joblib/loky/_apis/build/status/joblib.loky?branchname=master)](https://dev.azure.com/joblib/loky/_build/latest?definitionid=2&branchname=master)\n[![documentation status](https://readthedocs.org/projects/loky/badge/?version=latest)](https://loky.readthedocs.io/en/latest/?badge=latest)\n[![codecov](https://codecov.io/gh/joblib/loky/branch/master/graph/badge.svg)](https://codecov.io/gh/joblib/loky)\n[![doi](https://zenodo.org/badge/48578152.svg)](https://zenodo.org/badge/latestdoi/48578152)\n\n\n### goal\n\nthe aim of this project is to provide a robust, cross-platform and\ncross-version implementation of the `processpoolexecutor` class of\n`concurrent.futures`. it notably features:\n\n  * __consistent and robust spawn behavior__: all processes are started\n    using fork + exec on posix systems. this ensures safer interactions with\n    third party libraries. on the contrary, `multiprocessing.pool` uses\n    fork without exec by default, causing third party runtimes to crash\n    (e.g. openmp, macos accelerate...).\n\n  * __reusable executor__: strategy to avoid re-spawning a complete\n    executor every time. a singleton executor instance can be reused (and\n    dynamically resized if necessary) across consecutive calls to limit\n    spawning and shutdown overhead. the worker processes can be shutdown\n    automatically after a configurable idling timeout to free system\n    resources.\n\n  * __transparent cloudpickle integration__: to call interactively\n    defined functions and lambda expressions in parallel. it is also\n    possible to register a custom pickler implementation to handle\n    inter-process communications.\n\n  * __no need for ``if __name__ == \"__main__\":`` in scripts__: thanks\n    to the use of ``cloudpickle`` to call functions defined in the\n    ``__main__`` module, it is not required to protect the code calling\n    parallel functions under windows.\n\n  * __deadlock free implementation__: one of the major concern in\n    standard `multiprocessing` and `concurrent.futures` modules is the\n    ability of the `pool/executor` to handle crashes of worker\n    processes. this library intends to fix those possible deadlocks and\n    send back meaningful errors. note that the implementation of\n    `concurrent.futures.processpoolexecutor` that comes with python 3.7+\n    is as robust as the executor from loky but the latter also works for\n    older versions of python.\n\n\n### installation\n\nthe recommended way to install `loky` is with `pip`,\n```bash\npip install loky\n```\n\n`loky` can also be installed from sources using\n```bash\ngit clone https://github.com/joblib/loky\ncd loky\npython setup.py install\n```\n\nnote that `loky` has an optional dependency on [`psutil`][1] to allow early\nmemory leak detections.\n\n### usage\n\nthe basic usage of `loky` relies on the `get_reusable_executor`, which\ninternally manages a custom `processpoolexecutor` object, which is reused or\nre-spawned depending on the context.\n\n```python\nimport os\nfrom time import sleep\nfrom loky import get_reusable_executor\n\n\ndef say_hello(k):\n    pid = os.getpid()\n    print(f\"hello from {pid} with arg {k}\")\n    sleep(.01)\n    return pid\n\n\n# create an executor with 4 worker processes, that will\n# automatically shutdown after idling for 2s\nexecutor = get_reusable_executor(max_workers=4, timeout=2)\n\nres = executor.submit(say_hello, 1)\nprint(\"got results:\", res.result())\n\nresults = executor.map(say_hello, range(50))\nn_workers = len(set(results))\nprint(\"number of used processes:\", n_workers)\nassert n_workers == 4\n```\n\nfor more advance usage, see our\n[documentation](https://loky.readthedocs.io/en/stable/)\n\n### workflow to contribute\n\nto contribute to **loky**, first create an account on\n[github](http://github.com/). once this is done, fork the\n[loky repository](http://github.com/loky/loky) to have your own repository,\nclone it using 'git clone' on the computers where you want to work. make your\nchanges in your clone, push them to your github account, test them on several\ncomputers, and when you are happy with them, send a pull request to the main\nrepository.\n\n### running the test suite\n\nto run the test suite, you need the `pytest` (version >= 3) and `psutil`\nmodules. from the root of the project, run the test suite using:\n\n```sh\n    pip install -e .\n    pytest .\n```\n\n### why was the project named `loky`?\n\nwhile developping `loky`, we had some bad experiences trying to debug deadlocks\nwhen using `multiprocessing.pool` and `concurrent.futures.processpoolexecutor`,\nespecially when calling functions with non-picklable arguments or returned\nvalues at the beginning of the project. when we had to chose a name, we had\ndealt with so many deadlocks that we wanted some kind of invocation to repel\nthem! hence `loky`: a mix of a god, locks and the `y` that make it somehow\ncooler and nicer : (and also less likely to result in name conflict in google\nresults ^^).\n\nfixes to avoid those deadlocks in `concurrent.futures` were also contributed\nupstream in python 3.7+, as a less mystical way to repel the deadlocks :d\n\n### acknowledgement\n\nthis work is supported by the center for data science, funded by the idex\nparis-saclay, anr-11-idex-0003-02\n\n\n[1]: https://github.com/giampaolo/psutil\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "loky",
+  "package_url": "https://pypi.org/project/loky/",
+  "project_url": "https://pypi.org/project/loky/",
+  "project_urls": {
+    "Homepage": "https://github.com/joblib/loky/"
+  },
+  "release_url": "https://pypi.org/project/loky/3.4.1/",
+  "requires_dist": [
+    "cloudpickle"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a robust implementation of concurrent.futures.processpoolexecutor",
+  "version": "3.4.1",
+  "releases": [],
+  "developers": [
+    "thomas.moreau.2010@gmail.com",
+    "thomas_moreau"
+  ],
+  "kwds": "loky_logo loky processpoolexecutor azure badge",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_loky",
+  "homepage": "https://github.com/joblib/loky/",
+  "release_count": 38,
+  "dependency_ids": [
+    "pypi_cloudpickle"
+  ]
+}

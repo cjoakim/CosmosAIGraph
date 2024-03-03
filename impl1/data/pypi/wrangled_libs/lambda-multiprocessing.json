@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# lambda_multiprocessing - multiprocessing in aws lambda\n\nthis library is for doing multiprocessing in aws lambda in python.\n\n(this is unrelated to inline lambda functions such as `f = lambda x: x*x`.\n that's a different kind of lambda function.)\n\n## the problem\n\nif you deploy python code to an [aws lambda function](https://aws.amazon.com/lambda/),\nthe multiprocessing functions in the standard library such as [`multiprocessing.pool.map`](https://docs.python.org/3/library/multiprocessing.html?highlight=multiprocessing%20python%20map%20pool#multiprocessing.pool.pool.map) will not work.\n\nfor example:\n\n```\nfrom multiprocessing import pool\ndef func(x):\n    return x*x\nargs = [1,2,3]\nwith pool() as p:\n    result = p.map(func, args)\n```\n\nwill give you:\n\n```\noserror: [errno 38] function not implemented\n```\n\nthis is because aws lambda functions are very bare bones,\nand have no shared memory device (`/dev/shm`).\n\n\n\n## the solution\n\nthere is a workaround using `pipe`s and `process`es.\namazon documented it [in this blog post](https://aws.amazon.com/blogs/compute/parallel-processing-in-python-with-aws-lambda/).\nhowever that example is very much tied to the work being done,\nit doesn't have great error handling,\nand is not structured in the way you'd expect when using the normal `multiprocessing` library.\n\nthe purpose of this library is to take the solution from that blog post,\nand turn it into a drop-in replacement for `multiprocessing.pool`.\nthis also includes unit testing, error handling etc, to match what you get from `multiprocessing.pool`.\n\n## usage\n\ninstall with:\n\n```\npip install lambda_multiprocessing\n```\n\nonce you've imported `pool`, it acts just like `multiprocessing.pool`.\n[details here](https://docs.python.org/3/library/multiprocessing.html?highlight=multiprocessing%20python%20map%20pool#module-multiprocessing.pool).\n\n```\nfrom lambda_multiprocessing import pool\n\ndef work(x):\n    return x*x\n\nwith pool() as p:\n    results = p.map(work, range(5))\nassert results == [x*x for x in range(5)]\n```\n\nnote that lambda functions usually have only 2 vcpus.\nif you allocate a lot or memory you get a few more.\n(e.g. 3 at 5120mb, 6 at 10240mb)\nthe performance benefit you get from multiprocessing cpu-bound tasks is equal to the number of cpus, minus overhead.\n(e.g. double speed for multiprocessing with 2 vcpus)\nyou can get bigger performance benefits for io-bound tasks.\n(e.g. uploading many files to s3, publishing many payloads to sns etc).\n\n## limitations\n\nwhen constructing the pool, initializer, initargs, maxtasksperchild and context have not been implemented.\n\nfor `*map*` functions,\ncallbacks and chunk sizes have not been implemented.\n\n`imap` and `imap_unordered` have not been implemented.\n\nif you need any of these things implemented, raise an issue or a pr in github.\n\n## concurrency safety\n\nboto3 (the aws sdk) is concurrency safe.\nhowever the `client` and `session` objects should not be shared between processes or threads.\nso do not pass those to or from the child processes.\n\n`moto` (a library for unit-testing code that uses boto, by emulating most aws services in memory)\nis **not** concurrency safe.\nso if you're unit testing using moto, pass `0` as the first argument to `pool`,\nand then all the work will actually be done in the main thread.\ni.e. no multiprocessing at all.\nso you need an `if` statement to pass 0 or a positive integer based on whether this is unit testing or the real thing.\n\n## development\n\nthis library has no dependencies.\nthe unit tests depend on `boto3` and `moto`.\n\n```\npip install -r lambda_multiprocessing/requirements_test.txt\n```\n\nthen you can run the unit tests with:\n\n```\npython3 -m unittest\n```\n\n`cicd` is for the github actions which run unit tests and integration tests.\nyou probably don't need to touch those.\n\n## design\n\nwhen you `__enter__` the pool, it creates several `child`s.\nthese contain the actual child `process`es,\nplus a duplex pipe to send tasks to the child and get results back.\n\nthe child process just waits for payloads to appear in the pipe.\nit grabs the function and arguments from it, does the work,\ncatches any exception, then sends the exception or result back through the pipe.\nnote that the function that the client gives to this library might return an exception for some reason,\nso we return either `[result, none]` or `[none, exception]`, to differentiate.\n\nto close everything up when we're done, the parent sends a payload with a different structure (`payload[-1] == true`)\nand then the child will gracefully exit.\n\nwe keep a counter of how many tasks we've given to the child, minus how many results we've got back.\nwhen assigning work, we give it to a child chosen randomly from the set of children whose counter value is smallest.\n(i.e. shortest backlog)\n\nwhen passing the question and answer to the child and back, we pass around a uuid.\nthis is because the client may submit two tasks with apply_async, then request the result for the second one,\nbefore the first.\nwe can't assume that the next result coming back from the child is the one we want,\nsince each child can have a backlog of a few tasks.\n\noriginally i passed a new pipe to the child for each task to process,\nbut this results in oserrors from too many open files (i.e. too many pipes),\nand passing pipes through pipes is unusually slow on low-memory lambda functions for some reason.\n\nnote that `multiprocessing.queue` doesn't work in lambda functions.\nso we can't use that to distribute work amongst the children.\n",
+  "docs_url": null,
+  "keywords": "python,aws,amazon,lambda,multiprocessing,pool,concurrency",
+  "license": "",
+  "name": "lambda-multiprocessing",
+  "package_url": "https://pypi.org/project/lambda-multiprocessing/",
+  "project_url": "https://pypi.org/project/lambda-multiprocessing/",
+  "project_urls": {
+    "Homepage": "https://github.com/mdavis-xyz/lambda_multiprocessing"
+  },
+  "release_url": "https://pypi.org/project/lambda-multiprocessing/0.4/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "drop-in replacement for multiprocessing.pool in aws lambda functions (without /dev/shm shared memory)",
+  "version": "0.4",
+  "releases": [],
+  "developers": [
+    "github@mdavis.xyz",
+    "matthew_davis"
+  ],
+  "kwds": "lambda_multiprocessing multiprocessing lambda pip python3",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_lambda_multiprocessing",
+  "homepage": "https://github.com/mdavis-xyz/lambda_multiprocessing",
+  "release_count": 4,
+  "dependency_ids": []
+}

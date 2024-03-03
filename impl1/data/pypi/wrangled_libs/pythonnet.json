@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: c#",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "pythonnet - python.net\n===========================\n\n|join the chat at https://gitter.im/pythonnet/pythonnet| |stackexchange shield|\n\n|gh shield|\n\n|license shield|\n\n|pypi package version| |conda-forge version| |python supported shield|\n\n|nuget preview shield| |nuget release shield|\n\npython.net is a package that gives python programmers nearly\nseamless integration with the .net common language runtime (clr) and\nprovides a powerful application scripting tool for .net developers. it\nallows python code to interact with the clr, and may also be used to\nembed python into a .net application.\n\ncalling .net code from python\n-----------------------------\n\npython.net allows clr namespaces to be treated essentially as python packages.\n\n.. code-block:: python\n\n   import clr\n   from system import string\n   from system.collections import *\n\nto load an assembly, use the ``addreference`` function in the ``clr``\nmodule:\n\n.. code-block:: python\n\n   import clr\n   clr.addreference(\"system.windows.forms\")\n   from system.windows.forms import form\n\nby default, mono will be used on linux and macos, .net framework on windows. for\ndetails on the loading of different runtimes, please refer to the documentation.\n\n.net core\n~~~~~~~~~\n\nif .net core is installed in a default location or the ``dotnet`` cli tool is on\nthe ``path``, loading it instead of the default (mono/.net framework) runtime\njust requires setting either the environment variable\n``pythonnet_runtime=coreclr`` or calling ``pythonnet.load`` explicitly:\n\n.. code-block:: python\n\n   from pythonnet import load\n   load(\"coreclr\")\n\n   import clr\n\n\nembedding python in .net\n------------------------\n\n-  you must set ``runtime.pythondll`` property or ``pythonnet_pydll`` environment variable\n   starting with version 3.0, otherwise you will receive ``badpythondllexception``\n   (internal, derived from ``missingmethodexception``) upon calling ``initialize``.\n   typical values are ``python38.dll`` (windows), ``libpython3.8.dylib`` (mac),\n   ``libpython3.8.so`` (most other unix-like operating systems).\n-  then call ``pythonengine.initialize()``. if you plan to use python objects from\n   multiple threads, also call ``pythonengine.beginallowthreads()``.\n-  all calls to python should be inside a\n   ``using (py.gil()) {/* your code here */}`` block.\n-  import python modules using ``dynamic mod = py.import(\"mod\")``, then\n   you can call functions as normal, eg ``mod.func(args)``.\n-  use ``mod.func(args, py.kw(\"keywordargname\", keywordargvalue))`` or\n   ``mod.func(args, keywordargname: keywordargvalue)`` to apply keyword\n   arguments.\n-  all python objects should be declared as ``dynamic`` type.\n-  mathematical operations involving python and literal/managed types\n   must have the python object first, eg. ``np.pi * 2`` works,\n   ``2 * np.pi`` doesn't.\n\nexample\n~~~~~~~\n\n.. code-block:: csharp\n\n   static void main(string[] args)\n   {\n       pythonengine.initialize();\n       using (py.gil())\n       {\n           dynamic np = py.import(\"numpy\");\n           console.writeline(np.cos(np.pi * 2));\n\n           dynamic sin = np.sin;\n           console.writeline(sin(5));\n\n           double c = (double)(np.cos(5) + sin(5));\n           console.writeline(c);\n\n           dynamic a = np.array(new list<float> { 1, 2, 3 });\n           console.writeline(a.dtype);\n\n           dynamic b = np.array(new list<float> { 6, 5, 4 }, dtype: np.int32);\n           console.writeline(b.dtype);\n\n           console.writeline(a * b);\n           console.readkey();\n       }\n   }\n\noutput:\n\n.. code:: csharp\n\n   1.0\n   -0.958924274663\n   -0.6752620892\n   float64\n   int32\n   [  6.  10.  12.]\n\n\n\nresources\n---------\n\ninformation on installation, faq, troubleshooting, debugging, and\nprojects using pythonnet can be found in the wiki:\n\nhttps://github.com/pythonnet/pythonnet/wiki\n\nmailing list\n    https://mail.python.org/mailman/listinfo/pythondotnet\nchat\n    https://gitter.im/pythonnet/pythonnet\n\n.net foundation\n---------------\nthis project is supported by the `.net foundation <https://dotnetfoundation.org>`_.\n\n.. |join the chat at https://gitter.im/pythonnet/pythonnet| image:: https://badges.gitter.im/pythonnet/pythonnet.svg\n   :target: https://gitter.im/pythonnet/pythonnet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge\n.. |license shield| image:: https://img.shields.io/badge/license-mit-blue.svg?maxage=3600\n   :target: ./license\n.. |pypi package version| image:: https://img.shields.io/pypi/v/pythonnet.svg\n   :target: https://pypi.python.org/pypi/pythonnet\n.. |python supported shield| image:: https://img.shields.io/pypi/pyversions/pythonnet.svg\n   :target: https://pypi.python.org/pypi/pythonnet\n.. |stackexchange shield| image:: https://img.shields.io/badge/stackoverflow-python.net-blue.svg\n   :target: http://stackoverflow.com/questions/tagged/python.net\n.. |conda-forge version| image:: https://img.shields.io/conda/vn/conda-forge/pythonnet.svg\n   :target: https://anaconda.org/conda-forge/pythonnet\n.. |nuget preview shield| image:: https://img.shields.io/nuget/vpre/pythonnet\n   :target: https://www.nuget.org/packages/pythonnet/\n.. |nuget release shield| image:: https://img.shields.io/nuget/v/pythonnet\n   :target: https://www.nuget.org/packages/pythonnet/\n.. |gh shield| image:: https://github.com/pythonnet/pythonnet/workflows/github%20actions/badge.svg\n   :target: https://github.com/pythonnet/pythonnet/actions?query=branch%3amaster\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pythonnet",
+  "package_url": "https://pypi.org/project/pythonnet/",
+  "project_url": "https://pypi.org/project/pythonnet/",
+  "project_urls": {
+    "Homepage": "https://pythonnet.github.io/",
+    "Sources": "https://github.com/pythonnet/pythonnet"
+  },
+  "release_url": "https://pypi.org/project/pythonnet/3.0.3/",
+  "requires_dist": [
+    "clr-loader <0.3.0,>=0.2.6"
+  ],
+  "requires_python": "<3.13,>=3.7",
+  "summary": ".net and mono integration for python",
+  "version": "3.0.3",
+  "releases": [],
+  "developers": [
+    "pythonnet@python.org"
+  ],
+  "kwds": "pythonnet pythonnet_runtime dotnet pythondll pythondotnet",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pythonnet",
+  "homepage": "",
+  "release_count": 27,
+  "dependency_ids": [
+    "pypi_clr_loader"
+  ]
+}

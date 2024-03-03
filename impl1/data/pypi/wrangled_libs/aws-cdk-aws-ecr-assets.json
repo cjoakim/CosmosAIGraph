@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws cdk docker image assets\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\nthis module allows bundling docker images as assets.\n\n## images from dockerfile\n\nimages are built from a local docker context directory (with a `dockerfile`),\nuploaded to amazon elastic container registry (ecr) by the cdk toolkit\nand/or your app's ci/cd pipeline, and can be naturally referenced in your cdk app.\n\n```python\nfrom aws_cdk.aws_ecr_assets import dockerimageasset\n\n\nasset = dockerimageasset(self, \"mybuildimage\",\n    directory=path.join(__dirname, \"my-image\")\n)\n```\n\nthe directory `my-image` must include a `dockerfile`.\n\nthis will instruct the toolkit to build a docker image from `my-image`, push it\nto an amazon ecr repository and wire the name of the repository as cloudformation\nparameters to your stack.\n\nby default, all files in the given directory will be copied into the docker\n*build context*. if there is a large directory that you know you definitely\ndon't need in the build context you can improve the performance by adding the\nnames of files and directories to ignore to a file called `.dockerignore`, or\npass them via the `exclude` property. if both are available, the patterns\nfound in `exclude` are appended to the patterns found in `.dockerignore`.\n\nthe `ignoremode` property controls how the set of ignore patterns is\ninterpreted. the recommended setting for docker image assets is\n`ignoremode.docker`. if the context flag\n`@aws-cdk/aws-ecr-assets:dockerignoresupport` is set to `true` in your\n`cdk.json` (this is by default for new projects, but must be set manually for\nold projects) then `ignoremode.docker` is the default and you don't need to\nconfigure it on the asset itself.\n\nuse `asset.imageuri` to reference the image. it includes both the ecr image url\nand tag.\n\nyou can optionally pass build args to the `docker build` command by specifying\nthe `buildargs` property. it is recommended to skip hashing of `buildargs` for\nvalues that can change between different machines to maintain a consistent\nasset hash.\n\n```python\nfrom aws_cdk.aws_ecr_assets import dockerimageasset\n\n\nasset = dockerimageasset(self, \"mybuildimage\",\n    directory=path.join(__dirname, \"my-image\"),\n    build_args={\n        \"http_proxy\": \"http://10.20.30.2:1234\"\n    },\n    invalidation=dockerimageassetinvalidationoptions(\n        build_args=false\n    )\n)\n```\n\nyou can optionally pass a target to the `docker build` command by specifying\nthe `target` property:\n\n```python\nfrom aws_cdk.aws_ecr_assets import dockerimageasset\n\n\nasset = dockerimageasset(self, \"mybuildimage\",\n    directory=path.join(__dirname, \"my-image\"),\n    target=\"a-target\"\n)\n```\n\nyou can optionally pass networking mode to the `docker build` command by specifying\nthe `networkmode` property:\n\n```python\nfrom aws_cdk.aws_ecr_assets import dockerimageasset, networkmode\n\n\nasset = dockerimageasset(self, \"mybuildimage\",\n    directory=path.join(__dirname, \"my-image\"),\n    network_mode=networkmode.host\n)\n```\n\nyou can optionally pass an alternate platform to the `docker build` command by specifying\nthe `platform` property:\n\n```python\nfrom aws_cdk.aws_ecr_assets import dockerimageasset, platform\n\n\nasset = dockerimageasset(self, \"mybuildimage\",\n    directory=path.join(__dirname, \"my-image\"),\n    platform=platform.linux_arm64\n)\n```\n\n## images from tarball\n\nimages are loaded from a local tarball, uploaded to ecr by the cdk toolkit and/or your app's ci-cd pipeline, and can be\nnaturally referenced in your cdk app.\n\n```python\nfrom aws_cdk.aws_ecr_assets import tarballimageasset\n\n\nasset = tarballimageasset(self, \"mybuildimage\",\n    tarball_file=\"local-image.tar\"\n)\n```\n\nthis will instruct the toolkit to add the tarball as a file asset. during deployment it will load the container image\nfrom `local-image.tar`, push it to an amazon ecr repository and wire the name of the repository as cloudformation parameters\nto your stack.\n\n## publishing images to ecr repositories\n\n`dockerimageasset` is designed for seamless build & consumption of image assets by cdk code deployed to multiple environments\nthrough the cdk cli or through ci/cd workflows. to that end, the ecr repository behind this construct is controlled by the aws cdk.\nthe mechanics of where these images are published and how are intentionally kept as an implementation detail, and the construct\ndoes not support customizations such as specifying the ecr repository name or tags.\n\nif you are looking for a way to *publish* image assets to an ecr repository in your control, you should consider using\n[cdklabs/cdk-ecr-deployment](https://github.com/cdklabs/cdk-ecr-deployment), which is able to replicate an image asset from the cdk-controlled ecr repository to a repository of\nyour choice.\n\nhere an example from the [cdklabs/cdk-ecr-deployment](https://github.com/cdklabs/cdk-ecr-deployment) project:\n\n```text\n// this example available in typescript only\n\nimport { dockerimageasset } from '@aws-cdk/aws-ecr-assets';\nimport * as ecrdeploy from 'cdk-ecr-deployment';\n\nconst image = new dockerimageasset(this, 'cdkdockerimage', {\n  directory: path.join(__dirname, 'docker'),\n});\n\nnew ecrdeploy.ecrdeployment(this, 'deploydockerimage', {\n  src: new ecrdeploy.dockerimagename(image.imageuri),\n  dest: new ecrdeploy.dockerimagename(`${cdk.aws.account_id}.dkr.ecr.us-west-2.amazonaws.com/test:nginx`),\n});\n```\n\n\u26a0\ufe0f please note that this is a 3rd-party construct library and is not officially supported by aws.\nyou are welcome to +1 [this github issue](https://github.com/aws/aws-cdk/issues/12597) if you would like to see\nnative support for this use-case in the aws cdk.\n\n## pull permissions\n\ndepending on the consumer of your image asset, you will need to make sure\nthe principal has permissions to pull the image.\n\nin most cases, you should use the `asset.repository.grantpull(principal)`\nmethod. this will modify the iam policy of the principal to allow it to\npull images from this repository.\n\nif the pulling principal is not in the same account or is an aws service that\ndoesn't assume a role in your account (e.g. aws codebuild), pull permissions\nmust be granted on the **resource policy** (and not on the principal's policy).\nto do that, you can use `asset.repository.addtoresourcepolicy(statement)` to\ngrant the desired principal the following permissions: \"ecr:getdownloadurlforlayer\",\n\"ecr:batchgetimage\" and \"ecr:batchchecklayeravailability\".\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-ecr-assets",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-ecr-assets/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-ecr-assets/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-ecr-assets/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.assets (==1.204.0)",
+    "aws-cdk.aws-ecr (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-s3 (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "aws-cdk.cx-api (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "docker image assets deployed to ecr",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk dockerimageasset dockerimageassetinvalidationoptions cdkdockerimage aws_ecr_assets",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_ecr_assets",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 249,
+  "dependency_ids": [
+    "pypi_aws_cdk.assets",
+    "pypi_aws_cdk.aws_ecr",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_s3",
+    "pypi_aws_cdk.core",
+    "pypi_aws_cdk.cx_api",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

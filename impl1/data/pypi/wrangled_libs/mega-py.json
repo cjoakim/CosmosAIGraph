@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: internet :: www/http"
+  ],
+  "description": "mega.py\n=======\n\n[![build\nstatus](https://travis-ci.org/odwyersoftware/mega.py.png?branch=master)](https://travis-ci.org/odwyersoftware/mega.py)\n[![downloads](https://pypip.in/d/mega.py/badge.png)](https://crate.io/packages/mega.py/)  [![pypi version](https://badge.fury.io/py/mega.py.svg)](https://pypi.org/project/mega.py/)\n\npython library for the [mega.co.nz](https://mega.nz/aff=zo6ixnahw14)\napi, currently supporting:\n\n-   login\n-   uploading\n-   downloading\n-   deleting\n-   searching\n-   sharing\n-   renaming\n-   moving files\n\nthis is a work in progress, further functionality coming shortly.\n\nfor more detailed information see api\\_info.md\n\nhow to use\n----------\n\n### create a mega account\n\nfirst, [create an account with mega](https://mega.nz/aff=zo6ixnahw14) .\n\n### install mega.py package\n\nrun the following command, or run setup from the latest github source.\n\n```python\npip install mega.py\n```\n\n### import mega.py\n\n```python\nfrom mega import mega\n```\n\n### create an instance of mega.py\n\n```python\nmega = mega()\n```\n\n### login to mega\n\n```python\nm = mega.login(email, password)\n# login using a temporary anonymous account\nm = mega.login()\n```\n\n### get user details\n\n```python\ndetails = m.get_user()\n```\n\n### get account balance (pro accounts only)\n\n```python\nbalance = m.get_balance()\n```\n\n### get account disk quota\n\n```python\nquota = m.get_quota()\n```\n\n### get account storage space\n\n```python\n# specify unit output kilo, mega, gig, else bytes will output\nspace = m.get_storage_space(kilo=true)\n```\n\n### get account files\n\n```python\nfiles = m.get_files()\n```\n\n### upload a file, and get its public link\n\n```python\nfile = m.upload('myfile.doc')\nm.get_upload_link(file)\n# see mega.py for destination and filename options\n```\n\n### export a file or folder\n\n```python\npublic_exported_web_link = m.export('myfile.doc')\npublic_exported_web_link = m.export('my_mega_folder/my_sub_folder_to_share')\n# e.g. https://mega.nz/#f!wlvl1cbz!m3wmhwzdenmnujobsdzfng\n```\n\n### find a file or folder\n\n```python\nfolder = m.find('my_mega_folder')\n# excludes results which are in the trash folder (i.e. deleted)\nfolder = m.find('my_mega_folder', exclude_deleted=true)\n```\n\n### upload a file to a destination folder\n\n```python\nfolder = m.find('my_mega_folder')\nm.upload('myfile.doc', folder[0])\n```\n\n### download a file from url or file obj, optionally specify destination folder\n\n```python\nfile = m.find('myfile.doc')\nm.download(file)\nm.download_url('https://mega.co.nz/#!utyjgstq!om4u3v5v_w4n5edso0wolg1d5h0fwsrld3olnlus9pc')\nm.download(file, '/home/john-smith/desktop')\n# specify optional download filename (download_url() supports this also)\nm.download(file, '/home/john-smith/desktop', 'myfile.zip')\n```\n\n### import a file from url, optionally specify destination folder\n\n```python\nm.import_public_url('https://mega.co.nz/#!utyjgstq!om4u3v5v_w4n5edso0wolg1d5h0fwsrld3olnlus9pc')\nfolder_node = m.find('documents')[1]\nm.import_public_url('https://mega.co.nz/#!utyjgstq!om4u3v5v_w4n5edso0wolg1d5h0fwsrld3olnlus9pc', dest_node=folder_node)\n```\n\n### create a folder\n\n```python\nm.create_folder('new_folder')\nm.create_folder('new_folder/sub_folder/subsub_folder')\n```\n\nreturns a dict of folder node name and node\\_id, e.g.\n\n```python\n{\n  'new_folder': 'qpfhaywa',\n  'sub_folder': '2pdlmy4z',\n  'subsub_folder': 'ggmfcklz'\n}\n```\n\n### rename a file or a folder\n\n```python\nfile = m.find('myfile.doc')\nm.rename(file, 'my_file.doc')\n```\n\n## contact support\n\nfor paid priority support contact [mega@odwyer.software](mailto:mega@odwyer.software).\n\n**[uk python development agency](https://odwyer.software/)**\n\n\nrelease history\n===============\n\n1.0.8 (2020-06-25)\n------------------\n\n-   fixes find method returning the wrong file when more than one file\n    exists with that name.\n-   handle new shared file urls.\n\n1.0.7 (2020-03-25)\n------------------\n\n-   fix login by calculating public rsa exponent instead of hardcoding.\n\n1.0.6 (2020-02-03)\n------------------\n\n-   fixes rsa public exponent issue.\n-   switches dependency pycrypto to pycryptodome.\n\n1.0.5 (2019-11-18)\n------------------\n\n-   increase the wait time in between failed api request retries.\n\n1.0.4 (2019-11-18)\n------------------\n\n-   increase the wait time in between failed api request retries.\n\n1.0.3 (2019-11-12)\n------------------\n\n-   fixes broken `download` method.\n-   changes `download` and `download_url` methods to return the path to\n    the downloaded file, previously returned `none`.\n-   added license.\n\n1.0.2 (2019-11-07)\n------------------\n\n-   reverts, \"replace pycrypto dependency with pycryptodome\" as breaks\n    login process.\n\n1.0.1 (2019-11-06)\n------------------\n\n-   when a request fails due to eagain response, retry with exp backoff\n    up to 20 seconds.\n-   adds logging, removes print statements.\n-   replace pycrypto dependency with pycryptodome.\n-   removes python 2 specific code.\n\n1.0.0 (2019-10-31)\n------------------\n\n-   removes broken method `get_contacts()`.\n-   adds support for login with a v2 mega user account.\n-   adds `export()` method to share a file or folder, returning public\n    share url with key.\n-   adds code, message attrs to requesterror exception, makes message in\n    raised exceptions include more details.\n-   alters `create_folder()` to accept a path including multiple sub\n    directories, adds support to create them all (similar to 'mkdir -p'\n    on unix systems).\n-   adds `exclude_deleted=true` optional arg to `find()` method, to\n    exclude deleted nodes from results.\n\n0.9.20 (2019-10-17)\n-------------------\n\n-   python 3 bugfix to `upload` method.\n\n0.9.19 (2019-10-16)\n-------------------\n\n-   python 3 support and bugfixes.\n-   update packaging code.\n-   added changelog.\n\n0.9.18 (2013-07-04)\n-------------------\n\n-   unknown\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "creative commons attribution-noncommercial-share alike license",
+  "name": "mega.py",
+  "package_url": "https://pypi.org/project/mega.py/",
+  "project_url": "https://pypi.org/project/mega.py/",
+  "project_urls": {
+    "Homepage": "https://github.com/odwyersoftware/mega.py"
+  },
+  "release_url": "https://pypi.org/project/mega.py/1.0.8/",
+  "requires_dist": [
+    "requests (>=0.10)",
+    "pycryptodome (<4.0.0,>=3.9.6)",
+    "pathlib (==1.0.1)",
+    "tenacity (<6.0.0,>=5.1.5)"
+  ],
+  "requires_python": "",
+  "summary": "python lib for the mega.co.nz api",
+  "version": "1.0.8",
+  "releases": [],
+  "developers": [
+    "hello@odwyer.software"
+  ],
+  "kwds": "my_mega_folder mega filename pycryptodome py",
+  "license_kwds": "creative commons attribution-noncommercial-share alike license",
+  "libtype": "pypi",
+  "id": "pypi_mega.py",
+  "homepage": "https://github.com/odwyersoftware/mega.py",
+  "release_count": 36,
+  "dependency_ids": [
+    "pypi_pathlib",
+    "pypi_pycryptodome",
+    "pypi_requests",
+    "pypi_tenacity"
+  ]
+}

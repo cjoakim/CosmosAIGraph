@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 6 - mature",
+    "intended audience :: developers",
+    "operating system :: os independent",
+    "programming language :: c",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: utilities"
+  ],
+  "description": "===========================================\npycosat: bindings to picosat (a sat solver)\n===========================================\n\n`picosat <http://fmv.jku.at/picosat/>`_ is a popular\n`sat <http://en.wikipedia.org/wiki/boolean_satisfiability_problem>`_ solver\nwritten by armin biere in pure c.\nthis package provides efficient python bindings to picosat on the c level,\ni.e. when importing pycosat, the picosat solver becomes part of the\npython process itself.  for ease of deployment, the picosat source (namely\npicosat.c and picosat.h) is included in this project.  these files have\nbeen extracted from the picosat source (picosat-965.tar.gz).\n\nusage\n-----\n\nthe ``pycosat`` module has two functions ``solve`` and ``itersolve``,\nboth of which take an iterable of clauses as an argument. each clause\nis itself represented as an iterable of (non-zero) integers.\n\nthe function ``solve`` returns one of the following:\n  * one solution (a list of integers)\n  * the string \"unsat\" (when the clauses are unsatisfiable)\n  * the string \"unknown\" (when a solution could not be determined within the\n    propagation limit)\n\nthe function ``itersolve`` returns an iterator over solutions.  when the\npropagation limit is specified, exhausting the iterator may not yield all\npossible solutions.\n\nboth functions take the following keyword arguments:\n  * ``prop_limit``: the propagation limit (integer)\n  * ``vars``: number of variables (integer)\n  * ``verbose``: the verbosity level (integer)\n\n\nexample\n-------\n\nlet us consider the following clauses, represented using\nthe dimacs `cnf <http://en.wikipedia.org/wiki/conjunctive_normal_form>`_\nformat::\n\n   p cnf 5 3\n   1 -5 4 0\n   -1 5 3 4 0\n   -3 -4 0\n\nhere, we have 5 variables and 3 clauses, the first clause being\n(x\\ :sub:`1`  or not x\\ :sub:`5` or x\\ :sub:`4`).\nnote that the variable x\\ :sub:`2` is not used in any of the clauses,\nwhich means that for each solution with x\\ :sub:`2` = true, we must\nalso have a solution with x\\ :sub:`2` = false.  in python, each clause is\nmost conveniently represented as a list of integers.  naturally, it makes\nsense to represent each solution also as a list of integers, where the sign\ncorresponds to the boolean value (+ for true and - for false) and the\nabsolute value corresponds to i\\ :sup:`th` variable::\n\n   >>> import pycosat\n   >>> cnf = [[1, -5, 4], [-1, 5, 3, 4], [-3, -4]]\n   >>> pycosat.solve(cnf)\n   [1, -2, -3, -4, 5]\n\nthis solution translates to: x\\ :sub:`1` = x\\ :sub:`5` = true,\nx\\ :sub:`2` = x\\ :sub:`3` = x\\ :sub:`4` = false\n\nto find all solutions, use ``itersolve``::\n\n   >>> for sol in pycosat.itersolve(cnf):\n   ...     print sol\n   ...\n   [1, -2, -3, -4, 5]\n   [1, -2, -3, 4, -5]\n   [1, -2, -3, 4, 5]\n   ...\n   >>> len(list(pycosat.itersolve(cnf)))\n   18\n\nin this example, there are a total of 18 possible solutions, which had to\nbe an even number because x\\ :sub:`2` was left unspecified in the clauses.\n\nthe fact that ``itersolve`` returns an iterator, makes it very elegant\nand efficient for many types of operations.  for example, using\nthe ``itertools`` module from the standard library, here is how one\nwould construct a list of (up to) 3 solutions::\n\n   >>> import itertools\n   >>> list(itertools.islice(pycosat.itersolve(cnf), 3))\n   [[1, -2, -3, -4, 5], [1, -2, -3, 4, -5], [1, -2, -3, 4, 5]]\n\n\nimplementation of itersolve\n---------------------------\n\nhow does one go from having found one solution to another solution?\nthe answer is surprisingly simple.  one adds the *inverse* of the already\nfound solution as a new clause.  this new clause ensures that another\nsolution is searched for, as it *excludes* the already found solution.\nhere is basically a pure python implementation of ``itersolve`` in terms\nof ``solve``::\n\n   def py_itersolve(clauses): # don't use this function!\n       while true:            # (it is only here to explain things)\n           sol = pycosat.solve(clauses)\n           if isinstance(sol, list):\n               yield sol\n               clauses.append([-x for x in sol])\n           else: # no more solutions -- stop iteration\n               return\n\nthis implementation has several problems.  firstly, it is quite slow as\n``pycosat.solve`` has to convert the list of clauses over and over and over\nagain.  secondly, after calling ``py_itersolve`` the list of clauses will\nbe modified.  in pycosat, ``itersolve`` is implemented on the c level,\nmaking use of the picosat c interface (which makes it much, much faster\nthan the naive python implementation above).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pycosat",
+  "package_url": "https://pypi.org/project/pycosat/",
+  "project_url": "https://pypi.org/project/pycosat/",
+  "project_urls": {
+    "Homepage": "https://github.com/ContinuumIO/pycosat"
+  },
+  "release_url": "https://pypi.org/project/pycosat/0.6.6/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "bindings to picosat (a sat solver)",
+  "version": "0.6.6",
+  "releases": [],
+  "developers": [
+    "ilan@continuum.io",
+    "ilan_schnell"
+  ],
+  "kwds": "boolean_satisfiability_problem picosat solver python boolean",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pycosat",
+  "homepage": "https://github.com/continuumio/pycosat",
+  "release_count": 3,
+  "dependency_ids": []
+}

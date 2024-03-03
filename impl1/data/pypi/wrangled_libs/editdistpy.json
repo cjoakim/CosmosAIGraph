@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: c++",
+    "programming language :: cython",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython"
+  ],
+  "description": "editdistpy <br>\n[![pypi version](https://badge.fury.io/py/editdistpy.svg)](https://badge.fury.io/py/editdistpy)\n[![tests](https://github.com/mammothb/editdistpy/actions/workflows/tests.yml/badge.svg)](https://github.com/mammothb/editdistpy/actions/workflows/tests.yml)\n========\n\neditdistpy is a fast implementation of the levenshtein edit distance and\nthe damerau-levenshtein optimal string alignment (osa) edit distance\nalgorithms. the original c# project can be found at [softwx.match](https://github.com/softwx/softwx.match).\n\n## installation\n\nthe easiest way to install editdistpy is using `pip`:\n```\npip install -u editdistpy\n```\n\n## usage\n\nyou can specify the `max_distance` you care about, if the edit distance exceeds\nthis `max_distance`, `-1` will be returned. specifying a sensible max distance\ncan result in significant speed improvement.\n\nyou can also specify `max_distance=sys.maxsize` if you wish for the actual edit\ndistance to always be computed.\n\n### levenshtein\n\n```python\nimport sys\n\nfrom editdistpy import levenshtein\n\nstring_1 = \"flintstone\"\nstring_2 = \"hanson\"\n\nmax_distance = 2\nprint(levenshtein.distance(string_1, string_2, max_distance))\n# expected output: -1\n\nmax_distance = sys.maxsize\nprint(levenshtein.distance(string_1, string_2, max_distance))\n# expected output: 6\n```\n\n### damerau-levenshtein osa\n\n```python\nimport sys\n\nfrom editdistpy import damerau_osa\n\nstring_1 = \"flintstone\"\nstring_2 = \"hanson\"\n\nmax_distance = 2\nprint(damerau_osa.distance(string_1, string_2, max_distance))\n# expected output: -1\n\nmax_distance = sys.maxsize\nprint(damerau_osa.distance(string_1, string_2, max_distance))\n# expected output: 6\n```\n\n## benchmark\n\na simple benchmark was done on python 3.8.12 against [editdistance](https://github.com/roy-ht/editdistance) which implements the levenshtein edit distance\nalgorithm.\n\nthe script used by the benchmark can be found [here](https://github.com/mammothb/editdistpy/blob/master/tests/benchmarks.py).\n\nfor clarity, the following string pairs were used.\n\n### single word (completely different)\n\"xabxcdxxefxgx\"<br>\n\"1ab2cd34ef5g6\"\n\n### single word (similar)\n\"example\" <br>\n\"samples\"\n\n### single word (identical ending)\n\"kdeisfnexabxcdxlskdixefxgx\"<br>\n\"xabxcdxlskdixefxgx\"\n\n### short string\n\"short sentence with words\"<br>\n\"shrtsen tence wit mispeledwords\"\n\n### long string\n\"lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod rem\"<br>\n\"sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium\"\n\n```\nsingle_dif string\n        test_damerau_osa               0.5202 usec/pass 1040.36 msec total 2000000 iterations\n        test_levenshtein               0.3547 usec/pass 709.40 msec total 2000000 iterations\n        test_editdistance              0.6399 usec/pass 1279.81 msec total 2000000 iterations\n        test_damerau_osa early_cutoff  0.5134 usec/pass 1026.72 msec total 2000000 iterations\n        test_levenshtein early_cutoff  0.3862 usec/pass 772.31 msec total 2000000 iterations\nsingle_sim string\n        test_damerau_osa               0.2983 usec/pass 596.57 msec total 2000000 iterations\n        test_levenshtein               0.2433 usec/pass 486.68 msec total 2000000 iterations\n        test_editdistance              0.3942 usec/pass 788.36 msec total 2000000 iterations\n        test_damerau_osa early_cutoff  0.2865 usec/pass 572.90 msec total 2000000 iterations\n        test_levenshtein early_cutoff  0.2363 usec/pass 472.61 msec total 2000000 iterations\nsingle_end string\n        test_damerau_osa               0.3332 usec/pass 666.32 msec total 2000000 iterations\n        test_levenshtein               0.3300 usec/pass 659.93 msec total 2000000 iterations\n        test_editdistance              0.7902 usec/pass 1580.42 msec total 2000000 iterations\n        test_damerau_osa early_cutoff  0.3199 usec/pass 639.74 msec total 2000000 iterations\n        test_levenshtein early_cutoff  0.3205 usec/pass 641.01 msec total 2000000 iterations\nshort string\n        test_damerau_osa               0.9925 usec/pass 1984.97 msec total 2000000 iterations\n        test_levenshtein               0.6379 usec/pass 1275.76 msec total 2000000 iterations\n        test_editdistance              0.9587 usec/pass 1917.37 msec total 2000000 iterations\n        test_damerau_osa early_cutoff  0.7535 usec/pass 1506.91 msec total 2000000 iterations\n        test_levenshtein early_cutoff  0.5794 usec/pass 1158.79 msec total 2000000 iterations\nlong string\n        test_damerau_osa               8.6244 usec/pass 17248.73 msec total 2000000 iterations\n        test_levenshtein               4.2367 usec/pass 8473.36 msec total 2000000 iterations\n        test_editdistance              2.0407 usec/pass 4081.31 msec total 2000000 iterations\n        test_damerau_osa early_cutoff  1.0795 usec/pass 2158.99 msec total 2000000 iterations\n        test_levenshtein early_cutoff  0.9031 usec/pass 1806.28 msec total 2000000 iterations\n```\n\nwhile `max_distance=10` significantly improves the computation time, it may not\nbe a sensible value in some cases.\n\neditdistpy is also seen to perform better with shorter length strings and can\nbe the more suitable library if your use case mainly deals with comparing short\nstrings.\n\n## changelog\n\nsee the [changelog](https://github.com/mammothb/editdistpy/blob/master/changelog.md) for a history of notable changes to edistdistpy.\n\n\n",
+  "docs_url": null,
+  "keywords": "edit distance,levenshtein,damerau",
+  "license": "mit",
+  "name": "editdistpy",
+  "package_url": "https://pypi.org/project/editdistpy/",
+  "project_url": "https://pypi.org/project/editdistpy/",
+  "project_urls": {
+    "Changelog": "https://github.com/mammothb/editdistpy/blob/master/CHANGELOG.md",
+    "Documentation": "https://github.com/mammothb/editdistpy",
+    "Homepage": "https://github.com/mammothb/editdistpy"
+  },
+  "release_url": "https://pypi.org/project/editdistpy/0.1.3/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "fast levenshtein and damerau optimal string alignment algorithms.",
+  "version": "0.1.3",
+  "releases": [],
+  "developers": [
+    "mmb_l"
+  ],
+  "kwds": "test_editdistance editdistance levenshtein editdistpy test_levenshtein",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_editdistpy",
+  "homepage": "https://github.com/mammothb/editdistpy",
+  "release_count": 9,
+  "dependency_ids": []
+}

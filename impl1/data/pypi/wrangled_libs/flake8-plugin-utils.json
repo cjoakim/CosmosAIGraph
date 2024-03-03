@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# flake8-plugin-utils\n\n[![pypi](https://badge.fury.io/py/flake8-plugin-utils.svg)](https://pypi.org/project/flake8-plugin-utils)\n[![python: 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://pypi.org/project/flake8-plugin-utils)\n[![downloads](https://img.shields.io/pypi/dm/flake8-plugin-utils.svg)](https://pypistats.org/packages/flake8-plugin-utils)\n[![build status](https://travis-ci.org/afonasev/flake8-plugin-utils.svg?branch=master)](https://travis-ci.org/afonasev/flake8-plugin-utils)\n[![code coverage](https://codecov.io/gh/afonasev/flake8-plugin-utils/branch/master/graph/badge.svg)](https://codecov.io/gh/afonasev/flake8-plugin-utils)\n[![license: mit](https://img.shields.io/badge/license-mit-green.svg)](https://en.wikipedia.org/wiki/mit_license)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)\n\nthe package provides base classes and utils for flake8 plugin writing.\n\n## installation\n\n```bash\npip install flake8-plugin-utils\n```\n\n## example\n\nwrite simple plugin\n\n```python\nfrom flake8_plugin_utils import error, visitor, plugin\n\nclass myerror(error):\n    code = 'x100'\n    message = 'my error'\n\nclass myvisitor(visitor):\n    def visit_classdef(self, node):\n        self.error_from_node(myerror, node)\n\nclass myplugin(plugin):\n    name = 'myplugin'\n    version = '0.1.0'\n    visitors = [myvisitor]\n```\n\nand test it with pytest\n\n```python\nfrom flake8_plugin_utils import assert_error, assert_not_error\n\ndef test_code_with_error():\n    assert_error(myvisitor, 'class y: pass', myerror)\n\ndef test_code_without_error():\n    assert_not_error(myvisitor, 'x = 1')\n```\n\n### configuration\n\nto add configuration to a plugin, do the following:\n\n1. implement classmethod `add_options` in your plugin class, as per the\n[flake8 docs](https://flake8.pycqa.org/en/latest/plugin-development/plugin-parameters.html#registering-options).\n1. override classmethod `parse_options_to_config` in your plugin class\nto return any object holding the options you need.\n1. if you need a custom `__init__` for your visitor, make sure it accepts\na keyword argument named `config` and pass it to `super().__init__`\n1. use `self.config` in visitor code.\n\nexample:\n\n```python\nfrom flake8_plugin_utils import error, visitor, plugin, assert_error\n\nclass myerror(error):\n    code = 'x100'\n    message = 'my error with {thing}'\n\nclass myconfig:\n    def __init__(self, config_option):\n        self.config_option = config_option\n\nclass myvisitorwithconfig(visitor):\n    def visit_classdef(self, node):\n        self.error_from_node(\n            myerror, node, thing=f'{node.name} {self.config.config_option}'\n        )\n\nclass mypluginwithconfig(plugin):\n    name = 'mypluginwithconfig'\n    version = '0.0.1'\n    visitors = [myvisitorwithconfig]\n\n    @classmethod\n    def add_options(cls, options_manager):\n        options_manager.add_option('--config_option', parse_from_config=true, ...)\n\n    @classmethod\n    def parse_options_to_config(cls, option_manager, options, args):\n        return myconfig(config_option=options.config_option)\n\n\ndef test_code_with_error():\n    assert_error(\n        myvisitorwithconfig,\n        'class y: pass',\n        myerror,\n        config=myconfig(config_option='123'),\n        thing='y 123',\n    )\n```\n\n### formatting\n\nyour `error`s can take formatting arguments in their `message`:\n\n```python\nfrom flake8_plugin_utils import error, visitor, assert_error\n\nclass myformattederror(error):\n    code = 'x101'\n    message = 'my error with {thing}'\n\nclass myformattedvisitor(visitor):\n    def visit_classdef(self, node):\n        self.error_from_node(myformattederror, node, thing=node.name)\n\ndef test_code_with_error():\n    assert_error(\n        myformattedvisitor,\n        'class y: pass',\n        myformattederror,\n        thing='y',\n    )\n```\n\n### usage with typing/mypy\n\nthe `plugin` and `visitor` classes are generic with the config class as type\nparameter.  if your plugin does not have any config, inherit it from\n`plugin[none]` and the visitors from `visitor[none]`.  otherwise, use the\nconfig class as the type parameter (e.g. `plugin[myconfig]` and\n`visitor[myconfig]` in the above example).\n\n### utility functions\n\n* `assert_error`, `assert_not_error`\nutilities for testing visitors (see examples above).\n\n* `is_true`, `is_false`, `is_none`\nconvenience functions to check if an ast node represents a\n`true`/`false`/`none` value.\n\n* `check_equivalent_nodes`\nchecks if two given ast nodes are equivalent.\nthe nodes are considered equivalent in the following cases:\n  * dicts -- if they contain same key-value pairs, possibly in different order,\n  with duplicates and `**expansions` taken into account\n  * sets -- if they contain same elements, possibly in different order,\n  with duplicates taken into account\n  * anything else -- if they represent the same ast, regardless of formatting\n  (with any dicts in sets inside checked according to the rules above)\n\n## for developers\n\n### show help\n\n    make help\n\n### create venv and install deps\n\n    make init\n\n### install git precommit hook\n\n    make precommit\n\n### run linters, autoformat, tests etc.\n\n    make pretty lint test\n\n### bump new version\n\n    make bump_major\n    make bump_minor\n    make bump_patch\n\n## change log\n\nunreleased\n-----\n\n* ...\n\n1.3.3 - 2022-01-14\n-----\n\n* add py.typed file (#78)\n\n1.3.2 - 2021-05-05\n-----\n\n* drop noqa detection (#56)\n* docs: add help for makefile\n\n1.3.1 - 2020-08-06\n-----\n\n* fix handling of encoding when loading files (#37)\n\n1.3.0 - 2020-03-26\n-----\n\n* add `check_equivalent_nodes` utility function\n\n1.2.0 - 2020-03-06\n-----\n\n* add `config` argument to `assert_error` and `assert_not_error`\n\n1.1.1 - 2020-03-02\n-----\n\n* ignore encoding errors when reading strings for noqa validation\n\n1.1.0 - 2020-03-01\n-----\n\n* add ability for plugins to parse and use configuration\n**nb: this change breaks type-checking if you use typing/mypy. change your\ncode to inherit from `plugin[none]` and `visitor[none]` to fix.**\n\n1.0.0 - 2019-05-23\n-----\n\n* add message formatting to error\n\n0.2.1 - 2019-04-01\n-----\n\n* don`t strip before src dedent in _error_from_src\n* add is_none, is_true, is_false util functions\n\n0.2.0 - 2019.02.21\n-----\n\n* add assert methods\n\n0.1.0 - 2019.02.09\n-----\n\n* initial\n",
+  "docs_url": null,
+  "keywords": "flake8,plugin,utils",
+  "license": "mit",
+  "name": "flake8-plugin-utils",
+  "package_url": "https://pypi.org/project/flake8-plugin-utils/",
+  "project_url": "https://pypi.org/project/flake8-plugin-utils/",
+  "project_urls": {
+    "Homepage": "https://pypi.org/project/flake8-plugin-utils",
+    "Repository": "https://github.com/afonasev/flake8-plugin-utils"
+  },
+  "release_url": "https://pypi.org/project/flake8-plugin-utils/1.3.3/",
+  "requires_dist": [],
+  "requires_python": ">=3.6,<4.0",
+  "summary": "the package provides base classes and utils for flake8 plugin writing",
+  "version": "1.3.3",
+  "releases": [],
+  "developers": [
+    "afonasev_evgeniy",
+    "ea.afonasev@gmail.com"
+  ],
+  "kwds": "flake8_plugin_utils flake8 plugins plugin makefile",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flake8_plugin_utils",
+  "homepage": "https://pypi.org/project/flake8-plugin-utils",
+  "release_count": 11,
+  "dependency_ids": []
+}

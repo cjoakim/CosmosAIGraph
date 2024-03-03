@@ -1,0 +1,66 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "topic :: software development :: testing :: traffic generation"
+  ],
+  "description": "# ![snappi](snappi-logo.png)\n\n[![license](https://img.shields.io/badge/license-mit-green.svg)](https://en.wikipedia.org/wiki/mit_license)\n[![project status: active \u2013 the project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)\n[![build](https://github.com/open-traffic-generator/snappi/workflows/build/badge.svg)](https://github.com/open-traffic-generator/snappi/actions)\n[![total alerts](https://img.shields.io/lgtm/alerts/g/open-traffic-generator/snappi.svg?logo=lgtm&logowidth=18)](https://lgtm.com/projects/g/open-traffic-generator/snappi/alerts/)\n[![language grade: python](https://img.shields.io/lgtm/grade/python/g/open-traffic-generator/snappi.svg?logo=lgtm&logowidth=18)](https://lgtm.com/projects/g/open-traffic-generator/snappi/context:python)\n[![pypi](https://img.shields.io/pypi/v/snappi.svg)](https://pypi.org/project/snappi)\n[![python](https://img.shields.io/pypi/pyversions/snappi.svg)](https://pypi.python.org/pypi/snappi)\n\ntest scripts written in `snappi`, an auto-generated python sdk, can be executed against any traffic generator conforming to [open traffic generator api](https://github.com/open-traffic-generator/models).\n\n[ixia-c](https://github.com/open-traffic-generator/ixia-c) is one such reference implementation of open traffic generator api.\n\n> the repository is under active development and is subject to updates. all efforts will be made to keep the updates backwards compatible.\n\n## setup client\n \n```sh\npython -m pip install --upgrade snappi \n```\n\n## start testing \n\n```python\nimport datetime\nimport time\nimport snappi\nimport pytest\n\n\n@pytest.mark.example\ndef test_quickstart():\n    # create a new api handle to make api calls against otg\n    # with http as default transport protocol\n    api = snappi.api(location=\"https://localhost:8443\")\n\n    # create a new traffic configuration that will be set on otg\n    config = api.config()\n\n    # add a test port to the configuration\n    ptx = config.ports.add(name=\"ptx\", location=\"veth-a\")\n\n    # configure a flow and set previously created test port as one of endpoints\n    flow = config.flows.add(name=\"flow\")\n    flow.tx_rx.port.tx_name = ptx.name\n    # and enable tracking flow metrics\n    flow.metrics.enable = true\n\n    # configure number of packets to transmit for previously configured flow\n    flow.duration.fixed_packets.packets = 100\n    # and fixed byte size of all packets in the flow\n    flow.size.fixed = 128\n\n    # configure protocol headers for all packets in the flow\n    eth, ip, udp, cus = flow.packet.ethernet().ipv4().udp().custom()\n\n    eth.src.value = \"00:11:22:33:44:55\"\n    eth.dst.value = \"00:11:22:33:44:66\"\n\n    ip.src.value = \"10.1.1.1\"\n    ip.dst.value = \"20.1.1.1\"\n\n    # configure repeating patterns for source and destination udp ports\n    udp.src_port.values = [5010, 5015, 5020, 5025, 5030]\n    udp.dst_port.increment.start = 6010\n    udp.dst_port.increment.step = 5\n    udp.dst_port.increment.count = 5\n\n    # configure custom bytes (hex string) in payload\n    cus.bytes = \"\".join([hex(c)[2:] for c in b\"..quickstart snappi..\"])\n\n    # optionally, print json representation of config\n    print(\"configuration: \", config.serialize(encoding=config.json))\n\n    # push traffic configuration constructed so far to otg\n    api.set_config(config)\n\n    # start transmitting the packets from configured flow\n    ts = api.transmit_state()\n    ts.state = ts.start\n    api.set_transmit_state(ts)\n\n    # fetch metrics for configured flow\n    req = api.metrics_request()\n    req.flow.flow_names = [flow.name]\n    # and keep polling until either expectation is met or deadline exceeds\n    start = datetime.datetime.now()\n    while true:\n        metrics = api.get_metrics(req)\n        if (datetime.datetime.now() - start).seconds > 10:\n            raise exception(\"deadline exceeded\")\n        # print yaml representation of flow metrics\n        print(metrics)\n        if metrics.flow_metrics[0].transmit == metrics.flow_metrics[0].stopped:\n            break\n        time.sleep(0.1)\n```\n",
+  "docs_url": null,
+  "keywords": "snappi testing open traffic generator automation",
+  "license": "mit",
+  "name": "snappi",
+  "package_url": "https://pypi.org/project/snappi/",
+  "project_url": "https://pypi.org/project/snappi/",
+  "project_urls": {
+    "Homepage": "https://github.com/open-traffic-generator/snappi"
+  },
+  "release_url": "https://pypi.org/project/snappi/0.13.4/",
+  "requires_dist": [
+    "requests",
+    "PyYAML",
+    "semantic-version",
+    "urllib3",
+    "grpcio-tools ~=1.35.0 ; python_version <= \"3.6\"",
+    "grpcio ~=1.35.0 ; python_version <= \"3.6\"",
+    "protobuf ~=3.15.0 ; python_version <= \"3.6\"",
+    "grpcio-tools ~=1.54.2 ; python_version > \"3.6\"",
+    "grpcio ~=1.54.2 ; python_version > \"3.6\"",
+    "protobuf ~=4.23.3 ; python_version > \"3.6\"",
+    "snappi-convergence ==0.4.1 ; extra == 'convergence'",
+    "snappi-ixnetwork ==0.9.1 ; extra == 'ixnetwork'",
+    "pytest ; extra == 'testing'",
+    "flask ; extra == 'testing'",
+    "snappi-trex ; extra == 'trex'"
+  ],
+  "requires_python": ">=2.7, <4",
+  "summary": "the snappi open traffic generator python package",
+  "version": "0.13.4",
+  "releases": [],
+  "developers": [
+    "ajbalogh",
+    "andy.balogh@keysight.com"
+  ],
+  "kwds": "alerts badge badges snappi svg",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_snappi",
+  "homepage": "https://github.com/open-traffic-generator/snappi",
+  "release_count": 231,
+  "dependency_ids": [
+    "pypi_flask",
+    "pypi_grpcio",
+    "pypi_grpcio_tools",
+    "pypi_protobuf",
+    "pypi_pytest",
+    "pypi_pyyaml",
+    "pypi_requests",
+    "pypi_semantic_version",
+    "pypi_snappi_convergence",
+    "pypi_snappi_ixnetwork",
+    "pypi_snappi_trex",
+    "pypi_urllib3"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# tqdm-multiprocess\nusing queues, tqdm-multiprocess supports multiple worker processes, each with multiple tqdm progress bars, displaying them cleanly through the main process. the worker processes also have access to a single global tqdm for aggregate progress monitoring.\n\nlogging is also redirected from the subprocesses to the root logger in the main process.\n\ncurrently doesn't support tqdm(iterator), you will need to intialize your worker tqdms with a total and update manually.\n\ndue to the performance limits of the default python multiprocess queue you need to update your global and worker process tqdms infrequently to avoid flooding the main process. i will attempt to implement a lock free ringbuffer at some point to see if things can be improved.\n\n## installation\n\n```bash\npip install tqdm-multiprocess\n```\n\n## usage\n\n*tqdmmultiprocesspool* creates a standard python multiprocessing pool with the desired number of processes. under the hood it uses async_apply with an event loop to monitor a tqdm and logging queue, allowing the worker processes to redirect both their tqdm objects and logging messages to your main process. there is also a queue for the workers to update the single global tqdm.\n\nas shown below, you create a list of tasks containing their function and a tuple with your parameters. the functions you pass in will need the extra arguments on the end \"tqdm_func, global_tqdm\". you must use tqdm_func when initializing your tqdms for the redirection to work. as mentioned above, passing iterators into the tqdm function is currently not supported, so set total=total_steps when setting up your tqdm, and then update the progress manually with the update() method. all other arguments to tqdm should work fine.\n\nonce you have your task list, call the map() method on your pool, passing in the process count, global_tqdm (or none), task list, as well as error and done callback functions. the error callback will be trigerred if your task functions return anything evaluating as false (if not task_result in the source code). the done callback will be called when the task succesfully completes.\n\nthe map method returns a list containing the returned results for all your tasks in original order.\n\n### examples/basic_example.py\n\n```python\nfrom time import sleep\nimport multiprocessing\nimport tqdm\n\nimport logging\nfrom tqdm_multiprocess.logger import setup_logger_tqdm\nlogger = logging.getlogger(__name__)\n\nfrom tqdm_multiprocess import tqdmmultiprocesspool\n\niterations1 = 100\niterations2 = 5\niterations3 = 2\ndef some_other_function(tqdm_func, global_tqdm):\n\n    total_iterations = iterations1 * iterations2 * iterations3\n    with tqdm_func(total=total_iterations, dynamic_ncols=true) as progress3:\n        progress3.set_description(\"outer\")\n        for i in range(iterations3):\n            logger.info(\"outer\")\n            total_iterations = iterations1 * iterations2\n            with tqdm_func(total=total_iterations, dynamic_ncols=true) as progress2:\n                progress2.set_description(\"middle\")\n                for j in range(iterations2):\n                    logger.info(\"middle\")\n                    #for k in tqdm_func(range(iterations1), dynamic_ncols=true, desc=\"inner\"):\n                    with tqdm_func(total=iterations1, dynamic_ncols=true) as progress1:\n                        for j in range(iterations1):\n                            # logger.info(\"inner\") # spam slows down tqdm too much\n                            progress1.set_description(\"innert\")\n                            sleep(0.01)\n                            progress1.update()\n                            progress2.update()\n                            progress3.update()\n                            global_tqdm.update()\n\n    logger.warning(f\"warning test message. {multiprocessing.current_process().name}\")\n    logger.error(f\"error test message. {multiprocessing.current_process().name}\")\n\n\n# multiprocessed\ndef example_multiprocessing_function(some_input, tqdm_func, global_tqdm):  \n    logger.debug(f\"debug test message - i won't show up in console. {multiprocessing.current_process().name}\")\n    logger.info(f\"info test message. {multiprocessing.current_process().name}\")\n    some_other_function(tqdm_func, global_tqdm)\n    return true\n\ndef error_callback(result):\n    print(\"error!\")\n\ndef done_callback(result):\n    print(\"done. result: \", result)\n\ndef example():\n    pool = tqdmmultiprocesspool()\n    process_count = 4\n    task_count = 10\n    initial_tasks = [(example_multiprocessing_function, (i,)) for i in range(task_count)]    \n    total_iterations = iterations1 * iterations2 * iterations3 * task_count\n    with tqdm.tqdm(total=total_iterations, dynamic_ncols=true) as global_progress:\n        global_progress.set_description(\"global\")\n        results = pool.map(process_count, global_progress, initial_tasks, error_callback, done_callback)\n        print(results)\n\nif __name__ == '__main__':\n    logfile_path = \"tqdm_multiprocessing_example.log\"\n    setup_logger_tqdm(logfile_path) # logger will write messages using tqdm.write\n    example()\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "tqdm-multiprocess",
+  "package_url": "https://pypi.org/project/tqdm-multiprocess/",
+  "project_url": "https://pypi.org/project/tqdm-multiprocess/",
+  "project_urls": {
+    "Homepage": "https://github.com/EleutherAI/tqdm-multiprocess"
+  },
+  "release_url": "https://pypi.org/project/tqdm-multiprocess/0.0.11/",
+  "requires_dist": [
+    "tqdm",
+    "colorama",
+    "twine ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "easy multiprocessing with tqdm and logging redirected to main process.",
+  "version": "0.0.11",
+  "releases": [],
+  "developers": [
+    "2researcher2@gmail.com",
+    "researcher2"
+  ],
+  "kwds": "tqdm_multiprocess tqdm_multiprocessing_example tqdmmultiprocesspool tqdm multiprocess",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_tqdm_multiprocess",
+  "homepage": "https://github.com/eleutherai/tqdm-multiprocess",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_colorama",
+    "pypi_tqdm",
+    "pypi_twine"
+  ]
+}

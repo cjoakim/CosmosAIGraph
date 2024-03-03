@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "placebo\n=======\n\n[![codecov](https://codecov.io/gh/garnaat/placebo/branch/develop/graph/badge.svg?token=ukrsvmwxwv)](https://codecov.io/gh/garnaat/placebo)\n\nplacebo allows you to mock boto3 calls that look just like normal calls but\nactually have no effect at all.  it does this by allowing you to record a set\nof calls and save them to a data file and then replay those calls later\n(e.g. in a unit test) without ever hitting the aws endpoints.\n\ninstallation\n------------\n\n~~~\n$ pip install placebo\n~~~\n\nquickstart\n----------\n\nplacebo uses the event mechanism in botocore to do most of its work.  to start\nwith, you need a boto3 session object.\n\n~~~ python\nimport boto3\nimport placebo\n\nsession = boto3.session()\n~~~\n\nonce you have a session object, you can tell placebo about the session like\nthis:\n\n~~~ python\npill = placebo.attach(session, data_path='/path/to/response/directory')\n~~~\n\nthe ``data_path`` is a path to a directory where you want responses to be stored\nor that contains previously recorded responses you want to playback.\n\nthe ``attach`` function returns an instance of a ``pill`` object.  this object\nwill be used to control all recording and playback of requests for all clients\ncreated by this session object.\n\nthe first thing you will probably want to do is record some requests.  to do\nthis, simply:\n\n~~~ python\npill.record()\n~~~\n\nby default, the ``record`` method will cause all responses from all services to\nbe recorded to the ``data_path``.  if you are only interested in responses from\none certain services, you can limit the recording by passing in a list of\nservice names.\n\n~~~ python\npill.record(services='ec2,iam')\n~~~\n\nthis would limit to recording to responses from the ``ec2`` service and the\n``iam`` service.  if you want to restrict recording to only certain operations\nin a single service, you can do this:\n\n~~~ python\npill.record(services='ec2', operations='describeinstances,describekeypairs')\n~~~\n\nfrom this point on, any clients that match the recording specification and are\ncreated from the session will be placebo-aware.  to record responses, just\ncreate the client and use it as you normally would.\n\n~~~ python\naws_lambda = session.client('lambda')\naws_lambda.list_functions()\n# ... more lambda calls ...\n~~~\n\neach response will be saved as an individual json data file in the ``data_path``\npath you specified when you attached the session.  multiple responses from the\nsame service and operation are stored as separate files and will be replayed in\nthe same order on playback.\n\nlater, to replay saved requests:\n\n~~~ python\nimport boto3\nimport placebo\n\nsession = boto3.session()\npill = placebo.attach(session, data_path='/path/to/response/directory')\npill.playback()\naws_lambda = session.client('lambda')\naws_lambda.list_functions()\n# ... mocked response will be returned\n~~~\n\n#### attaching to the default session\n\nsometimes, placebo needs to be attached to the boto3 [default session](http://boto3.readthedocs.io/en/latest/guide/session.html#default-session)\nobject.\n\nto attach placebo to the default session, it is necessary to explicitly set up\nthe default session by making a call to `boto3.setup_default_session()`.  the\ndefault session is then accessible at `boto3.default_session`.\n\nfor example:\n\n~~~ python\nimport boto3\nimport placebo\n\n# explicity set up the default session and attach placebo to it.\nboto3.setup_default_session()\nsession = boto3.default_session\npill = placebo.attach(session, data_path='/path/to/response/directory')\npill.record()\n\n# now make boto3 calls using the default session.\nclient = boto3.client('ec2')\nclient.describe_images(dryrun=false)\n~~~\n\nthis is particularly useful if you are writing tests for legacy code that\nmakes use of the boto3 default session.\n\n#### using pickle\n\nthe responses can also be saved using pickle instead of json documents.\nthis can be useful to avoid serialization problems with complex types in\nthe responses.\n\nto enable the pickle format:\n```\npill = pill = placebo.attach(session, record_format=\"pickle\")\n```\n\n#### manual mocking\n\nyou can also add mocked responses manually:\n\n~~~ python\nlist_functions_response = [\n    {\n        \"version\": \"$latest\",\n        \"codesha256\": \"i8scq2g6zkcpivhkzvzqciv4pdysxq4gz+jlcmmdy5y=\",\n        \"functionname\": \"foobar\",\n        \"memorysize\": 128,\n        \"codesize\": 876521,\n        \"functionarn\": \"arn:aws:lambda:us-west-2:123456789012:function:foobar\",\n        \"handler\": \"foobar.handler\",\n        \"role\": \"arn:aws:iam::123456789012:role/foobar-role\",\n        \"timeout\": 30,\n        \"lastmodified\": \"2015-11-06t22:30:32.164+0000\",\n        \"runtime\": \"python2.7\",\n        \"description\": \"foos all of the bars\"\n    }]\n\npill.save_response(service='lambda', operation='listfunctions',\n                   response_data=list_functions_response, http_response=200)\n~~~\n\nyou can add additional responses to a particular operation and the responses\nwill be returned in order.  the final parameter is the http response code which\nis optional.  the default value is 200.\n\n#### usage as a decorator\n\nplacebo also provides a decorator for easier usage.\n\nfirst, you'll want to decorate your test method with `placebo_session` and include the `session` kwarg in your method, ex:\n~~~ python\n@placebo_session\ndef test_your_function(self, session):\n    foo = foo()\n    arn = foo.create_iam_roles(session)\n    self.assertequal(arn, \"arn:aws:iam::123:role/{}\".format(foo.role_name))\n~~~\n\nnow, you'll be able to record the aws interactions with an environment variable:\n~~~ bash\n$ placebo_mode=record nosetests tests.tests:testfoo.test_create_iam_roles\n~~~\n\nyou can optionally pass an aws profile to use:\n~~~ bash\n$ placebo_profile=foo placebo_mode=record nosetests tests.tests:testfoo.test_create_iam_roles\n~~~\n\nyou can optionally set the record format to use:\n```bash\n$ placebo_format=pickle placebo_mode=record nosetests tests.tests:testfoo.test_create_iam_roles\n```\n\nin this example, it has created the following json blobs:\n~~~\ntests/placebo/testfoo.test_create_iam_roles\ntests/placebo/testfoo.test_create_iam_roles/iam.createrole_1.json\ntests/placebo/testfoo.test_create_iam_roles/iam.getrole_1.json\ntests/placebo/testfoo.test_create_iam_roles/iam.getrolepolicy_1.json\ntests/placebo/testfoo.test_create_iam_roles/iam.putrolepolicy_1.json\n~~~\n\nafter the json has been created, simply drop the environment variables and re-run your test:\n~~~ bash\n$ nosetests tests.tests:testfoo.test_create_iam_roles\n~~~\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "placebo",
+  "package_url": "https://pypi.org/project/placebo/",
+  "project_url": "https://pypi.org/project/placebo/",
+  "project_urls": {
+    "Homepage": "https://github.com/garnaat/placebo"
+  },
+  "release_url": "https://pypi.org/project/placebo/0.10.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "make boto3 calls that look real but have no effect",
+  "version": "0.10.0",
+  "releases": [],
+  "developers": [
+    "mitch@garnaat.com",
+    "mitch_garnaat"
+  ],
+  "kwds": "placebo_session placebo_mode placebo_profile boto3 placebo_format",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_placebo",
+  "homepage": "https://github.com/garnaat/placebo",
+  "release_count": 19,
+  "dependency_ids": []
+}

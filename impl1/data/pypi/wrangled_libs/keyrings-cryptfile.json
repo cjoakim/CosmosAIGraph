@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "summary\n-------\n\nencrypted plain file keyring backend for use with the\n[keyring](https://pypi.python.org/pypi/keyring)  package.\n\ndescription\n-----------\nthe project is mainly targeted on a sufficiently secure storage for plain text\npasswords (keyring) in a simple portable file, where the default keyring storage\nimplementation of a usual desktop environment doesn't fit.\n\ncryptography\n------------\nthe keyring is secured with a keyring password. a raw\n`argon2($argon2id$v=19$m=65536,t=15,p=2)` hash is generated from the keyring\npassword, which is used as a key for encryption of plaintext passwords in one of\nthe supported authenticated aes encryption schemes (ccm, eax, gcm, ocb), where\ngcm is the default. the resulting encrypted data is persisted, together with the\nargon2 salt, nonce and mac. this value is stored with a service/userid reference\nin a text file (.ini format). the service/userid is taken into account as\nassociated data for mac calculation.\n\ninitially, a static reference value, treated as a password is stored as well,\nand this value is used for verification of the keyring password in subsequent\naccesses.\n\nattack surface\n--------------\nthe static reference value allow some form of attack, as it encrypts a well\nknown value. hopefully, the argon2 hash, combined with the authenticated aes\nencryption scheme raises the effort to break the key sufficiently high.\n\nthe argon2 parameterization is chosen in a way, that usual desktop and server\nsystems as of today (2017) have to process a significant cpu and memory load\nin order to calculate the hashes, which renders brute force attacks impractical.\n\nthe authenticated aes encryption scheme prevents tampering with the encrypted\ndata as well as its reference (service/userid).\n\nquick start guide\n-----------------\n\nin order to get you started, you will need to have a `python3` environment\nand `git` available (preferably on a linux system).\n\nyou might want to provide the python packages [argon2-cffi](https://pypi.python.org/pypi/argon2_cffi), [keyring](https://pypi.python.org/pypi/keyring), [pycryptodome](https://pypi.python.org/pypi/pycryptodome)\nand their dependencies (most notably [secretstorage](https://pypi.python.org/pypi/secretstorage) and [cryptography](https://pypi.python.org/pypi/cryptography)) with your\nsystem package management, or use a local venv, but that will depend on a\nproperly working c compiler and some development packages installed\n(`python-devel` and `openssl-devel` at least).\n\nsetup package and environment\n-----------------------------\n\n```\n$ git clone https://github.com/frispete/keyrings.cryptfile\n$ cd keyrings.cryptfile\n$ pyvenv env\n$ . env/bin/activate\n(env) $ pip install -e .\n```\n\nthe last command should succeed without errors, some development packages might\nbe missing otherwise.\n\nexample session\n---------------\n\ncreate an encrypted keyring, and store a test password into it. the process asks\nfor the keyring password itself, that protects your stored keyring values.\n\n```\n(env) $ python3\npython 3.4.5 (default, jul 03 2016, 12:57:15) [gcc] on linux\ntype \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>> from keyrings.cryptfile.cryptfile import cryptfilekeyring\n>>> kr = cryptfilekeyring()\n>>> kr.set_password(\"service\", \"user\", \"secret\")\nplease set a password for your new keyring: ******\nplease confirm the password: ******\n>>> ^d\n```\n\nnow retrieve the stored secret from the keyring again:\n\n```\n(env) $ python3\npython 3.4.5 (default, jul 03 2016, 12:57:15) [gcc] on linux\ntype \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n>>> from keyrings.cryptfile.cryptfile import cryptfilekeyring\n>>> kr = cryptfilekeyring()\n>>> kr.get_password(\"service\", \"user\")\nplease enter password for encrypted keyring: ******\n'secret'\n>>> ^d\n```\n\nnote, that the kdf delays the `{set,get}_password()` operations for a few seconds\n(~1 sec. on a capable system).\n\nresult\n------\n\nthe resulting file might look similar to:\n```\n(env) $ cat ~/.local/share/python_keyring/cryptfile_pass.cfg\n[keyring_2dsetting]\npassword_20reference =\n    eyjtywmioiaiwmvhu2lbalz5whd6vmg3k2z6tgx2ut09iiwgim5vbmnlijogijb0b2dka3rydmdy\n    tvpeu1f1qkfozfe9psisicjzywx0ijoginz2dfyzn2jvwnvlrtqzvhj6dgd6yve9psisicjkyxrh\n    ijogik1udnrzyuz6ohdsauzybfbhowzml2dqz0dml3roog05in0=\nscheme = [argon2] aes128.gcm\nversion = 1.0\n\n[service]\nuser =\n    eyjtywmioiaiatj4mwhnvgj1s0ptzexysxqwr0dqut09iiwgim5vbmnlijogilj5yu1dzmkyz0je\n    nstlnhn6mgpqrwc9psisicjzywx0ijogijlim1hjbdvhzmrzavhktuzytwnov2c9psisicjkyxrh\n    ijogimhnvc9latryin0=\n```\n\nthe values can be decoded like this:\n\n```\n(env) $ python3\n>>> import base64\n>>> base64.decodebytes(b\"\"\"\n... eyjtywmioiaiatj4mwhnvgj1s0ptzexysxqwr0dqut09iiwgim5vbmnlijogilj5yu1dzmkyz0je\n... nstlnhn6mgpqrwc9psisicjzywx0ijogijlim1hjbdvhzmrzavhktuzytwnov2c9psisicjkyxrh\n... ijogimhnvc9latryin0=\"\"\")\nb'{\"mac\": \"i2x1hmtbukjsdlxit0ggjq==\",\n   \"nonce\": \"ryamcfi2gbd5+e4sz0jpeg==\",\n    \"salt\": \"9h3xil5afdyixdmfrmcnwg==\",\n    \"data\": \"hmt/ki4x\"}'\n```\n\ndiscussion\n----------\n\nthe items of the json dict constitute the encryption parameters and value. in\ntheory, it should be sufficiently **hard** to get back to the plain value of\n**data** without knowledge of the password. due to the association of the values\nreference (`service` and `user` here) with the authenticated encryption,\nmodifications of values reference are detected/rejected as well.\n\nthe class hierarchy is inherited from the keyrings.alt project, which is not\nexactly easy to follow. the most interesting parts are in\n*keyrings/cryptfile/cryptfile.py*, which is quite concise itself, even if you're\nnot fluent in python.\n\nin order to control this process any further, you might want to subclass\n`cryptfilekeyring` and/or `plaintextkeyring`.\n\nnotes\n-----\n\nyou can avoid the interactive getpass() request for the keyring password by\nsupplying `kr.keyring_key = \"your keyring password\"` before calling any other\nmethods on the keyring. the following example shows a simple way to retrieve the \npassword from an environment variable `keyring_cryptfile_password`, when present:\n```python\nfrom getpass import getpass\nfrom os import getenv\nfrom keyrings.cryptfile.cryptfile import cryptfilekeyring\nkr = cryptfilekeyring()\nkr.keyring_key = getenv(\"keyring_cryptfile_password\") or getpass()\nkeyring.set_keyring(kr)\n```\n\ntesting\n-------\n\ntesting is done with pytest as usual. just executing `pytest` should do the trick.\na verbose test run is performed with `pytest -v`, while a single test is selected\nwith `pytest -vk test_wrong_password`.\n\nfeedback is always welcome.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "keyrings.cryptfile",
+  "package_url": "https://pypi.org/project/keyrings.cryptfile/",
+  "project_url": "https://pypi.org/project/keyrings.cryptfile/",
+  "project_urls": {
+    "Homepage": "https://github.com/frispete/keyrings.cryptfile"
+  },
+  "release_url": "https://pypi.org/project/keyrings.cryptfile/1.3.9/",
+  "requires_dist": [],
+  "requires_python": ">=3.5",
+  "summary": "encrypted file keyring backend",
+  "version": "1.3.9",
+  "releases": [],
+  "developers": [
+    "hans",
+    "hpj@urpla.net"
+  ],
+  "kwds": "keyring_cryptfile_password cryptfilekeyring cryptfile cryptfile_pass python_keyring",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_keyrings.cryptfile",
+  "homepage": "https://github.com/frispete/keyrings.cryptfile",
+  "release_count": 10,
+  "dependency_ids": []
+}

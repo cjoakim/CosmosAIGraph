@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# dropstackframe\na python library for dropping stack frames.\n\nthis can be useful for removing decorators from stack traces, when using a framework with a lot of\ndecorators.\n\n## example\n\nlet's us write a small decorator for measuring the time it takes to call a function:\n\n```python\nfrom time import perf_counter\n\n\ndef measure_time(func):\n    def wrapper(*args, **kwargs):\n        before = perf_counter()\n        result = func(*args, **kwargs)\n        after = perf_counter()\n        print(f\"{func.__name__} took {after - before}s.\")\n        return result\n\n    return wrapper\n```\n\nwe can use it like this:\n\n```python\n@measure_time\ndef foo(should_raise):\n    assert not should_raise\n    return 42\n\n\n@measure_time\ndef bar(should_raise):\n    return foo(should_raise)\n\n\n@measure_time\ndef baz(should_raise):\n    return bar(should_raise)\n\n\nbaz(false)\n```\n\non my computer this prints:\n\n```\nfoo took 2.2800122678745538e-07s.\nbar took 3.576500057533849e-05s.\nbaz took 4.227000135870185e-05s.\n```\n\ngreat. but what happens if we raise an error?\n\n```python\nbaz(true)\n```\n\nyields:\n\n```\ntraceback (most recent call last):\n  file \"example.py\", line 32, in <module>\n    baz(true)\n  file \"example.py\", line 7, in wrapper\n    result = func(*args, **kwargs)\n  file \"example.py\", line 28, in baz\n    return bar(should_raise)\n  file \"example.py\", line 7, in wrapper\n    result = func(*args, **kwargs)\n  file \"example.py\", line 23, in bar\n    return foo(should_raise)\n  file \"example.py\", line 7, in wrapper\n    result = func(*args, **kwargs)\n  file \"example.py\", line 17, in foo\n    assert not should_raise\nassertionerror\n```\n\nnotice how every other line is the `wrapper` from our decorator? if we have large codebase and it is\nusing a framework with a lot of decorators, this can make the stack traces hard to read, because\nmost of the frames are irrelevant decorators.\n\nwe can use the `dropstackframe` library to rewrite our decorator:\n\n```python\nfrom time import perf_counter\nfrom dropstackframe import drop_stack_frame\n\n\ndef measure_time(func):\n    def wrapper(*args, **kwargs):\n        before = perf_counter()\n        try:\n            result = func(*args, **kwargs)\n        except exception:\n            drop_stack_frame()\n            raise\n        after = perf_counter()\n        print(f\"{func.__name__} took {after - before}s.\")\n        return result\n\n    return wrapper\n```\n\nnow, if we get an error:\n\n```python\nbaz(true)\n```\n\nwe get:\n\n```\ntraceback (most recent call last):\n  file \"example2.py\", line 37, in <module>\n    baz(true)\n  file \"example2.py\", line 33, in baz\n    return bar(should_raise)\n  file \"example2.py\", line 28, in bar\n    return foo(should_raise)\n  file \"example2.py\", line 22, in foo\n    assert not should_raise\nassertionerror\n```\n\nand all the annoying `wrapper` stack frames have been removed.\n\n## disabling `dropstackframe`\n\nlet's say you have a large codebase that uses `dropstackframe` and one day you have a bug that is\nreally hard to find. in fact you start suspecting that the bug might be hidden by\n`drop_stack_frame`. you can use `set_enable_drop_stack_frame` to disable `drop_stack_frame`:\n\n```python\nfrom dropstackframe import set_enable_drop_stack_frame\n\nset_enable_drop_stack_frame(false)\nbaz(true)\n```\n\n`set_enable_drop_stack_frame` can also be used as a context manager, if you only want to disable\n`drop_stack_frame` in a limited region of your code:\n\n```python\nfrom dropstackframe import set_enable_drop_stack_frame\n\nwith set_enable_drop_stack_frame(false):\n    baz(true)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "dropstackframe",
+  "package_url": "https://pypi.org/project/dropstackframe/",
+  "project_url": "https://pypi.org/project/dropstackframe/",
+  "project_urls": {
+    "Homepage": "https://github.com/jesnie/dropstackframe",
+    "Repository": "https://github.com/jesnie/dropstackframe"
+  },
+  "release_url": "https://pypi.org/project/dropstackframe/0.1.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "a python package for removing stack frames from stack traces.",
+  "version": "0.1.0",
+  "releases": [],
+  "developers": [
+    "jesper_nielsen",
+    "jespernielsen1982+dropstackframe@gmail.com"
+  ],
+  "kwds": "drop_stack_frame measure_time set_enable_drop_stack_frame decorators decorator",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_dropstackframe",
+  "homepage": "https://github.com/jesnie/dropstackframe",
+  "release_count": 2,
+  "dependency_ids": []
+}

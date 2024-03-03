@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "[pypi-image]: https://badge.fury.io/py/torch-scatter.svg\n[pypi-url]: https://pypi.python.org/pypi/torch-scatter\n[testing-image]: https://github.com/rusty1s/pytorch_scatter/actions/workflows/testing.yml/badge.svg\n[testing-url]: https://github.com/rusty1s/pytorch_scatter/actions/workflows/testing.yml\n[linting-image]: https://github.com/rusty1s/pytorch_scatter/actions/workflows/linting.yml/badge.svg\n[linting-url]: https://github.com/rusty1s/pytorch_scatter/actions/workflows/linting.yml\n[docs-image]: https://readthedocs.org/projects/pytorch-scatter/badge/?version=latest\n[docs-url]: https://pytorch-scatter.readthedocs.io/en/latest/?badge=latest\n[coverage-image]: https://codecov.io/gh/rusty1s/pytorch_scatter/branch/master/graph/badge.svg\n[coverage-url]: https://codecov.io/github/rusty1s/pytorch_scatter?branch=master\n\n# pytorch scatter\n\n[![pypi version][pypi-image]][pypi-url]\n[![testing status][testing-image]][testing-url]\n[![linting status][linting-image]][linting-url]\n[![docs status][docs-image]][docs-url]\n[![code coverage][coverage-image]][coverage-url]\n\n<p align=\"center\">\n  <img width=\"50%\" src=\"https://raw.githubusercontent.com/rusty1s/pytorch_scatter/master/docs/source/_figures/add.svg?sanitize=true\" />\n</p>\n\n--------------------------------------------------------------------------------\n\n**[documentation](https://pytorch-scatter.readthedocs.io)**\n\nthis package consists of a small extension library of highly optimized sparse update (scatter and segment) operations for the use in [pytorch](http://pytorch.org/), which are missing in the main package.\nscatter and segment operations can be roughly described as reduce operations based on a given \"group-index\" tensor.\nsegment operations require the \"group-index\" tensor to be sorted, whereas scatter operations are not subject to these requirements.\n\nthe package consists of the following operations with reduction types `\"sum\"|\"mean\"|\"min\"|\"max\"`:\n\n* [**scatter**](https://pytorch-scatter.readthedocs.io/en/latest/functions/scatter.html) based on arbitrary indices\n* [**segment_coo**](https://pytorch-scatter.readthedocs.io/en/latest/functions/segment_coo.html) based on sorted indices\n* [**segment_csr**](https://pytorch-scatter.readthedocs.io/en/latest/functions/segment_csr.html) based on compressed indices via pointers\n\nin addition, we provide the following **composite functions** which make use of `scatter_*` operations under the hood: `scatter_std`, `scatter_logsumexp`, `scatter_softmax` and `scatter_log_softmax`.\n\nall included operations are broadcastable, work on varying data types, are implemented both for cpu and gpu with corresponding backward implementations, and are fully traceable.\n\n## installation\n\n### anaconda\n\n**update:** you can now install `pytorch-scatter` via [anaconda](https://anaconda.org/pyg/pytorch-scatter) for all major os/pytorch/cuda combinations \ud83e\udd17\ngiven that you have [`pytorch >= 1.8.0` installed](https://pytorch.org/get-started/locally/), simply run\n\n```\nconda install pytorch-scatter -c pyg\n```\n\n### binaries\n\nwe alternatively provide pip wheels for all major os/pytorch/cuda combinations, see [here](https://data.pyg.org/whl).\n\n#### pytorch 2.1\n\nto install the binaries for pytorch 2.1.0, simply run\n\n```\npip install torch-scatter -f https://data.pyg.org/whl/torch-2.1.0+${cuda}.html\n```\n\nwhere `${cuda}` should be replaced by either `cpu`, `cu118`, or `cu121` depending on your pytorch installation.\n\n|             | `cpu` | `cu118` | `cu121` |\n|-------------|-------|---------|---------|\n| **linux**   | \u2705    | \u2705      | \u2705      |\n| **windows** | \u2705    | \u2705      | \u2705      |\n| **macos**   | \u2705    |         |         |\n\n\n#### pytorch 2.0\n\nto install the binaries for pytorch 2.0.0, simply run\n\n```\npip install torch-scatter -f https://data.pyg.org/whl/torch-2.0.0+${cuda}.html\n```\n\nwhere `${cuda}` should be replaced by either `cpu`, `cu117`, or `cu118` depending on your pytorch installation.\n\n|             | `cpu` | `cu117` | `cu118` |\n|-------------|-------|---------|---------|\n| **linux**   | \u2705    | \u2705      | \u2705      |\n| **windows** | \u2705    | \u2705      | \u2705      |\n| **macos**   | \u2705    |         |         |\n\n**note:** binaries of older versions are also provided for pytorch 1.4.0, pytorch 1.5.0, pytorch 1.6.0, pytorch 1.7.0/1.7.1, pytorch 1.8.0/1.8.1, pytorch 1.9.0, pytorch 1.10.0/1.10.1/1.10.2, pytorch 1.11.0, pytorch 1.12.0/1.12.1 and pytorch 1.13.0/1.13.1 (following the same procedure).\nfor older versions, you need to explicitly specify the latest supported version number or install via `pip install --no-index` in order to prevent a manual installation from source.\nyou can look up the latest supported version number [here](https://data.pyg.org/whl).\n\n### from source\n\nensure that at least pytorch 1.4.0 is installed and verify that `cuda/bin` and `cuda/include` are in your `$path` and `$cpath` respectively, *e.g.*:\n\n```\n$ python -c \"import torch; print(torch.__version__)\"\n>>> 1.4.0\n\n$ echo $path\n>>> /usr/local/cuda/bin:...\n\n$ echo $cpath\n>>> /usr/local/cuda/include:...\n```\n\nthen run:\n\n```\npip install torch-scatter\n```\n\nwhen running in a docker container without nvidia driver, pytorch needs to evaluate the compute capabilities and may fail.\nin this case, ensure that the compute capabilities are set via `torch_cuda_arch_list`, *e.g.*:\n\n```\nexport torch_cuda_arch_list = \"6.0 6.1 7.2+ptx 7.5+ptx\"\n```\n\n## example\n\n```py\nimport torch\nfrom torch_scatter import scatter_max\n\nsrc = torch.tensor([[2, 0, 1, 4, 3], [0, 2, 1, 3, 4]])\nindex = torch.tensor([[4, 5, 4, 2, 3], [0, 0, 2, 2, 1]])\n\nout, argmax = scatter_max(src, index, dim=-1)\n```\n\n```\nprint(out)\ntensor([[0, 0, 4, 3, 2, 0],\n        [2, 4, 3, 0, 0, 0]])\n\nprint(argmax)\ntensor([[5, 5, 3, 4, 0, 1]\n        [1, 4, 3, 5, 5, 5]])\n```\n\n## running tests\n\n```\npytest\n```\n\n## c++ api\n\n`torch-scatter` also offers a c++ api that contains c++ equivalent of python models.\nfor this, we need to add `torchlib` to the `-dcmake_prefix_path` (*e.g.*, it may exists in `{conda}/lib/python{x.x}/site-packages/torch` if installed via `conda`):\n\n```\nmkdir build\ncd build\n# add -dwith_cuda=on support for cuda support\ncmake -dcmake_prefix_path=\"...\" ..\nmake\nmake install\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "pytorch,scatter,segment,gather",
+  "license": "",
+  "name": "torch-scatter",
+  "package_url": "https://pypi.org/project/torch-scatter/",
+  "project_url": "https://pypi.org/project/torch-scatter/",
+  "project_urls": {
+    "Download": "https://github.com/rusty1s/pytorch_scatter/archive/2.1.2.tar.gz",
+    "Homepage": "https://github.com/rusty1s/pytorch_scatter"
+  },
+  "release_url": "https://pypi.org/project/torch-scatter/2.1.2/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "pytorch extension library of optimized scatter operations",
+  "version": "2.1.2",
+  "releases": [],
+  "developers": [
+    "matthias.fey@tu-dortmund.de",
+    "matthias_fey"
+  ],
+  "kwds": "pytorch_scatter torch_scatter scatter_softmax scatter_std scatter",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_torch_scatter",
+  "homepage": "https://github.com/rusty1s/pytorch_scatter",
+  "release_count": 23,
+  "dependency_ids": []
+}

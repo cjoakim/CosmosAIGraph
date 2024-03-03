@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "## marshmallow-jsonschema: json schema formatting with marshmallow\n\n![build status](https://github.com/fuhrysteve/marshmallow-jsonschema/workflows/build/badge.svg)\n[![coverage status](https://coveralls.io/repos/github/fuhrysteve/marshmallow-jsonschema/badge.svg?branch=master)](https://coveralls.io/github/fuhrysteve/marshmallow-jsonschema?branch=master)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)\n\n marshmallow-jsonschema translates marshmallow schemas into\n json schema draft v7 compliant jsonschema. see http://json-schema.org/\n\n#### why would i want my schema translated to json?\n\nwhat are the use cases for this? let's say you have a\nmarshmallow schema in python, but you want to render your\nschema as a form in another system (for example: a web browser\nor mobile device).\n\n#### installation\n\nrequires python>=3.6 and marshmallow>=3.11. (for python 2 & marshmallow 2 support, please use marshmallow-jsonschema<0.11)\n\n```\npip install marshmallow-jsonschema\n```\n\n#### some client tools can render forms using json schema\n\n* [react-jsonschema-form](https://github.com/mozilla-services/react-jsonschema-form) (recommended)\n  * see below extension for this excellent library!\n* https://github.com/brutusin/json-forms\n* https://github.com/jdorn/json-editor\n* https://github.com/ulion/jsonform\n\n### examples\n\n#### simple example\n\n```python\nfrom marshmallow import schema, fields\nfrom marshmallow_jsonschema import jsonschema\n\nclass userschema(schema):\n    username = fields.string()\n    age = fields.integer()\n    birthday = fields.date()\n\nuser_schema = userschema()\n\njson_schema = jsonschema()\njson_schema.dump(user_schema)\n```\n\nyields:\n\n```python\n{'properties': {'age': {'format': 'integer',\n                        'title': 'age',\n                        'type': 'number'},\n                'birthday': {'format': 'date',\n                             'title': 'birthday',\n                             'type': 'string'},\n                'username': {'title': 'username', 'type': 'string'}},\n 'required': [],\n 'type': 'object'}\n```\n\n#### nested example\n\n```python\nfrom marshmallow import schema, fields\nfrom marshmallow_jsonschema import jsonschema\nfrom tests import userschema\n\n\nclass athlete(object):\n    user_schema = userschema()\n\n    def __init__(self):\n        self.name = 'sam'\n\n\nclass athleteschema(schema):\n    user_schema = fields.nested(jsonschema)\n    name = fields.string()\n\n    \nathlete = athlete()\nathlete_schema = athleteschema()\n\nathlete_schema.dump(athlete)\n```\n\n#### complete example flask application using brutisin/json-forms\n\n![screenshot](http://i.imgur.com/jjv1wfk.png)\n\nthis example renders a form not dissimilar to how [wtforms](https://github.com/wtforms/wtforms) might render a form.\n\nhowever rather than rendering the form in python, the json schema is rendered using the\njavascript library [brutusin/json-forms](https://github.com/brutusin/json-forms).\n\n\n```python\nfrom flask import flask, jsonify\nfrom marshmallow import schema, fields\nfrom marshmallow_jsonschema import jsonschema\n\napp = flask(__name__)\n\n\nclass userschema(schema):\n    name = fields.string()\n    address = fields.string()\n\n\n@app.route('/schema')\ndef schema():\n    schema = userschema()\n    return jsonify(jsonschema().dump(schema))\n\n\n@app.route('/')\ndef home():\n    return '''<!doctype html>\n<head>\n<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/brutusin.json-forms/1.3.0/css/brutusin-json-forms.css\"><paste>\n<script src=\"https://code.jquery.com/jquery-1.12.1.min.js\" integrity=\"sha256-i1ntg78tsrzev3kjvfdm5a5ak/blglgzlazanlpdl3i=\" crossorigin=\"anonymous\"></script>\n<script src=\"https://cdnjs.cloudflare.com/ajax/libs/underscore.string/3.3.4/underscore.string.min.js\"></script>\n<script src=\"https://cdn.jsdelivr.net/brutusin.json-forms/1.3.0/js/brutusin-json-forms.min.js\"></script>\n<script>\n$(document).ready(function() {\n    $.ajax({\n        url: '/schema'\n        , success: function(data) {\n            var container = document.getelementbyid('myform');\n            var brutusinforms = brutusin[\"json-forms\"];\n            var bf = brutusinforms.create(data);\n            bf.render(container);\n        }\n    });\n});\n</script>\n</head>\n<body>\n<div id=\"myform\"></div>\n</body>\n</html>\n'''\n\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', debug=true)\n\n```\n\n\n### advanced usage\n#### custom type support\n\nsimply add a `_jsonschema_type_mapping` method to your field\nso we know how it ought to get serialized to json schema.\n\na common use case for this is creating a dropdown menu using\nenum (see gender below).\n\n\n```python\nclass colour(fields.field):\n\n    def _jsonschema_type_mapping(self):\n        return {\n            'type': 'string',\n        }\n\n    def _serialize(self, value, attr, obj):\n        r, g, b = value\n        r = \"%02x\" % (r,)\n        g = \"%02x\" % (g,)\n        b = \"%02x\" % (b,)\n        return '#' + r + g + b \n\nclass gender(fields.string):\n    def _jsonschema_type_mapping(self):\n        return {\n            'type': 'string',\n            'enum': ['male', 'female']\n        }\n\n\nclass userschema(schema):\n    name = fields.string(required=true)\n    favourite_colour = colour()\n    gender = gender()\n\nschema = userschema()\njson_schema = jsonschema()\njson_schema.dump(schema)\n```\n\n\n### react-jsonschema-form extension\n\n[react-jsonschema-form](https://react-jsonschema-form.readthedocs.io/en/latest/)\nis a library for rendering jsonschemas as a form using react. it is very powerful\nand full featured.. the catch is that it requires a proprietary\n[`uischema`](https://react-jsonschema-form.readthedocs.io/en/latest/form-customization/#the-uischema-object)\nto provide advanced control how the form is rendered.\n[here's a live playground](https://rjsf-team.github.io/react-jsonschema-form/)\n\n*(new in version 0.10.0)*\n\n```python\nfrom marshmallow_jsonschema.extensions import reactjsonschemaformjsonschema\n\nclass myschema(schema):\n    first_name = fields.string(\n        metadata={\n            'ui:autofocus': true,\n        }\n    )\n    last_name = fields.string()\n\n    class meta:\n        react_uischema_extra = {\n            'ui:order': [\n                'first_name',\n                'last_name',\n            ]\n        }\n\n\njson_schema_obj = reactjsonschemaformjsonschema()\nschema = myschema()\n\n# here's your jsonschema\ndata = json_schema_obj.dump(schema)\n\n# ..and here's your uischema!\nui_schema_json = json_schema_obj.dump_uischema(schema)\n\n\n",
+  "docs_url": null,
+  "keywords": "marshmallow-jsonschema marshmallow schema serialization jsonschema validation",
+  "license": "mit license",
+  "name": "marshmallow-jsonschema",
+  "package_url": "https://pypi.org/project/marshmallow-jsonschema/",
+  "project_url": "https://pypi.org/project/marshmallow-jsonschema/",
+  "project_urls": {
+    "Homepage": "https://github.com/fuhrysteve/marshmallow-jsonschema"
+  },
+  "release_url": "https://pypi.org/project/marshmallow-jsonschema/0.13.0/",
+  "requires_dist": [
+    "marshmallow (>=3.11)",
+    "marshmallow-enum ; extra == 'enum'",
+    "marshmallow-union ; extra == 'union'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "json schema draft v7 (http://json-schema.org/) formatting with marshmallow",
+  "version": "0.13.0",
+  "releases": [],
+  "developers": [
+    "fuhrysteve@gmail.com",
+    "stephen_fuhry"
+  ],
+  "kwds": "marshmallow_jsonschema _jsonschema_type_mapping jsonschema jsonschemas json_schema",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_marshmallow_jsonschema",
+  "homepage": "https://github.com/fuhrysteve/marshmallow-jsonschema",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_marshmallow",
+    "pypi_marshmallow_enum",
+    "pypi_marshmallow_union"
+  ]
+}

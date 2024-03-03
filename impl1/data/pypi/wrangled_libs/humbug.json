@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "topic :: software development :: libraries"
+  ],
+  "description": "# humbug python\n\nthe humbug python library.\n\n## installation\n\n### using pip\n\n```bash\npip install humbug\n```\n\n### from source\n\nclone this repository and enter this directory. make sure you are in your desired python environment\nand then run:\n\n```bash\npython setup.py install\n```\n\n## integration\n\nto add humbug to your project, first create a bugout access token and journal [following these\ninstructions](../readme.md#trying-it-out).\n\nyou can follow the recipes below to integrate humbug into your codebase:\n\n1. [error reporting](./recipes/error_reporting.py)\n1. [system reporting](./recipes/system_reporting.py)\n\nall reports are generated (and published) by a humbug reporter. by default, humbug publishes all\nreports asynchronously and in the background. if you would like to publish selected reports\nsynchronously, all reporter methods take a `wait=true` argument.\n\nif you plan to _only_ use a reporter synchronously or to do your own thread management, you can\ninstantiate the reporter in synchronous mode:\n\n```python\nfrom humbug.report import reporter, modes\n\nreporter = reporter(\n    \"<name>\",\n    client_id=\"<client_id>\",\n    session_id=\"<session_id>\",\n    bugout_token=\"<bugout_token>\",\n    bugout_journal_id=\"<bugout_journal_id>\",\n    mode=modes.synchronous,\n)\n```\n\nusing modes.synchronous in this manner skips the creation of the thread from which the reporter\npublishes reports.\n\n### consent\n\nhumbug cares deeply about consent. the innocuous `humbugconsent` from the snippet above supports\na wide range of consent flows.\n\n#### opting in with environment variables\n\nfor example, if you would like your users to be able to opt in by setting an environment variable\n`my_app_consent=true`:\n\n```python\nfrom humbug.consent import environment_variable_opt_in, humbugconsent\nfrom humbug.report import reporter\n\nconsent = humbugconsent(environment_variable_opt_in(\"my_app_consent\", [\"true\"]))\nreporter = reporter(\n    \"<name of your project>\",\n    consent,\n    bugout_token=\"<your bugout token>\",\n    bugout_journal_id=\"<your bugout journal id>\",\n)\n```\n\nif you use this configuration, unless your user uses your tool with `my_app_consent=true`, no\nreports will ever get sent to your knowledge base.\n\n#### opting out with environment variables\n\nif, [like `homebrew`](https://docs.brew.sh/analytics#opting-out), you would like users to be able to\nopt out by setting an environment variable `my_app_no_consent=1`:\n\n```python\nfrom humbug.consent import environment_variable_opt_out, humbugconsent\nfrom humbug.report import reporter\n\nconsent = humbugconsent(environment_variable_opt_out(\"my_app_no_consent\", [\"1\"]))\nreporter = reporter(\n    \"<name of your project>\",\n    consent,\n    bugout_token=\"<your bugout access token>\",\n    bugout_journal_id=\"<your bugout journal id>\",\n)\n```\n\nin this case, reports are sent by default unless the user sets `my_app_no_consent=1` in which\ncase reports will never be sent.\n\n#### composing consent mechanisms\n\nhumbug allows you to combine multiple consent mechanisms. for example:\n\n```python\nfrom humbug.consent import environment_variable_opt_in, environment_variable_opt_out, humbugconsent\nfrom humbug.report import reporter\n\nconsent = humbugconsent(\n    environment_variable_opt_in(\"my_app_consent\", [\"true\"]),\n    environment_variable_opt_out(\"my_app_no_consent\", [\"1\"]),\n)\nreporter = reporter(\n    \"<name of your project>\",\n    consent,\n    bugout_token=\"<your bugout access token>\",\n    bugout_journal_id=\"<your bugout journal id>\",\n)\n```\n\nif your users do not set `my_app_consent` or give it a value other than `true`, humbug won't even\nbother to send you any reports. if `my_app_consent` is indeed set to `true`, but the user has\nset `my_app_no_consent=1`, then again no reports will get sent back.\n\non the other hand, if the user has set `my_app_consent=true` and left `my_app_no_consent` unset or\nset to a value other than `1`, humbug will send you any reports you have configured.\n\n### blacklisting parameters in feature reports\n\narguments to functions and other callables can sometimes contain sensitive information which you may\nnot want to include in humbug reports.\n\nblacklist functions allow you to specify which parameters from an argument list to filter out of your\nfeature reports.\n\n#### `blacklist.generate_filter_parameters_by_key_fn`\n\nif you would just like to filter out all paramters with a given name, you can use the `blacklist.generate_filter_parameters_by_key_fn`.\n\nfor example, to ignore all parameters named `token` (case insensitive), you would instantiate your\n`humbugreporter` as follows:\n\n```python\nreporter = humbugreporter(\n    ...,\n    blacklist_fn=blacklist.generate_filter_parameters_by_key_fn([\"token\"]),\n)\n```\n\n#### custom blacklist functions\n\nyou could also implement a custom blacklist function to remove all parameters that contained the substring\n`token` (case insensitive):\n\n```python\ndef blacklist_token_parameters_fn(params: dict[str, any]) -> dict[str, any]:\n    admissible_params = {k:v for k, v in params.items() if \"token\" not in k}\n    return admissible_params\n\nreporter = humbugreporter(\n    ...,\n    blacklist_fn=blacklist_token_parameters_fn\n)\n```\n\n### case study: activeloopai/deeplake\n\n[this pull request](https://github.com/activeloopai/deeplake/pull/624) shows how\n[activeloop](https://www.activeloop.ai/) integrated humbug into their popular\n[`deeplake`](https://github.com/activeloopai/deeplake) tool.\n\nthis example shows how to use humbug to record consent in a configuration file that the user\ncan modify at will. it also shows how to add custom tags to your humbug reports.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "humbug",
+  "package_url": "https://pypi.org/project/humbug/",
+  "project_url": "https://pypi.org/project/humbug/",
+  "project_urls": {
+    "Homepage": "https://github.com/bugout-dev/humbug"
+  },
+  "release_url": "https://pypi.org/project/humbug/0.3.2/",
+  "requires_dist": [
+    "requests",
+    "dataclasses ; python_version == \"3.6\"",
+    "black ; extra == 'dev'",
+    "mypy ; extra == 'dev'",
+    "types-dataclasses ; extra == 'dev'",
+    "types-pkg-resources ; extra == 'dev'",
+    "types-psutil ; extra == 'dev'",
+    "types-requests ; extra == 'dev'",
+    "wheel ; extra == 'dev'",
+    "setuptools ; extra == 'distribute'",
+    "twine ; extra == 'distribute'",
+    "wheel ; extra == 'distribute'",
+    "GPUtil ; extra == 'profile'",
+    "psutil ; extra == 'profile'",
+    "types-psutil ; extra == 'profile'"
+  ],
+  "requires_python": "",
+  "summary": "humbug: do you build developer tools? humbug helps you know your users.",
+  "version": "0.3.2",
+  "releases": [],
+  "developers": [
+    "bugout",
+    "engineering@bugout.dev"
+  ],
+  "kwds": "humbug humbugreporter humbugconsent system_reporting error_reporting",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_humbug",
+  "homepage": "https://github.com/bugout-dev/humbug",
+  "release_count": 27,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_dataclasses",
+    "pypi_gputil",
+    "pypi_mypy",
+    "pypi_psutil",
+    "pypi_requests",
+    "pypi_setuptools",
+    "pypi_twine",
+    "pypi_types_dataclasses",
+    "pypi_types_pkg_resources",
+    "pypi_types_psutil",
+    "pypi_types_requests",
+    "pypi_wheel"
+  ]
+}

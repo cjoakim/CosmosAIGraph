@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: religion",
+    "topic :: scientific/engineering :: astronomy"
+  ],
+  "description": "convertdate\n===========\n\nthe convertdate package was originally developed as \"[python date\nutils](http://sourceforge.net/projects/pythondateutil/)\" by phil\nschwartz. it has been significantly updated and expanded.\n\n[consult the complete docs for detailed usage info](https://convertdate.readthedocs.io/).\n\navailable calendars:\n\n-   armenian\n-   bahai\n-   coptic (alexandrian)\n-   french republican\n-   gregorian\n-   hebrew\n-   indian civil\n-   islamic\n-   julian\n-   mayan\n-   persian\n-   positivist\n-   mayan\n-   iso\n-   ordinal (day of year)\n-   dublin day count\n-   julian day count\n\nthe `holidays` module also provides some useful holiday-calculation,\nwith a focus on north american and jewish holidays.\n\ninstalling\n----------\n\n`pip install convertdate`\n\nor download the package and run `python setup.py install`.\n\nexamples\n--------\n\n    >>> from convertdate import french_republican\n    >>> from convertdate import hebrew\n    >>> french_republican.from_gregorian(2014, 10, 31)\n    (223, 2, 9)\n    >>> hebrew.from_gregorian(2014, 10, 31)\n    (5775, 8, 7)\n\nnote that in some calendar systems, the day begins at sundown.\nconvertdate gives the conversion for noon of the day in question.\n\neach module includes a `monthcalendar` function, which will generate a\ncalender-like nested list for a year and month (each list of dates runs\nfrom sunday to saturday)\n\n    >>> hebrew.monthcalendar(5775, 8)\n    [\n        [none, none, none, none, none, none, 1],\n        [2, 3, 4, 5, 6, 7, 8],\n        [9, 10, 11, 12, 13, 14, 15],\n        [16, 17, 18, 19, 20, 21, 22],\n        [23, 24, 25, 26, 27, 28, 29]\n    ]\n\n    >>> julian.monthcalendar(2015, 1)\n    [\n       [none, none, none, 1, 2, 3, 4],\n       [5, 6, 7, 8, 9, 10, 11],\n       [12, 13, 14, 15, 16, 17, 18],\n       [19, 20, 21, 22, 23, 24, 25],\n       [26, 27, 28, 29, 30, 31, none]\n    ]\n\nspecial options\n---------------\n\n### armenian\n\nthe armenian calendar begins on 11 july 552 (julian) and has two modes of\nreckoning. the first is the invariant-length version consisting of 12 months\nof 30 days each and five epagomenal days; the second is the version\nestablished by yovhannes sarkawag in 1084, which fixed the first day of the\nyear with respect to the julian calendar and added a sixth epagomenal day\nevery four years.\n\nby default the invariant calendar is used, but the sarkawag calendar can be\nused beginning with the armenian year 533 (11 august 1084) by passing the\nparameter `method='sarkawag'` to the relevant functions.\n\n\n### french republican\n\nleap year calculations in the french republican calendar are a matter of\ndispute. by default, `convertdate` calculates leap years using the\nautumnal equinox. you can also use one of three more systematic methods\nproposed over the years.\n\n-   romme, a co-creator of the calendar, proposed leap years in years\n    divisible by four, except for years divisible by 100.\n-   some concordances were drawn up in the 19th century that gave leap\n    years every 4 years, in years that give a remainder of three when\n    divided by four (19, 23, 27, etc...).\n-   von m&auml;dler proposed leap years in years divisible by four, except\n    for years divisible by 128.\n\nyou can specify any of these three methods with the method keyword\nargument in `french_republican` conversion functions.\n\n    from convertdate import french_republican\n\n    # romme's method\n    french_republican.to_gregorian(20, 1, 1), method='romme')\n    # (1811, 9, 23)\n\n    # continuous method\n    french_republican.to_gregorian(20, 1, 1), method='continuous')\n    # (1811, 9, 24)\n\n    # von madler's method\n    french_republican.to_gregorian(20, 1, 1), method='madler')\n    # (1811, 9, 23)\n\nall the conversion methods correctly assign the leap years implemented\nwhile calendar was in use (3, 7, 11).\n\nbaha'i\n------\n\nthe bah&aacute;'&iacute; (bad&iacute;) calendar has an intercalary period, ayyam-i-h&aacute;, which occurs between the 18th and 19th months.\ndates in this period are returned as month 19, and the month of &lsquo;al&aacute; is reported as month 20.\n\n```python\nfrom convertdate import bahai\n# the first day of ayyam-i-ha:\nbahai.to_gregorian(175, 19, 1)\n# (2019, 2, 26)\n# the first day of 'ala:\nbahai.to_gregorian(175, 20, 1)\n# (2019, 3, 2)\n```\n\nbefore the common era\n---------------------\n\nfor dates before the common era (year 1), `convertdate` uses\nastronomical notation: 1 bc is recorded as 0, 2 bc is -1, etc. this\nmakes arithmatic much easier at the expense of ignoring custom.\n\nnote that for dates before 4 ce, `convertdate` uses the [proleptic\njulian\ncalendar](https://en.wikipedia.org/wiki/proleptic_julian_calendar). the\njulian calendar was in use from 45 bc, but before 4 ce the leap year\nleap year pattern was irregular.\n\nthe [proleptic gregorian\ncalendar](https://en.wikipedia.org/wiki/proleptic_gregorian_calendar) is\nused for dates before 1582 ce, the year of the gregorian calendar\nreform.\n\nholidays\n--------\n\nnorth american holidays are the current focus of the `holidays` module,\nbut pull requests are welcome.\n\n    from convertdate import holidays\n\n    # for simplicity, functions in the holidays module return a tuple\n    # in the format (year, month, day)\n\n    holidays.new_years(2014)\n    # (2014, 1, 1)\n\n    holidays.memorial_day(2014)\n    # (2014, 5, 26)\n\n    # usa is default\n    holidays.thanksgiving(2014)\n    # (2014, 11, 27)\n\n    # but there is a canadian option for some holidays\n    holidays.thanksgiving(2014, 'canada')\n    # (2014, 10, 13)\n\n    # mexican national holidays\n    holidays.natalicio_benito_juarez(2016)\n    # (2016, 3, 21)\n\n    holidays.dia_revolucion(2016)\n    # (2016, 11, 21)\n\n    # some jewish holidays are included\n    holidays.rosh_hashanah(2014)\n    \n    # easter can be calculated according to different churches \n    # ('western', 'orthodox', 'eastern')\n    # the eastern christian computation differs from the orthodox one\n    # 4 times in each 532-year cycle.\n    \n    holidays.easter(2019)\n    # (2019, 4, 21)\n    holidays.easter(2019, church=\"orthodox\")\n    # (2019, 4, 28)\n    holidays.easter(2019, church=\"orthodox\")\n    # (2019, 4, 28)\n\nutils\n-----\n\nconvertdate includes some utilities for manipulating and calculating\ndates.\n\n    from convertdate import utils\n\n    # calculate an arbitrary day of the week\n    thur = 3\n    april = 4\n\n    # 3rd thursday in april\n    utils.nth_day_of_month(3, thur, april, 2014)\n    # (2014, 4, 17)\n\n    utils.nth_day_of_month(5, thur, april, 2014)\n    # indexerror: no 5th day of month 4\n\n    # use 0 for the first argument to get the last weekday of a month\n    utils.nth_day_of_month(0, thur, april, 2014)\n    # (2014, 4, 24)\n\nnote that when calculating weekdays, convertdate uses the convention of\nthe calendar and time modules: monday is 0, sunday is 6.\n\n    from convertdate import gregorian\n\n    sun = 6\n\n    day = gregorian.to_jd(2014, 4, 17)\n    nextsunday = utils.next_weekday(sun, day)\n\n    gregorian.from_jd(nextsunday)\n    # (2014, 4, 20)\n\nother utility functions:\n\n-   nearest\\_weekday\n-   next\\_or\\_current\\_weekday\n-   previous\\_weekday\n-   previous\\_or\\_current\\_weekday\n\n\n\n",
+  "docs_url": null,
+  "keywords": "calendar,date,time",
+  "license": "mit",
+  "name": "convertdate",
+  "package_url": "https://pypi.org/project/convertdate/",
+  "project_url": "https://pypi.org/project/convertdate/",
+  "project_urls": {
+    "Homepage": "https://github.com/fitnr/convertdate"
+  },
+  "release_url": "https://pypi.org/project/convertdate/2.4.0/",
+  "requires_dist": [
+    "pymeeus (<=1,>=0.3.13)",
+    "build ; extra == 'dev'",
+    "black ; extra == 'dev'",
+    "isort ; extra == 'dev'",
+    "pylint ; extra == 'dev'",
+    "sphinx ; extra == 'docs'",
+    "sphinx-rtd-theme ; extra == 'docs'",
+    "myst-parser ; extra == 'docs'",
+    "coverage ; extra == 'tests'"
+  ],
+  "requires_python": "<4,>=3.7",
+  "summary": "converts between gregorian dates and other calendar systems",
+  "version": "2.4.0",
+  "releases": [],
+  "developers": [
+    "contact@fakeisthenewreal.org",
+    "neil_freeman"
+  ],
+  "kwds": "calendars calendar proleptic_gregorian_calendar convertdate proleptic_julian_calendar",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_convertdate",
+  "homepage": "https://github.com/fitnr/convertdate",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_build",
+    "pypi_coverage",
+    "pypi_isort",
+    "pypi_myst_parser",
+    "pypi_pylint",
+    "pypi_pymeeus",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme"
+  ]
+}

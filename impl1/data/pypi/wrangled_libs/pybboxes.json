@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: education",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "<h1 align=\"center\">pybboxes</h1>\n<p align=\"center\">\n<a href=\"https://pypi.org/project/pybboxes\"><img src=\"https://img.shields.io/pypi/v/pybboxes?color=blue\" alt=\"python versions\"></a>\n<a href=\"https://pepy.tech/project/pybboxes\"><img src=\"https://pepy.tech/badge/pybboxes\" alt=\"total downloads\"></a>\n<a href=\"https://pypi.org/project/pybboxes\"><img src=\"https://img.shields.io/pypi/dm/pybboxes?color=blue\" alt=\"monthly downloads\"></a>\n<br>\n<a href=\"https://pypi.org/project/pybboxes\"><img src=\"https://img.shields.io/pypi/pyversions/pybboxes\" alt=\"python versions\"></a>\n<a href=\"https://github.com/devrimcavusoglu/pybboxes/actions/workflows/ci.yml\"><img src=\"https://img.shields.io/github/workflow/status/devrimcavusoglu/pybboxes/tests\" alt=\"doi\"></a>\n<a href=\"https://github.com/devrimcavusoglu/pybboxes/blob/main/license\"><img src=\"https://img.shields.io/github/license/devrimcavusoglu/pybboxes\" alt=\"python versions\"></a>\n</p>\n\nlight weight toolkit for bounding boxes providing conversion between bounding box types and simple computations. supported bounding box types (<ins>italicized text indicates normalized values</ins>):\n\n- **albumentations** : [albumentations format](https://albumentations.ai/docs/getting_started/bounding_boxes_augmentation/#albumentations)\n  - **_[x-tl, y-tl, x-br, y-br]_** (normalized voc format) top-left coordinates & bottom-right coordinates\n- **coco** : [coco (common objects in context)](http://cocodataset.org/)\n  - **[x-tl, y-tl, w, h]** top-left corner & width & height\n- **fiftyone** : [fiftyone](https://github.com/voxel51/fiftyone)\n  - **_[x-tl, y-tl, w, h]_** (normalized coco format) top-left coordinates & width & height\n- **voc** : [pascal voc](http://host.robots.ox.ac.uk/pascal/voc/)\n  - **[x-tl, y-tl, x-br, y-br]** top-left coordinates & bottom-right coordinates\n- **yolo** : [yolo](https://github.com/ultralytics/yolov5)\n  - **_[x-c, y-c, w, h]_** center coordinates & width & height\n\n**glossary**\n\n- **tl:** top-left\n- **br:** bottom-right\n- **h:** height\n- **w:** width\n- **c:** center\n\n### important notice\nsupport for python<3.8 will be dropped starting version `0.2` though the development for python3.6 and python3.7 may \ncontinue where it will be developed under version `0.1.x` for future versions. this may introduce; however, certain \ndiscrepancies and/or unsupported operations in the `0.1.x` versions. to fully utilize and benefit from the entire \npackage, we recommend using python3.8 at minimum (`python>=3.8`).\n\n## installation\n\nthrough pip (recommended),\n\n    pip install pybboxes\n\nor build from source,\n\n    git clone https://github.com/devrimcavusoglu/pybboxes.git\n    cd pybboxes\n    python setup.py install\n\n## bounding boxes\n\nyou can easily create bounding box as easy as\n\n```python\nfrom pybboxes import boundingbox\n\nmy_coco_box = [98, 345, 322, 117]\ncoco_bbox = boundingbox.from_coco(*my_coco_box)  # <[98 345 322 117] (322x117) | image: (?x?)>\n# or alternatively\n# coco_bbox = boundingbox.from_array(my_coco_box)\n```\n\n### out of bounds boxes\npybboxes supports oob boxes, there exists a keyword `strict` in both box classes (construction) and in functional \nmodules. when `strict=true`, it does not allow out-of-bounds boxes to be constructed and raises an exception, while \nit does allow out-of-bounds boxes to be constructed and used when `strict=false`. also, there is a property `is_oob` \nthat indicates whether a particular bouding box is oob or not. \n\n**important** note that, if the return value for `is_oob` is `none`, then it indicates that oob status is unknown \n(e.g. image size required to determine, but not given). thus, values `none` and `false` indicates different information.\n\n```python\nfrom pybboxes import boundingbox\n\nimage_size = (640, 480)\nmy_coco_box = [98, 345, 580, 245]  # oob box for 640x480\ncoco_bbox = boundingbox.from_coco(*my_coco_box, image_size=image_size)  # exception\n# valueerror: given bounding box values is out of bounds. to silently skip out of bounds cases pass 'strict=false'.\n\ncoco_bbox = boundingbox.from_coco(*my_coco_box, image_size=image_size, strict=false)  # no exception\ncoco_bbox.is_oob  # true\n```\n\nif you want to allow oob, but still check oob status, you should use `strict=false` and `is_oob` where needed.\n\n### conversion\n\nwith the `boundingbox` class the conversion is as easy as one method call.\n\n```python\nfrom pybboxes import boundingbox\n\nmy_coco_box = [98, 345, 322, 117]\ncoco_bbox = boundingbox.from_coco(*my_coco_box)  # <[98 345 322 117] (322x117) | image: (?x?)>\nvoc_bbox = coco_bbox.to_voc()  # <[98 345 420 462] (322x117) | image: (?x?)>\nvoc_bbox_values = coco_bbox.to_voc(return_values=true)  # (98, 345, 420, 462)\n```\n\nhowever, if you try to make conversion between two bounding boxes that require scaling/normalization it'll give an error\n\n```python\nfrom pybboxes import boundingbox\n\nmy_coco_box = [98, 345, 322, 117]\ncoco_bbox = boundingbox.from_coco(*my_coco_box)  # <[98 345 322 117] (322x117) | image: (?x?)>\n# yolo_bbox = coco_bbox.to_yolo()  # this will raise an exception\n\n# you need to set image_size for coco_bbox and then you're good to go\ncoco_bbox.image_size = (640, 480)\nyolo_bbox = coco_bbox.to_yolo()  # <[0.4047 0.8406 0.5031 0.2437] (322x117) | image: (640x480)>\n```\n\nimage size associated with the bounding box can be given at the instantiation or while using classmethods e.g \n`from_coco()`.\n\n```python\nfrom pybboxes import boundingbox\n\nmy_coco_box = [98, 345, 322, 117]\ncoco_bbox = boundingbox.from_coco(*my_coco_box, image_size=(640, 480))  # <[98 345 322 117] (322x117) | image: (640x480)>\n# no longer raises exception\nyolo_bbox = coco_bbox.to_yolo()  # <[0.4047 0.8406 0.5031 0.2437] (322x117) | image: (640x480)> \n```\n\n### box operations\n\nbox operations now available as of `v0.1.0`.\n\n```python\nfrom pybboxes import boundingbox\n\nmy_coco_box = [98, 345, 322, 117]\nmy_coco_box2 = [90, 350, 310, 122]\ncoco_bbox = boundingbox.from_coco(*my_coco_box, image_size=(640, 480))\ncoco_bbox2 = boundingbox.from_coco(*my_coco_box2, image_size=(640, 480))\n\niou = coco_bbox.iou(coco_bbox2)  # 0.8117110631149508\narea_union = coco_bbox + coco_bbox2  # 41670 | alternative way: coco_bbox.union(coco_bbox2)\ntotal_area = coco_bbox.area + coco_bbox2.area  # 75494  (not union)\nintersection_area = coco_bbox * coco_bbox2  # 33824 | alternative way: coco_bbox.intersection(coco_bbox2)\nfirst_bbox_diff = coco_bbox - coco_bbox2  # 3850\nsecond_bbox_diff = coco_bbox2 - coco_bbox  # 3996\nbbox_ratio = coco_bbox / coco_bbox2 # 0.9961396086726599 (not iou)\n```\n\n## functional\n\n**note**: functional computations are moved under `pybboxes.functional` starting with the version `0.1.0`. the only \nexception is that  `convert_bbox()` which still can be used by importing `pybboxes` only (for backward compatibility).\n\n### conversion\nyou are able to convert from any bounding box type to another.\n\n```python\nimport pybboxes as pbx\n\ncoco_bbox = (1,2,3,4)  # coco format bbox as (x-tl,y-tl,w,h)\nvoc_bbox = (1,2,3,4)  # pascal voc format bbox as (x-tl,y-tl,x-br,y-br)\npbx.convert_bbox(coco_bbox, from_type=\"coco\", to_type=\"voc\")  # (1, 2, 4, 6)\npbx.convert_bbox(voc_bbox, from_type=\"voc\", to_type=\"coco\")  # (1, 2, 2, 2)\n```\n\nsome formats require image width and height information for scaling, e.g. yolo bbox (resulting coordinates \nare rounded to 2 decimals to ease reading).\n\n```python\nimport pybboxes as pbx\n\nvoc_bbox = (1,2,3,4)  # pascal voc format bbox as (x-tl,y-tl,x-br,y-br)\npbx.convert_bbox(voc_bbox, from_type=\"voc\", to_type=\"yolo\", image_size=(28, 28))  # (0.07, 0.11, 0.07, 0.07)\n```\n\n### computation\nyou can also make computations on supported bounding box formats.\n\n```python\nimport pybboxes.functional as pbf\n\ncoco_bbox = (1,2,3,4)  # coco format bbox as (x-tl,y-tl,w,h)\nvoc_bbox = (1,2,3,4)  # pascal voc format bbox as (x-tl,y-tl,x-br,y-br)\npbf.compute_area(coco_bbox, bbox_type=\"coco\")  # 12\npbf.compute_area(voc_bbox, bbox_type=\"voc\")  # 4\n```\n\n## contributing\n\n### installation\n\ninstall the package as follows, which will set you ready for the development mode.\n\n```shell\npip install -e .[dev]\n```\n\n### tests\n\nto tests simply run.\n\n    python tests/run_tests.py\n\n### code style\n\nto check code style,\n\n    python tests/run_code_style.py check\n\nto format codebase,\n\n    python tests/run_code_style.py format\n\n## license\n\nlicensed under the [mit](license) license.\n",
+  "docs_url": null,
+  "keywords": "machine-learning,deep-learning,image-processing,pytorch,tensorflow,numpy,bounding-box,iou,computer-vision,cv",
+  "license": "mit",
+  "name": "pybboxes",
+  "package_url": "https://pypi.org/project/pybboxes/",
+  "project_url": "https://pypi.org/project/pybboxes/",
+  "project_urls": {
+    "Homepage": "https://github.com/devrimcavusoglu/pybboxes"
+  },
+  "release_url": "https://pypi.org/project/pybboxes/0.1.6/",
+  "requires_dist": [
+    "numpy",
+    "black (==22.3.0) ; extra == 'dev'",
+    "click (==8.0.4) ; extra == 'dev'",
+    "deepdiff (==5.5.0) ; extra == 'dev'",
+    "flake8 (==3.9.2) ; extra == 'dev'",
+    "isort (==5.9.2) ; extra == 'dev'",
+    "pytest (>=7.0.1) ; extra == 'dev'",
+    "pytest-cov (>=3.0.0) ; extra == 'dev'",
+    "pytest-timeout (>=2.1.0) ; extra == 'dev'",
+    "importlib-metadata (<4.3,>=1.1.0) ; (python_version < \"3.8\") and extra == 'dev'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "light weight toolkit for bounding boxes",
+  "version": "0.1.6",
+  "releases": [],
+  "developers": [
+    "devrim_cavusoglu"
+  ],
+  "kwds": "pybboxes pytorch py tensorflow python3",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pybboxes",
+  "homepage": "https://github.com/devrimcavusoglu/pybboxes",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_click",
+    "pypi_deepdiff",
+    "pypi_flake8",
+    "pypi_importlib_metadata",
+    "pypi_isort",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_timeout"
+  ]
+}

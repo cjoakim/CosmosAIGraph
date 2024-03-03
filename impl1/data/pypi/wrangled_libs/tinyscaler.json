@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: artificial intelligence"
+  ],
+  "description": "<p align=\"center\">\n    <img src=\"https://raw.githubusercontent.com/farama-foundation/tinyscaler/main/tinyscaler-text.png\" width=\"500px\"/>\n</p>\n\na small cpu image scaling library with simd support on x86_64 and arm (neon). this project is aimed to replace opencv for image resizing, resolving installation inconveniences and compatibility issues. we developed this for future use in gymnasium and pettingzoo wrappers.\n\n## installation\nyou can install from pypi using `pip install tinyscaler`. linux and macos with python 3.7, 3.8, 3.9, 3.10 and 3.11 are supported.\n\n## usage\ntinyscaler contains a single external function, `scale` that using a numpy array input for the image and the new resized shape, returns the resized image. \n\n```python\nimport numpy as np\nimport tinyscaler\n\nimg = np.random.rand(64, 64, 4).astype(np.float32)\n\nresize_img = tinyscaler.scale(img, (32, 32))\nprint(resize_img.shape, resize_img.dtype)  # (32, 32) np.float32\n```\n\ntinyscaler supports mode='area', mode='bilinear', and mode='nearest' filtering. it also allows one to pass a destination buffer in order to avoid duplicate memory allocations.\n\narea filtering is only really useful for downscaling, bilinear will be used even when area filtering is set if upscaling. area filtering is also likely not worth it when downscaling less than or equal to 2x.\n\ntinyscaler is used through a single function. the full signature is:\n\n```python\nscale(src : np.ndarray, size : tuple, mode='area', dst : np.ndarray = none)\n```\n\nnote that the `size` tuple parameter is (width, height). however, the numpy arrays have dimensions ordered as (height, width, channels). this is similar to opencv.\n\ntinyscaler expects a contiguous numpy array. if it is not contiguous, it will throw an error. you can make a non-contiguous numpy array contiguous by calling `np.ascontiguousarray`. usually a numpy array will already be contiguous.\n\nif the final array dimension is not 4 (rgba), it will automatically convert to it. further, if the array is uint8, it will be converted to float32. so the prefered array has a shape `(height, width, 4)` and `dtype=np.float32`.\n\nfinally, downscaling is the focus of tinyscaler. it can also upscale, but it will not be as fast as a more complex separable algorithm in that case.\n\n## performance\nin a [simple benchmark](./examples/benchmark.py), we resized the same image (4928x3279) down to (852x567) 100 times using bilinear filtering with several libraries. here are the times (in seconds) spent (measured with python's perf_counter) on a amd 1950x:\n\n```\ntime elapsed for tinyscaler: 0.7968465110002398\ntime elapsed for opencv: 0.48667862100001\ntime elapsed for pillow: 12.672875003999707\ntime elapsed for skimage: 164.45401711399973\n```\n\nand with area filtering (just tinyscaler and opencv):\n\n```\ntime elapsed for tinyscaler: 4.34793155800071\ntime elapsed for opencv: 8.118138265999733\n```\n\nall methods were forced to use a single thread. opencv is slightly faster than tinyscaler for bilinear filtering, but tinyscaler remains very fast regardless.\n\ninterestingly, for area filtering, tinyscaler is faster (almost 2x).\n\n",
+  "docs_url": null,
+  "keywords": "reinforcement learning,gymnasium,pettingzoo",
+  "license": "mit license",
+  "name": "tinyscaler",
+  "package_url": "https://pypi.org/project/tinyscaler/",
+  "project_url": "https://pypi.org/project/tinyscaler/",
+  "project_urls": {
+    "Bug Report": "https://github.com/Farama-Foundation/TinyScaler/issues",
+    "Documentation": "https://github.com/Farama-Foundation/TinyScaler",
+    "Homepage": "https://farama.org",
+    "Repository": "https://github.com/Farama-Foundation/TinyScaler"
+  },
+  "release_url": "https://pypi.org/project/tinyscaler/1.2.7/",
+  "requires_dist": [
+    "numpy >=1.21.0"
+  ],
+  "requires_python": "<3.12,>=3.7",
+  "summary": "a tiny, simple image scaler.",
+  "version": "1.2.7",
+  "releases": [],
+  "developers": [
+    "contact@farama.org"
+  ],
+  "kwds": "tinyscaler scaler resize_img scaling pettingzoo",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_tinyscaler",
+  "homepage": "",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_numpy"
+  ]
+}

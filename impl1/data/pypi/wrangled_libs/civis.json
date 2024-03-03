@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "civis platform api python client\n================================\n\n|circleci| |pypi| |pyversions|\n\n.. |circleci| image:: https://circleci.com/gh/civisanalytics/civis-python.svg?style=shield\n   :target: https://circleci.com/gh/civisanalytics/civis-python\n   :alt: circleci build status\n\n.. |pypi| image:: https://img.shields.io/pypi/v/civis.svg\n   :target: https://pypi.org/project/civis/\n   :alt: latest version on pypi\n\n.. |pyversions| image:: https://img.shields.io/pypi/pyversions/civis.svg\n   :target: https://pypi.org/project/civis/\n   :alt: supported python versions for civis-python\n\nintroduction\n------------\n\n.. start-include-marker-introductory-paragraph\n\nthe civis platform api python client is a python package that helps analysts\nand developers interact with the civis platform. the package includes a set of\ntools around common workflows as well as a convenient interface to make\nrequests directly to the civis api.\n\n.. end-include-marker-introductory-paragraph\n\nplease see the\n`full documentation <https://civis-python.readthedocs.io>`_ for more details.\n\n.. start-include-marker-api-keys-section\n\napi keys\n--------\n\nin order to make requests to the civis api,\nyou will need a civis platform api key that is unique to you.\ninstructions for creating a new key are found\n`here <https://civis.zendesk.com/hc/en-us/articles/216341583-generating-an-api-key>`_.\napi keys have a set expiration date and new keys will need to be created at\nleast every 30 days. the api client will look for a ``civis_api_key``\nenvironmental variable to access your api key, so after creating a new api key,\nfollow the steps below for your operating system to set up your environment.\n\nlinux / macos\n~~~~~~~~~~~~~\n\n1. add the following to your shell configuration file (``~/.zshrc`` for macos or ``~/.bashrc`` for linux, by default)::\n\n    export civis_api_key=\"alphanumericapik3y\"\n\n2. source your shell configuration file (or restart your terminal).\n\nwindows 10\n~~~~~~~~~~\n\n1. navigate to \"settings\" -> type \"environment\" in search bar ->\n   \"edit environment variables for your account\". this can also be found\n   in \"system properties\" -> \"advanced\" -> \"environment variables...\".\n2. in the user variables section, if ``civis_api_key`` already exists in\n   the list of environment variables, click on it and press \"edit...\".\n   otherwise, click \"new..\".\n3. enter civis_api_key as the \"variable name\".\n4. enter your api key as the \"variable value\".  your api key should look\n   like a long string of letters and numbers.\n\n.. end-include-marker-api-keys-section\n\n.. start-include-marker-installation-section\n\ninstallation\n------------\n\nafter creating an api key and setting the ``civis_api_key`` environmental\nvariable, install the python package ``civis`` with the recommended method via ``pip``::\n\n    pip install civis\n\nalternatively, if you are interested in the latest functionality not yet released through ``pip``,\nyou may clone the code from github and build from source:\n\n.. code-block:: bash\n\n   git clone https://github.com/civisanalytics/civis-python.git\n   cd civis-python\n   python setup.py install\n\nyou can test your installation by running\n\n.. code-block:: python\n\n    import civis\n    client = civis.apiclient()\n    print(client.users.list_me()['username'])\n\nif ``civis`` was installed correctly, this will print your civis\nplatform username.\n\nthe client has a soft dependency on ``pandas`` to support features such as\ndata type parsing.  if you are using the ``io`` namespace to read or write\ndata from civis, it is highly recommended that you install ``pandas`` and\nset ``use_pandas=true`` in functions that accept that parameter.  to install\n``pandas``:\n\n.. code-block:: bash\n\n   pip install pandas\n\nmachine learning features in the ``ml`` namespace have a soft dependency on\n``scikit-learn`` and ``pandas``. install ``scikit-learn`` to\nexport your trained models from the civis platform or to\nprovide your own custom models. use ``pandas`` to download model predictions\nfrom the civis platform. the ``civis.ml`` code\noptionally uses the `feather <https://github.com/wesm/feather>`_\nformat to transfer data from your local computer to civis\nplatform. install these dependencies with\n\n.. code-block:: bash\n\n   pip install scikit-learn\n   pip install pandas\n   pip install feather-format\n\n\nsome civisml models have open-source dependencies in\naddition to ``scikit-learn``, which you may need if you want to\ndownload the model object. these dependencies are\n``civisml-extensions``, ``glmnet``, and ``muffnn``. install these\ndependencies with\n\n.. code-block:: bash\n\n   pip install civisml-extensions\n   pip install glmnet\n   pip install muffnn\n\n.. end-include-marker-installation-section\n\nusage\n-----\n\n``civis`` includes a number of wrappers around the civis api for\ncommon workflows.\n\n.. code-block:: python\n\n    import civis\n    df = civis.io.read_civis(table=\"my_schema.my_table\",\n                             database=\"database\",\n                             use_pandas=true)\n\nthe civis api may also be directly accessed via the ``apiclient`` class.\n\n.. code-block:: python\n\n    import civis\n    client = civis.apiclient()\n    database = client.databases.list()\n\nsee the `documentation <https://civis-python.readthedocs.io>`_ for a more\ncomplete user guide.\n\n\n.. start-include-marker-retries-section\n\nretries\n-------\n\nthe api client will automatically retry for certain api error responses.\n\nif the error is one of [413, 429, 503] and the api client is told how long it needs\nto wait before it's safe to retry (this is always the case with 429s, which are\nrate limit errors), then the client will wait the specified amount of time\nbefore retrying the request.\n\nif the error is one of [429, 502, 503, 504] and the request is not a ``patch*`` or ``post*``\nmethod, then the api client will retry the request several times, with an exponential delay,\nto see if it will succeed. if the request is of type ``post*`` it will retry with the same parameters\nfor error codes [429, 503].\n\n.. end-include-marker-retires-section\n\n\nbuild documentation locally\n---------------------------\n\nto install dependencies for building the documentation::\n\n    pip install sphinx\n    pip install sphinx_rtd_theme\n    pip install numpydoc\n\nto build the api documentation locally::\n\n    cd docs\n    make html\n\nthen open ``docs/build/html/index.html``.\n\nnote that this will use your api key in the ``civis_api_key`` environment\nvariable so it will generate documentation for all the endpoints that you have access to.\n\ncommand-line interface (cli)\n----------------------------\n\nafter installing the python package, you'll also have a ``civis`` command accessible from your shell. it surfaces a commandline interface to all of the regular civis api endpoints, plus a few helpers. to get started, run ``civis --help``.\nplease see the `cli documentation <https://civis-python.readthedocs.io/en/stable/cli.html>`_ for more details.\n\n\ncontributing\n------------\n\nsee `contributing.md <contributing.md>`_ for information about contributing to this project.\n\n\nlicense\n-------\n\nbsd-3\n\nsee `license.md <license.md>`_ for details.\n\n\nfor maintainers\n---------------\n\nthe `tools <tools/>`_ directory contains scripts that civis-python maintainers can\nuse (and maintain...). please see their docstrings for usage.\nnon-public information can be found by searching the internal documentation system\nor consulting the current maintainers.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "civis",
+  "package_url": "https://pypi.org/project/civis/",
+  "project_url": "https://pypi.org/project/civis/",
+  "project_urls": {
+    "Homepage": "https://www.civisanalytics.com"
+  },
+  "release_url": "https://pypi.org/project/civis/1.16.1/",
+  "requires_dist": [
+    "pyyaml (<7,>=3.0)",
+    "click (<9,>=6.0)",
+    "jsonref (<=0.2.99,>=0.1)",
+    "requests (<3,>=2.12.0)",
+    "jsonschema (<5,>=2.5.1)",
+    "joblib (<1.3,>=0.11)",
+    "cloudpickle (<3,>=0.2)",
+    "tenacity (<9,>=6.2)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "access the civis platform api",
+  "version": "1.16.1",
+  "releases": [],
+  "developers": [
+    "civis_analytics_inc",
+    "opensource@civisanalytics.com"
+  ],
+  "kwds": "civis read_civis civis_api_key civisml pyversions",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_civis",
+  "homepage": "https://www.civisanalytics.com",
+  "release_count": 33,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_cloudpickle",
+    "pypi_joblib",
+    "pypi_jsonref",
+    "pypi_jsonschema",
+    "pypi_pyyaml",
+    "pypi_requests",
+    "pypi_tenacity"
+  ]
+}

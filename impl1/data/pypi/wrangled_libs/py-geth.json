@@ -1,0 +1,72 @@
+{
+  "classifiers": [
+    "development status :: 2 - pre-alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# py-geth\n\n[![join the conversation on discord](https://img.shields.io/discord/809793915578089484?color=blue&label=chat&logo=discord&logocolor=white)](https://discord.gg/ghryrvpb84)\n[![build status](https://circleci.com/gh/ethereum/py-geth.svg?style=shield)](https://circleci.com/gh/ethereum/py-geth)\n[![pypi version](https://badge.fury.io/py/py-geth.svg)](https://badge.fury.io/py/py-geth)\n[![python versions](https://img.shields.io/pypi/pyversions/py-geth.svg)](https://pypi.python.org/pypi/py-geth)\n\npython wrapper around running `geth` as a subprocess\n\n## system dependency\n\nthis library requires the `geth` executable to be present.\n\n> if managing your own bundled version of geth, set the path to the binary using the `geth_binary` environment variable.\n\n## installation\n\ninstallation\n\n```bash\npython -m pip install py-geth\n```\n\n## quickstart\n\nto run geth connected to the mainnet\n\n```python\n>>> from geth import livegethprocess\n>>> geth = livegethprocess()\n>>> geth.start()\n```\n\nor a private local chain for testing.  these require you to give them a name.\n\n```python\n>>> from geth import devgethprocess\n>>> geth = devgethprocess('testing')\n>>> geth.start()\n```\n\nby default the `devgethprocess` sets up test chains in the default `datadir`\nused by `geth`.  if you would like to change the location for these test\nchains, you can specify an alternative `base_dir`.\n\n```python\n>>> geth = devgethprocess('testing', '/tmp/some-other-base-dir/')\n>>> geth.start()\n```\n\neach instance has a few convenient properties.\n\n```python\n>>> geth.data_dir\n\"~/.ethereum\"\n>>> geth.rpc_port\n8545\n>>> geth.ipc_path\n\"~/.ethereum/geth.ipc\"\n>>> geth.accounts\n['0xd3cda913deb6f67967b99d67acdfa1712c293601']\n>>> geth.is_alive\nfalse\n>>> geth.is_running\nfalse\n>>> geth.is_stopped\nfalse\n>>> geth.start()\n>>> geth.is_alive\ntrue  # indicates that the subprocess hasn't exited\n>>> geth.is_running\ntrue  # indicates that `start()` has been called (but `stop()` hasn't)\n>>> geth.is_stopped\nfalse\n>>> geth.stop()\n>>> geth.is_alive\nfalse\n>>> geth.is_running\nfalse\n>>> geth.is_stopped\ntrue\n```\n\nwhen testing it can be nice to see the logging output produced by the `geth`\nprocess.  `py-geth` provides a mixin class that can be used to log the stdout\nand stderr output to a logfile.\n\n```python\n>>> from geth import loggingmixin, devgethprocess\n>>> class mygeth(loggingmixin, devgethprocess):\n...     pass\n>>> geth = mygeth()\n>>> geth.start()\n```\n\nall logs will be written to logfiles in `./logs/` in the current directory.\n\nthe underlying `geth` process can take additional time to open the rpc or ipc\nconnections, as well as to start mining if it needs to generate the dag.  you\ncan use the following interfaces to query whether these are ready.\n\n```python\n>>> geth.is_rpc_ready\ntrue\n>>> geth.wait_for_rpc(timeout=30)  # wait up to 30 seconds for the rpc connection to open\n>>> geth.is_ipc_ready\ntrue\n>>> geth.wait_for_ipc(timeout=30)  # wait up to 30 seconds for the ipc socket to open\n>>> geth.is_dag_generated\ntrue\n>>> geth.is_mining\ntrue\n>>> geth.wait_for_dag(timeout=600)  # wait up to 10 minutes for the dag to generate.\n```\n\n> the dag functionality currently only applies to the dag for epoch 0.\n\n## installing specific versions of `geth`\n\n> this feature is experimental and subject to breaking changes.\n\nversions of `geth` dating back to v1.11.0 can be installed using `py-geth`.\nsee [install.py](https://github.com/ethereum/py-geth/blob/master/geth/install.py) for\nthe current list of supported versions.\n\ninstallation can be done via the command line:\n\n```bash\n$ python -m geth.install v1.13.4\n```\n\nor from python using the `install_geth` function.\n\n```python\n>>> from geth import install_geth\n>>> install_geth('v1.13.4')\n```\n\nthe installed binary can be found in the `$home/.py-geth` directory, under your\nhome directory.  the `v1.13.4` binary would be located at\n`$home/.py-geth/geth-v1.13.4/bin/geth`.\n\n## about `devgethprocess`\n\nthe `devgethprocess` is designed to facilitate testing.  in that regard, it is\npreconfigured as follows.\n\n- a single account is created and allocated 1 billion ether.\n- all apis are enabled on both `rpc` and `ipc` interfaces.\n- account 0 is unlocked\n- networking is configured to not look for or connect to any peers.\n- the `networkid` of `1234` is used.\n- verbosity is set to `5` (debug)\n- mining is enabled with a single thread.\n- the rpc interface *tries* to bind to 8545 but will find an open port if this\n  port is not available.\n- the devp2p interface *tries* to bind to 30303 but will find an open port if this\n  port is not available.\n\n## gotchas\n\nif you are running with `mining` enabled, which is default for `devgethprocess`,\nthen you will likely need to generate the `dag` manually.  if you do not, then\nit will auto-generate the first time you run the process and this takes a\nwhile.\n\nto generate it manually:\n\n```sh\n$ geth makedag 0 ~/.ethash\n```\n\nthis is especially important in ci environments like travis-ci where your\nprocess will likely timeout during generation.\n\n## development\n\nclone the repository:\n\n```shell\n$ git clone git@github.com:ethereum/py-geth.git\n```\n\nnext, run the following from the newly-created `py-geth` directory:\n\n```sh\n$ python -m pip install -e \".[dev]\"\n```\n\n### running the tests\n\nyou can run the tests with:\n\n```sh\npytest tests\n```\n\n## developer setup\n\nif you would like to hack on py-geth, please check out the [snake charmers\ntactical manual](https://github.com/ethereum/snake-charmers-tactical-manual)\nfor information on how we do:\n\n- testing\n- pull requests\n- documentation\n\nwe use [pre-commit](https://pre-commit.com/) to maintain consistent code style. once\ninstalled, it will run automatically with every commit. you can also run it manually\nwith `make lint`. if you need to make a commit that skips the `pre-commit` checks, you\ncan do so with `git commit --no-verify`.\n\n### development environment setup\n\nyou can set up your dev environment with:\n\n```sh\ngit clone git@github.com:ethereum/py-geth.git\ncd py-geth\nvirtualenv -p python3 venv\n. venv/bin/activate\npython -m pip install -e \".[dev]\"\npre-commit install\n```\n\n### release setup\n\nto release a new version:\n\n```sh\nmake release bump=$$version_part_to_bump$$\n```\n\n#### how to bumpversion\n\nthe version format for this repo is `{major}.{minor}.{patch}` for stable, and\n`{major}.{minor}.{patch}-{stage}.{devnum}` for unstable (`stage` can be alpha or beta).\n\nto issue the next version in line, specify which part to bump,\nlike `make release bump=minor` or `make release bump=devnum`. this is typically done from the\nmaster branch, except when releasing a beta (in which case the beta is released from master,\nand the previous stable branch is released from said branch).\n\nif you are in a beta version, `make release bump=stage` will switch to a stable.\n\nto issue an unstable version when the current version is stable, specify the\nnew version explicitly, like `make release bump=\"--new-version 4.0.0-alpha.1 devnum\"`\n\n## adding support for new geth versions\n\nthere is an automation script to facilitate adding support for new geth versions: `update_geth.py`\n\nto add support for a geth version, run the following line from the py-geth directory, substituting\nthe version for the one you wish to add support for. note that the `v` in the versioning is\noptional.\n\n```shell\n$ python update_geth.py v1_10_9\n```\n\nto introduce support for more than one version, pass in the versions in increasing order,\nending with the latest version.\n\n```shell\n$ python update_geth.py v1_10_7 v1_10_8 v1_10_9\n```\n\nalways review your changes before committing as something may cause this existing pattern to change at some point.\nit is best to compare the git difference with a previous commit that introduced support for a new geth version to make\nsure everything looks good.\n",
+  "docs_url": null,
+  "keywords": "ethereum go-ethereum geth",
+  "license": "mit",
+  "name": "py-geth",
+  "package_url": "https://pypi.org/project/py-geth/",
+  "project_url": "https://pypi.org/project/py-geth/",
+  "project_urls": {
+    "Homepage": "https://github.com/ethereum/py-geth"
+  },
+  "release_url": "https://pypi.org/project/py-geth/4.0.0/",
+  "requires_dist": [
+    "semantic-version >=2.6.0",
+    "build >=0.9.0 ; extra == 'dev'",
+    "bumpversion >=0.5.3 ; extra == 'dev'",
+    "ipython ; extra == 'dev'",
+    "pre-commit >=3.4.0 ; extra == 'dev'",
+    "requests >=2.20 ; extra == 'dev'",
+    "tox >=4.0.0 ; extra == 'dev'",
+    "twine ; extra == 'dev'",
+    "wheel ; extra == 'dev'",
+    "towncrier <22,>=21 ; extra == 'dev'",
+    "flaky >=3.2.0 ; extra == 'dev'",
+    "pytest >=7.0.0 ; extra == 'dev'",
+    "pytest-xdist >=2.4.0 ; extra == 'dev'",
+    "towncrier <22,>=21 ; extra == 'docs'",
+    "flaky >=3.2.0 ; extra == 'test'",
+    "pytest >=7.0.0 ; extra == 'test'",
+    "pytest-xdist >=2.4.0 ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8, <4",
+  "summary": "py-geth: run go-ethereum as a subprocess",
+  "version": "4.0.0",
+  "releases": [],
+  "developers": [
+    "snakecharmers@ethereum.org",
+    "the_ethereum_foundation"
+  ],
+  "kwds": "pyversions py python3 pytest install_geth",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_py_geth",
+  "homepage": "https://github.com/ethereum/py-geth",
+  "release_count": 47,
+  "dependency_ids": [
+    "pypi_build",
+    "pypi_bumpversion",
+    "pypi_flaky",
+    "pypi_ipython",
+    "pypi_pre_commit",
+    "pypi_pytest",
+    "pypi_pytest_xdist",
+    "pypi_requests",
+    "pypi_semantic_version",
+    "pypi_towncrier",
+    "pypi_tox",
+    "pypi_twine",
+    "pypi_wheel"
+  ]
+}

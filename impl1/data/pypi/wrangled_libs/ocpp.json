@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": ".. image:: https://github.com/mobilityhouse/ocpp/actions/workflows/pull-request.yml/badge.svg?style=svg\n   :target: https://github.com/mobilityhouse/ocpp/actions/workflows/pull-request.yml\n\n.. image:: https://img.shields.io/pypi/pyversions/ocpp.svg\n   :target: https://pypi.org/project/ocpp/\n\n.. image:: https://img.shields.io/readthedocs/ocpp.svg\n   :target: https://ocpp.readthedocs.io/en/latest/\n\nocpp\n----\n\npython package implementing the json version of the open charge point protocol\n(ocpp). currently ocpp 1.6 (errata v4), ocpp 2.0 and ocpp 2.0.1 (final version)\nare supported.\n\nyou can find the documentation on `rtd`_.\n\ninstallation\n------------\n\nyou can either the project install from pypi:\n\n.. code-block:: bash\n\n   $ pip install ocpp\n\nor clone the project and install it manually using:\n\n.. code-block:: bash\n\n   $ pip install .\n\nquick start\n-----------\n\nbelow you can find examples on how to create a simple ocpp 2.0 central system as\nwell as an ocpp 2.0 charge point.\n\n.. note::\n\n   to run these examples the dependency websockets_ is required! install it by running:\n\n   .. code-block:: bash\n\n      $ pip install websockets\n\ncentral system\n~~~~~~~~~~~~~~\n\nthe code snippet below creates a simple ocpp 2.0 central system which is able\nto handle bootnotification calls. you can find a detailed explanation of the\ncode in the `central system documentation`_.\n\n\n.. code-block:: python\n\n    import asyncio\n    import logging\n    import websockets\n    from datetime import datetime\n\n    from ocpp.routing import on\n    from ocpp.v201 import chargepoint as cp\n    from ocpp.v201 import call_result\n    from ocpp.v201.enums import registrationstatustype\n\n    logging.basicconfig(level=logging.info)\n\n\n    class chargepoint(cp):\n        @on('bootnotification')\n        async def on_boot_notification(self, charging_station, reason, **kwargs):\n            return call_result.bootnotificationpayload(\n                current_time=datetime.utcnow().isoformat(),\n                interval=10,\n                status=registrationstatustype.accepted\n            )\n\n\n    async def on_connect(websocket, path):\n        \"\"\" for every new charge point that connects, create a chargepoint\n        instance and start listening for messages.\n        \"\"\"\n        try:\n            requested_protocols = websocket.request_headers[\n                'sec-websocket-protocol']\n        except keyerror:\n            logging.info(\"client hasn't requested any subprotocol. \"\n                     \"closing connection\")\n            return await websocket.close()\n\n        if websocket.subprotocol:\n            logging.info(\"protocols matched: %s\", websocket.subprotocol)\n        else:\n            # in the websockets lib if no subprotocols are supported by the\n            # client and the server, it proceeds without a subprotocol,\n            # so we have to manually close the connection.\n            logging.warning('protocols mismatched | expected subprotocols: %s,'\n                            ' but client supports  %s | closing connection',\n                            websocket.available_subprotocols,\n                            requested_protocols)\n            return await websocket.close()\n\n        charge_point_id = path.strip('/')\n        cp = chargepoint(charge_point_id, websocket)\n\n        await cp.start()\n\n\n    async def main():\n        server = await websockets.serve(\n            on_connect,\n            '0.0.0.0',\n            9000,\n            subprotocols=['ocpp2.0.1']\n        )\n        logging.info(\"websocket server started\")\n        await server.wait_closed()\n\n    if __name__ == '__main__':\n        asyncio.run(main())\n\ncharge point\n~~~~~~~~~~~~\n\n.. code-block:: python\n\n    import asyncio\n\n    from ocpp.v201.enums import registrationstatustype\n    import logging\n    import websockets\n\n    from ocpp.v201 import call\n    from ocpp.v201 import chargepoint as cp\n\n    logging.basicconfig(level=logging.info)\n\n\n    class chargepoint(cp):\n\n        async def send_boot_notification(self):\n            request = call.bootnotificationpayload(\n                charging_station={\n                    'model': 'wallbox xyz',\n                    'vendor_name': 'anewone'\n                },\n                reason=\"powerup\"\n            )\n            response = await self.call(request)\n\n            if response.status == registrationstatustype.accepted:\n                print(\"connected to central system.\")\n\n\n    async def main():\n        async with websockets.connect(\n                'ws://localhost:9000/cp_1',\n                subprotocols=['ocpp2.0.1']\n        ) as ws:\n            cp = chargepoint('cp_1', ws)\n\n            await asyncio.gather(cp.start(), cp.send_boot_notification())\n\n\n    if __name__ == '__main__':\n        asyncio.run(main())\n\ndebugging\n---------\n\npython's default log level is `logging.warning`. as result most of the logs\ngenerated by this package are discarded. to see the log output of this package\nlower the log level to `logging.debug`.\n\n.. code-block:: python\n\n  import logging\n  logging.basicconfig(level=logging.debug)\n\nhowever, this approach defines the log level for the complete logging system.\nin other words: the log level of all dependencies is set to `logging.debug`.\n\nto lower the logs for this package only use the following code:\n\n.. code-block:: python\n\n  import logging\n  logging.getlogger('ocpp').setlevel(level=logging.debug)\n  logging.getlogger('ocpp').addhandler(logging.streamhandler())\n\nlicense\n-------\n\nexcept from the documents in `docs/v16` and `docs/v201` everything is licensed under mit_.\n\u00a9 `the mobility house`_\n\nthe documents in `docs/v16` and `docs/v201` are licensed under creative commons\nattribution-noderivatives 4.0 international public license.\n\n.. _central system documentation: https://ocpp.readthedocs.io/en/latest/central_system.html\n.. _mit: https://github.com/mobilityhouse/ocpp/blob/master/license\n.. _rtd: https://ocpp.readthedocs.io/en/latest/index.html\n.. _the mobility house: https://www.mobilityhouse.com/int_en/\n.. _websockets: https://pypi.org/project/websockets/\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "ocpp",
+  "package_url": "https://pypi.org/project/ocpp/",
+  "project_url": "https://pypi.org/project/ocpp/",
+  "project_urls": {
+    "Documentation": "https://ocpp.readthedocs.io/en/latest/",
+    "Homepage": "https://github.com/mobilityhouse/ocpp",
+    "Repository": "https://github.com/mobilityhouse/ocpp"
+  },
+  "release_url": "https://pypi.org/project/ocpp/0.24.0/",
+  "requires_dist": [
+    "jsonschema (>=4.4.0,<5.0.0)"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "python package implementing the json version of the open charge point protocol (ocpp).",
+  "version": "0.24.0",
+  "releases": [],
+  "developers": [
+    "andre15x@gmail.com"
+  ],
+  "kwds": "ocpp ocpp2 requested_protocols pyversions charge_point_id",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_ocpp",
+  "homepage": "https://github.com/mobilityhouse/ocpp",
+  "release_count": 45,
+  "dependency_ids": [
+    "pypi_jsonschema"
+  ]
+}

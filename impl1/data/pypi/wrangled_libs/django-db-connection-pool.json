@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# django-db-connection-pool\r\n\r\n*:star: leave a star if django-db-connection-pool is helpful to you, or you like it, thank you:smile:*\r\n\r\nmysql & oracle & postgresql & jdbc (oracle, oceanbase) connection pool backends of django, \r\nbe based on [sqlalchemy](https://github.com/sqlalchemy/sqlalchemy). \r\nwork fine in multiprocessing and multithreading django project.\r\n\r\n* [\u4e2d\u6587\u7248](readme_cn.md)\r\n\r\n## quickstart\r\n\r\n### installation\r\n\r\ninstall with `pip` with all engines:\r\n```bash\r\n$ pip install django-db-connection-pool[all]\r\n```\r\nor select specific engines:\r\n```bash\r\n$ pip install django-db-connection-pool[mysql,oracle,postgresql,jdbc]\r\n```\r\nor one of mysql,oracle,postgresql,jdbc\r\n```bash\r\n$ pip install django-db-connection-pool[oracle]\r\n```\r\n\r\n### update settings.databases\r\n\r\n#### mysql  \r\nchange `django.db.backends.mysql` to `dj_db_conn_pool.backends.mysql`:\r\n```python\r\ndatabases = {\r\n    'default': {\r\n        'engine': 'dj_db_conn_pool.backends.mysql'\r\n    }\r\n}\r\n```\r\n\r\n#### oracle  \r\nchange `django.db.backends.oracle` to `dj_db_conn_pool.backends.oracle`:\r\n```python\r\ndatabases = {\r\n    'default': {\r\n        'engine': 'dj_db_conn_pool.backends.oracle'\r\n    }\r\n}\r\n```\r\n\r\n#### postgresql  \r\nchange `django.db.backends.postgresql` to `dj_db_conn_pool.backends.postgresql`:\r\n```python\r\ndatabases = {\r\n    'default': {\r\n        'engine': 'dj_db_conn_pool.backends.postgresql'\r\n    }\r\n}\r\n```\r\n\r\n#### pool options(optional)\r\nyou can provide additional options to pass to sqlalchemy's pool creation, key's name is `pool_options`:\r\n\r\n```python\r\ndatabases = {\r\n    'default': {\r\n        'pool_options' : {\r\n            'pool_size': 10,\r\n            'max_overflow': 10,\r\n            'recycle': 24 * 60 * 60\r\n        }\r\n     }\r\n }\r\n```\r\n\r\n`django-db-connection-pool` has more configuration options here: [poolcontainer.pool_default_params](https://github.com/altairbow/django-db-connection-pool/blob/master/dj_db_conn_pool/core/__init__.py#l13-l20)\r\n     \r\nhere's an explanation of these options(from sqlalchemy's doc):\r\n\r\n* **pool_size**: the size of the pool to be maintained,\r\n          defaults to 5. this is the largest number of connections that\r\n          will be kept persistently in the pool. note that the pool\r\n          begins with no connections; once this number of connections\r\n          is requested, that number of connections will remain.\r\n          `pool_size` can be set to 0 to indicate no size limit; to\r\n          disable pooling, use a :class:`~sqlalchemy.pool.nullpool`\r\n          instead.\r\n\r\n* **max_overflow**: the maximum overflow size of the\r\n          pool. when the number of checked-out connections reaches the\r\n          size set in pool_size, additional connections will be\r\n          returned up to this limit. when those additional connections\r\n          are returned to the pool, they are disconnected and\r\n          discarded. it follows then that the total number of\r\n          simultaneous connections the pool will allow is pool_size +\r\n          `max_overflow`, and the total number of \"sleeping\"\r\n          connections the pool will allow is pool_size. `max_overflow`\r\n          can be set to -1 to indicate no overflow limit; no limit\r\n          will be placed on the total number of concurrent\r\n          connections. defaults to 10.\r\n          \r\n* **recycle**: if set to a value other than -1, number of seconds \r\n          between connection recycling, which means upon checkout, \r\n          if this timeout is surpassed the connection will be closed \r\n          and replaced with a newly opened connection. \r\n          defaults to -1.          \r\n\r\nor, you can use dj_db_conn_pool.setup to change default arguments(for each pool's creation), before using database pool:\r\n\r\n```python\r\nimport dj_db_conn_pool\r\ndj_db_conn_pool.setup(pool_size=100, max_overflow=50)\r\n```\r\n\r\n#### multiprocessing environment\r\nin a multiprocessing environment, such as uwsgi, each process will have its own `dj_db_conn_pool.core:pool_container` object,\r\nit means that each process has an independent connection pool, for example: \r\nthe `pool_options` configuration of database `db1` is`{ 'pool_size': 10, 'max_overflow': 20 }`,\r\nif uwsgi starts 8 worker processes, then the total connection pool size of `db1`  is `8 * 10`,\r\nthe maximum number of connections will not exceed `8 * 10 + 8 * 20`\r\n\r\n\r\n## jdbc (experimental, not production ready)\r\nthanks to [jpype](https://github.com/jpype-project/jpype),\r\ndjango-db-connection-pool can connect to database in jdbc way\r\n\r\n### usage\r\n#### set java runtime environment\r\n```bash\r\nexport java_home=$path_to_jre;\r\nexport classpath=$path_ro_jdbc_driver_jar\r\n```\r\n\r\n#### update settings.databases\r\n##### oracle\r\n\r\nchange `django.db.backends.oracle` to `dj_db_conn_pool.backends.jdbc.oracle`:\r\n```python\r\ndatabases = {\r\n    'default': {\r\n        'engine': 'dj_db_conn_pool.backends.jdbc.oracle'\r\n    }\r\n}\r\n```\r\n\r\n##### oceanbase\r\nuse `dj_db_conn_pool.backends.jdbc.oceanbase`:\r\n```python\r\ndatabases = {\r\n    'default': {\r\n        'engine': 'dj_db_conn_pool.backends.jdbc.oceanbase'\r\n    }\r\n}\r\n```\r\n",
+  "docs_url": null,
+  "keywords": "django,db,database,persistent,connection,pool,pooling",
+  "license": "mit license  copyright (c) 2019 altair bow  permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"software\"), to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, subject to the following conditions:  the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software. ",
+  "name": "django-db-connection-pool",
+  "package_url": "https://pypi.org/project/django-db-connection-pool/",
+  "project_url": "https://pypi.org/project/django-db-connection-pool/",
+  "project_urls": {
+    "homepage": "https://github.com/altairbow/django-db-connection-pool",
+    "repository": "https://github.com/altairbow/django-db-connection-pool"
+  },
+  "release_url": "https://pypi.org/project/django-db-connection-pool/1.2.4/",
+  "requires_dist": [
+    "cx-Oracle (>=6.4.1) ; extra == 'all'",
+    "mysqlclient (>=1.3.0) ; extra == 'all'",
+    "psycopg2 (>=2.8.6) ; extra == 'all'",
+    "pyodbc (>=4.0.34) ; extra == 'all'",
+    "sqlparams (>=3.0.0) ; extra == 'all'",
+    "JPype1 (>=1.3.0) ; extra == 'jdbc'",
+    "mysqlclient (>=1.3.0) ; extra == 'mysql'",
+    "pyodbc (>=4.0.34) ; extra == 'odbc'",
+    "cx-Oracle (>=6.4.1) ; extra == 'oracle'",
+    "psycopg2 (>=2.8.6) ; extra == 'postgresql'",
+    "Django (>=2.0)",
+    "SQLAlchemy (>=1.4.24)",
+    "sqlparams (>=4.0.0)",
+    "Django (>=2.0) ; extra == 'all'",
+    "JPype1 (>=1.3.0) ; extra == 'all'",
+    "SQLAlchemy (>=1.4.24) ; extra == 'all'"
+  ],
+  "requires_python": ">=3.4",
+  "summary": "database connection pool component library for django",
+  "version": "1.2.4",
+  "releases": [],
+  "developers": [
+    "altair.bow@foxmail.com"
+  ],
+  "kwds": "dj_db_conn_pool sqlalchemy pool_options django pool_container",
+  "license_kwds": "copyright license liable liability noninfringement",
+  "libtype": "pypi",
+  "id": "pypi_django_db_connection_pool",
+  "homepage": "",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_cx_oracle",
+    "pypi_django",
+    "pypi_jpype1",
+    "pypi_mysqlclient",
+    "pypi_psycopg2",
+    "pypi_pyodbc",
+    "pypi_sqlalchemy",
+    "pypi_sqlparams"
+  ]
+}

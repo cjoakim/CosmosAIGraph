@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "topic :: software development :: testing :: traffic generation"
+  ],
+  "description": "# snappi extension for ixnetwork\n\n[![license](https://img.shields.io/badge/license-mit-green.svg)](https://en.wikipedia.org/wiki/mit_license)\n[![project status: active \u2013 the project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)\n[![build](https://github.com/open-traffic-generator/snappi-ixnetwork/workflows/build/badge.svg)](https://github.com/open-traffic-generator/snappi-ixnetwork/actions)\n[![pypi](https://img.shields.io/pypi/v/snappi_ixnetwork.svg)](https://pypi.org/project/snappi_ixnetwork)\n[![python](https://img.shields.io/pypi/pyversions/snappi_ixnetwork.svg)](https://pypi.python.org/pypi/snappi_ixnetwork)\n[![total alerts](https://img.shields.io/lgtm/alerts/g/open-traffic-generator/snappi-ixnetwork.svg?logo=lgtm&logowidth=18)](https://lgtm.com/projects/g/open-traffic-generator/snappi-ixnetwork/alerts/)\n[![language grade: python](https://img.shields.io/lgtm/grade/python/g/open-traffic-generator/snappi-ixnetwork.svg?logo=lgtm&logowidth=18)](https://lgtm.com/projects/g/open-traffic-generator/snappi-ixnetwork/context:python)\n[![downloads](https://pepy.tech/badge/snappi-ixnetwork)](https://pepy.tech/project/snappi-ixnetwork)\n\nthis extension allows executing test scripts written using [snappi](https://github.com/open-traffic-generator/snappi) against  \nixnetwork, (one of) keysight's implementation of [open traffic generator](https://github.com/open-traffic-generator/models/releases).\n\n> the repository is under active development.\n\nto start contributing, please see [contributing.md](contributing.md).\n\n## install on a client\n\n```sh\npython -m pip install --upgrade \"snappi[ixnetwork]\"\n```\n\n## start scripting\n\n```python\n\"\"\"\nconfigure a raw tcp flow with,\n- tx port as source to rx port as destination\n- frame count 10000, each of size 128 bytes\n- transmit rate of 1000 packets per second\nvalidate,\n- frames transmitted and received for configured flow is as expected\n\"\"\"\n\nimport snappi\n# host is ixnetwork api server\napi = snappi.api(location='https://localhost:443', ext='ixnetwork')\n# new config\nconfig = api.config()\n# port location is chassis-ip;card-id;port-id\ntx, rx = (\n    config.ports\n    .port(name='tx', location='192.168.0.1;2;1')\n    .port(name='rx', location='192.168.0.1;2;2')\n)\n# configure layer 1 properties\nly, = config.layer1.layer1(name='ly')\nly.port_names = [tx.name, rx.name]\nly.speed = ly.speed_10_gbps\nly.media = ly.fiber\n# configure flow properties\nflw, = config.flows.flow(name='flw')\n# flow endpoints\nflw.tx_rx.port.tx_name = tx.name\nflw.tx_rx.port.rx_name = rx.name\n# enable flow metrics\nflw.metrics.enable = true\n# configure rate, size, frame count\nflw.size.fixed = 128\nflw.rate.pps = 1000\nflw.duration.fixed_packets.packets = 10000\n# configure protocol headers with defaults fields\nflw.packet.ethernet().vlan().ipv4().tcp()\n# push configuration\napi.set_config(config)\n# start transmitting configured flows\nts = api.transmit_state()\nts.state = ts.start\napi.set_transmit_state(ts)\n# create a query for flow metrics\nreq = api.metrics_request()\nreq.flow.flow_names = [flw.name]\n# wait for flow metrics to be as expected\nwhile true:\n    res = api.get_metrics(req)\n    if all([m.frames_tx == 10000 == m.frames_rx for m in res.flow_metrics]):\n        break\n```\n",
+  "docs_url": null,
+  "keywords": "snappi ixnetwork testing open traffic generator automation",
+  "license": "mit",
+  "name": "snappi-ixnetwork",
+  "package_url": "https://pypi.org/project/snappi-ixnetwork/",
+  "project_url": "https://pypi.org/project/snappi-ixnetwork/",
+  "project_urls": {
+    "Homepage": "https://github.com/open-traffic-generator/snappi-ixnetwork"
+  },
+  "release_url": "https://pypi.org/project/snappi-ixnetwork/0.9.1/",
+  "requires_dist": [
+    "ixnetwork-restpy (>=1.0.52)",
+    "snappi (==0.9.1) ; extra == 'testing'",
+    "snappi-convergence (==0.4.1) ; extra == 'testing'",
+    "pytest ; extra == 'testing'",
+    "mock ; extra == 'testing'",
+    "dpkt (==1.9.4) ; extra == 'testing'"
+  ],
+  "requires_python": ">=2.7, <4",
+  "summary": "the snappi ixnetwork open traffic generator python package",
+  "version": "0.9.1",
+  "releases": [],
+  "developers": [
+    "ajbalogh",
+    "andy.balogh@keysight.com"
+  ],
+  "kwds": "snappi_ixnetwork snappi ixnetwork svg badge",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_snappi_ixnetwork",
+  "homepage": "https://github.com/open-traffic-generator/snappi-ixnetwork",
+  "release_count": 57,
+  "dependency_ids": [
+    "pypi_dpkt",
+    "pypi_ixnetwork_restpy",
+    "pypi_mock",
+    "pypi_pytest",
+    "pypi_snappi",
+    "pypi_snappi_convergence"
+  ]
+}

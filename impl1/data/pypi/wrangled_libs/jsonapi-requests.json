@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# jsonapi-requests\n\n[![build status](https://app.travis-ci.com/socialwifi/jsonapi-requests.svg?branch=master)](https://app.travis-ci.com/socialwifi/jsonapi-requests)\n[![coverage status](https://coveralls.io/repos/github/socialwifi/jsonapi-requests/badge.svg)](https://coveralls.io/github/socialwifi/jsonapi-requests)\n[![latest version](https://img.shields.io/pypi/v/jsonapi-requests.svg)](https://pypi.python.org/pypi/jsonapi-requests/)\n[![supported python versions](https://img.shields.io/pypi/pyversions/jsonapi-requests.svg)](https://pypi.python.org/pypi/jsonapi-requests/)\n[![wheel status](https://img.shields.io/pypi/wheel/jsonapi-requests.svg)](https://pypi.python.org/pypi/jsonapi-requests/)\n[![license](https://img.shields.io/pypi/l/jsonapi-requests.svg)](https://github.com/socialwifi/jsonapi-requests/blob/master/license)\n\npython client implementation for json api. http://jsonapi.org/\n\n----\n## usage example\n\n```python\nimport jsonapi_requests\n\napi = jsonapi_requests.api.config({\n    'api_root': 'https://localhost/api/2.0',\n    'auth': ('basic_auth_login', 'basic_auth_password'),\n    'validate_ssl': false,\n    'timeout': 1,\n})\n\nendpoint = api.endpoint('networks/cd9c124a-acc3-4e20-8c02-3a37d460df22/available-profiles')\nresponse = endpoint.get()\n\nfor profile in response.data:\n    print(profile.attributes['name'])\n# example output: \"162 sushi\"\n\nendpoint = api.endpoint('cookies')\nendpoint.post(object=jsonapi_requests.jsonapiobject(\n    type='cookies',\n    attributes={\n        'uuid': '09d3a4fff8d64335a1ee9f1d9d054161', \n        'domain': 'some.domain.pl'\n    },\n))\n# example output: <apiresponse({'data': {'id': '81', 'attributes': {'uuid': '09d3a4fff8d64335a1ee9f1d9d054161', 'domain': 'some.domain.pl'}, 'type': 'cookies'}})>\n```\n\n## orm example\n\nlets say we have api endpoint: `https://localhost/api/2.0/car/2`\nwhich returns\n\n```json\n{\n    \"data\":{\n        \"id\": \"2\",\n        \"type\": \"car\",\n        \"attributes\": {\n            \"color\": \"red\"\n        },\n        \"relationships\": {\n            \"driver\": {\n                \"data\": {\n                    \"id\": \"3\", \n                    \"type\": \"person\"\n                }\n            }\n        }\n    },\n    \"included\": [\n        {\n            \"id\": \"3\",\n            \"type\": \"person\",\n            \"attributes\": {\n                \"name\": \"kowalski\"\n            },\n            \"relationships\": {\n                \"married-to\": {\n                    \"data\": {\n                        \"id\": \"4\", \n                        \"type\": \"person\"\n                    }\n                }\n            }\n        },\n        {\n            \"id\": \"4\",\n            \"type\": \"person\",\n            \"attributes\": {\n                \"name\": \"kowalska\"\n            },\n            \"relationships\": {\n                \"married-to\": {\n                    \"data\": {\n                        \"id\": \"3\", \n                        \"type\": \"person\"\n                    }\n                }\n            }\n        },\n    ]\n}\n```\n\nthen we can run:\n\n```python\nimport jsonapi_requests\n\napi = jsonapi_requests.orm.ormapi.config({\n    'api_root': 'https://localhost/api/2.0',\n    'auth': ('basic_auth_login', 'basic_auth_password'),\n    'validate_ssl': false,\n    'timeout': 1,\n})\n\nclass person(jsonapi_requests.orm.apimodel):\n    class meta:\n        type = 'person'\n        api = api\n\n    name = jsonapi_requests.orm.attributefield('name')\n    married_to = jsonapi_requests.orm.relationfield('married-to')\n\nclass car(jsonapi_requests.orm.apimodel):\n    class meta:\n        type = 'car'\n        api = api\n\n    color = jsonapi_requests.orm.attributefield('color')\n    driver = jsonapi_requests.orm.relationfield('driver')\n\ncar = car.from_id(\"2\")\n\ncar.color # request happens here\n# example output: 'red'\n\ncar.driver.name\n# example output:  'kowalski'\n\ncar.driver.married_to.name\n# example output: 'kowalska'\n\ncar.driver.married_to.married_to.name\n# example output: 'kowalski'\n```\n\n## authorization http header forwarding in flask application\n\nwhen using jsonapi\\_requests with flask, we can set `jsonapi_requests.auth.flaskforwardauth()` as `auth` configuration option to copy authorization header from current request context.\nit can be useful when fetching resources from different microservices.\n\ninstallation with flask support:\n\n```bash\npip install jsonapi-requests[flask]\n```\n\nexample usage:\n\n```python\nimport jsonapi_requests\n\napi = jsonapi_requests.api.config({\n    'api_root': 'https://localhost/api/2.0',\n    'auth': jsonapi_requests.auth.flaskforwardauth(),\n})\n```\n\n## documentation\nfor more documentation check our [wiki](https://github.com/socialwifi/jsonapi-requests/wiki).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "jsonapi-requests",
+  "package_url": "https://pypi.org/project/jsonapi-requests/",
+  "project_url": "https://pypi.org/project/jsonapi-requests/",
+  "project_urls": {
+    "Homepage": "https://github.com/socialwifi/jsonapi-requests"
+  },
+  "release_url": "https://pypi.org/project/jsonapi-requests/0.7.0/",
+  "requires_dist": [
+    "requests",
+    "tenacity",
+    "flask ; extra == 'flask'"
+  ],
+  "requires_python": "",
+  "summary": "python client implementation for json api. http://jsonapi.org/",
+  "version": "0.7.0",
+  "releases": [],
+  "developers": [
+    "it@socialwifi.com",
+    "social_wifi"
+  ],
+  "kwds": "jsonapi_requests jsonapi socialwifi _requests api",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_jsonapi_requests",
+  "homepage": "https://github.com/socialwifi/jsonapi-requests",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_flask",
+    "pypi_requests",
+    "pypi_tenacity"
+  ]
+}

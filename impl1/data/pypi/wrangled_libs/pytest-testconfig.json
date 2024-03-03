@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: testing"
+  ],
+  "description": "=================\npytest-testconfig\n=================\n\n.. image:: https://img.shields.io/pypi/v/pytest-testconfig.svg\n    :target: https://pypi.org/project/pytest-testconfig\n    :alt: pypi version\n\n.. image:: https://img.shields.io/pypi/pyversions/pytest-testconfig.svg\n    :target: https://pypi.org/project/pytest-testconfig\n    :alt: python versions\n\n.. image:: https://travis-ci.org/wojole/pytest-testconfig.svg?branch=master\n    :target: https://travis-ci.org/wojole/pytest-testconfig\n    :alt: see build status on travis ci\n\n\ntest configuration plugin for pytest.\n\nbased on nose-testconfig by jesse noller. rewritten for pytest by wojciech olejarz and bart\u0142omiej skrobek.\n\n----\n\nthis `pytest`_ plugin was generated with `cookiecutter`_ along with `@hackebrot`_'s `cookiecutter-pytest-plugin`_ template.\n\n\nfeatures\n--------\npytest-testconfig is a plugin to the pytest test framework used for passing test-specific (or test-run specific) configuration data\nto the tests being executed.\n\ncurrently configuration files in the following formats should be supported:\n\n- yaml (via `pyyaml <http://pypi.python.org/pypi/pyyaml/>`_)\n- ini (via `configparser <http://docs.python.org/lib/module-configparser.html>`_)\n- pure python (via exec)\n- json (via `json <http://docs.python.org/library/json.html>`_)\n\nthe plugin is ``meant`` to be flexible, ergo the support of exec'ing arbitrary\npython files as configuration files with no checks. the default format is\nassumed to be configparser ini-style format.\n\nif multiple files are provided, the objects are merged. later settings will\noverride earlier ones.\n\nthe plugin provides a method of overriding certain parameters from the command\nline (assuming that the main \"config\" object is a dict) and can easily have\nadditional parsers added to it.\n\na configuration file may not be provided. in this case, the config object is an\nemtpy dict. any command line \"overriding\" paramters will be added to the dict.\n\n\nrequirements\n------------\n\nrequires pytest>=3.5.0\n\n\ninstallation\n------------\n\nyou can install \"pytest-testconfig\" via `pip`_ from `pypi`_::\n\n    $ python3 -m pip install pytest-testconfig\n\n\nusage\n-----\n\ntests can import the \"config\" singleton from testconfig::\n\n    from pytest_testconfig import config\n\nby default, yaml files parse into a nested dictionary, and configparser ini\nfiles are also collapsed into a nested dictionary for foo[bar][baz] style\naccess. tests can obviously access configuration data by referencing the\nrelevant dictionary keys::\n\n    from pytest_testconfig import config\n    def test_foo():\n        target_server_ip = config['servers']['webapp_ip']\n\n``warning``: given this is just a dictionary singleton, tests can easily write\ninto the configuration. this means that your tests can write into the config\nspace and possibly alter it. this also means that threaded access into the\nconfiguration can be interesting.\n\nwhen using pure python configuration - obviously the \"sky is the the limit\" -\ngiven that the configuration is loaded via an exec, you could potentially\nmodify pytest, the plugin, etc. however, if you do not export a config{} dict\nas part of your python code, you obviously won't be able to import the\nconfig object from testconfig.\n\nwhen using yaml-style configuration, you get a lot of the power of pure python\nwithout the danger of unprotected exec() - you can obviously use the pyaml\npython-specific objects and all of the other yaml creamy goodness.\n\ndefining a configuration file\n-----------------------------\n\nsimple configparser style::\n\n    [myapp_servers]\n    main_server = 10.1.1.1\n    secondary_server = 10.1.1.2\n\nso your tests access the config options like this::\n\n    from pytest_testconfig import config\n    def test_foo():\n        main_server = config['myapp_servers']['main_server']\n\nyaml style configuration::\n    myapp:\n        servers:\n            main_server: 10.1.1.1\n            secondary_server: 10.1.1.2\n\nand your tests can access it thus::\n\n    from pytest_testconfig import config\n    def test_foo():\n        main_server = config['myapp']['servers']['main_server']\n\npython configuration file::\n\n    import socket\n\n    global config\n    config = {}\n    possible_main_servers = ['10.1.1.1', '10.1.1.2']\n\n    for srv in possible_main_servers:\n        try:\n            s = socket.socket(socket.af_inet, socket.sock_stream)\n            s.connect((srv, 80))\n        except:\n            continue\n        s.close()\n        config['main_server'] = srv\n        break\n\nand lo, the config is thus::\n\n    from pytest_testconfig import config\n    def test_foo():\n        main_server = config['main_server']\n\nif you need to put python code into your configuration, you either need to use\nthe python-config file faculties, or you need to use the !!python tags within\npyyaml/yaml - raw ini files no longer have any sort of eval magic.\n\ncommand line options\n--------------------\n\nafter it is installed, the plugin adds the following command line flags to\npytest::\n\n    --tc-file=testconfig  configuration file to parse and pass to tests\n                          [py_test_config_file]\n                          if this is specified multiple times, all files\n                          will be parsed. in all formats except python,\n                          previous contents are preserved and the configs\n                          are merged.\n\n    --tc-format=testconfigformat  test config file format, default is\n                                  configparser ini format\n                                  [py_test_config_file_format]\n\n    --tc=overrides        option:value specific overrides.\n\n    --tc-exact            optional: do not explode periods in override keys to\n                          individual keys within the config dict, instead treat\n                          them as config[my.toplevel.key] ala sqlalchemy.url in\n                          pylons.\n\ncontributing\n------------\ncontributions are very welcome. tests can be run with `tox`_, please ensure\nthe coverage at least stays the same before you submit a pull request.\n\nlicense\n-------\n\ndistributed under the terms of the `apache software license 2.0`_ license, \"pytest-testconfig\" is free and open source software\n\n\nissues\n------\n\nif you encounter any problems, please `file an issue`_ along with a detailed description.\n\n.. _`cookiecutter`: https://github.com/audreyr/cookiecutter\n.. _`@hackebrot`: https://github.com/hackebrot\n.. _`mit`: http://opensource.org/licenses/mit\n.. _`bsd-3`: http://opensource.org/licenses/bsd-3-clause\n.. _`gnu gpl v3.0`: http://www.gnu.org/licenses/gpl-3.0.txt\n.. _`apache software license 2.0`: http://www.apache.org/licenses/license-2.0\n.. _`cookiecutter-pytest-plugin`: https://github.com/pytest-dev/cookiecutter-pytest-plugin\n.. _`file an issue`: https://github.com/wojole/pytest-testconfig/issues\n.. _`pytest`: https://github.com/pytest-dev/pytest\n.. _`tox`: https://tox.readthedocs.io/en/latest/\n.. _`pip`: https://pypi.org/project/pip/\n.. _`pypi`: https://pypi.org/project\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache software license 2.0",
+  "name": "pytest-testconfig",
+  "package_url": "https://pypi.org/project/pytest-testconfig/",
+  "project_url": "https://pypi.org/project/pytest-testconfig/",
+  "project_urls": {
+    "Homepage": "https://github.com/wojole/pytest-testconfig"
+  },
+  "release_url": "https://pypi.org/project/pytest-testconfig/0.2.0/",
+  "requires_dist": [
+    "pytest (>=3.5.0)",
+    "pyyaml"
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+  "summary": "test configuration plugin for pytest.",
+  "version": "0.2.0",
+  "releases": [],
+  "developers": [
+    "olejarz.wojciech@gmail.com",
+    "wojciech_olejarz"
+  ],
+  "kwds": "pytest_testconfig py_test_config_file py_test_config_file_format pytest testconfig",
+  "license_kwds": "apache software license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_pytest_testconfig",
+  "homepage": "https://github.com/wojole/pytest-testconfig",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_pytest",
+    "pypi_pyyaml"
+  ]
+}

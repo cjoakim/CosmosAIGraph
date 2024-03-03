@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development"
+  ],
+  "description": "when i refactor code i often find myself tediously adding type\nannotations that are obvious from context: functions that don't\nreturn anything, boolean flags, etcetera. that's where autotyping\ncomes in: it automatically adds those types and inserts the right\nannotations.\n\nit is built as a libcst codemod; see the\n[libcst documentation](https://libcst.readthedocs.io/en/latest/codemods_tutorial.html)\nfor more information on how to use codemods.\n\n# usage\n\nhere's how to use it:\n\n- `pip install autotyping`\n- make sure you have a `.libcst.codemod.yaml` with `'autotyping'` in the `modules` list.\n  for an example, see the `.libcst.codemod.yaml` in this repo.\n- run `python -m libcst.tool codemod autotyping.autotypecommand /path/to/my/code`\n\nby default it does nothing; you have to add flags to make it do\nmore transformations. the following are supported:\n\n- annotating return types:\n  - `--none-return`: add a `-> none` return type to functions without any\n    return, yield, or raise in their body\n  - `--scalar-return`: add a return annotation to functions that only return\n    literal bool, str, bytes, int, or float objects.\n- annotating parameter types:\n  - `--bool-param`: add a `: bool` annotation to any function\n    parameter with a default of `true` or `false`\n  - `--int-param`, `--float-param`, `--str-param`, `--bytes-param`: add\n    an annotation to any parameter for which the default is a literal int,\n    float, str, or bytes object\n  - `--annotate-optional foo:bar.baz`: for any parameter of the form\n    `foo=none`, add `baz`, imported from `bar`, as the type. for example,\n    use `--annotate-optional uid:my_types.uid` to annotate any `uid` in your\n    codebase with a `none` default as `optional[my_types.uid]`.\n  - `--annotate-named-param foo:bar.baz`: annotate any parameter with no\n    default that is named `foo` with `bar.baz`. for example, use\n    `--annotate-named-param uid:my_types.uid` to annotate any `uid`\n    parameter in your codebase with no default as `my_types.uid`.\n  - `--guess-common-names`: infer certain parameter types from their names\n    based on common patterns in open-source python code. for example, infer\n    that a `verbose` parameter is of type `bool`.\n- annotating magical methods:\n  - `--annotate-magics`: add type annotation to certain magic methods.\n    currently this does the following:\n    - `__str__` returns `str`\n    - `__repr__` returns `str`\n    - `__len__` returns `int`\n    - `__length_hint__` returns `int`\n    - `__init__` returns `none`\n    - `__del__` returns `none`\n    - `__bool__` returns `bool`\n    - `__bytes__` returns `bytes`\n    - `__format__` returns `str`\n    - `__contains__` returns `bool`\n    - `__complex__` returns `complex`\n    - `__int__` returns `int`\n    - `__float__` returns `float`\n    - `__index__` returns `int`\n    - `__exit__`: the three parameters are `optional[type[baseexception]]`,\n      `optional[baseexception]`, and `optional[tracebacktype]`\n    - `__aexit__`: same as `__exit__`\n  - `--annotate-imprecise-magics`: add imprecise type annotations for\n    some additional magic methods. currently this adds `typing.iterator`\n    return annotations to `__iter__`, `__await__`, and `__reversed__`.\n    these annotations should have a generic parameter to indicate what\n    you're iterating over, but that's too hard for autotyping to figure\n    out.\n- external integrations\n  - `--pyanalyze-report`: takes types suggested by\n    [pyanalyze](https://github.com/quora/pyanalyze)'s `suggested_parameter_type`\n    and `suggested_return_type` codes and applies them.\n  - `--only-without-imports`: only apply pyanalyze suggestions that do not require\n    new imports. this is useful because suggestions that require imports may need\n    more manual work.\n\nthere are two shortcut flags to enable multiple transformations at once:\n\n- `--safe` enables changes that should always be safe. this includes\n  `--none-return`, `--scalar-return`, and `--annotate-magics`.\n- `--aggressive` enables riskier changes that are more likely to produce\n  new type checker errors. it includes all of `--safe` as well as `--bool-param`,\n  `--int-param`, `--float-param`, `--str-param`, `--bytes-param`, and\n  `--annotate-imprecise-magics`.\n\n# limitations\n\nautotyping is intended to be a simple tool that uses heuristics to find\nannotations that would be tedious to add by hand. the heuristics may fail,\nand after you run autotyping you should run a type checker to verify that\nthe types it added are correct.\n\nknown limitations:\n\n- autotyping does not model code flow through a function, so it may miss\n  implicit `none` returns\n\n# changelog\n\n## 23.3.0 (march 3, 2023)\n\n- fix crash on certain argument names like `iterables` (contributed by\n  marco gorelli)\n\n## 23.2.0 (february 3, 2023)\n\n- add `--guess-common-names` (contributed by john litborn)\n- fix the `--safe` and `--aggressive` flags so they don't take\n  ignored arguments\n- `--length-hint` should return `int` (contributed by nikita sobolev)\n- fix bug in import adding (contributed by shantanu)\n\n## 22.9.0 (september 5, 2022)\n\n- add `--safe` and `--aggressive`\n- add `--pyanalyze-report`\n- do not add `none` return types to methods marked with `@abstractmethod` and\n  to methods in stub files\n- improve type inference:\n  - `\"string\" % ...` is always `str`\n  - `b\"bytes\" % ...` is always `bytes`\n  - an `and` or `or` operator where left and right sides are of the same type\n    returns that type\n  - `is`, `is not`, `in`, and `not in` always return `bool`\n\n## 21.12.0 (december 21, 2021)\n\n- initial pypi release\n",
+  "docs_url": null,
+  "keywords": "typing annotations",
+  "license": "mit",
+  "name": "autotyping",
+  "package_url": "https://pypi.org/project/autotyping/",
+  "project_url": "https://pypi.org/project/autotyping/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/JelleZijlstra/autotyping/issues",
+    "Homepage": "https://github.com/JelleZijlstra/autotyping"
+  },
+  "release_url": "https://pypi.org/project/autotyping/23.3.0/",
+  "requires_dist": [
+    "libcst"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a tool for autoadding simple type annotations.",
+  "version": "23.3.0",
+  "releases": [],
+  "developers": [
+    "jelle.zijlstra@gmail.com",
+    "jelle_zijlstra"
+  ],
+  "kwds": "autotypecommand codemods_tutorial annotations annotation annotate",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_autotyping",
+  "homepage": "https://github.com/jellezijlstra/autotyping",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_libcst"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: web environment",
+    "framework :: asyncio",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: internet :: www/http :: http servers",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "fastapi-sqlalchemy\n==================\n\n.. image:: https://github.com/mfreeborn/fastapi-sqlalchemy/workflows/ci/badge.svg\n    :target: https://github.com/mfreeborn/fastapi-sqlalchemy/actions\n.. image:: https://codecov.io/gh/mfreeborn/fastapi-sqlalchemy/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/mfreeborn/fastapi-sqlalchemy\n.. image:: https://img.shields.io/pypi/v/fastapi_sqlalchemy?color=blue\n    :target: https://pypi.org/project/fastapi-sqlalchemy\n\n\nfastapi-sqlalchemy provides a simple integration between fastapi_ and sqlalchemy_ in your application. it gives access to useful helpers to facilitate the completion of common tasks.\n\n\ninstalling\n----------\n\ninstall and update using pip_:\n\n.. code-block:: text\n\n  $ pip install fastapi-sqlalchemy\n\n\nexamples\n--------\n\nusage inside of a route\n^^^^^^^^^^^^^^^^^^^^^^^\n\n.. code-block:: python\n\n    from fastapi import fastapi\n    from fastapi_sqlalchemy import dbsessionmiddleware  # middleware helper\n    from fastapi_sqlalchemy import db  # an object to provide global access to a database session\n\n    from app.models import user\n\n    app = fastapi()\n\n    app.add_middleware(dbsessionmiddleware, db_url=\"sqlite://\")\n\n    # once the middleware is applied, any route can then access the database session \n    # from the global ``db``\n\n    @app.get(\"/users\")\n    def get_users():\n        users = db.session.query(user).all()\n\n        return users\n\nnote that the session object provided by ``db.session`` is based on the python3.7+ ``contextvar``. this means that\neach session is linked to the individual request context in which it was created.\n\nusage outside of a route\n^^^^^^^^^^^^^^^^^^^^^^^^\n\nsometimes it is useful to be able to access the database outside the context of a request, such as in scheduled tasks which run in the background:\n\n.. code-block:: python\n\n    import pytz\n    from apscheduler.schedulers.asyncio import asyncioscheduler  # other schedulers are available\n    from fastapi import fastapi\n    from fastapi_sqlalchemy import db\n\n    from app.models import user, usercount\n\n    app = fastapi()\n\n    app.add_middleware(dbsessionmiddleware, db_url=\"sqlite://\")\n\n\n    @app.on_event('startup')\n    async def startup_event():\n        scheduler = asyncioscheduler(timezone=pytz.utc)\n        scheduler.start()\n        scheduler.add_job(count_users_task, \"cron\", hour=0)  # runs every night at midnight\n\n\n    def count_users_task():\n        \"\"\"count the number of users in the database and save it into the user_counts table.\"\"\"\n\n        # we are outside of a request context, therefore we cannot rely on ``dbsessionmiddleware``\n        # to create a database session for us. instead, we can use the same ``db`` object and \n        # use it as a context manager, like so:\n\n        with db():\n            user_count = db.session.query(user).count()\n\n            db.session.add(usercount(user_count))\n            db.session.commit()\n\n        # no longer able to access a database session once the db() context manager has ended\n\n        return users\n\n\n.. _fastapi: https://github.com/tiangolo/fastapi\n.. _sqlalchemy: https://github.com/pallets/flask-sqlalchemy\n.. _pip: https://pip.pypa.io/en/stable/quickstart/\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "fastapi-sqlalchemy",
+  "package_url": "https://pypi.org/project/FastAPI-SQLAlchemy/",
+  "project_url": "https://pypi.org/project/FastAPI-SQLAlchemy/",
+  "project_urls": {
+    "Code": "https://github.com/mfreeborn/fastapi-sqlalchemy",
+    "Homepage": "https://github.com/mfreeborn/fastapi-sqlalchemy",
+    "Issue tracker": "https://github.com/mfreeborn/fastapi-sqlalchemy/issues"
+  },
+  "release_url": "https://pypi.org/project/FastAPI-SQLAlchemy/0.2.1/",
+  "requires_dist": [
+    "starlette (>=0.12.9)",
+    "SQLAlchemy (>=1.2)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "adds simple sqlalchemy support to fastapi",
+  "version": "0.2.1",
+  "releases": [],
+  "developers": [
+    "michael_freeborn",
+    "michaelfreeborn1@gmail.com"
+  ],
+  "kwds": "fastapi_sqlalchemy sqlalchemy sqlalchemy_ _sqlalchemy fastapi_",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_fastapi_sqlalchemy",
+  "homepage": "https://github.com/mfreeborn/fastapi-sqlalchemy",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_sqlalchemy",
+    "pypi_starlette"
+  ]
+}

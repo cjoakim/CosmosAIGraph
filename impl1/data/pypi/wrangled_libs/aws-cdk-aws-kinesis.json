@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon kinesis construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\n[amazon kinesis](https://docs.aws.amazon.com/streams/latest/dev/introduction.html) provides collection and processing of large\n[streams](https://aws.amazon.com/streaming-data/) of data records in real time. kinesis data streams can be used for rapid and continuous data\nintake and aggregation.\n\n## table of contents\n\n* [streams](#streams)\n\n  * [encryption](#encryption)\n  * [import](#import)\n  * [permission grants](#permission-grants)\n\n    * [read permissions](#read-permissions)\n    * [write permissions](#write-permissions)\n    * [custom permissions](#custom-permissions)\n  * [metrics](#metrics)\n\n## streams\n\namazon kinesis data streams ingests a large amount of data in real time, durably stores the data, and makes the data available for consumption.\n\nusing the cdk, a new kinesis stream can be created as part of the stack using the construct's constructor. you may specify the `streamname` to give\nyour own identifier to the stream. if not, cloudformation will generate a name.\n\n```python\nkinesis.stream(self, \"myfirststream\",\n    stream_name=\"my-awesome-stream\"\n)\n```\n\nyou can also specify properties such as `shardcount` to indicate how many shards the stream should choose and a `retentionperiod`\nto specify how long the data in the shards should remain accessible.\nread more at [creating and managing streams](https://docs.aws.amazon.com/streams/latest/dev/working-with-streams.html)\n\n```python\nkinesis.stream(self, \"myfirststream\",\n    stream_name=\"my-awesome-stream\",\n    shard_count=3,\n    retention_period=duration.hours(48)\n)\n```\n\n### encryption\n\n[stream encryption](https://docs.aws.amazon.com/awscloudformation/latest/userguide/aws-properties-kinesis-stream-streamencryption.html) enables\nserver-side encryption using an aws kms key for a specified stream.\n\nencryption is enabled by default on your stream with the master key owned by kinesis data streams in regions where it is supported.\n\n```python\nkinesis.stream(self, \"myencryptedstream\")\n```\n\nyou can enable encryption on your stream with a user-managed key by specifying the `encryption` property.\na kms key will be created for you and associated with the stream.\n\n```python\nkinesis.stream(self, \"myencryptedstream\",\n    encryption=kinesis.streamencryption.kms\n)\n```\n\nyou can also supply your own external kms key to use for stream encryption by specifying the `encryptionkey` property.\n\n```python\nkey = kms.key(self, \"mykey\")\n\nkinesis.stream(self, \"myencryptedstream\",\n    encryption=kinesis.streamencryption.kms,\n    encryption_key=key\n)\n```\n\n### import\n\nany kinesis stream that has been created outside the stack can be imported into your cdk app.\n\nstreams can be imported by their arn via the `stream.fromstreamarn()` api\n\n```python\nimported_stream = kinesis.stream.from_stream_arn(self, \"importedstream\", \"arn:aws:kinesis:us-east-2:123456789012:stream/f3j09j2230j\")\n```\n\nencrypted streams can also be imported by their attributes via the `stream.fromstreamattributes()` api\n\n```python\nimported_stream = kinesis.stream.from_stream_attributes(self, \"importedencryptedstream\",\n    stream_arn=\"arn:aws:kinesis:us-east-2:123456789012:stream/f3j09j2230j\",\n    encryption_key=kms.key.from_key_arn(self, \"key\", \"arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012\")\n)\n```\n\n### permission grants\n\niam roles, users or groups which need to be able to work with amazon kinesis streams at runtime should be granted iam permissions.\n\nany object that implements the `igrantable` interface (has an associated principal) can be granted permissions by calling:\n\n* `grantread(principal)` - grants the principal read access\n* `grantwrite(principal)` - grants the principal write permissions to a stream\n* `grantreadwrite(principal)` - grants principal read and write permissions\n\n#### read permissions\n\ngrant `read` access to a stream by calling the `grantread()` api.\nif the stream has an encryption key, read permissions will also be granted to the key.\n\n```python\nlambda_role = iam.role(self, \"role\",\n    assumed_by=iam.serviceprincipal(\"lambda.amazonaws.com\"),\n    description=\"example role...\"\n)\n\nstream = kinesis.stream(self, \"myencryptedstream\",\n    encryption=kinesis.streamencryption.kms\n)\n\n# give lambda permissions to read stream\nstream.grant_read(lambda_role)\n```\n\nthe following read permissions are provided to a service principal by the `grantread()` api:\n\n* `kinesis:describestreamsummary`\n* `kinesis:getrecords`\n* `kinesis:getsharditerator`\n* `kinesis:listshards`\n* `kinesis:subscribetoshard`\n\n#### write permissions\n\ngrant `write` permissions to a stream is provided by calling the `grantwrite()` api.\nif the stream has an encryption key, write permissions will also be granted to the key.\n\n```python\nlambda_role = iam.role(self, \"role\",\n    assumed_by=iam.serviceprincipal(\"lambda.amazonaws.com\"),\n    description=\"example role...\"\n)\n\nstream = kinesis.stream(self, \"myencryptedstream\",\n    encryption=kinesis.streamencryption.kms\n)\n\n# give lambda permissions to write to stream\nstream.grant_write(lambda_role)\n```\n\nthe following write permissions are provided to a service principal by the `grantwrite()` api:\n\n* `kinesis:listshards`\n* `kinesis:putrecord`\n* `kinesis:putrecords`\n\n#### custom permissions\n\nyou can add any set of permissions to a stream by calling the `grant()` api.\n\n```python\nuser = iam.user(self, \"myuser\")\n\nstream = kinesis.stream(self, \"mystream\")\n\n# give my user permissions to list shards\nstream.grant(user, \"kinesis:listshards\")\n```\n\n### metrics\n\nyou can use common metrics from your stream to create alarms and/or dashboards. the `stream.metric('metricname')` method creates a metric with the stream namespace and dimension. you can also use pre-define methods like `stream.metricgetrecordssuccess()`. to find out more about kinesis metrics check [monitoring the amazon kinesis data streams service with amazon cloudwatch](https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html).\n\n```python\nstream = kinesis.stream(self, \"mystream\")\n\n# using base metric method passing the metric name\nstream.metric(\"getrecords.success\")\n\n# using pre-defined metric method\nstream.metric_get_records_success()\n\n# using pre-defined and overriding the statistic\nstream.metric_get_records_success(statistic=\"maximum\")\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-kinesis",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-kinesis/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-kinesis/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-kinesis/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-cloudwatch (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.aws-logs (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::kinesis",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws cdk kinesis streams amazonaws",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_kinesis",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_cloudwatch",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.aws_logs",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

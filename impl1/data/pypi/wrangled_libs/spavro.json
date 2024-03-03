@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries",
+    "topic :: system :: networking"
+  ],
+  "description": "[![spavro build](https://api.travis-ci.com/mikepk/spavro.svg?branch=master)](https://travis-ci.com/github/mikepk/spavro)\n\n# (sp)eedier avro - spavro\n\nspavro is a fork of the [official apache avro python 2 implementation](https://github.com/apache/avro) with the goal of greatly improving data read deserialization and write serialization performance.\n\nspavro is also python 2/3 compatible (instead of a separate project / implementation). [currently tested](https://travis-ci.com/github/mikepk/spavro) using python 2.7, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, and 3.11. python 3 versions before 3.3 are not supported due to the use of unicode literals and other compatibility features.\n\n## implementation details\n\nthere are three primary differences between the official implementation and spavro. first, spavro uses a c extension, created with cython, to accelerate some of the low level binary serialization logic. additionally spavro uses a different model for handling schemas. spavro attempts to parse the write and read schemas _once_ and only _once_ and creates recursive reader/writer functions from the schema definition. these reader/writer functions encode the type structure of the schema so no additional lookups are necessary while processing data. the last difference is that spavro has been updated to be both python 2 and python 3 compatible using the `six` library. the official apache avro implementation has two separate codebases for python 2 and python 3 and spavro only has one.\n\nthis has the net effect of greatly improving the throughput of reading and writing individual datums, since the schema isn't interrogated for every datum. this can be especially beneficial for \"compatible\" schema reading where both a read and write schema are needed to be able to read a complete data set.\n\n## performance / benchmarks\n\n### results\n\nthese tests were run using an aws `m4.large` instance running centos 7. they were run with the following versions: `avro-python3==1.8.2`, `fastavro==0.17.9`, `spavro==1.1.10`. python `3.6.4` was used for the python 3 tests.\n\nthe tldr is that spavro has _14-23x_ the throughput of the default apache avro implementation and _2-4x_ the throughput of the fastavro library (depending on the shape of the records).\n\n### deserialize avro records (read)\n\nrecords per second read:\n\n![read, 1 field, records per sec](benchmark/results/read_1field_rec_per_sec.png?raw=true \"read, 1 field, records per sec\")\n![read, 500 fields, records per sec](benchmark/results/read_500field_rec_per_sec.png?raw=true \"read, 500 fields, records per sec\")\n\ndatums per second (individual fields) read:\n\n![read, fields per second](benchmark/results/read_datum_per_sec.png?raw=true \"read, fields per second\")\n\n### serialize avro records (write)\n\nrecords per second write:\n\n![write, 1 field, records per sec](benchmark/results/write_1field_rec_per_sec.png?raw=true \"write, 1 field, records per sec\")\n![write, 500 fields, records per sec](benchmark/results/write_500field_rec_per_sec.png?raw=true \"write, 500 fields, records per sec\")\n\ndatums per second (individual fields) write:\n\n![write, fields per second](benchmark/results/write_datum_per_sec.png?raw=true \"write, fields per second\")\n\n### methodology\n\nbenchmarks were performed with the `benchmark.py` script in the `/benchmarks` path in the repository (if you'd like to run your own tests).\n\nmany of the records that led to the creation of spavro were of the form `{\"type\": \"record\", \"name\": \"somerecord\", \"fields\": [1 ... n fields usually with a type of the form of a union of ['null' and a primitive type]]}` so the benchmarks were created to simulate that type of record structure. i believe this is a _very_ common use case for avro so the benchmarks were created around this pattern.\n\nthe benchmark creates a random schema of a record with a mix of string, double, long and boolean types and a random record generator to test that schema. the pseudo-random generator is seeded with the same string to make the results deterministic (but with varied records). the number of fields in the record was varied from one to 500 and the performance of the avro implementations were tested for each of the cases.\n\nthe serializer and deserializer benchmarks create an array of simulated records in memory and then attempts to process them using the three different implementation as quickly as possible. this means the max working size is limited to memory (a combination of the number of records and the number of fields in the simulated record). for these benchmarks 5m datums were processed for each run (divided by the number of fields in each record).\n\neach run of the schema/record/implementation was repeated ten times and the time to complete was averaged.\n\n## api\n\nspavro keeps the default apache library's api. this allows spavro to be a drop-in replacement for code using the existing apache implementation.\n\n## tests\n\nsince the api matches the existing library, the majority of the existing apache test suite is used to verify the correct operation of spavro. spavro adds some additional correctness tests to compare new vs old behaviors as well as some additional logic tests above and beyond the original library. some of the java-based \"map reduce\" tests (specifically the tether tests) were removed because spavro does not include the java code to implement that logic.\n",
+  "docs_url": null,
+  "keywords": "avro serialization rpc data",
+  "license": "apache license 2.0",
+  "name": "spavro",
+  "package_url": "https://pypi.org/project/spavro/",
+  "project_url": "https://pypi.org/project/spavro/",
+  "project_urls": {
+    "Homepage": "http://github.com/mikepk/spavro"
+  },
+  "release_url": "https://pypi.org/project/spavro/1.1.26/",
+  "requires_dist": [
+    "six>=1.10.0",
+    "python-snappy; extra == \"snappy\"",
+    "pytest>=3.1.1; extra == \"test\""
+  ],
+  "requires_python": "",
+  "summary": "an avro library, spavro is a (sp)eedier avro implementation using cython -- spavro is a fork of the official apache avro python 2 implementation with the goal of greatly improving data read deserialization and write serialization performance.",
+  "version": "1.1.26",
+  "releases": [],
+  "developers": [
+    "michael_kowalchik",
+    "mikepk@tenzerolab.com"
+  ],
+  "kwds": "spavro serialization avro serialize serializer",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_spavro",
+  "homepage": "http://github.com/mikepk/spavro",
+  "release_count": 27,
+  "dependency_ids": [
+    "pypi_pytest",
+    "pypi_python_snappy",
+    "pypi_six"
+  ]
+}

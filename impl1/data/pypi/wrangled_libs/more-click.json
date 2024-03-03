@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# more_click\n\n<a href=\"https://pypi.org/project/more_click\">\n    <img alt=\"pypi\" src=\"https://img.shields.io/pypi/v/more_click\" />\n</a>\n<a href=\"https://pypi.org/project/more_click\">\n    <img alt=\"pypi - python version\" src=\"https://img.shields.io/pypi/pyversions/more_click\" />\n</a>\n<a href=\"https://github.com/cthoyt/more_click/blob/main/license\">\n    <img alt=\"pypi - license\" src=\"https://img.shields.io/pypi/l/more_click\" />\n</a>\n<a href=\"https://zenodo.org/badge/latestdoi/319609575\">\n    <img src=\"https://zenodo.org/badge/319609575.svg\" alt=\"doi\">\n</a>\n\nextra stuff for click i use in basically every repo\n\n## more options\n\nthe module `more_click.options` has several options (pre-defined instances of `click.option()`) that i use often. first,\n`verbose_option` makes it easy to adjust the logger of your package using `-v`.\n\nthere are also several that are useful for web stuff, including\n\n| name                     | type | flag     |\n| ------------------------ | ---- | -------- |\n| `more_click.host_option` | str  | `--host` |\n| `more_click.port_option` | str  | `--port` |\n\n## web tools\n\nin many packages, i've included a flask web application in `wsgi.py`. i usually use the following form inside `cli.py`\nfile to import the web application and keep it insulated from other package-related usages:\n\n```python\n# cli.py\nimport click\nfrom more_click import host_option, port_option\n\n\n@click.command()\n@host_option\n@port_option\ndef web(host: str, port: str):\n    from .wsgi import app  # modify to point to your module-level flask.flask instance\n    app.run(host=host, port=port)\n\n\nif __name__ == '__main__':\n    web()\n```\n\nhowever, sometimes i want to make it possible to run via `gunicorn` from the cli, so i would use the following\nextensions to automatically determine if it should be run with flask's development server or gunicorn.\n\n```python\n# cli.py\nimport click\nfrom more_click import host_option, port_option, with_gunicorn_option, workers_option, run_app\n\n\n@click.command()\n@host_option\n@port_option\n@with_gunicorn_option\n@workers_option\ndef web(host: str, port: str, with_gunicorn: bool, workers: int):\n    from .wsgi import app  # modify to point to your module-level flask.flask instance\n    run_app(app=app, with_gunicorn=with_gunicorn, host=host, port=port, workers=workers)\n\n\nif __name__ == '__main__':\n    web()\n```\n\nfor ultimate lazy mode, i've written a wrapper around the second:\n\n```python\n# cli.py\nfrom more_click import make_web_command\n\nweb = make_web_command('my_package_name.wsgi:app')\n\nif __name__ == '__main__':\n    web()\n```\n\nthis uses a standard `wsgi`-style string to locate the app, since you don't want to be eagerly importing the app in your\ncli since it might rely on optional dependencies like flask. if your cli has other stuff, you can include the web\ncommand in a group like:\n\n```python\n# cli.py\nimport click\nfrom more_click import make_web_command\n\n\n@click.group()\ndef main():\n    \"\"\"my awesome cli.\"\"\"\n\n\nmake_web_command('my_package_name.wsgi:app', group=main)\n\nif __name__ == '__main__':\n    main()\n```\n",
+  "docs_url": null,
+  "keywords": "databases,biological databases,biomedical databases",
+  "license": "mit",
+  "name": "more-click",
+  "package_url": "https://pypi.org/project/more-click/",
+  "project_url": "https://pypi.org/project/more-click/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/cthoyt/more_click/issues",
+    "Download": "https://github.com/cthoyt/more_click/releases",
+    "Homepage": "https://github.com/cthoyt/more_click"
+  },
+  "release_url": "https://pypi.org/project/more-click/0.1.2/",
+  "requires_dist": [
+    "click",
+    "coverage ; extra == 'tests'",
+    "pytest ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "more click.",
+  "version": "0.1.2",
+  "releases": [],
+  "developers": [
+    "charles_tapley_hoyt",
+    "cthoyt@gmail.com"
+  ],
+  "kwds": "more_click pypi href py pyversions",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_more_click",
+  "homepage": "https://github.com/cthoyt/more_click",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_coverage",
+    "pypi_pytest"
+  ]
+}

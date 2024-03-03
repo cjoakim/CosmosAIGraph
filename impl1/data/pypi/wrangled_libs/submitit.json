@@ -1,0 +1,62 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "topic :: system :: distributed computing"
+  ],
+  "description": "[![circleci](https://circleci.com/gh/facebookincubator/submitit.svg?style=svg)](https://circleci.com/gh/facebookincubator/workflows/submitit)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n[![pypi](https://img.shields.io/pypi/v/submitit)](https://pypi.org/project/submitit/)\n[![conda-forge](https://img.shields.io/conda/vn/conda-forge/submitit)](https://anaconda.org/conda-forge/submitit)\n# submit it!\n\n## what is submitit?\n\nsubmitit is a lightweight tool for submitting python functions for computation within a slurm cluster.\nit basically wraps submission and provide access to results, logs and more.\n[slurm](https://slurm.schedmd.com/quickstart.html) is an open source, fault-tolerant, and highly scalable cluster management and job scheduling system for large and small linux clusters.\nsubmitit allows to switch seamlessly between executing on slurm or locally.\n\n### an example is worth a thousand words: performing an addition\n\nfrom inside an environment with `submitit` installed:\n\n```python\nimport submitit\n\ndef add(a, b):\n    return a + b\n\n# executor is the submission interface (logs are dumped in the folder)\nexecutor = submitit.autoexecutor(folder=\"log_test\")\n# set timeout in min, and partition for running the job\nexecutor.update_parameters(timeout_min=1, slurm_partition=\"dev\")\njob = executor.submit(add, 5, 7)  # will compute add(5, 7)\nprint(job.job_id)  # id of your job\n\noutput = job.result()  # waits for completion and returns output\nassert output == 12  # 5 + 7 = 12...  your addition was computed in the cluster\n```\n\nthe `job` class also provides tools for reading the log files (`job.stdout()` and `job.stderr()`).\n\nif what you want to run is a command, turn it into a python function using `submitit.helpers.commandfunction`, then submit it.\nby default stdout is silenced in `commandfunction`, but it can be unsilenced with `verbose=true`.\n\n**find more examples [here](https://github.com/facebookincubator/submitit/blob/1.5.1/docs/examples.md)!!!**\n\nsubmitit is a python 3.8+ toolbox for submitting jobs to slurm.\nit aims at running python function from python code.\n\n\n## install\n\nquick install, in a virtualenv/conda environment where `pip` is installed (check `which pip`):\n- stable release:\n  ```\n  pip install submitit\n  ```\n- stable release using __conda__:\n  ```\n  conda install -c conda-forge submitit\n  ```\n- main branch:\n  ```\n  pip install git+https://github.com/facebookincubator/submitit@main#egg=submitit\n  ```\n\nyou can try running the [mnist example](https://github.com/facebookincubator/submitit/blob/1.5.1/docs/mnist.py) to check that everything is working as expected (requires sklearn).\n\n\n## documentation\n\nsee the following pages for more detailled information:\n\n- [examples](https://github.com/facebookincubator/submitit/blob/1.5.1/docs/examples.md): for a bunch of examples dealing with errors, concurrency, multi-tasking etc...\n- [structure and main objects](https://github.com/facebookincubator/submitit/blob/1.5.1/docs/structure.md): to get a better understanding of how `submitit` works, which files are created for each job, and the main objects you will interact with.\n- [checkpointing](https://github.com/facebookincubator/submitit/blob/1.5.1/docs/checkpointing.md): to understand how you can configure your job to get checkpointed when preempted and/or timed-out.\n- [tips and caveats](https://github.com/facebookincubator/submitit/blob/1.5.1/docs/tips.md): for a bunch of information that can be handy when working with `submitit`.\n- [hyperparameter search with nevergrad](https://github.com/facebookincubator/submitit/blob/1.5.1/docs/nevergrad.md): basic example of `nevergrad` usage and how it interfaces with `submitit`.\n\n\n### goals\n\nthe aim of this python3 package is to be able to launch jobs on slurm painlessly from *inside python*, using the same submission and job patterns than the standard library package `concurrent.futures`:\n\nhere are a few benefits of using this lightweight package:\n - submit any function, even lambda and script-defined functions.\n - raises an error with stack trace if the job failed.\n - requeue preempted jobs (slurm only)\n - swap between `submitit` executor and one of `concurrent.futures` executors in a line, so that it is easy to run your code either on slurm, or locally with multithreading for instance.\n - checkpoints stateful callables when preempted or timed-out and requeue from current state (advanced feature).\n - easy access to task local/global rank for multi-nodes/tasks jobs.\n - same code can work for different clusters thanks to a plugin system.\n\nsubmitit is used by fair researchers on the fair cluster.\nthe defaults are chosen to make their life easier, and might not be ideal for every cluster.\n\n### non-goals\n\n- a commandline tool for running slurm jobs. here, everything happens inside python. to this end, you can however use [hydra](https://hydra.cc/)'s [submitit plugin](https://hydra.cc/docs/next/plugins/submitit_launcher) (version >= 1.0.0).\n- a task queue, this only implements the ability to launch tasks, but does not schedule them in any way.\n- being used in python2! this is a python3.8+ only package :)\n\n\n### comparison with dask.distributed\n\n[`dask`](https://distributed.dask.org/en/latest/) is a nice framework for distributed computing. `dask.distributed` provides the same `concurrent.futures` executor api as `submitit`:\n\n```python\nfrom distributed import client\nfrom dask_jobqueue import slurmcluster\ncluster = slurmcluster(processes=1, cores=2, memory=\"2gb\")\ncluster.scale(2)  # this may take a few seconds to launch\nexecutor = client(cluster)\nexecutor.submit(...)\n```\n\nthe key difference with `submitit` is that `dask.distributed` distributes the jobs to a pool of workers (see the `cluster` variable above) while `submitit` jobs are directly jobs on the cluster. in that sense `submitit` is a lower level interface than `dask.distributed` and you get more direct control over your jobs, including individual `stdout` and `stderr`, and possibly checkpointing in case of preemption and timeout. on the other hand, you should avoid submitting multiple small tasks with `submitit`, which would create many independent jobs and possibly overload the cluster, while you can do it without any problem through `dask.distributed`.\n\n\n## contributors\n\nby chronological order: j\u00e9r\u00e9my rapin, louis martin, lowik chanussot, lucas hosseini, fabio petroni, francisco massa, guillaume wenzek, thibaut lavril, vinayak tantia, andrea vedaldi, max nickel, quentin duval (feel free to [contribute](https://github.com/facebookincubator/submitit/blob/1.5.1/.github/contributing.md) and add your name ;) )\n\n## license\n\nsubmitit is released under the [mit license](https://github.com/facebookincubator/submitit/blob/1.5.1/license).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "submitit",
+  "package_url": "https://pypi.org/project/submitit/",
+  "project_url": "https://pypi.org/project/submitit/",
+  "project_urls": {
+    "Source": "https://github.com/facebookincubator/submitit",
+    "Tracker": "https://github.com/facebookincubator/submitit/issues"
+  },
+  "release_url": "https://pypi.org/project/submitit/1.5.1/",
+  "requires_dist": [
+    "cloudpickle>=1.2.1",
+    "typing_extensions>=3.7.4.2",
+    "pytest>=7.4.2 ; extra == \"dev\"",
+    "pytest-asyncio>=0.15.0 ; extra == \"dev\"",
+    "pytest-cov>=4.1.0 ; extra == \"dev\"",
+    "coverage[toml]>=5.1 ; extra == \"dev\"",
+    "black==23.3.0 ; extra == \"dev\"",
+    "isort==5.11.5 ; extra == \"dev\"",
+    "pre-commit>=1.15.2 ; extra == \"dev\"",
+    "mypy>=1.4.1 ; extra == \"dev\"",
+    "types-pkg_resources>=0.1.2 ; extra == \"dev\"",
+    "pylint>=3.0.0 ; extra == \"dev\"",
+    "flit>=3.5.1 ; extra == \"dev\""
+  ],
+  "requires_python": ">=3.8",
+  "summary": "\"python 3.8+ toolbox for submitting jobs to slurm",
+  "version": "1.5.1",
+  "releases": [],
+  "developers": [
+    "facebook_ai_research"
+  ],
+  "kwds": "submitit submit submission submitting facebookincubator",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_submitit",
+  "homepage": "",
+  "release_count": 23,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_cloudpickle",
+    "pypi_coverage",
+    "pypi_flit",
+    "pypi_isort",
+    "pypi_mypy",
+    "pypi_pre_commit",
+    "pypi_pylint",
+    "pypi_pytest",
+    "pypi_pytest_asyncio",
+    "pypi_pytest_cov",
+    "pypi_types_pkg_resources",
+    "pypi_typing_extensions"
+  ]
+}

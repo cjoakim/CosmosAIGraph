@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: artificial intelligence"
+  ],
+  "description": "<a href=\"https://explosion.ai\"><img src=\"https://explosion.ai/assets/img/logo.svg\" width=\"125\" height=\"125\" align=\"right\" /></a>\n\n# spacy + stanza (formerly stanfordnlp)\n\nthis package wraps the [stanza](https://github.com/stanfordnlp/stanza) (formerly\nstanfordnlp) library, so you can use stanford's models in a\n[spacy](https://spacy.io) pipeline. the stanford models achieved top accuracy in\nthe conll 2017 and 2018 shared task, which involves tokenization, part-of-speech\ntagging, morphological analysis, lemmatization and labeled dependency parsing in\n68 languages. as of v1.0, stanza also supports named entity recognition for\nselected languages.\n\n> \u26a0\ufe0f previous version of this package were available as\n> [`spacy-stanfordnlp`](https://pypi.python.org/pypi/spacy-stanfordnlp).\n\n[![tests](https://github.com/explosion/spacy-stanza/actions/workflows/tests.yml/badge.svg)](https://github.com/explosion/spacy-stanza/actions/workflows/tests.yml)\n[![pypi](https://img.shields.io/pypi/v/spacy-stanza.svg?style=flat-square)](https://pypi.python.org/pypi/spacy-stanza)\n[![github](https://img.shields.io/github/release/explosion/spacy-stanza/all.svg?style=flat-square)](https://github.com/explosion/spacy-stanza)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/ambv/black)\n\nusing this wrapper, you'll be able to use the following annotations, computed by\nyour pretrained `stanza` model:\n\n- statistical tokenization (reflected in the `doc` and its tokens)\n- lemmatization (`token.lemma` and `token.lemma_`)\n- part-of-speech tagging (`token.tag`, `token.tag_`, `token.pos`, `token.pos_`)\n- morphological analysis (`token.morph`)\n- dependency parsing (`token.dep`, `token.dep_`, `token.head`)\n- named entity recognition (`doc.ents`, `token.ent_type`, `token.ent_type_`,\n  `token.ent_iob`, `token.ent_iob_`)\n- sentence segmentation (`doc.sents`)\n\n## \ufe0f\ufe0f\ufe0f\u231b\ufe0f installation\n\nas of v1.0.0 `spacy-stanza` is only compatible with **spacy v3.x**. to install\nthe most recent version:\n\n```bash\npip install spacy-stanza\n```\n\nfor spacy v2, install v0.2.x and refer to the\n[v0.2.x usage documentation](https://github.com/explosion/spacy-stanza/tree/v0.2.x#-usage--examples):\n\n```bash\npip install \"spacy-stanza<0.3.0\"\n```\n\nmake sure to also\n[download](https://stanfordnlp.github.io/stanza/download_models.html) one of the\n[pre-trained stanza models](https://stanfordnlp.github.io/stanza/models.html).\n\n## \ud83d\udcd6 usage & examples\n\n> \u26a0\ufe0f **important note:** this package has been refactored to take advantage of\n> [spacy v3.0](https://spacy.io). previous versions that were built for\n> [spacy v2.x](https://v2.spacy.io) worked considerably differently. please see\n> previous tagged versions of this readme for documentation on prior versions.\n\nuse `spacy_stanza.load_pipeline()` to create an `nlp` object that you can use to\nprocess a text with a stanza pipeline and create a spacy\n[`doc` object](https://spacy.io/api/doc). by default, both the spacy pipeline\nand the stanza pipeline will be initialized with the same `lang`, e.g. \"en\":\n\n```python\nimport stanza\nimport spacy_stanza\n\n# download the stanza model if necessary\nstanza.download(\"en\")\n\n# initialize the pipeline\nnlp = spacy_stanza.load_pipeline(\"en\")\n\ndoc = nlp(\"barack obama was born in hawaii. he was elected president in 2008.\")\nfor token in doc:\n    print(token.text, token.lemma_, token.pos_, token.dep_, token.ent_type_)\nprint(doc.ents)\n```\n\nif language data for the given language is available in spacy, the respective\nlanguage class can be used as the base for the `nlp` object \u2013 for example,\n`english()`. this lets you use spacy's lexical attributes like `is_stop` or\n`like_num`. the `nlp` object follows the same api as any other spacy `language`\nclass \u2013 so you can visualize the `doc` objects with displacy, add custom\ncomponents to the pipeline, use the rule-based matcher and do pretty much\nanything else you'd normally do in spacy.\n\n```python\n# access spacy's lexical attributes\nprint([token.is_stop for token in doc])\nprint([token.like_num for token in doc])\n\n# visualize dependencies\nfrom spacy import displacy\ndisplacy.serve(doc)  # or displacy.render if you're in a jupyter notebook\n\n# process texts with nlp.pipe\nfor doc in nlp.pipe([\"lots of texts\", \"even more texts\", \"...\"]):\n    print(doc.text)\n\n# combine with your own custom pipeline components\nfrom spacy import language\n@language.component(\"custom_component\")\ndef custom_component(doc):\n    # do something to the doc here\n    print(f\"custom component called: {doc.text}\")\n    return doc\n\nnlp.add_pipe(\"custom_component\")\ndoc = nlp(\"some text\")\n\n# serialize attributes to a numpy array\nnp_array = doc.to_array(['orth', 'lemma', 'pos'])\n```\n\n### stanza pipeline options\n\nadditional options for the stanza\n[`pipeline`](https://stanfordnlp.github.io/stanza/pipeline.html#pipeline) can be\nprovided as keyword arguments following the `pipeline` api:\n\n- provide the stanza language as `lang`. for stanza languages without spacy\n  support, use \"xx\" for the spacy language setting:\n\n  ```python\n  # initialize a pipeline for coptic\n  nlp = spacy_stanza.load_pipeline(\"xx\", lang=\"cop\")\n  ```\n\n- provide stanza pipeline settings following the `pipeline` api:\n\n  ```python\n  # initialize a german pipeline with the `hdt` package\n  nlp = spacy_stanza.load_pipeline(\"de\", package=\"hdt\")\n  ```\n\n- tokenize with spacy rather than the statistical tokenizer (only for english):\n\n  ```python\n  nlp = spacy_stanza.load_pipeline(\"en\", processors= {\"tokenize\": \"spacy\"})\n  ```\n\n- provide any additional processor settings as additional keyword arguments:\n\n  ```python\n  # provide pretokenized texts (whitespace tokenization)\n  nlp = spacy_stanza.load_pipeline(\"de\", tokenize_pretokenized=true)\n  ```\n\nthe spacy config specifies all `pipeline` options in the `[nlp.tokenizer]`\nblock. for example, the config for the last example above, a german pipeline\nwith pretokenized texts:\n\n```ini\n[nlp.tokenizer]\n@tokenizers = \"spacy_stanza.pipelineastokenizer.v1\"\nlang = \"de\"\ndir = null\npackage = \"default\"\nlogging_level = null\nverbose = null\nuse_gpu = true\n\n[nlp.tokenizer.kwargs]\ntokenize_pretokenized = true\n\n[nlp.tokenizer.processors]\n```\n\n### serialization\n\nthe full stanza pipeline configuration is stored in the spacy pipeline\n[config](https://spacy.io/usage/training#config), so you can save and load the\npipeline just like any other `nlp` pipeline:\n\n```python\n# save to a local directory\nnlp.to_disk(\"./stanza-spacy-model\")\n\n# reload the pipeline\nnlp = spacy.load(\"./stanza-spacy-model\")\n```\n\nnote that this **does not save any stanza model data by default**. the stanza\nmodels are very large, so for now, this package expects you to download the\nmodels separately with `stanza.download()` and have them available either in the\ndefault model directory or in the path specified under `[nlp.tokenizer.dir]` in\nthe config.\n\n### adding additional spacy pipeline components\n\nby default, the spacy pipeline in the `nlp` object returned by\n`spacy_stanza.load_pipeline()` will be empty, because all `stanza` attributes\nare computed and set within the custom tokenizer,\n[`stanzatokenizer`](spacy_stanza/tokenizer.py). but since it's a regular `nlp`\nobject, you can add your own components to the pipeline. for example, you could\nadd\n[your own custom text classification component](https://spacy.io/usage/training)\nwith `nlp.add_pipe(\"textcat\", source=source_nlp)`, or augment the named entities\nwith your own rule-based patterns using the\n[`entityruler` component](https://spacy.io/usage/rule-based-matching#entityruler).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "spacy-stanza",
+  "package_url": "https://pypi.org/project/spacy-stanza/",
+  "project_url": "https://pypi.org/project/spacy-stanza/",
+  "project_urls": {
+    "Homepage": "https://explosion.ai",
+    "Release notes": "https://github.com/explosion/spacy-stanza/releases",
+    "Source": "https://github.com/explosion/spacy-stanza"
+  },
+  "release_url": "https://pypi.org/project/spacy-stanza/1.0.4/",
+  "requires_dist": [
+    "spacy <4.0.0,>=3.0.0",
+    "stanza <1.7.0,>=1.2.0"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "use the latest stanza (stanfordnlp) research models directly in spacy",
+  "version": "1.0.4",
+  "releases": [],
+  "developers": [
+    "contact@explosion.ai",
+    "explosion"
+  ],
+  "kwds": "stanfordnlp annotations tokenizers stanzatokenizer tokenizer",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_spacy_stanza",
+  "homepage": "https://explosion.ai",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_spacy",
+    "pypi_stanza"
+  ]
+}

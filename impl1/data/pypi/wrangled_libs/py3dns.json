@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: no input/output (daemon)",
+    "intended audience :: developers",
+    "license :: osi approved :: python license (cnri python license)",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "topic :: internet :: name service (dns)",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "release 4.0.0 unreleased\nremoved class dnsasyncrequest since python 3.12 dropped asyncore.  bumping\nmajor version since this is a breaking change.  if you need async dns, use\naiodns instead.\n\nchanged behavior when /etc/resolv.conf is missing.  instead of\nfilenotfounderror, assume dns server is '127.0.0.1'.\n\nrelease 3.2.0 mon jul 23 2018\n\nswitched from distutils to setuptools because \"it's the future\".  it is\nunlikely to have end user impact.  for python3.3+ no additional dependencies\nare required.\n\nrelease 3.1.0 thu apr 24 23:52:00 edt 2014\n\nmore choices about result types are provided in 3.1.0.  to specify resulttype,\nin a dnsrequest object, use the new function dnsrequest.qry\n(resulttype='binary/text/default'). dnsrequest.qry returns ipaddress objects\nfor a and aaaa queries by defaults.  other defaults are the same as\ndnsrequest.req.  continue to use dnsrequest.req for exact backward\ncompatibility with pydns and older py3dns defaults.  txt and spf record data\nare returned as strings by default, this matches what dnspython3 returns.\n\nthe ipaddress module is used internally now.  see changes for details.\n\nrelease 3.0.3 wed may 29 00:05:00 edt 2013\n\nthere was a third, unintended incompatiblity in 3.0.2 in that ipv6 addresses\nwere returned in their string format rather than their decimal format.  this\nbreaks pyspf queries when the connect ip is ipv6.  3.0.3 is a release strictly\nto revert this change.\n\nrelease 3.0.2 thu jan 19 01:25:00 est 2012\n\nthis release introduces two potentially incompatible changes from the python\nverion of dns (pydns).  first, the data portion of dns records of types txt\nand spf are returned as bytes instead of strings.  second, additional sub\nclasses of dnserror have been added.  any code that catches dnserror should\nbe checked to see if it needs updating to catch one of the new sub classes:\nargumenterror, socketerror, timeouterror, servererror, and\nincompletereplyerror.\n\nrelease 3.0 sun mar 2-9 23:07:22 2011 -0400\n\nported to python3 by scott kitterman <scott@kitterman.com>.  this is mostly a\nminimal port to work with python3 (tested with python3.2) plus addition of\nsome of the patches that people have submitted on sourceforge. it should be\nfully api compatible with 2.3. note: version 3.0.0 shipped with a new\nlazy.lookupfull function in advance of 2.3. this was incorporated in pydns\n2.3.5 as lazy.lookupalll. it has been renamed in 3.0.1 to stay api compatible\nwith pydns 2.3.\n\nrelease 2.3 mon may  6 16:18:02 est 2002\n\nthis is a another release of the pydns code, as originally written by \nguido van rossum, and with a hopefully nicer api bolted over the\ntop of it by anthony baxter <anthony@interlink.com.au>. \n\nthis code is released under a python-style license. \n\ni'm making this release because there hasn't been a release in a \nheck of a long time, and it probably deserves one. i'd also like to\ndo a substantial refactor of some of the guts of the code, and this\nis likely to break any code that uses the existing interface. so\nthis will be a release for people who are using the existing api...\n\nthere are several known bugs/unfinished bits\n\n- processing of axfr results is not done yet.\n- doesn't do ipv6 dns requests (type aaaa) \n- docs, aside from this file\n- all sorts of other stuff that i've probably forgotten.\n- macos support for discovering nameservers\n- the api that i evolved some time ago is pretty ugly. i'm going\n  to re-do it, designed this time.\n\nstuff it _does_ do:\n- processes /etc/resolv.conf - at least as far as nameserver directives go.\n- tries multiple nameservers.\n- nicer api - see below.\n- returns results in more useful format.\n- optional timing of requests.\n- default 'show' behaviour emulates 'dig' pretty closely.\n  \n\nto use:\n\nimport dns\nreqobj=dns.request(args)\nreqobj.req(args)\n\nargs can be a name, in which case it takes that as the query, and/or a series\nof keyword/value args. (see below for a list of args)\n\nwhen calling the 'req()' method, it reuses the options specified in the\ndns.request() call as defaults.\n\noptions are applied in the following order:\n  those specified in the req() call\n  or, if not specified there,\n  those specified in the creation of the request() object\n  or, if not specified there,\n  those specified in the dns.defaults dictionary\n\nname servers can be specified in the following ways:\n- by calling dns.discovernameservers(), which will load the dns servers\n    from the system's /etc/resolv.conf file on unix, or from the registry\n    on windows.\n- by specifying it as an option to the request\n- by manually setting dns.defaults['server'] to a list of server ip\n    addresses to try\n- xxxx it should be possible to load the dns servers on a mac os machine, \n    from where-ever they've squirrelled them away\n\nname=\"host.do.main\"   # the object being looked up\nqtype=\"soa\"           # the query type, eg soa, a, mx, cname, any\nprotocol=\"udp\"        # \"udp\" or \"tcp\" - usually you want \"udp\"\nserver=\"nameserver\"   # the name of the nameserver. note that you might\n                      # want to use an ip address here\nrd=1                  # \"recursion desired\" - defaults to 1.\nother: opcode, port, ...\n\nthere's also some convenience functions, for the lazy:\n\nto do a reverse lookup:\n>>> print dns.revlookup(\"192.189.54.17\")    \nyarrina.connect.com.au\n\nto look up all mx records for an entry:\n>>> print dns.mxlookup(\"connect.com.au\")\n[(10, 'yarrina.connect.com.au'), (100, 'warrane.connect.com.au')]\n\ndocumentation of the rest of the interface will have to wait for a \nlater date. note that the dnsasyncrequest stuff is currently not\nworking - i haven't looked too closely at why, yet.\n\nthere's some examples in the tests/ directory - including test5.py,\nwhich is even vaguely useful. it looks for the soa for a domain, checks\nthat the primary ns is authoritative, then checks the nameservers\nthat it believes are nss for the domain and checks that they're\nauthoritative, and that the zone serial numbers match.\n\nsee also readme.guido for the original docs.\n\npy3dns is derived from pydns.  the sourceforge details below refer to pydns.\nall py3dns issues/comments/etc should be reported via\nhttps://launchpad.net/py3dns.\n\ncomments to me, anthony@interlink.com.au, or to the mailing list,\npydns-developer@lists.sourceforge.net.\n\nbugs/patches to the tracker on sf - \n               http://sourceforge.net/tracker/?group_id=31674\n",
+  "docs_url": null,
+  "keywords": "dns",
+  "license": "",
+  "name": "py3dns",
+  "package_url": "https://pypi.org/project/py3dns/",
+  "project_url": "https://pypi.org/project/py3dns/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/py3dns/4.0.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.2",
+  "summary": "python 3 dns library",
+  "version": "4.0.0",
+  "releases": [],
+  "developers": [
+    "py3dns-hackers@lists.launchpad.net",
+    "scott@kitterman.com"
+  ],
+  "kwds": "dnspython3 dnsasyncrequest dnsrequest dns py3dns",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_py3dns",
+  "homepage": "",
+  "release_count": 6,
+  "dependency_ids": []
+}

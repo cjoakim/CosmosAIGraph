@@ -1,0 +1,40 @@
+{
+  "classifiers": [],
+  "description": "# \u23f3 tiktoken\n\ntiktoken is a fast [bpe](https://en.wikipedia.org/wiki/byte_pair_encoding) tokeniser for use with\nopenai's models.\n\n```python\nimport tiktoken\nenc = tiktoken.get_encoding(\"cl100k_base\")\nassert enc.decode(enc.encode(\"hello world\")) == \"hello world\"\n\n# to get the tokeniser corresponding to a specific model in the openai api:\nenc = tiktoken.encoding_for_model(\"gpt-4\")\n```\n\nthe open source version of `tiktoken` can be installed from pypi:\n```\npip install tiktoken\n```\n\nthe tokeniser api is documented in `tiktoken/core.py`.\n\nexample code using `tiktoken` can be found in the\n[openai cookbook](https://github.com/openai/openai-cookbook/blob/main/examples/how_to_count_tokens_with_tiktoken.ipynb).\n\n\n## performance\n\n`tiktoken` is between 3-6x faster than a comparable open source tokeniser:\n\n![image](https://raw.githubusercontent.com/openai/tiktoken/main/perf.svg)\n\nperformance measured on 1gb of text using the gpt-2 tokeniser, using `gpt2tokenizerfast` from\n`tokenizers==0.13.2`, `transformers==4.24.0` and `tiktoken==0.2.0`.\n\n\n## getting help\n\nplease post questions in the [issue tracker](https://github.com/openai/tiktoken/issues).\n\nif you work at openai, make sure to check the internal documentation or feel free to contact\n@shantanu.\n\n## what is bpe anyway?\n\nmodels don't see text like you and i, instead they see a sequence of numbers (known as tokens).\nbyte pair encoding (bpe) is a way of converting text into tokens. it has a couple desirable\nproperties:\n1) it's reversible and lossless, so you can convert tokens back into the original text\n2) it works on arbitrary text, even text that is not in the tokeniser's training data\n3) it compresses the text: the token sequence is shorter than the bytes corresponding to the\n   original text. on average, in practice, each token corresponds to about 4 bytes.\n4) it attempts to let the model see common subwords. for instance, \"ing\" is a common subword in\n   english, so bpe encodings will often split \"encoding\" into tokens like \"encod\" and \"ing\"\n   (instead of e.g. \"enc\" and \"oding\"). because the model will then see the \"ing\" token again and\n   again in different contexts, it helps models generalise and better understand grammar.\n\n`tiktoken` contains an educational submodule that is friendlier if you want to learn more about\nthe details of bpe, including code that helps visualise the bpe procedure:\n```python\nfrom tiktoken._educational import *\n\n# train a bpe tokeniser on a small amount of text\nenc = train_simple_encoding()\n\n# visualise how the gpt-4 encoder encodes text\nenc = simplebytepairencoding.from_tiktoken(\"cl100k_base\")\nenc.encode(\"hello world aaaaaaaaaaaa\")\n```\n\n\n## extending tiktoken\n\nyou may wish to extend `tiktoken` to support new encodings. there are two ways to do this.\n\n\n**create your `encoding` object exactly the way you want and simply pass it around.**\n\n```python\ncl100k_base = tiktoken.get_encoding(\"cl100k_base\")\n\n# in production, load the arguments directly instead of accessing private attributes\n# see openai_public.py for examples of arguments for specific encodings\nenc = tiktoken.encoding(\n    # if you're changing the set of special tokens, make sure to use a different name\n    # it should be clear from the name what behaviour to expect.\n    name=\"cl100k_im\",\n    pat_str=cl100k_base._pat_str,\n    mergeable_ranks=cl100k_base._mergeable_ranks,\n    special_tokens={\n        **cl100k_base._special_tokens,\n        \"<|im_start|>\": 100264,\n        \"<|im_end|>\": 100265,\n    }\n)\n```\n\n**use the `tiktoken_ext` plugin mechanism to register your `encoding` objects with `tiktoken`.**\n\nthis is only useful if you need `tiktoken.get_encoding` to find your encoding, otherwise prefer\noption 1.\n\nto do this, you'll need to create a namespace package under `tiktoken_ext`.\n\nlayout your project like this, making sure to omit the `tiktoken_ext/__init__.py` file:\n```\nmy_tiktoken_extension\n\u251c\u2500\u2500 tiktoken_ext\n\u2502\u00a0\u00a0 \u2514\u2500\u2500 my_encodings.py\n\u2514\u2500\u2500 setup.py\n```\n\n`my_encodings.py` should be a module that contains a variable named `encoding_constructors`.\nthis is a dictionary from an encoding name to a function that takes no arguments and returns\narguments that can be passed to `tiktoken.encoding` to construct that encoding. for an example, see\n`tiktoken_ext/openai_public.py`. for precise details, see `tiktoken/registry.py`.\n\nyour `setup.py` should look something like this:\n```python\nfrom setuptools import setup, find_namespace_packages\n\nsetup(\n    name=\"my_tiktoken_extension\",\n    packages=find_namespace_packages(include=['tiktoken_ext*']),\n    install_requires=[\"tiktoken\"],\n    ...\n)\n```\n\nthen simply `pip install ./my_tiktoken_extension` and you should be able to use your\ncustom encodings! make sure **not** to use an editable install.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license  copyright (c) 2022 openai, shantanu jain  permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"software\"), to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, subject to the following conditions:  the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software. ",
+  "name": "tiktoken",
+  "package_url": "https://pypi.org/project/tiktoken/",
+  "project_url": "https://pypi.org/project/tiktoken/",
+  "project_urls": {
+    "changelog": "https://github.com/openai/tiktoken/blob/main/CHANGELOG.md",
+    "homepage": "https://github.com/openai/tiktoken",
+    "repository": "https://github.com/openai/tiktoken"
+  },
+  "release_url": "https://pypi.org/project/tiktoken/0.5.2/",
+  "requires_dist": [
+    "regex >=2022.1.18",
+    "requests >=2.26.0",
+    "blobfile >=2 ; extra == 'blobfile'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "tiktoken is a fast bpe tokeniser for use with openai's models",
+  "version": "0.5.2",
+  "releases": [],
+  "developers": [
+    "shantanu@openai.com",
+    "shantanu_jain"
+  ],
+  "kwds": "how_to_count_tokens_with_tiktoken tiktoken_ext from_tiktoken tiktoken my_tiktoken_extension",
+  "license_kwds": "copyright license liable mit liability",
+  "libtype": "pypi",
+  "id": "pypi_tiktoken",
+  "homepage": "",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_blobfile",
+    "pypi_regex",
+    "pypi_requests"
+  ]
+}

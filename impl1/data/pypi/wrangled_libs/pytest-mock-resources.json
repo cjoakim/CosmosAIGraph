@@ -1,0 +1,70 @@
+{
+  "classifiers": [
+    "framework :: pytest",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "![circleci](https://img.shields.io/circleci/build/gh/schireson/pytest-mock-resources/master)\n[![codecov](https://codecov.io/gh/schireson/pytest-mock-resources/branch/master/graph/badge.svg)](https://codecov.io/gh/schireson/pytest-mock-resources)\n[![documentation\nstatus](https://readthedocs.org/projects/pytest-mock-resources/badge/?version=latest)](https://pytest-mock-resources.readthedocs.io/en/latest/?badge=latest)\n\n## introduction\n\ncode which depends on external resources such a databases (postgres, redshift, etc) can be difficult\nto write automated tests for. conventional wisdom might be to mock or stub out the actual database\ncalls and assert that the code works correctly before/after the calls.\n\nhowever take the following, _simple_ example:\n\n```python\ndef serialize(users):\n    return [\n        {\n            'user': user.serialize(),\n            'address': user.address.serialize(),\n            'purchases': [p.serialize() for p in user.purchases],\n        }\n        for user in users\n    ]\n\ndef view_function(session):\n    users = session.query(user).join(address).options(selectinload(user.purchases)).all()\n    return serialize(users)\n```\n\nsure, you can test `serialize`, but whether the actual **query** did the correct thing _truly_\nrequires that you execute the query.\n\n## the pitch\n\nhaving tests depend upon a **real** postgres instance running somewhere is a pain, very fragile, and\nprone to issues across machines and test failures.\n\ntherefore `pytest-mock-resources` (primarily) works by managing the lifecycle of docker containers\nand providing access to them inside your tests.\n\nas such, this package makes 2 primary assumptions:\n\n- you're using `pytest` (hopefully that's appropriate, given the package name)\n- for many resources, `docker` is required to be available and running (or accessible through remote\n  docker).\n\nif you aren't familiar with pytest fixtures, you can read up on them in the [pytest\ndocumentation](https://docs.pytest.org/en/latest/fixture.html).\n\nin the above example, your test file could look something like\n\n```python\nfrom pytest_mock_resources import create_postgres_fixture\nfrom models import modelbase\n\npg = create_postgres_fixture(modelbase, session=true)\n\ndef test_view_function_empty_db(pg):\n  response = view_function(pg)\n  assert response == ...\n\ndef test_view_function_user_without_purchases(pg):\n  pg.add(user(...))\n  pg.flush()\n\n  response = view_function(pg)\n  assert response == ...\n\ndef test_view_function_user_with_purchases(pg):\n  pg.add(user(..., purchases=[purchase(...)]))\n  pg.flush()\n\n  response = view_function(pg)\n  assert response == ...\n```\n\n## existing resources (many more possible)\n\n- sqlite\n\n  ```python\n  from pytest_mock_resources import create_sqlite_fixture\n  ```\n\n- postgres\n\n  ```python\n  from pytest_mock_resources import create_postgres_fixture\n  ```\n\n- redshift\n\n  **note** uses postgres under the hood, but the fixture tries to support as much redshift\n  functionality as possible (including redshift's `copy`/`unload` commands).\n\n  ```python\n  from pytest_mock_resources import create_redshift_fixture\n  ```\n\n- mongo\n\n  ```python\n  from pytest_mock_resources import create_mongo_fixture\n  ```\n\n- redis\n\n  ```python\n  from pytest_mock_resources import create_redis_fixture\n  ```\n\n- mysql\n\n  ```python\n  from pytest_mock_resources import create_mysql_fixture\n  ```\n\n- moto\n\n  ```python\n  from pytest_mock_resources import create_moto_fixture\n  ```\n\n## features\n\ngeneral features include:\n\n- support for \"actions\" which pre-populate the resource you're mocking before the test\n- [async fixtures](https://pytest-mock-resources.readthedocs.io/en/latest/async.html)\n- custom configuration for container/resource startup\n\n## installation\n\n```bash\n# basic fixture support i.e. sqlite\npip install \"pytest-mock-resources\"\n\n# general, docker-based fixture support\npip install \"pytest-mock-resources[docker]\"\n\n# mongo fixture support, installs `pymongo`\npip install \"pytest-mock-resources[mongo]\"\n\n# moto fixture support, installs non-driver extras specific to moto support\npip install \"pytest-mock-resources[moto]\"\n\n# redis fixture support, installs `redis` client\npip install \"pytest-mock-resources[redis]\"\n\n# redshift fixture support, installs non-driver extras specific to redshift support\npip install \"pytest-mock-resources[redshift]\"\n```\n\nadditionally there are number of **convenience** extras currently provided\nfor installing drivers/clients of specific features. however in most cases,\nyou **should** already be installing the driver/client used for that fixture\nas as first-party dependency of your project.\n\nas such, we recommend against using these extras, and instead explcitly depending\non the package in question in your own project's 1st party dependencies.\n\n```bash\n# installs psycopg2/psycopg2-binary driver\npip install \"pytest-mock-resources[postgres-binary]\"\npip install \"pytest-mock-resources[postgres]\"\n\n# installs asyncpg driver\npip install \"pytest-mock-resources[postgres-async]\"\n\n# installs pymysql driver\npip install \"pytest-mock-resources[mysql]\"\n```\n\n## possible future resources\n\n- rabbit broker\n- aws presto\n\nfeel free to file an [issue](https://github.com/schireson/pytest-mock-resources/issues) if you find\nany bugs or want to start a conversation around a mock resource you want implemented!\n\n## python 2\n\nreleases in the 1.x series were supportive of python 2. however starting from 2.0.0, support for\npython 2 was dropped. we may accept bugfix prs for the 1.x series, however new development and\nfeatures will not be backported.\n",
+  "docs_url": null,
+  "keywords": "pytest,sqlalchemy,docker,fixture,mock",
+  "license": "mit",
+  "name": "pytest-mock-resources",
+  "package_url": "https://pypi.org/project/pytest-mock-resources/",
+  "project_url": "https://pypi.org/project/pytest-mock-resources/",
+  "project_urls": {
+    "Homepage": "https://github.com/schireson/pytest-mock-resources",
+    "Repository": "https://github.com/schireson/pytest-mock-resources"
+  },
+  "release_url": "https://pypi.org/project/pytest-mock-resources/2.9.2/",
+  "requires_dist": [
+    "pytest (>=1.0)",
+    "sqlalchemy (>1.0,!=1.4.0,!=1.4.1,!=1.4.2,!=1.4.3,!=1.4.4,!=1.4.5,!=1.4.6,!=1.4.7,!=1.4.8,!=1.4.9,!=1.4.10,!=1.4.11,!=1.4.12,!=1.4.13,!=1.4.14,!=1.4.15,!=1.4.16,!=1.4.17,!=1.4.18,!=1.4.19,!=1.4.20,!=1.4.21,!=1.4.22,!=1.4.23)",
+    "typing_extensions",
+    "psycopg2; extra == \"postgres\"",
+    "psycopg2-binary; extra == \"postgres-binary\"",
+    "asyncpg; extra == \"postgres-async\"",
+    "moto; extra == \"redshift\"",
+    "boto3; extra == \"redshift\" or extra == \"moto\"",
+    "sqlparse; extra == \"redshift\"",
+    "pymongo; extra == \"mongo\"",
+    "redis; extra == \"redis\"",
+    "pymysql (>=1.0); extra == \"mysql\"",
+    "filelock; extra == \"docker\" or extra == \"postgres\" or extra == \"postgres-binary\" or extra == \"postgres-async\" or extra == \"redshift\" or extra == \"mongo\" or extra == \"moto\" or extra == \"redis\" or extra == \"mysql\"",
+    "python-on-whales (>=0.22.0); extra == \"docker\" or extra == \"postgres\" or extra == \"postgres-binary\" or extra == \"postgres-async\" or extra == \"redshift\" or extra == \"mongo\" or extra == \"moto\" or extra == \"redis\" or extra == \"mysql\""
+  ],
+  "requires_python": ">=3.7,<4",
+  "summary": "a pytest plugin for easily instantiating reproducible mock resources.",
+  "version": "2.9.2",
+  "releases": [],
+  "developers": [
+    "oakhan3@gmail.com",
+    "omar_khan"
+  ],
+  "kwds": "pytest_mock_resources pytest mock mocking pymysql",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_mock_resources",
+  "homepage": "https://github.com/schireson/pytest-mock-resources",
+  "release_count": 55,
+  "dependency_ids": [
+    "pypi_asyncpg",
+    "pypi_boto3",
+    "pypi_filelock",
+    "pypi_moto",
+    "pypi_psycopg2",
+    "pypi_psycopg2_binary",
+    "pypi_pymongo",
+    "pypi_pymysql",
+    "pypi_pytest",
+    "pypi_python_on_whales",
+    "pypi_redis",
+    "pypi_sqlalchemy",
+    "pypi_sqlparse",
+    "pypi_typing_extensions"
+  ]
+}

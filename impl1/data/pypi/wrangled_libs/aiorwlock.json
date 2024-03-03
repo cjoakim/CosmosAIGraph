@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: asyncio",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "aiorwlock\n=========\n.. image:: https://github.com/aio-libs/aiorwlock/workflows/ci/badge.svg\n   :target: https://github.com/aio-libs/aiorwlock/actions?query=workflow%3aci\n.. image:: https://codecov.io/gh/aio-libs/aiorwlock/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/aio-libs/aiorwlock\n.. image:: https://badges.gitter.im/join%20chat.svg\n   :target: https://gitter.im/aio-libs/lobby\n   :alt: chat on gitter\n\nread write lock for asyncio_ . a ``rwlock`` maintains a pair of associated\nlocks, one for read-only operations and one for writing. the read lock may be\nheld simultaneously by multiple reader tasks, so long as there are\nno writers. the write lock is exclusive.\n\nwhether or not a read-write lock will improve performance over the use of\na mutual exclusion lock depends on the frequency that the data is *read*\ncompared to being *modified*. for example, a collection that is initially\npopulated with data and thereafter infrequently modified, while being\nfrequently searched is an ideal candidate for the use of a read-write lock.\nhowever, if updates become frequent then the data spends most of its time\nbeing exclusively locked and there is little, if any increase in concurrency.\n\n\nimplementation is almost direct port from this patch_.\n\n\nexample\n-------\n\nrequires python 3.5.3+\n\n.. code:: python\n\n   import asyncio\n   import aiorwlock\n\n\n   async def go():\n       rwlock = aiorwlock.rwlock()\n\n       # acquire reader lock, multiple coroutines allowed to hold the lock\n       async with rwlock.reader_lock:\n           print('inside reader lock')\n           await asyncio.sleep(0.1)\n\n       # acquire writer lock, only one coroutine can hold the lock\n       async with rwlock.writer_lock:\n           print('inside writer lock')\n           await asyncio.sleep(0.1)\n\n\n   loop = asyncio.get_event_loop()\n   loop.run_until_complete(go())\n\n\nfast path\n---------\n\nby default `rwlock` switches context on lock acquiring. that allows to\nother waiting tasks get the lock even if task that holds the lock\ndoesn't contain context switches (`await fut` statements).\n\nthe default behavior can be switched off by `fast` argument:\n`rwlock(fast=true)`.\n\nlong story short:  lock is safe by  default, but if you  sure you have\ncontext switches (`await`,  `async with`, `async for`  or `yield from`\nstatements) inside  locked code  you may want  to use  `fast=true` for\nminor speedup.\n\n\ntla+ specification\n------------------\n\ntla+ specification of ``aiorwlock`` provided in this repository.\n\n\nlicense\n-------\n\n``aiorwlock`` is offered under the apache 2 license.\n\n\n.. _asyncio: http://docs.python.org/3.8/library/asyncio.html\n.. _patch: http://bugs.python.org/issue8800\n\nchanges\n-------\n\n1.3.0 (2022-1-18)\n^^^^^^^^^^^^^^^^^^\n\n* dropped python 3.6 support\n* python 3.10 is officially supported\n* drop deprecated `loop` parameter from `rwlock` constructor\n\n\n1.2.0 (2021-11-09)\n^^^^^^^^^^^^^^^^^^\n\n* fix a bug that makes concurrent writes possible under some (rare) conjunctions (#235)\n\n1.1.0 (2021-09-27)\n^^^^^^^^^^^^^^^^^^\n\n* remove explicit loop usage in `asyncio.sleep()` call, make the library forward\n  compatible with python 3.10\n\n1.0.0 (2020-12-32)\n^^^^^^^^^^^^^^^^^^\n\n* fix a bug with cancelation during acquire #170 (thanks @romasku)\n\n* deprecate passing explicit `loop` argument to `rwlock` constructor\n\n* deprecate creation of `rwlock` instance outside of async function context\n\n* minimal supported version is python 3.6\n\n* the library works with python 3.8 and python 3.9 seamlessly\n\n\n0.6.0 (2018-12-18)\n^^^^^^^^^^^^^^^^^^\n* wake up all readers after writer releases lock #60 (thanks @ranyixu)\n\n* fixed python 3.7 compatibility\n\n* removed old `yield from` syntax\n\n* minimal supported version is python 3.5.3\n\n* removed support for none async context managers\n\n0.5.0 (2017-12-03)\n^^^^^^^^^^^^^^^^^^\n\n* fix corner cases and deadlock when we upgrade lock from write to\n  read #39\n\n* use loop.create_future instead asyncio.future if possible\n\n0.4.0 (2015-09-20)\n^^^^^^^^^^^^^^^^^^\n\n* support python 3.5 and `async with` statement\n\n* rename `.reader_lock` -> `.reader`, `.writer_lock` ->\n  `.writer`. backward compatibility is preserved.\n\n0.3.0 (2014-02-11)\n^^^^^^^^^^^^^^^^^^\n\n* add `.locked` property\n\n0.2.0 (2014-02-09)\n^^^^^^^^^^^^^^^^^^\n\n* make `.release()` non-coroutine\n\n\n0.1.0 (2014-12-22)\n^^^^^^^^^^^^^^^^^^\n\n* initial release\n\n",
+  "docs_url": null,
+  "keywords": "aiorwlock,lock,asyncio",
+  "license": "apache 2",
+  "name": "aiorwlock",
+  "package_url": "https://pypi.org/project/aiorwlock/",
+  "project_url": "https://pypi.org/project/aiorwlock/",
+  "project_urls": {
+    "Download": "https://pypi.python.org/pypi/aiorwlock",
+    "Homepage": "https://github.com/aio-libs/aiorwlock",
+    "Issues": "https://github.com/aio-libs/aiorwlock/issues",
+    "Website": "https://github.com/aio-libs/aiorwlock"
+  },
+  "release_url": "https://pypi.org/project/aiorwlock/1.3.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.7.0",
+  "summary": "read write lock for asyncio.",
+  "version": "1.3.0",
+  "releases": [],
+  "developers": [
+    "nickolainovik@gmail.com",
+    "nikolay_novik"
+  ],
+  "kwds": "writer_lock reader_lock locks lock deadlock",
+  "license_kwds": "apache 2",
+  "libtype": "pypi",
+  "id": "pypi_aiorwlock",
+  "homepage": "https://github.com/aio-libs/aiorwlock",
+  "release_count": 13,
+  "dependency_ids": []
+}

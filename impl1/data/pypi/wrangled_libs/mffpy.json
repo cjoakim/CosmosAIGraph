@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# introduction\n\n[![github actions](https://github.com/bel-public/mffpy/workflows/lint-and-test/badge.svg)\n](https://github.com/bel-public/mffpy/actions)\n\n`mffpy` is a lean reader for egi's mff file format.  these files are\ndirectories containing several files of mostly xml files, but also binary\nfiles.\n\nthe main entry point into the library is class `reader` that accesses a\nselection of functions in the .mff directory to return signal data and its meta\ninformation.\n\n## installation\n\n```bash\n$ conda create -n mffpy python=3.6 pip\n$ conda activate mffpy\n$ pip install -r requirements-dev.txt\n$ pip install .\n$ # and to run the test\n$ make test\n```\n\n## contribute\n\ndefinitely run:\n```bash\n$ pre-commit install\n```\n\n### test coverage\n\n```\n============================= test session starts ==============================\nplatform linux -- python 3.6.7, pytest-7.0.1, pluggy-1.0.0\nrootdir: /home/runner/work/mffpy/mffpy\nplugins: cov-4.0.0\ncollected 122 items\n\nmffpy/tests/test_cached_property.py ..                                   [  1%]\nmffpy/tests/test_devices.py .............                                [ 12%]\nmffpy/tests/test_dict2xml.py .                                           [ 13%]\nmffpy/tests/test_header_block.py ..                                      [ 14%]\nmffpy/tests/test_mffdir.py ....                                          [ 18%]\nmffpy/tests/test_raw_bin_files.py ..................                     [ 32%]\nmffpy/tests/test_reader.py ......................                        [ 50%]\nmffpy/tests/test_writer.py ...........                                   [ 59%]\nmffpy/tests/test_xml_files.py .......................................... [ 94%]\n..                                                                       [ 95%]\nmffpy/tests/test_zipfile.py .....                                        [100%]\n\n----------- coverage: platform linux, python 3.6.7-final-0 -----------\nname                                          stmts   miss  cover\n-----------------------------------------------------------------\nmffpy/__init__.py                                 4      0   100%\nmffpy/bin_files.py                               40      2    95%\nmffpy/bin_writer.py                              71      0   100%\nmffpy/cached_property.py                         25      1    96%\nmffpy/devices.py                                 10      0   100%\nmffpy/dict2xml.py                                31      3    90%\nmffpy/epoch.py                                   24      3    88%\nmffpy/header_block/__init__.py                    1      0   100%\nmffpy/header_block/header_block.py               48      2    96%\nmffpy/header_block/helpers.py                    15      0   100%\nmffpy/header_block/optional_header_block.py      32      1    97%\nmffpy/mffdir.py                                  92      7    92%\nmffpy/raw_bin_files.py                          113      0   100%\nmffpy/reader.py                                 110      2    98%\nmffpy/tests/__init__.py                           0      0   100%\nmffpy/tests/conftest.py                          11      0   100%\nmffpy/tests/test_cached_property.py              33      0   100%\nmffpy/tests/test_devices.py                      12      0   100%\nmffpy/tests/test_dict2xml.py                     16      0   100%\nmffpy/tests/test_header_block.py                 33      0   100%\nmffpy/tests/test_mffdir.py                       30      0   100%\nmffpy/tests/test_raw_bin_files.py                63      0   100%\nmffpy/tests/test_reader.py                       96      0   100%\nmffpy/tests/test_writer.py                      204      0   100%\nmffpy/tests/test_xml_files.py                   202      1    99%\nmffpy/tests/test_zipfile.py                      34      0   100%\nmffpy/version.py                                  1      0   100%\nmffpy/writer.py                                  71      0   100%\nmffpy/xml_files.py                              554     18    97%\nmffpy/zipfile.py                                 47      0   100%\n-----------------------------------------------------------------\ntotal                                          2023     40    98%\n\n\n============================= 122 passed in 7.19s ==============================\n```\n\n## view the docs\n\nall documentation and api guidance are generated from the python doc-strings\nand this readme file using pydoc-markdown.  to view the docs:\n\n* install pydoc-markdown: `pip install pydoc-markdown`\n* build and run:  `pydocmd build; pydocmd serve`\n* navigate to the [docs](http://localhost:8000)\n\n## example code\n\n### example 1:  basic information\n\n```python\nimport mffpy\nfo = mffpy.reader(\"./examples/example_1.mff\")\nprint(\"time and date of the start of recording:\", fo.startdatetime)\nprint(\"number of channels:\", fo.num_channels)\nprint(\"sampling rates:\", fo.sampling_rates, \"(in hz)\")\nprint(\"durations:\", fo.durations, \"(in sec.)\")\nprint(\"here's the epoch information\")\nfor i, e in enumerate(fo.epochs):\n    print(\"epoch number\", i)\n    print(e)\n```\n\n### example 2: reading samples\n\n```python\nfrom mffpy import reader\nfo = reader(\"./examples/example_1.mff\")\nfo.set_unit('eeg', 'uv')\neeg_in_mv, t0_eeg = fo.get_physical_samples_from_epoch(fo.epochs[0], dt=0.1)['eeg']\nfo.set_unit('eeg', 'v')\neeg_in_v, t0_eeg = fo.get_physical_samples_from_epoch(fo.epochs[0], dt=0.1)['eeg']\nprint('data in mv:', eeg_in_mv[0])\nprint('data in v :', eeg_in_v[0])\n```\n\n### example 3: reading .mff xml files\n\n```python\nfrom mffpy import xml\ncategories = xml.from_file(\"./examples/example_1.mff/categories.xml\")\nprint(categories['ulrn'])\n```\n\n### example 4: writing random numbers into an .mff file\n\n```python\nfrom os.path import join\nfrom datetime import datetime\nimport numpy as np\nfrom mffpy.writer import *\n\n# write 256 channels of 10 data points at a sampling rate of 128 hz\nb = binwriter(sampling_rate=128)\nb.add_block(np.random.randn(256, 10).astype(np.float32))\nw = writer(join('.cache', 'example_4_output.mff'))\nstartdatetime = datetime.strptime('1984-02-18t14:00:10.000000+0100',\n        \"%y-%m-%dt%h:%m:%s.%f%z\")\nw.addxml('fileinfo', recordtime=startdatetime)\nw.add_coordinates_and_sensor_layout(device='hydrocel gsn 256 1.0')\nw.addbin(b)\nw.write()\n```\n\n\n### example 5: exporting mff content to a .json file\n\n```python\nfrom mffpy import reader, writer\n\n# read data from an mff file\nreader = reader(\"./examples/example_2.mff\")\ndata = reader.get_mff_content()\n\n# write data to a json file\nwriter = writer(\".cache/example_5_output.json\")\nwriter.export_to_json(data)\n```\n**note: for now, the json exporting feature only works for segmented mffs files.**\n\n## specification of the .mff file format\n\n### .xml files\n\nxml-type files are specified in \"/schemata/\" using xml schema definition.  any\n.xml file can be checked for compliance with the command-line tool xmllint.\none can validate your xml files by: `xmllint --schema schemata/categories.xsd\n/path/to/my/file.xml --noout`.  we are using the following version of xmllint:\n\n```bash\n$ xmllint --version\nxmllint: using libxml version 20909\ncompiled with: threads tree output push reader patterns writer saxv1 ftp\nhttp dtdvalid html legacy c14n catalog xpath xpointer xinclude iconv iso8859x\nunicode regexps automata expr schemas schematron modules debug zlib lzma\n```\n\ncurrently we describe the following .xml file types:\n\n- [categories.xml](schemata/categories.xsd)\n\n\n## license and copyright\n\ncopyright 2019 brain electrophysiology laboratory company llc\n\nlicensed under the apachelicense, version 2.0(the \"license\");\nyou may not use this module except in compliance with the license.\nyou may obtain a copy of the license at:\n\nhttp: // www.apache.org / licenses / license - 2.0\n\nunless required by applicable law or agreed to in writing, software\ndistributed under the license is distributed on an\n\"as is\" basis, without warranties or conditions of\nany kind, either express or implied.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "mffpy",
+  "package_url": "https://pypi.org/project/mffpy/",
+  "project_url": "https://pypi.org/project/mffpy/",
+  "project_urls": {
+    "Homepage": "https://github.com/BEL-Public/mffpy"
+  },
+  "release_url": "https://pypi.org/project/mffpy/0.8.0/",
+  "requires_dist": [
+    "lxml (>=4.8.0)",
+    "pytz (>=2019.2)",
+    "numpy (>=1.15.1)",
+    "Deprecated (>=1.2.12)"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "reader and writer for philips' mff file format.",
+  "version": "0.8.0",
+  "releases": [],
+  "developers": [
+    "evan.hathaway@belco.tech",
+    "evan_hathaway",
+    "jschwabedal@belco.tech",
+    "justus_schwabedal",
+    "wayne.manselle@belco.tech"
+  ],
+  "kwds": "test_raw_bin_files test_mffdir get_mff_content mffs mff",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_mffpy",
+  "homepage": "https://github.com/bel-public/mffpy",
+  "release_count": 20,
+  "dependency_ids": [
+    "pypi_deprecated",
+    "pypi_lxml",
+    "pypi_numpy",
+    "pypi_pytz"
+  ]
+}

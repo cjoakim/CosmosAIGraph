@@ -1,0 +1,71 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon dynamodb construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\nhere is a minimal deployable dynamodb table definition:\n\n```python\ntable = dynamodb.table(self, \"table\",\n    partition_key=dynamodb.attribute(name=\"id\", type=dynamodb.attributetype.string)\n)\n```\n\n## importing existing tables\n\nto import an existing table into your cdk application, use the `table.fromtablename`, `table.fromtablearn` or `table.fromtableattributes`\nfactory method. this method accepts table name or table arn which describes the properties of an already\nexisting table:\n\n```python\n# user: iam.user\n\ntable = dynamodb.table.from_table_arn(self, \"importedtable\", \"arn:aws:dynamodb:us-east-1:111111111:table/my-table\")\n# now you can just call methods on the table\ntable.grant_read_write_data(user)\n```\n\nif you intend to use the `tablestreamarn` (including indirectly, for example by creating an\n`@aws-cdk/aws-lambda-event-source.dynamoeventsource` on the imported table), you *must* use the\n`table.fromtableattributes` method and the `tablestreamarn` property *must* be populated.\n\n## keys\n\nwhen a table is defined, you must define it's schema using the `partitionkey`\n(required) and `sortkey` (optional) properties.\n\n## billing mode\n\ndynamodb supports two billing modes:\n\n* provisioned - the default mode where the table and global secondary indexes have configured read and write capacity.\n* pay_per_request - on-demand pricing and scaling. you only pay for what you use and there is no read and write capacity for the table or its global secondary indexes.\n\n```python\ntable = dynamodb.table(self, \"table\",\n    partition_key=dynamodb.attribute(name=\"id\", type=dynamodb.attributetype.string),\n    billing_mode=dynamodb.billingmode.pay_per_request\n)\n```\n\nfurther reading:\nhttps://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks.readwritecapacitymode.\n\n## table class\n\ndynamodb supports two table classes:\n\n* standard - the default mode, and is recommended for the vast majority of workloads.\n* standard_infrequent_access - optimized for tables where storage is the dominant cost.\n\n```python\ntable = dynamodb.table(self, \"table\",\n    partition_key=dynamodb.attribute(name=\"id\", type=dynamodb.attributetype.string),\n    table_class=dynamodb.tableclass.standard_infrequent_access\n)\n```\n\nfurther reading:\nhttps://docs.aws.amazon.com/amazondynamodb/latest/developerguide/howitworks.tableclasses.html\n\n## configure autoscaling for your table\n\nyou can have dynamodb automatically raise and lower the read and write capacities\nof your table by setting up autoscaling. you can use this to either keep your\ntables at a desired utilization level, or by scaling up and down at pre-configured\ntimes of the day:\n\nauto-scaling is only relevant for tables with the billing mode, provisioned.\n\n```python\nread_scaling = table.auto_scale_read_capacity(min_capacity=1, max_capacity=50)\n\nread_scaling.scale_on_utilization(\n    target_utilization_percent=50\n)\n\nread_scaling.scale_on_schedule(\"scaleupinthemorning\",\n    schedule=appscaling.schedule.cron(hour=\"8\", minute=\"0\"),\n    min_capacity=20\n)\n\nread_scaling.scale_on_schedule(\"scaledownatnight\",\n    schedule=appscaling.schedule.cron(hour=\"20\", minute=\"0\"),\n    max_capacity=20\n)\n```\n\nfurther reading:\nhttps://docs.aws.amazon.com/amazondynamodb/latest/developerguide/autoscaling.html\nhttps://aws.amazon.com/blogs/database/how-to-use-aws-cloudformation-to-configure-auto-scaling-for-amazon-dynamodb-tables-and-indexes/\n\n## amazon dynamodb global tables\n\nyou can create dynamodb global tables by setting the `replicationregions` property on a `table`:\n\n```python\nglobal_table = dynamodb.table(self, \"table\",\n    partition_key=dynamodb.attribute(name=\"id\", type=dynamodb.attributetype.string),\n    replication_regions=[\"us-east-1\", \"us-east-2\", \"us-west-2\"]\n)\n```\n\nwhen doing so, a cloudformation custom resource will be added to the stack in order to create the replica tables in the\nselected regions.\n\nthe default billing mode for global tables is `pay_per_request`.\nif you want to use `provisioned`,\nyou have to make sure write auto-scaling is enabled for that table:\n\n```python\nglobal_table = dynamodb.table(self, \"table\",\n    partition_key=dynamodb.attribute(name=\"id\", type=dynamodb.attributetype.string),\n    replication_regions=[\"us-east-1\", \"us-east-2\", \"us-west-2\"],\n    billing_mode=dynamodb.billingmode.provisioned\n)\n\nglobal_table.auto_scale_write_capacity(\n    min_capacity=1,\n    max_capacity=10\n).scale_on_utilization(target_utilization_percent=75)\n```\n\nwhen adding a replica region for a large table, you might want to increase the\ntimeout for the replication operation:\n\n```python\nglobal_table = dynamodb.table(self, \"table\",\n    partition_key=dynamodb.attribute(name=\"id\", type=dynamodb.attributetype.string),\n    replication_regions=[\"us-east-1\", \"us-east-2\", \"us-west-2\"],\n    replication_timeout=duration.hours(2)\n)\n```\n\n## encryption\n\nall user data stored in amazon dynamodb is fully encrypted at rest. when creating a new table, you can choose to encrypt using the following customer master keys (cmk) to encrypt your table:\n\n* aws owned cmk - by default, all tables are encrypted under an aws owned customer master key (cmk) in the dynamodb service account (no additional charges apply).\n* aws managed cmk - aws kms keys (one per region) are created in your account, managed, and used on your behalf by aws dynamodb (aws kms charges apply).\n* customer managed cmk - you have full control over the kms key used to encrypt the dynamodb table (aws kms charges apply).\n\ncreating a table encrypted with a customer managed cmk:\n\n```python\ntable = dynamodb.table(self, \"mytable\",\n    partition_key=dynamodb.attribute(name=\"id\", type=dynamodb.attributetype.string),\n    encryption=dynamodb.tableencryption.customer_managed\n)\n\n# you can access the cmk that was added to the stack on your behalf by the table construct via:\ntable_encryption_key = table.encryption_key\n```\n\nyou can also supply your own key:\n\n```python\nimport aws_cdk.aws_kms as kms\n\n\nencryption_key = kms.key(self, \"key\",\n    enable_key_rotation=true\n)\ntable = dynamodb.table(self, \"mytable\",\n    partition_key=dynamodb.attribute(name=\"id\", type=dynamodb.attributetype.string),\n    encryption=dynamodb.tableencryption.customer_managed,\n    encryption_key=encryption_key\n)\n```\n\nin order to use the aws managed cmk instead, change the code to:\n\n```python\ntable = dynamodb.table(self, \"mytable\",\n    partition_key=dynamodb.attribute(name=\"id\", type=dynamodb.attributetype.string),\n    encryption=dynamodb.tableencryption.aws_managed\n)\n```\n\n## get schema of table or secondary indexes\n\nto get the partition key and sort key of the table or indexes you have configured:\n\n```python\n# table: dynamodb.table\n\nschema = table.schema()\npartition_key = schema.partition_key\nsort_key = schema.sort_key\n```\n\n## kinesis stream\n\na kinesis data stream can be configured on the dynamodb table to capture item-level changes.\n\n```python\nimport aws_cdk.aws_kinesis as kinesis\n\n\nstream = kinesis.stream(self, \"stream\")\n\ntable = dynamodb.table(self, \"table\",\n    partition_key=dynamodb.attribute(name=\"id\", type=dynamodb.attributetype.string),\n    kinesis_stream=stream\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-dynamodb",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-dynamodb/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-dynamodb/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-dynamodb/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-applicationautoscaling (==1.204.0)",
+    "aws-cdk.aws-cloudwatch (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kinesis (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.aws-lambda (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "aws-cdk.custom-resources (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::dynamodb",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk dynamodb aws_kms dynamoeventsource aws_kinesis",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_dynamodb",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_applicationautoscaling",
+    "pypi_aws_cdk.aws_cloudwatch",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kinesis",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.aws_lambda",
+    "pypi_aws_cdk.core",
+    "pypi_aws_cdk.custom_resources",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

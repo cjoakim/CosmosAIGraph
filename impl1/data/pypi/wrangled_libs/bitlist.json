@@ -1,0 +1,53 @@
+{
+  "classifiers": [],
+  "description": "=======\nbitlist\n=======\n\npure-python library for working with bit vectors.\n\n|pypi| |readthedocs| |actions| |coveralls|\n\n.. |pypi| image:: https://badge.fury.io/py/bitlist.svg\n   :target: https://badge.fury.io/py/bitlist\n   :alt: pypi version and link.\n\n.. |readthedocs| image:: https://readthedocs.org/projects/bitlist/badge/?version=latest\n   :target: https://bitlist.readthedocs.io/en/latest/?badge=latest\n   :alt: read the docs documentation status.\n\n.. |actions| image:: https://github.com/lapets/bitlist/workflows/lint-test-cover-docs/badge.svg\n   :target: https://github.com/lapets/bitlist/actions/workflows/lint-test-cover-docs.yml\n   :alt: github actions status.\n\n.. |coveralls| image:: https://coveralls.io/repos/github/lapets/bitlist/badge.svg?branch=main\n   :target: https://coveralls.io/github/lapets/bitlist?branch=main\n   :alt: coveralls test coverage summary.\n\npurpose\n-------\nthis library allows programmers to work with bit vectors using a pure-python data structure. its design prioritizes interoperability with built-in python classes and operators.\n\ninstallation and usage\n----------------------\nthis library is available as a `package on pypi <https://pypi.org/project/bitlist>`__:\n\n.. code-block:: bash\n\n    python -m pip install bitlist\n\nthe library can be imported in the usual way:\n\n.. code-block:: python\n\n    import bitlist\n    from bitlist import bitlist\n\nexamples\n^^^^^^^^\n\n.. |bitlist| replace:: ``bitlist``\n.. _bitlist: https://bitlist.readthedocs.io/en/1.1.0/_source/bitlist.html#bitlist.bitlist.bitlist\n\nthis library makes it possible to construct bit vectors from a variety of representations (including integers, bytes-like objects, strings of binary digits, lists of binary digits, and other bit vectors). integer arguments are converted into a big-endian binary representation:\n\n.. code-block:: python\n\n    >>> bitlist(123)\n    bitlist('1111011')\n    >>> bitlist(bytes([255, 254]))\n    bitlist('1111111111111110')\n    >>> bitlist('101')\n    bitlist('101')\n    >>> bitlist([1, 0, 1, 1])\n    bitlist('1011')\n    >>> bitlist(bitlist('1010'))\n    bitlist('1010')\n\nthe optional ``length`` parameter can be used to specify the length of the created bit vector (padding consisting of zero bits is applied automatically *on the left-hand size*, if necessary):\n\n.. code-block:: python\n\n    >>> bitlist(bytes([123]), length=16)\n    bitlist('0000000001111011')\n    >>> bitlist(16, 64)\n    bitlist('0000000000000000000000000000000000000000000000000000000000010000')\n    >>> bitlist(bitlist(123), 8)\n    bitlist('01111011')\n\nif the ``length`` parameter has a value that is less than the minimum number of bits that would be included according to the default constructor behaviors, the bit vector is truncated *on the left-hand side* to match the specified length:\n\n.. code-block:: python\n\n    >>> bitlist(bytes([123]), length=7)\n    bitlist('1111011')\n    >>> bitlist(bytes([123]), 4)\n    bitlist('1011')\n    >>> bitlist(bytes([123]), 2)\n    bitlist('11')\n    >>> bitlist(bytes([123]), 0)\n    bitlist()\n\nbit vectors are iterable sequences of individual bits (where each bit is represented as an integer). both slice notation and retrieval of individual bits by index are supported. furthermore, methods are available for converting a bit vector into other common representations:\n\n.. code-block:: python\n\n    >>> b = bitlist('1111011')\n    >>> b[1:-1]\n    bitlist('11101')\n    >>> b[0]\n    1\n    >>> [bit for bit in b]\n    [1, 1, 1, 1, 0, 1, 1]\n    >>> b.bin()\n    '1111011'\n    >>> b.hex()\n    '7b'\n    >>> list(b.to_bytes())\n    [123]\n\n`concatenation <https://bitlist.readthedocs.io/en/1.1.0/_source/bitlist.html#bitlist.bitlist.bitlist.__add__>`__, `partitioning <https://bitlist.readthedocs.io/en/1.1.0/_source/bitlist.html#bitlist.bitlist.bitlist.__truediv__>`__, `subscription and slicing <https://bitlist.readthedocs.io/en/1.1.0/_source/bitlist.html#bitlist.bitlist.bitlist.__getitem__>`__, `shift and rotation <https://bitlist.readthedocs.io/en/1.1.0/_source/bitlist.html#bitlist.bitlist.bitlist.__lshift__>`__, `comparison <https://bitlist.readthedocs.io/en/1.1.0/_source/bitlist.html#bitlist.bitlist.bitlist.__eq__>`__, and `logical <https://bitlist.readthedocs.io/en/1.1.0/_source/bitlist.html#bitlist.bitlist.bitlist.__and__>`__ operations are also supported by instances of the |bitlist|_ class. the larger example below -- a bitwise addition function -- illustrates the use of various operators supported by instances of the |bitlist|_ class:\n\n.. code-block:: python\n\n    >>> def add(x, y):\n    ...     \"\"\"bitwise addition algorithm.\"\"\"\n    ...     r = bitlist(0)\n    ...     carry = 0\n    ...     # use negative indices for big-endian interface.\n    ...     for i in range(1, max(len(x), len(y)) + 1):\n    ...         r[-i] = (x[-i] ^ y[-i]) ^ carry\n    ...         carry = (x[-i] & y[-i]) | (x[-i] & carry) | (y[-i] & carry)\n    ...     r[-(max(len(x), len(y)) + 1)] = carry\n    ...     return r\n    ...\n    >>> int(add(bitlist(123), bitlist(456)))\n    579\n\nthe `testing script <https://bitlist.readthedocs.io/en/1.1.0/_source/test_bitlist.html>`_ that accompanies this library contains additional examples of bitwise arithmetic operations implemented with the help of |bitlist|_ operators.\n\ndevelopment\n-----------\nall installation and development dependencies are fully specified in ``pyproject.toml``. the ``project.optional-dependencies`` object is used to `specify optional requirements <https://peps.python.org/pep-0621>`__ for various development tasks. this makes it possible to specify additional options (such as ``docs``, ``lint``, and so on) when performing installation using `pip <https://pypi.org/project/pip>`__:\n\n.. code-block:: bash\n\n    python -m pip install .[docs,lint]\n\ndocumentation\n^^^^^^^^^^^^^\nthe documentation can be generated automatically from the source files using `sphinx <https://www.sphinx-doc.org>`__:\n\n.. code-block:: bash\n\n    python -m pip install .[docs]\n    cd docs\n    sphinx-apidoc -f -e --templatedir=_templates -o _source .. && make html\n\ntesting and conventions\n^^^^^^^^^^^^^^^^^^^^^^^\nall unit tests are executed and their coverage is measured when using `pytest <https://docs.pytest.org>`__ (see the ``pyproject.toml`` file for configuration details):\n\n.. code-block:: bash\n\n    python -m pip install .[test]\n    python -m pytest\n\nthe subset of the unit tests included in the module itself and the *documentation examples* that appear in the testing script can be executed separately using `doctest <https://docs.python.org/3/library/doctest.html>`_:\n\n.. code-block:: bash\n\n    python src/bitlist/bitlist.py -v\n    python test/test_bitlist.py -v\n\nstyle conventions are enforced using `pylint <https://pylint.readthedocs.io>`__:\n\n.. code-block:: bash\n\n    python -m pip install .[lint]\n    python -m pylint src/bitlist test/test_bitlist.py\n\ncontributions\n^^^^^^^^^^^^^\nin order to contribute to the source code, open an issue or submit a pull request on the `github page <https://github.com/lapets/bitlist>`__ for this library.\n\nversioning\n^^^^^^^^^^\nbeginning with version 0.3.0, the version number format for this library and the changes to the library associated with version number increments conform with `semantic versioning 2.0.0 <https://semver.org/#semantic-versioning-200>`__.\n\npublishing\n^^^^^^^^^^\nthis library can be published as a `package on pypi <https://pypi.org/project/bitlist>`__ by a package maintainer. first, install the dependencies required for packaging and publishing:\n\n.. code-block:: bash\n\n    python -m pip install .[publish]\n\nensure that the correct version number appears in ``pyproject.toml``, and that any links in this readme document to the read the docs documentation of this package (or its dependencies) have appropriate version numbers. also ensure that the read the docs project for this library has an `automation rule <https://docs.readthedocs.io/en/stable/automation-rules.html>`__ that activates and sets as the default all tagged versions. create and push a tag for this version (replacing ``?.?.?`` with the version number):\n\n.. code-block:: bash\n\n    git tag ?.?.?\n    git push origin ?.?.?\n\nremove any old build/distribution files. then, package the source into a distribution archive:\n\n.. code-block:: bash\n\n    rm -rf build dist src/*.egg-info\n    python -m build --sdist --wheel .\n\nfinally, upload the package distribution archive to `pypi <https://pypi.org>`__:\n\n.. code-block:: bash\n\n    python -m twine upload dist/*\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "bitlist",
+  "package_url": "https://pypi.org/project/bitlist/",
+  "project_url": "https://pypi.org/project/bitlist/",
+  "project_urls": {
+    "Documentation": "https://bitlist.readthedocs.io",
+    "Repository": "https://github.com/lapets/bitlist"
+  },
+  "release_url": "https://pypi.org/project/bitlist/1.2.0/",
+  "requires_dist": [
+    "parts ~=1.7",
+    "coveralls ~=3.3.1 ; extra == 'coveralls'",
+    "toml ~=0.10.2 ; extra == 'docs'",
+    "sphinx ~=4.2.0 ; extra == 'docs'",
+    "sphinx-rtd-theme ~=1.0.0 ; extra == 'docs'",
+    "pylint ~=2.17.0 ; extra == 'lint'",
+    "build ~=0.10 ; extra == 'publish'",
+    "twine ~=4.0 ; extra == 'publish'",
+    "pytest ~=7.2 ; extra == 'test'",
+    "pytest-cov ~=4.0 ; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "pure-python library for working with bit vectors.",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "a@lapets.io",
+    "andrei_lapets"
+  ],
+  "kwds": "test_bitlist _bitlist bitlist pytest coveralls",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_bitlist",
+  "homepage": "",
+  "release_count": 30,
+  "dependency_ids": [
+    "pypi_build",
+    "pypi_coveralls",
+    "pypi_parts",
+    "pypi_pylint",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_toml",
+    "pypi_twine"
+  ]
+}

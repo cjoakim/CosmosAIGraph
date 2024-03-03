@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "topic :: software development :: libraries"
+  ],
+  "description": "# welcome to stravalib\n\n[![doi](https://zenodo.org/badge/8828908.svg)](https://zenodo.org/badge/latestdoi/8828908)\n![pypi](https://img.shields.io/pypi/v/stravalib?style=plastic) ![pypi - python version](https://img.shields.io/pypi/pyversions/stravalib?style=plastic) [![documentation status](https://readthedocs.org/projects/stravalib/badge/?version=latest)](https://stravalib.readthedocs.io/en/latest/?badge=latest) ![package tests status](https://github.com/stravalib/stravalib/actions/workflows/build-test.yml/badge.svg) ![pypi - downloads](https://img.shields.io/pypi/dm/stravalib?style=plastic) [![codecov](https://codecov.io/gh/stravalib/stravalib/branch/main/graph/badge.svg?token=shbfjn7epy)](https://codecov.io/gh/stravalib/stravalib)\n\nthe **stravalib** python package provides easy-to-use tools for accessing and\ndownloading strava data from the strava v3 web service. stravalib provides a client class that supports:\n\n- authenticating with stravalib\n- accessing and downloading strava activity, club and profile data\n- making changes to account activities\n\nit also provides support for working with date/time/temporal attributes\nand quantities through the [python pint library](https://pypi.org/project/pint/).\n\n## dependencies\n\n- python 3.9+\n- setuptools for installing dependencies\n- other python libraries (installed automatically when using pip): requests, pytz, pint, arrow, pydantic\n\n## installation\n\nthe package is available on pypi to be installed using `pip`:\n\n`pip install stravalib`\n\n## how to contribute to stravalib\n\n### get started!\n\nready to contribute? here's how to set up stravalib for local development.\n\n1. fork the repository on github\n\n---\n\nto create your own copy of the repository on github, navigate to the\n`stravalib/stravalib <https://github.com/stravalib/stravalib>`\\_ repository\nand click the **fork** button in the top-right corner of the page.\n\n2. clone your fork locally\n\n---\n\nuse `git clone` to get a local copy of your stravalib repository on your\nlocal filesystem::\n\n    $ git clone git@github.com:your_name_here/stravalib.git\n    $ cd stravalib/\n\n3. set up your fork for local development\n\n---\n\nthe docs for this library are created using `sphinx`.\nto build the html version of the documentation, use the\ncommand:\n\n`$ make -c docs html`\n\n### building from sources\n\nto build the project locally in editable mode,\naccess the project root directory and run:\n\n```bash\n$ pip install -e .\n```\n\nto execute **unit - or integration tests** you will need to run\n\n```bash\n$ make test\n```\n\n## local tests\n\nto run **end-to-end** tests you will need to rename _test.ini-example_ (which you can find _<your-root-proj-dir>_/stravalib/tests/) to _test.ini_\nin _test.ini_ provide your _access_token_ and _activity_id_. now you can run\n\n```\nshell$ pytest stravalib/tests/functional\n```\n\n### pull requests and tests\n\nplease add tests that cover your changes, these will greatly reduce the effort of reviewing\nand merging your pull requests. in case you need it, there's a pytest fixture\n`mock_strava_api` that is based on `requestsmock` from the `responses` package. it prevents\nrequests being made to the actual strava api and instead registers responses that are\nbased on examples from the published strava api documentation. example usages of this\nfixture can be found in the `stravalib.tests.integration` package.\n\n## basic usage\n\nplease take a look at the source (in particular the stravalib.client.client class, if you'd like to play around with the\napi. most of the strava api is implemented at this point; however, certain features such as streams are still on the\nto-do list.\n\n### authentication\n\nin order to make use of this library, you will need to create an app in strava\nwhich is free to do. [have a look at this tutorial for instructions on creating\nan app with strava - we will be updating our docs with this information soon.](https://medium.com/analytics-vidhya/accessing-user-data-via-the-strava-api-using-stravalib-d5bee7fdde17)\n\n**note** we will be updating our documentation with clear instructions to support this\nin the upcoming months\n\nonce you have created your app, stravalib have several helper methods to make\nauthentication easier.\n\n```python\nfrom stravalib.client import client\n\nclient = client()\nauthorize_url = client.authorization_url(\n    client_id=1234, redirect_uri=\"http://localhost:8282/authorized\"\n)\n# have the user click the authorization url, a 'code' param will be added to the redirect_uri\n# .....\n\n# extract the code from your webapp response\ncode = requests.get(\"code\")  # or whatever your framework does\ntoken_response = client.exchange_code_for_token(\n    client_id=1234, client_secret=\"asdf1234\", code=code\n)\naccess_token = token_response[\"access_token\"]\nrefresh_token = token_response[\"refresh_token\"]\nexpires_at = token_response[\"expires_at\"]\n\n# now store that short-lived access token somewhere (a database?)\nclient.access_token = access_token\n# you must also store the refresh token to be used later on to obtain another valid access token\n# in case the current is already expired\nclient.refresh_token = refresh_token\n\n# an access_token is only valid for 6 hours, store expires_at somewhere and\n# check it before making an api call.\nclient.token_expires_at = expires_at\n\nathlete = client.get_athlete()\nprint(\n    \"for {id}, i now have an access token {token}\".format(\n        id=athlete.id, token=access_token\n    )\n)\n\n# ... time passes ...\nif time.time() > client.token_expires_at:\n    refresh_response = client.refresh_access_token(\n        client_id=1234, client_secret=\"asdf1234\", refresh_token=client.refresh_token\n    )\n    access_token = refresh_response[\"access_token\"]\n    refresh_token = refresh_response[\"refresh_token\"]\n    expires_at = refresh_response[\"expires_at\"]\n```\n\n### athletes and activities\n\n(this is a glimpse into what you can do.)\n\n```python\n# currently-authenticated (based on provided token) athlete\n# will have maximum detail exposed (resource_state=3)\ncurr_athlete = client.get_athlete()\n\n# fetch another athlete\nother_athlete = client.get_athlete(123)\n# will only have summary-level attributes exposed (resource_state=2)\n\n# get an activity\nactivity = client.get_activity(123)\n# if activity is owned by current user, will have full detail (resource_state=3)\n# otherwise summary-level detail.\n```\n\n### streams\n\nstreams represent the raw data of the uploaded file. activities, efforts, and\nsegments all have streams. there are many types of streams, if activity does\nnot have requested stream type, returned set simply won't include it.\n\n```python\n# activities can have many streams, you can request n desired stream types\ntypes = [\n    \"time\",\n    \"latlng\",\n    \"altitude\",\n    \"heartrate\",\n    \"temp\",\n]\n\nstreams = client.get_activity_streams(123, types=types, resolution=\"medium\")\n\n#  result is a dictionary object.  the dict's key are the stream type.\nif \"altitude\" in streams.keys():\n    print(streams[\"altitude\"].data)\n```\n\n### working with units\n\nstravalib uses the [python pint library](https://pypi.org/project/pint/) to facilitate working\nwith the values in the api that have associated units (e.g. distance, speed). you can use the pint library\ndirectly or through the `stravalib.unithelper` module for shortcuts\n\n```python\nactivity = client.get_activity(96089609)\nassert isinstance(activity.distance, unithelper.quantity)\nprint(activity.distance)\n# 22530.80 m\n\n# meters!?\n\nfrom stravalib import unithelper\n\nprint(unithelper.miles(activity.distance))\n# 14.00 mi\n\n# and to get the number:\nnum_value = float(unithelper.miles(activity.distance))\n# or:\nnum_value = unithelper.miles(activity.distance).num\n```\n\n## still reading?\n\nthe [published sphinx documentation](https://stravalib.readthedocs.io/) provides much more.\n",
+  "docs_url": "https://pythonhosted.org/stravalib/",
+  "keywords": "strava,running,cycling,athletes",
+  "license": "apache 2.0 license",
+  "name": "stravalib",
+  "package_url": "https://pypi.org/project/stravalib/",
+  "project_url": "https://pypi.org/project/stravalib/",
+  "project_urls": {
+    "changelog": "https://github.com/stravalib/stravalib/blob/main/changelog.md",
+    "documentation": "https://stravalib.readthedocs.io",
+    "homepage": "https://example.com",
+    "repository": "https://github.com/stravalib/stravalib"
+  },
+  "release_url": "https://pypi.org/project/stravalib/1.5/",
+  "requires_dist": [
+    "pint",
+    "pytz",
+    "arrow",
+    "requests",
+    "pydantic ==1.10.9"
+  ],
+  "requires_python": ">=3.9",
+  "summary": "a python package that makes it easy to access and download data from the strava v3 rest api.",
+  "version": "1.5",
+  "releases": [],
+  "developers": [
+    "hans@xmpl.org",
+    "leah_wasser"
+  ],
+  "kwds": "stravalib badge strava mock_strava_api pypi",
+  "license_kwds": "apache 2.0 license",
+  "libtype": "pypi",
+  "id": "pypi_stravalib",
+  "homepage": "",
+  "release_count": 35,
+  "dependency_ids": [
+    "pypi_arrow",
+    "pypi_pint",
+    "pypi_pydantic",
+    "pypi_pytz",
+    "pypi_requests"
+  ]
+}

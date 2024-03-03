@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: mathematics",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# mixed precision training in [jax]\n\n![test status](https://github.com/deepmind/jmp/workflows/pytest/badge.svg)\n![pypi version](https://img.shields.io/pypi/v/jmp)\n\n[**installation**](#installation)\n| [**examples**](#examples)\n| [**policies**](#policies)\n| [**loss scaling**](#loss-scaling)\n| [**citing jmp**](#citing-jmp)\n| [**references**](#references)\n\nmixed precision training [[0]] is a technique that mixes the use of full and\nhalf precision floating point numbers during training to reduce the memory\nbandwidth requirements and improve the computational efficiency of a given\nmodel.\n\nthis library implements support for mixed precision training in [jax] by providing\ntwo key abstractions (mixed precision \"policies\" and loss scaling). neural\nnetwork libraries (such as [haiku]) can integrate with `jmp` and provide\n\"automatic mixed precision (amp)\" support (automating or simplifying applying\npolicies to modules).\n\nall code examples below assume the following:\n\n```python\nimport jax\nimport jax.numpy as jnp\nimport jmp\n\nhalf = jnp.float16  # on tpu this should be jnp.bfloat16.\nfull = jnp.float32\n```\n\n## installation\n\njmp is written in pure python, but depends on c++ code via jax and numpy.\n\nbecause jax installation is different depending on your cuda version, jmp does\nnot list jax as a dependency in `requirements.txt`.\n\nfirst, follow [these instructions](https://github.com/google/jax#installation)\nto install jax with the relevant accelerator support.\n\nthen, install jmp using pip:\n\n```bash\n$ pip install git+https://github.com/deepmind/jmp\n```\n\n## examples\n\nyou can find a\n[fully worked jmp example in haiku](https://github.com/deepmind/dm-haiku/tree/master/examples/imagenet)\nwhich shows how to use mixed f32/f16 precision to halve training time on gpu and\nmixed f32/bf16 to reduce training time on tpu by a third.\n\n## policies\n\na mixed precision policy encapsulates the configuration in a mixed precision\nexperiment.\n\n```python\n# our policy specifies that we will store parameters in full precision but will\n# compute and return output in half precision.\nmy_policy = jmp.policy(compute_dtype=half,\n                       param_dtype=full,\n                       output_dtype=half)\n```\n\nthe policy object can be used to cast pytrees:\n\n```python\ndef layer(params, x):\n  params, x = my_policy.cast_to_compute((params, x))\n  w, b = params\n  y = x @ w + b\n  return my_policy.cast_to_output(y)\n\nparams = {\"w\": jnp.ones([], dtype=my_policy.param_dtype)}\ny = layer(params, x)\nassert y.dtype == half\n```\n\nyou can replace the output type of a given policy:\n\n```python\nmy_policy = my_policy.with_output_dtype(full)\n```\n\nyou can also define a policy via a string, which may be useful for specifying a\npolicy as a command-line argument or as a hyperparameter to your experiment:\n\n```python\nmy_policy = jmp.get_policy(\"params=float32,compute=float16,output=float32\")\nfloat16 = jmp.get_policy(\"float16\")  # everything in f16.\nhalf = jmp.get_policy(\"half\")        # everything in half (f16 or bf16).\n```\n\n## loss scaling\n\nwhen training with reduced precision, consider whether gradients will need to be\nshifted into the representable range of the format that you are using. this is\nparticularly important when training with `float16` and less important for\n`bfloat16`. see the nvidia mixed precision user guide [[1]] for more details.\n\nthe easiest way to shift gradients is with loss scaling, which scales your loss\nand gradients by `s` and `1/s` respectively.\n\n```python\ndef my_loss_fn(params, loss_scale: jmp.lossscale, ...):\n  loss = ...\n  # you should apply regularization etc before scaling.\n  loss = loss_scale.scale(loss)\n  return loss\n\ndef train_step(params, loss_scale: jmp.lossscale, ...):\n  grads = jax.grad(my_loss_fn)(...)\n  grads = loss_scale.unscale(grads)\n  # you should put gradient clipping etc after unscaling.\n  params = apply_optimizer(params, grads)\n  return params\n\nloss_scale = jmp.staticlossscale(2 ** 15)\nfor _ in range(num_steps):\n  params = train_step(params, loss_scale, ...)\n```\n\nthe appropriate value for `s` depends on your model, loss, batch size and\npotentially other factors. you can determine this with trial and error. as a\nrule of thumb you want the largest value of `s` that does not introduce overflow\nduring backprop. nvidia [[1]] recommend computing statistics about the gradients\nof your model (in full precision) and picking `s` such that its product with the\nmaximum norm of your gradients is below `65,504`.\n\nwe provide a dynamic loss scale, which adjusts the loss scale periodically\nduring training to find the largest value for `s` that produces finite\ngradients. this is more convenient and robust compared with picking a static\nloss scale, but has a small performance impact (between 1 and 5%).\n\n```python\ndef my_loss_fn(params, loss_scale: jmp.lossscale, ...):\n  loss = ...\n  # you should apply regularization etc before scaling.\n  loss = loss_scale.scale(loss)\n  return loss\n\ndef train_step(params, loss_scale: jmp.lossscale, ...):\n  grads = jax.grad(my_loss_fn)(...)\n  grads = loss_scale.unscale(grads)\n  # you should put gradient clipping etc after unscaling.\n\n  # you definitely want to skip non-finite updates with the dynamic loss scale,\n  # but you might also want to consider skipping them when using a static loss\n  # scale if you experience nan's when training.\n  skip_nonfinite_updates = isinstance(loss_scale, jmp.dynamiclossscale)\n\n  if skip_nonfinite_updates:\n    grads_finite = jmp.all_finite(grads)\n    # adjust our loss scale depending on whether gradients were finite. the\n    # loss scale will be periodically increased if gradients remain finite and\n    # will be decreased if not.\n    loss_scale = loss_scale.adjust(grads_finite)\n    # only apply our optimizer if grads are finite, if any element of any\n    # gradient is non-finite the whole update is discarded.\n    params = jmp.select_tree(grads_finite, apply_optimizer(params, grads), params)\n  else:\n    # with static or no loss scaling just apply our optimizer.\n    params = apply_optimizer(params, grads)\n\n  # since our loss scale is dynamic we need to return the new value from\n  # each step. all loss scales are `pytree`s.\n  return params, loss_scale\n\nloss_scale = jmp.dynamiclossscale(jmp.half_dtype()(2 ** 15))\nfor _ in range(num_steps):\n  params, loss_scale = train_step(params, loss_scale, ...)\n```\n\nin general using a static loss scale should offer the best speed, but we have\noptimized dynamic loss scaling to make it competitive. we recommend you start\nwith dynamic loss scaling and move to static loss scaling if performance is an\nissue.\n\nwe finally offer a no-op loss scale which you can use as a drop in replacement.\nit does nothing (apart from implement the `jmp.lossscale` api):\n\n```python\nloss_scale = jmp.nooplossscale()\nassert loss is loss_scale.scale(loss)\nassert grads is loss_scale.unscale(grads)\nassert loss_scale is loss_scale.adjust(grads_finite)\nassert loss_scale.loss_scale == 1\n```\n\n## citing jmp\n\nthis repository is part of the [deepmind jax ecosystem](https://deepmind.com/blog/article/using-jax-to-accelerate-our-research),\nto cite jmp please use the [deepmind jax ecosystem citation](https://github.com/deepmind/jax/blob/main/deepmind2020jax.txt).\n\n## references\n\n[[0]] paulius micikevicius, sharan narang, jonah alben, gregory diamos, erich\nelsen, david garcia, boris ginsburg, michael houston, oleksii kuchaiev, ganesh\nvenkatesh, hao wu: \"mixed precision training\", 2017; arxiv:1710.03740\nhttps://arxiv.org/abs/1710.03740.\n\n[[1]] \"training with mixed precision :: nvidia deep learning performance\ndocumentation\". docs.nvidia.com, 2020,\nhttps://docs.nvidia.com/deeplearning/performance/mixed-precision-training/.\n\n[0]: https://arxiv.org/abs/1710.03740\n[1]: https://docs.nvidia.com/deeplearning/performance/mixed-precision-training/index.html\n[haiku]: https://github.com/deepmind/dm-haiku\n[jax]: https://github.com/google/jax\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2.0",
+  "name": "jmp",
+  "package_url": "https://pypi.org/project/jmp/",
+  "project_url": "https://pypi.org/project/jmp/",
+  "project_urls": {
+    "Homepage": "https://github.com/deepmind/jmp"
+  },
+  "release_url": "https://pypi.org/project/jmp/0.0.4/",
+  "requires_dist": [
+    "numpy (>=1.19.5)",
+    "dataclasses (>=0.7) ; python_version < \"3.7\"",
+    "jax (>=0.2.20) ; extra == 'jax'",
+    "jaxlib (>=0.1.71) ; extra == 'jax'"
+  ],
+  "requires_python": "",
+  "summary": "jmp is a mixed precision library for jax.",
+  "version": "0.0.4",
+  "releases": [],
+  "developers": [
+    "deepmind",
+    "jmp-dev-os@google.com"
+  ],
+  "kwds": "precision jmp deepmind lossscale deeplearning",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_jmp",
+  "homepage": "https://github.com/deepmind/jmp",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_dataclasses",
+    "pypi_jax",
+    "pypi_jaxlib",
+    "pypi_numpy"
+  ]
+}

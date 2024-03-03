@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: build tools",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# qtsass: compile scss files to qt stylesheets\n\n[![license - mit](https://img.shields.io/github/license/spyder-ide/qtsass.svg)](./license.txt)\n[![opencollective backers](https://opencollective.com/spyder/backers/badge.svg?color=blue)](#backers)\n[![join the chat at https://gitter.im/spyder-ide/public](https://badges.gitter.im/spyder-ide/spyder.svg)](https://gitter.im/spyder-ide/public)<br>\n[![github build status](https://github.com/spyder-ide/qtsass/workflows/tests/badge.svg)](https://github.com/spyder-ide/qtsass/actions)\n[![codecov coverage](https://img.shields.io/codecov/c/github/spyder-ide/qtsass/master.svg)](https://codecov.io/gh/spyder-ide/qtsass)\n[![scrutinizer code quality](https://scrutinizer-ci.com/g/spyder-ide/qtsass/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/spyder-ide/qtsass/?branch=master)\n\n*copyright \u00a9 2015 yann lanthony*\n\n*copyright \u00a9 2017\u20132018 spyder project contributors*\n\n\n## overview\n\n[sass](http://sass-lang.com/) brings countless amazing features to css.\nbesides being used in web development, css is also the way to stylize qt-based desktop applications.\nhowever, qt's css has a few variations that prevent the direct use of sass compiler.\n\nthe purpose of this tool is to fill the gap between sass and qt-css by handling those variations.\n\n\n## qt's css specificities\n\nthe goal of qtsass is to be able to generate a qt-css stylesheet based on a 100% valid sass file.\nthis is how it deals with qt's specifics and how you should modify your css stylesheet to use qtsass.\n\n#### \"!\" in selectors\nqt allows to define the style of a widget according to its states, like this:\n\n```css\nqlineedit:enabled {\n...\n}\n```\n\nhowever, a \"not\" state is problematic because it introduces an exclamation mark in the selector's name, which is not valid sass/css:\n\n```css\nqlineedit:!editable {\n...\n}\n```\n\nqtsass allows \"!\" in selectors' names; the sass file is preprocessed and any occurence of `:!` is replaced by `:_qnot_` (for \"qt not\").\nhowever, using this feature prevents from having a 100% valid sass file, so this support of `!` might change in the future.\nthis can be replaced by the direct use of the `_qnot_` keyword in your sass file:\n\n```css\nqlineedit:_qnot_editable { /* will generate qlineedit:!editable { */\n...\n}\n```\n\n#### qlineargradient\nthe qlineargradient function also has a non-valid css syntax.\n\n```css\nqlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0.1 blue, stop: 0.8 green)\n```\n\nto support qlineargradient qtsass provides a preprocessor and a sass implementation of the qlineargradient function. the above qss syntax will be replaced with the following:\n\n```css\nqlineargradient(0, 0, 0, 1, (0.1 blue, 0.8 green))\n```\n\nyou may also use this syntax directly in your qtsass.\n\n```\nqlineargradient(0, 0, 0, 1, (0.1 blue, 0.8 green))\n# the stops parameter is a list, so you can also use variables:\n$stops = 0.1 blue, 0.8 green\nqlineargradient(0, 0, 0, 0, $stops)\n```\n\n#### qrgba\nqt's rgba:\n\n```css\nrgba(255, 128, 128, 50%)\n```\n\nis replaced by css rgba:\n\n```css\nrgba(255, 128, 128, 0.5)\n```\n\n\n## executable usage\n\nto compile your sass stylesheet to a qt compliant css file:\n\n```bash\n# if -o is omitted, output will be printed to console\nqtsass style.scss -o style.css\n```\n\nto use the watch mode and get your stylesheet auto recompiled on each file save:\n\n```bash\n# if -o is omitted, output will be print to console\nqtsass style.scss -o style.css -w\n```\n\nto compile a directory containing sass stylesheets to qt compliant css files:\n\n```bash\nqtsass ./static/scss -o ./static/css\n```\n\nyou can also use watch mode to watch the entire directory for changes.\n\n```bash\nqtsass ./static/scss -o ./static/css -w\n```\n\nset the environment variable qtsass_debug to 1 or pass the --debug flag to enable logging.\n\n```bash\nqtsass ./static/scss -o ./static/css --debug\n```\n\n## api methods\n\n### `compile(string, **kwargs)`\n\nconform and compile qtsass source code to css.\n\nthis function conforms qtsass to valid scss before passing it to\nsass.compile. any keyword arguments you provide will be combined with\nqtsass's default keyword arguments and passed to sass.compile.\n\nexamples:\n\n```bash\n>>> import qtsass\n>>> qtsass.compile(\"qwidget {background: rgb(0, 0, 0);}\")\nqwidget {background:black;}\n```\n\narguments:\n- string: qtsass source code to conform and compile.\n- kwargs: keyword arguments to pass to sass.compile\n\nreturns:\n- qt compliant css string\n\n### `compile_filename(input_file, output_file=none, **kwargs)`:\n\ncompile and return a qtsass file as qt compliant css. optionally save to a file.\n\nexamples:\n\n```bash\n>>> import qtsass\n>>> qtsass.compile_filename(\"dummy.scss\", \"dummy.css\")\n>>> css = qtsass.compile_filename(\"dummy.scss\")\n```\n\narguments:\n- input_file: path to qtsass file.\n- output_file: path to write qt compliant css.\n- kwargs: keyword arguments to pass to sass.compile\n\nreturns:\n- qt compliant css string\n\n### `compile_dirname(input_dir, output_dir, **kwargs)`:\n\ncompiles qtsass files in a directory including subdirectories.\n\n```bash\n>>> import qtsass\n>>> qtsass.compile_dirname(\"./scss\", \"./css\")\n```\n\narguments:\n- input_dir: path to directory containing qtsass files.\n- output_dir: directory to write compiled qt compliant css files to.\n- kwargs: keyword arguments to pass to sass.compile\n\n### `enable_logging(level=none, handler=none)`:\nenable logging for qtsass.\n\nsets the qtsass logger's level to:\n    1. the provided logging level\n    2. logging.debug if the qtsass_debug envvar is a true value\n    3. logging.warning\n\n```bash\n>>> import logging\n>>> import qtsass\n>>> handler = logging.streamhandler()\n>>> formatter = logging.formatter('%(level)-8s: %(name)s> %(message)s')\n>>> handler.setformatter(formatter)\n>>> qtsass.enable_logging(level=logging.debug, handler=handler)\n```\n\narguments:\n- level: optional logging level\n- handler: optional handler to add\n\n### `watch(source, destination, compiler=none, watcher=none)`:\nwatches a source file or directory, compiling qtsass files when modified.\n\nthe compiler function defaults to compile_filename when source is a file\nand compile_dirname when source is a directory.\n\narguments:\n- source: path to source qtsass file or directory.\n- destination: path to output css file or directory.\n- compiler: compile function (optional)\n- watcher: defaults to qtsass.watchers.watcher (optional)\n\nreturns:\n- qtsass.watchers.watcher instance\n\n## contributing\n\neveryone is welcome to contribute!\n\n\n## sponsors\n\nspyder and its subprojects are funded thanks to the generous support of\n\n[![quansight](https://static.wixstatic.com/media/095d2c_2508c560e87d436ea00357abc404cf1d~mv2.png/v1/crop/x_0,y_9,w_915,h_329/fill/w_380,h_128,al_c,usm_0.66_1.00_0.01/095d2c_2508c560e87d436ea00357abc404cf1d~mv2.png)](https://www.quansight.com/)[![numfocus](https://i2.wp.com/numfocus.org/wp-content/uploads/2017/07/numfocus_lrg.png?fit=320%2c148&ssl=1)](https://numfocus.org/)\n\n\nand the donations we have received from our users around the world through [open collective](https://opencollective.com/spyder/):\n\n[![sponsors](https://opencollective.com/spyder/sponsors.svg)](https://opencollective.com/spyder#support)\n\nplease consider becoming a sponsor!\n",
+  "docs_url": null,
+  "keywords": "qt sass qtsass scss css qss stylesheets",
+  "license": "mit",
+  "name": "qtsass",
+  "package_url": "https://pypi.org/project/qtsass/",
+  "project_url": "https://pypi.org/project/qtsass/",
+  "project_urls": {
+    "Homepage": "https://github.com/spyder-ide/qtsass"
+  },
+  "release_url": "https://pypi.org/project/qtsass/0.4.0/",
+  "requires_dist": [
+    "libsass (>=0.22.0)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "compile scss files to valid qt stylesheets.",
+  "version": "0.4.0",
+  "releases": [],
+  "developers": [
+    "qtsass@spyder-ide.org",
+    "the_spyder_project_contributors",
+    "yann_lanthony"
+  ],
+  "kwds": "qss qtsass_debug spyder qwidget scss",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_qtsass",
+  "homepage": "https://github.com/spyder-ide/qtsass",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_libsass"
+  ]
+}

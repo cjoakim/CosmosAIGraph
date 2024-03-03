@@ -1,0 +1,71 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws cloudtrail construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\n## trail\n\naws cloudtrail enables governance, compliance, and operational and risk auditing of your aws account. actions taken by\na user, role, or an aws service are recorded as events in cloudtrail. learn more at the [cloudtrail\ndocumentation](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html).\n\nthe `trail` construct enables ongoing delivery of events as log files to an amazon s3 bucket. learn more about [creating\na trail for your aws account](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-create-and-update-a-trail.html).\nthe following code creates a simple cloudtrail for your account -\n\n```python\ntrail = cloudtrail.trail(self, \"cloudtrail\")\n```\n\nby default, this will create a new s3 bucket that cloudtrail will write to, and choose a few other reasonable defaults\nsuch as turning on multi-region and global service events.\nthe defaults for each property and how to override them are all documented on the `trailprops` interface.\n\n## log file validation\n\nin order to validate that the cloudtrail log file was not modified after cloudtrail delivered it, cloudtrail provides a\ndigital signature for each file. learn more at [validating cloudtrail log file\nintegrity](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html).\n\nthis is enabled on the `trail` construct by default, but can be turned off by setting `enablefilevalidation` to `false`.\n\n```python\ntrail = cloudtrail.trail(self, \"cloudtrail\",\n    enable_file_validation=false\n)\n```\n\n## notifications\n\namazon sns notifications can be configured upon new log files containing trail events are delivered to s3.\nlearn more at [configuring amazon sns notifications for\ncloudtrail](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/configure-sns-notifications-for-cloudtrail.html).\nthe following code configures an sns topic to be notified -\n\n```python\ntopic = sns.topic(self, \"trailtopic\")\ntrail = cloudtrail.trail(self, \"cloudtrail\",\n    sns_topic=topic\n)\n```\n\n## service integrations\n\nbesides sending trail events to s3, they can also be configured to notify other aws services -\n\n### amazon cloudwatch logs\n\ncloudtrail events can be delivered to a cloudwatch logs loggroup. by default, a new loggroup is created with a\ndefault retention setting. the following code enables sending cloudwatch logs but specifies a particular retention\nperiod for the created log group.\n\n```python\nimport aws_cdk.aws_logs as logs\n\n\ntrail = cloudtrail.trail(self, \"cloudtrail\",\n    send_to_cloud_watch_logs=true,\n    cloud_watch_logs_retention=logs.retentiondays.four_months\n)\n```\n\nif you would like to use a specific log group instead, this can be configured via `cloudwatchloggroup`.\n\n### amazon eventbridge\n\namazon eventbridge rules can be configured to be triggered when cloudtrail events occur using the `trail.onevent()` api.\nusing apis available in `aws-events`, these events can be filtered to match to those that are of interest, either from\na specific service, account or time range. see [events delivered via\ncloudtrail](https://docs.aws.amazon.com/amazoncloudwatch/latest/events/eventtypes.html#events-for-services-not-listed)\nto learn more about the event structure for events from cloudtrail.\n\nthe following code filters events for s3 from a specific aws account and triggers a lambda function.\n\n```python\nmy_function_handler = lambda_.function(self, \"myfunction\",\n    code=lambda_.code.from_asset(\"resource/myfunction\"),\n    runtime=lambda_.runtime.nodejs_14_x,\n    handler=\"index.handler\"\n)\n\nevent_rule = cloudtrail.trail.on_event(self, \"mycloudwatchevent\",\n    target=targets.lambdafunction(my_function_handler)\n)\n\nevent_rule.add_event_pattern(\n    account=[\"123456789012\"],\n    source=[\"aws.s3\"]\n)\n```\n\n## multi-region & global service events\n\nby default, a `trail` is configured to deliver log files from multiple regions to a single s3 bucket for a given\naccount. this creates shadow trails (replication of the trails) in all of the other regions. learn more about [how\ncloudtrail behaves regionally](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-concepts.html#cloudtrail-concepts-regional-and-global-services)\nand about the [`ismultiregion`\nproperty](https://docs.aws.amazon.com/awscloudformation/latest/userguide/aws-resource-cloudtrail-trail.html#cfn-cloudtrail-trail-ismultiregiontrail).\n\nfor most services, events are recorded in the region where the action occurred. for global services such as aws iam,\naws sts, amazon cloudfront, route 53, etc., events are delivered to any trail that includes global services. learn more\n[about global service events](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-concepts.html#cloudtrail-concepts-global-service-events).\n\nevents for global services are turned on by default for `trail` constructs in the cdk.\n\nthe following code disables multi-region trail delivery and trail delivery for global services for a specific `trail` -\n\n```python\ntrail = cloudtrail.trail(self, \"cloudtrail\",\n    # ...\n    is_multi_region_trail=false,\n    include_global_service_events=false\n)\n```\n\n## events types\n\n**management events** provide information about management operations that are performed on resources in your aws\naccount. these are also known as control plane operations. learn more about [management\nevents](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-concepts.html#cloudtrail-concepts-events).\n\nby default, a `trail` logs all management events. however, they can be configured to either be turned off, or to only\nlog 'read' or 'write' events.\n\nthe following code configures the `trail` to only track management events that are of type 'read'.\n\n```python\ntrail = cloudtrail.trail(self, \"cloudtrail\",\n    # ...\n    management_events=cloudtrail.readwritetype.read_only\n)\n```\n\n**data events** provide information about the resource operations performed on or in a resource. these are also known\nas data plane operations. learn more about [data\nevents](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-concepts.html#cloudtrail-concepts-events).\nby default, no data events are logged for a `trail`.\n\naws cloudtrail supports data event logging for amazon s3 objects and aws lambda functions.\n\nthe `logalls3dataevents()` api configures the trail to log all s3 data events while the `adds3eventselector()` api can\nbe used to configure logging of s3 data events for specific buckets and specific object prefix. the following code\nconfigures logging of s3 data events for `foobucket` and with object prefix `bar/`.\n\n```python\nimport aws_cdk.aws_s3 as s3\n# bucket: s3.bucket\n\n\ntrail = cloudtrail.trail(self, \"myamazingcloudtrail\")\n\n# adds an event selector to the bucket foo\ntrail.add_s3_event_selector([\n    bucket=bucket,\n    object_prefix=\"bar/\"\n])\n```\n\nsimilarly, the `logalllambdadataevents()` configures the trail to log all lambda data events while the\n`addlambdaeventselector()` api can be used to configure logging for specific lambda functions. the following code\nconfigures logging of lambda data events for a specific function.\n\n```python\ntrail = cloudtrail.trail(self, \"myamazingcloudtrail\")\namazing_function = lambda_.function(self, \"anamazingfunction\",\n    runtime=lambda_.runtime.nodejs_14_x,\n    handler=\"hello.handler\",\n    code=lambda_.code.from_asset(\"lambda\")\n)\n\n# add an event selector to log data events for the provided lambda functions.\ntrail.add_lambda_event_selector([amazing_function])\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-cloudtrail",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-cloudtrail/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-cloudtrail/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-cloudtrail/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-events (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.aws-lambda (==1.204.0)",
+    "aws-cdk.aws-logs (==1.204.0)",
+    "aws-cdk.aws-s3 (==1.204.0)",
+    "aws-cdk.aws-sns (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::cloudtrail",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk cloudtrail aws_s3 cloud_watch_logs_retention cdk",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_cloudtrail",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_events",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.aws_lambda",
+    "pypi_aws_cdk.aws_logs",
+    "pypi_aws_cdk.aws_s3",
+    "pypi_aws_cdk.aws_sns",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

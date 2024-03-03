@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "intended audience :: telecommunications industry",
+    "license :: osi approved :: apache software license",
+    "license :: osi approved :: gnu general public license v2 or later (gplv2+)",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: networking",
+    "topic :: system :: systems administration"
+  ],
+  "description": "pyroute2\n========\n\npyroute2 is a pure python **netlink** library. the core requires only python\nstdlib, no 3rd party libraries. the library was started as an rtnl protocol\nimplementation, so the name is **pyroute2**, but now it supports many netlink\nprotocols. some supported netlink families and protocols:\n\n* **rtnl**, network settings --- addresses, routes, traffic controls\n* **nfnetlink** --- netfilter api\n* **ipq** --- simplest userspace packet filtering, iptables queue target\n* **devlink** --- manage and monitor devlink-enabled hardware\n* **generic** --- generic netlink families\n* **uevent** --- same uevent messages as in udev\n\nnetfilter api:\n\n* **ipset** --- ip sets\n* **nftables** --- packet filtering\n* **nfct** --- connection tracking\n\ngeneric netlink:\n\n* **ethtool** --- low-level network interface setup\n* **wireguard** --- vpn setup\n* **nl80211** --- wireless functions api (basic support)\n* **taskstats** --- extended process statistics\n* **acpi_events** --- acpi events monitoring\n* **thermal_events** --- thermal events monitoring\n* **vfs_dquot** --- disk quota events monitoring\n\non the low level the library provides socket objects with an\nextended api. the additional functionality aims to:\n\n* help to open/bind netlink sockets\n* discover generic netlink protocols and multicast groups\n* construct, encode and decode netlink and pf_route messages\n\nsupported systems\n-----------------\n\npyroute2 runs natively on linux and emulates some limited subset\nof rtnl netlink api on bsd systems on top of pf_route notifications\nand standard system tools.\n\nother platforms are not supported.\n\nndb -- high level rtnl api\n--------------------------\n\nkey features:\n\n* data integrity\n* transactions with commit/rollback changes\n* state synchronization\n* multiple sources, including netns and remote systems\n\na \"hello world\" example:\n\n.. code-block:: python\n\n    from pyroute2 import ndb\n\n    with ndb() as ndb:\n        with ndb.interfaces['eth0'] as eth0:\n            # set one parameter\n            eth0.set(state='down')\n            eth0.commit()  # make sure that the interface is down\n            # or multiple parameters at once\n            eth0.set(ifname='hello_world!', state='up')\n            eth0.commit()  # rename, bring up and wait for success\n        # --> <-- here you can be sure that the interface is up & renamed\n\nmore examples:\n\n.. code-block:: python\n\n    from pyroute2 import ndb\n\n    ndb = ndb(log='debug')\n\n    for record in ndb.interfaces.summary():\n        print(record.ifname, record.address, record.state)\n\n    if_dump = ndb.interfaces.dump()\n    if_dump.select_records(state='up')\n    if_dump.select_fields('index', 'ifname', 'kind')\n    for line in if_dump.format('json'):\n        print(line)\n\n    addr_summary = ndb.addresses.summary()\n    addr_summary.select_records(ifname='eth0')\n    for line in addr_summary.format('csv'):\n        print(line)\n\n    with ndb.interfaces.create(ifname='br0', kind='bridge') as br0:\n        br0.add_port('eth0')\n        br0.add_port('eth1')\n        br0.add_ip('10.0.0.1/24')\n        br0.add_ip('192.168.0.1/24')\n        br0.set(\n            br_stp_state=1,  # set stp on\n            br_group_fwd_mask=0x4000,  # set lldp forwarding\n            state='up',  # bring the interface up\n        )\n    # --> <-- commit() will be run by the context manager\n\n    # operate on netns:\n    ndb.sources.add(netns='testns')  # connect to a namespace\n\n    with (\n        ndb.interfaces.create(\n            ifname='veth0',  # create veth\n            kind='veth',\n            peer={\n                'ifname': 'eth0',  # setup peer\n                'net_ns_fd': 'testns',  # in a namespace\n            },\n            state='up',\n        )\n    ) as veth0:\n        veth0.add_ip(address='172.16.230.1', prefixlen=24)\n\n    with ndb.interfaces.wait(\n        target='testns', ifname='eth0'\n    ) as peer:  # wait for the peer\n        peer.set(state='up')  # bring it up\n        peer.add_ip('172.16.230.2/24')  # add address\n\niproute -- low level rtnl api\n-----------------------------\n\nlow-level **iproute** utility --- linux network configuration.\nthe **iproute** class is a 1-to-1 rtnl mapping. there are no implicit\ninterface lookups and so on.\n\nget notifications about network settings changes with iproute:\n\n.. code-block:: python\n\n    from pyroute2 import iproute\n    with iproute() as ipr:\n        # with iproute objects you have to call bind() manually\n        ipr.bind()\n        for message in ipr.get():\n            print(message)\n\nmore examples:\n\n.. code-block:: python\n\n    from socket import af_inet\n    from pyroute2 import iproute\n\n    # get access to the netlink socket\n    ipr = iproute()\n    # no monitoring here -- thus no bind()\n\n    # print interfaces\n    for link in ipr.get_links():\n        print(link)\n\n    # create veth pair and move v0p1 to netns 'test'\n    ipr.link('add', ifname='v0p0', peer='v0p1', kind='veth')\n    # wait for the devices:\n    peer, veth = ipr.poll(\n        ipr.link, 'dump', timeout=5, ifname=lambda x: x in ('v0p0', 'v0p1')\n    )\n    ipr.link('set', index=peer['index'], net_ns_fd='test')\n\n    # bring v0p0 up and add an address\n    ipr.link('set', index=veth['index'], state='up')\n    ipr.addr('add', index=veth['index'], address='10.0.0.1', prefixlen=24)\n\n    # release netlink socket\n    ip.close()\n\nnetwork namespace examples\n--------------------------\n\nnetwork namespace manipulation:\n\n.. code-block:: python\n\n    from pyroute2 import netns\n    # create netns\n    netns.create('test')\n    # list\n    print(netns.listnetns())\n    # remove netns\n    netns.remove('test')\n\ncreate **veth** interfaces pair and move to **netns**:\n\n.. code-block:: python\n\n    from pyroute2 import iproute\n\n    with iproute() as ipr:\n\n        # create interface pair\n        ipr.link('add', ifname='v0p0', kind='veth',  peer='v0p1')\n\n        # wait for the peer\n        (peer,) = ipr.poll(ipr.link, 'dump', timeout=5, ifname='v0p1')\n\n        # move the peer to the 'test' netns:\n        ipr.link('set', index=peer['index'], net_ns_fd='test')\n\nlist interfaces in some **netns**:\n\n.. code-block:: python\n\n    from pyroute2 import netns\n    from pprint import pprint\n\n    ns = netns('test')\n    pprint(ns.get_links())\n    ns.close()\n\nmore details and samples see in the documentation.\n\ninstallation\n------------\n\nusing pypi:\n\n.. code-block:: bash\n\n    pip install pyroute2\n\nusing git:\n\n.. code-block:: bash\n\n    pip install git+https://github.com/svinota/pyroute2.git\n\nusing source, requires make and nox\n\n.. code-block:: bash\n\n    git clone https://github.com/svinota/pyroute2.git\n    cd pyroute2\n    make install\n\nrequirements\n------------\n\npython >= 3.6\n\nlinks\n-----\n\n* home: https://pyroute2.org/\n* source: https://github.com/svinota/pyroute2\n* bugs: https://github.com/svinota/pyroute2/issues\n* pypi: https://pypi.python.org/pypi/pyroute2\n* docs: http://docs.pyroute2.org/\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "gpl-2.0-or-later or apache-2.0",
+  "name": "pyroute2",
+  "package_url": "https://pypi.org/project/pyroute2/",
+  "project_url": "https://pypi.org/project/pyroute2/",
+  "project_urls": {
+    "Homepage": "https://github.com/svinota/pyroute2"
+  },
+  "release_url": "https://pypi.org/project/pyroute2/0.7.10/",
+  "requires_dist": [
+    "win-inet-pton ; platform_system == \"Windows\"",
+    "importlib-metadata ; python_version < \"3.8\""
+  ],
+  "requires_python": "",
+  "summary": "python netlink library",
+  "version": "0.7.10",
+  "releases": [],
+  "developers": [
+    "peter@svinota.eu",
+    "peter_saveliev"
+  ],
+  "kwds": "netlink nfnetlink netfilter packet pyroute2",
+  "license_kwds": "gpl-2.0-or-later or apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_pyroute2",
+  "homepage": "https://github.com/svinota/pyroute2",
+  "release_count": 110,
+  "dependency_ids": [
+    "pypi_importlib_metadata",
+    "pypi_win_inet_pton"
+  ]
+}

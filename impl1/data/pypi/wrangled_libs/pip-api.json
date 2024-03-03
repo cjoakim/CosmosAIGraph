@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "\n<!--- badges: start --->\n[![github - license](https://img.shields.io/github/license/di/pip-api?logo=github&style=flat&color=green)][#github-license]\n[![pypi - python version](https://img.shields.io/pypi/pyversions/pip-api?logo=pypi&style=flat&color=blue)][#pypi-package]\n[![pypi - package version](https://img.shields.io/pypi/v/pip-api?logo=pypi&style=flat&color=orange)][#pypi-package]\n[![conda - platform](https://img.shields.io/conda/pn/conda-forge/pip-api?logo=anaconda&style=flat)][#conda-forge-package]\n[![conda (channel only)](https://img.shields.io/conda/vn/conda-forge/pip-api?logo=anaconda&style=flat&color=orange)][#conda-forge-package]\n[![conda recipe](https://img.shields.io/static/v1?logo=conda-forge&style=flat&color=green&label=recipe&message=pip-api)][#conda-forge-feedstock]\n\n[#github-license]: https://github.com/di/pip-api/blob/master/license\n[#pypi-package]: https://pypi.org/project/pip-api/\n[#conda-forge-package]: https://anaconda.org/conda-forge/pip-api\n[#conda-forge-feedstock]: https://github.com/conda-forge/pip-api-feedstock\n<!--- badges: end --->\n\nsince [`pip`](https://pypi.org/p/pip) is a command-line-tool, [it does not have\nan official, supported, _importable_\napi](https://pip.pypa.io/en/latest/user_guide/#using-pip-from-your-program).\n\nhowever, this does not mean that people haven't tried to `import pip`, usually\nto end up with much headache when `pip`'s maintainers do routine refactoring.\n\n## goal\nthe goal of this project is to provide an importable `pip` api, which is _fully\ncompliant_ with the recommended method of using `pip` from your program.\n\nhow? by providing an importable api that wraps command-line calls to `pip`,\nthis library can be used as a drop-in replacement for existing uses of `pip`'s\ninternal api.\n\n### scope\nthis goal means that any new api added here must have the following\nequivalents:\n\n- some internal `pip` api (or combination of internal apis)\n- some cli calls (or combination of cli calls)\n\nany functionality that is not currently possible from internal `pip` api or\ncli calls is out of scope.\n\n## installation\n\nyou can install `pip-api` with either `pip` or with `conda`.\n\n**with pip**:\n\n```sh\npython -m pip install pip-api\n```\n\n**with conda**:\n\n```sh\nconda install -c conda-forge pip-api\n```\n\n## supported commands\n\nnot all commands are supported in all versions of `pip` and on all platforms.\nif the command you are trying to use is not compatible, `pip_api` will raise a\n`pip_api.exceptions.incompatible` exception for your program to catch.\n\n### available with all `pip` versions:\n* `pip_api.version()`\n  > returns the `pip` version as a string, e.g. `\"9.0.1\"`\n\n* `pip_api.installed_distributions(local=false)`\n  > returns a list of all installed distributions as a `distribution` object with the following attributes:\n  > * `distribution.name` (`string`): the name of the installed distribution\n  > * `distribution.version` ([`packaging.version.version`](https://packaging.pypa.io/en/latest/version/#packaging.version.version)): the version of the installed distribution\n  > * `distribution.location` (`string`): the location of the installed distribution\n  > * `distribution.editable` (`bool`): whether the distribution is editable or not\n  > optionally takes a `local` parameter to filter out globally-installed packages\n\n* `pip_api.parse_requirements(filename, options=none, include_invalid=false, strict_hashes=false)`\n  > takes a path to a filename of a requirements file. returns a mapping from package name to a `pip_api.requirement` object (subclass of [`packaging.requirements.requirement`](https://packaging.pypa.io/en/latest/requirements/#packaging.requirements.requirement)) with the following attributes:\n  > * `requirement.name` (`string`): the name of the requirement.\n  > * `requirement.extras` (`set`): a set of extras that the requirement specifies.\n  > * `requirement.specifier` ([`packaging.specifiers.specifierset`](https://packaging.pypa.io/en/latest/specifiers/#packaging.specifiers.specifierset)): a `specifierset` of the version specified by the requirement.\n  > * `requirement.marker` ([`packaging.markers.marker`](https://packaging.pypa.io/en/latest/markers/#packaging.markers.marker)): a `marker` of the marker for the requirement. can be `none`.\n  > * `requirement.hashes` (`dict`): a mapping of hashes for the requirement, corresponding to `--hash=...` options.\n  > * `requirement.editable` (`bool`): whether the requirement is editable, corresponding to `-e ...`\n  > * `requirement.filename` (`str`): the filename that the requirement originates from.\n  > * `requirement.lineno` (`int`): the source line that the requirement was parsed from.\n  >\n  > optionally takes an `options` parameter to override the regex used to skip requirements lines.\n  > optionally takes an `include_invalid` parameter to return an `unparsedrequirement` in the event that a requirement cannot be parsed correctly.\n  > optionally takes a `strict_hashes` parameter to require that all requirements have associated hashes.\n\n### available with `pip>=8.0.0`:\n* `pip_api.hash(filename, algorithm='sha256')`\n  > returns the resulting as a string.\n  > valid `algorithm` parameters are `'sha256'`, `'sha384'`, and `'sha512'`\n\n### available with `pip>=19.2`:\n* `pip_api.installed_distributions(local=false, paths=[])`\n  > as described above, but with an extra optional `paths` parameter to provide a list of locations to look for installed distributions. attempting to use the `paths` parameter with `pip<19.2` will result in a `piperror`.\n\n## use cases\nthis library is in use by a number of other tools, including:\n* [`pip-audit`](https://pypi.org/project/pip-audit/), to analyze dependencies for known vulnerabilities\n* [`pytest-reqs`](https://pypi.org/project/pytest-reqs), to compare requirements files with test dependencies\n* [`hashin`](https://pypi.org/project/hashin/), to add hash pinning to requirements files\n* ...and many more.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pip-api",
+  "package_url": "https://pypi.org/project/pip-api/",
+  "project_url": "https://pypi.org/project/pip-api/",
+  "project_urls": {
+    "Homepage": "http://github.com/di/pip-api"
+  },
+  "release_url": "https://pypi.org/project/pip-api/0.0.30/",
+  "requires_dist": [
+    "pip"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "an unofficial, importable pip api",
+  "version": "0.0.30",
+  "releases": [],
+  "developers": [
+    "di@python.org",
+    "dustin_ingram"
+  ],
+  "kwds": "pypi pip pypa pip_api pyversions",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pip_api",
+  "homepage": "http://github.com/di/pip-api",
+  "release_count": 28,
+  "dependency_ids": [
+    "pypi_pip"
+  ]
+}

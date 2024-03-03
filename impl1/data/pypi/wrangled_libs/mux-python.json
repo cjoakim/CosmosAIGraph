@@ -1,0 +1,38 @@
+{
+  "classifiers": [],
+  "description": "![mux python banner](github-python-sdk.png)\n\n<p align=\"center\">\n  <a href=\"https://pypi.org/project/mux-python/\"><img src=\"https://img.shields.io/pypi/v/mux_python\" title=\"pypi\" /></a>\n  <a href=\"https://github.com/muxinc/mux-python/workflows/integration%20test\"><img src=\"https://github.com/muxinc/mux-python/workflows/integration%20test/badge.svg\" title=\"ci\" /></a>\n</p>\n<p align=\"center\">\n  <a href=\"https://pypi.org/project/mux-python\">pypi</a> |\n  <a href=\"https://docs.mux.com\">mux docs</a> |\n  <a href=\"https://docs.mux.com/api-reference\">mux api reference </a>\n</p>\n\n# mux python\n\nofficial mux api wrapper for python projects, supporting both mux data and mux video.\n\n[mux video](https://mux.com/video) is an api-first platform, powered by data and designed by video experts to make beautiful video possible for every development team.\n\n[mux data](https://mux.com/data) is a platform for monitoring your video streaming performance with just a few lines of code. get in-depth quality of service analytics on web, mobile, and ott devices.\n\nnot familiar with mux? check out https://mux.com/ for more information.\n\n## requirements\n\npython 2.7 or 3.4+\n\n### compatibility with ubuntu 14.04\n\nmux uses cross signed tls root certificates, which may not be compatible with ubuntu 14.04 lts [as documented in this issue](https://github.com/certifi/python-certifi/issues/26). we suggest upgrading to a later lts operating system if you encounter this issue.\n\n## installation\n\n### via pip\n\n```sh\npip install git+https://github.com/muxinc/mux-python.git\n```\n(you may need to run `pip` with root permission)\n\n### via source\n```sh\ngit checkout https://github.com/muxinc/mux-python.git\ncd mux-python\npython setup.py install --user\n```\n\n## getting started\n\n### overview\n\nmux python is a code generated lightweight wrapper around the mux rest api and reflects them accurately. this has a few consequences you should watch out for:\n\n1) for almost all api responses, the object you're looking for will be in the `data` field on the api response object, as in the example below. this is because we designed our apis with similar concepts to the [json:api](https://jsonapi.org/) standard. this means we'll be able to return more metadata from our api calls (such as related entities) without the need to make breaking changes to our apis. we've decided not to hide that in this library.\n\n2) we don't use a lot of object orientation. for example api calls that happen on a single asset don't exist in the asset class, but are api calls in the assetsapi which require an asset id.\n\n### authentication\nto use the mux api, you'll need an access token and a secret. [details on obtaining these can be found here in the mux documentation.](https://docs.mux.com/docs#section-1-get-an-api-access-token)\n\nits up to you to manage your token and secret. in our examples, we read them from `mux_token_id` and `mux_token_secret` in your environment.\n\n### example usage\nbelow is a quick example of using mux-python to list the video assets stored in your mux account.\n\nbe sure to also checkout the [examples directory](examples/):\n* [list assets, live streams, signing keys, and uploads.](examples/video/list-everything.py)\n* [create an asset, wait for it to become availiable, and print its playback url](examples/video/ingest.py)\n* [create a new live stream and retrieve its stream key.](examples/video/create-live-stream.py)\n\nthere's also example usage of every api call (also used for testing):\n* [video](examples/video/)\n  * [assets](examples/video/exercise-assets.py)\n  * [live streams](examples/video/exercise-live-streams.py)\n  * [signing keys](examples/video/exercise-signing-keys.py)\n  * [uploads](examples/video/exercise-uploads.py)\n* [data](examples/data/)\n  * [errors](examples/data/exercise-errors.py)\n  * [exports](examples/data/exercise-exports.py)\n  * [filters](examples/data/exercise-filters.py)\n  * [metrics](examples/data/exercise-metrics.py)\n  * [video views](examples/data/exercise-video-views.py)\n\n```python\nimport os\nimport mux_python\nfrom mux_python.rest import apiexception\n\n# authentication setup\nconfiguration = mux_python.configuration()\nconfiguration.username = os.environ['mux_token_id']\nconfiguration.password = os.environ['mux_token_secret']\n\n# api client initialization\nassets_api = mux_python.assetsapi(mux_python.apiclient(configuration))\n\n# list assets\nprint(\"listing assets: \\n\")\ntry:\n    list_assets_response = assets_api.list_assets()\n    for asset in list_assets_response.data:\n        print('asset id: ' + asset.id)\n        print('status: ' + asset.status)\n        print('duration: ' + str(asset.duration) + \"\\n\")\nexcept apiexception as e:\n    print(\"exception when calling assetsapi->list_assets: %s\\n\" % e)\n```\n\n## exceptions & error handling\n\nall exceptions inherit from `apiexception`, you can catch it as in the example above, or you can catch one of the more specific exceptions below. you can check the fields `error_type` and `error_messages` in all exceptions to see what error the mux api reported.\n\n### notfoundexception\n\n`notfoundexception` is thrown when a resource is not found. this is useful when trying to get an entity by its id, for example `get_asset(\"some-id-here\")` in the assetsapi.\n\n### unauthorizedexception\n\n`unauthorizedexception` is thrown when mux cannot authenticate your request. [you should check you have configured your credentials correctly.](#authentication)\n\n### serviceexception\n\n`serviceexception` is thrown when mux returns a http 5xx status code. if you encounter this reproducibly, please get in touch with [support@mux.com](mailto:support@mux.com).\n\n## documentation\n\n[be sure to check out the documentation in the `docs` directory.](docs/)\n\n## issues\nif you run into problems, [please raise a github issue,](https://github.com/muxinc/mux-python/issues) filling in the issue template. we'll take a look as soon as possible.\n\n## contributing\nplease do not submit prs against this package. it is generated from our openapi definitions - [please open an issue instead!](https://github.com/muxinc/mux-python/issues)\n\n## license\n[mit license.](license) copyright 2019 mux, inc.\n",
+  "docs_url": null,
+  "keywords": "openapi,openapi-generator,mux api",
+  "license": "mit",
+  "name": "mux-python",
+  "package_url": "https://pypi.org/project/mux-python/",
+  "project_url": "https://pypi.org/project/mux-python/",
+  "project_urls": {
+    "Homepage": "https://github.com/muxinc/mux-python"
+  },
+  "release_url": "https://pypi.org/project/mux-python/3.13.0/",
+  "requires_dist": [
+    "urllib3 >=1.25.3",
+    "six >=1.10",
+    "python-dateutil"
+  ],
+  "requires_python": "",
+  "summary": "mux api",
+  "version": "3.13.0",
+  "releases": [],
+  "developers": [
+    "devex@mux.com",
+    "mux_devex"
+  ],
+  "kwds": "mux_python mux mux_token_id mux_token_secret muxinc",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_mux_python",
+  "homepage": "https://github.com/muxinc/mux-python",
+  "release_count": 33,
+  "dependency_ids": [
+    "pypi_python_dateutil",
+    "pypi_six",
+    "pypi_urllib3"
+  ]
+}

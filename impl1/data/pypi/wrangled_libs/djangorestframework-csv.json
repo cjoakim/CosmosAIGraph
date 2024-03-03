@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "=======================\ndjangorestframework-csv\n=======================\n\n|build status|_\n\n.. |build status| image:: https://github.com/mjumbewu/django-rest-framework-csv/actions/workflows/test.yml/badge.svg\n.. _build status: https://github.com/mjumbewu/django-rest-framework-csv/actions/workflows/test.yml\n\n**csv tools for django rest framework**\n\ninstallation\n------------\n\n.. code-block:: bash\n\n    $ pip install djangorestframework-csv\n\ncompatibility\n-------------\n\n- for compatibility with python 3 and django < 3.2, use `djangorestframework-csv<3.0.1`\n- for compatibility with python 2.7, use `djangorestframework-csv<3`\n\nusage\n-----\n\n*views.py*\n\n.. code-block:: python\n\n    from rest_framework.views import apiview\n    from rest_framework.settings import api_settings\n    from rest_framework_csv import renderers as r\n\n    class myview (apiview):\n        renderer_classes = (r.csvrenderer, ) + tuple(api_settings.default_renderer_classes)\n        ...\n\nalternatively, to set csv as a default rendered format, add the following to the\n`settings.py` file:\n\n.. code-block:: python\n\n    rest_framework = {\n        # specifying the renderers\n        'default_renderer_classes': (\n            'rest_framework_csv.renderers.csvrenderer',\n        ),\n    }\n\nordered fields\n--------------\n\nby default, a ``csvrenderer`` will output fields in sorted order. to specify\nan alternative field ordering you can override the ``header`` attribute. there\nare two ways to do this:\n\n1) create a new renderer class and override the ``header`` attribute directly:\n\n    .. code-block:: python\n\n        class myuserrenderer (csvrenderer):\n            header = ['first', 'last', 'email']\n\n        @api_view(['get'])\n        @renderer_classes((myuserrenderer,))\n        def my_view(request):\n            users = user.objects.filter(is_active=true)\n            content = [{'first': user.first_name,\n                        'last': user.last_name,\n                        'email': user.email}\n                       for user in users]\n            return response(content)\n\n2) use the ``renderer_context`` to override the field ordering on the fly:\n\n    .. code-block:: python\n\n        class myview (apiview):\n            renderer_classes = [csvrenderer]\n\n            def get_renderer_context(self):\n                context = super().get_renderer_context()\n                context['header'] = (\n                    self.request.get['fields'].split(',')\n                    if 'fields' in self.request.get else none)\n                return context\n\n            ...\n\nlabeled fields\n--------------\n\ncustom labels can be applied to the ``csvrenderer`` using the ``labels`` dict\nattribute where each key corresponds to the header and the value corresponds\nto the custom label for that header.\n\n1) create a new renderer class and override the ``header`` and ``labels``\nattribute directly:\n\n    .. code-block:: python\n\n        class mybazrenderer (csvrenderer):\n            header = ['foo.bar']\n            labels = {\n                'foo.bar': 'baz'\n            }\n\npagination\n----------\n\nusing the renderer with paginated data is also possible with the\nnew `paginatedcsvrenderer` class and should be used with views that\npaginate data\n\n\nfor more information about using renderers with django rest framework, see the\n`api guide <http://django-rest-framework.org/api-guide/renderers/>`_ or the\n`tutorial <http://django-rest-framework.org/tutorial/1-serialization/>`_.\n\nrunning the tests\n-----------------\n\nto run the tests against the current environment:\n\n.. code-block:: bash\n\n    $ ./manage.py test\n\n\nchangelog\n=========\n\n3.0.2\n-----\n\n- fix the project long description metadata\n\n3.0.1\n-----\n\n- remove django tests for all but the currently supported django versions\n  (3.2, 4.1, 4.2). also only keep tests for python versions compatible with\n  supported django versions (3.8 - 3.11).\n\n3.0.0\n-----\n\n- removed compatibility with python 2\n- added compatibility with django up to 3.2 and 4.2\n  (thanks to work from @ttycho, @awais786, @arpitjain799, @tirkarthi)\n\n2.1.1\n-----\n\n- add support for byte order markers (bom) (thanks @yaoxin)\n- documentation updates (thanks @rjemanuele and @coreyshirk)\n\n2.1.0\n-----\n\n- csvs with no data still output header labels (thanks @travisbloom)\n- include a paginated renderer as part of the app (thanks @masterfloda)\n- generators can be used as data sources for csvstreamingrenderer (thanks\n  @jrzerr)\n- support for non utf-8 encoding parsing (thanks @weasellin)\n\n2.0.0\n-----\n\n- make `csvrenderer.render` return bytes, and `csvparser.parse` expect a byte\n  stream.\n- have data-less renders print header row, if header is explicitly supplied\n- drop django 1.7 tests and add django 1.10 tests\n- have `csvrenderer.tableize` act as a generator when possible (i.e., when a\n  header is explicitly specified).\n- add docs for labels thanks to @radyz\n- fix header rendering in `csvstreamingrenderer` thanks to @radialnash\n- improve unicode handling, thanks to @brandonrobertz\n\n1.4.0/1.4.1\n-----------\n\n- add support for changing field labels in the ``csvrenderer``, thanks to @soby\n- add support for setting ``csvrenderer`` headers, labels, and writer_opts as\n  ``renderer_context`` parameters.\n- renamed ``csvrenderer.headers`` to ``csvrenderer.header``; old spelling is\n  still available for backwards compatibility, but may be removed in the future.\n\n1.3.4\n-----\n\n- support streaming csv rendering, via @ivancrneto\n- improved test configuration and project metadata, via @ticosax\n\n1.3.2/1.3.3\n-----------\n\n- support unicode csv parsing, and universal newlines, with thanks to @brocksamson\n\n1.3.1\n-----\n\n- renderer handles case where data is not a list by wrapping data in a list, via pull request from @dougvk\n- better cross python version support, via @paurullan and @vishen\n\n1.3.0\n-----\n\n- support for python 3, derived from work by @samdobson\n\n1.2.0\n-----\n\n- support consistent ordering of fields in rendered csv; thanks to @robguttman\n- support specifying particular fields/headers in custom csv renderer by\n  overriding the ``headers`` attribute.\n\n1.1.0\n-----\n\n- support simple csv parsing; thanks to @sebastibe\n\n1.0.1\n-----\n\n- add the package manifest\n\n1.0.0\n-----\n\n- initial release\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "djangorestframework-csv",
+  "package_url": "https://pypi.org/project/djangorestframework-csv/",
+  "project_url": "https://pypi.org/project/djangorestframework-csv/",
+  "project_urls": {
+    "Homepage": "https://github.com/mjumbewu/django-rest-framework-csv"
+  },
+  "release_url": "https://pypi.org/project/djangorestframework-csv/3.0.2/",
+  "requires_dist": [
+    "djangorestframework"
+  ],
+  "requires_python": "",
+  "summary": "csv tools for django rest framework",
+  "version": "3.0.2",
+  "releases": [],
+  "developers": [
+    "mjumbe_wawatu_ukweli",
+    "mjumbewu@gmail.com"
+  ],
+  "kwds": "rest_framework_csv djangorestframework rest_framework django csvs",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_djangorestframework_csv",
+  "homepage": "https://github.com/mjumbewu/django-rest-framework-csv",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_djangorestframework"
+  ]
+}

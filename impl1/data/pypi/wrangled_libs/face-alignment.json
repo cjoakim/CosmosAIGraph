@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# face recognition\n\ndetect facial landmarks from python using the world's most accurate face alignment network, capable of detecting points in both 2d and 3d coordinates.\n\nbuild using [fan](https://www.adrianbulat.com)'s state-of-the-art deep learning based face alignment method. \n\n<p align=\"center\"><img src=\"docs/images/face-alignment-adrian.gif\" /></p>\n\n**note:** the lua version is available [here](https://github.com/1adrianb/2d-and-3d-face-alignment).\n\nfor numerical evaluations it is highly recommended to use the lua version which uses indentical models with the ones evaluated in the paper. more models will be added soon.\n\n[![license](https://img.shields.io/badge/license-bsd%203--clause-blue.svg)](https://opensource.org/licenses/bsd-3-clause)  [![test face alignmnet](https://github.com/1adrianb/face-alignment/workflows/test%20face%20alignmnet/badge.svg)](https://github.com/1adrianb/face-alignment/actions?query=workflow%3a%22test+face+alignmnet%22) [![anaconda-server badge](https://anaconda.org/1adrianb/face_alignment/badges/version.svg)](https://anaconda.org/1adrianb/face_alignment)\n[![pypi version](https://badge.fury.io/py/face-alignment.svg)](https://pypi.org/project/face-alignment/)\n\n## features\n\n#### detect 2d facial landmarks in pictures\n\n<p align='center'>\n<img src='docs/images/2dlandmarks.png' title='3d-fan-full example' style='max-width:600px'></img>\n</p>\n\n```python\nimport face_alignment\nfrom skimage import io\n\nfa = face_alignment.facealignment(face_alignment.landmarkstype.two_d, flip_input=false)\n\ninput = io.imread('../test/assets/aflw-test.jpg')\npreds = fa.get_landmarks(input)\n```\n\n#### detect 3d facial landmarks in pictures\n\n<p align='center'>\n<img src='https://www.adrianbulat.com/images/image-z-examples.png' title='3d-fan-full example' style='max-width:600px'></img>\n</p>\n\n```python\nimport face_alignment\nfrom skimage import io\n\nfa = face_alignment.facealignment(face_alignment.landmarkstype.three_d, flip_input=false)\n\ninput = io.imread('../test/assets/aflw-test.jpg')\npreds = fa.get_landmarks(input)\n```\n\n#### process an entire directory in one go\n\n```python\nimport face_alignment\nfrom skimage import io\n\nfa = face_alignment.facealignment(face_alignment.landmarkstype.two_d, flip_input=false)\n\npreds = fa.get_landmarks_from_directory('../test/assets/')\n```\n\n#### detect the landmarks using a specific face detector.\n\nby default the package will use the sfd face detector. however the users can alternatively use dlib, blazeface, or pre-existing ground truth bounding boxes.\n\n```python\nimport face_alignment\n\n# sfd for sfd, dlib for dlib and folder for existing bounding boxes.\nfa = face_alignment.facealignment(face_alignment.landmarkstype.two_d, face_detector='sfd')\n```\n\n#### running on cpu/gpu\nin order to specify the device (gpu or cpu) on which the code will run one can explicitly pass the device flag:\n\n```python\nimport torch\nimport face_alignment\n\n# cuda for cuda, mps for apple m1/2 gpus.\nfa = face_alignment.facealignment(face_alignment.landmarkstype.two_d, device='cpu')\n\n# running using lower precision\nfa = fa = face_alignment.facealignment(face_alignment.landmarkstype.two_d, dtype=torch.bfloat16, device='cuda')\n```\n\nplease also see the ``examples`` folder\n\n#### supported face detectors\n\n```python\n\n# dlib (fast, may miss faces)\nmodel = facealignment(landmarks_type= landmarkstype.two_d, face_detector='dlib')\n\n# sfd (likely best results, but slowest)\nmodel = facealignment(landmarks_type= landmarkstype.two_d, face_detector='sfd')\n\n# blazeface (front camera model)\nmodel = facealignment(landmarks_type= landmarkstype.two_d, face_detector='blazeface')\n\n# blazeface (back camera model)\nmodel = facealignment(landmarks_type= landmarkstype.two_d, face_detector='blazeface', face_detector_kwargs={'back_model': true})\n\n```\n\n## installation\n\n### requirements\n\n* python 3.5+ (it may work with other versions too). last version with support for python 2.7 was v1.1.1\n* linux, windows or macos\n* pytorch (>=1.5)\n\nwhile not required, for optimal performance(especially for the detector) it is **highly** recommended to run the code using a cuda enabled gpu.\n\n### binaries\n\nthe easiest way to install it is using either pip or conda:\n\n| **using pip**                | **using conda**                            |\n|------------------------------|--------------------------------------------|\n| `pip install face-alignment` | `conda install -c 1adrianb face_alignment` |\n|                              |                                            |\n\nalternatively, bellow, you can find instruction to build it from source.\n\n### from source\n\n install pytorch and pytorch dependencies. please check the [pytorch readme](https://github.com/pytorch/pytorch) for this.\n\n#### get the face alignment source code\n```bash\ngit clone https://github.com/1adrianb/face-alignment\n```\n#### install the face alignment lib\n```bash\npip install -r requirements.txt\npython setup.py install\n```\n\n### docker image\n\na dockerfile is provided to build images with cuda support and cudnn. for more instructions about running and building a docker image check the orginal docker documentation.\n```\ndocker build -t face-alignment .\n```\n\n## how does it work?\n\nwhile here the work is presented as a black-box, if you want to know more about the intrisecs of the method please check the original paper either on arxiv or my [webpage](https://www.adrianbulat.com).\n\n## contributions\n\nall contributions are welcomed. if you encounter any issue (including examples of images where it fails) feel free to open an issue. if you plan to add a new features please open an issue to discuss this prior to making a pull request.\n\n## citation\n\n```\n@inproceedings{bulat2017far,\n  title={how far are we from solving the 2d \\& 3d face alignment problem? (and a dataset of 230,000 3d facial landmarks)},\n  author={bulat, adrian and tzimiropoulos, georgios},\n  booktitle={international conference on computer vision},\n  year={2017}\n}\n```\n\nfor citing dlib, pytorch or any other packages used here please check the original page of their respective authors.\n\n## acknowledgements\n\n* to the [pytorch](http://pytorch.org/) team for providing such an awesome deeplearning framework\n* to [my supervisor](http://www.cs.nott.ac.uk/~pszyt/) for his patience and suggestions.\n* to all other python developers that made available the rest of the packages used in this repository.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "face-alignment",
+  "package_url": "https://pypi.org/project/face-alignment/",
+  "project_url": "https://pypi.org/project/face-alignment/",
+  "project_urls": {
+    "Homepage": "https://github.com/1adrianb/face-alignment"
+  },
+  "release_url": "https://pypi.org/project/face-alignment/1.4.1/",
+  "requires_dist": [
+    "torch",
+    "numpy",
+    "scipy (>=0.17)",
+    "scikit-image",
+    "opencv-python",
+    "tqdm",
+    "numba",
+    "enum34 ; python_version < \"3.4\""
+  ],
+  "requires_python": ">=3",
+  "summary": "detector 2d or 3d face landmarks from python",
+  "version": "1.4.1",
+  "releases": [],
+  "developers": [
+    "adrian@adrianbulat.com",
+    "adrian_bulat"
+  ],
+  "kwds": "face_alignment face_detector facealignment face_detector_kwargs faces",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_face_alignment",
+  "homepage": "https://github.com/1adrianb/face-alignment",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_enum34",
+    "pypi_numba",
+    "pypi_numpy",
+    "pypi_opencv_python",
+    "pypi_scikit_image",
+    "pypi_scipy",
+    "pypi_torch",
+    "pypi_tqdm"
+  ]
+}

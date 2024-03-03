@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "[![build status](https://github.com/pre-commit/identify/actions/workflows/main.yml/badge.svg)](https://github.com/pre-commit/identify/actions/workflows/main.yml)\n[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/pre-commit/identify/main.svg)](https://results.pre-commit.ci/latest/github/pre-commit/identify/main)\n\nidentify\n========\n\nfile identification library for python.\n\ngiven a file (or some information about a file), return a set of standardized\ntags identifying what the file is.\n\n## installation\n\n```bash\npip install identify\n```\n\n## usage\n### with a file on disk\n\nif you have an actual file on disk, you can get the most information possible\n(a superset of all other methods):\n\n```python\n>>> from identify import identify\n>>> identify.tags_from_path('/path/to/file.py')\n{'file', 'text', 'python', 'non-executable'}\n>>> identify.tags_from_path('/path/to/file-with-shebang')\n{'file', 'text', 'shell', 'bash', 'executable'}\n>>> identify.tags_from_path('/bin/bash')\n{'file', 'binary', 'executable'}\n>>> identify.tags_from_path('/path/to/directory')\n{'directory'}\n>>> identify.tags_from_path('/path/to/symlink')\n{'symlink'}\n```\n\nwhen using a file on disk, the checks performed are:\n\n* file type (file, symlink, directory, socket)\n* mode (is it executable?)\n* file name (mostly based on extension)\n* if executable, the shebang is read and the interpreter interpreted\n\n\n### if you only have the filename\n\n```python\n>>> identify.tags_from_filename('file.py')\n{'text', 'python'}\n```\n\n\n### if you only have the interpreter\n\n```python\n>>> identify.tags_from_interpreter('python3.5')\n{'python', 'python3'}\n>>> identify.tags_from_interpreter('bash')\n{'shell', 'bash'}\n>>> identify.tags_from_interpreter('some-unrecognized-thing')\nset()\n```\n\n### as a cli\n\n```\n$ identify-cli --help\nusage: identify-cli [-h] [--filename-only] path\n\npositional arguments:\n  path\n\noptional arguments:\n  -h, --help       show this help message and exit\n  --filename-only\n```\n\n```console\n$ identify-cli setup.py; echo $?\n[\"file\", \"non-executable\", \"python\", \"text\"]\n0\n$ identify-cli setup.py --filename-only; echo $?\n[\"python\", \"text\"]\n0\n$ identify-cli wat.wat; echo $?\nwat.wat does not exist.\n1\n$ identify-cli wat.wat --filename-only; echo $?\n1\n```\n\n### identifying license files\n\n`identify` also has an api for determining what type of license is contained\nin a file.  this routine is roughly based on the approaches used by\n[licensee] (the ruby gem that github uses to figure out the license for a\nrepo).\n\nthe approach that `identify` uses is as follows:\n\n1. strip the copyright line\n2. normalize all whitespace\n3. return any exact matches\n4. return the closest by edit distance (where edit distance < 5%)\n\nto use the api, install via `pip install identify[license]`\n\n```pycon\n>>> from identify import identify\n>>> identify.license_id('license')\n'mit'\n```\n\nthe return value of the `license_id` function is an [spdx] id.  currently\nlicenses are sourced from [choosealicense.com].\n\n[licensee]: https://github.com/benbalter/licensee\n[spdx]: https://spdx.org/licenses/\n[choosealicense.com]: https://github.com/github/choosealicense.com\n\n## how it works\n\na call to `tags_from_path` does this:\n\n1. what is the type: file, symlink, directory? if it's not file, stop here.\n2. is it executable? add the appropriate tag.\n3. do we recognize the file extension? if so, add the appropriate tags, stop\n   here. these tags would include binary/text.\n4. peek at the first x bytes of the file. use these to determine whether it is\n   binary or text, add the appropriate tag.\n5. if identified as text above, try to read and interpret the shebang, and add\n   appropriate tags.\n\nby design, this means we don't need to partially read files where we recognize\nthe file extension.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "identify",
+  "package_url": "https://pypi.org/project/identify/",
+  "project_url": "https://pypi.org/project/identify/",
+  "project_urls": {
+    "Homepage": "https://github.com/pre-commit/identify"
+  },
+  "release_url": "https://pypi.org/project/identify/2.5.33/",
+  "requires_dist": [
+    "ukkonen ; extra == 'license'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "file identification library for python",
+  "version": "2.5.33",
+  "releases": [],
+  "developers": [
+    "chris_kuehl",
+    "ckuehl@ocf.berkeley.edu"
+  ],
+  "kwds": "python pip tags_from_filename python3 github",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_identify",
+  "homepage": "https://github.com/pre-commit/identify",
+  "release_count": 162,
+  "dependency_ids": [
+    "pypi_ukkonen"
+  ]
+}

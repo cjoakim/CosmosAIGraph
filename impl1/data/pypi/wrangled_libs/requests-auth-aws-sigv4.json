@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3"
+  ],
+  "description": "# requests-auth-aws-sigv4\nuse aws signature version 4 authentication with the python requests module\n\nthis package provides an authentication class that can be used with the popular \n[requests](https://requests.readthedocs.io/en/master/) package to add the \n[aws signature version 4](https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html)\nauthentication information.\n\nthe signing code is inspired by the python example provided by aws.\n\nthis package should support any/all aws api's, including api gateway api's (execute-api), \nelasticsearch clusters, and others.  aws credentials may be pulled from the environment\nin an easy and familiar way.\nthe signature is added as a header to the request.\n\n## installation\n\n```\npip install requests-auth-aws-sigv4\n```\n\n## usage\n\n```python\nimport requests\nfrom requests_auth_aws_sigv4 import awssigv4\n\nr = requests.request('post', 'https://sts.us-east-1.amazonaws.com', \n    data=dict(version='2011-06-15', action='getcalleridentity'), \n    auth=awssigv4('sts'))\nprint(r.text)\n```\n\nif **boto3** is available, it will attempt to use credentials that have been configured for the aws cli or sdk's,\nas documented in [boto3 user guide: credentials](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html#credentials).\notherwise, if **boto3** is not available, credentials must be provided using either environment variables or parameters.\n\n#### example using environment variables\n\nenvironment variable names are the same as documented for aws cli and sdk's.\n\n```shell\nexport aws_access_key_id=myaccesskey\nexport aws_secret_access_key=thisissecret\nexport aws_session_token=thisiswherethesuperlongtokengoes\n```\n\n```python\nimport requests\nfrom requests_auth_aws_sigv4 import awssigv4\n\naws_auth = awssigv4('ec2') # if not provided, check for aws credentials from environment variables\n\nr = requests.request('get', 'https://ec2.us-east-1.amazonaws.com?version=2016-11-15&action=describeregions',\n    auth=aws_auth)\nprint(r.text)\n```\n\n#### example using parameters\n\npassing credentials as parameters overrides all other possible sources. \n\n```python\nimport requests\nfrom requests_auth_aws_sigv4 import awssigv4\n\naws_auth = awssigv4('ec2',\n    aws_access_key_id=access_key,\n    aws_secret_access_key=secret_key,\n    aws_session_token=session_token,\n)\n\nr = requests.request('get', 'https://ec2.us-east-1.amazonaws.com?version=2016-11-15&action=describeregions',\n    auth=aws_auth)\nprint(r.text)\n```\n\n### usage with elasticsearch client (elasticsearch-py)\n\n```python\nfrom elasticsearch import elasticsearch, requestshttpconnection\nfrom requests_auth_aws_sigv4 import awssigv4\n\nes_host = 'search-service-foobar.us-east-1.es.amazonaws.com'\naws_auth = awssigv4('es')\n\n# use the requests connection_class and pass in our custom auth class\nes_client = elasticsearch(host=es_host,\n                          port=80,\n                          connection_class=requestshttpconnection,\n                          http_auth=aws_auth)\nes_client.info()\n```\n\n### debug logging\n\nall log messages are at the module level.\n\n```python\nimport logging\nlogging.basicconfig() # setup basic logging to stdout\nlog = logging.getlogger('requests_auth_aws_sigv4')\nlog.setlevel(logging.debug)\n```\n\n## command line usage\n\nthe module can be run from the command line in a way that is similar to how curl works.\n\n```shell\n$ python3 -m requests_auth_aws_sigv4 https://sampleapi.execute-api.us-east-1.amazonaws.com/test/ -v\n> get /test/ http/1.1\n> host: sampleapi.execute-api.us-east-1.amazonaws.com\n> user-agent: python-requests/2.23.0 auth-aws-sigv4/0.2\n> accept-encoding: gzip, deflate\n> accept: */*\n> connection: keep-alive\n> x-amz-date: 20200513t180549z\n> authorization: aws4-hmac-sha256 credential=akiasamplekeyid/20200513/us-east-1/execute-api/aws4_request, signedheaders=host;x-amz-date, signature=examplesignatureishere\n>\n< http/1.1 200 ok\n< connection: keep-alive\n< content-length: 25\n< content-type: application/json\n< date: wed, 13 may 2020 18:05:49 gmt\n< server: server\n< x-amz-apigw-id: meexampleimfs99=\n< x-amzn-requestid: 7example-7b7b-4343-9a9a-9bbexampleaf\nhello\n```\n\n## temporary security credentials\n\ncredentials issued from [aws sts](https://docs.aws.amazon.com/iam/latest/userguide/id_credentials_temp.html)\nto grant temporary access can be used normally.  set the token by passing the `aws_session_token` parameter, \nsetting the `aws_session_token` environment variable, or configure the credential for boto3 as normal.\n\n## using boto3 (or botocore) for aws credentials\n\nthe packages **boto3** and **botocore** are not requirements to use this module.  \nas mentioned above, if **boto3** is available, a boto3.session will be created to attempt to get credentials\nand configure the default region.  this will happen automatically if credentials are not provided as parameters.\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "requests-auth-aws-sigv4",
+  "package_url": "https://pypi.org/project/requests-auth-aws-sigv4/",
+  "project_url": "https://pypi.org/project/requests-auth-aws-sigv4/",
+  "project_urls": {
+    "Homepage": "https://github.com/andrewjroth/requests-auth-aws-sigv4"
+  },
+  "release_url": "https://pypi.org/project/requests-auth-aws-sigv4/0.7/",
+  "requires_dist": [
+    "requests"
+  ],
+  "requires_python": ">=2.7, >=3.6",
+  "summary": "aws sigv4 authentication with the python requests module",
+  "version": "0.7",
+  "releases": [],
+  "developers": [
+    "andrew@andrewjroth.com",
+    "andrew_roth"
+  ],
+  "kwds": "requests_auth_aws_sigv4 aws_auth aws4_request aws_session_token http_auth",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_requests_auth_aws_sigv4",
+  "homepage": "https://github.com/andrewjroth/requests-auth-aws-sigv4",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

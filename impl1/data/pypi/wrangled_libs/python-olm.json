@@ -1,0 +1,36 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "topic :: communications"
+  ],
+  "description": "python-olm\n==========\n\npython bindings for olm.\n\nthe specification of the olm cryptographic ratchet which is used for peer to\npeer sessions of this library can be found [here][4].\n\nthe specification of the megolm cryptographic ratchet which is used for group\nsessions of this library can be found [here][5].\n\nan example of the implementation of the olm and megolm cryptographic protocol\ncan be found in the matrix protocol for which the implementation guide can be\nfound [here][6].\n\nthe full api reference can be found [here][7].\n\n# installation instructions\n\nto install from the source package, you will need:\n\n- cmake (recommended) or gnu make\n- a c/c++ compiler\n\nyou can then run `pip install python-olm`.\n\nthis should work in unix-like environments, including macos, and may work in\nother environments too, but is known to not work yet in windows.\n\n# accounts\n\naccounts create and hold the central identity of the olm protocol, they consist of a fingerprint and identity\nkey pair. they also produce one time keys that are used to start peer to peer\nencrypted communication channels.\n\n## account creation\n\na new account is created with the account class, it creates a new olm key pair.\nthe public parts of the key pair are available using the identity_keys property\nof the class.\n\n```python\n>>> alice = account()\n>>> alice.identity_keys\n{'curve25519': '2pytgagxercwhjzqetlcma3josau2qkpiesaqoi59ze',\n 'ed25519': 'hhpoufydhwoa54gxsttz9ymatmbuvu3js92utujyjgm'}\n```\n\n\n## one time keys\n\none time keys need to be generated before people can start an encrypted peer to\npeer channel to an account.\n\n```python\n>>> alice.generate_one_time_keys(1)\n>>> alice.one_time_keys\n{'curve25519': {'aaaaaq': 'kihow6ciy905uc4v1frmwr3vw8btwkbl4uwtwffllxm'}}\n```\n\nafter the one time keys are published they should be marked as such so they\naren't reused.\n\n```python\n>>> alice.mark_keys_as_published()\n>>> alice.one_time_keys\n{'curve25519': {}}\n```\n\n## pickling\n\naccounts should be stored for later reuse, storing an account is done with the\npickle method while the restoring step is done with the from_pickle class\nmethod.\n\n```python\n>>> pickle = alice.pickle()\n>>> restored = account.from_pickle(pickle)\n```\n\n# sessions\n\nsessions are used to create an encrypted peer to peer communication channel\nbetween two accounts.\n\n## session creation\n```python\n>>> alice = account()\n>>> bob = account()\n>>> bob.generate_one_time_keys(1)\n>>> id_key = bob.identity_keys[\"curve25519\"]\n>>> one_time = list(bob.one_time_keys[\"curve25519\"].values())[0]\n>>> alice_session = outboundsession(alice, id_key, one_time)\n```\n\n## encryption\n\nafter an outbound session is created an encrypted message can be exchanged:\n\n```python\n>>> message = alice_session.encrypt(\"it's a secret to everybody\")\n>>> message.ciphertext\n'awogkl7roakt9gnjczmra+y39wxkrmnxbpeaep6osueia0csijxgpbop8yz+cgwexq10lujbxmgk88\nxg/jzmqj5ulk9zgic8tyreznyr3qyibllecxr/9wnegvjasfdmwdvocf4xfyi/awogqizfaklrxgc5b\nzjczxvxqggj8dz4oqii8k0dp8msuxwqaciqvagy1do55qvnk5pz2gf+wdknvj6zxl2g'\n>>> message.message_type\n0\n```\n\nafter the message is transfered, bob can create an inboundsession to decrypt the\nmessage.\n\n```python\n>>> bob_session = inboundsession(bob, message)\n>>> bob_session.decrypt(message)\n\"it's a secret to everybody\"\n```\n\n## pickling\n\nsessions like accounts can be stored for later use the api is the same as for\naccounts.\n\n```python\n>>> pickle = session.pickle()\n>>> restored = session.from_pickle(pickle)\n```\n\n# group sessions\n\ngroup sessions are used to create a one-to-many encrypted communication channel.\nthe group session key needs to be shared with all participants that should be able\nto decrypt the group messages. another thing to notice is that, since the group\nsession key is ratcheted every time a message is encrypted, the session key should\nbe shared before any messages are encrypted.\n\n## group session creation\n\ngroup sessions aren't bound to an account like peer-to-peer sessions so their\ncreation is straightforward.\n\n```python\n>>> alice_group = outboundgroupsession()\n>>> bob_inbound_group = inboundgroupsession(alice_group.session_key)\n```\n\n## group encryption\n\ngroup encryption is pretty simple. the important part is to share the session\nkey with all participants over a secure channel (e.g. peer-to-peer olm\nsessions).\n\n```python\n>>> message = alice_group.encrypt(\"it's a secret to everybody\")\n>>> bob_inbound_group.decrypt(message)\n(\"it's a secret to everybody\", 0)\n```\n\n## pickling\n\npickling works the same way as for peer-to-peer olm sessions.\n\n```python\n>>> pickle = session.pickle()\n>>> restored = inboundgroupsession.from_pickle(pickle)\n```\n[1]: https://git.matrix.org/git/olm/about/\n[2]: https://git.matrix.org/git/olm/tree/python?id=f8c61b8f8432d0b0b38d57f513c5048fb42f22ab\n[3]: https://cffi.readthedocs.io/en/latest/\n[4]: https://git.matrix.org/git/olm/about/docs/olm.rst\n[5]: https://git.matrix.org/git/olm/about/docs/megolm.rst\n[6]: https://matrix.org/docs/guides/end-to-end-encryption-implementation-guide\n[7]: https://poljar.github.io/python-olm/html/index.html\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "python-olm",
+  "package_url": "https://pypi.org/project/python-olm/",
+  "project_url": "https://pypi.org/project/python-olm/",
+  "project_urls": {
+    "homepage": "https://gitlab.matrix.org/matrix-org/olm/-/tree/master/python"
+  },
+  "release_url": "https://pypi.org/project/python-olm/3.2.16/",
+  "requires_dist": [
+    "cffi >=1.0.0"
+  ],
+  "requires_python": "",
+  "summary": "python cffi bindings for the olm cryptographic ratchet library",
+  "version": "3.2.16",
+  "releases": [],
+  "developers": [
+    "poljar@termina.org.uk"
+  ],
+  "kwds": "olm python ratchet unix session_key",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_python_olm",
+  "homepage": "",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_cffi"
+  ]
+}

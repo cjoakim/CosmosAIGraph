@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# qcs sdk python\n\n\u26a0\ufe0f in development\n\n`qcs-sdk-python` provides an interface to rigetti [quantum cloud services](https://docs.rigetti.com/qcs/) (qcs), allowing users\nto compile and run quil programs on rigetti quantum processors. internally, it is powered by the [qcs rust sdk](https://github.com/rigetti/qcs-sdk-rust).\n\nwhile this package can be used directly, [pyquil](https://pypi.org/project/pyquil/) offers more functionality and a \nhigher-level interface for building and executing quil programs. this package is still in early development and breaking changes should be expected between minor versions.\n\n# documentation\n\ndocumentation for the current release of `qcs_sdk` is published [here](https://rigetti.github.io/qcs-sdk-rust/qcs_sdk.html). every version of `qcs_sdk` ships [with type stubs](https://github.com/rigetti/qcs-sdk-rust/tree/main/crates/python/qcs_sdk) that can provide type hints and documentation to python tooling and editors.\n\n## troubleshooting\n\n### enabling debug logging\n\nthis package integrates with python's [logging facility](https://docs.python.org/3/library/logging.html) through a rust crate called [`pyo3_log`](https://docs.rs/pyo3-log/latest/pyo3_log/). the quickest way to get started is to just enable debug logging:\n\n```python\nimport logging\nlogging.basicconfig(level=logging.debug)\n```\n\nbecause this is implemented with rust, there are some important differences in regards to log levels and filtering.\n\n#### the `trace` log level\n\nrust has a `trace` log level that doesn't exist in python. it is less severe than `debug` and is set to a value of 5. while the `debug` level is recommended for troubleshooting, you can choose to target `trace` level logs and below like so:\n\n```python\nimport logging\nlogging.basicconfig(level=5)\n```\n\n#### runtime configuration and caching\n \n`pyo3_log` caches loggers and their level filters to improve performance. this means that logger re-configuration done at runtime may cause unexpected logging behavior in certain situations. if this is a concern, [this section of the pyo3_log documentation](https://docs.rs/pyo3-log/latest/pyo3_log/#performance-filtering-and-caching) goes into more detail.\n\nthese caches can be reset using the following:\n\n```python\nqcs_sdk.reset_logging()\n```\n\nthis will allow the logging handlers to pick up the most recently-applied configuration from the python side.\n\n#### filtering logs\n\nbecause the logs are emitted from a rust library, the logger names will correspond to the fully qualified path of the rust module in the library where the log occurred. these fully qualified paths all have their own logger, and have to be configured individually.\n\nfor example, say you wanted to disable the following log:\n\n```\ndebug:hyper.proto.h1.io:flushed 124 bytes\n```\n\nyou could get the logger for `hyper.proto.h1.io` and disable it like so:\n\n```python\nlogging.getlogger(\"hyper.proto.h1.io\").disabled = true\n```\n\nthis can become cumbersome, since there are a handful of libraries all logging from a handful of modules that you may not be concerned with. a less cumbersome, but more heavy handed approach is to apply a filter to all logging handlers at runtime. for example, if you only cared about logs from a `qcs` library, you could setup a log filter like so:\n\n```python\nclass qcslogfilter(logging.filter):\n    def filter(self, record) -> bool:\n        return \"qcs\" in record.name\n\nfor handler in logging.root.handlers:\n    handler.addfilter(qcslogfilter())\n```\n\nthis applies to all logs, so you may want to tune the `filter` method to include other logs you care about. see the caching section above for important information about the application of these filters.\n\n",
+  "docs_url": null,
+  "keywords": "pyquil,sdk,rigetti,quil,quantum",
+  "license": "apache-2.0",
+  "name": "qcs-sdk-python",
+  "package_url": "https://pypi.org/project/qcs-sdk-python/",
+  "project_url": "https://pypi.org/project/qcs-sdk-python/",
+  "project_urls": {
+    "Source Code": "https://github.com/rigetti/qcs-sdk-rust"
+  },
+  "release_url": "https://pypi.org/project/qcs-sdk-python/0.16.1/",
+  "requires_dist": [
+    "quil ==0.6.3"
+  ],
+  "requires_python": "",
+  "summary": "python interface for the qcs rust sdk",
+  "version": "0.16.1",
+  "releases": [],
+  "developers": [
+    "mark.skilbeck@rigetti.com",
+    "mvaldez@rigetti.com",
+    "rfulton@rigetti.com",
+    "softapps@rigetti.com"
+  ],
+  "kwds": "qcs_sdk qcs qcslogfilter quil pyquil",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_qcs_sdk_python",
+  "homepage": "",
+  "release_count": 129,
+  "dependency_ids": [
+    "pypi_quil"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu general public license v3 or later (gplv3+)",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python"
+  ],
+  "description": "================================\ngeneralized package asset loader\n================================\n\nloads resources and symbols from a python package, whether installed\nas a directory, an egg, or in source form. also provides some other\npackage-related helper methods, including ``asset.version()``,\n``asset.caller()``, and ``asset.chunks()``.\n\ntl;dr\n=====\n\ninstall:\n\n.. code:: bash\n\n  $ pip install asset\n\nload symbols (e.g. functions, classes, or variables) from a package by\nname:\n\n.. code:: python\n\n  import asset\n\n  # load the 'mypackage.foo.myfunc' function and call it with some parameter\n  retval = asset.symbol('mypackage.foo.myfunc')(param='value')\n\nload data files from a package:\n\n.. code:: python\n\n  # load the file 'mypackage/templates/data.txt' into string\n  data = asset.load('mypackage:templates/data.txt').read()\n\n  # or as a file-like stream\n  stream = asset.load('mypackage:templates/data.txt').stream()\n  data   = stream.read()\n\nmultiple files can be operated on at once by using `globre\n<https://pypi.python.org/pypi/globre>`_ style wildcards:\n\n.. code:: python\n\n  # concatenate all 'css' files into one string:\n  css = asset.load('mypackage:static/style/**.css').read()\n\n  # load all '.txt' files, xml-escaping the data and wrapping\n  # each file in an <node name=\"...\">...</node> element.\n  import xml.etree.elementtree as et\n  data = et.element('nodes')\n  for item in asset.load('asset:**.txt'):\n    cur = et.subelement(data, 'node', name=item.name)\n    cur.text = item.read()\n  data = et.tostring(data)\n\nquery the installed version of a package:\n\n.. code:: python\n\n  asset.version('asset')\n  # ==> '0.0.5'\n\n  asset.version('python')\n  # ==> '2.7'\n\n  asset.version('no-such-package')\n  # ==> none\n\nfind out what package is calling the current function:\n\n.. code:: python\n\n  # assuming the call stack is:\n  #   in package \"zig\" a function \"x\", which calls\n  #   in package \"bar\" a function \"y\", which calls\n  #   in package \"foo\" a function \"callfoo\" defined as:\n\n  def callfoo():\n\n    asset.caller()\n    # ==> 'bar'\n\n    asset.caller(ignore='bar')\n    # ==> 'zig'\n\n    asset.caller(ignore=['bar', 'zig'])\n    # ==> none\n\ncall all the plugins for a given group:\n\n.. code:: python\n\n  for plugin in asset.plugins('mypackage.plugins'):\n    plugin.handle()\n\nfilter an object through all the plugins for a given group (if there\nare no plugins, this will simply return `thing`):\n\n.. code:: python\n\n  result = asset.plugins('mypackage.plugins').filter(thing)\n\nload all registered plugins, select the ones named `foo` and invoke\nthem (this will fail if there is no `foo` plugin):\n\n.. code:: python\n\n  result = asset.plugins('mypackage.plugins').select('foo').handle(thing)\n\nchunk a file (or any file-like object) into 1 kib chunks:\n\n.. code:: python\n\n  with open('/var/binary/data', 'rb') as fp:\n    for chunk in asset.chunks(fp, 1024):\n      # ... do something with `chunk` ...\n\nchunk an asset stream (here using the `.chunks` alias method):\n\n.. code:: python\n\n  for chunk in asset.load('mypackage:data/**.bin').chunks():\n    # ... using the default chunk size (usually 8 kib) ...\n\n\ntesting\n=======\n\nin order to run the unit tests correctly, the `pxml` package needs to\nbe installed as a zipped package (i.e. an \"egg\") and the `globre`\npackage needs to be installed unzipped. to accomplish that, do:\n\n.. code:: bash\n\n  $ easy_install --zip-ok pxml\n  $ easy_install --always-unzip globre\n\nthe reason is that the unit tests confirm that `asset` can load assets\nfrom both zipped and unzipped packages, and can also identify in which\nmode it is operating.\n\n\ndetails\n=======\n\ntodo: add detailed docs...\n\n* ``asset.filename``:\n\n  if the asset represents a file on the filesystem, is the absolute\n  path to the specified file. otherwise is ``none``.\n\n* ``assetgroupstream.readline()``:\n\n  returns the next line from the aggregate asset group stream, as if\n  the assets had been concatenate into a single asset.\n\n  **important**: if an asset ends with content that is not terminated\n  by an eol token, it is returned as-is, i.e. it does not append the\n  first line from the next asset.\n\nnote: because ``asset.load()`` does lazy-loading, it only throws a\n`nosuchasset` exception when you actually attempt to use the\nassetgroup! if you need an immediate error, use the `peek()` method.\nnote that it returns itself, so you can do something like:\n\n.. code:: python\n\n  import asset\n\n  def my_function_that_returns_an_iterable():\n\n    return asset.load(my_spec).peek()\n\n    # this returns exactly the same thing as the following:\n    #\n    #   return asset.load(my_spec)\n    #\n    # but throws an exception early if there are no matching assets.\n",
+  "docs_url": null,
+  "keywords": "python package pkg_resources asset resolve lookup loader",
+  "license": "gplv3+",
+  "name": "asset",
+  "package_url": "https://pypi.org/project/asset/",
+  "project_url": "https://pypi.org/project/asset/",
+  "project_urls": {
+    "Homepage": "http://github.com/metagriffin/asset"
+  },
+  "release_url": "https://pypi.org/project/asset/0.6.13/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "a package resource and symbol loading helper library.",
+  "version": "0.6.13",
+  "releases": [],
+  "developers": [
+    "metagriffin",
+    "mg.pypi@uberdev.org"
+  ],
+  "kwds": "pkg_resources assets asset mypackage loader",
+  "license_kwds": "gplv3+",
+  "libtype": "pypi",
+  "id": "pypi_asset",
+  "homepage": "http://github.com/metagriffin/asset",
+  "release_count": 19,
+  "dependency_ids": []
+}

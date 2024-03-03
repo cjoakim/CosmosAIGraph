@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "license :: other/proprietary license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# sample aws appconfig helper\n\na sample helper python library for aws appconfig which makes rolling configuration updates out easier.\n\n![pypi - python version](https://img.shields.io/pypi/pyversions/sample-helper-aws-appconfig) ![pypi version](https://badge.fury.io/py/sample-helper-aws-appconfig.svg) [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n\n## features\n\n* configurable update interval: you can ask the library to update your configuration as often as needed, but it will only call the aws appconfig api at the configured interval (in seconds).\n* handles correct api usage: the library uses the new appconfig data api and handles tracking the next configuration token and poll interval for you.\n* flexible: can automatically fetch the current configuration on initialisation, every time the configuration is read by your code, or on demand. you can override the caching interval if needed.\n* handles yaml, json and plain text configurations, stored in any supported appconfig store. any other content type is returned unprocessed as the python `bytes` type.\n* supports aws lambda, amazon ec2 instances and on-premises use.\n\n## installation\n\n```bash\npip install sample-helper-aws-appconfig\n```\n\n## example\n\n```python\nfrom appconfig_helper import appconfighelper\nfrom fastapi import fastapi\n\nappconfig = appconfighelper(\n    \"myappconfigapp\",\n    \"myappconfigenvironment\",\n    \"myappconfigprofile\",\n    45  # minimum interval between update checks\n)\n\napp = fastapi()\n\n@app.get(\"/some-url\")\ndef index():\n    if appconfig.update_config():\n        print(\"new configuration received\")\n    # your configuration is available in the \"config\" attribute\n    return {\n        \"config_info\": appconfig.config\n    }\n```\n\n## usage\n\nplease see the [aws appconfig documentation](https://docs.aws.amazon.com/appconfig/latest/userguide/what-is-appconfig.html) for details on configuring the service.\n\n### initialising\n\nstart by creating an `appconfighelper` object. you must specify the application name, environment name, and profile (configuration) name. you must also specify the refresh interval, in seconds. appconfighelper will not attempt to fetch a new configuration version from the aws appconfig service more frequently than this interval. you should set it low enough that your code will receive new configuration promptly, but not so low that it takes too long. the library enforces a minimum interval of 15 seconds.\n\nthe configuration is not automatically fetched unless you set `fetch_on_init`. to have the library fetch the configuration when it is accessed, if it has been more than `max_config_age` seconds since the last fetch, set `fetch_on_read`.\n\nif you need to customise the aws credentials or region, set `session` to a configured `boto3.session` object. otherwise, the [standard boto3 logic](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html) for credential/configuration discovery is used.\n\n### reading the configuration\n\nthe configuration from aws appconfig is available as the `config` property. before accessing it, you should call `update_config()`, unless you specified fetch_on_init or fetch_on_read during initialisation. if you want to force a config fetch, even if the number of seconds specified have not yet passed, call `update_config(true)`.\n\n`update_config()` returns `true` if a new version of the configuration was received. if no attempt was made to fetch it, or the configuration received was the same as current one, it returns `false`. it will raise `valueerror` if the received configuration data could not be processed (e.g. invalid json). if needed, the inner exception for json or yaml parsing is available as `__context__` on the raised exception.\n\nto read the values in your configuration, access the `config` property. for json and yaml configurations, this will contain the structure of your data. for plain text configurations, this will be a simple string.\n\nthe original data received from appconfig is available in the `raw_config` property. accessing this property will not trigger an automatic update even if `fetch_on_read` is true. the content type field received from appconfig is available in the `content_type` property.\n\nfor example, with the following json in your appconfig configuration profile:\n\n```json\n{\n    \"hello\": \"world\",\n    \"data\": {\n        \"is_sample\": true\n    }\n}\n```\n\nyou would see the following when using the library:\n\n```python\n# appconfig is the instance of the library\n>>> appconfig.config[\"hello\"]\n\"world\"\n>>> appconfig.config[\"data\"]\n{'is_sample': true}\n```\n\n### use in aws lambda\n\naws appconfig is best used in lambda by taking advantage of [lambda extensions](https://docs.aws.amazon.com/appconfig/latest/userguide/appconfig-integration-lambda-extensions.html)\n\n## security\n\nsee [contributing](contributing.md#security-issue-notifications) for more information.\n\n## licence\n\nthis library is licensed under apache-2.0. see the license file.\n\n",
+  "docs_url": null,
+  "keywords": "aws,appconfig",
+  "license": "osi approved (apache-2.0)",
+  "name": "sample-helper-aws-appconfig",
+  "package_url": "https://pypi.org/project/sample-helper-aws-appconfig/",
+  "project_url": "https://pypi.org/project/sample-helper-aws-appconfig/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws-samples/sample-python-helper-aws-appconfig",
+    "Repository": "https://github.com/aws-samples/sample-python-helper-aws-appconfig"
+  },
+  "release_url": "https://pypi.org/project/sample-helper-aws-appconfig/2.1.0/",
+  "requires_dist": [
+    "PyYAML (>=6.0,<7.0)",
+    "boto3 (>=1.20.8,<2.0.0)",
+    "botocore (>=1.23.8,<2.0.0)"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "sample helper library for aws appconfig",
+  "version": "2.1.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services",
+    "james_seward",
+    "sewardjm@amazon.co.uk"
+  ],
+  "kwds": "update_config appconfig_helper config_info appconfig aws",
+  "license_kwds": "osi approved (apache-2.0)",
+  "libtype": "pypi",
+  "id": "pypi_sample_helper_aws_appconfig",
+  "homepage": "https://github.com/aws-samples/sample-python-helper-aws-appconfig",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_botocore",
+    "pypi_pyyaml"
+  ]
+}

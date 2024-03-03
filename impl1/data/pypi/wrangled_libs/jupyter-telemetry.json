@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "intended audience :: system administrators",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3"
+  ],
+  "description": "# telemetry\n\n[![circleci](https://circleci.com/gh/jupyter/telemetry.svg?style=svg)](https://circleci.com/gh/jupyter/telemetry)\n[![codecov](https://codecov.io/gh/jupyter/telemetry/branch/master/graph/badge.svg)](https://codecov.io/gh/jupyter/telemetry)\n[![documentation status](https://readthedocs.org/projects/jupyter-telemetry/badge/?version=latest)](https://jupyter-telemetry.readthedocs.io/en/latest/?badge=latest)\n\n*telemetry for jupyter applications and extensions.*\n\n> telemetry (t\u0259\u02c8lem\u0259tr\u0113): the process of recording and transmitting the readings of an instrument. [oxford dictionaries]\n\njupyter telemetry enables jupyter applications (e.g. jupyter server, jupyter notebook, jupyterlab, jupyterhub, etc.) to record **events**\u2014i.e. actions by application users\u2014and transmit them to remote (or local) destinations as **structured** data. it works with python's standard `logging` library to handle the transmission of events allowing users to send events to local files, over the web, etc.\n\n## install\n\njupyter's telemetry library can be installed from pypi.\n```\npip install jupyter_telemetry\n```\n\n## basic usage\n\ntelemetry provides a configurable traitlets object, `eventlog`, for structured event-logging in python. it leverages python's standard `logging` library for filtering, handling, and recording events. all events are validated (using [jsonschema](https://pypi.org/project/jsonschema/)) against registered [json schemas](https://json-schema.org/).\n\nlet's look at a basic example of an `eventlog`.\n```python\nimport logging\nfrom jupyter_telemetry import eventlog\n\n\neventlog = eventlog(\n    # use logging handlers to route where events\n    # should be record.\n    handlers=[\n        logging.filehandler('events.log')\n    ],\n    # list schemas of events that should be recorded.\n    allowed_schemas=[\n        'uri.to.event.schema'\n    ]\n)\n```\n\neventlog has two configurable traits:\n* `handlers`: a list of python's `logging` handlers.\n* `allowed_schemas`: a list of event schemas to record.\n\nevent schemas must be registered with the `eventlog` for events to be recorded. an event schema looks something like:\n```json\n{\n  \"$id\": \"url.to.event.schema\",\n  \"title\": \"my event\",\n  \"description\": \"all events must have a name property.\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"name\": {\n      \"title\": \"name\",\n      \"description\": \"name of event\",\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\"name\"],\n  \"version\": 1\n}\n```\n2 fields are required:\n* `$id`: a valid uri to identify the schema (and possibly fetch it from a remote address).\n* `version`: the version of the schema.\n\nthe other fields follow standard json schema structure.\n\nschemas can be registered from a python `dict` object, a file, or a url. this example loads the above example schema from file.\n```python\n# register the schema.\neventlog.register_schema_file('schema.json')\n```\n\nevents are recorded using the `record_event` method. this method validates the event data and routes the json string to the python `logging` handlers listed in the `eventlog`.\n```python\n# record an example event.\nevent = {'name': 'example event'}\neventlog.record_event(\n    schema_id='url.to.event.schema',\n    version=1,\n    event=event\n)\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "jupyter,jupyterlab",
+  "license": "bsd",
+  "name": "jupyter-telemetry",
+  "package_url": "https://pypi.org/project/jupyter-telemetry/",
+  "project_url": "https://pypi.org/project/jupyter-telemetry/",
+  "project_urls": {
+    "Homepage": "http://jupyter.org"
+  },
+  "release_url": "https://pypi.org/project/jupyter-telemetry/0.1.0/",
+  "requires_dist": [
+    "jsonschema",
+    "python-json-logger",
+    "traitlets",
+    "ruamel.yaml"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "jupyter telemetry library",
+  "version": "0.1.0",
+  "releases": [],
+  "developers": [
+    "jupyter@googlegroups.com",
+    "jupyter_development_team"
+  ],
+  "kwds": "jupyter_telemetry telemetry jupyterlab jupyter jupyterhub",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_jupyter_telemetry",
+  "homepage": "http://jupyter.org",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_jsonschema",
+    "pypi_python_json_logger",
+    "pypi_ruamel.yaml",
+    "pypi_traitlets"
+  ]
+}

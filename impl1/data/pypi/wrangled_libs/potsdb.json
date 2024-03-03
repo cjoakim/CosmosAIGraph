@@ -1,0 +1,37 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "operating system :: unix",
+    "topic :: utilities"
+  ],
+  "description": "potsdb\n======\n\npython client to opentsdb\n\nthis was designed with a long running parent program in mind, where sending metrics was something that happens on the side.\nimplemented such that sending the metric \"put\" message to the time series database api does not block the calling application. this is achieved by creating a background worker thread which takes metrics off the queue, then sending them on a tcp socket to host. the client.log method simply sets up and puts the metric on the queue, then returns.\n\nwhen the client object is instantiated, a temporary socket is created to the target host, port combination to check for connectivity. this may fail with a timeout error. however if the background thread encounters socket communication problems like timeout further down the line (in the sending metrics loop) then it will silently keep trying to reconnect forever.\n\nkeep in mind that if you send a bunch of metrics through .log then immediately quit, the background thread will also terminate, without having had enough time to send your metrics properly.\n\nrate limiting for sending metrics over tcp is by default set to 100 metrics per second. this can be overwritten upon instantiation.\n\ninstallation\n===\nclone this repo, then \n```\ncd potsdb\npython setup.py install\n```\nor\n```\npip install potsdb\n```\n\nusage\n===\n```\nimport potsdb\n\n# minimum is hostname. port is defaulted to 4242:\nmetrics = potsdb.client('hostname.local')\n# all options:\nmetrics = potsdb.client('hostname.local', port=4242, qsize=1000, host_tag=true, mps=100, check_host=true)\n\n# qsize: max size of queue. note: if queue reaches qsize, old metrics will be dropped. 0 = unlimited. default is 100k\n# host_tag: true for automatic, string value for override, none for nothing\n# mps: metrics per second rate limiting. default is 0 (unlimited)\n# check_host: change to false to skip startup connectivity checking\n\n# bare minimum is metric name, metric value\nmetrics.send('test.metric2', 100)\n# tags can also be specified\nmetrics.send('test.metric5', 100, extratag1='tagvalue', extratag2='tagvalue')\n# host tag is set automatically, but can be overwritten\nmetrics.send('test.metric6', 34, host='app1.local')\n\n# waits for all outstanding metrics to be sent and background thread closes\nmetrics.wait()\n\n```\n\ncontributers\n===\n\npotsdb was created by orionvm as an internal project which was subsequently open sourced. current contributors:\n\n1. alex sharp (alex.sharp@orionvm.com) who originally developed the project\n2. chris mcclymont (chris.mcclymont@orionvm.com), current developer and maintainer\n3. sam marks (http://linkedin.com/in/samuelmarks)\n4. you! pull requests and comments welcome.",
+  "docs_url": null,
+  "keywords": "opentsdb,tsdb,time series",
+  "license": "gnu gpl",
+  "name": "potsdb",
+  "package_url": "https://pypi.org/project/potsdb/",
+  "project_url": "https://pypi.org/project/potsdb/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "http://github.com/orionvm/potsdb"
+  },
+  "release_url": "https://pypi.org/project/potsdb/1.0.3/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "a python client for opentsdb which creates a separate thread for tcp communication.",
+  "version": "1.0.3",
+  "releases": [],
+  "developers": [
+    "alex.sharp@orionvm.com",
+    "alex_sharp"
+  ],
+  "kwds": "tcp opentsdb potsdb timeout tsdb",
+  "license_kwds": "gnu gpl",
+  "libtype": "pypi",
+  "id": "pypi_potsdb",
+  "homepage": "http://github.com/orionvm/potsdb",
+  "release_count": 8,
+  "dependency_ids": []
+}

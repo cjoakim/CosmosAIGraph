@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3 :: only",
+    "topic :: games/entertainment",
+    "topic :: multimedia :: graphics",
+    "topic :: multimedia :: graphics :: 3d rendering",
+    "topic :: scientific/engineering :: visualization"
+  ],
+  "description": "\n\n[![preview](https://github.com/moderngl/moderngl/assets/11232402/b314f7af-0c0a-4b7d-b4f5-857f426454ca)](#readme)\n\n\n\n# moderngl\n\n[![pypi](https://badge.fury.io/py/moderngl.svg)](https://pypi.python.org/pypi/moderngl) [![anaconda](https://anaconda.org/conda-forge/moderngl/badges/version.svg)](https://anaconda.org/conda-forge/moderngl/) <img src=\"https://raw.githubusercontent.com/moderngl/moderngl/master/.github/python-versions.svg?sanitize=true\"> [![rtd](https://readthedocs.org/projects/moderngl/badge/?version=latest)](https://moderngl.readthedocs.io)\n\nmoderngl is a python wrapper over opengl 3.3+ core that simplifies the creation of simple graphics applications like scientific simulations, games or user interfaces. usually, acquiring in-depth knowledge of opengl requires a steep learning curve. in contrast, moderngl is easy to learn and use, moreover it is capable of rendering with high performance and quality, with less code written. the majority of the moderngl\ncode base is also written in c++ for high performance.\n\n```sh\npip install moderngl\n```\n\n- [documentation](https://moderngl.readthedocs.io/)\n- [examples](https://github.com/moderngl/moderngl/tree/master/examples/#readme)\n- [moderngl on github](https://github.com/moderngl/moderngl/)\n- [moderngl on pypi](https://pypi.org/project/moderngl/)\n- [moderngl discord server](https://discord.gg/uemtw8d)\n- [glcontext](https://github.com/moderngl/glcontext)\n- [moderngl-window](https://github.com/moderngl/moderngl-window) (window creation, resource loading, ...)\n\n## features\n\n- gpu accelerated high quality graphics\n- rendering modern opengl scenes with less headache\n- simpler and faster than pyopengl\n- can render without a window\n- 100% pythonic\n\n## sample usage\n\n```py\n>>> import moderngl\n>>> ctx = moderngl.create_standalone_context()\n>>> buf = ctx.buffer(b'hello world!')  # allocated on the gpu\n>>> buf.read()\nb'hello world!'\n```\n\nfor complete examples please visit the [examples](https://github.com/moderngl/moderngl/tree/master/examples/#readme).\n\n## easy to use with pillow and numpy\n\n```py\n>>> img = image.open('texture.jpg')\n>>> ctx.texture(img.size, 3, img.tobytes())\n<texture: 1>\n```\n\n```py\n>>> ctx.buffer(np.array([0.0, 0.0, 1.0, 1.0], dtype='f4'))\n<buffer: 1>\n```\n\n## compared to pyopengl\n\nwith pyopengl, using the original opengl api, you have to write three lines to\nachieve a simple task like binding a vbo:\n\n```py\nvbo1 = gl.glgenbuffers(1)\ngl.glbindbuffer(gl.gl_array_buffer, vbo1)\ngl.glbufferdata(gl.gl_array_buffer, b'hello world!', gl.gl_static_draw)\n\nvbo2 = gl.glgenbuffers(1)\ngl.glbindbuffer(gl.gl_array_buffer, vbo2)\ngl.glbufferdata(gl.gl_array_buffer, none, gl.gl_dynamic_draw)\n```\n\nwith moderngl you need just one simple line per vbo to achieve the same results:\n\n```py\nvbo1 = ctx.buffer(b'hello world!')\nvbo2 = ctx.buffer(reserve=1024, dynamic=true)\n```\n\n## build\n\n[![build](https://github.com/moderngl/moderngl/actions/workflows/build.yml/badge.svg)](https://github.com/moderngl/moderngl/actions/workflows/build.yml) [![test](https://github.com/moderngl/moderngl/actions/workflows/test.yml/badge.svg)](https://github.com/moderngl/moderngl/actions/workflows/test.yml)\n\n```sh\npython -m build .\n```\n\n## faq\n\n### is moderngl faster than pyopengl?\n\nin many cases **yes**, the core functions of moderngl are written in c++.\nwe do not call every opengl function from python, we batch them in a single c++ function instead.\n\n### what version of opengl is used?\n\nmost of the calls only require **opengl 3.3**.\ncompute shaders require **opengl 4.3**.\nsome functionality relies on their specific extension.\n\n### is my old pc supported?\n\nopengl 3.3 came out in february 2010. with **up to date drivers** you will\nbe able to use the most of the moderngl functions, even on integrated\ngraphics cards.\n\n### where can i use moderngl?\n\n**anywhere where opengl is supported.** moderngl is capable of rendering\nusing a [standalone_context] as well. rendering to a window only requires\na valid opengl context.\n\n[standalone_context]: https://github.com/moderngl/moderngl/tree/master/examples/old-examples/standalone\n\n### can moderngl create a window?\n\n**no**, moderngl is responsible for calling the opengl api and providing a pythonic user-friendly api instead.\nwe also provide a utility library [moderngl-window](https://github.com/moderngl/moderngl-window)\nmaking window creation and resource loading very simple.\n\n### limitations using moderngl over pyopengl?\n\nall the necessary calls are (or can be) implemented in moderngl. however you can interact with the moderngl objects from pyopengl.\nif something is missing write an [issue](https://github.com/moderngl/moderngl/issues) or raise a [pr](https://github.com/moderngl/moderngl/pulls).\n\n## supported platforms\n\n- [x] windows\n- [x] linux\n- [x] mac\n\n## installing from source\n\n### installing on ubuntu from source\n\n```sh\napt-get install python3-dev libgl1-mesa-dev libx11-dev\npython3 -m pip install -e .\n```\n\n### building the sphinx documentation\n\n```sh\npip install -r docs/requirements.txt\npython -m sphinx docs build/sphinx\n```\n\n### running tests\n\n```sh\nexport libgl_always_software=true\npython3 -m pip install glcontext pytest numpy scipy\npython3 -x dev -m pytest -s -vvv tests\n```\n\n### headless rendering\n\n```sh\napt-get install xvfb\nalias xpy='xvfb-run -s \"-screen 0 1x1x24\" python3'\nxpy -m moderngl\n```\n\n## citation\n\nif you need to cite this repository in academic research:\n\n```txt\n@online{dombi2020,\n  author = {szabolcs dombi},\n  title = {moderngl, high performance python bindings for opengl 3.3+},\n  date = {2020-05-01},\n  publisher = {github},\n  journal = {github repository},\n  howpublished = {\\url{https://github.com/moderngl/moderngl}},\n  commit = {<insert hash if needed>}\n}\n```\n\nif commit hash is required this can be found per release here:\nhttps://github.com/moderngl/moderngl/releases\n\n## community\n\n- [contributors](https://github.com/moderngl/moderngl/graphs/contributors)\n- [moderngl discord server](https://discord.gg/uemtw8d)\n- [code of conduct](https://github.com/moderngl/moderngl/blob/master/.github/code_of_conduct.md)\n",
+  "docs_url": null,
+  "keywords": "moderngl,opengl,pyopengl,rendering,graphics,shader,glsl,gpu,visualization,2d,3d",
+  "license": "mit",
+  "name": "moderngl",
+  "package_url": "https://pypi.org/project/moderngl/",
+  "project_url": "https://pypi.org/project/moderngl/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/moderngl/moderngl/issues/",
+    "Documentation": "https://moderngl.readthedocs.io/",
+    "Homepage": "https://github.com/moderngl/moderngl",
+    "Source": "https://github.com/moderngl/moderngl/"
+  },
+  "release_url": "https://pypi.org/project/moderngl/5.9.0/",
+  "requires_dist": [
+    "glcontext<3,>=2.5.0"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "moderngl: high performance rendering for python 3",
+  "version": "5.9.0",
+  "releases": [],
+  "developers": [
+    "szabolcs@szabolcsdombi.com",
+    "szabolcs_dombi"
+  ],
+  "kwds": "moderngl opengl libgl1 graphics libgl_always_software",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_moderngl",
+  "homepage": "https://github.com/moderngl/moderngl",
+  "release_count": 86,
+  "dependency_ids": [
+    "pypi_glcontext"
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: financial and insurance industry",
+    "intended audience :: healthcare industry",
+    "intended audience :: information technology",
+    "intended audience :: science/research",
+    "license :: osi approved :: gnu general public license v3 or later (gplv3+)",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: education",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: information analysis",
+    "topic :: scientific/engineering :: mathematics",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: utilities"
+  ],
+  "description": "# mlr (`pip install mlr`)\n\n![top](https://raw.githubusercontent.com/tirthajyoti/mlr/master/images/top_image_1.png)\n\na lightweight, easy-to-use python package that combines the `scikit-learn`-like simple api with the power of **statistical inference tests**, **visual residual analysis**, **outlier visualization**, **multicollinearity test**, found in packages like `statsmodels` and r language.\n\nauthored and maintained by **dr. tirthajyoti sarkar ([website](https://tirthajyoti.github.io), [linkedin profile](https://www.linkedin.com/in/tirthajyoti-sarkar-2127aa7/))**\n\n### useful regression metrics,\n* mse, sse, sst \n* r^2, adjusted r^2\n* aic (akaike information criterion), and bic (bayesian information criterion)\n\n### inferential statistics,\n* standard errors\n* confidence intervals\n* p-values \n* t-test values \n* f-statistic\n\n### visual residual analysis,\n* plots of fitted vs. features, \n* plot of fitted vs. residuals, \n* histogram of standardized residuals\n* q-q plot of standardized residuals\n\n### outlier detection\n* influence plot\n* cook's distance plot\n\n### multicollinearity\n* pairplot\n* variance infletion factors (vif)\n* covariance matrix\n* correlation matrix\n* correlation matrix heatmap\n\n## requirements\n\n* numpy (`pip install numpy`)\n* pandas (`pip install pandas`)\n* matplotlib (`pip install matplotlib`)\n* seaborn (`pip install seaborn`)\n* scipy (`pip install scipy`)\n* statsmodels (`pip install statsmodels`)\n\n## install\n\n(on linux and windows) you can use ``pip``\n\n```pip install mlr```\n\n(on mac os), first install pip,\n```\ncurl https://bootstrap.pypa.io/get-pip.py -o get-pip.py\npython get-pip.py\n```\nthen proceed as above.\n\n---\n\n## quick start\n\nimport the `mylinearregression` class,\n\n```\nfrom mlr import mylinearregression as mlr\nimport numpy as np\n```\n\ngenerate some random data\n\n```\nnum_samples=40\nnum_dim = 5\nx = 10*np.random.random(size=(num_samples,num_dim))\ncoeff = np.array([2,-3.5,1.2,4.1,-2.5])\ny = np.dot(coeff,x.t)+10*np.random.randn(num_samples)\n```\n\nmake a model instance,\n\n```\nmodel = mlr()\n```\n\ningest the data\n\n```\nmodel.ingest_data(x,y)\n```\n\nfit,\n\n```\nmodel.fit()\n```\n---\n\n## directly read from a pandas dataframe\nyou can read directly from a pandas dataframe. just give the features/predictors' column names as a list and the target column name as a string to the `fit_dataframe` method.\n\nat this point, only numerical features/targets are supported but in future releases we will support categorical variables too. \n\n```\n<... obtain a pandas dataframe by some processing>\ndf = pd.dataframe(...)\nfeature_cols = ['x1','x2','x3']\ntarget_col = 'output'\n\nmodel = mlr()\nmodel.fit_dataframe(x=feature_cols,y = target_col,dataframe=df)\n```\n\n---\n\n## metrics\nso far, it looks similar to the linear regression estimator of scikit-learn, doesn't it?\n<br>here comes the difference,\n\n### print all kinds of regression model metrics, one by one,\n\n```\nprint (\"r-squared: \",model.r_squared())\nprint (\"adjusted r-squared: \",model.adj_r_squared())\nprint(\"mse: \",model.mse())\n\n>> r-squared:  0.8344327025902752\n   adjusted r-squared:  0.8100845706182569\n   mse:  72.2107655649954\n\n```\n\n### or, print all the metrics at once!\n\n```\nmodel.print_metrics()\n\n>> sse:     2888.4306\n   sst:     17445.6591\n   mse:     72.2108\n   r^2:     0.8344\n   adj_r^2: 0.8101\n   aic:     296.6986\n   bic:     306.8319\n```\n---\n\n## correlation matrix, heatmap, covariance\n\nwe can build the correlation matrix right after ingesting the data. this matrix gives us an indication how much multicollinearity is present among the features/predictors.\n\n### correlation matrix\n```\nmodel.ingest_data(x,y)\nmodel.corrcoef()\n\n>> array([[ 1.        ,  0.18424447, -0.00207883,  0.144186  ,  0.08678109],\n       [ 0.18424447,  1.        , -0.08098705, -0.05782733,  0.19119872],\n       [-0.00207883, -0.08098705,  1.        ,  0.03602977, -0.17560097],\n       [ 0.144186  , -0.05782733,  0.03602977,  1.        ,  0.05216212],\n       [ 0.08678109,  0.19119872, -0.17560097,  0.05216212,  1.        ]])\n```\n\n### covariance\n\n```\nmodel.covar()\n\n>> array([[10.28752086,  1.51237819, -0.01770701,  1.47414685,  0.79121778],\n       [ 1.51237819,  6.54969628, -0.5504233 , -0.47174359,  1.39094876],\n       [-0.01770701, -0.5504233 ,  7.05247111,  0.30499622, -1.32560195],\n       [ 1.47414685, -0.47174359,  0.30499622, 10.16072256,  0.47264283],\n       [ 0.79121778,  1.39094876, -1.32560195,  0.47264283,  8.08036806]])\n```\n\n### correlation heatmap\n\n```\nmodel.corrplot(cmap='inferno',annot=true)\n```\n![corrplot](https://raw.githubusercontent.com/tirthajyoti/mlr/master/images/corrplot1.png)\n\n## statistical inference\n\n### perform the f-test of overall significance\nit retunrs the f-statistic and the p-value of the test. \n\nif the p-value is a small number you can reject the null hypothesis that all the regression coefficient is zero. that means a small p-value (generally < 0.01) indicates that the overall regression is statistically significant.\n```\nmodel.ftest()\n\n>> (34.270912591948814, 2.3986657277649282e-12)\n```\n\n### how about p-values, t-test statistics, and standard errors of the coefficients?\nstandard errors and corresponding t-tests give us the p-values for each regression coefficient, which tells us whether that particular coefficient is statistically significant or not (based on the given data).\n\n```\nprint(\"p-values:\",model.pvalues())\nprint(\"t-test values:\",model.tvalues())\nprint(\"standard errors:\",model.std_err())\n\n>> p-values: [8.33674608e-01 3.27039586e-03 3.80572234e-05 2.59322037e-01 9.95094748e-11 2.82226752e-06]\n   t-test values: [ 0.21161008  3.1641696  -4.73263963  1.14716519  9.18010412 -5.60342256]\n   standard errors: [5.69360847 0.47462621 0.59980706 0.56580141 0.47081187 0.5381103 ]\n\n```\n\n### confidence intervals\n```\nmodel.conf_int()\n\n>> array([[-10.36597959,  12.77562953],\n       [  0.53724132,   2.46635435],\n       [ -4.05762528,  -1.61971606],\n       [ -0.50077913,   1.79891449],\n       [  3.36529718,   5.27890687],\n       [ -4.10883113,  -1.92168771]])\n\n```\n\n## visual analysis of the residuals\nresidual analysis is crucial to check the assumptions of a linear regression model. `mlr` helps you check those assumption easily by providing straight-forward visual analytis methods for the residuals.\n\n### fitted vs. residuals plot\ncheck the assumption of constant variance and uncorrelated features (independence) with this plot\n```\nmodel.fitted_vs_residual()\n```\n![fit_vs_resid](https://raw.githubusercontent.com/tirthajyoti/mlr/master/images/fitted_vs_residuals.png)\n\n### fitted vs features plot\ncheck the assumption of linearity with this plot\n```\nmodel.fitted_vs_features()\n```\n![fit_vs_features](https://raw.githubusercontent.com/tirthajyoti/mlr/master/images/fitted_vs_features.png)\n\n### histogram and q-q plot of standardized residuals\ncheck the normality assumption of the error terms using these plots,\n```\nmodel.histogram_resid()\n```\n![hist_resid](https://raw.githubusercontent.com/tirthajyoti/mlr/master/images/hist_resid.png)\n<br>\n```\nmodel.qqplot_resid()\n```\n![](https://raw.githubusercontent.com/tirthajyoti/mlr/master/images/qq_plot_resid.png)\n\n## do more\n\ndo more fun stuff with your regression model.\nmore features will be added in the future releases!\n\n* outlier detection and plots\n* multicollinearity checks\n\n\n\n",
+  "docs_url": null,
+  "keywords": "regression,linear regression,data science,machine learning,engineering,statistics,modeling,analytics,predictive analytics,data mining",
+  "license": "gplv3+",
+  "name": "mlr",
+  "package_url": "https://pypi.org/project/mlr/",
+  "project_url": "https://pypi.org/project/mlr/",
+  "project_urls": {
+    "Homepage": "https://github.com/tirthajyoti/mlr"
+  },
+  "release_url": "https://pypi.org/project/mlr/0.1.0/",
+  "requires_dist": [
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    "statsmodels"
+  ],
+  "requires_python": "",
+  "summary": "linear regression utility with inference tests, residual analysis, outlier visualization, multicollinearity test, and other features",
+  "version": "0.1.0",
+  "releases": [],
+  "developers": [
+    "tirthajyoti@gmail.com",
+    "tirthajyoti_sarkar"
+  ],
+  "kwds": "regression statsmodels analytics scikit scipy",
+  "license_kwds": "gplv3+",
+  "libtype": "pypi",
+  "id": "pypi_mlr",
+  "homepage": "https://github.com/tirthajyoti/mlr",
+  "release_count": 1,
+  "dependency_ids": [
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_seaborn",
+    "pypi_statsmodels"
+  ]
+}

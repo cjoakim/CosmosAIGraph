@@ -1,0 +1,35 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "license :: osi approved :: mit license",
+    "topic :: utilities"
+  ],
+  "description": "python-jws\n=====\na python implementation of [json web signatures draft 02](http://self-issued.info/docs/draft-jones-json-web-signature.html)\n\nalso now works on python 3.3+ as well as python 2.7+.  however, it's a naive conversion to support both python 2 and python 3 so there may well be hidden bugs.\n\ninstalling\n----------\n    $ pip install jws\n\n\n\nalgorithms\n----------\nthe jws spec reserves several algorithms for cryptographic signing. out of the 9, this library currently supports 7:\n\n\n**hmac** \u2013 native\n\n* hs256 \u2013 hmac using sha-256 hash algorithm\n* hs384 \u2013 hmac using sha-384 hash algorithm\n* hs512 \u2013 hmac using sha-512 hash algorithm\n\n\n**rsa** \u2013 requires pycrypto >= 2.5: ``pip install pycrypto``\n\n* rs256 \u2013 rsa using sha-256 hash algorithm\n\n**ecdsa** \u2013 requires ecdsa lib: ``pip install ecdsa``\n\n* es256 \u2013 ecdsa using p-256 curve and sha-256 hash algorithm\n* es384 \u2013 ecdsa using p-384 curve and sha-384 hash algorithm\n* es512 \u2013 ecdsa using p-521 curve and sha-512 hash algorithm\n\nthere is also a mechanism for extending functionality by adding your own\nalgorithms without cracking open the whole codebase. see the advanced usage\nsection for an example.\n\nfor rsa and ecdsa, all crypto libraries are lazily loaded so you won't need the dependencies unless you try to use the functionality.\n\nusage\n-----\nlet's check out some examples.\n\n    >>> import jws\n    >>> header  = { 'alg': 'hs256' }\n    >>> payload = { 'claim': 'json is the raddest.', 'iss': 'brianb' }\n    >>> signature = jws.sign(header, payload, 'secret')\n    >>> jws.verify(header, payload, signature, 'secret')\n    true\n    >>> jws.verify(header, payload, signature, 'badbadbad')\n    traceback (most recent call last):\n    ...\n    jws.exceptions.signatureerror: could not validate signature\n\nnow with a real key!\n\n    >>> import ecdsa\n    >>> sk256 = ecdsa.signingkey.generate(curve=ecdsa.nist256p)\n    >>> vk = sk256.get_verifying_key()\n    >>> header = { 'alg': 'es256' }\n    >>> sig = jws.sign(header, payload, sk256)\n    >>> jws.verify(header, payload, sig, vk)\n    true\n\nadvanced usage\n--------------\nmake this file\n\n    # file: sillycrypto.py\n    import jws\n    from jws.algos import algorithmbase, signatureerror\n    class fxuy(algorithmbase):\n        def __init__(self, x, y):\n            self.x = int(x)\n            self.y = int(y)\n        def sign(self, msg, key):\n            return 'verysecure' * self.x + key * self.y\n\n        def verify(self, msg, sig, key):\n            if sig != self.sign(msg, key):\n                raise signatureerror('nope')\n            return true\n\n    jws.algos.custom += [\n       # a regular expression with two named matching groups. (x and y)\n        # named groups will be sent to the class constructor\n        (r'^f(?p<x>\\d)u(?p<y>\\d{2})$',  fxuy),\n    ]\n\nand in an interpreter:\n\n    >>> import jws\n    >>> header = { 'alg': 'f7u12' }\n    >>> payload = { 'claim': 'wutt' }\n    >>> sig = jws.sign(header, payload, '<trollface>')\n    traceback (most recent call last):\n      ....\n    jws.exceptions.algorithmnotimplemented: \"f7u12\" not implemented.\n    >>>\n    >>> import sillycrypto\n    >>> sig = jws.sign(header, payload, '<trollface>')\n    >>> jws.verify(header, payload, sig, '<trollface>')\n    true\n    >>> jws.verify(header, payload, sig, 'y u no verify?')\n    traceback (most recent call last):\n    ....\n    jws.exceptions.signatureerror: nope\n\n\nother stuff\n---------\n\ncheck out\nhttps://github.com/brianloveswords/python-jws/blob/master/examples/minijwt.py\nfor a 14-line implemention of jwt.\n\nsee\nhttps://github.com/brianloveswords/python-jws/blob/master/examples/ragecrypto.py\nfor a rage-comic inspired cryptography extension.\n\ntodo\n-------\n* write about all the rad stuff that can be done around headers (as extensible as crypto algos)\n* pull in jwk support\n\n\ntests\n-----\n\nuse nosetests\n\nlicense\n-------\n\nmit",
+  "docs_url": null,
+  "keywords": "jws json web security signing",
+  "license": "mit",
+  "name": "jws",
+  "package_url": "https://pypi.org/project/jws/",
+  "project_url": "https://pypi.org/project/jws/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "http://github.com/brianloveswords/python-jws"
+  },
+  "release_url": "https://pypi.org/project/jws/0.1.3/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "json web signatures implementation in python",
+  "version": "0.1.3",
+  "releases": [],
+  "developers": [
+    "brian_j_brennan",
+    "brianloveswords@gmail.com"
+  ],
+  "kwds": "jws pycrypto hmac signatureerror signingkey",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_jws",
+  "homepage": "http://github.com/brianloveswords/python-jws",
+  "release_count": 3,
+  "dependency_ids": []
+}

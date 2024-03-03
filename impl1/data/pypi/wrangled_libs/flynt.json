@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: utilities"
+  ],
+  "description": "# flynt - string formatting converter\n\n<p align=\"center\">\n<a href=\"https://github.com/ikamensh/flynt/actions\"><img alt=\"actions status\" src=\"https://github.com/ikamensh/flynt/workflows/test/badge.svg\"></a>\n<a href=\"https://github.com/ikamensh/flynt/blob/main/license\"><img alt=\"license: mit\" src=\"https://black.readthedocs.io/en/stable/_static/license.svg\"></a>\n<a href=\"https://pypi.org/project/flynt/\"><img alt=\"pypi\" src=\"https://img.shields.io/pypi/v/flynt\"></a>\n<a href=\"https://pepy.tech/project/flynt\"><img alt=\"downloads\" src=\"https://pepy.tech/badge/flynt\"></a>\n<a href=\"https://github.com/psf/black\"><img alt=\"code style: black\" src=\"https://img.shields.io/badge/code%20style-black-000000.svg\"></a>\n</p>\n\n`flynt` is a command line tool to automatically convert a project's python code from old \"%-formatted\" and .format(...) strings into python 3.6+'s \"f-strings\".\n\nf-strings:\n\n> not only are they more readable, more concise, and less prone to error than other ways of formatting, but they are also faster!\n\n### installation\n\n`pip install flynt`. it requires python version 3.7+.\n\n### usage\n\n*flynt will modify the files it runs on. add your project to version control system before using flynt.*\n\nto run: `flynt {source_file_or_directory}`\n\n* given a single file, it will 'f-stringify' it: replace all applicable string formatting in this file (file will be modified).\n* given a folder, it will search the folder recursively and f-stringify all the .py files it finds. it skips some hard-coded folder names: `blacklist = {'.tox', 'venv', 'site-packages', '.eggs'}`.\n\nit turns the code it runs on into python 3.6+, since 3.6 is when \"f-strings\" were introduced.\n\n### command line options\n\nfrom the output of `flynt -h`:\n\n<!-- begin-options -->\n```\nusage: flynt [-h] [-v | -q] [--no-multiline | -ll line_length]\n             [-d | --stdout] [-s] [--no-tp] [--no-tf] [-tc] [-tj]\n             [-f] [-a] [-e exclude [exclude ...]] [--version]\n             [src ...]\n\nflynt v.0.78\n\npositional arguments:\n  src                   source file(s) or directory (or a single `-`\n                        to read stdin and output to stdout)\n\noptional arguments:\n  -h, --help            show this help message and exit\n  -v, --verbose         run with verbose output\n  -q, --quiet           run without outputting statistics to stdout\n  --no-multiline        convert only single line expressions\n  -ll line_length, --line-length line_length\n                        for expressions spanning multiple lines,\n                        convert only if the resulting single line\n                        will fit into the line length limit. default\n                        value is 88 characters.\n  -d, --dry-run         do not change the files in-place and print\n                        the diff instead. note that this must be\n                        used in conjunction with '--fail-on-change'\n                        when used for linting purposes.\n  --stdout              do not change the files in-place and print\n                        the result instead. this argument implies\n                        --quiet, i.e. no statistics are printed to\n                        stdout, only the resulting code. it is\n                        incompatible with --dry-run and --verbose.\n  -s, --string          interpret the input as a python code snippet\n                        and print the converted version. the snippet\n                        must use single quotes or escaped double\n                        quotes.\n  --no-tp, --no-transform-percent\n                        don't transform % formatting to f-strings\n                        (default: do so)\n  --no-tf, --no-transform-format\n                        don't transform .format formatting to\n                        f-strings (default: do so)\n  -tc, --transform-concats\n                        replace string concatenations (defined as +\n                        operations involving string literals) with\n                        f-strings. available only if flynt is\n                        installed with 3.8+ interpreter.\n  -tj, --transform-joins\n                        replace static joins (where the joiner is a\n                        string literal and the joinee is a static-\n                        length list) with f-strings. available only\n                        if flynt is installed with 3.8+ interpreter.\n  -f, --fail-on-change  fail when changing files (for linting\n                        purposes)\n  -a, --aggressive      include conversions with potentially changed\n                        behavior.\n  -e exclude [exclude ...], --exclude exclude [exclude ...]\n                        ignore files with given strings in it's\n                        absolute path.\n  --version             print the current version number and exit.\n\n```\n\n### sample output of a successful run:\n```\n38f9d3a65222:~ ikkamens$ git clone https://github.com/pallets/flask.git\ncloning into 'flask'...\n...\nresolving deltas: 100% (12203/12203), done.\n\n38f9d3a65222:open_source ikkamens$ flynt flask\nrunning flynt v.0.40\n\nflynt run has finished. stats:\n\nexecution time:                            0.789s\nfiles modified:                            21\ncharacter count reduction:                 299 (0.06%)\n\nper expression type:\nold style (`%`) expressions attempted:     40/42 (95.2%)\n`.format(...)` calls attempted:            26/33 (78.8%)\nf-string expressions created:              48\nout of all attempted transforms, 7 resulted in errors.\nto find out specific error messages, use --verbose flag.\n\n_-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_._-_.\nplease run your tests before committing. did flynt get a perfect conversion? give it a star at:\n~ https://github.com/ikamensh/flynt ~\nthank you for using flynt. upgrade more projects and recommend it to your colleagues!\n\n38f9d3a65222:~ ikkamens$\n```\n\n### pre-commit hook\n\nto make sure all formatted strings are always converted to f-strings, you can\nadd flynt to your [pre-commit](https://www.pre-commit.com) hooks.\n\nadd a new section to `.pre-commit-config.yaml`:\n```\n-   repo: https://github.com/ikamensh/flynt/\n    rev: ''\n    hooks:\n    -   id: flynt\n```\n\nthis will run flynt on all modified files before committing.\n\nyou can skip conversion of certain lines by adding `# noqa [: anything else] flynt [anything else]`\n\n\n### configuration files\n\nsince v0.71 flynt can be configured using `pyproject.toml` file on a per-project basis. \nuse same arguments as in cli, and add them to `[tool.flynt]` section. cli arguments takes precedence over the config file.\nit can also be configured globally with a toml file located in `~/.config/flynt.toml` on unix / `~/.flynt.toml` on windows.\n\n### about\n\nread up on f-strings here:\n- https://realpython.com/python-f-strings/\n- https://www.python.org/dev/peps/pep-0498/\n\nafter obsessively refactoring a project at work, and not even covering 50% of f-string candidates, i realized there was some place for automation. also it was very interesting to work with ast module.\n\n### dangers of conversion\nit is not guaranteed that formatted strings will be exactly the same as before conversion.\n\n`'%s' % var` is converted to `f'{var}'`. there is a case when this will behave different from the original -  if var is a tuple of one element. in this case, %s displays the element, and f-string displays the tuple. example:\n\n```\nfoo = (1,)\nprint('%s' % foo) # prints '1'\nprint(f'{foo}')   # prints '(1,)'\n```\n\nfurthermore, some arguments cause formatting of strings to throw exceptions. one example where f-strings are inconsistent with previous formatting is %d vs {:d} - new format no longer accepts floats. while most cases are covered by taking the formatting specifiers to the f-strings format, the precise exception behaviour might differ as well. make sure you have sufficient test coverage.\n\n### other credits / dependencies / links\n\n- [astor](https://github.com/berkerpeksag/astor) is used to turn the transformed ast back into code.\n- thanks to folks from [pyddf](https://www.pyddf.de/) for their support, advice and participation during spring hackathon 2019, in particular holger hass, farid muradov, charlie clark.\n- logic finding the pyproject.toml and parsing it was partially copied from [black](https://github.com/psf/black) \n",
+  "docs_url": null,
+  "keywords": "strings,utility",
+  "license": "",
+  "name": "flynt",
+  "package_url": "https://pypi.org/project/flynt/",
+  "project_url": "https://pypi.org/project/flynt/",
+  "project_urls": {
+    "Homepage": "https://github.com/ikamensh/flynt"
+  },
+  "release_url": "https://pypi.org/project/flynt/1.0.1/",
+  "requires_dist": [
+    "astor",
+    "tomli>=1.1.0; python_version < '3.11'",
+    "build; extra == 'dev'",
+    "pre-commit; extra == 'dev'",
+    "pytest; extra == 'dev'",
+    "pytest-cov; extra == 'dev'",
+    "twine; extra == 'dev'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "cli tool to convert a python project's %-formatted strings to f-strings.",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "ilya_kamenshchikov"
+  ],
+  "kwds": "flynt href formatting stringify snippet",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_flynt",
+  "homepage": "",
+  "release_count": 82,
+  "dependency_ids": [
+    "pypi_astor",
+    "pypi_build",
+    "pypi_pre_commit",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_tomli",
+    "pypi_twine"
+  ]
+}

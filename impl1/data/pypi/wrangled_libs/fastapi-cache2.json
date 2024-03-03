@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# fastapi-cache\n\n![pypi](https://img.shields.io/pypi/v/fastapi-cache2.svg?style=flat)\n![license](https://img.shields.io/github/license/long2ice/fastapi-cache)\n![workflows](https://github.com/long2ice/fastapi-cache/workflows/pypi/badge.svg)\n![workflows](https://github.com/long2ice/fastapi-cache/workflows/ci/badge.svg)\n\n## introduction\n\n`fastapi-cache` is a tool to cache fastapi response and function result, with backends support `redis`, `memcache`,\nand `dynamodb`.\n\n## features\n\n- support `redis`, `memcache`, `dynamodb`, and `in-memory` backends.\n- easily integration with `fastapi`.\n- support http cache like `etag` and `cache-control`.\n\n## requirements\n\n- `asyncio` environment.\n- `redis` if use `redisbackend`.\n- `memcache` if use `memcachebackend`.\n- `aiobotocore` if use `dynamobackend`.\n\n## install\n\n```shell\n> pip install fastapi-cache2\n```\n\nor\n\n```shell\n> pip install \"fastapi-cache2[redis]\"\n```\n\nor\n\n```shell\n> pip install \"fastapi-cache2[memcache]\"\n```\n\nor\n\n```shell\n> pip install \"fastapi-cache2[dynamodb]\"\n```\n\n## usage\n\n### quick start\n\n```python\nfrom fastapi import fastapi\nfrom starlette.requests import request\nfrom starlette.responses import response\n\nfrom fastapi_cache import fastapicache\nfrom fastapi_cache.backends.redis import redisbackend\nfrom fastapi_cache.decorator import cache\n\nfrom redis import asyncio as aioredis\n\napp = fastapi()\n\n\n@cache()\nasync def get_cache():\n    return 1\n\n\n@app.get(\"/\")\n@cache(expire=60)\nasync def index():\n    return dict(hello=\"world\")\n\n\n@app.on_event(\"startup\")\nasync def startup():\n    redis = aioredis.from_url(\"redis://localhost\", encoding=\"utf8\", decode_responses=true)\n    fastapicache.init(redisbackend(redis), prefix=\"fastapi-cache\")\n\n```\n\n### initialization\n\nfirstly you must call `fastapicache.init` on startup event of `fastapi`, there are some global config you can pass in.\n\n### use `cache` decorator\n\nif you want cache `fastapi` response transparently, you can use `cache` as decorator between router decorator and view\nfunction and must pass `request` as param of view function.\n\nparameter | type, description\n------------ | -------------\nexpire | int, states a caching time in seconds\nnamespace | str, namespace to use to store certain cache items\ncoder | which coder to use, e.g. jsoncoder\nkey_builder | which key builder to use, default to builtin\n\nyou can also use `cache` as decorator like other cache tools to cache common function result.\n\n### custom coder\n\nby default use `jsoncoder`, you can write custom coder to encode and decode cache result, just need\ninherit `fastapi_cache.coder.coder`.\n\n```python\n@app.get(\"/\")\n@cache(expire=60, coder=jsoncoder)\nasync def index():\n    return dict(hello=\"world\")\n```\n\n### custom key builder\n\nby default use builtin key builder, if you need, you can override this and pass in `cache` or `fastapicache.init` to\ntake effect globally.\n\n```python\ndef my_key_builder(\n        func,\n        namespace: optional[str] = \"\",\n        request: request = none,\n        response: response = none,\n        *args,\n        **kwargs,\n):\n    prefix = fastapicache.get_prefix()\n    cache_key = f\"{prefix}:{namespace}:{func.__module__}:{func.__name__}:{args}:{kwargs}\"\n    return cache_key\n\n\n@app.get(\"/\")\n@cache(expire=60, coder=jsoncoder, key_builder=my_key_builder)\nasync def index():\n    return dict(hello=\"world\")\n```\n\n### inmemorybackend\n\n`inmemorybackend` store cache data in memory and use lazy delete, which mean if you don't access it after cached, it\nwill not delete automatically.\n\n## tests and coverage\n\n```shell\ncoverage run -m pytest\ncoverage html\nxdg-open htmlcov/index.html\n```\n\n## license\n\nthis project is licensed under the [apache-2.0](https://github.com/long2ice/fastapi-cache/blob/master/license) license.\n\n",
+  "docs_url": null,
+  "keywords": "fastapi,cache,caching",
+  "license": "apache-2.0",
+  "name": "fastapi-cache2",
+  "package_url": "https://pypi.org/project/fastapi-cache2/",
+  "project_url": "https://pypi.org/project/fastapi-cache2/",
+  "project_urls": {
+    "Documentation": "https://github.com/long2ice/fastapi-cache",
+    "Homepage": "https://github.com/long2ice/fastapi-cache",
+    "Repository": "https://github.com/long2ice/fastapi-cache.git"
+  },
+  "release_url": "https://pypi.org/project/fastapi-cache2/0.2.1/",
+  "requires_dist": [
+    "aiobotocore (>=1.4.1,<2.0.0) ; extra == \"dynamodb\" or extra == \"all\"",
+    "aiohttp (>=3.8.3) ; python_version >= \"3.11\"",
+    "aiomcache ; extra == \"memcache\" or extra == \"all\"",
+    "fastapi",
+    "pendulum",
+    "redis (>=4.2.0rc1,<5.0.0) ; extra == \"redis\" or extra == \"all\"",
+    "typing-extensions (>=4.1.0) ; python_version < \"3.10\"",
+    "uvicorn"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "cache for fastapi",
+  "version": "0.2.1",
+  "releases": [],
+  "developers": [
+    "long2ice",
+    "long2ice@gmail.com"
+  ],
+  "kwds": "fastapi_cache fastapi cache2 cache fastapicache",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_fastapi_cache2",
+  "homepage": "https://github.com/long2ice/fastapi-cache",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_aiobotocore",
+    "pypi_aiohttp",
+    "pypi_aiomcache",
+    "pypi_fastapi",
+    "pypi_pendulum",
+    "pypi_redis",
+    "pypi_typing_extensions",
+    "pypi_uvicorn"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "framework :: django",
+    "framework :: django :: 1.11",
+    "framework :: django :: 2.2",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.2",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: quality assurance",
+    "topic :: software development :: testing"
+  ],
+  "description": "==================================\ndjango template coverage.py plugin\n==================================\n\na `coverage.py`_ plugin to measure test coverage of django templates.\n\n\n\nsupported on:\n\n- python: 3.8 through 3.12.\n\n- django: 2.x, 3.x and 4.x.\n\n- coverage.py: 6.x or higher.\n\nthe plugin is pip installable::\n\n    $ python3 -m pip install django_coverage_plugin\n\nto run it, add this setting to your ``.coveragerc`` file::\n\n    [run]\n    plugins = django_coverage_plugin\n\nthen run your tests under `coverage.py`_.\n\nyou will see your templates listed in your coverage report along with\nyour python modules. please use `coverage.py`_ v4.4 or greater to allow\nthe plugin to identify untested templates.\n\nif you get a :code:`django.core.exceptions.improperlyconfigured` error,\nyou need to set the :code:`django_settings_module` environment variable.\n\ntemplate coverage only works if your django templates have debugging enabled.\nif you get :code:`django_coverage_plugin.plugin.djangotemplatepluginexception:\ntemplate debugging must be enabled in settings`, or if no templates get\nmeasured, make sure you have :code:`templates.options.debug` set to true in\nyour settings file:\n\n.. code-block:: python\n\n    templates = [\n        {\n            ...\n            'options': {\n                'debug': true,\n            },\n        },\n    ]\n\n\nconfiguration\n~~~~~~~~~~~~~\n\nthe django template plugin uses some existing settings from your\n``.coveragerc`` file.  the ``source=``, ``include=``, and ``omit=`` options\ncontrol what template files are included in the report.\n\nthe plugin can find unused template and include them in your results.  by\ndefault, it will look for files in your templates directory with an extension\nof ``.html``, ``.htm``, or ``.txt``.  you can configure it to look for a different set of\nextensions if you like::\n\n    [run]\n    plugins = django_coverage_plugin\n\n    [django_coverage_plugin]\n    template_extensions = html, txt, tex, email\n\nif you use ``pyproject.toml`` for tool configuration use::\n\n    [tool.coverage.run]\n    plugins = [\n        'django_coverage_plugin',\n    ]\n\n    [tool.coverage.django_coverage_plugin]\n    template_extensions = 'html, txt, tex, email'\n\ncaveats\n~~~~~~~\n\ncoverage.py can't tell whether a ``{% blocktrans %}`` tag used the\nsingular or plural text, so both are marked as used if the tag is used.\n\n\nwhat the? how?\n~~~~~~~~~~~~~~\n\nthe technique used to measure the coverage is the same that dmitry\ntrofimov used in `dtcov`_, but integrated into coverage.py as a plugin,\nand made more performant. i'd love to see how well it works in a real\nproduction project. if you want to help me with it, feel free to drop me\nan email.\n\nthe coverage.py plugin mechanism is designed to be generally useful for\nhooking into the collection and reporting phases of coverage.py,\nspecifically to support non-python files.  if you have non-python files\nyou'd like to support in coverage.py, let's talk.\n\n\ntests\n~~~~~\n\nto run the tests::\n\n    $ python3 -m pip install -r requirements.txt\n    $ tox\n\n\nhistory\n~~~~~~~\n\n.. scriv-insert-here\n\nv3.1.0 \u2014 2023-07-10\n-------------------\n\ndropped support for python 3.7 and django 1.x.  declared support for python\n3.12.\n\n\nv3.0.0 \u2014 2022-12-06\n-------------------\n\ndropped support for python 2.7, python 3.6, and django 1.8.\n\n\nv2.0.4 \u2014 2022-10-31\n-------------------\n\ndeclare our support for python 3.11 and django 4.1.\n\n\nv2.0.3 \u2014 2022-05-04\n-------------------\n\nadd support for django 4.0.\n\n\nv2.0.2 \u2014 2021-11-11\n-------------------\n\nif a non-utf8 file was found when looking for templates, it would fail when\nreading during the reporting phase, ending execution.  this failure is now\nraised in a way that can be ignored with a .coveragerc setting of ``[report]\nignore_errors=true`` (`issue 78`_).\n\nwhen using ``source=.``, an existing coverage html report directory would be\nfound and believed to be unmeasured html template files.  this is now fixed.\n\n.. _issue 78: https://github.com/nedbat/django_coverage_plugin/issues/78\n\n\nv2.0.1 \u2014 2021-10-06\n-------------------\n\ntest and claim our support on python 3.10.\n\nv2.0.0 \u2014 2021-06-08\n-------------------\n\ndrop support for python 3.4 and 3.5.\n\na setting is available: ``template_extensions`` lets you set the file\nextensions that will be considered when looking for unused templates\n(requested in `issue 60`_).\n\nfix an issue on windows where file names were being compared\ncase-sensitively, causing templates to be missed (`issue 46`_).\n\nfix an issue (`issue 63`_) where tag libraries can't be found if imported\nduring test collection. thanks to daniel izquierdo for the fix.\n\n.. _issue 46: https://github.com/nedbat/django_coverage_plugin/issues/46\n.. _issue 60: https://github.com/nedbat/django_coverage_plugin/issues/60\n.. _issue 63: https://github.com/nedbat/django_coverage_plugin/issues/63\n\nv1.8.0 \u2014 2020-01-23\n-------------------\n\nadd support for:\n\n- coverage 5\n\nv1.7.0 \u2014 2020-01-16\n-------------------\n\nadd support for:\n\n- python 3.7 & 3.8\n- django 2.2 & 3.0\n\nv1.6.0 \u2014 2018-09-04\n-------------------\n\nadd support for django 2.1.\n\n\nv1.5.2 \u2014 2017-10-18\n-------------------\n\nvalidates support for django version 2.0b1. improves discovery of\ntemplate files.\n\n\nv1.5.1a \u2014 2017-04-05\n--------------------\n\nvalidates support for django version 1.11. testing for new package\nmaintainer pamela mca'nulty\n\n\nv1.5.0 \u2014 2017-02-23\n-------------------\n\nremoves support for django versions below 1.8.  validates support for\ndjango version 1.11b1\n\n\nv1.4.2 \u2014 2017-02-06\n-------------------\n\nfixes another instance of `issue 32`_, which was the result of an\ninitialization order problem.\n\n.. _issue 32: https://github.com/nedbat/django_coverage_plugin/issues/32\n\n\nv1.4.1 \u2014 2017-01-25\n-------------------\n\nfixes `issue 32`_, which was the result of an initialization order\nproblem.\n\n\nv1.4 \u2014 2017-01-16\n-----------------\n\ndjango 1.10.5 is now supported.\n\nchecking settings configuration is deferred so that settings.py is\nincluded in coverage reporting.  fixes `issue 28`_.\n\nonly the ``django.template.backends.django.djangotemplates`` template\nengine is supported, and it must be configured with\n``['options']['debug'] = true``. fixes `issue 27`_.\n\n.. _issue 28: https://github.com/nedbat/django_coverage_plugin/issues/28\n.. _issue 27: https://github.com/nedbat/django_coverage_plugin/issues/27\n\n\n\nv1.3.1 \u2014 2016-06-02\n-------------------\n\nsettings are read slightly differently, so as to not interfere with\nprograms that don't need settings.  fixes `issue 18`_.\n\n.. _issue 18: https://github.com/nedbat/django_coverage_plugin/issues/18\n\n\n\nv1.3 \u2014 2016-04-03\n-----------------\n\nmultiple template engines are allowed.  thanks, simon charette.\n\n\n\nv1.2.2 \u2014 2016-02-01\n-------------------\n\nno change in code, but django 1.9.2 is now supported.\n\n\n\nv1.2.1 \u2014 2016-01-28\n-------------------\n\nthe template debug settings are checked properly for people still using\n``template_debug`` in newer versions of django.\n\n\n\nv1.2 \u2014 2016-01-16\n-----------------\n\ncheck if template debugging is enabled in the settings, and raise a\nvisible warning if not.  this prevents mysterious failures of the\nplugin, and fixes `issue 17`_.\n\npotential django 1.9 support is included, but the patch to django hasn't\nbeen applied yet.\n\n.. _issue 17: https://github.com/nedbat/django_coverage_plugin/issues/17\n\n\n\nv1.1 \u2014 2015-11-12\n-----------------\n\nexplicitly configure settings if need be to get things to work.\n\n\n\nv1.0 \u2014 2015-09-20\n-----------------\n\nfirst version :)\n\n.. _coverage.py: http://nedbatchelder.com/code/coverage\n.. _dtcov: https://github.com/traff/dtcov\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "django-coverage-plugin",
+  "package_url": "https://pypi.org/project/django-coverage-plugin/",
+  "project_url": "https://pypi.org/project/django-coverage-plugin/",
+  "project_urls": {
+    "Homepage": "https://github.com/nedbat/django_coverage_plugin"
+  },
+  "release_url": "https://pypi.org/project/django-coverage-plugin/3.1.0/",
+  "requires_dist": [
+    "coverage"
+  ],
+  "requires_python": "",
+  "summary": "django template coverage.py plugin",
+  "version": "3.1.0",
+  "releases": [],
+  "developers": [
+    "ned@nedbatchelder.com",
+    "ned_batchelder"
+  ],
+  "kwds": "django_coverage_plugin djangotemplates djangotemplatepluginexception template_debug _coverage",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_django_coverage_plugin",
+  "homepage": "https://github.com/nedbat/django_coverage_plugin",
+  "release_count": 32,
+  "dependency_ids": [
+    "pypi_coverage"
+  ]
+}

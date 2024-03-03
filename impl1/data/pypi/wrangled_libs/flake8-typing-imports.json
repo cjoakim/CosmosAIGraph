@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "[![build status](https://github.com/asottile/flake8-typing-imports/actions/workflows/main.yml/badge.svg)](https://github.com/asottile/flake8-typing-imports/actions/workflows/main.yml)\n[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/asottile/flake8-typing-imports/main.svg)](https://results.pre-commit.ci/latest/github/asottile/flake8-typing-imports/main)\n\nflake8-typing-imports\n=====================\n\nflake8 plugin which checks that typing imports are properly guarded\n\n## installation\n\n```bash\npip install flake8-typing-imports\n```\n\n## flake8 codes\n\n| code   | description                                                           |\n|--------|-----------------------------------------------------------------------|\n| typ001 | guard import by `type_checking`                                       |\n| typ002 | `@overload` is broken in <3.5.2                                       |\n| typ003 | `union[match, ...]` or `union[pattern, ...]` must be quoted in <3.5.2 |\n| typ004 | `namedtuple` does not support methods in 3.6.0                        |\n| typ005 | `namedtuple` does not support defaults in 3.6.0                       |\n| typ006 | guard `typing` attribute by quoting                                   |\n\n## rationale\n\nunfortunately, the `typing` module has been pretty unstable -- it has seen api\nchanges in 3.5.0, 3.5.2, 3.5.3, 3.5.4, 3.6.0, 3.6.1, 3.6.2, 3.7.0, and 3.7.2!\n\ndepending on your supported version of python, you may need to guard your\nimports by `if type_checking:` (3.5.2+) or `if false:` if the things you are\nimporting aren't available in all the pythons you support.\n\nas it's pretty difficult to keep track of what version things changed and you\ncan't always test against particular patch versions of python, this plugin\nhelps you statically check this automatically!\n\n```python\n# default / --min-python-version 3.5.0\nfrom typing import type  # typ001\n```\n\n```python\n# default / --min-python-version 3.5.0\nif false:\n    from typing import type  # ok!\n```\n\n```python\n# default / --min-python-version 3.5.0\nfrom typing import overload  # typ002\n```\n\n```python\n# default / --min-python-version 3.5.0\nimport sys\nfrom typing import overload  # ok!\nif sys.version_info < (3, 5, 2):\n    def overload(f):\n        return f\n```\n\n```python\n# default / --min-python-version 3.5.0\ndef foo(bar: union[match, str]) -> none: pass  # typ003\ndef foo(bar: \"union[match, str]\") -> none: pass  # ok!\n\ndef foo(bar: union[pattern, str]) -> none: pass  # typ003\ndef foo(bar: \"union[pattern, str]\") -> none: pass  # ok!\n```\n\n```python\n# --min-python-version 3.6.0\nclass nt(namedtuple):\n    x: int = 5  # typ005\n\n    def f(self) -> int:  # typ004\n        return self.x + 4\n```\n\n```python\n# --min-python-version 3.7.0\nfrom typing import type_checking\nif type_checking:\n    from typing import ordereddict  # ok!\n```\n\n## configuration\n\nthis plugin has a single configuration point (beyond those provided by flake8)\nwhich is the `--min-python-version` option.\n\nby default, this option is `3.5.0`.  this includes all versions of python\nwhich have the `typing` module present.\n\nyou can also set this option in the flake8 configuration if you don't want\nto use the commandline:\n\n```ini\n[flake8]\nmin_python_version = 3.6.2\n```\n\nif a `>=` is set for `python_requires` in `setup.cfg`, that value will be used:\n\n```ini\n# setup.cfg setuptools metadata\n\n[options]\npython_requires = >=3.6\n```\n\n## as a pre-commit hook\n\nsee [pre-commit](https://github.com/pre-commit/pre-commit) for instructions\n\nsample `.pre-commit-config.yaml`:\n\n```yaml\n-   repo: https://github.com/pycqa/flake8\n    rev: 3.7.7\n    hooks:\n    -   id: flake8\n        additional_dependencies: [flake8-typing-imports==1.12.0]\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "flake8-typing-imports",
+  "package_url": "https://pypi.org/project/flake8-typing-imports/",
+  "project_url": "https://pypi.org/project/flake8-typing-imports/",
+  "project_urls": {
+    "Homepage": "https://github.com/asottile/flake8-typing-imports"
+  },
+  "release_url": "https://pypi.org/project/flake8-typing-imports/1.15.0/",
+  "requires_dist": [
+    "flake8 (>=5.0)"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "flake8 plugin which checks that typing imports are properly guarded",
+  "version": "1.15.0",
+  "releases": [],
+  "developers": [
+    "anthony_sottile",
+    "asottile@umich.edu"
+  ],
+  "kwds": "flake8 type_checking python_requires imports import",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flake8_typing_imports",
+  "homepage": "https://github.com/asottile/flake8-typing-imports",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_flake8"
+  ]
+}

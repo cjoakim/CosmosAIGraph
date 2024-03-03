@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: unix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: gis"
+  ],
+  "description": "=======\nshapely\n=======\n\n.. documentation at rtd \u2014 https://readthedocs.org\n\n.. image:: https://readthedocs.org/projects/shapely/badge/?version=stable\n   :alt: documentation status\n   :target: https://shapely.readthedocs.io/en/stable/\n\n.. github actions status \u2014 https://github.com/shapely/shapely/actions\n\n.. |github-actions| image:: https://github.com/shapely/shapely/workflows/tests/badge.svg?branch=main\n   :alt: github actions status\n   :target: https://github.com/shapely/shapely/actions?query=branch%3amain\n\n.. travis ci status -- https://travis-ci.com\n\n.. image:: https://travis-ci.com/shapely/shapely.svg?branch=main\n   :alt: travis ci status\n   :target: https://travis-ci.com/github/shapely/shapely\n\n.. pypi\n\n.. image:: https://img.shields.io/pypi/v/shapely.svg\n   :alt: pypi\n   :target: https://pypi.org/project/shapely/\n\n.. anaconda\n\n.. image:: https://img.shields.io/conda/vn/conda-forge/shapely\n   :alt: anaconda\n   :target: https://anaconda.org/conda-forge/shapely\n\n.. coverage\n\n.. |coveralls| image:: https://coveralls.io/repos/github/shapely/shapely/badge.svg?branch=main\n   :target: https://coveralls.io/github/shapely/shapely?branch=main\n\n.. zenodo\n\n.. .. image:: https://zenodo.org/badge/191151963.svg\n..   :alt: zenodo\n..   :target: https://zenodo.org/badge/latestdoi/191151963\n\nmanipulation and analysis of geometric objects in the cartesian plane.\n\n.. image:: https://c2.staticflickr.com/6/5560/31301790086_b3472ea4e9_c.jpg\n   :width: 800\n   :height: 378\n\nshapely is a bsd-licensed python package for manipulation and analysis of\nplanar geometric objects. it is using the widely deployed open-source\ngeometry library `geos <https://libgeos.org/>`__ (the engine of `postgis\n<https://postgis.net/>`__, and a port of `jts <https://locationtech.github.io/jts/>`__).\nshapely wraps geos geometries and operations to provide both a feature rich\n`geometry` interface for singular (scalar) geometries and higher-performance\nnumpy ufuncs for operations using arrays of geometries.\nshapely is not primarily focused on data serialization formats or coordinate\nsystems, but can be readily integrated with packages that are.\n\nwhat is a ufunc?\n----------------\n\na universal function (or ufunc for short) is a function that operates on\n*n*-dimensional arrays on an element-by-element fashion and supports array\nbroadcasting. the underlying ``for`` loops are implemented in c to reduce the\noverhead of the python interpreter.\n\nmultithreading\n--------------\n\nshapely functions generally support multithreading by releasing the global\ninterpreter lock (gil) during execution. normally in python, the gil prevents\nmultiple threads from computing at the same time. shapely functions\ninternally release this constraint so that the heavy lifting done by geos can\nbe done in parallel, from a single python process.\n\nusage\n=====\n\nhere is the canonical example of building an approximately circular patch by\nbuffering a point, using the scalar geometry interface:\n\n.. code-block:: pycon\n\n    >>> from shapely import point\n    >>> patch = point(0.0, 0.0).buffer(10.0)\n    >>> patch\n    <polygon ((10 0, 9.952 -0.98, 9.808 -1.951, 9.569 -2.903, 9.239 -3.827, 8.81...>\n    >>> patch.area\n    313.6548490545941\n\nusing the vectorized ufunc interface (instead of using a manual for loop),\ncompare an array of points with a polygon:\n\n.. code:: python\n\n    >>> import shapely\n    >>> import numpy as np\n    >>> geoms = np.array([point(0, 0), point(1, 1), point(2, 2)])\n    >>> polygon = shapely.box(0, 0, 2, 2)\n\n    >>> shapely.contains(polygon, geoms)\n    array([false,  true, false])\n\nsee the documentation for more examples and guidance: https://shapely.readthedocs.io\n\nrequirements\n============\n\nshapely 2.0 requires\n\n* python >=3.7\n* geos >=3.5\n* numpy >=1.14\n\ninstalling shapely\n==================\n\nwe recommend installing shapely using one of the available built\ndistributions, for example using ``pip`` or ``conda``:\n\n.. code-block:: console\n\n    $ pip install shapely\n    # or using conda\n    $ conda install shapely --channel conda-forge\n\nsee the `installation documentation <https://shapely.readthedocs.io/en/latest/installation.html>`__\nfor more details and advanced installation instructions.\n\nintegration\n===========\n\nshapely does not read or write data files, but it can serialize and deserialize\nusing several well known formats and protocols. the shapely.wkb and shapely.wkt\nmodules provide dumpers and loaders inspired by python's pickle module.\n\n.. code-block:: pycon\n\n    >>> from shapely.wkt import dumps, loads\n    >>> dumps(loads('point (0 0)'))\n    'point (0.0000000000000000 0.0000000000000000)'\n\nshapely can also integrate with other python gis packages using geojson-like\ndicts.\n\n.. code-block:: pycon\n\n    >>> import json\n    >>> from shapely.geometry import mapping, shape\n    >>> s = shape(json.loads('{\"type\": \"point\", \"coordinates\": [0.0, 0.0]}'))\n    >>> s\n    <point (0 0)>\n    >>> print(json.dumps(mapping(s)))\n    {\"type\": \"point\", \"coordinates\": [0.0, 0.0]}\n\nsupport\n=======\n\nquestions about using shapely may be asked on the `gis stackexchange\n<https://gis.stackexchange.com/questions/tagged/shapely>`__ using the \"shapely\"\ntag.\n\nbugs may be reported at https://github.com/shapely/shapely/issues.\n\ncopyright & license\n===================\n\nshapely is licensed under bsd 3-clause license.\ngeos is available under the terms of gnu lesser general public license (lgpl) 2.1 at https://libgeos.org.\n",
+  "docs_url": null,
+  "keywords": "geometry,topology,gis",
+  "license": "bsd 3-clause",
+  "name": "shapely",
+  "package_url": "https://pypi.org/project/shapely/",
+  "project_url": "https://pypi.org/project/shapely/",
+  "project_urls": {
+    "Documentation": "https://shapely.readthedocs.io/",
+    "Repository": "https://github.com/shapely/shapely"
+  },
+  "release_url": "https://pypi.org/project/shapely/2.0.2/",
+  "requires_dist": [
+    "numpy >=1.14",
+    "numpydoc ==1.1.* ; extra == 'docs'",
+    "matplotlib ; extra == 'docs'",
+    "sphinx ; extra == 'docs'",
+    "sphinx-book-theme ; extra == 'docs'",
+    "sphinx-remove-toctrees ; extra == 'docs'",
+    "pytest ; extra == 'test'",
+    "pytest-cov ; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "manipulation and analysis of geometric objects",
+  "version": "2.0.2",
+  "releases": [],
+  "developers": [
+    "sean_gillies",
+    "shapely_contributors"
+  ],
+  "kwds": "shapely shape badge branch status",
+  "license_kwds": "bsd 3-clause",
+  "libtype": "pypi",
+  "id": "pypi_shapely",
+  "homepage": "",
+  "release_count": 121,
+  "dependency_ids": [
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_numpydoc",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_sphinx",
+    "pypi_sphinx_book_theme",
+    "pypi_sphinx_remove_toctrees"
+  ]
+}

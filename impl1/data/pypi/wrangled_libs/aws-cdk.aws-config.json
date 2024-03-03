@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws config construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n\n\nfeatures                                                                               | stability\n---------------------------------------------------------------------------------------|------------\ncfn resources                                                                          | ![stable](https://img.shields.io/badge/stable-success.svg?style=for-the-badge)\nhigher level constructs for config rules                                               | ![stable](https://img.shields.io/badge/stable-success.svg?style=for-the-badge)\nhigher level constructs for initial set-up (delivery channel & configuration recorder) | ![not implemented](https://img.shields.io/badge/not--implemented-black.svg?style=for-the-badge)\n\n> **cfn resources:** all classes with the `cfn` prefix in this module ([cfn resources](https://docs.aws.amazon.com/cdk/latest/guide/constructs.html#constructs_lib)) are always\n> stable and safe to use.\n\n<!-- -->\n\n> **stable:** higher level constructs in this module that are marked stable will not undergo any\n> breaking changes. they will strictly follow the [semantic versioning](https://semver.org/) model.\n\n---\n<!--end stability banner-->\n\n[aws config](https://docs.aws.amazon.com/config/latest/developerguide/whatisconfig.html) provides a detailed view of the configuration of aws resources in your aws account.\nthis includes how the resources are related to one another and how they were configured in the\npast so that you can see how the configurations and relationships change over time.\n\nthis module is part of the [aws cloud development kit](https://github.com/aws/aws-cdk) project.\n\n## initial setup\n\nbefore using the constructs provided in this module, you need to set up aws config\nin the region in which it will be used. this setup includes the one-time creation of the\nfollowing resources per region:\n\n* `configurationrecorder`: configure which resources will be recorded for config changes.\n* `deliverychannel`: configure where to store the recorded data.\n\nthe following guides provide the steps for getting started with aws config:\n\n* [using the aws console](https://docs.aws.amazon.com/config/latest/developerguide/gs-console.html)\n* [using the aws cli](https://docs.aws.amazon.com/config/latest/developerguide/gs-cli.html)\n\n## rules\n\naws config can evaluate the configuration settings of your aws resources by creating aws config rules,\nwhich represent your ideal configuration settings.\n\nsee [evaluating resources with aws config rules](https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config.html) to learn more about aws config rules.\n\n### aws managed rules\n\naws config provides aws managed rules, which are predefined, customizable rules that aws config\nuses to evaluate whether your aws resources comply with common best practices.\n\nfor example, you could create a managed rule that checks whether active access keys are rotated\nwithin the number of days specified.\n\n```python\n# https://docs.aws.amazon.com/config/latest/developerguide/access-keys-rotated.html\nconfig.managedrule(self, \"accesskeysrotated\",\n    identifier=config.managedruleidentifiers.access_keys_rotated,\n    input_parameters={\n        \"max_access_key_age\": 60\n    },\n\n    # default is 24 hours\n    maximum_execution_frequency=config.maximumexecutionfrequency.twelve_hours\n)\n```\n\nidentifiers for aws managed rules are available through static constants in the `managedruleidentifiers` class.\nyou can find supported input parameters in the [list of aws config managed rules](https://docs.aws.amazon.com/config/latest/developerguide/managed-rules-by-aws-config.html).\n\nthe following higher level constructs for aws managed rules are available.\n\n#### access key rotation\n\nchecks whether your active access keys are rotated within the number of days specified.\n\n```python\n# compliant if access keys have been rotated within the last 90 days\nconfig.accesskeysrotated(self, \"accesskeyrotated\")\n```\n\n#### cloudformation stack drift detection\n\nchecks whether your cloudformation stack's actual configuration differs, or has drifted,\nfrom it's expected configuration.\n\n```python\n# compliant if stack's status is 'in_sync'\n# non-compliant if the stack's drift status is 'drifted'\nconfig.cloudformationstackdriftdetectioncheck(self, \"drift\",\n    own_stack_only=true\n)\n```\n\n#### cloudformation stack notifications\n\nchecks whether your cloudformation stacks are sending event notifications to a sns topic.\n\n```python\n# topics to which cloudformation stacks may send event notifications\ntopic1 = sns.topic(self, \"allowedtopic1\")\ntopic2 = sns.topic(self, \"allowedtopic2\")\n\n# non-compliant if cloudformation stack does not send notifications to 'topic1' or 'topic2'\nconfig.cloudformationstacknotificationcheck(self, \"notificationcheck\",\n    topics=[topic1, topic2]\n)\n```\n\n### custom rules\n\nyou can develop custom rules and add them to aws config. you associate each custom rule with an\naws lambda function, which contains the logic that evaluates whether your aws resources comply\nwith the rule.\n\n### triggers\n\naws lambda executes functions in response to events that are published by aws services.\nthe function for a custom config rule receives an event that is published by aws config,\nand is responsible for evaluating the compliance of the rule.\n\nevaluations can be triggered by configuration changes, periodically, or both.\nto create a custom rule, define a `customrule` and specify the lambda function\nto run and the trigger types.\n\n```python\n# eval_compliance_fn: lambda.function\n\n\nconfig.customrule(self, \"customrule\",\n    lambda_function=eval_compliance_fn,\n    configuration_changes=true,\n    periodic=true,\n\n    # default is 24 hours\n    maximum_execution_frequency=config.maximumexecutionfrequency.six_hours\n)\n```\n\nwhen the trigger for a rule occurs, the lambda function is invoked by publishing an event.\nsee [example events for aws config rules](https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config_develop-rules_example-events.html)\n\nthe aws documentation has examples of lambda functions for evaluations that are\n[triggered by configuration changes](https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config_develop-rules_nodejs-sample.html#event-based-example-rule) and [triggered periodically](https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config_develop-rules_nodejs-sample.html#periodic-example-rule)\n\n### scope\n\nby default rules are triggered by changes to all [resources](https://docs.aws.amazon.com/config/latest/developerguide/resource-config-reference.html#supported-resources).\n\nuse the `rulescope` apis (`fromresource()`, `fromresources()` or `fromtag()`) to restrict\nthe scope of both managed and custom rules:\n\n```python\n# eval_compliance_fn: lambda.function\nssh_rule = config.managedrule(self, \"ssh\",\n    identifier=config.managedruleidentifiers.ec2_security_groups_incoming_ssh_disabled,\n    rule_scope=config.rulescope.from_resource(config.resourcetype.ec2_security_group, \"sg-1234567890abcdefgh\")\n)\ncustom_rule = config.customrule(self, \"lambda\",\n    lambda_function=eval_compliance_fn,\n    configuration_changes=true,\n    rule_scope=config.rulescope.from_resources([config.resourcetype.cloudformation_stack, config.resourcetype.s3_bucket])\n)\n\ntag_rule = config.customrule(self, \"costcentertagrule\",\n    lambda_function=eval_compliance_fn,\n    configuration_changes=true,\n    rule_scope=config.rulescope.from_tag(\"cost center\", \"myapp\")\n)\n```\n\n### events\n\nyou can define amazon eventbridge event rules which trigger when a compliance check fails\nor when a rule is re-evaluated.\n\nuse the `oncompliancechange()` apis to trigger an eventbridge event when a compliance check\nof your aws config rule fails:\n\n```python\n# topic to which compliance notification events will be published\ncompliance_topic = sns.topic(self, \"compliancetopic\")\n\nrule = config.cloudformationstackdriftdetectioncheck(self, \"drift\")\nrule.on_compliance_change(\"topicevent\",\n    target=targets.snstopic(compliance_topic)\n)\n```\n\nuse the `onreevaluationstatus()` status to trigger an eventbridge event when an aws config\nrule is re-evaluated.\n\n```python\n# topic to which re-evaluation notification events will be published\nre_evaluation_topic = sns.topic(self, \"compliancetopic\")\n\nrule = config.cloudformationstackdriftdetectioncheck(self, \"drift\")\nrule.on_re_evaluation_status(\"reevaluationevent\",\n    target=targets.snstopic(re_evaluation_topic)\n)\n```\n\n### example\n\nthe following example creates a custom rule that evaluates whether ec2 instances are compliant.\ncompliance events are published to an sns topic.\n\n```python\n# lambda function containing logic that evaluates compliance with the rule.\neval_compliance_fn = lambda_.function(self, \"customfunction\",\n    code=lambda_.assetcode.from_inline(\"exports.handler = (event) => console.log(event);\"),\n    handler=\"index.handler\",\n    runtime=lambda_.runtime.nodejs_14_x\n)\n\n# a custom rule that runs on configuration changes of ec2 instances\ncustom_rule = config.customrule(self, \"custom\",\n    configuration_changes=true,\n    lambda_function=eval_compliance_fn,\n    rule_scope=config.rulescope.from_resource(config.resourcetype.ec2_instance)\n)\n\n# a rule to detect stack drifts\ndrift_rule = config.cloudformationstackdriftdetectioncheck(self, \"drift\")\n\n# topic to which compliance notification events will be published\ncompliance_topic = sns.topic(self, \"compliancetopic\")\n\n# send notification on compliance change events\ndrift_rule.on_compliance_change(\"compliancechange\",\n    target=targets.snstopic(compliance_topic)\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-config",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-config/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-config/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-config/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-events (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-lambda (==1.204.0)",
+    "aws-cdk.aws-sns (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::config",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "cdk aws cloudformationstackdriftdetectioncheck ec2 ec2_instance",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_config",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_events",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_lambda",
+    "pypi_aws_cdk.aws_sns",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

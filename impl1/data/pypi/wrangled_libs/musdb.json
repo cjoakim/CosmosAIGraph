@@ -1,0 +1,60 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "environment :: plugins",
+    "intended audience :: science/research",
+    "intended audience :: telecommunications industry",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: multimedia :: sound/audio :: analysis",
+    "topic :: multimedia :: sound/audio :: sound synthesis"
+  ],
+  "description": "# musdb\n\n[![build status](https://github.com/sigsep/sigsep-mus-db/workflows/ci/badge.svg)](https://github.com/sigsep/sigsep-mus-db/actions?query=workflow%3aci+branch%3amaster+event%3apush)\n[![latest version](https://img.shields.io/pypi/v/musdb.svg)](https://pypi.python.org/pypi/musdb/)\n[![supported python versions](https://img.shields.io/pypi/pyversions/musdb.svg)](https://pypi.python.org/pypi/musdb/)\n\na python package to parse and process the [musdb18 dataset](https://sigsep.github.io/musdb), the largest open access dataset for music source separation. the tool was originally developed for the [music separation task](https://sisec18.unmix.app) as part of the [signal separation evaluation campaign (sisec)](https://sisec.inria.fr/). \n\n## getting the data\n\n`musdb` comes with 7 seconds excerpts (automatically downloaded) of the full dataset for quick evaluation or prototyping. the full dataset, however, needs to be downloaded [via zenodo](https://zenodo.org/record/1117372) and stored (unzipped) separately.\n\n> the dataset is hosted on zenodo and requires that users request access, since the tracks can only be used for academic purposes. we manually check this requests. please do not fill the form multiple times, it usually takes as less than a day to give you access.\n\n## installation and setup\n\n### package installation\n\nyou can install `musdb` using pip:\n\n```bash\npip install musdb\n```\n\n### using stems (default)\n\n<img src=\"https://sigsep.github.io/assets/img/stems.a411b49d.png\" width=\"300\"/>\n\n_musdb18_ comes encoded in [stems](http://www.stems-music.com/) which is a multitrack audio format that uses _lossy compression_. the `musdb` package, internally, relies on ffmpeg to decode the multi-stream files. for convenience, we developed a python package called [stempeg](https://github.com/faroit/stempeg) that allows to easily parse the stem files and decode them on-the-fly.\nwhen you install _musdb_ (which depends on _stempeg_), it is therefore necessary to also install the ffmpeg library. the installation may differ among operating systems and python distributions:\n\n* on [anaconda](https://anaconda.org), you can install ffmpeg using `conda install -c conda-forge ffmpeg`.\n\nalternatively you can install ffmpeg manually as follows:\n\n* on macos, using homebrew: `brew install ffmpeg`\n* on ubuntu/debian: `sudo apt-get install ffmpeg `\n\n#### using wav files (optional)\n\nif you want to use wav files (e.g. for faster audio decoding), `musdb` also supports parsing and processing pre-decoded pcm/wav files. `musdb` comes with the ability to convert a stems dataset into wav version. this script can be used from the command line by\n\n```\nmusdbconvert path/to/musdb-stems-root path/to/new/musdb-wav-root\n```\n\nif you don't want to use python for this, we also provide [docker based scripts](https://github.com/sigsep/sigsep-mus-io) to decode the dataset to wav files.\n\n__when you use the decoded musdb, use the `is_wav` parameter when initializing the dataset.__\n\n## usage\n\nthis package should nicely integrate with your existing python numpy, tensorflow or pytorch code. most of the steps to use musdb in your project will probably use the same first steps:\n\n### setting up musdb\n\nimport the `musdb` package in your main python function and iterate over the 7 seconds `musdb` tracks:\n\n```python\nimport musdb\nmus = musdb.db(download=true)\nmus[0].audio\n```\n\nto use the full dataset, set a dataset `root` directory \n\n```python\nmus = musdb.db(root=\"/path/to/musdb)\n```\n\nwhere `root` is the path to the musdb18 dataset root folder. the root parameter can also be overridden using a system environment variable. just ```export musdb_path=/path/to/musdb``` inside your bash environment. in that case no arguments would need to passed to `db()`.\n\n### iterate over musdb18 tracks\n\niterating over `musdb` and thus accessing the audio data is as simple as. lets assume, we have a supervised training method `train(x, y)` that takes the __mixture__ as input and the __vocals__ as output, we can simple use:\n\n```python\nfor track in mus:\n    train(track.audio, track.targets['vocals'].audio)\n```\n\n#### tracks properties\n\nthe ```track``` objects which makes it easy to process the audio and metadata in a pythonic way:\n\n* ```track.name```, the track name, consisting of `track.artist` and `track.title`.\n* ```track.path```, the absolute path of the mixture which might be handy to process with external applications.\n* ```track.audio```, stereo mixture as an numpy array of shape `(nb_samples, 2)`.\n* ```track.rate```, the sample rate of the mixture.\n* ```track.sources```, a dictionary of sources used for this track.\n* ```track.stems```, an numpy tensor of all five stereo sources of shape `(5, nb_samples, 2)`. the stems are always in the following order: `['mixture', 'drums', 'bass', 'other', 'vocals']`,\n* ```track.targets```, a dictionary of targets provided for this track.\nnote that for musdb, the sources and targets differ only in the existence of the `accompaniment`, which is the sum of all sources, except for the vocals. musdb supports the following targets: `['mixture', 'drums', 'bass', 'other', 'vocals', 'accompaniment', 'linear_mixture']`. note that some of the targets (such as __accompaniment__) are dynamically mixed on the fly.\n\n\n#### processing training and testing subsets separately\n\nwe provide subsets for _train_ and _test_ for machine learning methods:\n\n```python\nmus_train = musdb.db(subsets=\"train\")\nmus_test = musdb.db(subsets=\"test\")\n```\n\n#### use train / validation split\n\nif you want to access individual tracks, you can access the `mus` tracks list by its indices, e.g. `mus[2:]`. to foster reproducible research, we provide a fixed validation dataset.\n\n```python\nmus_train = musdb.db(subsets=\"train\", split='train')\nmus_valid = musdb.db(subsets=\"train\", split='valid')\n```\n\nthe list of validation tracks can be edited using the [`mus.setup['validation_tracks']`](https://github.com/sigsep/sigsep-mus-tools/blob/b283da5b8f24e84172a60a06bb8f3dacd57aa6cd/musdb/configs/mus.yaml) object.\n\n## training deep neural networks with `musdb`\n\nwriting an efficient dataset generator varies across different deep learning frameworks. a very simple n\u00e4ive generator that\n\n* draws random tracks with replacement\n* draws random chunks of fixed length with replacement\n\ncan be easily implemented using musdb's `track.chunk_start` and `track.chunk_duration` properties which efficiently seeks to the start sample (provided in seconds) and does not load the full audio into memory first.\n\n```python\nwhile true:\n    track = random.choice(mus.tracks)\n    track.chunk_duration = 5.0\n    track.chunk_start = random.uniform(0, track.duration - track.chunk_duration)\n    x = track.audio.t\n    y = track.targets['vocals'].audio.t\n    yield x, y\n```\n\n### evaluation\n\nto evaluate a `musdb` track using the popular bsseval metrics, you can use our [museval](https://github.com/sigsep/sigsep-mus-eval) package. after `pip install museval` evaluation of a single `track`, can be done by\n\n```python\nimport museval\n# provide an estimate\nestimates = {\n    'vocals': np.random.random(track.audio.shape),\n    'accompaniment': np.random.random(track.audio.shape)\n}\n# evaluates using bsseval v4, and writes results to `./eval`\nprint(museval.eval_mus_track(track, estimates, output_dir=\"./eval\")\n```\n\n## baselines\n\n### oracles\nfor oracle methods, please check out our [open unmix oracle separation methods](https://github.com/sigsep/sigsep-mus-oracle).\nthis will show you how oracle performance is computed and gives indications for an upper bound for the quality of the separation.\n\n### open-unmix\n\nwe provide a state-of-the-art deep learning based separation method for pytorch, tensorflow and nnable at [open.unmix.app](https://open.unmix.app).\n\n## frequently asked questions\n\n##### the mixture is not exactly the sum of its sources, is that intended?\n\nthis is not a bug. since we adopted the stems format, we used aac compression. here the residual noise of the mixture is different from the sum of the residual noises of the sources. this difference does not significantly affect separation performance.\n\n```python\ntrack.targets['linear_mixture'].audio\n```\n\n## citations\n\n<details><summary>if you use the musdb dataset for your research - cite the musdb18 dataset</summary>\n<p>\n\n```latex\n@misc{musdb18,\n  author       = {rafii, zafar and\n                  liutkus, antoine and\n                  fabian-robert st{\\\"o}ter and\n                  mimilakis, stylianos ioannis and\n                  bittner, rachel},\n  title        = {the {musdb18} corpus for music separation},\n  month        = dec,\n  year         = 2017,\n  doi          = {10.5281/zenodo.1117372},\n  url          = {https://doi.org/10.5281/zenodo.1117372}\n}\n```\n\n</p>\n</details>\n\n\n<details><summary>if compare your results with sisec 2018 participants - cite the sisec 2018 lva/ica paper</summary>\n<p>\n\n```latex\n@inproceedings{sisec18,\n  author=\"st{\\\"o}ter, fabian-robert and liutkus, antoine and ito, nobutaka\",\n  title=\"the 2018 signal separation evaluation campaign\",\n  booktitle=\"latent variable analysis and signal separation:\n  14th international conference, lva/ica 2018, surrey, uk\",\n  year=\"2018\",\n  pages=\"293--305\"\n}\n```\n\n</p>\n</details>\n\n## how to contribute\n\n_musdb_ is a community focused project, we therefore encourage the community to submit bug-fixes and requests for technical support through [github issues](https://github.com/sigsep/sigsep-mus-db/issues/new). for more details of how to contribute, please follow our [`contributing.md`](contributing.md). \n\n## license\n\nmit\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "musdb",
+  "package_url": "https://pypi.org/project/musdb/",
+  "project_url": "https://pypi.org/project/musdb/",
+  "project_urls": {
+    "Homepage": "https://github.com/sigsep/sigsep-mus-db"
+  },
+  "release_url": "https://pypi.org/project/musdb/0.4.2/",
+  "requires_dist": [
+    "pytest ; extra == 'tests'",
+    "numpy (>=1.7)",
+    "stempeg (>=0.2.3)",
+    "pyaml",
+    "tqdm",
+    "check-manifest ; extra == 'dev'",
+    "sphinx ; extra == 'docs'",
+    "sphinx-rtd-theme ; extra == 'docs'",
+    "recommonmark ; extra == 'docs'"
+  ],
+  "requires_python": "",
+  "summary": "python parser for the sigsep musdb18 dataset",
+  "version": "0.4.2",
+  "releases": [],
+  "developers": [
+    "fabian",
+    "mail@faroit.com"
+  ],
+  "kwds": "musdb musdb18 musdb_path _musdb18_ _musdb_",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_musdb",
+  "homepage": "https://github.com/sigsep/sigsep-mus-db",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_check_manifest",
+    "pypi_numpy",
+    "pypi_pyaml",
+    "pypi_pytest",
+    "pypi_recommonmark",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_stempeg",
+    "pypi_tqdm"
+  ]
+}

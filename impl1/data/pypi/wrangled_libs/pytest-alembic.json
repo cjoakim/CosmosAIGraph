@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "framework :: pytest",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "![github actions build](https://github.com/schireson/pytest-alembic/actions/workflows/build.yml/badge.svg)\n[![codecov](https://codecov.io/gh/schireson/pytest-alembic/branch/master/graph/badge.svg)](https://codecov.io/gh/schireson/pytest-alembic)\n[![documentation status](https://readthedocs.org/projects/pytest-alembic/badge/?version=latest)](https://pytest-alembic.readthedocs.io/en/latest/?badge=latest)\n\nsee the full documentation [here](https://pytest-alembic.readthedocs.io/en/latest/).\n\n## introduction\n\na pytest plugin to test alembic migrations (with default tests) and\nwhich enables you to write tests specific to your migrations.\n\n```bash\n$ pip install pytest-alembic\n$ pytest --test-alembic\n\n...\n::pytest_alembic/tests/model_definitions_match_ddl <- . passed           [ 25%]\n::pytest_alembic/tests/single_head_revision <- . passed                  [ 50%]\n::pytest_alembic/tests/up_down_consistency <- . passed                   [ 75%]\n::pytest_alembic/tests/upgrade <- . passed                               [100%]\n\n============================== 4 passed in 2.32s ===============================\n```\n\n## the pitch\n\nhave you ever merged a change to your models and you forgot to generate\na migration?\n\nhave you ever written a migration only to realize that it fails when\nthere\u2019s data in the table?\n\nhave you ever written a **perfect** migration only to merge it and later\nfind out that someone else merged also merged a migration and your cd is\nnow broken!?\n\n`pytest-alembic` is meant to (with a little help) solve all these\nproblems and more. note, due to a few different factors, there **may**\nbe some [minimal required\nsetup](http://pytest-alembic.readthedocs.io/en/latest/setup.html);\nhowever most of it is boilerplate akin to the setup required for alembic\nitself.\n\n### built-in tests\n\n- **test_single_head_revision**\n\n  assert that there only exists one head revision.\n\n  we\u2019re not sure what realistic scenario involves a diverging history to\n  be desirable. we have only seen it be the result of uncaught merge\n  conflicts resulting in a diverged history, which lazily breaks during\n  deployment.\n\n- **test_upgrade**\n\n  assert that the revision history can be run through from base to head.\n\n- **test_model_definitions_match_ddl**\n\n  assert that the state of the migrations matches the state of the\n  models describing the ddl.\n\n  in general, the set of migrations in the history should coalesce into\n  ddl which is described by the current set of models. therefore, a call\n  to `revision --autogenerate` should always generate an empty migration\n  (e.g.\u00a0find no difference between your database (i.e.\u00a0migrations\n  history) and your models).\n\n- **test_up_down_consistency**\n\n  assert that all downgrades succeed.\n\n  while downgrading may not be lossless operation data-wise, there\u2019s a\n  theory of database migrations that says that the revisions in\n  existence for a database should be able to go from an entirely blank\n  schema to the finished product, and back again.\n\n- [experimental\n  tests](http://pytest-alembic.readthedocs.io/en/latest/experimental_tests.html)\n\n  - all_models_register_on_metadata\n\n    assert that all defined models are imported statically.\n\n    prevents scenarios in which the minimal import of your models in your `env.py`\n    does not import all extant models, leading alembic to not autogenerate all\n    your models, or (worse!) suggest the deletion of tables which should still exist.\n\n  - downgrade_leaves_no_trace\n\n    assert that there is no difference between the state of the database pre/post downgrade.\n\n    in essence this is a much more strict version of `test_up_down_consistency`,\n    where the state of a metadata before and after a downgrade are identical as\n    far as alembic (autogenerate) is concerned.\n\n  these tests will need to be enabled manually because their semantics or api are\n  not yet guaranteed to stay the same. see the linked docs for more details!\n\nlet us know if you have any ideas for more built-in tests which would be\ngenerally useful for most alembic histories!\n\n### custom tests\n\nfor more information, see the docs for [custom\ntests](http://pytest-alembic.readthedocs.io/en/latest/custom_tests.html)\n(example below) or [custom static\ndata](http://pytest-alembic.readthedocs.io/en/latest/custom_data.html)\n(to be inserted automatically before a given revision).\n\nsometimes when writing a particularly gnarly data migration, it helps to\nbe able to practice a little timely tdd, since there\u2019s always the\npotential you\u2019ll trash your actual production data.\n\nwith `pytest-alembic`, you can write tests directly, in the same way\nthat you would normally, through the use of the `alembic_runner`\nfixture.\n\n```python\ndef test_gnarly_migration_xyz123(alembic_engine, alembic_runner):\n    # migrate up to, but not including this new migration\n    alembic_runner.migrate_up_before('xyz123')\n\n    # perform some very specific data setup, because this migration is sooooo complex.\n    # ...\n    alembic_engine.execute(table.insert(id=1, name='foo'))\n\n    alembic_runner.migrate_up_one()\n```\n\n`alembic_runner` has a number of methods designed to make it convenient\nto change the state of your database up, down, and all around.\n\n## installing\n\n```bash\npip install \"pytest-alembic\"\n```\n",
+  "docs_url": null,
+  "keywords": "pytest,sqlalchemy,alembic,migration,revision",
+  "license": "mit",
+  "name": "pytest-alembic",
+  "package_url": "https://pypi.org/project/pytest-alembic/",
+  "project_url": "https://pypi.org/project/pytest-alembic/",
+  "project_urls": {
+    "Homepage": "https://github.com/schireson/pytest-alembic",
+    "Repository": "https://github.com/schireson/pytest-alembic"
+  },
+  "release_url": "https://pypi.org/project/pytest-alembic/0.10.7/",
+  "requires_dist": [
+    "pytest (>=6.0)",
+    "alembic",
+    "sqlalchemy"
+  ],
+  "requires_python": ">=3.6,<4",
+  "summary": "a pytest plugin for verifying alembic migrations.",
+  "version": "0.10.7",
+  "releases": [],
+  "developers": [
+    "dan_cardin",
+    "ddcardin@gmail.com"
+  ],
+  "kwds": "pytest_alembic pytest alembic_runner alembic_engine alembic",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_alembic",
+  "homepage": "https://github.com/schireson/pytest-alembic",
+  "release_count": 30,
+  "dependency_ids": [
+    "pypi_alembic",
+    "pypi_pytest",
+    "pypi_sqlalchemy"
+  ]
+}

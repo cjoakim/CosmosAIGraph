@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "# `etuples`\n[![tests](https://github.com/pythological/etuples/actions/workflows/tests.yml/badge.svg)](https://github.com/pythological/etuples/actions/workflows/tests.yml) [![coverage status](https://coveralls.io/repos/github/pythological/etuples/badge.svg?branch=main)](https://coveralls.io/github/pythological/etuples?branch=main) [![pypi](https://img.shields.io/pypi/v/etuples)](https://pypi.org/project/etuples/)\n\npython [s-expression](https://en.wikipedia.org/wiki/s-expression) emulation using tuple-like objects.\n\n## examples\n\n`etuple`s are like tuples:\n\n```python\n>>> from operator import add\n>>> from etuples import etuple, etuplize\n\n>>> et = etuple(add, 1, 2)\n>>> et\nexpressiontuple((<built-in function add>, 1, 2))\n\n>>> from ipython.lib.pretty import pprint\n>>> pprint(et)\ne(<function _operator.add(a, b, /)>, 1, 2)\n\n>>> et[0:2]\nexpressiontuple((<built-in function add>, 1))\n```\n\n`etuple`s can also be evaluated:\n\n```python\n>>> et.evaled_obj\n3\n```\n\nevaluated `etuple`s are cached:\n```python\n>>> et = etuple(add, \"a\", \"b\")\n>>> et.evaled_obj\n'ab'\n\n>>> et.evaled_obj is et.evaled_obj\ntrue\n```\n\nreconstructed `etuple`s and their evaluation results are preserved across tuple operations:\n```python\n>>> et_new = (et[0],) + et[1:]\n>>> et_new is et\ntrue\n>>> et_new.evaled_obj is et.evaled_obj\ntrue\n```\n\n`rator`, `rands`, and `apply` will return the operator, the operands, and apply the operation to the operands:\n```python\n>>> from etuples import rator, rands, apply\n>>> et = etuple(add, 1, 2)\n\n>>> rator(et)\n<built-in function add>\n\n>>> rands(et)\nexpressiontuple((1, 2))\n\n>>> apply(rator(et), rands(et))\n3\n```\n\n\n`rator` and `rands` are [`multipledispatch`](https://github.com/mrocklin/multipledispatch) functions that can be extended to handle arbitrary objects:\n```python\nfrom etuples.core import expressiontuple\nfrom collections.abc import sequence\n\n\nclass node:\n    def __init__(self, rator, rands):\n        self.rator, self.rands = rator, rands\n\n    def __eq__(self, other):\n        return self.rator == other.rator and self.rands == other.rands\n\n\nclass operator:\n    def __init__(self, op_name):\n        self.op_name = op_name\n\n    def __call__(self, *args):\n        return node(operator(self.op_name), args)\n\n    def __repr__(self):\n        return self.op_name\n\n    def __eq__(self, other):\n        return self.op_name == other.op_name\n\n\nrands.add((node,), lambda x: x.rands)\nrator.add((node,), lambda x: x.rator)\n\n\n@apply.register(operator, (sequence, expressiontuple))\ndef apply_operator(rator, rands):\n    return node(rator, rands)\n```\n\n```python\n>>> mul_op, add_op = operator(\"*\"), operator(\"+\")\n>>> mul_node = node(mul_op, [1, 2])\n>>> add_node = node(add_op, [mul_node, 3])\n```\n\n`etuplize` will convert non-tuple objects into their corresponding `etuple` form:\n```python\n>>> et = etuplize(add_node)\n>>> pprint(et)\ne(+, e(*, 1, 2), 3)\n\n>>> et.evaled_obj is add_node\ntrue\n```\n\n`etuplize` can also do shallow object-to-`etuple` conversions:\n```python\n>>> et = etuplize(add_node, shallow=true)\n>>> pprint(et)\ne(+, <__main__.node at 0x7f347361a080>, 3)\n```\n\n## installation\n\nusing `pip`:\n```bash\npip install etuples\n```\n\n### development\n\nfirst obtain the project source:\n```bash\ngit clone git@github.com:pythological/etuples.git\n```\n\ncreate a virtual environment and install the development dependencies:\n```bash\n$ pip install -r requirements.txt\n```\n\nset up `pre-commit` hooks:\n\n```bash\n$ pre-commit install --install-hooks\n```\n\ntests can be run with the provided `makefile`:\n```bash\nmake check\n```",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "etuples",
+  "package_url": "https://pypi.org/project/etuples/",
+  "project_url": "https://pypi.org/project/etuples/",
+  "project_urls": {
+    "Homepage": "http://github.com/pythological/etuples"
+  },
+  "release_url": "https://pypi.org/project/etuples/0.3.9/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "python s-expression emulation using tuple-like objects.",
+  "version": "0.3.9",
+  "releases": [],
+  "developers": [
+    "brandon_t",
+    "brandonwillard+etuples@gmail.com"
+  ],
+  "kwds": "tuples python tuple etuples apply_operator",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_etuples",
+  "homepage": "http://github.com/pythological/etuples",
+  "release_count": 16,
+  "dependency_ids": []
+}

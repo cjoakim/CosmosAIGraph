@@ -1,0 +1,60 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "[![image](https://img.shields.io/pypi/pyversions/typish.svg)](https://pypi.org/project/typish/)\n[![downloads](https://pepy.tech/badge/typish)](https://pepy.tech/project/typish)\n[![pypi version](https://badge.fury.io/py/typish.svg)](https://badge.fury.io/py/typish)\n[![codecov](https://codecov.io/gh/ramonhagenaars/typish/branch/master/graph/badge.svg)](https://codecov.io/gh/ramonhagenaars/typish)\n[![scrutinizer code quality](https://scrutinizer-ci.com/g/ramonhagenaars/typish/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ramonhagenaars/typish/?branch=master)\n\n# typish\n\n* functions for thorough checks on types\n* instance checks considering generics\n* typesafe duck-typing\n\n## example\n\n```python\n>>> from typing import iterable\n>>> from typish import instance_of\n>>> instance_of([1, 2, 3], iterable[int])\ntrue\n```\n\n## installation\n\n```\npip install typish\n```\n\n## content\n\n### functions\n\n| function | description\n|---|---\n| ``subclass_of(cls: type, *args: type) -> bool`` | returns whether ``cls`` is a sub type of *all* types in ``args``\n| ``instance_of(obj: object, *args: type) -> bool`` | returns whether ``cls`` is an instance of *all* types in ``args``\n| ``get_origin(t: type) -> type`` | return the \"origin\" of a generic type. e.g. ``get_origin(list[str])`` gives ``list``.\n| ``get_args(t: type) -> typing.tuple[type, ...]`` | return the arguments of a generic type. e.g. ``get_args(list[str])`` gives ``(str, )``.\n| ``get_alias(cls: t) -> typing.optional[t]`` | return the ``typing`` alias for a type. e.g ``get_alias(list)`` gives ``list``.\n| ``get_type(inst: t, use_union: bool = false) -> typing.type[t]`` | return the (generic) type of an instance. e.g. a list of ints will give ``list[int]``.\n| ``common_ancestor(*args: object) -> type`` | return the closest common ancestor of the given instances.\n| ``common_ancestor_of_types(*args: type) -> type`` | return the closest common ancestor of the given classes.\n| ``get_args_and_return_type(hint: typing.type[typing.callable]) -> typing.tuple[typing.optional[typing.tuple[type]], typing.optional[type]]`` | get the argument types and the return type of a callable type hint (e.g. ``callable[[int], str]``). \n| ``get_type_hints_of_callable(func: typing.callable) -> typing.dict[str, type]`` | return the type hints of the parameters of the given callable.\n| ``is_type_annotation(item: typing.any) -> bool`` | returns whether ``item`` is a ``type`` or a ``typing`` type.\n| ``is_from_typing(cls: type) -> bool`` | returns whether ``cls`` is from the ``typing`` module.\n| ``is_optional_type(cls: type) -> bool`` | returns whether ``cls`` is considered to be an optional type.\n| ``get_mro(obj: typing.any) -> typing.tuple[type, ...]`` | wrapper around ``getmro`` from ``inspect`` to also support ``typing`` types.\n\n\n### types\n\n| type | description\n|---|---|\n| ``t`` | a generic type var.\n| ``kt`` | a type var for keys in a dict.\n| ``vt`` | a type var for values in a dict.\n| ``empty`` | the type of emptiness (= ``parameter.empty``).\n| ``unknown`` | the type of something unknown.\n| ``module`` | the type of a module.\n| ``nonetype`` | the type of ``none``.\n| ``ellipsistype`` | the type of ``...``.\n\n### decorators\n\n#### hintable\nthis decorator allows one to capture the type hint of a variable that calls a function. if no hint is provided, `none` \nis passed as a value for `hint`.\n\njust remember: with great power comes great responsibility. use this functionality wisely. you may want to make sure \nthat if you hinted a variable with a certain type, your `hintable` function does indeed return a value of that type.\n\n```python\n@hintable\ndef cast(arg: any, hint: type[t]) -> t:\n    return hint(arg)\n\n# the type hint on x is passed to cast:\nx: int = cast('42')\n\n# it works with mypy hints as well:\ny = cast('42')  # type: int\n\n# not something you would normally do, but the type hint takes precedence:\nz: int = cast('42')  # type: str\n```\n\n### classes\n\n#### subscriptabletype\nthis metaclass allows a type to become subscriptable.\n\n*example:*\n```python\nclass myclass(metaclass=subscriptabletype):\n    ...\n```\nnow you can do:\n```python\nmyclass2 = myclass['some args']\nprint(myclass2.__args__)\nprint(myclass2.__origin__)\n```\noutput:\n```\nsome args\n<class '__main__.myclass'>\n```\n\n#### something\ndefine an interface with ``typish.something``.\n\n*example:*\n```python\nduck = something['walk': callable[[], none], \n                 'quack': callable[[], none]]\n```\n\nanything that has the attributes defined in ``something`` with the right type is \nconsidered an instance of that ``something`` (classes, objects, even modules...).\n\nthe builtin ``isinstance`` is supported as well as ``typish.instance_of``.\n\n#### clsdict\na dictionary that uses instance checking to determine which value to return.\nit only accepts types as keys.\n\nthis is particularly useful when a function accepts multiple types for an \nargument and you want to split the implementation into separate functions.\n\n*example:* \n```python\n\ndef _handle_str(item):\n    ...\n\ndef _handle_int(item):\n    ...\n\ndef func(item):\n    # suppose item can be a string or an int, you can use clsdict to\n    # pick a handler function.\n\n    cd = clsdict({\n        str: _handle_str,\n        int: _handle_int,\n    })\n\n    handler = cd[item]  # pick the right handler.\n    handler(item)       # call that handler.\n```\n\n#### clsfunction\na callable that uses `clsdict` to call the right function.\nbelow is the same example as above, but slightly modified in \nthat it uses `clsfunction`.\n\n*example:*\n\n```python\ndef _handle_str(item):\n    ...\n\n\ndef _handle_int(item):\n    ...\n\n\ndef func(item):\n    # suppose item can be a string or an int, you can use clsfunction to\n    # delegate to the right handler function.\n\n    function = clsfunction({\n        str: _handle_str,\n        int: _handle_int,\n    })\n\n    function(item)\n\n```\n\n#### literal\na backwards compatible variant of typing.literal (python3.8). when importing \n`literal` from `typish`, you will get the `typing.literal` if it is available.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "typish",
+  "package_url": "https://pypi.org/project/typish/",
+  "project_url": "https://pypi.org/project/typish/",
+  "project_urls": {
+    "Homepage": "https://github.com/ramonhagenaars/typish"
+  },
+  "release_url": "https://pypi.org/project/typish/1.9.3/",
+  "requires_dist": [
+    "numpy ; extra == 'test'",
+    "nptyping (>=1.3.0) ; extra == 'test'",
+    "pycodestyle ; extra == 'test'",
+    "pylint ; extra == 'test'",
+    "mypy ; extra == 'test'",
+    "pytest ; extra == 'test'",
+    "coverage ; extra == 'test'",
+    "codecov ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "functionality for types",
+  "version": "1.9.3",
+  "releases": [],
+  "developers": [
+    "ramon.hagenaars@gmail.com",
+    "ramon_hagenaars"
+  ],
+  "kwds": "badge badges code codecov svg",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_typish",
+  "homepage": "https://github.com/ramonhagenaars/typish",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_codecov",
+    "pypi_coverage",
+    "pypi_mypy",
+    "pypi_nptyping",
+    "pypi_numpy",
+    "pypi_pycodestyle",
+    "pypi_pylint",
+    "pypi_pytest"
+  ]
+}

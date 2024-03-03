@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http"
+  ],
+  "description": "daphne\n======\n\n.. image:: https://img.shields.io/pypi/v/daphne.svg\n    :target: https://pypi.python.org/pypi/daphne\n\ndaphne is a http, http2 and websocket protocol server for\n`asgi <https://github.com/django/asgiref/blob/main/specs/asgi.rst>`_ and\n`asgi-http <https://github.com/django/asgiref/blob/main/specs/www.rst>`_,\ndeveloped to power django channels.\n\nit supports automatic negotiation of protocols; there's no need for url\nprefixing to determine websocket endpoints versus http endpoints.\n\n\nrunning\n-------\n\nsimply point daphne to your asgi application, and optionally\nset a bind address and port (defaults to localhost, port 8000)::\n\n    daphne -b 0.0.0.0 -p 8001 django_project.asgi:application\n\nif you intend to run daphne behind a proxy server you can use unix\nsockets to communicate between the two::\n\n    daphne -u /tmp/daphne.sock django_project.asgi:application\n\nif daphne is being run inside a process manager, you might\nwant it to bind to a file descriptor passed down from a parent process.\nto achieve this you can use the --fd flag::\n\n    daphne --fd 5 django_project.asgi:application\n\nif you want more control over the port/socket bindings you can fall back to\nusing `twisted's endpoint description strings\n<http://twistedmatrix.com/documents/current/api/twisted.internet.endpoints.html#serverfromstring>`_\nby using the `--endpoint (-e)` flag, which can be used multiple times.\nthis line would start a ssl server on port 443, assuming that `key.pem` and `crt.pem`\nexist in the current directory (requires pyopenssl to be installed)::\n\n    daphne -e ssl:443:privatekey=key.pem:certkey=crt.pem django_project.asgi:application\n\nendpoints even let you use the ``txacme`` endpoint syntax to get automatic certificates\nfrom let's encrypt, which you can read more about at http://txacme.readthedocs.io/en/stable/.\n\nto see all available command line options run daphne with the ``-h`` flag.\n\n\nhttp/2 support\n--------------\n\ndaphne supports terminating http/2 connections natively. you'll\nneed to do a couple of things to get it working, though. first, you need to\nmake sure you install the twisted ``http2`` and ``tls`` extras::\n\n    pip install -u 'twisted[tls,http2]'\n\nnext, because all current browsers only support http/2 when using tls, you will\nneed to start daphne with tls turned on, which can be done using the twisted endpoint syntax::\n\n    daphne -e ssl:443:privatekey=key.pem:certkey=crt.pem django_project.asgi:application\n\nalternatively, you can use the ``txacme`` endpoint syntax or anything else that\nenables tls under the hood.\n\nyou will also need to be on a system that has **openssl 1.0.2 or greater**; if you are\nusing ubuntu, this means you need at least ubuntu 16.04.\n\nnow, when you start up daphne, it should tell you this in the log::\n\n    2017-03-18 19:14:02,741 info     starting server at ssl:port=8000:privatekey=privkey.pem:certkey=cert.pem, channel layer django_project.asgi:channel_layer.\n    2017-03-18 19:14:02,742 info     http/2 support enabled\n\nthen, connect with a browser that supports http/2, and everything should be\nworking. it's often hard to tell that http/2 is working, as the log daphne gives you\nwill be identical (it's http, after all), and most browsers don't make it obvious\nin their network inspector windows. there are browser extensions that will let\nyou know clearly if it's working or not.\n\ndaphne only supports \"normal\" requests over http/2 at this time; there is not\nyet support for extended features like server push. it will, however, result in\nmuch faster connections and lower overheads.\n\nif you have a reverse proxy in front of your site to serve static files or\nsimilar, http/2 will only work if that proxy understands and passes through the\nconnection correctly.\n\n\nroot path (script_name)\n-----------------------\n\nin order to set the root path for daphne, which is the equivalent of the\nwsgi ``script_name`` setting, you have two options:\n\n* pass a header value ``daphne-root-path``, with the desired root path as a\n  urlencoded ascii value. this header will not be passed down to applications.\n\n* set the ``--root-path`` commandline option with the desired root path as a\n  urlencoded ascii value.\n\nthe header takes precedence if both are set. as with ``script_alias``, the value\nshould start with a slash, but not end with one; for example::\n\n    daphne --root-path=/forum django_project.asgi:application\n\n\npython support\n--------------\n\ndaphne requires python 3.7 or later.\n\n\ncontributing\n------------\n\nplease refer to the\n`main channels contributing docs <https://github.com/django/channels/blob/main/contributing.rst>`_.\n\nto run tests, make sure you have installed the ``tests`` extra with the package::\n\n    cd daphne/\n    pip install -e '.[tests]'\n    pytest\n\n\nmaintenance and security\n------------------------\n\nto report security issues, please contact security@djangoproject.com. for gpg\nsignatures and more security process information, see\nhttps://docs.djangoproject.com/en/dev/internals/security/.\n\nto report bugs or request new features, please open a new github issue.\n\nthis repository is part of the channels project. for the shepherd and maintenance team, please see the\n`main channels readme <https://github.com/django/channels/blob/main/readme.rst>`_.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "daphne",
+  "package_url": "https://pypi.org/project/daphne/",
+  "project_url": "https://pypi.org/project/daphne/",
+  "project_urls": {
+    "Homepage": "https://github.com/django/daphne"
+  },
+  "release_url": "https://pypi.org/project/daphne/4.0.0/",
+  "requires_dist": [
+    "twisted[tls] (>=22.4)",
+    "autobahn (>=22.4.2)",
+    "asgiref (<4,>=3.5.2)",
+    "hypothesis ; extra == 'tests'",
+    "pytest ; extra == 'tests'",
+    "pytest-asyncio ; extra == 'tests'",
+    "django ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "django asgi (http/websocket) server",
+  "version": "4.0.0",
+  "releases": [],
+  "developers": [
+    "django_software_foundation",
+    "foundation@djangoproject.com"
+  ],
+  "kwds": "django asgi websocket djangoproject django_project",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_daphne",
+  "homepage": "https://github.com/django/daphne",
+  "release_count": 57,
+  "dependency_ids": [
+    "pypi_asgiref",
+    "pypi_autobahn",
+    "pypi_django",
+    "pypi_hypothesis",
+    "pypi_pytest",
+    "pypi_pytest_asyncio",
+    "pypi_twisted"
+  ]
+}

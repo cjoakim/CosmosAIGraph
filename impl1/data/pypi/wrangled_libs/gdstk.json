@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: manufacturing",
+    "intended audience :: science/research",
+    "license :: osi approved :: boost software license 1.0 (bsl-1.0)",
+    "operating system :: os independent",
+    "programming language :: c++",
+    "programming language :: python",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: scientific/engineering :: electronic design automation (eda)",
+    "typing :: typed"
+  ],
+  "description": "# gdstk\n\n[![boost software license - version 1.0](https://img.shields.io/github/license/heitzmann/gdstk.svg)](https://www.boost.org/license_1_0.txt)\n[![tests runner](https://github.com/heitzmann/gdstk/actions/workflows/testing.yml/badge.svg)](https://github.com/heitzmann/gdstk/actions/workflows/testing.yml)\n[![publish docs](https://github.com/heitzmann/gdstk/actions/workflows/docs.yml/badge.svg)](https://github.com/heitzmann/gdstk/actions/workflows/docs.yml)\n[![pypi packages](https://github.com/heitzmann/gdstk/actions/workflows/pypi-packages.yml/badge.svg)](https://github.com/heitzmann/gdstk/actions/workflows/pypi-packages.yml)\n[![downloads](https://img.shields.io/github/downloads/heitzmann/gdstk/total.svg)](https://github.com/heitzmann/gdstk/releases)\n\ngdstk (gdsii tool kit) is a c++ library for creation and manipulation of gdsii and oasis files.\nit is also available as a python module meant to be a successor to [gdspy](https://github.com/heitzmann/gdspy).\n\nkey features for the creation of complex cad layouts are included:\n\n* boolean operations on polygons (and, or, not, xor) based on clipping algorithm\n* polygon offset (inward and outward rescaling of polygons)\n* efficient point-in-polygon solutions for large array sets\n\ntypical applications of gdstk are in the fields of electronic chip design, planar lightwave circuit design, and mechanical engineering.\n\n\n## documentation\n\nthe complete documentation is available [here](http://heitzmann.github.io/gdstk).\n\nthe source files can be found in the _docs_ directory.\n\n\n## installation\n\n### c++ library only\n\nthe c++ library is meant to be used by including it in your own source code.\n\nif you prefer to install a static library, the included _cmakelists.txt_ should be a good starting option (use `-dcmake_install_prefix=path` to control the installation path):\n\n```sh\ncmake -s . -b build\ncmake --build build --target install\n```\n\nthe library depends on [zlib](https://zlib.net/).\n\n### python wrapper\n\nthe python module can be installed via pip, conda or compiled directly from source.\nit depends on:\n\n* [zlib](https://zlib.net/)\n* [qhull](http://www.qhull.org/)\n* [cmake](https://cmake.org/)\n* [python](https://www.python.org/)\n* [numpy](https://numpy.org/)\n* [sphinx](https://www.sphinx-doc.org/), [read the docs theme](https://sphinx-rtd-theme.readthedocs.io/), and [sphinx inline tabs](https://sphinx-inline-tabs.readthedocs.io/) (to build the [documentation](http://heitzmann.github.io/gdstk))\n\n#### from pypi\n\nsimply run the following to install the package for the current user:\n\n```sh\npip install --user gdstk\n```\n\nor download and install the available wheels manually.\n\n#### conda\n\nwindows users are suggested to install via [conda](https://www.anaconda.com/) using the available [conda-forge recipe](https://github.com/conda-forge/gdstk-feedstock).\nthe recipe works on macos and linux as well.\n\nto install in a new conda environment:\n\n```sh\n# create a new conda environment named gdstk\nconda create -n gdstk -c conda-forge --strict-channel-priority\n# activate the new environment\nconda activate gdstk\n# install gdstk\nconda install gdstk\n```\n\nto use an existing environment, make sure it is configured to prioritize the conda-forge channel:\n\n```sh\n# configure the conda-forge channel\nconda config --env --add channels conda-forge\nconda config --env --set channel_priority strict\n# install gdstk\nconda install gdstk\n```\n\n#### from source\n\nthe module must be linked against zlib.\nthe included cmakelists.txt file can be used as a guide.\n\ninstallation from source should follow the usual method (there is no need to compile the static library beforehand):\n\n```sh\npython setup.py install\n```\n\n## support\n\nhelp support gdstk development by [donating via paypal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=jd2eue2wppbqq) or [sponsoring me on github](https://github.com/sponsors/heitzmann).\n\n\n## benchmarks\n\nthe _benchmarks_ directory contains a few tests to compare the performance gain of the python interface versus gdspy.\nthey are only for reference; the real improvement is heavily dependent on the type of layout and features used.\nif maximal performance is important, the library should be used directly from c++, without the python interface.\n\ntiming results were obtained with python 3.11 on an intel core i7-9750h @ 2.60 ghz\nthey represent the best average time to run each function out of 16 sets of 8 runs each.\n\n| benchmark        |   gdspy 1.6.13   |   gdstk 0.9.41   |   gain   |\n| :--------------- | :--------------: | :--------------: | :------: |\n| 10k_rectangles   |     80.2 ms      |     4.87 ms      |   16.5   |\n| 1k_circles       |      312 ms      |      239 ms      |   1.3    |\n| boolean-offset   |      187 \u03bcs      |     44.7 \u03bcs      |   4.19   |\n| bounding_box     |     36.7 ms      |      170 \u03bcs      |   216    |\n| curves           |     1.52 ms      |     30.9 \u03bcs      |   49.3   |\n| flatten          |      465 \u03bcs      |     8.17 \u03bcs      |   56.9   |\n| flexpath         |     2.88 ms      |     16.1 \u03bcs      |   178    |\n| flexpath-param   |      2.8 ms      |      585 \u03bcs      |   4.78   |\n| fracture         |      929 \u03bcs      |      616 \u03bcs      |   1.51   |\n| inside           |      161 \u03bcs      |      33 \u03bcs       |   4.88   |\n| read_gds         |     2.68 ms      |      94 \u03bcs       |   28.5   |\n| read_rawcells    |      363 \u03bcs      |     52.4 \u03bcs      |   6.94   |\n| robustpath       |      171 \u03bcs      |     8.68 \u03bcs      |   19.7   |\n\nmemory usage per object for 100000 objects:\n\n| object               |   gdspy 1.6.13   |   gdstk 0.9.41   | reduction |\n| :------------------- | :--------------: | :--------------: | :-------: |\n| rectangle            |      601 b       |      232 b       |    61%    |\n| circle (r = 10)      |     1.68 kb      |     1.27 kb      |    24%    |\n| flexpath segment     |     1.48 kb      |      439 b       |    71%    |\n| flexpath arc         |     2.26 kb      |     1.49 kb      |    34%    |\n| robustpath segment   |     2.89 kb      |      920 b       |    69%    |\n| robustpath arc       |     2.66 kb      |      920 b       |    66%    |\n| label                |      407 b       |      215 b       |    47%    |\n| reference            |      160 b       |      179 b       |    -12%   |\n| reference (array)    |      189 b       |      181 b       |     4%    |\n| cell                 |      430 b       |      229 b       |    47%    |\n",
+  "docs_url": null,
+  "keywords": "gdsii,oasis,cad,layout",
+  "license": "boost software license - version 1.0 - august 17th, 2003  permission is hereby granted, free of charge, to any person or organization obtaining a copy of the software and accompanying documentation covered by this license (the \"software\") to use, reproduce, display, distribute, execute, and transmit the software, and to prepare derivative works of the software, and to permit third-parties to whom the software is furnished to do so, all subject to the following:  the copyright notices in the software and this entire statement, including the above license grant, this restriction and the following disclaimer, must be included in all copies of the software, in whole or in part, and all derivative works of the software, unless such copies or derivative works are solely in the form of machine-executable object code generated by a source language processor.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, title and non-infringement. in no event shall the copyright holders or anyone distributing the software be liable for any damages or other liability, whether in contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software. ",
+  "name": "gdstk",
+  "package_url": "https://pypi.org/project/gdstk/",
+  "project_url": "https://pypi.org/project/gdstk/",
+  "project_urls": {
+    "changelog": "https://github.com/heitzmann/gdstk/blob/main/CHANGELOG.md",
+    "documentation": "https://heitzmann.github.io/gdstk/",
+    "repository": "https://github.com/heitzmann/gdstk"
+  },
+  "release_url": "https://pypi.org/project/gdstk/0.9.48/",
+  "requires_dist": [
+    "numpy",
+    "typing-extensions ; python_version < \"3.11\"",
+    "sphinx ; extra == 'docs'",
+    "sphinx-rtd-theme ; extra == 'docs'",
+    "sphinx-inline-tabs ; extra == 'docs'",
+    "matplotlib ; extra == 'docs'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "python module for creation and manipulation of gdsii files.",
+  "version": "0.9.48",
+  "releases": [],
+  "developers": [
+    "heitzmann@gmail.com"
+  ],
+  "kwds": "gdstk documentation workflows gdspy yml",
+  "license_kwds": "license boost copyright software infringement",
+  "libtype": "pypi",
+  "id": "pypi_gdstk",
+  "homepage": "",
+  "release_count": 34,
+  "dependency_ids": [
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_sphinx",
+    "pypi_sphinx_inline_tabs",
+    "pypi_sphinx_rtd_theme",
+    "pypi_typing_extensions"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "classifiers": [],
+  "description": "cligj\n======\n\n.. image:: https://travis-ci.com/mapbox/cligj.svg\n   :target: https://travis-ci.com/mapbox/cligj\n\n.. image:: https://coveralls.io/repos/mapbox/cligj/badge.png?branch=master\n   :target: https://coveralls.io/r/mapbox/cligj?branch=master\n\ncommon arguments and options for geojson processing commands, using click.\n\n`cligj` is for python developers who create command line interfaces for geospatial data.\n`cligj` allows you to quickly build consistent, well-tested and interoperable clis for handling geojson.\n\n\narguments\n---------\n\n``files_in_arg``\nmultiple files\n\n``files_inout_arg``\nmultiple files, last of which is an output file.\n\n``features_in_arg``\ngeojson features input which accepts multiple representations of geojson features\nand returns the input data as an iterable of geojson feature-like dictionaries\n\noptions\n--------\n\n``verbose_opt``\n\n``quiet_opt``\n\n``format_opt``\n\njson formatting options\n~~~~~~~~~~~~~~~~~~~~~~~\n\n``indent_opt``\n\n``compact_opt``\n\ncoordinate precision option\n~~~~~~~~~~~~~~~~~~~~~~~~~~~\n``precision_opt``\n\ngeographic (default), projected, or mercator switch\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n``projection_geographic_opt``\n\n``projection_projected_opt``\n\n``projection_mercator_opt``\n\nfeature collection or feature sequence switch\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n``sequence_opt``\n\n``use_rs_opt``\n\ngeojson output mode option\n~~~~~~~~~~~~~~~~~~~~~~~~~~\n``geojson_type_collection_opt``\n\n``geojson_type_feature_opt``\n\n``def geojson_type_bbox_opt``\n\nexample\n-------\n\nhere's an example of a command that writes out geojson features as a collection\nor, optionally, a sequence of individual features. since most software that\nreads and writes geojson expects a text containing a single feature collection,\nthat's the default, and a lf-delimited sequence of texts containing one geojson\nfeature each is a feature that is turned on using the ``--sequence`` option.\nto write sequences of feature texts that conform to the `geojson text sequences\nstandard <https://tools.ietf.org/html/rfc8142>`__ (and might contain\npretty-printed json) with the ascii record separator (0x1e) as a delimiter, use\nthe ``--rs`` option\n\n.. warning:: future change warning\n   geojson sequences (`--sequence`), not collections (`--no-sequence`), will be\n   the default in version 1.0.0.\n\n\n.. code-block:: python\n\n    import click\n    import cligj\n    import json\n\n    def process_features(features):\n        for feature in features:\n            # todo process feature here\n            yield feature\n\n    @click.command()\n    @cligj.features_in_arg\n    @cligj.sequence_opt\n    @cligj.use_rs_opt\n    def pass_features(features, sequence, use_rs):\n        if sequence:\n            for feature in process_features(features):\n                if use_rs:\n                    click.echo(u'\\x1e', nl=false)\n                click.echo(json.dumps(feature))\n        else:\n            click.echo(json.dumps(\n                {'type': 'featurecollection',\n                 'features': list(process_features(features))}))\n\non the command line, the generated help text explains the usage\n\n.. code-block:: console\n\n    usage: pass_features [options] features...\n\n    options:\n    --sequence / --no-sequence  write a lf-delimited sequence of texts\n                                containing individual objects or write a single\n                                json text containing a feature collection object\n                                (the default).\n    --rs / --no-rs              use rs (0x1e) as a prefix for individual texts\n                                in a sequence as per http://tools.ietf.org/html\n                                /draft-ietf-json-text-sequence-13 (default is\n                                false).\n    --help                      show this message and exit.\n\nand can be used like this\n\n.. code-block:: console\n\n    $ cat data.geojson\n    {'type': 'featurecollection', 'features': [{'type': 'feature', 'id': '1'}, {'type': 'feature', 'id': '2'}]}\n\n    $ pass_features data.geojson\n    {'type': 'featurecollection', 'features': [{'type': 'feature', 'id': '1'}, {'type': 'feature', 'id': '2'}]}\n\n    $ cat data.geojson | pass_features\n    {'type': 'featurecollection', 'features': [{'type': 'feature', 'id': '1'}, {'type': 'feature', 'id': '2'}]}\n\n    $ cat data.geojson | pass_features --sequence\n    {'type': 'feature', 'id': '1'}\n    {'type': 'feature', 'id': '2'}\n\n    $ cat data.geojson | pass_features --sequence --rs\n    ^^{'type': 'feature', 'id': '1'}\n    ^^{'type': 'feature', 'id': '2'}\n\nin this example, ``^^`` represents 0x1e.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "cligj",
+  "package_url": "https://pypi.org/project/cligj/",
+  "project_url": "https://pypi.org/project/cligj/",
+  "project_urls": {
+    "Homepage": "https://github.com/mapbox/cligj"
+  },
+  "release_url": "https://pypi.org/project/cligj/0.7.2/",
+  "requires_dist": [
+    "click (>=4.0)",
+    "pytest-cov ; extra == 'test'"
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, <4",
+  "summary": "click params for commmand line interfaces to geojson",
+  "version": "0.7.2",
+  "releases": [],
+  "developers": [
+    "sean@mapbox.com",
+    "sean_gillies"
+  ],
+  "kwds": "geojson geojson_type_bbox_opt cligj geojson_type_feature_opt mapbox",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_cligj",
+  "homepage": "https://github.com/mapbox/cligj",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_pytest_cov"
+  ]
+}

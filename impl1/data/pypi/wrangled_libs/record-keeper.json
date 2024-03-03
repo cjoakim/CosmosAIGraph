@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# record-keeper\n\n## installation\n```\npip install record-keeper\n```\n\n## the problem:\nwhen running machine-learning experiments, having more logged data is usually better than less. but adding new series of data to log can often require changes to your training code. when you want to log dozens of different series of data, your code starts to look awful.\n\n## the solution:\n\nuse recordkeeper, and easily add loggable information when you write a new class. the example below is modified from the [pytorch-metric-learning](https://github.com/kevinmusgrave/pytorch-metric-learning/blob/master/src/pytorch_metric_learning/miners/batch_hard_miner.py) library. \n\nfirst, create a list that contains the names of the attributes you want to record (```self._record_these``` in the example below).\n```python\nclass batchhardminer(basetupleminer):\n    def __init__(self, **kwargs):\n        super().__init__(**kwargs)\n        self._record_these = [\"hardest_triplet_dist\", \"hardest_pos_pair_dist\", \"hardest_neg_pair_dist\"]\n```\n\nthen tell recordkeeper the name of the list to read. recordkeeper will log and save all the attributes described in the list. it'll search recursively too, if you have nested objects.\n```python\nfrom torch.utils.tensorboard import summarywriter\nimport record_keeper as record_keeper_package\nfrom pytorch_metric_learning import miners\n\nrecord_writer = record_keeper_package.recordwriter(your_folder_for_logs)\ntensorboard_writer = summarywriter(log_dir=your_tensorboard_folder)\nrecord_keeper = record_keeper_package.recordkeeper(tensorboard_writer, record_writer, [\"_record_these\"])\n\nyour_miner_dictionary = {\"tuple_miner\": miners.batchhardminer()}\n\n# then at each iteration of training:\nrecord_keeper.update_records(your_miner_dictionary, current_iteration)\n```\n\nnow the attributes described in ```_record_these```, (specifically, ```hardest_triplet_dist```, ```hardest_pos_pair_dist```, and ```hardest_neg_pair_dist```) can be viewed on tensorboard.\n\nthese data series are also saved in sqlite and csv format. if you only want to use tensorboard, then pass in only a summarywriter, and vice versa.\n\nthe dictionary that you pass into ```record_keeper.update_records``` can contain any number of objects, and for each one, recordkeeper will check if the object has a \"_record_these\" attribute. as long as you're making your dictionaries programmatically, it's possible to add large amounts of loggable data without clogging up your training code. see [pytorch-metric-learning](https://github.com/kevinmusgrave/pytorch-metric-learning/) and [powerful-benchmarker](https://github.com/kevinmusgrave/powerful-benchmarker/) to see recordkeeper in action.  \n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "record-keeper",
+  "package_url": "https://pypi.org/project/record-keeper/",
+  "project_url": "https://pypi.org/project/record-keeper/",
+  "project_urls": {
+    "Homepage": "https://github.com/KevinMusgrave/record-keeper"
+  },
+  "release_url": "https://pypi.org/project/record-keeper/0.9.32/",
+  "requires_dist": [
+    "numpy",
+    "torch"
+  ],
+  "requires_python": ">=3.0",
+  "summary": "record experiment data easily",
+  "version": "0.9.32",
+  "releases": [],
+  "developers": [
+    "kevin_musgrave"
+  ],
+  "kwds": "pytorch_metric_learning batch_hard_miner record_writer record_keeper recordkeeper",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_record_keeper",
+  "homepage": "https://github.com/kevinmusgrave/record-keeper",
+  "release_count": 33,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_torch"
+  ]
+}

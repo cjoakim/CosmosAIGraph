@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "topic :: internet"
+  ],
+  "description": "# dataplicity lomond\n\ntranquil websockets for python.\n\n[![pypi version](https://badge.fury.io/py/lomond.svg)](https://pypi.org/project/lomond/)\n[![pypi](https://img.shields.io/pypi/pyversions/lomond.svg)](https://pypi.org/project/lomond/)\n[![coverage status](https://coveralls.io/repos/github/wildfoundry/dataplicity-lomond/badge.svg?branch=master)](https://coveralls.io/github/wildfoundry/dataplicity-lomond?branch=master)\n[![circleci](https://circleci.com/gh/wildfoundry/dataplicity-lomond/tree/master.svg?style=svg)](https://circleci.com/gh/wildfoundry/dataplicity-lomond/tree/master)\n\nlomond is a websocket client which turns a websocket connection in to\nan orderly stream of _events_. no threads or callbacks necessary.\n\n- [documentation](https://lomond.readthedocs.io/)\n\n- [github repository](https://github.com/wildfoundry/dataplicity-lomond)\n\n- [blog](https://www.willmcgugan.com/search/?s=lomond)\n\n## how to use\n\nto connect to a \"ws:\" or \"wss:\" websocket url, construct a `lomond.websocket` object then iterate over it. this will yield an _event object_ for each step in the connection process and for any data sent by the server.\n\nyou will receive a ``binary`` or ``text`` event when the server sends you a message.\nyou may _send_ a message with the ``send_binary`` or ``send_text`` methods.\n\n## example\n\nthe following is a silly example that connects to a websocket server\n(in this case a public echo server), and sends a string of text\nevery 5 seconds.\n\n\n```python\nfrom lomond import websocket\n\n\nwebsocket = websocket('wss://echo.websocket.org')\n\nfor event in websocket:\n    if event.name == 'poll':\n        websocket.send_text('hello, world')\n    elif event.name == 'text':\n        print(event.text)\n```\n\n## events\n\na successful websocket connection will result in a series of events\nsuch as the following:\n\n```\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502      connecting      \u2502     contacting server\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n           \u2502\n           \u25bc\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     connected to server (but\n\u2502      connected       \u2502     not yet sent data)\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n           \u2502\n           \u25bc\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     negotiated websocket\n\u2502        ready         \u2502     handshake\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n           \u2502  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n           \u2502  \u2502           \u2502\n           \u25bc  \u25bc           \u2502\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u2502  send and receive\n\u2502 binary / text / poll \u2502\u2500\u2500\u2518  application data\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n           \u2502\n           \u25bc\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     websocket close\n\u2502        closed        \u2502     handshake\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n           \u2502\n           \u25bc\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502     disconnected     \u2502     disconnected tcp/ip\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518     connection to server\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "lomond",
+  "package_url": "https://pypi.org/project/lomond/",
+  "project_url": "https://pypi.org/project/lomond/",
+  "project_urls": {
+    "Homepage": "https://github.com/wildfoundry/dataplicity-lomond"
+  },
+  "release_url": "https://pypi.org/project/lomond/0.3.3/",
+  "requires_dist": [
+    "six (>=1.10.0)"
+  ],
+  "requires_python": "",
+  "summary": "websocket client library",
+  "version": "0.3.3",
+  "releases": [],
+  "developers": [
+    "wildfoundry",
+    "willmcgugan@gmail.com"
+  ],
+  "kwds": "websocket websockets lomond py dataplicity",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_lomond",
+  "homepage": "https://github.com/wildfoundry/dataplicity-lomond",
+  "release_count": 45,
+  "dependency_ids": [
+    "pypi_six"
+  ]
+}

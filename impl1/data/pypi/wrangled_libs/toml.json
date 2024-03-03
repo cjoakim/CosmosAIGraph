@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "****\ntoml\n****\n\n.. image:: https://img.shields.io/pypi/v/toml\n    :target: https://pypi.org/project/toml/\n\n.. image:: https://travis-ci.org/uiri/toml.svg?branch=master\n    :target: https://travis-ci.org/uiri/toml\n\n.. image:: https://img.shields.io/pypi/pyversions/toml.svg\n    :target: https://pypi.org/project/toml/\n\n\na python library for parsing and creating `toml <https://en.wikipedia.org/wiki/toml>`_.\n\nthe module passes `the toml test suite <https://github.com/burntsushi/toml-test>`_.\n\nsee also:\n\n* `the toml standard <https://github.com/toml-lang/toml>`_\n* `the currently supported toml specification <https://github.com/toml-lang/toml/blob/v0.5.0/readme.md>`_\n\ninstallation\n============\n\nto install the latest release on `pypi <https://pypi.org/project/toml/>`_,\nsimply run:\n\n::\n\n  pip install toml\n\nor to install the latest development version, run:\n\n::\n\n  git clone https://github.com/uiri/toml.git\n  cd toml\n  python setup.py install\n\nquick tutorial\n==============\n\n*toml.loads* takes in a string containing standard toml-formatted data and\nreturns a dictionary containing the parsed data.\n\n.. code:: pycon\n\n  >>> import toml\n  >>> toml_string = \"\"\"\n  ... # this is a toml document.\n  ...\n  ... title = \"toml example\"\n  ...\n  ... [owner]\n  ... name = \"tom preston-werner\"\n  ... dob = 1979-05-27t07:32:00-08:00 # first class dates\n  ...\n  ... [database]\n  ... server = \"192.168.1.1\"\n  ... ports = [ 8001, 8001, 8002 ]\n  ... connection_max = 5000\n  ... enabled = true\n  ...\n  ... [servers]\n  ...\n  ...   # indentation (tabs and/or spaces) is allowed but not required\n  ...   [servers.alpha]\n  ...   ip = \"10.0.0.1\"\n  ...   dc = \"eqdc10\"\n  ...\n  ...   [servers.beta]\n  ...   ip = \"10.0.0.2\"\n  ...   dc = \"eqdc10\"\n  ...\n  ... [clients]\n  ... data = [ [\"gamma\", \"delta\"], [1, 2] ]\n  ...\n  ... # line breaks are ok when inside arrays\n  ... hosts = [\n  ...   \"alpha\",\n  ...   \"omega\"\n  ... ]\n  ... \"\"\"\n  >>> parsed_toml = toml.loads(toml_string)\n\n\n*toml.dumps* takes a dictionary and returns a string containing the\ncorresponding toml-formatted data.\n\n.. code:: pycon\n\n  >>> new_toml_string = toml.dumps(parsed_toml)\n  >>> print(new_toml_string)\n  title = \"toml example\"\n  [owner]\n  name = \"tom preston-werner\"\n  dob = 1979-05-27t07:32:00z\n  [database]\n  server = \"192.168.1.1\"\n  ports = [ 8001, 8001, 8002,]\n  connection_max = 5000\n  enabled = true\n  [clients]\n  data = [ [ \"gamma\", \"delta\",], [ 1, 2,],]\n  hosts = [ \"alpha\", \"omega\",]\n  [servers.alpha]\n  ip = \"10.0.0.1\"\n  dc = \"eqdc10\"\n  [servers.beta]\n  ip = \"10.0.0.2\"\n  dc = \"eqdc10\"\n\n*toml.dump* takes a dictionary and a file descriptor and returns a string containing the\ncorresponding toml-formatted data.\n\n.. code:: pycon\n\n  >>> with open('new_toml_file.toml', 'w') as f:\n  ...     new_toml_string = toml.dump(parsed_toml, f)\n  >>> print(new_toml_string)\n  title = \"toml example\"\n  [owner]\n  name = \"tom preston-werner\"\n  dob = 1979-05-27t07:32:00z\n  [database]\n  server = \"192.168.1.1\"\n  ports = [ 8001, 8001, 8002,]\n  connection_max = 5000\n  enabled = true\n  [clients]\n  data = [ [ \"gamma\", \"delta\",], [ 1, 2,],]\n  hosts = [ \"alpha\", \"omega\",]\n  [servers.alpha]\n  ip = \"10.0.0.1\"\n  dc = \"eqdc10\"\n  [servers.beta]\n  ip = \"10.0.0.2\"\n  dc = \"eqdc10\"\n\nfor more functions, view the api reference below.\n\nnote\n----\n\nfor numpy users, by default the data types ``np.floatx`` will not be translated to floats by toml, but will instead be encoded as strings. to get around this, specify the ``tomlnumpyencoder`` when saving your data.\n\n.. code:: pycon\n\n  >>> import toml\n  >>> import numpy as np\n  >>> a = np.arange(0, 10, dtype=np.double)\n  >>> output = {'a': a}\n  >>> toml.dumps(output)\n  'a = [ \"0.0\", \"1.0\", \"2.0\", \"3.0\", \"4.0\", \"5.0\", \"6.0\", \"7.0\", \"8.0\", \"9.0\",]\\n'\n  >>> toml.dumps(output, encoder=toml.tomlnumpyencoder())\n  'a = [ 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0,]\\n'\n\napi reference\n=============\n\n``toml.load(f, _dict=dict)``\n  parse a file or a list of files as toml and return a dictionary.\n\n  :args:\n    * ``f``: a path to a file, list of filepaths (to be read into single\n      object) or a file descriptor\n    * ``_dict``: the class of the dictionary object to be returned\n\n  :returns:\n    a dictionary (or object ``_dict``) containing parsed toml data\n\n  :raises:\n    * ``typeerror``: when ``f`` is an invalid type or is a list containing\n      invalid types\n    * ``tomldecodeerror``: when an error occurs while decoding the file(s)\n\n``toml.loads(s, _dict=dict)``\n  parse a toml-formatted string to a dictionary.\n\n  :args:\n    * ``s``: the toml-formatted string to be parsed\n    * ``_dict``: specifies the class of the returned toml dictionary\n\n  :returns:\n    a dictionary (or object ``_dict``) containing parsed toml data\n\n  :raises:\n    * ``typeerror``: when a non-string object is passed\n    * ``tomldecodeerror``: when an error occurs while decoding the\n      toml-formatted string\n\n``toml.dump(o, f, encoder=none)``\n  write a dictionary to a file containing toml-formatted data\n\n  :args:\n    * ``o``: an object to be converted into toml\n    * ``f``: a file descriptor where the toml-formatted output should be stored\n    * ``encoder``: an instance of ``tomlencoder`` (or subclass) for encoding the object. if ``none``, will default to ``tomlencoder``\n\n  :returns:\n    a string containing the toml-formatted data corresponding to object ``o``\n\n  :raises:\n    * ``typeerror``: when anything other than file descriptor is passed\n\n``toml.dumps(o, encoder=none)``\n  create a toml-formatted string from an input object\n\n  :args:\n    * ``o``: an object to be converted into toml\n    * ``encoder``: an instance of ``tomlencoder`` (or subclass) for encoding the object. if ``none``, will default to ``tomlencoder``\n\n  :returns:\n    a string containing the toml-formatted data corresponding to object ``o``\n\n\n\nlicensing\n=========\n\nthis project is released under the terms of the mit open source license. view\n*license.txt* for more information.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "toml",
+  "package_url": "https://pypi.org/project/toml/",
+  "project_url": "https://pypi.org/project/toml/",
+  "project_urls": {
+    "Homepage": "https://github.com/uiri/toml"
+  },
+  "release_url": "https://pypi.org/project/toml/0.10.2/",
+  "requires_dist": [],
+  "requires_python": ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*",
+  "summary": "python library for tom's obvious, minimal language",
+  "version": "0.10.2",
+  "releases": [],
+  "developers": [
+    "uiri@xqz.ca",
+    "william_pearson"
+  ],
+  "kwds": "parsed_toml toml_string new_toml_file toml new_toml_string",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_toml",
+  "homepage": "https://github.com/uiri/toml",
+  "release_count": 16,
+  "dependency_ids": []
+}

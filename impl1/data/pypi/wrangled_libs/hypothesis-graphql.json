@@ -1,0 +1,64 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "framework :: hypothesis",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: testing"
+  ],
+  "description": "# hypothesis-graphql\n\n[![build](https://github.com/stranger6667/hypothesis-graphql/workflows/build/badge.svg)](https://github.com/stranger6667/hypothesis-graphql/actions)\n[![coverage](https://codecov.io/gh/stranger6667/hypothesis-graphql/branch/master/graph/badge.svg)](https://codecov.io/gh/stranger6667/hypothesis-graphql/branch/master)\n[![version](https://img.shields.io/pypi/v/hypothesis-graphql.svg)](https://pypi.org/project/hypothesis-graphql/)\n[![python versions](https://img.shields.io/pypi/pyversions/hypothesis-graphql.svg)](https://pypi.org/project/hypothesis-graphql/)\n[![chat](https://img.shields.io/discord/938139740912369755)](https://discord.gg/vnxfdfmbup)\n[![license](https://img.shields.io/pypi/l/hypothesis-graphql.svg)](https://opensource.org/licenses/mit)\n\n<h4 align=\"center\">\ngenerate queries matching your graphql schema, and use them to verify your backend implementation\n</h4>\n\nit is a python library that provides a set of [hypothesis](https://github.com/hypothesisworks/hypothesis/tree/master/hypothesis-python) strategies that\nlet you write tests parametrized by a source of examples.\ngenerated queries have arbitrary depth and may contain any subset of graphql types defined in the input schema.\nthey expose edge cases in your code that are unlikely to be found otherwise.\n\n[schemathesis](https://github.com/schemathesis/schemathesis) provides a higher-level interface around this library and finds server crashes automatically.\n\n## usage\n\n`hypothesis-graphql` provides the `from_schema` function, which takes a graphql schema and returns a hypothesis strategy for\ngraphql queries matching the schema:\n\n```python\nfrom hypothesis import given\nfrom hypothesis_graphql import from_schema\nimport requests\n\n# strings and `graphql.graphqlschema` are supported\nschema = \"\"\"\ntype book {\n  title: string\n  author: author\n}\n\ntype author {\n  name: string\n  books: [book]\n}\n\ntype query {\n  getbooks: [book]\n  getauthors: [author]\n}\n\ntype mutation {\n  addbook(title: string!, author: string!): book!\n  addauthor(name: string!): author!\n}\n\"\"\"\n\n\n@given(from_schema(schema))\ndef test_graphql(query):\n    # will generate samples like these:\n    #\n    # {\n    #   getbooks {\n    #     title\n    #   }\n    # }\n    #\n    # mutation {\n    #   addbook(title: \"h4z\\u7869\", author: \"\\u00d2\"){\n    #     title\n    #   }\n    # }\n    response = requests.post(\"http://127.0.0.1/graphql\", json={\"query\": query})\n    assert response.status_code == 200\n    assert response.json().get(\"errors\") is none\n```\n\nit is also possible to generate queries or mutations separately with `hypothesis_graphql.queries` and `hypothesis_graphql.mutations`.\n\n### customization\n\nto restrict the set of fields in generated operations use the `fields` argument:\n\n```python\n@given(from_schema(schema, fields=[\"getauthors\"]))\ndef test_graphql(query):\n    # only `getauthors` will be generated\n    ...\n```\n\nit is also possible to generate custom scalars. for example, `date`:\n\n```python\nfrom hypothesis import strategies as st, given\nfrom hypothesis_graphql import from_schema, nodes\n\nschema = \"\"\"\nscalar date\n\ntype query {\n  getbydate(created: date!): int\n}\n\"\"\"\n\n\n@given(\n    from_schema(\n        schema,\n        custom_scalars={\n            # standard scalars work out of the box, for custom ones you need\n            # to pass custom strategies that generate proper ast nodes\n            \"date\": st.dates().map(nodes.string)\n        },\n    )\n)\ndef test_graphql(query):\n    # example:\n    #\n    #  { getbydate(created: \"2000-01-01\") }\n    #\n    ...\n```\n\nthe `hypothesis_graphql.nodes` module includes a few helpers to generate various node types:\n\n- `string` -> `graphql.stringvaluenode`\n- `float` -> `graphql.floatvaluenode`\n- `int` -> `graphql.intvaluenode`\n- `object` -> `graphql.objectvaluenode`\n- `list` -> `graphql.listvaluenode`\n- `boolean` -> `graphql.booleanvaluenode`\n- `enum` -> `graphql.enumvaluenode`\n- `null` -> `graphql.nullvaluenode` (a constant, not a function)\n\nthey exist because classes like `graphql.stringvaluenode` can't be directly used in `map` calls due to kwarg-only arguments.\n\n## license\n\nthe code in this project is licensed under [mit license](https://opensource.org/licenses/mit).\nby contributing to `hypothesis-graphql`, you agree that your contributions will be licensed under its mit license.\n",
+  "docs_url": null,
+  "keywords": "graphql,hypothesis,testing",
+  "license": "",
+  "name": "hypothesis-graphql",
+  "package_url": "https://pypi.org/project/hypothesis-graphql/",
+  "project_url": "https://pypi.org/project/hypothesis-graphql/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/Stranger6667/hypothesis-graphql",
+    "Changelog": "https://github.com/Stranger6667/hypothesis-graphql/blob/master/CHANGELOG.md",
+    "Funding": "https://github.com/sponsors/Stranger6667",
+    "Source Code": "https://github.com/Stranger6667/hypothesis-graphql"
+  },
+  "release_url": "https://pypi.org/project/hypothesis-graphql/0.11.0/",
+  "requires_dist": [
+    "graphql-core<3.3.0,>=3.1.0",
+    "hypothesis<7.0,>=6.84.3",
+    "coverage-enable-subprocess; extra == 'cov'",
+    "coverage[toml]>=7; extra == 'cov'",
+    "hypothesis-graphql[cov,tests]; extra == 'dev'",
+    "coverage>=7; extra == 'tests'",
+    "pytest-xdist<3.0,>=2.5; extra == 'tests'",
+    "pytest<8,>=6.2.0; extra == 'tests'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "hypothesis strategies for graphql queries",
+  "version": "0.11.0",
+  "releases": [],
+  "developers": [
+    "dmitry@dygalo.dev"
+  ],
+  "kwds": "hypothesis_graphql test_graphql graphqlschema graphql graph",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_hypothesis_graphql",
+  "homepage": "",
+  "release_count": 23,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_coverage_enable_subprocess",
+    "pypi_graphql_core",
+    "pypi_hypothesis",
+    "pypi_hypothesis_graphql",
+    "pypi_pytest",
+    "pypi_pytest_xdist"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "classifiers": [],
+  "description": "|ci status| |asv|\n\nabout\n-----\n\nsometimes you just want to compute simple 1d or 2d histograms with regular bins. fast. no\nnonsense. `numpy's <http://www.numpy.org>`__ histogram functions are\nversatile, and can handle for example non-regular binning, but this\nversatility comes at the expense of performance.\n\nthe **fast-histogram** mini-package aims to provide simple and fast\nhistogram functions for regular bins that don't compromise on performance. it doesn't do\nanything complicated - it just implements a simple histogram algorithm\nin c and keeps it simple. the aim is to have functions that are fast but\nalso robust and reliable. the result is a 1d histogram function here that\nis **7-15x faster** than ``numpy.histogram``, and a 2d histogram function\nthat is **20-25x faster** than ``numpy.histogram2d``.\n\nto install::\n\n    pip install fast-histogram\n\nor if you use conda you can instead do::\n\n    conda install -c conda-forge fast-histogram\n\nthe ``fast_histogram`` module then provides two functions:\n``histogram1d`` and ``histogram2d``:\n\n.. code:: python\n\n    from fast_histogram import histogram1d, histogram2d\n\nexample\n-------\n\nhere's an example of binning 10 million points into a regular 2d\nhistogram:\n\n.. code:: python\n\n    in [1]: import numpy as np\n\n    in [2]: x = np.random.random(10_000_000)\n\n    in [3]: y = np.random.random(10_000_000)\n\n    in [4]: %timeit _ = np.histogram2d(x, y, range=[[-1, 2], [-2, 4]], bins=30)\n    935 ms \u00b1 58.4 ms per loop (mean \u00b1 std. dev. of 7 runs, 1 loop each)\n\n    in [5]: from fast_histogram import histogram2d\n\n    in [6]: %timeit _ = histogram2d(x, y, range=[[-1, 2], [-2, 4]], bins=30)\n    40.2 ms \u00b1 624 \u00b5s per loop (mean \u00b1 std. dev. of 7 runs, 10 loops each)\n\n(note that ``10_000_000`` is possible in python 3.6 syntax, use ``10000000`` instead in previous versions)\n\nthe version here is over 20 times faster! the following plot shows the\nspeedup as a function of array size for the bin parameters shown above:\n\n.. figure:: https://github.com/astrofrog/fast-histogram/raw/master/speedup_compared.png\n   :alt: comparison of performance between numpy and fast-histogram\n\nas well as results for the 1d case, also with 30 bins. the speedup for\nthe 2d case is consistently between 20-25x, and for the 1d case goes\nfrom 15x for small arrays to around 7x for large arrays.\n\nq&a\n---\n\nwhy don't the histogram functions return the edges?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\ncomputing and returning the edges may seem trivial but it can slow things down by a factor of a few when computing histograms of 10^5 or fewer elements, so not returning the edges is a deliberate decision related to performance. you can easily compute the edges yourself if needed though, using ``numpy.linspace``.\n\ndoesn't package x already do this, but better?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthis may very well be the case! if this duplicates another package, or\nif it is possible to use numpy in a smarter way to get the same\nperformance gains, please open an issue and i'll consider deprecating\nthis package :)\n\none package that does include fast histogram functions (including in\nn-dimensions) and can compute other statistics is\n`vaex <https://github.com/maartenbreddels/vaex>`_, so take a look there\nif you need more advanced functionality!\n\nare the 2d histograms not transposed compared to what they should be?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthere is technically no 'right' and 'wrong' orientation - here we adopt\nthe convention which gives results consistent with numpy, so:\n\n.. code:: python\n\n    numpy.histogram2d(x, y, range=[[xmin, xmax], [ymin, ymax]], bins=[nx, ny])\n\nshould give the same result as:\n\n.. code:: python\n\n    fast_histogram.histogram2d(x, y, range=[[xmin, xmax], [ymin, ymax]], bins=[nx, ny])\n\nwhy not contribute this to numpy directly?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nas mentioned above, the numpy functions are much more versatile, so they could not\nbe replaced by the ones here. one option would be to check in numpy's functions for\ncases that are simple and dispatch to functions such as the ones here, or add\ndedicated functions for regular binning. i hope we can get this in numpy in some form\nor another eventually, but for now, the aim is to have this available to packages\nthat need to support a range of numpy versions.\n\nwhy not use cython?\n~~~~~~~~~~~~~~~~~~~\n\ni originally implemented this in cython, but found that i could get a\n50% performance improvement by going straight to a c extension.\n\nwhat about using numba?\n~~~~~~~~~~~~~~~~~~~~~~~\n\ni specifically want to keep this package as easy as possible to install,\nand while `numba <https://numba.pydata.org>`__ is a great package, it is\nnot trivial to install outside of anaconda.\n\ncould this be parallelized?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthis may benefit from parallelization under certain circumstances. the\neasiest solution might be to use openmp, but this won't work on all\nplatforms, so it would need to be made optional.\n\ncouldn't you make it faster by using the gpu?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nalmost certainly, though the aim here is to have an easily installable\nand portable package, and introducing gpus is going to affect both of\nthese.\n\nwhy make a package specifically for this? this is a tiny amount of functionality\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\npackages that need this could simply bundle their own c extension or\ncython code to do this, but the main motivation for releasing this as a\nmini-package is to avoid making pure-python packages into packages that\nrequire compilation just because of the need to compute fast histograms.\n\ncan i contribute?\n~~~~~~~~~~~~~~~~~\n\nyes please! this is not meant to be a finished package, and i welcome\npull request to improve things.\n\n.. |ci status| image:: https://github.com/astrofrog/fast-histogram/actions/workflows/main.yml/badge.svg\n   :target: https://github.com/astrofrog/fast-histogram/actions/workflows/main.yml\n\n.. |asv| image:: https://img.shields.io/badge/benchmarked%20by-asv-brightgreen.svg\n   :target: https://astrofrog.github.io/fast-histogram\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "fast-histogram",
+  "package_url": "https://pypi.org/project/fast-histogram/",
+  "project_url": "https://pypi.org/project/fast-histogram/",
+  "project_urls": {
+    "Homepage": "https://github.com/astrofrog/fast-histogram"
+  },
+  "release_url": "https://pypi.org/project/fast-histogram/0.12/",
+  "requires_dist": [
+    "numpy",
+    "pytest ; extra == 'test'",
+    "pytest-cov ; extra == 'test'",
+    "hypothesis[numpy] ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "fast simple 1d and 2d histograms",
+  "version": "0.12",
+  "releases": [],
+  "developers": [
+    "thomas.robitaille@gmail.com",
+    "thomas_robitaille"
+  ],
+  "kwds": "fast_histogram histogram histograms histogram2d histogram1d",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_fast_histogram",
+  "homepage": "https://github.com/astrofrog/fast-histogram",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_hypothesis",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_pytest_cov"
+  ]
+}

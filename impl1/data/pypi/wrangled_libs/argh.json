@@ -1,0 +1,70 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: gnu library or lesser general public license (lgpl)",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: user interfaces"
+  ],
+  "description": "argh: the natural cli\n=====================\n\n.. image:: https://github.com/neithere/argh/actions/workflows/lint-and-test.yml/badge.svg\n    :target: https://github.com/neithere/argh/actions/workflows/lint-and-test.yml\n\n.. image:: https://img.shields.io/pypi/format/argh.svg\n    :target: https://pypi.python.org/pypi/argh\n\n.. image:: https://img.shields.io/pypi/status/argh.svg\n    :target: https://pypi.python.org/pypi/argh\n\n.. image:: https://img.shields.io/pypi/v/argh.svg\n    :target: https://pypi.python.org/pypi/argh\n\n.. image:: https://img.shields.io/pypi/pyversions/argh.svg\n    :target: https://pypi.python.org/pypi/argh\n\n.. image:: https://img.shields.io/pypi/dd/argh.svg\n    :target: https://pypi.python.org/pypi/argh\n\n.. image:: https://readthedocs.org/projects/argh/badge/?version=stable\n    :target: http://argh.readthedocs.org/en/stable/\n\n.. image:: https://readthedocs.org/projects/argh/badge/?version=latest\n    :target: http://argh.readthedocs.org/en/latest/\n\nbuilding a command-line interface?  found yourself uttering \"argh!\" while\nstruggling with the api of `argparse`?  don't like the complexity but need\nthe power?\n\n.. epigraph::\n\n    everything should be made as simple as possible, but no simpler.\n\n    -- albert einstein (probably)\n\n`argh` is a smart wrapper for `argparse`.  `argparse` is a very powerful tool;\n`argh` just makes it easy to use.\n\nin a nutshell\n-------------\n\n`argh`-powered applications are *simple* but *flexible*:\n\n:modular:\n    declaration of commands can be decoupled from assembling and dispatching;\n\n:pythonic:\n    commands are declared naturally, no complex api calls in most cases;\n\n:reusable:\n    commands are plain functions, can be used directly outside of cli context;\n\n:layered:\n    the complexity of code raises with requirements;\n\n:transparent:\n    the full power of argparse is available whenever needed;\n\n:namespaced:\n    nested commands are a piece of cake, no messing with subparsers (though\n    they are of course used under the hood);\n\n:unobtrusive:\n    `argh` can dispatch a subset of pure-`argparse` code, and pure-`argparse`\n    code can update and dispatch a parser assembled with `argh`;\n\n:dry:\n    don't repeat yourself.  the amount of boilerplate code is minimal.\n    among other things, `argh` will:\n\n    * infer command name from function name;\n    * infer arguments from function signature;\n    * infer argument type from the default value;\n    * infer argument action from the default value (for booleans);\n\n:nih free:\n    `argh` supports *completion*, *progress bars* and everything else by being\n    friendly to excellent 3rd-party libraries.  no need to reinvent the wheel.\n\nsounds good?  check the tutorial!\n\nrelation to argparse\n--------------------\n\n`argh` is fully compatible with `argparse`.  you can mix `argh`-agnostic and\n`argh`-aware code.  just keep in mind that the dispatcher does some extra work\nthat a custom dispatcher may not do.\n\ninstallation\n------------\n\n::\n\n    $ pip install argh\n\nexamples\n--------\n\na very simple application with one command:\n\n.. code-block:: python\n\n    import argh\n\n    def main() -> str:\n        return \"hello world\"\n\n    argh.dispatch_command(main)\n\nrun it:\n\n.. code-block:: bash\n\n    $ ./app.py\n    hello world\n\nan app with multiple commands:\n\n.. code-block:: python\n\n    import argh\n\n    from my_commands import hello, echo\n\n    argh.dispatch_commands([hello, echo])\n\nrun it:\n\n.. code-block:: bash\n\n    $ ./app.py echo hey\n    hey\n\na potentially modular application with more control over the process:\n\n.. code-block:: python\n\n    import argh\n\n    # declaring:\n\n    def echo(text):\n        \"returns given word as is.\"\n        return text\n\n    def greet(name: str, *, greeting: str = \"hello\") -> str:\n        \"greets the user with given name. the greeting is customizable.\"\n        return f\"{greeting}, {name}!\"\n\n    # assembling:\n\n    parser = argh.arghparser()\n    parser.add_commands([echo, greet])\n\n    # dispatching:\n\n    if __name__ == \"__main__\":\n        parser.dispatch()\n\n.. code-block:: bash\n\n    $ ./app.py greet andy\n    hello, andy\n\n    $ ./app.py greet andy -g arrrgh\n    arrrgh, andy\n\nhere's the auto-generated help for this application (note how the docstrings\nare reused)::\n\n    $ ./app.py --help\n\n    usage: app.py {echo,greet} ...\n\n    positional arguments:\n        echo        returns given word as is.\n        greet       greets the user with given name. the greeting is customizable.\n\n...and for a specific command (an ordinary function signature is converted\nto cli arguments)::\n\n    $ ./app.py --help greet\n\n    usage: app.py greet [-g greeting] name\n\n    greets the user with given name. the greeting is customizable.\n\n    positional arguments:\n      name\n\n    optional arguments:\n      -g greeting, --greeting greeting   'hello'\n\n(the help messages have been simplified a bit for brevity.)\n\n`argh` easily maps plain python functions to cli.  sometimes this is not\nenough; in these cases the powerful api of `argparse` is also available:\n\n.. code-block:: python\n\n    @arg(\"text\", default=\"hello world\", nargs=\"+\", help=\"the message\")\n    def echo(text: str) -> none:\n        print text\n\nthe approaches can be safely combined even up to this level:\n\n.. code-block:: python\n\n    # adding help to `foo` which is in the function signature:\n    @arg(\"foo\", help=\"blah\")\n    # these are not in the signature so they go to **kwargs:\n    @arg(\"baz\")\n    @arg(\"-q\", \"--quux\")\n    # the function itself:\n    def cmd(foo: str, bar: int = 1, *args, **kwargs) -> iterator[str]:\n        yield foo\n        yield bar\n        yield \", \".join(args)\n        yield kwargs[\"baz\"]\n        yield kwargs[\"quux\"]\n\nlinks\n-----\n\n* `project home page`_ (github)\n* `documentation`_ (read the docs)\n* `package distribution`_ (pypi)\n* questions, requests, bug reports, etc.:\n\n  * `issue tracker`_ (github)\n  * direct e-mail (neithere at gmail com)\n\n.. _project home page: http://github.com/neithere/argh/\n.. _documentation: http://argh.readthedocs.org\n.. _package distribution: http://pypi.python.org/pypi/argh\n.. _issue tracker: http://github.com/neithere/argh/issues/\n\nauthor\n------\n\ndeveloped by andrey mikhaylenko since 2010.\n\nsee file `authors.rst` for a list of contributors to this library.\n\nsupport\n-------\n\nthe fastest way to improve this project is to submit tested and documented\npatches or detailed bug reports.\n\nyou can also `donate via liberapay`_.  this may speed up development or simply\nmake the original author happy :)\n\n.. _donate via liberapay: https://liberapay.com/neithere/donate\n\nlicensing\n---------\n\nargh is free software: you can redistribute it and/or modify\nit under the terms of the gnu lesser general public license as published\nby the free software foundation, either version 3 of the license, or\n(at your option) any later version.\n\nargh is distributed in the hope that it will be useful,\nbut without any warranty; without even the implied warranty of\nmerchantability or fitness for a particular purpose.  see the\ngnu lesser general public license for more details.\n\nyou should have received a copy of the gnu lesser general public license\nalong with argh.  if not, see <http://gnu.org/licenses/>.\n\n",
+  "docs_url": "https://pythonhosted.org/argh/",
+  "keywords": "cli,command line,argparse,optparse,argument,option",
+  "license": "",
+  "name": "argh",
+  "package_url": "https://pypi.org/project/argh/",
+  "project_url": "https://pypi.org/project/argh/",
+  "project_urls": {
+    "Discussions": "https://github.com/neithere/argh/discussions",
+    "Documentation": "https://argh.readthedocs.io/en/latest",
+    "Homepage": "https://github.com/neithere/argh",
+    "Issue Tracker": "https://github.com/neithere/argh/issues",
+    "Releases": "https://github.com/neithere/argh/releases"
+  },
+  "release_url": "https://pypi.org/project/argh/0.30.4/",
+  "requires_dist": [
+    "argcomplete >= 2.0 ; extra == \"completion\"",
+    "sphinx >= 6.1 ; extra == \"docs\"",
+    "sphinx-pyproject == 0.1.0 ; extra == \"docs\"",
+    "sphinx_rtd_theme >= 1.2.0 ; extra == \"docs\"",
+    "readthedocs-sphinx-search == 0.2.0 ; extra == \"docs\"",
+    "pre-commit >= 3.4.0 ; extra == \"linters\"",
+    "tox >= 4.11.3 ; extra == \"test\"",
+    "pytest >= 7.4 ; extra == \"test\"",
+    "pytest-cov >= 4.1 ; extra == \"test\""
+  ],
+  "requires_python": ">=3.8",
+  "summary": "an unobtrusive argparse wrapper with natural syntax",
+  "version": "0.30.4",
+  "releases": [],
+  "developers": [
+    "neithere@gmail.com"
+  ],
+  "kwds": "args arghparser argparse arg optparse",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_argh",
+  "homepage": "",
+  "release_count": 60,
+  "dependency_ids": [
+    "pypi_argcomplete",
+    "pypi_pre_commit",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_readthedocs_sphinx_search",
+    "pypi_sphinx",
+    "pypi_sphinx_pyproject",
+    "pypi_sphinx_rtd_theme",
+    "pypi_tox"
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "pendulum\n########\n\n.. image:: https://img.shields.io/pypi/v/pendulum.svg\n    :target: https://pypi.python.org/pypi/pendulum\n\n.. image:: https://img.shields.io/pypi/l/pendulum.svg\n    :target: https://pypi.python.org/pypi/pendulum\n\n.. image:: https://github.com/sdispater/pendulum/actions/workflows/tests.yml/badge.svg\n    :alt: pendulum build status\n    :target: https://github.com/sdispater/pendulum/actions\n\n\npython datetimes made easy.\n\nsupports python **3.8 and newer**.\n\n\n.. code-block:: python\n\n   >>> import pendulum\n\n   >>> now_in_paris = pendulum.now('europe/paris')\n   >>> now_in_paris\n   '2016-07-04t00:49:58.502116+02:00'\n\n   # seamless timezone switching\n   >>> now_in_paris.in_timezone('utc')\n   '2016-07-03t22:49:58.502116+00:00'\n\n   >>> tomorrow = pendulum.now().add(days=1)\n   >>> last_week = pendulum.now().subtract(weeks=1)\n\n   >>> past = pendulum.now().subtract(minutes=2)\n   >>> past.diff_for_humans()\n   '2 minutes ago'\n\n   >>> delta = past - last_week\n   >>> delta.hours\n   23\n   >>> delta.in_words(locale='en')\n   '6 days 23 hours 58 minutes'\n\n   # proper handling of datetime normalization\n   >>> pendulum.datetime(2013, 3, 31, 2, 30, tz='europe/paris')\n   '2013-03-31t03:30:00+02:00' # 2:30 does not exist (skipped time)\n\n   # proper handling of dst transitions\n   >>> just_before = pendulum.datetime(2013, 3, 31, 1, 59, 59, 999999, tz='europe/paris')\n   '2013-03-31t01:59:59.999999+01:00'\n   >>> just_before.add(microseconds=1)\n   '2013-03-31t03:00:00+02:00'\n\n\nresources\n=========\n\n* `official website <https://pendulum.eustace.io>`_\n* `documentation <https://pendulum.eustace.io/docs/>`_\n* `issue tracker <https://github.com/sdispater/pendulum/issues>`_\n\nwhy pendulum?\n=============\n\nnative ``datetime`` instances are enough for basic cases but when you face more complex use-cases\nthey often show limitations and are not so intuitive to work with.\n``pendulum`` provides a cleaner and more easy to use api while still relying on the standard library.\nso it's still ``datetime`` but better.\n\nunlike other datetime libraries for python, pendulum is a drop-in replacement\nfor the standard ``datetime`` class (it inherits from it), so, basically, you can replace all your ``datetime``\ninstances by ``datetime`` instances in your code (exceptions exist for libraries that check\nthe type of the objects by using the ``type`` function like ``sqlite3`` or ``pymysql`` for instance).\n\nit also removes the notion of naive datetimes: each ``pendulum`` instance is timezone-aware\nand by default in ``utc`` for ease of use.\n\npendulum also improves the standard ``timedelta`` class by providing more intuitive methods and properties.\n\nlimitations\n===========\n\neven though the ``datetime`` class is a subclass of ``datetime`` there are some rare cases where\nit can't replace the native class directly. here is a list (non-exhaustive) of the reported cases with\na possible solution, if any:\n\n* ``sqlite3`` will use the ``type()`` function to determine the type of the object by default. to work around it you can register a new adapter:\n\n.. code-block:: python\n\n    from pendulum import datetime\n    from sqlite3 import register_adapter\n\n    register_adapter(datetime, lambda val: val.isoformat(' '))\n\n* ``mysqlclient`` (former ``mysqldb``) and ``pymysql`` will use the ``type()`` function to determine the type of the object by default. to work around it you can register a new adapter:\n\n.. code-block:: python\n\n    import mysqldb.converters\n    import pymysql.converters\n\n    from pendulum import datetime\n\n    mysqldb.converters.conversions[datetime] = mysqldb.converters.datetime2literal\n    pymysql.converters.conversions[datetime] = pymysql.converters.escape_datetime\n\n* ``django`` will use the ``isoformat()`` method to store datetimes in the database. however since ``pendulum`` is always timezone aware the offset information will always be returned by ``isoformat()`` raising an error, at least for mysql databases. to work around it you can either create your own ``datetimefield`` or use the previous workaround for ``mysqldb``:\n\n.. code-block:: python\n\n    from django.db.models import datetimefield as basedatetimefield\n    from pendulum import datetime\n\n\n    class datetimefield(basedatetimefield):\n\n        def value_to_string(self, obj):\n            val = self.value_from_object(obj)\n\n            if isinstance(value, datetime):\n                return value.to_datetime_string()\n\n            return '' if val is none else val.isoformat()\n\n\ncontributing\n============\n\ncontributions are welcome, especially with localization.\n\ngetting started\n---------------\n\nto work on the pendulum codebase, you'll want to clone the project locally\nand install the required dependencies via `poetry <https://poetry.eustace.io>`_.\n\n.. code-block:: bash\n\n    $ git clone git@github.com:sdispater/pendulum.git\n    $ poetry install\n\nlocalization\n------------\n\nif you want to help with localization, there are two different cases: the locale already exists\nor not.\n\nif the locale does not exist you will need to create it by using the ``clock`` utility:\n\n.. code-block:: bash\n\n    ./clock locale create <your-locale>\n\nit will generate a directory in ``pendulum/locales`` named after your locale, with the following\nstructure:\n\n.. code-block:: text\n\n    <your-locale>/\n        - custom.py\n        - locale.py\n\nthe ``locale.py`` file must not be modified. it contains the translations provided by\nthe cldr database.\n\nthe ``custom.py`` file is the one you want to modify. it contains the data needed\nby pendulum that are not provided by the cldr database. you can take the `en <https://github.com/sdispater/pendulum/tree/master/pendulum/locales/en/custom.py>`_\ndata as a reference to see which data is needed.\n\nyou should also add tests for the created or modified locale.\n",
+  "docs_url": null,
+  "keywords": "datetime,date,time",
+  "license": "mit",
+  "name": "pendulum",
+  "package_url": "https://pypi.org/project/pendulum/",
+  "project_url": "https://pypi.org/project/pendulum/",
+  "project_urls": {
+    "Documentation": "https://pendulum.eustace.io/docs",
+    "Homepage": "https://pendulum.eustace.io",
+    "Repository": "https://github.com/sdispater/pendulum"
+  },
+  "release_url": "https://pypi.org/project/pendulum/3.0.0/",
+  "requires_dist": [
+    "python-dateutil (>=2.6)",
+    "backports.zoneinfo (>=0.2.1) ; python_version < \"3.9\"",
+    "time-machine (>=2.6.0) ; (implementation_name != \"pypy\") and (extra == \"test\")",
+    "tzdata (>=2020.1)",
+    "importlib-resources (>=5.9.0) ; python_version < \"3.9\""
+  ],
+  "requires_python": ">=3.8",
+  "summary": "python datetimes made easy",
+  "version": "3.0.0",
+  "releases": [],
+  "developers": [
+    "sebastien@eustace.io"
+  ],
+  "kwds": "pendulum basedatetimefield datetimefield datetimes datetime",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pendulum",
+  "homepage": "https://pendulum.eustace.io",
+  "release_count": 55,
+  "dependency_ids": [
+    "pypi_backports.zoneinfo",
+    "pypi_importlib_resources",
+    "pypi_python_dateutil",
+    "pypi_time_machine",
+    "pypi_tzdata"
+  ]
+}

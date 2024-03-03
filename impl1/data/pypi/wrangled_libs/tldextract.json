@@ -1,0 +1,69 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: utilities"
+  ],
+  "description": "# tldextract [![pypi version](https://badge.fury.io/py/tldextract.svg)](https://badge.fury.io/py/tldextract) [![build status](https://github.com/john-kurkowski/tldextract/actions/workflows/ci.yml/badge.svg)](https://github.com/john-kurkowski/tldextract/actions/workflows/ci.yml)\n\n`tldextract` accurately separates a url's subdomain, domain, and public suffix,\nusing [the public suffix list (psl)](https://publicsuffix.org).\n\nsay you want just the \"google\" part of https://www.google.com. *everybody gets\nthis wrong.* splitting on the \".\" and taking the 2nd-to-last element only works\nfor simple domains, e.g. .com. consider\n[http://forums.bbc.co.uk](http://forums.bbc.co.uk): the naive splitting method\nwill give you \"co\" as the domain, instead of \"bbc\". rather than juggle tlds,\ngtlds, or cctlds  yourself, `tldextract` extracts the currently living public\nsuffixes according to [the public suffix list](https://publicsuffix.org).\n\n> a \"public suffix\" is one under which internet users can directly register\n> names.\n\na public suffix is also sometimes called an effective tld (etld).\n\n## usage\n\n```python\n>>> import tldextract\n\n>>> tldextract.extract('http://forums.news.cnn.com/')\nextractresult(subdomain='forums.news', domain='cnn', suffix='com', is_private=false)\n\n>>> tldextract.extract('http://forums.bbc.co.uk/') # united kingdom\nextractresult(subdomain='forums', domain='bbc', suffix='co.uk', is_private=false)\n\n>>> tldextract.extract('http://www.worldbank.org.kg/') # kyrgyzstan\nextractresult(subdomain='www', domain='worldbank', suffix='org.kg', is_private=false)\n```\n\nnote subdomain and suffix are _optional_. not all url-like inputs have a\nsubdomain or a valid suffix.\n\n```python\n>>> tldextract.extract('google.com')\nextractresult(subdomain='', domain='google', suffix='com', is_private=false)\n\n>>> tldextract.extract('google.notavalidsuffix')\nextractresult(subdomain='google', domain='notavalidsuffix', suffix='', is_private=false)\n\n>>> tldextract.extract('http://127.0.0.1:8080/deployed/')\nextractresult(subdomain='', domain='127.0.0.1', suffix='', is_private=false)\n```\n\nto rejoin the original hostname, if it was indeed a valid, registered hostname:\n\n```python\n>>> ext = tldextract.extract('http://forums.bbc.co.uk')\n>>> ext.registered_domain\n'bbc.co.uk'\n>>> ext.fqdn\n'forums.bbc.co.uk'\n```\n\nby default, this package supports the public icann tlds and their exceptions.\nyou can optionally support the public suffix list's private domains as well.\n\nthis package started by implementing the chosen answer from [this stackoverflow question on\ngetting the \"domain name\" from a url](http://stackoverflow.com/questions/569137/how-to-get-domain-name-from-url/569219#569219).\nhowever, the proposed regex solution doesn't address many country codes like\ncom.au, or the exceptions to country codes like the registered domain\nparliament.uk. the public suffix list does, and so does this package.\n\n## install\n\nlatest release on pypi:\n\n```zsh\npip install tldextract\n```\n\nor the latest dev version:\n\n```zsh\npip install -e 'git://github.com/john-kurkowski/tldextract.git#egg=tldextract'\n```\n\ncommand-line usage, splits the url components by space:\n\n```zsh\ntldextract http://forums.bbc.co.uk\n# forums bbc co.uk\n```\n\n## note about caching\n\nbeware when first calling `tldextract`, it updates its tld list with a live http\nrequest. this updated tld set is usually cached indefinitely in `$home/.cache/python-tldextract`.\nto control the cache's location, set tldextract_cache environment variable or set the\ncache_dir path in tldextract initialization.\n\n(arguably runtime bootstrapping like that shouldn't be the default behavior,\nlike for production systems. but i want you to have the latest tlds, especially\nwhen i haven't kept this code up to date.)\n\n\n```python\n# extract callable that falls back to the included tld snapshot, no live http fetching\nno_fetch_extract = tldextract.tldextract(suffix_list_urls=())\nno_fetch_extract('http://www.google.com')\n\n# extract callable that reads/writes the updated tld set to a different path\ncustom_cache_extract = tldextract.tldextract(cache_dir='/path/to/your/cache/')\ncustom_cache_extract('http://www.google.com')\n\n# extract callable that doesn't use caching\nno_cache_extract = tldextract.tldextract(cache_dir=none)\nno_cache_extract('http://www.google.com')\n```\n\nif you want to stay fresh with the tld definitions--though they don't change\noften--delete the cache file occasionally, or run\n\n```zsh\ntldextract --update\n```\n\nor:\n\n```zsh\nenv tldextract_cache=\"~/tldextract.cache\" tldextract --update\n```\n\nit is also recommended to delete the file after upgrading this lib.\n\n## advanced usage\n\n### public vs. private domains\n\nthe psl [maintains a concept of \"private\"\ndomains](https://publicsuffix.org/list/).\n\n> private domains are amendments submitted by the domain holder, as an\n> expression of how they operate their domain security policy. \u2026 while some\n> applications, such as browsers when considering cookie-setting, treat all\n> entries the same, other applications may wish to treat icann domains and\n> private domains differently.\n\nby default, `tldextract` treats public and private domains the same.\n\n```python\n>>> extract = tldextract.tldextract()\n>>> extract('waiterrant.blogspot.com')\nextractresult(subdomain='waiterrant', domain='blogspot', suffix='com', is_private=false)\n```\n\nthe following overrides this.\n```python\n>>> extract = tldextract.tldextract()\n>>> extract('waiterrant.blogspot.com', include_psl_private_domains=true)\nextractresult(subdomain='', domain='waiterrant', suffix='blogspot.com', is_private=true)\n```\n\nor to change the default for all extract calls,\n```python\n>>> extract = tldextract.tldextract( include_psl_private_domains=true)\n>>> extract('waiterrant.blogspot.com')\nextractresult(subdomain='', domain='waiterrant', suffix='blogspot.com', is_private=true)\n```\n\nthe thinking behind the default is, it's the more common case when people\nmentally parse a domain name. it doesn't assume familiarity with the psl nor\nthat the psl makes a public/private distinction. note this default may run\ncounter to the default parsing behavior of other, psl-based libraries.\n\n### specifying your own url or file for public suffix list data\n\nyou can specify your own input data in place of the default mozilla public suffix list:\n\n```python\nextract = tldextract.tldextract(\n    suffix_list_urls=[\"http://foo.bar.baz\"],\n    # recommended: specify your own cache file, to minimize ambiguities about where\n    # tldextract is getting its data, or cached data, from.\n    cache_dir='/path/to/your/cache/',\n    fallback_to_snapshot=false)\n```\n\nthe above snippet will fetch from the url *you* specified, upon first need to download the\nsuffix list (i.e. if the cached version doesn't exist).\n\nif you want to use input data from your local filesystem, just use the `file://` protocol:\n\n```python\nextract = tldextract.tldextract(\n    suffix_list_urls=[\"file://\" + \"/absolute/path/to/your/local/suffix/list/file\"],\n    cache_dir='/path/to/your/cache/',\n    fallback_to_snapshot=false)\n```\n\nuse an absolute path when specifying the `suffix_list_urls` keyword argument.\n`os.path` is your friend.\n\nthe command line update command can be used with a url or local file you specify:\n\n```zsh\ntldextract --update --suffix_list_url \"http://foo.bar.baz\"\n```\n\nthis could be useful in production when you don't want the delay associated with updating the suffix\nlist on first use, or if you are behind a complex firewall that prevents a simple update from working.\n\n## faq\n\n### can you add suffix \\_\\_\\_\\_? can you make an exception for domain \\_\\_\\_\\_?\n\nthis project doesn't contain an actual list of public suffixes. that comes from\n[the public suffix list (psl)](https://publicsuffix.org/). submit amendments there.\n\n(in the meantime, you can tell tldextract about your exception by either\nforking the psl and using your fork in the `suffix_list_urls` param, or adding\nyour suffix piecemeal with the `extra_suffixes` param.)\n\n### i see my suffix in [the public suffix list (psl)](https://publicsuffix.org/), but this library doesn't extract it.\n\ncheck if your suffix is in the private section of the list. see [this\ndocumentation](#public-vs-private-domains).\n\n### if i pass an invalid url, i still get a result, no error. what gives?\n\nto keep `tldextract` light in loc & overhead, and because there are plenty of\nurl validators out there, this library is very lenient with input. if valid\nurls are important to you, validate them before calling `tldextract`.\n\nto avoid parsing a string twice, you can pass `tldextract` the output of\n[`urllib.parse`](https://docs.python.org/3/library/urllib.parse.html) methods.\nfor example:\n\n```py\nextractor = tldextract()\nsplit_url = urllib.parse.urlsplit(\"https://foo.bar.com:8080\")\nsplit_suffix = extractor.extract_urllib(split_url)\nurl_to_crawl = f\"{split_url.scheme}://{split_suffix.registered_domain}:{split_url.port}\"\n```\n\n`tldextract`'s lenient string parsing stance lowers the learning curve of using\nthe library, at the cost of desensitizing users to the nuances of urls. this\ncould be overhauled. for example, users could opt into validation, either\nreceiving exceptions or error metadata on results.\n\n## contribute\n\n### setting up\n\n1. `git clone` this repository.\n2. change into the new directory.\n3. `pip install --upgrade --editable '.[testing]'`\n\n### running the test suite\n\nrun all tests against all supported python versions:\n\n```zsh\ntox --parallel\n```\n\nrun all tests against a specific python environment configuration:\n\n```zsh\ntox -l\ntox -e py311\n```\n\n### code style\n\nautomatically format all code:\n\n```zsh\nblack .\n```\n",
+  "docs_url": null,
+  "keywords": "tld,domain,subdomain,url,parse,extract,urlparse,urlsplit,public,suffix,list,publicsuffix,publicsuffixlist",
+  "license": "bsd-3-clause",
+  "name": "tldextract",
+  "package_url": "https://pypi.org/project/tldextract/",
+  "project_url": "https://pypi.org/project/tldextract/",
+  "project_urls": {
+    "Homepage": "https://github.com/john-kurkowski/tldextract"
+  },
+  "release_url": "https://pypi.org/project/tldextract/5.1.1/",
+  "requires_dist": [
+    "idna",
+    "requests >=2.1.0",
+    "requests-file >=1.4",
+    "filelock >=3.0.8",
+    "black ; extra == 'testing'",
+    "mypy ; extra == 'testing'",
+    "pytest ; extra == 'testing'",
+    "pytest-gitignore ; extra == 'testing'",
+    "pytest-mock ; extra == 'testing'",
+    "responses ; extra == 'testing'",
+    "ruff ; extra == 'testing'",
+    "tox ; extra == 'testing'",
+    "types-filelock ; extra == 'testing'",
+    "types-requests ; extra == 'testing'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "accurately separates a url's subdomain, domain, and public suffix, using the public suffix list (psl). by default, this includes the public icann tlds and their exceptions. you can optionally support the public suffix list's private domains as well.",
+  "version": "5.1.1",
+  "releases": [],
+  "developers": [
+    "john.kurkowski@gmail.com"
+  ],
+  "kwds": "suffix_list_urls suffix_list_url tlds tldextract suffixes",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_tldextract",
+  "homepage": "",
+  "release_count": 60,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_filelock",
+    "pypi_idna",
+    "pypi_mypy",
+    "pypi_pytest",
+    "pypi_pytest_gitignore",
+    "pypi_pytest_mock",
+    "pypi_requests",
+    "pypi_requests_file",
+    "pypi_responses",
+    "pypi_ruff",
+    "pypi_tox",
+    "pypi_types_filelock",
+    "pypi_types_requests"
+  ]
+}

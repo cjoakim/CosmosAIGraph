@@ -1,0 +1,37 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3",
+    "programming language :: python :: implementation :: cpython"
+  ],
+  "description": "# python-jwt&nbsp;&nbsp;&nbsp;[![build status](https://github.com/davedoesdev/python-jwt/actions/workflows/ci.yml/badge.svg)](https://github.com/davedoesdev/python-jwt/actions/workflows/ci.yml) [![coverage status](https://coveralls.io/repos/github/davedoesdev/python-jwt/badge.svg?branch=master)](https://coveralls.io/github/davedoesdev/python-jwt?branch=master) [![pypi version](https://badge.fury.io/py/python-jwt.svg)](https://badge.fury.io/py/python-jwt)\n\nmodule for generating and verifying [json web tokens](http://self-issued.info/docs/draft-ietf-oauth-json-web-token.html).\n\n***all versions of python-jwt are now deprecated. i don't have the time to maintain this module.***\n\n- **note:** versions 3.3.4 and later fix a [vulnerability](https://github.com/davedoesdev/python-jwt/security/advisories/ghsa-5p8v-58qm-c7fp) (cve-2022-39227) in json web token verification which lets an attacker with a valid token re-use its signature with modified claims. cve to follow. please upgrade!\n- **note:** from version 2.0.1 the namespace has changed from `jwt` to `python_jwt`, in order to avoid conflict with [pyjwt](https://github.com/jpadilla/pyjwt).\n- **note:** versions 1.0.0 and later fix a [vulnerability](https://www.timmclean.net/2015/02/25/jwt-alg-none.html) in json web token verification so please upgrade if you're using this functionality. the api has changed so you will need to update your application. [verify_jwt](http://rawgit.davedoesdev.com/davedoesdev/python-jwt/master/docs/_build/html/index.html#python_jwt.verify_jwt) now requires you to specify which signature algorithms are allowed.\n- uses [jwcrypto](https://jwcrypto.readthedocs.io) to do the heavy lifting.\n- supports [__rs256__, __rs384__, __rs512__](https://tools.ietf.org/html/rfc7518#section-3.3), [__ps256__, __ps384__, __ps512__](https://tools.ietf.org/html/rfc7518#section-3.5), [__hs256__, __hs384__, __hs512__](https://tools.ietf.org/html/rfc7518#section-3.2), [__es256__, __es384__, __es512__](https://tools.ietf.org/html/rfc7518#section-3.4), [__es256k__](https://tools.ietf.org/html/draft-ietf-cose-webauthn-algorithms-05#section-3.2), [__eddsa__](https://tools.ietf.org/html/rfc8037#section-3.1) and [__none__](http://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-14#section-3.6) signature algorithms.\n- unit tests, including tests for interoperability with [jose](https://github.com/panva/jose).\n- supports python 3.6+. **note:** [generate_jwt](http://rawgit.davedoesdev.com/davedoesdev/python-jwt/master/docs/_build/html/index.html#python_jwt.generate_jwt) returns the token as a unicode string.\n\nexample:\n\n```python\nimport python_jwt as jwt, jwcrypto.jwk as jwk, datetime\nkey = jwk.jwk.generate(kty='rsa', size=2048)\npayload = { 'foo': 'bar', 'wup': 90 };\ntoken = jwt.generate_jwt(payload, key, 'ps256', datetime.timedelta(minutes=5))\nheader, claims = jwt.verify_jwt(token, key, ['ps256'])\nfor k in payload: assert claims[k] == payload[k]\n```\n\nthe api is described [here](http://rawgit.davedoesdev.com/davedoesdev/python-jwt/master/docs/_build/html/index.html).\n\n\n## installation\n\n```shell\npip install python_jwt\n```\n\n## another example\n\nyou can read and write keys from and to [pem-format](http://www.openssl.org/docs/crypto/pem.html) strings:\n\n```python\nimport python_jwt as jwt, jwcrypto.jwk as jwk, datetime\nkey = jwk.jwk.generate(kty='rsa', size=2048)\npriv_pem = key.export_to_pem(private_key=true, password=none)\npub_pem = key.export_to_pem()\npayload = { 'foo': 'bar', 'wup': 90 };\npriv_key = jwk.jwk.from_pem(priv_pem)\npub_key = jwk.jwk.from_pem(pub_pem)\ntoken = jwt.generate_jwt(payload, priv_key, 'rs256', datetime.timedelta(minutes=5))\nheader, claims = jwt.verify_jwt(token, pub_key, ['rs256'])\nfor k in payload: assert claims[k] == payload[k]\n```\n\n## licence\n\n[mit](https://raw.github.com/davedoesdev/python-jwt/master/licence)\n\n## tests\n\n```shell\nmake test\n```\n\n## lint\n\n```shell\nmake lint\n```\n\n## code coverage\n\n```shell\nmake coverage\n```\n\n[coverage.py](http://nedbatchelder.com/code/coverage/) results are available [here](http://rawgit.davedoesdev.com/davedoesdev/python-jwt/master/coverage/html/index.html).\n\ncoveralls page is [here](https://coveralls.io/r/davedoesdev/python-jwt).\n\n## benchmarks\n\n```shell\nmake bench\n```\n\nhere are some results on a laptop with an intel core i5-4300m 2.6ghz cpu and 8gb ram running ubuntu 17.04.\n\ngenerate key|user (ns)|sys (ns)|real (ns)\n:--|--:|--:|--:\nrsa|103,100,000|200,000|103,341,537\n\ngenerate token|user (ns)|sys (ns)|real (ns)\n:--|--:|--:|--:\nhs256|220,000|0|226,478\nhs384|220,000|0|218,233\nhs512|230,000|0|225,823\nps256|1,530,000|10,000|1,536,235\nps384|1,550,000|0|1,549,844\nps512|1,520,000|10,000|1,524,844\nrs256|1,520,000|10,000|1,524,565\nrs384|1,530,000|0|1,528,074\nrs512|1,510,000|0|1,526,089\n\nload key|user (ns)|sys (ns)|real (ns)\n:--|--:|--:|--:\nrsa|210,000|3,000|210,791\n\nverify token|user (ns)|sys (ns)|real (ns)\n:--|--:|--:|--:\nhs256|100,000|0|101,478\nhs384|100,000|10,000|103,014\nhs512|110,000|0|104,323\nps256|230,000|0|231,058\nps384|240,000|0|237,551\nps512|240,000|0|232,450\nrs256|230,000|0|227,737\nrs384|230,000|0|230,698\nrs512|230,000|0|228,624\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "python-jwt",
+  "package_url": "https://pypi.org/project/python-jwt/",
+  "project_url": "https://pypi.org/project/python-jwt/",
+  "project_urls": {
+    "Homepage": "https://github.com/davedoesdev/python-jwt"
+  },
+  "release_url": "https://pypi.org/project/python-jwt/4.1.0/",
+  "requires_dist": [
+    "jwcrypto (>=1.4.2)"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "module for generating and verifying json web tokens",
+  "version": "4.1.0",
+  "releases": [],
+  "developers": [
+    "dave@davedoesdev.com",
+    "david_halls"
+  ],
+  "kwds": "python_jwt verify_jwt generate_jwt jwt pyjwt",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python_jwt",
+  "homepage": "https://github.com/davedoesdev/python-jwt",
+  "release_count": 45,
+  "dependency_ids": [
+    "pypi_jwcrypto"
+  ]
+}

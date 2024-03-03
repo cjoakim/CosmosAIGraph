@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: gpu :: nvidia cuda :: 11.0",
+    "environment :: gpu :: nvidia cuda :: 11.1",
+    "environment :: gpu :: nvidia cuda :: 11.2",
+    "environment :: gpu :: nvidia cuda :: 11.3",
+    "environment :: gpu :: nvidia cuda :: 11.4",
+    "environment :: gpu :: nvidia cuda :: 11.5",
+    "environment :: gpu :: nvidia cuda :: 11.6",
+    "environment :: gpu :: nvidia cuda :: 11.7",
+    "environment :: gpu :: nvidia cuda :: 11.8",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: artificial intelligence"
+  ],
+  "description": "[![ci](https://github.com/opennmt/ctranslate2/workflows/ci/badge.svg)](https://github.com/opennmt/ctranslate2/actions?query=workflow%3aci) [![pypi version](https://badge.fury.io/py/ctranslate2.svg)](https://badge.fury.io/py/ctranslate2) [![documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://opennmt.net/ctranslate2/) [![gitter](https://badges.gitter.im/opennmt/ctranslate2.svg)](https://gitter.im/opennmt/ctranslate2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![forum](https://img.shields.io/discourse/status?server=https%3a%2f%2fforum.opennmt.net%2f)](https://forum.opennmt.net/)\n\n# ctranslate2\n\nctranslate2 is a c++ and python library for efficient inference with transformer models.\n\nthe project implements a custom runtime that applies many performance optimization techniques such as weights quantization, layers fusion, batch reordering, etc., to [accelerate and reduce the memory usage](#benchmarks) of transformer models on cpu and gpu.\n\nthe following model types are currently supported:\n\n* encoder-decoder models: transformer base/big, m2m-100, nllb, bart, mbart, pegasus, t5, whisper\n* decoder-only models: gpt-2, gpt-j, gpt-neox, opt, bloom, mpt, llama, mistral, codegen, gptbigcode, falcon\n* encoder-only models: bert, distilbert, xlm-roberta\n\ncompatible models should be first converted into an optimized model format. the library includes converters for multiple frameworks:\n\n* [opennmt-py](https://opennmt.net/ctranslate2/guides/opennmt_py.html)\n* [opennmt-tf](https://opennmt.net/ctranslate2/guides/opennmt_tf.html)\n* [fairseq](https://opennmt.net/ctranslate2/guides/fairseq.html)\n* [marian](https://opennmt.net/ctranslate2/guides/marian.html)\n* [opus-mt](https://opennmt.net/ctranslate2/guides/opus_mt.html)\n* [transformers](https://opennmt.net/ctranslate2/guides/transformers.html)\n\nthe project is production-oriented and comes with [backward compatibility guarantees](https://opennmt.net/ctranslate2/versioning.html), but it also includes experimental features related to model compression and inference acceleration.\n\n## key features\n\n* **fast and efficient execution on cpu and gpu**<br/>the execution [is significantly faster and requires less resources](#benchmarks) than general-purpose deep learning frameworks on supported models and tasks thanks to many advanced optimizations: layer fusion, padding removal, batch reordering, in-place operations, caching mechanism, etc.\n* **quantization and reduced precision**<br/>the model serialization and computation support weights with [reduced precision](https://opennmt.net/ctranslate2/quantization.html): 16-bit floating points (fp16), 16-bit brain floating points (bf16), 16-bit integers (int16), and 8-bit integers (int8).\n* **multiple cpu architectures support**<br/>the project supports x86-64 and aarch64/arm64 processors and integrates multiple backends that are optimized for these platforms: [intel mkl](https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/onemkl.html), [onednn](https://github.com/oneapi-src/onednn), [openblas](https://www.openblas.net/), [ruy](https://github.com/google/ruy), and [apple accelerate](https://developer.apple.com/documentation/accelerate).\n* **automatic cpu detection and code dispatch**<br/>one binary can include multiple backends (e.g. intel mkl and onednn) and instruction set architectures (e.g. avx, avx2) that are automatically selected at runtime based on the cpu information.\n* **parallel and asynchronous execution**<br/>multiple batches can be processed in parallel and asynchronously using multiple gpus or cpu cores.\n* **dynamic memory usage**<br/>the memory usage changes dynamically depending on the request size while still meeting performance requirements thanks to caching allocators on both cpu and gpu.\n* **lightweight on disk**<br/>quantization can make the models 4 times smaller on disk with minimal accuracy loss.\n* **simple integration**<br/>the project has few dependencies and exposes simple apis in [python](https://opennmt.net/ctranslate2/python/overview.html) and c++ to cover most integration needs.\n* **configurable and interactive decoding**<br/>[advanced decoding features](https://opennmt.net/ctranslate2/decoding.html) allow autocompleting a partial sequence and returning alternatives at a specific location in the sequence.\n\nsome of these features are difficult to achieve with standard deep learning frameworks and are the motivation for this project.\n\n## installation and usage\n\nctranslate2 can be installed with pip:\n\n```bash\npip install ctranslate2\n```\n\nthe python module is used to convert models and can translate or generate text with few lines of code:\n\n```python\ntranslator = ctranslate2.translator(translation_model_path)\ntranslator.translate_batch(tokens)\n\ngenerator = ctranslate2.generator(generation_model_path)\ngenerator.generate_batch(start_tokens)\n```\n\nsee the [documentation](https://opennmt.net/ctranslate2) for more information and examples.\n\n## benchmarks\n\nwe translate the en->de test set *newstest2014* with multiple models:\n\n* [opennmt-tf wmt14](https://opennmt.net/models-tf/#translation): a base transformer trained with opennmt-tf on the wmt14 dataset (4.5m lines)\n* [opennmt-py wmt14](https://opennmt.net/models-py/#translation): a base transformer trained with opennmt-py on the wmt14 dataset (4.5m lines)\n* [opus-mt](https://github.com/helsinki-nlp/opus-mt-train/tree/master/models/en-de#opus-2020-02-26zip): a base transformer trained with marian on all opus data available on 2020-02-26 (81.9m lines)\n\nthe benchmark reports the number of target tokens generated per second (higher is better). the results are aggregated over multiple runs. see the [benchmark scripts](tools/benchmark) for more details and reproduce these numbers.\n\n**please note that the results presented below are only valid for the configuration used during this benchmark: absolute and relative performance may change with different settings.**\n\n#### cpu\n\n| | tokens per second | max. memory | bleu |\n| --- | --- | --- | --- |\n| **opennmt-tf wmt14 model** | | | |\n| opennmt-tf 2.31.0 (with tensorflow 2.11.0) | 209.2 | 2653mb | 26.93 |\n| **opennmt-py wmt14 model** | | | |\n| opennmt-py 3.0.4 (with pytorch 1.13.1) | 275.8 | 2012mb | 26.77 |\n| - int8 | 323.3 | 1359mb | 26.72 |\n| ctranslate2 3.6.0 | 658.8 | 849mb | 26.77 |\n| - int16 | 733.0 | 672mb | 26.82 |\n| - int8 | 860.2 | 529mb | 26.78 |\n| - int8 + vmap | 1126.2 | 598mb | 26.64 |\n| **opus-mt model** | | | |\n| transformers 4.26.1 (with pytorch 1.13.1) | 147.3 | 2332mb | 27.90 |\n| marian 1.11.0 | 344.5 | 7605mb | 27.93 |\n| - int16 | 330.2 | 5901mb | 27.65 |\n| - int8 | 355.8 | 4763mb | 27.27 |\n| ctranslate2 3.6.0 | 525.0 | 721mb | 27.92 |\n| - int16 | 596.1 | 660mb | 27.53 |\n| - int8 | 696.1 | 516mb | 27.65 |\n\nexecuted with 4 threads on a [*c5.2xlarge*](https://aws.amazon.com/ec2/instance-types/c5/) amazon ec2 instance equipped with an intel(r) xeon(r) platinum 8275cl cpu.\n\n#### gpu\n\n| | tokens per second | max. gpu memory | max. cpu memory | bleu |\n| --- | --- | --- | --- | --- |\n| **opennmt-tf wmt14 model** | | | | |\n| opennmt-tf 2.31.0 (with tensorflow 2.11.0) | 1483.5 | 3031mb | 3122mb | 26.94 |\n| **opennmt-py wmt14 model** | | | | |\n| opennmt-py 3.0.4 (with pytorch 1.13.1) | 1795.2 | 2973mb | 3099mb | 26.77 |\n| fastertransformer 5.3 | 6979.0 | 2402mb | 1131mb | 26.77 |\n| - float16 | 8592.5 | 1360mb | 1135mb | 26.80 |\n| ctranslate2 3.6.0 | 6634.7 | 1261mb | 953mb | 26.77 |\n| - int8 | 8567.2 | 1005mb | 807mb | 26.85 |\n| - float16 | 10990.7 | 941mb | 807mb | 26.77 |\n| - int8 + float16 | 8725.4 | 813mb | 800mb | 26.83 |\n| **opus-mt model** | | | | |\n| transformers 4.26.1 (with pytorch 1.13.1) | 1022.9 | 4097mb | 2109mb | 27.90 |\n| marian 1.11.0 | 3241.0 | 3381mb | 2156mb | 27.92 |\n| - float16 | 3962.4 | 3239mb | 1976mb | 27.94 |\n| ctranslate2 3.6.0 | 5876.4 | 1197mb | 754mb | 27.92 |\n| - int8 | 7521.9 | 1005mb | 792mb | 27.79 |\n| - float16 | 9296.7 | 909mb | 814mb | 27.90 |\n| - int8 + float16 | 8362.7 | 813mb | 766mb | 27.90 |\n\nexecuted with cuda 11 on a [*g5.xlarge*](https://aws.amazon.com/ec2/instance-types/g5/) amazon ec2 instance equipped with a nvidia a10g gpu (driver version: 510.47.03).\n\n## additional resources\n\n* [documentation](https://opennmt.net/ctranslate2)\n* [forum](https://forum.opennmt.net)\n* [gitter](https://gitter.im/opennmt/ctranslate2)\n",
+  "docs_url": null,
+  "keywords": "opennmt nmt neural machine translation cuda mkl inference quantization",
+  "license": "mit",
+  "name": "ctranslate2",
+  "package_url": "https://pypi.org/project/ctranslate2/",
+  "project_url": "https://pypi.org/project/ctranslate2/",
+  "project_urls": {
+    "Documentation": "https://opennmt.net/CTranslate2",
+    "Forum": "https://forum.opennmt.net",
+    "Gitter": "https://gitter.im/OpenNMT/CTranslate2",
+    "Homepage": "https://opennmt.net",
+    "Source": "https://github.com/OpenNMT/CTranslate2"
+  },
+  "release_url": "https://pypi.org/project/ctranslate2/3.23.0/",
+  "requires_dist": [
+    "setuptools",
+    "numpy",
+    "pyyaml <7,>=5.3"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "fast inference engine for transformer models",
+  "version": "3.23.0",
+  "releases": [],
+  "developers": [
+    "opennmt"
+  ],
+  "kwds": "ctranslate2 tensorflow opennmt opennmt_tf pytorch",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_ctranslate2",
+  "homepage": "https://opennmt.net",
+  "release_count": 53,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_pyyaml",
+    "pypi_setuptools"
+  ]
+}

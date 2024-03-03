@@ -1,0 +1,34 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# keras self-attention\n\n[![version](https://img.shields.io/pypi/v/keras-self-attention.svg)](https://pypi.org/project/keras-self-attention/)\n![license](https://img.shields.io/pypi/l/keras-self-attention.svg)\n\n\\[[\u4e2d\u6587](https://github.com/cyberzhg/keras-self-attention/blob/master/readme.zh-cn.md)|[english](https://github.com/cyberzhg/keras-self-attention/blob/master/readme.md)\\]\n\nattention mechanism for processing sequential data that considers the context for each timestamp.\n\n* ![](https://user-images.githubusercontent.com/853842/44248592-1fbd0500-a21e-11e8-9fe0-52a1e4a48329.gif)\n* ![](https://user-images.githubusercontent.com/853842/44248591-1e8bd800-a21e-11e8-9ca8-9198c2725108.gif)\n* ![](https://user-images.githubusercontent.com/853842/44248590-1df34180-a21e-11e8-8ff1-268217f466ba.gif)\n* ![](https://user-images.githubusercontent.com/853842/44249018-8ba06d00-a220-11e8-80e3-802677b658ed.gif)\n\n## install\n\n```bash\npip install keras-self-attention\n```\n\n## usage\n\n### basic\n\nby default, the attention layer uses additive attention and considers the whole context while calculating the relevance. the following code creates an attention layer that follows the equations in the first section (`attention_activation` is the activation function of `e_{t, t'}`):\n\n```python\nimport keras\nfrom keras_self_attention import seqselfattention\n\n\nmodel = keras.models.sequential()\nmodel.add(keras.layers.embedding(input_dim=10000,\n                                 output_dim=300,\n                                 mask_zero=true))\nmodel.add(keras.layers.bidirectional(keras.layers.lstm(units=128,\n                                                       return_sequences=true)))\nmodel.add(seqselfattention(attention_activation='sigmoid'))\nmodel.add(keras.layers.dense(units=5))\nmodel.compile(\n    optimizer='adam',\n    loss='categorical_crossentropy',\n    metrics=['categorical_accuracy'],\n)\nmodel.summary()\n```\n\n### local attention\n\nthe global context may be too broad for one piece of data. the parameter `attention_width` controls the width of the local context:\n\n```python\nfrom keras_self_attention import seqselfattention\n\nseqselfattention(\n    attention_width=15,\n    attention_activation='sigmoid',\n    name='attention',\n)\n```\n\n### multiplicative attention\n\nyou can use multiplicative attention by setting `attention_type`:\n\n![](https://user-images.githubusercontent.com/853842/44253887-a03a3080-a233-11e8-9d49-3fd7e622a0f7.gif)\n\n```python\nfrom keras_self_attention import seqselfattention\n\nseqselfattention(\n    attention_width=15,\n    attention_type=seqselfattention.attention_type_mul,\n    attention_activation=none,\n    kernel_regularizer=keras.regularizers.l2(1e-6),\n    use_attention_bias=false,\n    name='attention',\n)\n```\n\n### regularizer\n\n![](https://user-images.githubusercontent.com/853842/44250188-f99b6300-a225-11e8-8fab-8dcf0d99616e.gif)\n\nto use the regularizer, set `attention_regularizer_weight` to a positive number:\n\n```python\nimport keras\nfrom keras_self_attention import seqselfattention\n\ninputs = keras.layers.input(shape=(none,))\nembd = keras.layers.embedding(input_dim=32,\n                              output_dim=16,\n                              mask_zero=true)(inputs)\nlstm = keras.layers.bidirectional(keras.layers.lstm(units=16,\n                                                    return_sequences=true))(embd)\natt = seqselfattention(attention_type=seqselfattention.attention_type_mul,\n                       kernel_regularizer=keras.regularizers.l2(1e-4),\n                       bias_regularizer=keras.regularizers.l1(1e-4),\n                       attention_regularizer_weight=1e-4,\n                       name='attention')(lstm)\ndense = keras.layers.dense(units=5, name='dense')(att)\nmodel = keras.models.model(inputs=inputs, outputs=[dense])\nmodel.compile(\n    optimizer='adam',\n    loss={'dense': 'sparse_categorical_crossentropy'},\n    metrics={'dense': 'categorical_accuracy'},\n)\nmodel.summary(line_length=100)\n```\n\n### load the model\n\nmake sure to add `seqselfattention` to custom objects:\n\n```python\nimport keras\n\nkeras.models.load_model(model_path, custom_objects=seqselfattention.get_custom_objects())\n```\n\n### history only\n\nset `history_only` to `true` when only historical data could be used:\n\n```python\nseqselfattention(\n    attention_width=3,\n    history_only=true,\n    name='attention',\n)\n```\n\n### multi-head\n\nplease refer to [keras-multi-head](https://github.com/cyberzhg/keras-multi-head).",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "keras-self-attention",
+  "package_url": "https://pypi.org/project/keras-self-attention/",
+  "project_url": "https://pypi.org/project/keras-self-attention/",
+  "project_urls": {
+    "Homepage": "https://github.com/CyberZHG/keras-self-attention"
+  },
+  "release_url": "https://pypi.org/project/keras-self-attention/0.51.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "attention mechanism for processing sequential data that considers the context for each timestamp",
+  "version": "0.51.0",
+  "releases": [],
+  "developers": [
+    "cyberzhg",
+    "cyberzhg@users.noreply.github.com"
+  ],
+  "kwds": "keras_self_attention attention attention_activation keras attention_type",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_keras_self_attention",
+  "homepage": "https://github.com/cyberzhg/keras-self-attention",
+  "release_count": 36,
+  "dependency_ids": []
+}

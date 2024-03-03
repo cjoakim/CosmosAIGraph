@@ -1,0 +1,46 @@
+{
+  "classifiers": [],
+  "description": "# numba-stats\n\n![](https://img.shields.io/pypi/v/numba-stats.svg)\n\nwe provide `numba`-accelerated implementations of statistical functions for common probability distributions\n\n* uniform\n* (truncated) normal\n* log-normal\n* poisson\n* (truncated) exponential\n* student's t\n* voigtian\n* crystal ball\n* generalised double-sided crystal ball\n* tsallis-hagedorn, a model for the minimum bias pt distribution\n* q-gaussian\n* bernstein density (not normalized to unity, use this in extended likelihood fits)\n* cruijff density (not normalized to unity, use this in extended likelihood fits)\n\nwith more to come. the speed gains are huge, up to a factor of 100 compared to `scipy`. benchmarks are included in the repository and are run by `pytest`.\n\n## usage\n\neach distribution is implemented in a submodule. import the submodule that you need and call the functions in the module.\n```py\nfrom numba_stats import norm\nimport numpy as np\n\nx = np.linspace(-10, 10)\nmu = 2\nsigma = 3\n\np = norm.pdf(x, mu, sigma)\nc = norm.cdf(x, mu, sigma)\n```\nthe functions are vectorized on the variate `x`, but not on the shape parameters of the distribution. ideally, the following functions are implemented for each distribution:\n* `pdf`: probability density function\n* `logpdf`: the logarithm of the probability density function (can be computed more efficiently and accurately for some distributions)\n* `cdf`: integral of the probability density function\n* `ppf`:inverse of the cdf\n* `rvs`: to generate random variates\n\n`cdf` and `ppf` are missing for some distributions (e.g. `voigt`), if there is currently no fast implementation available. `logpdf` is only implemented if it is more efficient and accurate compared to computing `log(dist.pdf(...))`. `rvs` is only implemented for distributions that have `ppf`, which is used to generate the random variates. the implementations of `rvs` are currently not optimized for highest performance, but turn out to be useful in practice nevertheless.\n\nthe distributions in `numba_stats` can be used in other `numba`-jit'ed functions. the functions in `numba_stats` use a single thread, but the implementations were written so that they profit from auto-parallelization. to enable this, call them from a jit'ed function with the argument `parallel=true,fastmath=true`. you should always combine `parallel=true` with `fastmath=true`, since the latter enhances the gain from auto-parallelization.\n\n```py\nfrom numba_stats import norm\nimport numba as nb\nimport numpy as np\n\n@nb.njit(parallel=true, fastmath=true)\ndef norm_pdf(x, mu, sigma):\n  return norm.pdf(x, mu, sigma)\n\nx = np.linspace(-10, 10)\nmu = 2\nsigma = 3\n\n# uses all your cpu cores\np = norm_pdf(x, mu, sigma)\n```\n\nnote that this is only faster if `x` has sufficient length (about 1000 elements or more). otherwise, the parallelization overhead will make the call slower, see benchmarks below.\n\n## benchmarks\n\nthe following benchmarks were produced on an intel(r) core(tm) i7-8569u cpu @ 2.80ghz against scipy-1.10.1. the dotted line on the right-hand figure shows the expected speedup (4x) from parallelization on a cpu with four physical cores.\n\nwe see large speed-ups with respect to `scipy` for almost all distributions. also calls with short arrays profit from `numba_stats`, due to the reduced call-overhead. the functions `voigt.pdf` and `t.ppf` do not run faster than the `scipy` versions, because we call the respective `scipy` implementation written in fortran. the advantage provided by `numba_stats` here is that you can call these functions from other `numba`-jit'ed functions, which is not possible with the `scipy` implementations, and `voigt.pdf` still profits from auto-parallelization.\n\nthe `bernstein.density` does not profit from auto-parallelization, on the contrary it becomes much slower, so this should be avoided. this is a known issue, the internal implementation cannot be easily auto-parallelized.\n\n![](docs/_static/norm.pdf.svg)\n![](docs/_static/norm.cdf.svg)\n![](docs/_static/norm.ppf.svg)\n![](docs/_static/expon.pdf.svg)\n![](docs/_static/expon.cdf.svg)\n![](docs/_static/expon.ppf.svg)\n![](docs/_static/uniform.pdf.svg)\n![](docs/_static/uniform.cdf.svg)\n![](docs/_static/uniform.ppf.svg)\n![](docs/_static/t.pdf.svg)\n![](docs/_static/t.cdf.svg)\n![](docs/_static/t.ppf.svg)\n![](docs/_static/truncnorm.pdf.svg)\n![](docs/_static/truncnorm.cdf.svg)\n![](docs/_static/truncnorm.ppf.svg)\n![](docs/_static/truncexpon.pdf.svg)\n![](docs/_static/truncexpon.cdf.svg)\n![](docs/_static/truncexpon.ppf.svg)\n![](docs/_static/voigt.pdf.svg)\n![](docs/_static/bernstein.density.svg)\n![](docs/_static/truncexpon.pdf.plus.norm.pdf.svg)\n\n## documentation\n\nto get documentation, please use `help()` in the python interpreter.\n\nfunctions with equivalents in `scipy.stats` follow the `scipy` calling conventions exactly, except for distributions starting with `trunc...`, which follow a different convention, since the `scipy` behavior is very impractical. even so, note that the `scipy` conventions are sometimes a bit unusual, particular in case of the exponential, the log-normal, and the uniform distribution. see the `scipy` docs for details.\n\n## contributions\n\n**you can help with adding more distributions, patches are very welcome.** implementing a probability distribution is easy. you need to write it in simple python that `numba` can understand. special functions from `scipy.special` can be used after some wrapping, see submodule `numba_stats._special.py` how it is done.\n\n## numba-stats and numba-scipy\n\n[numba-scipy](https://github.com/numba/numba-scipy) is the official package and repository for fast numba-accelerated scipy functions, are we reinventing the wheel?\n\nideally, the functionality in this package should be in `numba-scipy` and we hope that eventually this will be case. in this package, we don't offer overloads for scipy functions and classes like `numba-scipy` does. this simplifies the implementation dramatically. `numba-stats` is intended as a temporary solution until fast statistical functions are included in `numba-scipy`. `numba-stats` currently does not depend on `numba-scipy`, only on `numba` and `scipy`.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "\"mit\"",
+  "name": "numba-stats",
+  "package_url": "https://pypi.org/project/numba-stats/",
+  "project_url": "https://pypi.org/project/numba-stats/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/hdembinski/numba-stats/issues"
+  },
+  "release_url": "https://pypi.org/project/numba-stats/1.4.1/",
+  "requires_dist": [
+    "numba >=0.49",
+    "numpy >=1.18",
+    "scipy >=1.5",
+    "pytest ; extra == 'test'",
+    "pytest-cov ; extra == 'test'",
+    "pytest-benchmark ; extra == 'test'",
+    "pydocstyle ; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "numba-accelerated implementations of common probability distributions",
+  "version": "1.4.1",
+  "releases": [],
+  "developers": [
+    "hans.dembinski@gmail.com",
+    "hans_dembinski"
+  ],
+  "kwds": "numba_stats scipy python benchmarks numba",
+  "license_kwds": "\"mit\"",
+  "libtype": "pypi",
+  "id": "pypi_numba_stats",
+  "homepage": "",
+  "release_count": 23,
+  "dependency_ids": [
+    "pypi_numba",
+    "pypi_numpy",
+    "pypi_pydocstyle",
+    "pypi_pytest",
+    "pypi_pytest_benchmark",
+    "pypi_pytest_cov",
+    "pypi_scipy"
+  ]
+}

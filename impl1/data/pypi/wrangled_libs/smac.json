@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "natural language :: english",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: artificial intelligence"
+  ],
+  "description": "# smac3: a versatile bayesian optimization package for hyperparameter optimization\n\n\n[![tests](https://github.com/automl/smac3/actions/workflows/pytest.yml/badge.svg?branch=main)](https://github.com/automl/smac3/actions/workflows/pytest.yml)\n[![documentation](https://github.com/automl/smac3/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/automl/smac3/actions/workflows/docs.yml)\n[![codecov\nstatus](https://codecov.io/gh/automl/smac3/branch/master/graph/badge.svg)](https://codecov.io/gh/automl/smac3)\n\n<img src=\"docs/images/logo.png\" style=\"width: 50%;\" />\n\nsmac offers a robust and flexible framework for bayesian optimization to support users in determining well-performing \nhyperparameter configurations for their (machine learning) algorithms, datasets and applications at hand. the main core \nconsists of bayesian optimization in combination with an aggressive racing mechanism to efficiently decide which of two configurations performs better.\n\nsmac3 is written in python3 and continuously tested with python 3.8, 3.9, and 3.10. its random\nforest is written in c++. in further texts, smac is representatively mentioned for smac3.\n\n> [documentation](https://automl.github.io/smac3)\n\n> [roadmap](https://github.com/orgs/automl/projects/5/views/2)\n\n\n## important: changes in v2.0\n\nwith the next big major release of smac, we drastically boosted the user experience by improving the apis and how the \npipelining is done (see [changelog](changelog.md)). all facades/intensifiers support multi-objective, multi-fidelity, \nand multi-threading natively now! that includes having an ask-and-tell interface and continuing a run\nwherever you left off. psmac is removed because when specifying the number of workers, smac automatically uses \nmulti-threading for evaluating trials. when cleaning the code base, however, we removed the command-line \ninterface (calling a target function from a script is still supported), and runtime optimization. also,\npython 3.7 is not supported anymore. if you depend on those functionalities, please keep using v1.4.\n\nwe are excited to introduce the new major release and look forward to developing new features on the new code base. \nwe hope you enjoy this new user experience as much as we do. \ud83d\ude80\n\n\n## installation\n\nthis instruction is for the installation on a linux system, for windows and mac and further information see the [documentation](https://automl.github.io/smac3/main/1_installation.html).\n\ncreate a new environment with python 3.10 and make sure swig is installed either on your system or\ninside the environment. we demonstrate the installation via anaconda in the following:\n\ncreate and activate environment:\n```\nconda create -n smac python=3.10\nconda activate smac\n```\n\ninstall swig:\n```\nconda install gxx_linux-64 gcc_linux-64 swig\n```\n\ninstall smac via pypi:\n```\npip install smac\n```\n\nif you want to contribute to smac, use the following steps instead:\n```\ngit clone https://github.com/automl/smac3.git && cd smac3\nmake install-dev\n```\n\n\n## minimal example\n\n```py\nfrom configspace import configuration, configurationspace\n\nimport numpy as np\nfrom smac import hyperparameteroptimizationfacade, scenario\nfrom sklearn import datasets\nfrom sklearn.svm import svc\nfrom sklearn.model_selection import cross_val_score\n\niris = datasets.load_iris()\n\n\ndef train(config: configuration, seed: int = 0) -> float:\n    classifier = svc(c=config[\"c\"], random_state=seed)\n    scores = cross_val_score(classifier, iris.data, iris.target, cv=5)\n    return 1 - np.mean(scores)\n\n\nconfigspace = configurationspace({\"c\": (0.100, 1000.0)})\n\n# scenario object specifying the optimization environment\nscenario = scenario(configspace, deterministic=true, n_trials=200)\n\n# use smac to find the best configuration/hyperparameters\nsmac = hyperparameteroptimizationfacade(scenario, train)\nincumbent = smac.optimize()\n```\n\nmore examples can be found in the [documentation](https://automl.github.io/smac3/main/examples/).\n\n## visualization via deepcave\n\nwith deepcave ([repo](https://github.com/automl/deepcave), [paper](https://arxiv.org/abs/2206.03493)) you can visualize your smac runs. it is a visualization and analysis tool for automl (especially for the sub-problem\nhyperparameter optimization) runs.\n\n## license\n\nthis program is free software: you can redistribute it and/or modify\nit under the terms of the 3-clause bsd license (please see the license file).\n\nthis program is distributed in the hope that it will be useful,\nbut without any warranty; without even the implied warranty of\nmerchantability or fitness for a particular purpose.\n\nyou should have received a copy of the 3-clause bsd license\nalong with this program (see license file).\nif not, see [here](https://opensource.org/licenses/bsd-3-clause).\n\n## contacting us\n\nif you have trouble using smac, a concrete question or found a bug, please create an [issue](https://github.com/automl/smac3/issues). this is the easiest way to communicate about these things with us. \n\nfor all other inquiries, please write an email to smac[at]ai[dot]uni[dash]hannover[dot]de.\n\n## miscellaneous\n\nsmac3 is developed by the [automl groups of the universities of hannover and\nfreiburg](http://www.automl.org/).\n\nif you have found a bug, please report to [issues](https://github.com/automl/smac3/issues). moreover, we are \nappreciating any kind of help. find our guidelines for contributing to this package \n[here](contributing.md).\n\nif you use smac in one of your research projects, please cite our \n[jmlr paper](https://jmlr.org/papers/v23/21-0888.html):\n```\n@article{jmlr:v23:21-0888,\n  author  = {marius lindauer and katharina eggensperger and matthias feurer and andr\u00e9 biedenkapp and difan deng and carolin benjamins and tim ruhkopf and ren\u00e9 sass and frank hutter},\n  title   = {smac3: a versatile bayesian optimization package for hyperparameter optimization},\n  journal = {journal of machine learning research},\n  year    = {2022},\n  volume  = {23},\n  number  = {54},\n  pages   = {1--9},\n  url     = {http://jmlr.org/papers/v23/21-0888.html}\n}\n```\n\ncopyright (c) 2016-2022  [automl group](http://www.automl.org).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd 3-clause license",
+  "name": "smac",
+  "package_url": "https://pypi.org/project/smac/",
+  "project_url": "https://pypi.org/project/smac/",
+  "project_urls": {
+    "Documentation": "https://https://github.com/automl.github.io/SMAC3/main",
+    "Homepage": "https://www.automl.org/",
+    "Source Code": "https://github.com/https://github.com/automl/smac"
+  },
+  "release_url": "https://pypi.org/project/smac/2.0.2/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "smac3, a python implementation of 'sequential model-based algorithm configuration'.",
+  "version": "2.0.2",
+  "releases": [],
+  "developers": [
+    "fh@cs.uni-freiburg.de",
+    "marius_lindauer"
+  ],
+  "kwds": "pytest smac3 smac hyperparameter hyperparameters",
+  "license_kwds": "bsd 3-clause license",
+  "libtype": "pypi",
+  "id": "pypi_smac",
+  "homepage": "https://www.automl.org/",
+  "release_count": 47,
+  "dependency_ids": []
+}

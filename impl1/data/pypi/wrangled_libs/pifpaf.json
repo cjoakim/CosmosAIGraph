@@ -1,0 +1,68 @@
+{
+  "classifiers": [
+    "intended audience :: information technology",
+    "license :: osi approved :: apache software license",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: software development :: testing"
+  ],
+  "description": "==========\n pifpaf\n==========\n\n.. image:: https://travis-ci.org/jd/pifpaf.png?branch=master\n    :target: https://travis-ci.org/jd/pifpaf\n    :alt: build status\n\n.. image:: https://badge.fury.io/py/pifpaf.svg\n    :target: https://badge.fury.io/py/pifpaf\n\npifpaf is a suite of `fixtures`_ and a command-line tool that allows to start\nand stop daemons for a quick throw-away usage. this is typically useful when\nneeding these daemons to run `integration testing`_. it originaly evolved from\nits precussor `overtest`_.\n\n.. _fixtures: https://pypi.python.org/pypi/fixtures\n.. _overtest: https://github.com/jd/overtest\n\nsupported daemons\n=================\n\npifpaf currently supports:\n\n* `postgresql`_\n* `mysql`_\n* `memcached`_\n* `influxdb`_\n* `etcd`_ (with clustering)\n* `redis`_ (with sentinel mode)\n* `elasticsearch`_\n* `zookeeper`_\n* `gnocchi`_\n* `aodh`_\n* `ceph`_\n* `rabbitmq`_ (with clustering)\n* `fakes3`_\n* `consul`_\n* `keystone`_\n* `couchdb`_\n* `s3rver`_\n* `mongodb`_\n* `openstack swift`_\n* `vault`_\n* `httpbin`_\n\n.. _consul: https://www.consul.io/\n.. _postgresql: http://postgresql.org\n.. _mysql: http://mysql.org\n.. _memcached: http://memcached.org\n.. _influxdb: http://influxdb.org\n.. _etcd: https://coreos.com/etcd/\n.. _redis: http://redis.io/\n.. _elasticsearch: https://www.elastic.co/\n.. _zookeeper: https://zookeeper.apache.org/\n.. _gnocchi: http://gnocchi.xyz\n.. _aodh: http://launchpad.net/aodh\n.. _ceph: http://ceph.com\n.. _rabbitmq: https://www.rabbitmq.com/\n.. _fakes3: https://github.com/jubos/fake-s3\n.. _keystone: https://launchpad.net/keystone\n.. _couchdb: http://couchdb.apache.org/\n.. _s3rver: https://www.npmjs.com/package/s3rver\n.. _mongodb: https://www.mongodb.com\n.. _openstack swift: https://docs.openstack.org/developer/swift/\n.. _vault: https://www.vaultproject.io/\n.. _httpbin: https://httpbin.org/\n\nusage\n=====\nto use pifpaf, simply call the `pifpaf run $daemon <command>` program that you\nneed. it will setup the temporary environment and export a few environment\nvariable for you to access it::\n\n  $ pifpaf run postgresql psql template1\n  expanded display is used automatically.\n  line style is unicode.\n  set\n  psql (9.4.5)\n  type \"help\" for help.\n\n  template1=# \\l\n                                list of databases\n     name    \u2502 owner \u2502 encoding \u2502   collate   \u2502    ctype    \u2502 access privileges\n  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n   postgres  \u2502 jd    \u2502 utf8     \u2502 en_us.utf-8 \u2502 en_us.utf-8 \u2502\n   template0 \u2502 jd    \u2502 utf8     \u2502 en_us.utf-8 \u2502 en_us.utf-8 \u2502 =c/jd            \u21b5\n             \u2502       \u2502          \u2502             \u2502             \u2502 jd=ctc/jd\n   template1 \u2502 jd    \u2502 utf8     \u2502 en_us.utf-8 \u2502 en_us.utf-8 \u2502 =c/jd            \u21b5\n             \u2502       \u2502          \u2502             \u2502             \u2502 jd=ctc/jd\n  (3 rows)\n\n  template1=# \\q\n  $\n\nyou can also run it with no command line provided::\n\n  $ eval `pifpaf run memcached`\n  $ env | grep pifpaf\n  pifpaf_pid=13387\n  pifpaf_daemon=memcached\n  pifpaf_url=memcached://localhost:11212\n  pifpaf_memcached_url=memcached://localhost:11212\n  $ pifpaf_stop\n\nkilling the daemon whose pid is contained in `$pifpaf_pid` will stop the\nlaunched daemon and clean the test environment. you can kill it yourself or use\nthe defined function `pifpaf_stop`.\n\nenvironment variables\n=====================\npifpaf exports a few environment variable:\n\n* `pifpaf_daemon` which contains the name of the daemon launched\n* `pifpaf_url` which contains the url to the daemon\n* `pifpaf_pid` the pid of the pifpaf daemon\n* `pifpaf_$daemon_*` variables, which contains daemon specific variables,\n  such as port, database name, url, etc.\n\n.. _integration testing: https://en.wikipedia.org/wiki/integration_testing\n\n\nrunning several programs at once\n================================\npifpaf provides the ability to change the prefix of its environment variable,\nallowing you to nest several pifpaf instances and therefore running several\ndaemons at once::\n\n  $ pifpaf --env-prefix storage run memcached -- pifpaf --env-prefix index run postgresql $shell\n  $ env | grep storage\n  storage_data=/var/folders/7k/pwdhb_mj2cv4zyr0kyrlzjx40000gq/t/tmpvrej0j\n  storage_memcached_port=11212\n  storage_url=memcached://localhost:11212\n  storage_pid=71019\n  storage_daemon=memcached\n  storage_memcached_url=memcached://localhost:11212\n  $ env | grep index\n  index_data=/var/folders/7k/pwdhb_mj2cv4zyr0kyrlzjx40000gq/t/tmphag7tf\n  index_url=postgresql://localhost/postgres?host=/var/folders/7k/pwdhb_mj2cv4zyr0kyrlzjx40000gq/t/tmphag7tf&port=9824\n  index_pid=71021\n  index_daemon=postgresql\n  index_postgresql_url=postgresql://localhost/postgres?host=/var/folders/7k/pwdhb_mj2cv4zyr0kyrlzjx40000gq/t/tmphag7tf&port=9824\n  $ echo $pifpaf_urls\n  memcached://localhost:11212;postgresql://localhost/postgres?host=/var/folders/7k/pwdhb_mj2cv4zyr0kyrlzjx40000gq/t/tmpq2bwfh&port=9824\n\nthe `pifpaf_urls` environment variable will contain the list of all urls\ndetected and set-up by pifpaf. you can override this variable name with the\n`--global-urls-variable` option.\n\nhow it works under the hood\n===========================\n\npifpaf will start the asked daemon using the current posix user. the data file\nof the daemon will be placed in a temporary directory. the system-wide\nconfigured daemon that might exists is not touched at all.\n\npifpaf expected to find daemon binaries on your system (like `mysql`, `mysqld`,\n`pg_config`, `pg_ctl`, `rabbitmq-server`, etc).\n\nwhen the python fixture is cleaned or when pifpaf is terminated, the daemon is\nstopped and the temporary directory removed.\n\n.. image:: pifpaf.jpg\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pifpaf",
+  "package_url": "https://pypi.org/project/pifpaf/",
+  "project_url": "https://pypi.org/project/pifpaf/",
+  "project_urls": {
+    "Homepage": "https://github.com/jd/pifpaf"
+  },
+  "release_url": "https://pypi.org/project/pifpaf/3.1.5/",
+  "requires_dist": [
+    "daiquiri",
+    "click",
+    "pbr",
+    "jinja2",
+    "fixtures",
+    "psutil",
+    "xattr ; (sys_platform != 'win32')",
+    "uwsgi ; extra == 'gnocchi'",
+    "requests ; extra == 'test'",
+    "testrepository ; extra == 'test'",
+    "testtools ; extra == 'test'",
+    "os-testr ; extra == 'test'",
+    "mock ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "suite of tools and fixtures to manage daemons for testing",
+  "version": "3.1.5",
+  "releases": [],
+  "developers": [
+    "julien@danjou.info",
+    "julien_danjou"
+  ],
+  "kwds": "pifpaf_daemon pifpaf_stop pifpaf pifpaf_pid daemons",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pifpaf",
+  "homepage": "https://github.com/jd/pifpaf",
+  "release_count": 122,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_daiquiri",
+    "pypi_fixtures",
+    "pypi_jinja2",
+    "pypi_mock",
+    "pypi_os_testr",
+    "pypi_pbr",
+    "pypi_psutil",
+    "pypi_requests",
+    "pypi_testrepository",
+    "pypi_testtools",
+    "pypi_uwsgi",
+    "pypi_xattr"
+  ]
+}

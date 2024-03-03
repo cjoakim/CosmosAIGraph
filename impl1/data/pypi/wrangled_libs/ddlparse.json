@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: database",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# ddl parse\n\n[![pypi version](https://img.shields.io/pypi/v/ddlparse.svg)](https://pypi.org/project/ddlparse/)\n[![python version](https://img.shields.io/pypi/pyversions/ddlparse.svg)](https://pypi.org/project/ddlparse/)\n[![travis ci build status](https://travis-ci.com/shinichi-takii/ddlparse.svg?branch=master)](https://travis-ci.com/shinichi-takii/ddlparse)\n[![coveralls coverage status](https://coveralls.io/repos/github/shinichi-takii/ddlparse/badge.svg?branch=master)](https://coveralls.io/github/shinichi-takii/ddlparse?branch=master)\n[![codecov coverage status](https://codecov.io/gh/shinichi-takii/ddlparse/branch/master/graph/badge.svg)](https://codecov.io/gh/shinichi-takii/ddlparse)\n[![requirements status](https://requires.io/github/shinichi-takii/ddlparse/requirements.svg?branch=master)](https://requires.io/github/shinichi-takii/ddlparse/requirements/?branch=master)\n[![license](https://img.shields.io/badge/license-bsd%203--clause-blue.svg)](https://github.com/shinichi-takii/ddlparse/blob/master/license.md)\n\n*ddl parase and convert to bigquery json schema and ddl statements module, available in python.*\n\n----\n\n## features\n\n- ddl parse and get table schema information.\n- currently, only the `create table` statement is supported.\n- convert to [bigquery json schema](https://cloud.google.com/bigquery/docs/schemas#creating_a_json_schema_file) and [bigquery ddl statements](https://cloud.google.com/bigquery/docs/reference/standard-sql/data-definition-language).\n- supported databases are mysql/mariadb, postgresql, oracle, redshift.\n\n## requirement\n\n1. python >= 3.5\n1. [pyparsing](https://github.com/pyparsing/pyparsing)\n\n## installation\n\n### install\n\npip install:\n```bash\n$ pip install ddlparse\n```\n\ncommand install:\n```bash\n$ python setup.py install\n```\n\n### update\n\npip update:\n```bash\n$ pip install ddlparse --upgrade\n```\n\n## usage\n\n### example\n\n```python\nimport json\n\nfrom ddlparse import ddlparse\n\nsample_ddl = \"\"\"\ncreate table my_schema.sample_table (\n  id integer primary key comment 'user id',\n  name varchar(100) not null comment 'user name',\n  total bigint not null,\n  avg decimal(5,1) not null,\n  point int(10) unsigned,\n  zerofill_id integer unsigned zerofill not null,\n  created_at date, -- oracle 'date' -> bigquery 'datetime'\n  unique (name)\n);\n\"\"\"\n\n\n# parse pattern (1-1)\ntable = ddlparse().parse(sample_ddl)\n\n# parse pattern (1-2) : specify source database\ntable = ddlparse().parse(ddl=sample_ddl, source_database=ddlparse.database.oracle)\n\n\n# parse pattern (2-1)\nparser = ddlparse(sample_ddl)\ntable = parser.parse()\n\nprint(\"* bigquery fields * : normal\")\nprint(table.to_bigquery_fields())\n\n\n# parse pattern (2-2) : specify source database\nparser = ddlparse(ddl=sample_ddl, source_database=ddlparse.database.oracle)\ntable = parser.parse()\n\n\n# parse pattern (3-1)\nparser = ddlparse()\nparser.ddl = sample_ddl\ntable = parser.parse()\n\n# parse pattern (3-2) : specify source database\nparser = ddlparse()\nparser.source_database = ddlparse.database.oracle\nparser.ddl = sample_ddl\ntable = parser.parse()\n\nprint(\"* bigquery fields * : oracle\")\nprint(table.to_bigquery_fields())\n\n\nprint(\"* table *\")\nprint(\"schema = {} : name = {} : is_temp = {}\".format(table.schema, table.name, table.is_temp))\n\nprint(\"* bigquery fields *\")\nprint(table.to_bigquery_fields())\n\nprint(\"* bigquery fields - column name to lower case / upper case *\")\nprint(table.to_bigquery_fields(ddlparse.name_case.lower))\nprint(table.to_bigquery_fields(ddlparse.name_case.upper))\n\nprint(\"* column *\")\nfor col in table.columns.values():\n    col_info = {}\n\n    col_info[\"name\"]                  = col.name\n    col_info[\"data_type\"]             = col.data_type\n    col_info[\"length\"]                = col.length\n    col_info[\"precision(=length)\"]    = col.precision\n    col_info[\"scale\"]                 = col.scale\n    col_info[\"is_unsigned\"]           = col.is_unsigned\n    col_info[\"is_zerofill\"]           = col.is_zerofill\n    col_info[\"constraint\"]            = col.constraint\n    col_info[\"not_null\"]              = col.not_null\n    col_info[\"pk\"]                    = col.primary_key\n    col_info[\"unique\"]                = col.unique\n    col_info[\"auto_increment\"]        = col.auto_increment\n    col_info[\"distkey\"]               = col.distkey\n    col_info[\"sortkey\"]               = col.sortkey\n    col_info[\"encode\"]                = col.encode\n    col_info[\"default\"]               = col.default\n    col_info[\"character_set\"]         = col.character_set\n    col_info[\"bq_legacy_data_type\"]   = col.bigquery_legacy_data_type\n    col_info[\"bq_standard_data_type\"] = col.bigquery_standard_data_type\n    col_info[\"comment\"]               = col.comment\n    col_info[\"description(=comment)\"] = col.description\n    col_info[\"bigquery_field\"]        = json.loads(col.to_bigquery_field())\n\n    print(json.dumps(col_info, indent=2, ensure_ascii=false))\n\nprint(\"* ddl (create table) statements *\")\nprint(table.to_bigquery_ddl())\n\nprint(\"* ddl (create table) statements - dataset name, table name and column name to lower case / upper case *\")\nprint(table.to_bigquery_ddl(ddlparse.name_case.lower))\nprint(table.to_bigquery_ddl(ddlparse.name_case.upper))\n\nprint(\"* get column object (case insensitive) *\")\nprint(table.columns[\"total\"])\nprint(table.columns[\"total\"].data_type)\n```\n\n## license\n\n[bsd 3-clause license](https://github.com/shinichi-takii/ddlparse/blob/master/license.md)\n\n## author\n\nshinichi takii <shinichi.takii@shaketh.com>\n\n## links\n\n- repository : https://github.com/shinichi-takii/ddlparse\n- pypi package : https://pypi.org/project/ddlparse/\n\n## special thanks\n\n- pyparsing : https://github.com/pyparsing/pyparsing\n\n\n",
+  "docs_url": null,
+  "keywords": "ddl sql parse bigquery",
+  "license": "bsd-3-clause",
+  "name": "ddlparse",
+  "package_url": "https://pypi.org/project/ddlparse/",
+  "project_url": "https://pypi.org/project/ddlparse/",
+  "project_urls": {
+    "Homepage": "http://github.com/shinichi-takii/ddlparse"
+  },
+  "release_url": "https://pypi.org/project/ddlparse/1.10.0/",
+  "requires_dist": [
+    "pyparsing"
+  ],
+  "requires_python": "",
+  "summary": "ddl parase and convert to bigquery json schema",
+  "version": "1.10.0",
+  "releases": [],
+  "developers": [
+    "shinichi.takii@shaketh.com",
+    "shinichi_takii"
+  ],
+  "kwds": "to_bigquery_ddl ddlparse bigquery sample_ddl bigquery_legacy_data_type",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_ddlparse",
+  "homepage": "http://github.com/shinichi-takii/ddlparse",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_pyparsing"
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon simple notification service construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\nadd an sns topic to your stack:\n\n```python\ntopic = sns.topic(self, \"topic\",\n    display_name=\"customer subscription topic\"\n)\n```\n\nadd a fifo sns topic with content-based de-duplication to your stack:\n\n```python\ntopic = sns.topic(self, \"topic\",\n    content_based_deduplication=true,\n    display_name=\"customer subscription topic\",\n    fifo=true,\n    topic_name=\"customertopic\"\n)\n```\n\nnote that fifo topics require a topic name to be provided. the required `.fifo` suffix will be automatically added to the topic name if it is not explicitly provided.\n\n## subscriptions\n\nvarious subscriptions can be added to the topic by calling the\n`.addsubscription(...)` method on the topic. it accepts a *subscription* object,\ndefault implementations of which can be found in the\n`@aws-cdk/aws-sns-subscriptions` package:\n\nadd an https subscription to your topic:\n\n```python\nmy_topic = sns.topic(self, \"mytopic\")\n\nmy_topic.add_subscription(subscriptions.urlsubscription(\"https://foobar.com/\"))\n```\n\nsubscribe a queue to the topic:\n\n```python\n# queue: sqs.queue\n\nmy_topic = sns.topic(self, \"mytopic\")\n\nmy_topic.add_subscription(subscriptions.sqssubscription(queue))\n```\n\nnote that subscriptions of queues in different accounts need to be manually confirmed by\nreading the initial message from the queue and visiting the link found in it.\n\n### filter policy\n\na filter policy can be specified when subscribing an endpoint to a topic.\n\nexample with a lambda subscription:\n\n```python\nimport aws_cdk.aws_lambda as lambda_\n# fn: lambda.function\n\n\nmy_topic = sns.topic(self, \"mytopic\")\n\n# lambda should receive only message matching the following conditions on attributes:\n# color: 'red' or 'orange' or begins with 'bl'\n# size: anything but 'small' or 'medium'\n# price: between 100 and 200 or greater than 300\n# store: attribute must be present\nmy_topic.add_subscription(subscriptions.lambdasubscription(fn,\n    filter_policy={\n        \"color\": sns.subscriptionfilter.string_filter(\n            allowlist=[\"red\", \"orange\"],\n            match_prefixes=[\"bl\"]\n        ),\n        \"size\": sns.subscriptionfilter.string_filter(\n            denylist=[\"small\", \"medium\"]\n        ),\n        \"price\": sns.subscriptionfilter.numeric_filter(\n            between=sns.betweencondition(start=100, stop=200),\n            greater_than=300\n        ),\n        \"store\": sns.subscriptionfilter.exists_filter()\n    }\n))\n```\n\n### example of firehose subscription\n\n```python\nfrom aws_cdk.aws_kinesisfirehose import deliverystream\n# stream: deliverystream\n\n\ntopic = sns.topic(self, \"topic\")\n\nsns.subscription(self, \"subscription\",\n    topic=topic,\n    endpoint=stream.delivery_stream_arn,\n    protocol=sns.subscriptionprotocol.firehose,\n    subscription_role_arn=\"sample_arn\"\n)\n```\n\n## dlq setup for sns subscription\n\ncdk can attach provided queue as dlq for your sns subscription.\nsee the [sns dlq configuration docs](https://docs.aws.amazon.com/sns/latest/dg/sns-configure-dead-letter-queue.html) for more information about this feature.\n\nexample of usage with user provided dlq.\n\n```python\ntopic = sns.topic(self, \"topic\")\ndl_queue = sqs.queue(self, \"deadletterqueue\",\n    queue_name=\"mysubscription_dlq\",\n    retention_period=duration.days(14)\n)\n\nsns.subscription(self, \"subscription\",\n    endpoint=\"endpoint\",\n    protocol=sns.subscriptionprotocol.lambda,\n    topic=topic,\n    dead_letter_queue=dl_queue\n)\n```\n\n## cloudwatch event rule target\n\nsns topics can be used as targets for cloudwatch event rules.\n\nuse the `@aws-cdk/aws-events-targets.snstopic`:\n\n```python\nimport aws_cdk.aws_codecommit as codecommit\nimport aws_cdk.aws_events_targets as targets\n\n# repo: codecommit.repository\n\nmy_topic = sns.topic(self, \"topic\")\n\nrepo.on_commit(\"oncommit\",\n    target=targets.snstopic(my_topic)\n)\n```\n\nthis will result in adding a target to the event rule and will also modify the\ntopic resource policy to allow cloudwatch events to publish to the topic.\n\n## topic policy\n\na topic policy is automatically created when `addtoresourcepolicy` is called, if\none doesn't already exist. using `addtoresourcepolicy` is the simplest way to\nadd policies, but a `topicpolicy` can also be created manually.\n\n```python\ntopic = sns.topic(self, \"topic\")\ntopic_policy = sns.topicpolicy(self, \"topicpolicy\",\n    topics=[topic]\n)\n\ntopic_policy.document.add_statements(iam.policystatement(\n    actions=[\"sns:subscribe\"],\n    principals=[iam.anyprincipal()],\n    resources=[topic.topic_arn]\n))\n```\n\na policy document can also be passed on `topicpolicy` construction\n\n```python\ntopic = sns.topic(self, \"topic\")\npolicy_document = iam.policydocument(\n    assign_sids=true,\n    statements=[\n        iam.policystatement(\n            actions=[\"sns:subscribe\"],\n            principals=[iam.anyprincipal()],\n            resources=[topic.topic_arn]\n        )\n    ]\n)\n\ntopic_policy = sns.topicpolicy(self, \"policy\",\n    topics=[topic],\n    policy_document=policy_document\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-sns",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-sns/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-sns/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-sns/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-cloudwatch (==1.204.0)",
+    "aws-cdk.aws-codestarnotifications (==1.204.0)",
+    "aws-cdk.aws-events (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.aws-sqs (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::sns",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk aws_lambda aws_kinesisfirehose aws_events_targets notification",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_sns",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_cloudwatch",
+    "pypi_aws_cdk.aws_codestarnotifications",
+    "pypi_aws_cdk.aws_events",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.aws_sqs",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

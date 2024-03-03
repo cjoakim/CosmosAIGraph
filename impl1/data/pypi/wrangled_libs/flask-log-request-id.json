@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "\nflask-log-request-id\n====================\n\n|circleci|\n\n**flask-log-request-id** is an extension for `flask`_ that can parse and handle\nthe request-id sent by request processors like `amazon elb`_, `heroku request-id`_\nor any multi-tier infrastructure as the one used at microservices. a common\nusage scenario is to inject the request\\_id in the logging system so that all\nlog records, even those emitted by third party libraries, have attached the\nrequest\\_id that initiated their call. this can greatly improve tracing and debugging of problems.\n\n\nfeatures\n--------\n\nflask-log-request-id provides the ``current_request_id()`` function which can be used\nat any time to get the request id of the initiated execution chain. it also comes with\nlog filter to inject this information on log events as also an extension to forward\nthe current request id into celery's workers.\n\n\nexample: parse request id and send it to to logging\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nin the following example, we will use the ``requestidlogfilter`` to inject\nthe request id on all log events, and a custom formatter to print this\ninformation. if all these sounds unfamiliar please take a look at `python logging system`_\n\n.. code:: python\n\n    import logging\n    import logging.config\n    from random import randint\n    from flask import flask\n    from flask_log_request_id import requestid, requestidlogfilter\n\n    def generic_add(a, b):\n        \"\"\"simple function to add two numbers that is not aware of the request id\"\"\"\n        logging.debug('called generic_add({}, {})'.format(a, b))\n        return a + b\n\n    app = flask(__name__)\n    requestid(app)\n\n    # setup logging\n    handler = logging.streamhandler()\n    handler.setformatter(\n        logging.formatter(\"%(asctime)s - %(name)s - level=%(levelname)s - request_id=%(request_id)s - %(message)s\"))\n    handler.addfilter(requestidlogfilter())  # << add request id contextual filter\n    logging.getlogger().addhandler(handler)\n\n\n    @app.route('/')\n    def index():\n        a, b = randint(1, 15), randint(1, 15)\n        logging.info('adding two random numbers {} {}'.format(a, b))\n        return str(generic_add(a, b))\n\n\ninstallation\n------------\nthe easiest way to install it is using ``pip`` from pypi\n\n.. code:: bash\n\n    pip install flask-log-request-id\n\n\nlicense\n-------\n\nsee the `license`_ file for license rights and limitations (mit).\n\n\n.. _flask: http://flask.pocoo.org/\n.. _amazon elb: http://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-request-tracing.html\n.. _heroku request-id: https://devcenter.heroku.com/articles/http-request-id\n.. _python logging system: https://docs.python.org/3/library/logging.html\n.. _license: https://github.com/workable/flask-log-request-id/blob/master/license.md\n.. |circleci| image:: https://img.shields.io/circleci/project/github/workable/flask-log-request-id.svg\n   :target: https://circleci.com/gh/workable/flask-log-request-id\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "flask-log-request-id",
+  "package_url": "https://pypi.org/project/Flask-Log-Request-ID/",
+  "project_url": "https://pypi.org/project/Flask-Log-Request-ID/",
+  "project_urls": {
+    "Homepage": "http://github.com/Workable/flask-log-request-id"
+  },
+  "release_url": "https://pypi.org/project/Flask-Log-Request-ID/0.10.1/",
+  "requires_dist": [
+    "Flask (>=0.8)",
+    "nose ; extra == 'test'",
+    "flake8 ; extra == 'test'",
+    "mock (==2.0.0) ; extra == 'test'",
+    "coverage (~=4.5.4) ; extra == 'test'",
+    "celery (~=4.3.0) ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "flask extension that can parse and handle multiple types of request-id sent by request processors like amazon elb, heroku or any multi-tier infrastructure as the one used for microservices.",
+  "version": "0.10.1",
+  "releases": [],
+  "developers": [
+    "ioannis.foukarakis@gmail.com",
+    "konstantinos_paliouras",
+    "squarious@gmail.com"
+  ],
+  "kwds": "flask_log_request_id current_request_id requestidlogfilter request_id flask",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flask_log_request_id",
+  "homepage": "http://github.com/workable/flask-log-request-id",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_celery",
+    "pypi_coverage",
+    "pypi_flake8",
+    "pypi_flask",
+    "pypi_mock",
+    "pypi_nose"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "classifiers": [
+    "license :: osi approved :: isc license (iscl)",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# multisig-hmac\n\n> multisig scheme for hmac authentication. python implementation of [multisig-hmac](https://github.com/emilbayes/multisig-hmac).\n\n## usage\nkey management can happen in either of two modes, either by storing every of the component keys, or by storing a single master seed and using that to derive keys ad hoc.\n\nthe following two examples return `true` when they are executed, for example inside a virtual environment.\n\nusing stored keys:\n\n```python\nimport multisig_hmac\nfrom multisig_hmac.multisig_hmac import multisighmac\nimport base64\n\nm = multisighmac()\n\n# generate keys which need to be stored securely and need to be shared securely with each party\nk0 = m.keygen(0)\nk1 = m.keygen(1)\nk2 = m.keygen(2)\n\n# sign by each client\ndata = b'hello world'\n\ns0 = m.sign(k0, data)\ns2 = m.sign(k2, data)\n\n# combine the used signatures\nout = m.combine([s0, s2])\n\nsent = (out[0], base64.urlsafe_b64encode(out[1]))\n\n# --- network ---\n\nreceived = (sent[0], base64.urlsafe_b64decode(sent[1]))\n\n# verify on the server\nthreshold = 2\nkeys = [k0, k1, k2]\nsignature = received\n\nprint(m.verify(keys, signature, data, threshold))\n\n```\n\nusing a derived master key:\n\n```python\nimport multisig_hmac\nfrom multisig_hmac.multisig_hmac import multisighmac\nimport base64\n\nm = multisighmac()\n\n# generate a master seed which needs to be stored securely\n# this seed must not be shared with any other party\nseed = m.seedgen()\n\nk0 = m.derivekey(seed, 0)\nk1 = m.derivekey(seed, 1)\nk2 = m.derivekey(seed, 2)\n\n# sign by each client\ndata = b'hello world'\n\ns0 = m.sign(k0, data)\ns2 = m.sign(k2, data)\n\n# combine the used signatures\nout = m.combine([s0, s2])\n\nsent = (out[0], base64.urlsafe_b64encode(out[1]))\n\n# --- network ---\n\nreceived = (sent[0], base64.urlsafe_b64decode(sent[1]))\n\n# verify on the server, but now keys are dynamically derived\nthreshold = 2\nsignature = received\n\nprint(m.verifyderived(seed, signature, data, threshold))\n\n```\n\n## api\n### constants\n* `multisighmac.bytes` signature length in bytes (default)\n* `multisighmac.keybytes` key length in bytes (default)\n* `multisighmac.primitive` is `sha256` (default)\n\nso far, the implementation supports the following specific algorithms:\n* `multisighmac.sha256_bytes` signature length in bytes\n* `multisighmac.sha256_keybytes` key length in bytes\n* `multisighmac.sha256_primitive` is `sha256`\n* `multisighmac.sha512_bytes` signature length in bytes\n* `multisighmac.sha512_keybytes` key length in bytes\n* `multisighmac.sha512_primitive` is `sha512`\n* `multisighmac.sha384_bytes` signature length in bytes\n* `multisighmac.sha384_keybytes` key length in bytes\n* `multisighmac.sha384_primitive` is `sha384`\n\n### `n = multisighmac.popcount(bitfield)`\nreturns the number of keys (i.e. high bits) in `bitfield`. `bitfield` must be a 32-bit unsigned integer. example:\n```python\nassert multisighmac.popcount(5) == 2\n```\n\n### `xs = multisighmac.keyindexes(bitfield)`\nreturns the indexes of the keys (i.e. high bits) in `bitfield` as a list. `bitfield` must be a 32-bit unsigned integer. example:\n```python\nassert multisighmac.keyindexes(5) == [0,2]\n```\n\n### `m = multisighmac([alg = multisighmac.primitive])`\ncreates a new instance of `multisighmac` which can be used as a global singleton. just sets the algorithm to be used for subsequent methods and associated constants. example:\n```python\nm = multisighmac()\nassert (m.popcount(5) == 2 and m.keyindexes(5) == [0,2])\n```\n\n### `key = multisighmac.keygen(index)`\ngenerates a new cryptographically random key. the function returns `{ index: 32-bit unsigned integer, key: bytes of length keybytes }`.\n\nnote: `index` should be counted from 0.\n\n### `masterseed = multisighmac.seedgen()`\ngenerates a new cryptographically random master seed.\n\n### `key = multisighmac.derivekey(masterseed, index)`\nderives a new subkey from a master seed. `index` must be a 32-bit unsigned integer, but in practice you want to keep a much lower number, as the bitfield used with the signature has as many bits as the largest index. the function returns `{ index: 32-bit unsigned integer, key: bytes of length keybytes }`.\n\nnote: `index` should be counted from 0.\n\nkeys are derived using a kdf based on hmac:\n```\nb[0...bytes] = hmac(key = masterseed, data = 'derive' || u32le(index) || 0x00)\nb[bytes...] = hmac(key = masterseed, b[0...bytes] || 0x01)\n```\n\n### `signature = multisighmac.sign(key, data)`\nindependently signs `data` with `key`. the function returns `{ bitfield: 32-bit unsigned integer, signature: bytes of length bytes }`. this object can be passed to the `combine()` function explained below.\n\n### `signature = multisighmac.combine([signatures...])`\ncombines a list of signatures which have all been signed independently. only include each signature once, otherwise they will cancel out. signatures can be combined in any order. the function returns `{ bitfield: 32-bit unsigned integer, signature: bytearray of length bytes }`.\n\n### `valid = multisighmac.verify(keys, signature, data, threshold)`\nverifies a `signature` of `data` against a list of `keys`, over a given `threshold`. `keys` must be an array of keys. the function returns `true` or `false`.\n\n### `valid = multisighmac.verifyderived(masterseed, signature, data, threshold)`\nverifies a `signature` of `data` against dynamically derived keys from `masterseed`, over a given `threshold`. `masterseed` must be bytes of length `keybytes`. the function returns `true` or `false`.\n\n## installation\n```console\n$ pip install multisig-hmac\n```\n\n## running tests\n```console\n$ pip install -u pytest\n$ py.test\n```\n\n## license\n\n[isc](license)\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "multisig-hmac",
+  "package_url": "https://pypi.org/project/multisig-hmac/",
+  "project_url": "https://pypi.org/project/multisig-hmac/",
+  "project_urls": {
+    "Homepage": "https://github.com/AmalieDue/multisig-hmac-python-version"
+  },
+  "release_url": "https://pypi.org/project/multisig-hmac/0.2.4/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "multisig hmac",
+  "version": "0.2.4",
+  "releases": [],
+  "developers": [
+    "amalie_due_jensen",
+    "amalieduejensen@hotmail.com"
+  ],
+  "kwds": "multisig_hmac multisig hmac multisighmac sha256_keybytes",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_multisig_hmac",
+  "homepage": "https://github.com/amaliedue/multisig-hmac-python-version",
+  "release_count": 7,
+  "dependency_ids": []
+}

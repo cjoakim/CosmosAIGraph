@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "\n# gs_usb\n\npython windows/linux/mac can driver based on usbfs or winusb wcid for geschwister schneider usb/can devices, candlelight usb can interfaces, can debugger devices and other interfaces utilising the gs_usb driver.\n\n## getting started\n\ninstall by ```pip install gs_usb```\n\nbelow is a basic demo for can message sending and receiving.\n\n```python\nimport time\n\nfrom gs_usb.gs_usb import gsusb\nfrom gs_usb.gs_usb_frame import gsusbframe\nfrom gs_usb.constants import (\n    can_eff_flag,\n    can_err_flag,\n    can_rtr_flag,\n)\n\n\ndef main():\n    # find our device\n    devs = gsusb.scan()\n    if len(devs) == 0:\n        print(\"can not find gs_usb device\")\n        return\n    dev = devs[0]\n\n    # configuration\n    if not dev.set_bitrate(250000):\n        print(\"can not set bitrate for gs_usb\")\n        return\n\n    # start device\n    dev.start()\n\n    # prepare frames\n    data = b\"\\x12\\x34\\x56\\x78\\x9a\\xbc\\xde\\xf0\"\n    sff_frame = gsusbframe(can_id=0x7ff, data=data)\n    sff_none_data_frame = gsusbframe(can_id=0x7ff)\n    err_frame = gsusbframe(can_id=0x7ff | can_err_flag, data=data)\n    eff_frame = gsusbframe(can_id=0x12345678 | can_eff_flag, data=data)\n    eff_none_data_frame = gsusbframe(can_id=0x12345678 | can_eff_flag)\n    rtr_frame = gsusbframe(can_id=0x7ff | can_rtr_flag)\n    rtr_with_eid_frame = gsusbframe(can_id=0x12345678 | can_rtr_flag | can_eff_flag)\n    rtr_with_data_frame = gsusbframe(can_id=0x7ff | can_rtr_flag, data=data)\n    frames = [\n        sff_frame,\n        sff_none_data_frame,\n        err_frame,\n        eff_frame,\n        eff_none_data_frame,\n        rtr_frame,\n        rtr_with_eid_frame,\n        rtr_with_data_frame,\n    ]\n\n    # read all the time and send message in each second\n    end_time, n = time.time() + 1, -1\n    while true:\n        iframe = gsusbframe()\n        if dev.read(iframe, 1):\n            print(\"rx  {}\".format(iframe))\n\n        if time.time() - end_time >= 0:\n            end_time = time.time() + 1\n            n += 1\n            n %= len(frames)\n\n            if dev.send(frames[n]):\n                print(\"tx  {}\".format(frames[n]))\n\n\nif __name__ == \"__main__\":\n    try:\n        main()\n    except keyboardinterrupt:\n        pass\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "gs-usb",
+  "package_url": "https://pypi.org/project/gs-usb/",
+  "project_url": "https://pypi.org/project/gs-usb/",
+  "project_urls": {
+    "Homepage": "https://github.com/jxltom/gs_usb"
+  },
+  "release_url": "https://pypi.org/project/gs-usb/0.3.0/",
+  "requires_dist": [
+    "pyusb (>=1.0.2)"
+  ],
+  "requires_python": "",
+  "summary": "python windows/linux/mac can driver based on usbfs or winusb wcid for geschwister schneider usb/can devices and candlelight usb can interfaces.",
+  "version": "0.3.0",
+  "releases": [],
+  "developers": [
+    "jxltom",
+    "jxltom@gmail.com"
+  ],
+  "kwds": "gs_usb_frame gs_usb gsusb usb usbfs",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_gs_usb",
+  "homepage": "https://github.com/jxltom/gs_usb",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_pyusb"
+  ]
+}

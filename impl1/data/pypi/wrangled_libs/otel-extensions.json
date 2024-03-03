@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries",
+    "topic :: software development :: testing",
+    "topic :: utilities"
+  ],
+  "description": "# otel-extensions-python: opentelemetry extensions for python\nopentelemetry extensions for python is a collection of helper classes, functions, and decorators to facilitate the use of the \n[opentelemetry python api & sdk packages](https://opentelemetry.io/docs/instrumentation/python/)\n\n\n## version support\n\npython >= 3.6\n\n## installation\n### pip install\n\nyou can install through pip using:\n\n```sh\npip install otel-extensions\n```\n(you may need to run `pip` with root permission: `sudo pip install otel-extensions`)\n\n\n### setuptools\n\ninstall via [setuptools](http://pypi.python.org/pypi/setuptools).\n\n```sh\npython setup.py install --user\n```\n(or `sudo python setup.py install` to install the package for all users)\n\n\n\n## features\n\n### tracer provider initialization\n\n```python\nfrom otel_extensions import init_telemetry_provider, telemetryoptions\n\n# provide options for telemetry provider\n# alternatively, any of the following options can be specified through\n# environment variables with the equivalent name\noptions = telemetryoptions(\n    # otlp receiver endpoint\n    otel_exporter_otlp_endpoint=\"http://localhost:4317/\",\n    # ca bundle for tls verification of endpoint (if endpoint scheme is https)\n    otel_exporter_otlp_certificate=\"/path/to/ca/bundle\",\n    # protocol for otlp receiver (supported: gprc | http/protobuf | custom)\n    otel_exporter_otlp_protocol=\"grpc\",\n    # custom span exporter class name (needed if protocol set to 'custom')\n    otel_exporter_custom_span_exporter_type=\"pkg.classname\",\n    # name of service\n    otel_service_name=\"my service\",\n    # processor type\n    #   batch:  use batchspanprocessor\n    #   simple: use simplespanprocessor\n    otel_processor_type=\"batch\",\n    # optional parent span id.  will be injected into current context\n    traceparent=\"001233454656....\"\n)\n# initialize the global tracer provider\ninit_telemetry_provider(options)\n```\n\n### instrumentation decorator\nyou can use the `@instrumented` decorator to automatically wrap a span around a function or method.\n(as of version 0.2.0, the decorator can support coroutine functions defined as `async def` as well as normal functions)\n\n```python\nfrom otel_extensions import init_telemetry_provider, instrumented\nimport asyncio\n\nasync def main():\n    foo()\n    await async_foo()\n    \n@instrumented\ndef foo():\n    \"\"\"creates a span named 'foo'\"\"\"\n    bar()\n\n@instrumented(span_name=\"custom span name\")\ndef bar():\n    \"\"\"creates a span named 'custom span name'\"\"\"\n    print(\"hello world\")\n    \n@instrumented(span_attributes={\"attr1\": \"val1\", \"attr2\": \"val2\"})\ndef fn_with_attrs():\n    \"\"\"creates a span named 'fn_with_attrs' and sets key/value pairs\n    from `span_attributes` as span attributes\"\"\"\n    print(\"hello world\")\n\n@instrumented\nasync def async_foo():\n    \"\"\"creates a span named 'async_foo'\"\"\"\n    await async_bar()\n\n@instrumented(span_name=\"custom span name\")\nasync def async_bar():\n    \"\"\"creates a span named 'custom span name'\"\"\"\n    print(\"hello world\")\n    \n@instrumented(span_name=\"custom span name\")\nasync def async_bar():\n    \"\"\"creates a span named 'custom span name'\"\"\"\n    print(\"hello world\")\n    \n@instrumented(span_attributes={\"attr1\": \"val1\", \"attr2\": \"val2\"})\nasync def async_fn_with_attrs():\n    \"\"\"creates a span named 'async_fn_with_attrs' and sets key/value pairs\n    from `span_attributes` as span attributes\"\"\"\n    print(\"hello world\")\n    \nif __name__ == '__main__':\n    # init telemetry provider (using options from environment variables)\n    init_telemetry_provider()\n    asyncio.run(main())\n\n```\n\n### trace context helper class\nthe `tracecontextcarrier` class is useful when propagating context across process or thread boundaries\n\n```python\nfrom otel_extensions import tracecontextcarrier\nfrom threading import thread\n\n\ndef main_program():\n    ...\n    # capture current context\n    ctx = tracecontextcarrier()\n    thread = thread(thread_func, args=(ctx))\n    thread.start()\n    ...\n\ndef thread_func(ctx: tracecontextcarrier):\n    # attach to context stored in ctx\n    ctx.attach()\n    ...\n```\n\nalso, the `tracecontextcarrier` class can attach to context stored in the `traceparent` environment variable.\nnote that this is done automatically when calling the `init_telemetry_provider()` function.\n\n```python\nfrom otel_extensions import tracecontextcarrier\n\ntracecontextcarrier.attach_from_env()\n```\n\n`tracecontextcarrier` can also inject the current context into the `traceparent` environment variable.\nthis is useful for context propagation when using `popen` to create a subprocess\n```python\nfrom otel_extensions import tracecontextcarrier\nfrom subprocess import popen\n\ntracecontextcarrier.inject_to_env()\nprocess = popen(...)\n```\n\n### log messages as events\nthe `traceeventloghandler` class is a `logging.handler` class that creates events for any log message that occurs in a span.\n\n```python\nfrom otel_extensions import traceeventloghandler, init_telemetry_provider, get_tracer\nimport logging\n\ninit_telemetry_provider()\n\nlogging.basicconfig()\nlogging.getlogger(__name__).addhandler(traceeventloghandler())\n\nwith get_tracer(__name__).start_as_current_span(\"foo\") as span:\n    logging.getlogger(__name__).warning(\"some log message\")\n    # 'some log message' will be created as an event in 'span',\n    # as if you had called\n    # span.add_event('some log message')\n\n```\n\n\n\n",
+  "docs_url": null,
+  "keywords": "otel,opentelemetry,debug",
+  "license": "apache-2.0",
+  "name": "otel-extensions",
+  "package_url": "https://pypi.org/project/otel-extensions/",
+  "project_url": "https://pypi.org/project/otel-extensions/",
+  "project_urls": {
+    "Homepage": "https://github.com/s4v4g3/otel-extensions-python",
+    "Source": "https://github.com/s4v4g3/otel-extensions-python",
+    "Tracker": "https://github.com/s4v4g3/otel-extensions-python/issues"
+  },
+  "release_url": "https://pypi.org/project/otel-extensions/1.0.1/",
+  "requires_dist": [
+    "opentelemetry-api",
+    "opentelemetry-sdk"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "python extensions for opentelemetry",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "joe.savage@gmail.com",
+    "joe_savage"
+  ],
+  "kwds": "opentelemetry init_telemetry_provider otel_exporter_otlp_protocol otel_service_name otel_exporter_otlp_endpoint",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_otel_extensions",
+  "homepage": "https://github.com/s4v4g3/otel-extensions-python",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_opentelemetry_api",
+    "pypi_opentelemetry_sdk"
+  ]
+}

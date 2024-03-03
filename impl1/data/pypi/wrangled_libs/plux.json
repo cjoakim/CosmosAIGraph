@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries",
+    "topic :: utilities"
+  ],
+  "description": "plux\n====\n\n<p>\n  <a href=\"https://github.com/localstack/plux/actions/workflows/build.yml\"><img alt=\"ci badge\" src=\"https://github.com/localstack/plux/actions/workflows/build.yml/badge.svg\"></img></a>\n  <a href=\"https://pypi.org/project/plux/\"><img alt=\"pypi version\" src=\"https://img.shields.io/pypi/v/plux?color=blue\"></a>\n  <a href=\"https://img.shields.io/pypi/l/plux.svg\"><img alt=\"pypi license\" src=\"https://img.shields.io/pypi/l/plux.svg\"></a>\n  <a href=\"https://github.com/psf/black\"><img alt=\"code style: black\" src=\"https://img.shields.io/badge/code%20style-black-000000.svg\"></a>\n</p>\n\nplux is the dynamic code loading framework used in [localstack](https://github.com/localstack/localstack).\n\n\noverview\n--------\n\nplux builds a higher-level plugin mechanism around [python's entry point mechanism](https://packaging.python.org/specifications/entry-points/).\nit provides tools to load plugins from entry points at run time, and to discover entry points from plugins at build time (so you don't have to declare entry points statically in your `setup.py`).\n\n### core concepts\n\n* `pluginspec`: describes a `plugin`. each plugin has a namespace, a unique name in that namespace, and a `pluginfactory` (something that creates `plugin` the spec is describing.\n  in the simplest case, that can just be the plugin's class).\n* `plugin`: an object that exposes a `should_load` and `load` method.\n  note that it does not function as a domain object (it does not hold the plugins lifecycle state, like initialized, loaded, etc..., or other metadata of the plugin)\n* `pluginfinder`: finds plugins, either at build time (by scanning the modules using `pkgutil` and `setuptools`) or at run time (reading entrypoints of the distribution using [stevedore](https://docs.openstack.org/stevedore/latest/))\n* `pluginmanager`: manages the run time lifecycle of a plugin, which has three states:\n  * resolved: the entrypoint pointing to the pluginspec was imported and the `pluginspec` instance was created\n  * init: the `pluginfactory` of the `pluginspec` was successfully invoked\n  * loaded: the `load` method of the `plugin` was successfully invoked\n\n![architecture](https://raw.githubusercontent.com/localstack/plux/main/docs/plux-architecture.png)\n\n### loading plugins\n\nat run time, a `pluginmanager` uses a `pluginfinder` that in turn uses stevedore to scan the available entrypoints for things that look like a `pluginspec`.\nwith `pluginmanager.load(name: str)` or `pluginmanager.load_all()`, plugins within the namespace that are discoverable in entrypoints can be loaded.\nif an error occurs at any state of the lifecycle, the `pluginmanager` informs the `pluginlifecyclelistener` about it, but continues operating.\n\n### discovering entrypoints\n\nto build a source distribution and a wheel of your code with your plugins as entrypoints, simply run `python setup.py plugins sdist bdist_wheel`.\n\nhow it works:\nfor discovering plugins at build time, plux provides a custom setuptools command `plugins`, invoked via `python setup.py plugins`.\nthe command uses a special `pluginfinder` that collects from the codebase anything that can be interpreted as a `pluginspec`, and creates from it a plugin index file `plux.json`, that is placed into the `.egg-info` distribution metadata directory.\nwhen a setuptools command is used to create the distribution (e.g., `python setup.py sdist/bdist_wheel/...`), plux finds the `plux.json` plugin index and extends automatically the list of entry points (collected into `.egg-info/entry_points.txt`).\nthe `plux.json` file becomes a part of the distribution, s.t., the plugins do not have to be discovered every time your distribution is installed elsewhere.\n\n\n\nexamples\n--------\n\nto build something using the plugin framework, you will first want to introduce a plugin that does something when it is loaded.\nand then, at runtime, you need a component that uses the `pluginmanager` to get those plugins.\n\n### one class per plugin\n\nthis is the way we went with `localstackcliplugin`. every plugin class (e.g., `procliplugin`) is essentially a singleton.\nthis is easy, as the classes are discoverable as plugins.\nsimply create a plugin class with a name and namespace and it will be discovered by the build time `pluginfinder`.\n\n```python\n\n# abstract case (not discovered at build time, missing name)\nclass cliplugin(plugin):\n    namespace = \"my.plugins.cli\"\n\n    def load(self, cli):\n        self.attach(cli)\n\n    def attach(self, cli):\n        raise notimplementederror\n\n# discovered at build time (has a namespace, name, and is a plugin)\nclass mycliplugin(cliplugin):\n    name = \"my\"\n\n    def attach(self, cli):\n        # ... attach commands to cli object\n\n```\n\nnow we need a `pluginmanager` (which has a generic type) to load the plugins for us:\n\n```python\ncli = # ... needs to come from somewhere\n\nmanager: pluginmanager[cliplugin] = pluginmanager(\"my.plugins.cli\", load_args=(cli,))\n\nplugins: list[cliplugin] = manager.load_all()\n\n# todo: do stuff with the plugins, if you want/need\n#  in this example, we simply use the plugin mechanism to run a one-shot function (attach) on a load argument\n\n```\n\n### re-usable plugins\n\nwhen you have lots of plugins that are structured in a similar way, we may not want to create a separate plugin class\nfor each plugin. instead we want to use the same `plugin` class to do the same thing, but use several instances of it.\nthe `pluginfactory`, and the fact that `pluginspec` instances defined at module level are discoverable (inpired\nby [pluggy](https://github.com/pytest-dev/pluggy)), can be used to achieve that.\n\n```python\n\nclass serviceplugin(plugin):\n\n    def __init__(self, service_name):\n        self.service_name = service_name\n        self.service = none\n\n    def should_load(self):\n        return self.service_name in config.services\n\n    def load(self):\n        module = importlib.import_module(\"localstack.services.%s\" % self.service_name)\n        # suppose we define a convention that each service module has a service class, like moto's `backend`\n        self.service = module.service()\n\ndef service_plugin_factory(name) -> pluginfactory:\n    def create():\n        return serviceplugin(name)\n\n    return create\n\n# discoverable\ns3 = pluginspec(\"localstack.plugins.services\", \"s3\", service_plugin_factory(\"s3\"))\n\n# discoverable\ndynamodb = pluginspec(\"localstack.plugins.services\", \"dynamodb\", service_plugin_factory(\"dynamodb\"))\n\n# ... could be simplified with convenience framework code, but the principle will stay the same\n\n```\n\nthen we could use the `pluginmanager` to build a supervisor\n\n```python\n\nclass supervisor:\n    manager: pluginmanager[serviceplugin]\n\n    def start(self, service_name):\n        plugin = manager.load(service_name)\n        service = plugin.service\n        service.start()\n\n```\n\n### functions as plugins\n\nwith the `@plugin` decorator, you can expose functions as plugins. they will be wrapped by the framework\ninto `functionplugin` instances, which satisfy both the contract of a plugin, and that of the function.\n\n```python\nfrom plugin import plugin\n\n\n@plugin(namespace=\"localstack.configurators\")\ndef configure_logging(runtime):\n    logging.basicconfig(level=runtime.config.loglevel)\n\n    \n@plugin(namespace=\"localstack.configurators\")\ndef configure_somethingelse(runtime):\n    # do other stuff with the runtime object\n    pass\n```\n\nwith a pluginmanager via `load_all`, you receive the `functionplugin` instances, that you can call like the functions\n\n```python\n\nruntime = localstackruntime()\n\nfor configurator in pluginmanager(\"localstack.configurators\").load_all():\n    configurator(runtime)\n```\n\nconfiguring your distribution\n-----------------------------\n\nif you are building a python distribution that exposes plugins discovered by plux, you need to configure your projects build system so other dependencies creates the `entry_points.txt` file when installing your distribution.\n\nfor a [`pyproject.toml`](https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/) template this involves adding the `build-system` section:\n\n```toml\n[build-system]\nrequires = ['setuptools', 'wheel', 'plux>=1.3.1']\nbuild-backend = \"setuptools.build_meta\"\n\n# ...\n```\n\ninstall\n-------\n\n    pip install plux\n\ndevelop\n-------\n\ncreate the virtual environment, install dependencies, and run tests\n\n    make venv\n    make test\n\nrun the code formatter\n\n    make format\n\nupload the pypi package using twine\n\n    make upload\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "plux",
+  "package_url": "https://pypi.org/project/plux/",
+  "project_url": "https://pypi.org/project/plux/",
+  "project_urls": {
+    "Homepage": "https://github.com/localstack/plux"
+  },
+  "release_url": "https://pypi.org/project/plux/1.5.0/",
+  "requires_dist": [
+    "stevedore >=3.4",
+    "pytest ==6.2.4 ; extra == 'dev'",
+    "black ==22.3.0 ; extra == 'dev'",
+    "isort ==5.9.1 ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "a dynamic code loading framework for building pluggable python distributions",
+  "version": "1.5.0",
+  "releases": [],
+  "developers": [
+    "thomas@localstack.cloud",
+    "thomas_rausch"
+  ],
+  "kwds": "pypi badge pypa plux png",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_plux",
+  "homepage": "https://github.com/localstack/plux",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_isort",
+    "pypi_pytest",
+    "pypi_stevedore"
+  ]
+}

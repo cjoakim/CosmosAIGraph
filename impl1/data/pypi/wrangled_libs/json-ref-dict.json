@@ -1,0 +1,37 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "programming language :: python :: 3.6"
+  ],
+  "description": "[![build status](https://travis-ci.com/jacksmith15/json-ref-dict.svg?branch=master)](https://travis-ci.com/jacksmith15/json-ref-dict)\n# jsonschema ref dict\npython dict-like object which abstracts resolution of jsonschema references.\n\n```python\nfrom json_ref_dict import refdict\n\nschema = refdict(\"https://json-schema.org/draft-07/schema#/\")\n```\n\nnested items containing `\"$ref\"` will be resolved lazily when accessed,\nmeaning the dictionary can be treating as a single, continuous (and\npossibly infinite) document.\n\nremote references are supported, and will be resolved relative to the current\ndocument.\n\nif no scheme is provided, it is assumed that the document is present on the\nlocal filesystem (see [example](#example) below).\n\nif [pyyaml](https://github.com/yaml/pyyaml) is installed, then loading of yaml documents will be supported, otherwise only json documents may be loaded.\n\n## example\ngiven the following related schemas:\n#### _master.yaml_\n```yaml\ndefinitions:\n  foo:\n    type: string\n  local_ref:\n    $ref: '#/definitions/foo'\n  remote_ref:\n    $ref: 'other.yaml#/definitions/bar'\n  backref:\n    $ref: 'other.yaml#/definitions/baz'\n```\n\n#### _other.yaml_\n```yaml\ndefinitions:\n  bar:\n    type: integer\n  baz:\n    $ref: 'master.yaml#/definitions/foo'\n```\n\nwe can parse these as a single object as follows:\n```python\nfrom json_ref_dict import refdict\n\nschema = refdict(\"master.yaml#/definitions\")\nprint(schema)\n>>> {'foo': {'type': 'string'}, 'local_ref': {'$ref': '#/definitions/foo'}, 'remote_ref': {'$ref': 'other.yaml#/definitions/bar'}, 'backref': {'$ref': 'other.yaml#/definitions/baz'}}\n\nprint(schema[\"local_ref\"])\n>>> {'type': 'string'}\n\nprint(schema[\"remote_ref\"])\n>>> {'type': 'integer'}\n\nprint(schema[\"backref\"])\n>>> {'type': 'string'}\n```\n\n## materializing documents\nif you don't want the lazy behaviour, and want to get all of the io out of the way up front, then you can \"materialize\" the dictionary:\n```python\nfrom json_ref_dict import materialize, refdict\n\nschema = materialize(refdict(\"https://json-schema.org/draft-04/schema#/\"))\nassert isinstance(schema, dict)\n```\n\na materialized `refdict` is just a regular dict, containing a document with all references resolved. this is useful if, for example, you want to cache/persist the entire schema. be aware that if there are cyclical references in the schema, these will be present on the materialized dictionary.\n\nthe `materialize` helper also supports some basic transformation options, as performing global transformations on infinite documents is non-trivial:\n\n- `include_keys` - an iterable of keys to include in the materialized document.\n- `exclude_keys` - an iterable of keys to exclude from the materialized document.\n- `value_map` - an operation to apply to the values of the document (not lists or dictionaries).\n\n# requirements\nthis package is currently tested for python 3.6.\n\n# installation\nthis project may be installed using [pip](https://pip.pypa.io/en/stable/):\n```\npip install json-ref-dict\n```\n\n# development\n1. clone the repository: `git clone git@github.com:jacksmith15/json-ref-dict.git && cd json-ref-dict`\n2. install the requirements: `pip install -r requirements.txt -r requirements-test.txt`\n3. run `pre-commit install`\n4. run the tests: `bash run_test.sh -c -a`\n\nthis project uses the following qa tools:\n- [pytest](https://docs.pytest.org/en/latest/) - for running unit tests.\n- [pylint](https://www.pylint.org/) - for enforcing code style.\n- [mypy](http://mypy-lang.org/) - for static type checking.\n- [travis ci](https://travis-ci.org/) - for continuous integration.\n- [black](https://black.readthedocs.io/en/stable/) - for uniform code formatting.\n\n# license\nthis project is distributed under the mit license.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "json-ref-dict",
+  "package_url": "https://pypi.org/project/json-ref-dict/",
+  "project_url": "https://pypi.org/project/json-ref-dict/",
+  "project_urls": {
+    "Homepage": "https://github.com/jacksmith15/json-ref-dict"
+  },
+  "release_url": "https://pypi.org/project/json-ref-dict/0.7.2/",
+  "requires_dist": [
+    "jsonpointer (~=2.0)"
+  ],
+  "requires_python": "",
+  "summary": "python dict-like object which abstracts resolution of jsonschema references",
+  "version": "0.7.2",
+  "releases": [],
+  "developers": [
+    "jack_smith"
+  ],
+  "kwds": "json_ref_dict local_ref dict refdict remote_ref",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_json_ref_dict",
+  "homepage": "https://github.com/jacksmith15/json-ref-dict",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_jsonpointer"
+  ]
+}

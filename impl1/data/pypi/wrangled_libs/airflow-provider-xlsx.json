@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# airflow provider xlsx\n\n[apache airflow](https://github.com/apache/airflow) operators for converting xlsx files from/to parquet, csv and json.\n\n[![build status](https://github.com/andreax79/airflow-provider-xlsx/workflows/tests/badge.svg)](https://github.com/andreax79/airflow-provider-xlsx/actions)\n[![pypi version](https://badge.fury.io/py/airflow-provider-xlsx.svg)](https://badge.fury.io/py/airflow-provider-xlsx)\n[![pypi](https://img.shields.io/pypi/pyversions/airflow-provider-xlsx.svg)](https://pypi.org/project/airflow-provider-xlsx)\n[![downloads](https://pepy.tech/badge/airflow-provider-xlsx/month)](https://pepy.tech/project/airflow-provider-xlsx)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n\n### system requirements\n\n* airflow versions\n    * 2.0 or newer\n\n### installation\n\n```console\n$ pip install airflow-provider-xlsx\n```\n\n### operators\n\n#### fromxlsxoperator\n\nread an xlsx or xls file and convert it into parquet, csv, json, json lines(one line per record) file.\n\n[api documentation](https://airflow-provider-xlsx.readthedocs.io/en/latest/#module-xlsx_provider.operators.from_xlsx_operator)\n\n##### example\n\nxlsx source\n\n![image](https://user-images.githubusercontent.com/1288154/130972144-e33f01af-2f9a-4e34-803a-907324a7adbf.png)\n\nairflow task\n\n```python\nfrom xlsx_provider.operators.from_xlsx_operator import fromxlsxoperator\n\nxlsx_to_jsonl = fromxlsxoperator(\n   task_id='xlsx_to_jsonl',\n   source='{{ var.value.tmp_path }}/test.xlsx',\n   target='{{ var.value.tmp_path }}/test.jsonl',\n   file_format='jsonl',\n   dag=dag\n)\n```\n\njson lines output\n\n```json\n{\"month\": \"jan\", \"high\": -12.2, \"mean\": -16.2, \"low\": -20.1, \"precipitation\": 19}\n{\"month\": \"feb\", \"high\": -10.3, \"mean\": -14.7, \"low\": -19.1, \"precipitation\": 14}\n{\"month\": \"mar\", \"high\": -2.6, \"mean\": -7.2, \"low\": -11.8, \"precipitation\": 15}\n{\"month\": \"apr\", \"high\": 8.1, \"mean\": 3.2, \"low\": -1.7, \"precipitation\": 24}\n{\"month\": \"may\", \"high\": 17.5, \"mean\": 11.6, \"low\": 5.6, \"precipitation\": 36}\n{\"month\": \"jun\", \"high\": 24, \"mean\": 18.2, \"low\": 12.3, \"precipitation\": 58}\n{\"month\": \"jul\", \"high\": 25.7, \"mean\": 20.2, \"low\": 14.7, \"precipitation\": 72}\n{\"month\": \"aug\", \"high\": 22.2, \"mean\": 17, \"low\": 11.7, \"precipitation\": 66}\n{\"month\": \"sep\", \"high\": 16.6, \"mean\": 11.5, \"low\": 6.4, \"precipitation\": 44}\n{\"month\": \"oct\", \"high\": 6.8, \"mean\": 3.4, \"low\": 0, \"precipitation\": 38}\n```\n\n#### fromxlsxqueryoperator\n\nexecute an sql query an xlsx/xls file and export the result into a parquet or csv file\n\nthis operators loads an xlsx or xls file into an in-memory sqlite database, executes a query on the db and stores the result into a parquet, csv, json, json lines(one line per record) file. the output columns names and types are determinated by the sql query output.\n\n[api documentation](https://airflow-provider-xlsx.readthedocs.io/en/latest/#xlsx-provider-operators-operators-from-xlsx-query-operator)\n\n##### example\n\nxlsx source\n\n![image](https://user-images.githubusercontent.com/1288154/130963470-f7f05ca0-a952-47e1-86ec-c6cd322746f6.png)\n\nsql query\n\n```sql\n select\n     g as high_tech_sector,\n     h as eur_bilion,\n     i as share\n from\n     high_tech\n where\n     _index > 1\n     and high_tech_sector <> ''\n     and lower(high_tech_sector) <> 'total'\n```\n\nairflow task\n\n```python\nfrom xlsx_provider.operators.from_xlsx_query_operator import fromxlsxqueryoperator\n\nxlsx_to_csv = fromxlsxqueryoperator(\n   task_id='xlsx_to_csv',\n   source='{{ var.value.tmp_path }}/high_tech.xlsx',\n   target='{{ var.value.tmp_path }}/high_tech.parquet',\n   file_format='csv',\n   csv_delimiter=',',\n   table_name='high_tech',\n   worksheet='figure 3',\n   query='''\n       select\n           g as high_tech_sector,\n           h as eur_bilion,\n           i as share\n       from\n           high_tech\n       where\n           _index > 1\n           and high_tech_sector <> ''\n           and lower(high_tech_sector) <> 'total'\n   ''',\n   dag = dag\n)\n```\n\noutput\n\n```\nhigh_tech_sector,value,share\npharmacy,78280,0.231952169555313\nelectronics-telecommunications,75243,0.222954583130376\nscientific instruments,64010,0.189670433253542\naerospace,44472,0.131776952366115\ncomputers office machines,21772,0.0645136852766778\nnon-electrical machinery,20813,0.0616714981835167\nchemistry,19776,0.058598734453222\nelectrical machinery,9730,0.028831912195612\narmament,3384,0.0100300315856265\n```\n\n#### toxlsxoperator\n\nread a parquest, csv, json, json lines(one line per record) file and convert it into xlsx.\n\n[api documentation](https://airflow-provider-xlsx.readthedocs.io/en/latest/#xlsx-provider-operators-operators-to-xlsx-operator)\n\n##### example\n\n```python\nfrom xlsx_provider.operators.to_xlsx_operator import toxlsxoperator\n\nparquet_to_xlsx = toxlsxoperator(\n   task_id='parquet_to_xlsx',\n   source='{{ var.value.tmp_path }}/test.parquet',\n   target='{{ var.value.tmp_path }}/test.xlsx',\n   dag=dag\n)\n\n```\n\n### links\n\n* apache airflow - https://github.com/apache/airflow\n* project home page (github) - https://github.com/andreax79/airflow-provider-xlsx\n* documentation (read the docs) - https://airflow-provider-xlsx.readthedocs.io/en/latest\n* openpyxl, library to read/write excel 2010 xlsx/xlsm/xltx/xltm files - https://foss.heptapod.net/openpyxl/openpyxl\n* lrd, library for reading data and formatting information from excel files in the historical .xls format - https://github.com/python-excel/xlrd\n* python library for apache arrow - https://github.com/apache/arrow/tree/master/python\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license, version 2.0",
+  "name": "airflow-provider-xlsx",
+  "package_url": "https://pypi.org/project/airflow-provider-xlsx/",
+  "project_url": "https://pypi.org/project/airflow-provider-xlsx/",
+  "project_urls": {
+    "Homepage": "https://github.com/andreax79/airflow-provider-xlsx"
+  },
+  "release_url": "https://pypi.org/project/airflow-provider-xlsx/1.0.1/",
+  "requires_dist": [
+    "apache-airflow (>=2.0)",
+    "openpyxl",
+    "pyarrow",
+    "xlrd"
+  ],
+  "requires_python": ">=3.4",
+  "summary": "airflow operators for reading and writing xlsx files",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "andrea.bonomi@gmail.com",
+    "andrea_bonomi"
+  ],
+  "kwds": "parquet_to_xlsx from_xlsx_operator xlsx_provider to_xlsx_operator xlsx_to_jsonl",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_airflow_provider_xlsx",
+  "homepage": "https://github.com/andreax79/airflow-provider-xlsx",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_apache_airflow",
+    "pypi_openpyxl",
+    "pypi_pyarrow",
+    "pypi_xlrd"
+  ]
+}

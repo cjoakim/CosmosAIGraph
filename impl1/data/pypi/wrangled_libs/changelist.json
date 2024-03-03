@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# changelist\n\nchangelist helps you write better release notes by automating as much of the\nprocess as possible. for example, see\nhttps://github.com/scientific-python/changelist/blob/main/changelog.md.\n\n**features**\n\n- compile a list of pull requests, code authors and reviewers between any two\n  valid git objects (refs).\n- categorize pull requests into sections based on github labels.\n- point it at any repository on github. no need to clone or checkout a\n  repository locally, a python package is all that's needed.\n\nwe recommend to treat the generated document as a first draft to build\non and not as an already perfect documentation of the release.\n\n_this project is currently in its alpha stage and might be incomplete or change a lot!_\n\n## installation\n\n```sh\npip install changelist\n```\n\n## usage\n\nthe script requires a [github personal access\ntoken](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).\nthe token does not need any permissions, since it is used only to\nincrease query limits.\n\n```sh\nexport gh_token='...'\nchangelist scientific-python/changelist v0.2.0 main\n```\n\nthis will list all pull requests, authors and reviewers that touched commits\nbetween `v0.2.0` and `main` (excluding `v0.2.0`).\npull requests are sorted into section according to the configuration in\n`tool.changelist.label_section_map`.\n\n## configuration\n\nchangelist can be configured from two sources, in order of precedence:\n\n- a local toml file specified with the `--config` option\n- a remote `pyproject.toml` at `stop_rev`\n\nif a configuration option is not specified in either file above, changelist\nfalls back to the following configuration:\n\n````toml\n# default changelist configuration as supported in pyproject.toml\n[tool.changelist]\n\n# a template string that is included as the title of the generated notes.\n# \"{repo_name}\" and \"{version}\", if given, are replaced by the respective\n# values given in the command line.\ntitle_template = \"{repo_name} {version}\"\n\n# a template string that is included as introductory text after the title.\n# \"{repo_name}\" and \"{version}\", if given, are replaced by the respective\n# values given in the command line.\nintro_template = \"\"\"\nwe're happy to announce the release of {repo_name} {version}!\n\"\"\"\n\n# a template string that is included at the end of the generated notes.\n# \"{repo_name}\" and \"{version}\", if given, are replaced by the respective\n# values given in the command line.\noutro_template = \"\"\"\n_these lists are automatically generated, and may not be complete or may contain\nduplicates._\n\"\"\"\n\n# profiles that are excluded from the contributor list.\nignored_user_logins = [\n    \"web-flow\",\n]\n\n# if this regex matches a pull requests description, the captured content\n# is included instead of the pull request title.\n# e.g. the default regex below is matched by\n#\n# ```release-note\n# an ideally expressive description of the change that is included as a single\n# bullet point. newlines are removed.\n# ```\n#\n# if you modify this regex, make sure to match the content with a capture\n# group named \"summary\".\npr_summary_regex = \"^```release-note\\\\s*(?p<summary>[\\\\s\\\\s]*?\\\\w[\\\\s\\\\s]*?)\\\\s*^```\"\n\n# if any of a pull request's labels matches one of the regexes on the left side\n# its summary will appear in the appropriate section with the title given on\n# the right side. if a pull request doesn't match one of these categories it is\n# sorted into a section titled \"other\". pull request can appear in multiple\n# sections as long as their labels match.\n[tool.changelist.label_section_map]\n\".*highlight.*\" = \"highlights\"\n\".*new feature.*\" = \"new features\"\n\".*api.*\" = \"api changes\"\n\".*enhancement.*\" = \"enhancements\"\n\".*performance.*\" = \"performance\"\n\".*bug fix.*\" = \"bug fixes\"\n\".*documentation.*\" = \"documentation\"\n\".*infrastructure.*\" = \"infrastructure\"\n\".*maintenance.*\" = \"maintenance\"\n````\n\n## set up your repository\n\nto categorize merged prs in the changelist with the default configuration, each\npr must have a label that matches one of the regexes on the left side of the\n`label_section_map` table, e.g. `type: highlights`.\n\n### label checking\n\nyou may want to ensure that each pr has an associated `type: ` label,\nwe recommend adding an action that fails ci if the label is missing.\n\nto do so, place the following in `.github/workflows/label-check.yaml`:\n\n```yaml\nname: labels\n\non:\n  pull_request:\n    types:\n      - opened\n      - repoened\n      - labeled\n      - unlabeled\n      - synchronize\n\nenv:\n  labels: ${{ join( github.event.pull_request.labels.*.name, ' ' ) }}\n\njobs:\n  check-type-label:\n    name: ensure type label\n    runs-on: ubuntu-latest\n    steps:\n      - if: \"contains( env.labels, 'type: ' ) == false\"\n        run: exit 1\n```\n\n### milestones\n\noften, it is helpful to have milestones that reflect the actual prs\nmerged. we therefore recommend adding an action that attached the\nnext open milestone to any merged pr.\n\nto do so, place the following in `.github/workflows/milestone-merged-prs.yaml`:\n\n```yaml\nname: milestone\n\non:\n  pull_request_target:\n    types:\n      - closed\n    branches:\n      - \"main\"\n\njobs:\n  milestone_pr:\n    name: attach to pr\n    runs-on: ubuntu-latest\n    steps:\n      - uses: scientific-python/attach-next-milestone-action@bc07be829f693829263e57d5e8489f4e57d3d420\n        with:\n          token: ${{ secrets.milestone_labeler_token }}\n          force: true\n```\n\nsee https://github.com/scientific-python/attach-next-milestone-action for more information.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd 3-clause license  copyright (c) 2023, scientific python  redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:  1. redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.  2. redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.  3. neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.  this software is provided by the copyright holders and contributors \"as is\" and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. in no event shall the copyright holder or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage. ",
+  "name": "changelist",
+  "package_url": "https://pypi.org/project/changelist/",
+  "project_url": "https://pypi.org/project/changelist/",
+  "project_urls": {
+    "Source": "https://github.com/scientific-python/changelist"
+  },
+  "release_url": "https://pypi.org/project/changelist/0.4/",
+  "requires_dist": [
+    "requests",
+    "requests-cache",
+    "tqdm",
+    "PyGithub",
+    "pre-commit ==3.4.0 ; extra == 'lint'"
+  ],
+  "requires_python": ">=3.9",
+  "summary": "",
+  "version": "0.4",
+  "releases": [],
+  "developers": [],
+  "kwds": "github changelist git documentation commits",
+  "license_kwds": "copyright liability liable redistributions license",
+  "libtype": "pypi",
+  "id": "pypi_changelist",
+  "homepage": "",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_pre_commit",
+    "pypi_pygithub",
+    "pypi_requests",
+    "pypi_requests_cache",
+    "pypi_tqdm"
+  ]
+}

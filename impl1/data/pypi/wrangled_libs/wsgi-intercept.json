@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: internet :: www/http :: wsgi",
+    "topic :: software development :: testing"
+  ],
+  "description": "installs a wsgi application in place of a real host for testing.\n\nintroduction\n============\n\ntesting a wsgi application sometimes involves starting a server at a\nlocal host and port, then pointing your test code to that address.\ninstead, this library lets you intercept calls to any specific host/port\ncombination and redirect them into a `wsgi application`_ importable by\nyour test program. thus, you can avoid spawning multiple processes or\nthreads to test your web app.\n\nsupported libaries\n==================\n\n``wsgi_intercept`` works with a variety of http clients in python 2.7,\n3.5 and beyond, and in pypy.\n\n* urllib2\n* urllib.request\n* httplib\n* http.client\n* httplib2\n* requests\n* urllib3 (<2.0.0, urllib3 2 support is in progress)\n\nhow does it work?\n=================\n\n``wsgi_intercept`` works by replacing ``httplib.httpconnection`` with a\nsubclass, ``wsgi_intercept.wsgi_httpconnection``. this class then\nredirects specific server/port combinations into a wsgi application by\nemulating a socket. if no intercept is registered for the host and port\nrequested, those requests are passed on to the standard handler.\n\nthe easiest way to use an intercept is to import an appropriate subclass\nof ``~wsgi_intercept.interceptor.interceptor`` and use that as a\ncontext manager over web requests that use the library associated with\nthe subclass. for example::\n\n    import httplib2\n    from wsgi_intercept.interceptor import httplib2interceptor\n    from mywsgiapp import app\n\n    def load_app():\n        return app\n\n    http = httplib2.http()\n    with httplib2interceptor(load_app, host='example.com', port=80) as url:\n        response, content = http.request('%s%s' % (url, '/path'))\n        assert response.status == 200\n\nthe interceptor class may aslo be used directly to install intercepts.\nsee the module documentation for more information.\n\nolder versions required that the functions ``add_wsgi_intercept(host,\nport, app_create_fn, script_name='')`` and ``remove_wsgi_intercept(host,port)``\nbe used to specify which urls should be redirected into what applications.\nthese methods are still available, but the ``interceptor`` classes are likely\neasier to use for most use cases.\n\n.. note:: ``app_create_fn`` is a *function object* returning a wsgi\n          application; ``script_name`` becomes ``script_name`` in the wsgi\n          app's environment, if set.\n\n.. note:: if ``http_proxy`` or ``https_proxy`` is set in the environment\n          this can cause difficulties with some of the intercepted libraries.\n          if requests or urllib is being used, these will raise an exception\n          if one of those variables is set.\n\n.. note:: if ``wsgi_intercept.strict_response_headers`` is set to ``true``\n          then response headers sent by an application will be checked to\n          make sure they are of the type ``str`` native to the version of\n          python, as required by pep 3333. the default is ``false`` (to\n          preserve backwards compatibility)\n\n\ninstall\n=======\n\n::\n\n    pip install -u wsgi_intercept\n\npackages intercepted\n====================\n\nunfortunately each of the http client libraries use their own specific\nmechanism for making http call-outs, so individual implementations are\nneeded. at this time there are implementations for ``httplib2``,\n``urllib3`` (<2.0.0) and ``requests`` in both python 2 and 3, ``urllib2`` and\n``httplib`` in python 2 and ``urllib.request`` and ``http.client``\nin python 3.\n\nif you are using python 2 and need support for a different http\nclient, require a version of ``wsgi_intercept<0.6``. earlier versions\ninclude support for ``webtest``, ``webunit`` and ``zope.testbrowser``.\n\nthe best way to figure out how to use interception is to inspect\n`the tests`_. more comprehensive documentation available upon\nrequest.\n\n.. _the tests: https://github.com/cdent/wsgi-intercept/tree/master/test\n\n\nhistory\n=======\n\npursuant to ian bicking's `\"best web testing framework\"`_ post, titus\nbrown put together an `in-process http-to-wsgi interception mechanism`_\nfor his own web testing system, twill. because the mechanism is pretty\ngeneric -- it works at the httplib level -- titus decided to try adding\nit into all of the *other* python web testing frameworks.\n\nthe python 2 version of wsgi-intercept was the result. kumar mcmillan\nlater took over maintenance.\n\nthe current version is tested with python 2.7, 3.5-3.11, and pypy and pypy3.\nit was assembled by `chris dent`_. testing and documentation improvements\nfrom `sasha hart`_.\n\n.. _\"best web testing framework\":\n     http://blog.ianbicking.org/best-of-the-web-app-test-frameworks.html\n.. _in-process http-to-wsgi interception mechanism:\n     http://www.advogato.org/person/titus/diary.html?start=119\n.. _wsgi application: http://www.python.org/peps/pep-3333.html\n.. _chris dent: https://github.com/cdent\n.. _sasha hart: https://github.com/sashahart\n\nproject home\n============\n\nthis project lives on `github`_. please submit all bugs, patches,\nfailing tests, et cetera using the issue tracker.\n\nadditional documentation is available on `read the docs`_.\n\n.. _github: http://github.com/cdent/wsgi-intercept\n.. _read the docs: http://wsgi-intercept.readthedocs.org/en/latest/\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "wsgi-intercept",
+  "package_url": "https://pypi.org/project/wsgi-intercept/",
+  "project_url": "https://pypi.org/project/wsgi-intercept/",
+  "project_urls": {
+    "Homepage": "http://pypi.python.org/pypi/wsgi_intercept"
+  },
+  "release_url": "https://pypi.org/project/wsgi-intercept/1.12.1/",
+  "requires_dist": [
+    "six",
+    "sphinx ; extra == 'docs'",
+    "pytest (>=2.4) ; extra == 'testing'",
+    "httplib2 ; extra == 'testing'",
+    "requests (>=2.0.1) ; extra == 'testing'",
+    "urllib3 (<2.0.0,>=1.11.0) ; extra == 'testing'"
+  ],
+  "requires_python": "",
+  "summary": "wsgi_intercept installs a wsgi application in place of a real uri for testing.",
+  "version": "1.12.1",
+  "releases": [],
+  "developers": [
+    "cdent@peermore.com",
+    "titus_brown"
+  ],
+  "kwds": "wsgi_httpconnection wsgi_intercept add_wsgi_intercept remove_wsgi_intercept wsgi",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_wsgi_intercept",
+  "homepage": "http://pypi.python.org/pypi/wsgi_intercept",
+  "release_count": 50,
+  "dependency_ids": [
+    "pypi_httplib2",
+    "pypi_pytest",
+    "pypi_requests",
+    "pypi_six",
+    "pypi_sphinx",
+    "pypi_urllib3"
+  ]
+}

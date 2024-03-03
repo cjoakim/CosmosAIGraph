@@ -1,0 +1,39 @@
+{
+  "classifiers": [],
+  "description": "===========\nlooker sdk\n===========\n\nthe looker sdk for python provides a convenient way to communicate with the\nlooker api available on your looker server. the library requires python3.6+\nand is annotated using the typing module.\n\nthe sdk uses a plug-in architecture (also known as dependency injection) for\ninitializing that supports run-time specific transports (currently only\n`requeststransport`) and different approaches for managing api authentication\n(`authsession` and `oauthsession`). the methods and models are generated from\nthe looker api spec by a new code generator developed at looker.\n\nplease `report any issues <https://github.com/looker-open-source/sdk-codegen/issues>`_\nencountered, and indicate the sdk language in the report.\n\nbasic usage\n===========\n.. code-block:: python\n\n    import looker_sdk\n\n    # for this to work you must either have set environment variables or created a looker.ini as described below in \"configuring the sdk\"\n    sdk = looker_sdk.init40()  # or init31() for the older v3.1 api\n    my_user = sdk.me()\n\n    # output can be treated like a dictionary\n    print(my_user[\"first_name\"])\n    # or a model instance (user in this case)\n    print(my_user.first_name)\n\n    # input methods can take either model instances like writeuser\n    sdk.create_user(\n        body=looker_sdk.models.writeuser(first_name=\"jane\", last_name=\"doe\")\n    )\n    # or plain dictionaries\n    sdk.create_user(body={\"first_name\": \"jane\", \"last_name\": \"doe\"})\n\nfull tutorial\n=============\ngo from installation all the way to creating a functional micro-application in this 20-30 minute interactive tutorial.\n\n*this tutorial is hosted in google colaboratory, an interactive online notebook. you can follow along right in the notebook by clicking the button below.*\n\n.. image:: https://colab.research.google.com/assets/colab-badge.svg\n   :target: https://colab.research.google.com/github/looker-open-source/sdk-codegen/blob/main/python/python-sdk-tutorial.ipynb\n\n\nsample project setup\n====================\n\ninstall python 3.8. we highly recommend using\n`pyenv <https://github.com/pyenv/pyenv#installation>`_ to install\ndifferent versions of python. mac users should use\n`homebrew <https://brew.sh/>`_ to install pyenv:\n\n.. code-block:: bash\n\n    brew install pyenv\n\nlinux users should use\n\n.. code-block:: bash\n\n    curl https://pyenv.run | bash\n\nput this in your shell configuration script:\n\n.. code-block:: bash\n\n    export path=$path:$home/.pyenv/bin\n    eval \"$(pyenv init --path)\"\n    eval \"$(pyenv init -)\"\n    eval \"$(pyenv virtualenv-init -)\"\n\nfollow the **remaining steps 3 - 5** of\nhttps://github.com/pyenv/pyenv#basic-github-checkout otherwise your python3.8\ninstallation may break.\n\nnow you're ready to install python 3.8:\n\n.. code-block:: bash\n\n    pyenv install 3.8.2\n\nwe'll use `pipenv <https://docs.pipenv.org/en/latest/#install-pipenv-today>`_\n(fantastic virtualenv manager) to manage project dependencies.\n\n.. code-block:: bash\n\n    brew install pipenv\n\ncreate a project directory\n\n.. code-block:: bash\n\n    mkdir looker-sdk-example\n\nset python3.8 as the base interpreter for this directory\n\n.. code-block:: bash\n\n    cd looker-sdk-example/\n    pyenv local 3.8.2\n\ninstall looker_sdk using pipenv\n\n.. code-block:: bash\n\n    pipenv --python 3.8.2 install --pre looker_sdk\n\n\nconfiguring the sdk\n===================\n\nthe sdk supports configuration through\n\n1. an ``.ini`` file on disk\n2. `setting environment variables <https://github.com/looker-open-source/sdk-codegen#environment-variable-configuration>`_\n3. providing your own implementation of the apisettings class\n\n. the latter override the former.\n\n**note**: the ``.ini`` configuration for the looker sdk is a sample\nimplementation intended to speed up the initial development of python\napplications using the looker api. see this note on\n`securing your sdk credentials <https://github.com/looker-open-source/sdk-codegen/blob/main/readme.md#securing-your-sdk-credentials>`_\nfor warnings about using ``.ini`` files that contain your\napi credentials in a source code repository or production environment.\n\nin order to configure the sdk client, create a \"looker.ini\" file to reference\nduring ``client.setup()``\n\nexample file:\n\n::\n\n    [looker]\n    # base url for api. do not include /api/* in the url. if hosted on gcp, remove the :19999 leaving just https://your.cloud.looker.com\n    base_url=https://your.looker.com:19999\n    # api 3 client id\n    client_id=yourclientid\n    # api 3 client secret\n    client_secret=yourclientsecret\n    # set to false if testing locally against self-signed certs. otherwise leave true\n    verify_ssl=true\n\n**note**: if the application using the looker sdk is going to be committed to a version control system, be sure to\n**ignore** the ``looker.ini`` file so the api credentials aren't unintentionally published.\n\nfor any ``.ini`` setting you can use an environment variable instead. it takes the form of\n``lookersdk_<uppercase-setting-from-ini>`` e.g. ``lookersdk_client_secret``\n\na final option is to provide your own implementation of the apisettings class. it is easiest to subclass ``api_settings.apisettings`` and override the ``read_config`` function (don't forget a call to ``super().read_config()`` if appropriate, example below). however, at a minimum your class must implement the `api_settings.papisettings` protocol.\n\n\n.. code-block:: python\n\n    import os\n    import looker_sdk\n    from looker_sdk import api_settings\n\n    class myapisettings(api_settings.apisettings):\n        def __init__(self, *args, **kw_args):\n            self.my_var = kw_args.pop(\"my_var\")\n            super().__init__(*args, **kw_args)\n\n        def read_config(self) -> api_settings.settingsconfig:\n            config = super().read_config()\n            # see api_settings.settingsconfig for required fields\n            if self.my_var == \"foo\":\n                config[\"client_id\"] = os.getenv(\"foo_client\")\n                config[\"client_secret\"] = os.getenv(\"foo_secret\")\n            else:\n                config[\"client_id\"] = os.getenv(\"bar_client\")\n                config[\"client_secret\"] = os.getenv(\"bar_secret\")\n            return config\n\n    sdk = looker_sdk.init40(config_settings=myapisettings(my_var=\"foo\"))\n    ...\n\n\ncode example\n============\n`see many python sdk examples in our examples repo <https://github.com/looker-open-source/sdk-codegen/tree/main/examples/python>`_\n\nchangelog\n============\n`located in our github repo <https://github.com/looker-open-source/sdk-codegen/tree/main/python/changelog.md>`_\n",
+  "docs_url": null,
+  "keywords": "looker,looker api,looker_sdk,looker api 4.0",
+  "license": "mit",
+  "name": "looker-sdk",
+  "package_url": "https://pypi.org/project/looker-sdk/",
+  "project_url": "https://pypi.org/project/looker-sdk/",
+  "project_urls": {
+    "Homepage": "https://pypi.python.org/pypi/looker_sdk"
+  },
+  "release_url": "https://pypi.org/project/looker-sdk/23.20.1/",
+  "requires_dist": [
+    "requests >=2.22",
+    "typing-extensions >=4.1.1",
+    "attrs >=20.1.0 ; python_version >= \"3.7\"",
+    "cattrs >=1.3 ; python_version >= \"3.7\""
+  ],
+  "requires_python": ">=3.6",
+  "summary": "looker rest api",
+  "version": "23.20.1",
+  "releases": [],
+  "developers": [
+    "looker_data_sciences"
+  ],
+  "kwds": "looker_sdk looker lookersdk_client_secret lookersdk_ api",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_looker_sdk",
+  "homepage": "https://pypi.python.org/pypi/looker_sdk",
+  "release_count": 60,
+  "dependency_ids": [
+    "pypi_attrs",
+    "pypi_cattrs",
+    "pypi_requests",
+    "pypi_typing_extensions"
+  ]
+}

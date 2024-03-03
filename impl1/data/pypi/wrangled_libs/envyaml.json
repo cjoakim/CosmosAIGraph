@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: utilities"
+  ],
+  "description": "# envyaml | easy configuration file parser for structured data\n\n[![latest version](https://pypip.in/version/envyaml/badge.svg)](https://pypi.python.org/pypi/envyaml/)\n[![envyaml ci/cd pipeline](https://github.com/thesimj/envyaml/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/thesimj/envyaml/actions/workflows/main.yml)\n[![coverage status](https://coveralls.io/repos/github/thesimj/envyaml/badge.svg?branch=master)](https://coveralls.io/github/thesimj/envyaml?branch=master)\n![versions](https://img.shields.io/pypi/pyversions/envyaml.svg)\n[![code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n[![alerts](https://img.shields.io/lgtm/alerts/g/thesimj/envyaml.svg?logo=lgtm&logowidth=18)](https://lgtm.com/projects/g/thesimj/envyaml/alerts/)\n[![code quality](https://img.shields.io/lgtm/grade/python/g/thesimj/envyaml.svg?logo=lgtm&logowidth=18)](https://lgtm.com/projects/g/thesimj/envyaml/context:python)\n[![license](https://img.shields.io/pypi/l/envyaml.svg)](license)\n\n\n### motivation\nmodern configuration files become to be more and more complex, flexible, and readable.\nyaml file format is perfect to store configuration but had no option to pass environment variables. they give flexibility, readability and provide an option to store complex data structure.\nthis project goal is to simplify usage of the yaml file and environment variables as program configuration files with easy config key access.\n\n\n### install\n```bash\npip install envyaml\n```\n\n\n### basic usage\nlet's assume we had a project with this config file `env.yaml`\n\n```yaml\n# env.yaml\nproject:\n  name: \"${project_name}-${project_id}\"\n\ndatabase:\n    host: $database_host\n    port: 3301\n    username: username\n    password: $database_password\n    database: test\n\n    table:\n      user: table_user\n      blog: table_blog\n\n    query: |-\n      select * from \"users\" where \"user\" = $1 and \"login\" = $2 and \"pwd\" = $3\n\n    insert: |-\n      insert into \"{table}\" (user, login) values ($1, $2)\n\nredis:\n    host: $redis_host|127.0.0.1\n    port: 5040\n    db: $redis_db|3 # with default value\n\n    config:\n      expire: 300\n      prefix: $redis_prefix\n\nescaped: $$.extra\n\nempty_env: $not_exist_env_variable\n```\n\nenvironment variables set to\n```\nproject_name=simple-hello\nproject_id=42\ndatabase_host=xxx.xxx.xxx.xxx\ndatabase_password=super-secret-password\nredis_prefix=state\n```\n\nparse file with `envyaml`\n\n```python\nfrom envyaml import envyaml\n\n# read file env.yaml and parse config\nenv = envyaml('env.yaml')\n\n# access project name\nprint(env['project.name'])\n\n# >> simple-hello-42\n\n# access whole database section\nprint(env['database'])\n\n# {\n# 'database': 'test',\n# 'host': 'xxx.xxx.xxx.xxx',\n# 'password': 'super-secret-password',\n# 'port': 3301,\n# 'table':\n#   {\n#       'blog': 'table_blog',\n#       'user': 'table_user'\n#   },\n# 'username': 'username'\n# }\n\n# access database host value as key item\nprint(env['database.host'])\n\n# >> xxx.xxx.xxx.xxx\n\n# access database user table value as key item\nprint(env['database.table.user'])\n\n# >> table_user\n\n# get sql query with $1,$2,$3 variables\nprint(env['database.query'])\n\n# >> select * from \"users\" where \"user\" = $1 and \"login\" = $2 and \"pwd\" = $3\n\n# using default values if variable not defined\n# one example is redis host and redis port, when $redis_host not set then default value will be used\nprint(env['redis.host'])\n\n# >> 127.0.0.1\n\n# one example is redis host and redis port, when $redis_db not set then default value will be used\nprint(env['redis.db'])\n\n# >> 3\n\n# access list items by number\nprint(env['list_test'][0])\n\n# >> one\n\n# access list items by number as key\nprint(env['list_test.1'])\n\n# >> two\n\n# test if you have key\nprint('redis.port' in env)\n\n# >> true\n\n```\n\naccess config with `get` function and default value\n```python\nprint(env.get('not.exist.value', 'default'))\n# >> default\n\nprint(env.get('empty_env', 'default'))\n# >> default\n\nprint(env['empty_env'])\n# >> none\n```\n\nuse `format` function to update placeholder\n```python\nprint(env.format('database.insert', table=\"users\"))\n# >> insert into \"users\" (user, login) values ($1, $2)\n```\n\n### strict mode\nthis mode is **enable by default** and prevents from declaring variables that do not exist in `environment variables` or `.env` file. this leads to having runtime `valueerror` exception when variables do not define with message `strict mode enabled, variable $var not defined!`. to disable **strict** mode specify `strict=false` at envyaml object initialization. another option to disable `strict` mode is to define `envyaml_strict_disable` environment variable before initializing envyaml object.\n\n\n### escaped variables\nin case of usage `$` in env.yaml file as value double `$$` should be used. example:\nuse `escaped` variable\n```python\nprint(env['escaped'])\n# >> $.extra\n```\n\n\n### license\nmit licensed. see the [license](license) file for more details.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "envyaml",
+  "package_url": "https://pypi.org/project/envyaml/",
+  "project_url": "https://pypi.org/project/envyaml/",
+  "project_urls": {
+    "Homepage": "https://github.com/thesimj/envyaml"
+  },
+  "release_url": "https://pypi.org/project/envyaml/1.10.211231/",
+  "requires_dist": [
+    "PyYAML"
+  ],
+  "requires_python": ">=2.7",
+  "summary": "simple yaml configuration file parser with easy access for structured data",
+  "version": "1.10.211231",
+  "releases": [],
+  "developers": [
+    "m+github@bubelich.com",
+    "mykola_bubelich"
+  ],
+  "kwds": "envyaml envyaml_strict_disable workflows badge yml",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_envyaml",
+  "homepage": "https://github.com/thesimj/envyaml",
+  "release_count": 28,
+  "dependency_ids": [
+    "pypi_pyyaml"
+  ]
+}

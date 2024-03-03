@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 2.1",
+    "framework :: django :: 2.2",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: internet :: www/http"
+  ],
+  "description": "# django-rest-framework-guardian\n\n[![circleci](https://circleci.com/gh/rpkilby/django-rest-framework-guardian.svg?style=shield)](https://circleci.com/gh/rpkilby/django-rest-framework-guardian)\n[![codecov](https://codecov.io/gh/rpkilby/django-rest-framework-guardian/branch/master/graph/badge.svg)](https://codecov.io/gh/rpkilby/django-rest-framework-guardian)\n[![license](https://img.shields.io/pypi/l/djangorestframework-guardian.svg)](https://pypi.org/project/djangorestframework-guardian)\n[![version](https://img.shields.io/pypi/v/djangorestframework-guardian.svg)](https://pypi.org/project/djangorestframework-guardian)\n[![python](https://img.shields.io/pypi/pyversions/djangorestframework-guardian.svg)](https://pypi.org/project/djangorestframework-guardian/)\n\ndjango-rest-framework-guardian provides django-guardian integrations for django rest framework.\ncurrently, this only includes the `objectpermissionsfilter`.\n\n\n## installation & setup\n\nto use django-rest-framework-guardian, install it into your environment.\n\n```sh\n$ pip install djangorestframework-guardian\n```\n\nensure both django rest framework and django-guardian are configured and added to your `installed_apps` setting.\n\n```python\ninstalled_apps = [\n    'rest_framework',\n    'guardian',\n]\n\nauthentication_backends = [\n    'django.contrib.auth.backends.modelbackend',\n    'guardian.backends.objectpermissionbackend',\n]\n```\n\n\n## objectpermissionsfilter\n\nthe filter will ensure that querysets only returns objects for which the user has the appropriate view permission.\n\nif you're using `objectpermissionsfilter`, you'll probably also want to add an appropriate object permissions\nclass, to ensure that users can only operate on instances if they have the appropriate object permissions.  the easiest\nway to do this is to subclass `djangoobjectpermissions` and add `'view'` permissions to the `perms_map` attribute.\n\nan example using both `objectpermissionsfilter` and `djangoobjectpermissions` might look like the following:\n\n**permissions.py**:\n\n```python\nfrom rest_framework import permissions\n\n\nclass customobjectpermissions(permissions.djangoobjectpermissions):\n    \"\"\"\n    similar to `djangoobjectpermissions`, but adding 'view' permissions.\n    \"\"\"\n    perms_map = {\n        'get': ['%(app_label)s.view_%(model_name)s'],\n        'options': ['%(app_label)s.view_%(model_name)s'],\n        'head': ['%(app_label)s.view_%(model_name)s'],\n        'post': ['%(app_label)s.add_%(model_name)s'],\n        'put': ['%(app_label)s.change_%(model_name)s'],\n        'patch': ['%(app_label)s.change_%(model_name)s'],\n        'delete': ['%(app_label)s.delete_%(model_name)s'],\n    }\n```\n\n**views.py**:\n\n```python\nfrom rest_framework import viewsets\nfrom rest_framework_guardian import filters\n\nfrom myapp.models import event\nfrom myapp.permissions import customobjectpermissions\nfrom myapp.serializers import eventserializer\n\n\nclass eventviewset(viewsets.modelviewset):\n    \"\"\"\n    viewset that only lists events if user has 'view' permissions, and only\n    allows operations on individual events if user has appropriate 'view', 'add',\n    'change' or 'delete' permissions.\n    \"\"\"\n    queryset = event.objects.all()\n    serializer_class = eventserializer\n    permission_classes = [customobjectpermissions]\n    filter_backends = [filters.objectpermissionsfilter]\n```\n\n\n## objectpermissionsassignmentmixin\n\na serializer mixin that allows permissions to be easily assigned to users and/or groups.\nso each time an object is created or updated, the `permissions_map` returned by `serializer.get_permissions_map` will be used to assign permission(s) to that object.\n\nplease note that the existing permissions will remain intact.\n\na usage example might look like the following:\n\n```python\nfrom rest_framework_guardian.serializers import objectpermissionsassignmentmixin\n\nfrom blog.models import post\n\n\nclass postserializer(objectpermissionsassignmentmixin, serializers.modelserializer):\n    class meta:\n        model = post\n        fields = '__all__'\n\n    def get_permissions_map(self, created):\n        current_user = self.context['request'].user\n        readers = group.objects.get(name='readers')\n        supervisors = group.objects.get(name='supervisors')\n\n        return {\n            'view_post': [current_user, readers],\n            'change_post': [current_user],\n            'delete_post': [current_user, supervisors]\n        }\n\n```\n\n\n## release process\n\n- update changelog\n- update package version in setup.py\n- create git tag for version\n- build & upload release to pypi\n  ```bash\n  $ pip install -u pip setuptools wheel twine\n  $ rm -rf dist/ build/\n  $ python setup.py bdist_wheel\n  $ twine upload dist/*\n  ```\n\n## license\n\nsee: [license](https://github.com/rpkilby/django-rest-framework-guardian/blob/master/license)\n\nbsd 3-clause license\n\ncopyright (c) 2018, ryan p kilby\nall rights reserved.\n\nredistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n* redistributions of source code must retain the above copyright notice, this\n  list of conditions and the following disclaimer.\n\n* redistributions in binary form must reproduce the above copyright notice,\n  this list of conditions and the following disclaimer in the documentation\n  and/or other materials provided with the distribution.\n\n* neither the name of the copyright holder nor the names of its\n  contributors may be used to endorse or promote products derived from\n  this software without specific prior written permission.\n\nthis software is provided by the copyright holders and contributors \"as is\"\nand any express or implied warranties, including, but not limited to, the\nimplied warranties of merchantability and fitness for a particular purpose are\ndisclaimed. in no event shall the copyright holder or contributors be liable\nfor any direct, indirect, incidental, special, exemplary, or consequential\ndamages (including, but not limited to, procurement of substitute goods or\nservices; loss of use, data, or profits; or business interruption) however\ncaused and on any theory of liability, whether in contract, strict liability,\nor tort (including negligence or otherwise) arising in any way out of the use\nof this software, even if advised of the possibility of such damage.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "djangorestframework-guardian",
+  "package_url": "https://pypi.org/project/djangorestframework-guardian/",
+  "project_url": "https://pypi.org/project/djangorestframework-guardian/",
+  "project_urls": {
+    "Homepage": "https://github.com/rpkilby/django-rest-framework-guardian",
+    "Source": "https://github.com/rpkilby/django-rest-framework-guardian",
+    "Tracker": "https://github.com/rpkilby/django-rest-framework-guardian/issues"
+  },
+  "release_url": "https://pypi.org/project/djangorestframework-guardian/0.3.0/",
+  "requires_dist": [
+    "django",
+    "djangorestframework",
+    "django-guardian"
+  ],
+  "requires_python": "",
+  "summary": "django-guardian support for django rest framework",
+  "version": "0.3.0",
+  "releases": [],
+  "developers": [
+    "kilbyr@gmail.com",
+    "ryan_p_kilby"
+  ],
+  "kwds": "rest_framework_guardian djangorestframework rest_framework guardian django",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_djangorestframework_guardian",
+  "homepage": "https://github.com/rpkilby/django-rest-framework-guardian",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_django_guardian",
+    "pypi_djangorestframework"
+  ]
+}

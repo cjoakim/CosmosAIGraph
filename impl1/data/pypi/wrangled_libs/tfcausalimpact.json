@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: scientific/engineering"
+  ],
+  "description": "# tfcausalimpact\n[![build status](https://travis-ci.com/willianfuks/tfcausalimpact.svg?branch=master)](https://travis-ci.com/willianfuks/tfcausalimpact) [![coverage status](https://coveralls.io/repos/github/willianfuks/tfcausalimpact/badge.svg?branch=master)](https://coveralls.io/github/willianfuks/tfcausalimpact?branch=master) [![github license](https://img.shields.io/github/license/willianfuks/tfcausalimpact.svg)](https://github.com/willianfuks/tfcausalimpact/blob/master/license) [![pypi version](https://badge.fury.io/py/tfcausalimpact.svg)](https://badge.fury.io/py/tfcausalimpact) [![pyversions](https://img.shields.io/pypi/pyversions/tfcausalimpact.svg)](https://pypi.python.org/pypi/tfcausalimpact)\n\ngoogle's [causal impact](https://github.com/google/causalimpact) algorithm implemented on top of [tensorflow probability](https://github.com/tensorflow/probability).\n\n## how it works\nthe algorithm basically fits a [bayesian structural](https://en.wikipedia.org/wiki/bayesian_structural_time_series) model on past observed data to make predictions on what future data would look like. past data comprises everything that happened before an intervention (which usually is the changing of a variable as being present or not, such as a marketing campaign that starts to run at a given point). it then compares the counter-factual (predicted) series against what was really observed in order to extract statistical conclusions.\n\nrunning the model is quite straightforward, it requires the observed data `y`, covariates `x` that helps the model through a linear regression, a `pre-period` interval that selects everything that happened before the intervention and a `post-period` with data after the \"impact\" happened.\n\nplease refer to this medium [post](https://towardsdatascience.com/implementing-causal-impact-on-top-of-tensorflow-probability-c837ea18b126) for more on this subject.\n\n## installation\n\n    pip install tfcausalimpact\n\n## requirements\n\n - python{3.7, 3.8, 3.9, 3.10, 3.11}\n - matplotlib\n - jinja2\n - tensorflow>=2.10.0\n - tensorflow_probability>=0.18.0\n - pandas >= 1.3.5\n\n\n## getting started\n\nwe recommend this [presentation](https://www.youtube.com/watch?v=gtgzfcltmm8) by kay brodersen (one of the creators of the causal impact in r).\n\nwe also created this introductory [ipython notebook](https://github.com/willianfuks/tfcausalimpact/blob/master/notebooks/getting_started.ipynb) with examples of how to use this package.\n\nthis medium [article](https://towardsdatascience.com/implementing-causal-impact-on-top-of-tensorflow-probability-c837ea18b126) also offers some ideas and concepts behind the library.\n\n### example\n\nhere's a simple example (which can also be found in the original google's r implementation) running in python:\n\n```python\nimport pandas as pd\nfrom causalimpact import causalimpact\n\n\ndata = pd.read_csv('https://raw.githubusercontent.com/willianfuks/tfcausalimpact/master/tests/fixtures/arma_data.csv')[['y', 'x']]\ndata.iloc[70:, 0] += 5\n\npre_period = [0, 69]\npost_period = [70, 99]\n\nci = causalimpact(data, pre_period, post_period)\nprint(ci.summary())\nprint(ci.summary(output='report'))\nci.plot()\n```\n\nsummary should look like this:\n\n```\nposterior inference {causal impact}\n                          average            cumulative\nactual                    125.23             3756.86\nprediction (s.d.)         120.34 (0.31)      3610.28 (9.28)\n95% ci                    [119.76, 120.97]   [3592.67, 3629.06]\n\nabsolute effect (s.d.)    4.89 (0.31)        146.58 (9.28)\n95% ci                    [4.26, 5.47]       [127.8, 164.19]\n\nrelative effect (s.d.)    4.06% (0.26%)      4.06% (0.26%)\n95% ci                    [3.54%, 4.55%]     [3.54%, 4.55%]\n\nposterior tail-area probability p: 0.0\nposterior prob. of a causal effect: 100.0%\n\nfor more details run the command: print(impact.summary('report'))\n```\n\nand here's the plot graphic:\n\n![alt text](https://raw.githubusercontent.com/willianfuks/tfcausalimpact/master/notebooks/tfcausal_plot_example.png)\n\n## google r package vs tensorflow python\n\nboth packages should give equivalent results. here's an example using the `comparison_data.csv` dataset available in the `fixtures` folder. when running causalimpact in the original r package, this is the result:\n\n### r\n\n```{r}\ndata = read.csv.zoo('comparison_data.csv', header=true)\npre.period <- c(as.date(\"2019-04-16\"), as.date(\"2019-07-14\"))\npost.period <- c(as.date(\"2019-07-15\"), as.date(\"2019-08-01\"))\nci = causalimpact(data, pre.period, post.period)\n```\n\nsummary results:\n\n```\nposterior inference {causalimpact}\n\n                         average          cumulative\nactual                   78574            1414340\nprediction (s.d.)        79232 (736)      1426171 (13253)\n95% ci                   [77743, 80651]   [1399368, 1451711]\n\nabsolute effect (s.d.)   -657 (736)       -11831 (13253)\n95% ci                   [-2076, 832]     [-37371, 14971]\n\nrelative effect (s.d.)   -0.83% (0.93%)   -0.83% (0.93%)\n95% ci                   [-2.6%, 1%]      [-2.6%, 1%]\n\nposterior tail-area probability p:   0.20061\nposterior prob. of a causal effect:  80%\n\nfor more details, type: summary(impact, \"report\")\n```\n\nand correspondent plot:\n\n![alt text](https://raw.githubusercontent.com/willianfuks/tfcausalimpact/master/notebooks/r/comparison/rplot.png)\n\n### python\n\n```python\nimport pandas as pd\nfrom causalimpact import causalimpact\n\n\ndata = pd.read_csv('https://raw.githubusercontent.com/willianfuks/tfcausalimpact/master/tests/fixtures/comparison_data.csv', index_col=['date'])\npre_period = ['2019-04-16', '2019-07-14']\npost_period = ['2019-7-15', '2019-08-01']\nci = causalimpact(data, pre_period, post_period, model_args={'fit_method': 'hmc'})\n```\n\nsummary is:\n\n```\nposterior inference {causal impact}\n                          average            cumulative\nactual                    78574.42           1414339.5\nprediction (s.d.)         79282.92 (727.48)  1427092.62 (13094.72)\n95% ci                    [77849.5, 80701.18][1401290.94, 1452621.31]\n\nabsolute effect (s.d.)    -708.51 (727.48)   -12753.12 (13094.72)\n95% ci                    [-2126.77, 724.92] [-38281.81, 13048.56]\n\nrelative effect (s.d.)    -0.89% (0.92%)     -0.89% (0.92%)\n95% ci                    [-2.68%, 0.91%]    [-2.68%, 0.91%]\n\nposterior tail-area probability p: 0.16\nposterior prob. of a causal effect: 84.12%\n\nfor more details run the command: print(impact.summary('report'))\n```\n\nand plot:\n\n![alt text](https://raw.githubusercontent.com/willianfuks/tfcausalimpact/master/notebooks/r/comparison/pythonplot.png)\n\nboth results are equivalent.\n\n## performance\n\nthis package uses as default the [`variational inference`](https://en.wikipedia.org/wiki/variational_bayesian_methods) method from `tensorflow probability` which is faster and should work for the most part. convergence can take somewhere between 2~3 minutes on more complex time series. you could also try running the package on top of gpus to see if results improve.\n\nif, on the other hand, precision is the top requirement when running causal impact analyzes, it's possible to switch algorithms by manipulating the input arguments like so:\n\n```python\nci = causalimpact(data, pre_period, post_period, model_args={'fit_method': 'hmc'})\n```\n\nthis will make usage of the algorithm [`hamiltonian monte carlo`](https://en.wikipedia.org/wiki/hamiltonian_monte_carlo) which is state-of-the-art for finding the bayesian posterior of distributions. still, keep in mind that on complex time series with thousands of data points and complex modeling involving various seasonal components this optimization can take 1 hour or even more to complete (on a gpu). performance is sacrificed in exchange for better precision.\n\n## bugs & issues\n\nif you find bugs or have any issues while running this library please consider opening an [`issue`](https://github.com/willianfuks/tfcausalimpact/issues) with a complete description and reproductible environment so we can better help you solving the problem.\n",
+  "docs_url": null,
+  "keywords": "causal impact",
+  "license": "apache license 2.0",
+  "name": "tfcausalimpact",
+  "package_url": "https://pypi.org/project/tfcausalimpact/",
+  "project_url": "https://pypi.org/project/tfcausalimpact/",
+  "project_urls": {
+    "Homepage": "https://github.com/WillianFuks/tfcausalimpact",
+    "Source": "https://github.com/WillianFuks/tfcausalimpact"
+  },
+  "release_url": "https://pypi.org/project/tfcausalimpact/0.0.14/",
+  "requires_dist": [
+    "jinja2",
+    "pandas >=1.3.5",
+    "tensorflow >=2.10",
+    "tensorflow-probability >=0.18",
+    "matplotlib",
+    "ipython ; extra == 'docs'",
+    "jupyter ; extra == 'docs'"
+  ],
+  "requires_python": ">=3, <3.12",
+  "summary": "python version of google's causal impact model on top of tensorflow probability.",
+  "version": "0.0.14",
+  "releases": [],
+  "developers": [
+    "willian.fuks@gmail.com",
+    "willian_fuks"
+  ],
+  "kwds": "tfcausalimpact causalimpact github causal pyversions",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_tfcausalimpact",
+  "homepage": "https://github.com/willianfuks/tfcausalimpact",
+  "release_count": 23,
+  "dependency_ids": [
+    "pypi_ipython",
+    "pypi_jinja2",
+    "pypi_jupyter",
+    "pypi_matplotlib",
+    "pypi_pandas",
+    "pypi_tensorflow",
+    "pypi_tensorflow_probability"
+  ]
+}

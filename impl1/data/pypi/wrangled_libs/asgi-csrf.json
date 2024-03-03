@@ -1,0 +1,47 @@
+{
+  "classifiers": [],
+  "description": "# asgi-csrf\n\n[![pypi](https://img.shields.io/pypi/v/asgi-csrf.svg)](https://pypi.org/project/asgi-csrf/)\n[![changelog](https://img.shields.io/github/v/release/simonw/asgi-csrf?include_prereleases&label=changelog)](https://github.com/simonw/asgi-csrf/releases)\n[![codecov](https://codecov.io/gh/simonw/asgi-csrf/branch/main/graph/badge.svg)](https://codecov.io/gh/simonw/asgi-csrf)\n[![license](https://img.shields.io/badge/license-apache%202.0-blue.svg)](https://github.com/simonw/asgi-csrf/blob/main/license)\n\nasgi middleware for protecting against csrf attacks\n\n## installation\n\n    pip install asgi-csrf\n\n## background\n\nsee the [owasp guide to cross site request forgery (csrf)](https://owasp.org/www-community/attacks/csrf) and their [cross-site request forgery (csrf) prevention cheat sheet](https://cheatsheetseries.owasp.org/cheatsheets/cross-site_request_forgery_prevention_cheat_sheet.html).\n\nthis middleware implements the [double submit cookie pattern](https://cheatsheetseries.owasp.org/cheatsheets/cross-site_request_forgery_prevention_cheat_sheet.html#double-submit-cookie), where a cookie is set that is then compared to a `csrftoken` hidden form field or a `x-csrftoken` http header.\n\n## usage\n\ndecorate your asgi application like this:\n\n```python\nfrom asgi_csrf import asgi_csrf\nfrom .my_asgi_app import app\n\n\napp = asgi_csrf(app, signing_secret=\"secret-goes-here\")\n```\n\nthe middleware will set a `csrftoken` cookie, if one is missing. the value of that token will be made available to your asgi application through the `scope[\"csrftoken\"]` function.\n\nyour application code should include that value as a hidden form field in any post forms:\n\n```html\n<form action=\"/login\" method=\"post\">\n    ...\n    <input type=\"hidden\" name=\"csrftoken\" value=\"{{ request.scope.csrftoken() }}\">\n</form>\n```\n\nnote that `request.scope[\"csrftoken\"]()` is a function that returns a string. calling that function also lets the middleware know that the cookie should be set by that page, if the user does not already have that cookie.\n\nif the cookie needs to be set, the middleware will add a `vary: cookie` header to the response to ensure it is not incorrectly cached by any cdns or intermediary proxies.\n\nthe middleware will return a 403 forbidden error for any post requests that do not include the matching `csrftoken` - either in the post data or in a `x-csrftoken` http header (useful for javascript `fetch()` calls).\n\nthe `signing_secret` is used to sign the tokens, to protect against subdomain vulnerabilities.\n\nif you do not pass in an explicit `signing_secret` parameter, the middleware will look for a `asgi_csrf_secret` environment variable.\n\nif it cannot find that environment variable, it will generate a random secret which will persist for the lifetime of the server.\n\nthis means that if you do not configure a specific secret your user's `csrftoken` cookies will become invalid every time the server restarts! you should configure a secret.\n\n## always setting the cookie if it is not already set\n\nby default this middleware only sets the `csrftoken` cookie if the user encounters a page that needs it - due to that page calling the `request.scope[\"csrftoken\"]()` function, for example to populate a hidden field in a form.\n\nif you would like the middleware to set that cookie for any incoming request that does not already provide the cookie, you can use the `always_set_cookie=true` argument:\n\n```python\napp = asgi_csrf(app, signing_secret=\"secret-goes-here\", always_set_cookie=true)\n```\n\n## other cases that skip csrf protection\n\nif the request includes an `authorization: bearer ...` header, commonly used by oauth and jwt authentication, the request will not be required to include a csrf token. this is because browsers cannot send those headers in a context that can be abused.\n\nif the request has no cookies at all it will be allowed through, since csrf protection is only necessary for requests from authenticated users.\n\n### always_protect\n\nif you have paths that should always be protected even without cookies - your login form for example (to avoid [login csrf](https://cheatsheetseries.owasp.org/cheatsheets/cross-site_request_forgery_prevention_cheat_sheet.html#login-csrf) attacks) you can protect those paths by passing them as the ``always_protect`` parameter:\n\n```python\napp = asgi_csrf(\n    app,\n    signing_secret=\"secret-goes-here\",\n    always_protect={\"/login\"}\n)\n```\n\n### skip_if_scope\n\nthere may be situations in which you want to opt-out of csrf protection even for authenticated post requests - this is often the case for web apis for example.\n\nthe `skip_if_scope=` parameter can be used to provide a callback function which is passed an asgi scope and returns `true` if csrf protection should be skipped for that request.\n\nthis example skips csrf protection for any incoming request where the request path starts with `/api/`:\n\n```python\ndef skip_api_paths(scope)\n    return scope[\"path\"].startswith(\"/api/\")\n\napp = asgi_csrf(\n    app,\n    signing_secret=\"secret-goes-here\",\n    skip_if_scope=skip_api_paths\n)\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license, version 2.0",
+  "name": "asgi-csrf",
+  "package_url": "https://pypi.org/project/asgi-csrf/",
+  "project_url": "https://pypi.org/project/asgi-csrf/",
+  "project_urls": {
+    "Homepage": "https://github.com/simonw/asgi-csrf"
+  },
+  "release_url": "https://pypi.org/project/asgi-csrf/0.9/",
+  "requires_dist": [
+    "itsdangerous",
+    "python-multipart",
+    "pytest ; extra == 'test'",
+    "pytest-asyncio ; extra == 'test'",
+    "httpx (>=0.16) ; extra == 'test'",
+    "starlette ; extra == 'test'",
+    "pytest-cov ; extra == 'test'",
+    "asgi-lifespan ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "asgi middleware for protecting against csrf attacks",
+  "version": "0.9",
+  "releases": [],
+  "developers": [
+    "simon_willison"
+  ],
+  "kwds": "asgi_csrf asgi_csrf_secret csrf csrftoken asgi",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_asgi_csrf",
+  "homepage": "https://github.com/simonw/asgi-csrf",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_asgi_lifespan",
+    "pypi_httpx",
+    "pypi_itsdangerous",
+    "pypi_pytest",
+    "pypi_pytest_asyncio",
+    "pypi_pytest_cov",
+    "pypi_python_multipart",
+    "pypi_starlette"
+  ]
+}

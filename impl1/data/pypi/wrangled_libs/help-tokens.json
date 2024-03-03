@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: django",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu affero general public license v3 or later (agplv3+)",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "###########\nhelp-tokens\n###########\n\ndjango app for linking to help pages with short tokens.\n\n|pypi-badge| |ci-badge| |codecov-badge| |pyversions-badge|\n|license-badge|\n\n\noverview\n********\n\nthere are various factors that affect what help page an application should link\nto:\n\n- there may be a number of relevant books\n\n- the version of the application might affect which book to display\n\n- the application's language might affect which book to display\n\nthis small django app provides a means to use \"help tokens\" on the application\npages, and then use those tokens, and various other settings, to determine the\nactual url to use.\n\n\ndocumentation\n*************\n\nhelp-tokens provides a context processor, and a redirection url.  configuration\nis in a number of settings.\n\nsettings\n========\n\nhelp-tokens reads these django settings to create urls:\n\n* help_tokens_ini_file: path to a .ini file containing help token definitions.\n  the format of the ini file is described below.\n\n* help_tokens_books: a dictionary mapping book slugs to urls.  for example::\n\n    help_tokens_books = {\n        'learner': 'http://edx.readthedocs.io/projects/learner-guide',\n        'course_author': 'http://edx.readthedocs.io/projects/running-a-course',\n    }\n\n* help_tokens_version: a string used as part of the final url, to choose the\n  correct version of the book.  for example, `\"latest\"`.\n\n* help_tokens_language_code: the language code to use as part of the book url,\n  mapped through the [locales] section of the ini file.\n\nini file format\n===============\n\nthe .ini file pointed to by help_tokens_ini_file contains the definitions of\nthe help tokens themselves.\n\nthe `[pages]` section defines the help tokens.  each help token definition\nconsists of a book slug (defined in help_tokens_books), a colon, and a url\npath.  the `default` token is used for missing tokens.  for example::\n\n    [pages]\n    default = learner:index.html\n    instructor = learner:sfd_instructor_dash_help.html\n    course = learner:index.html\n\n    cohortmanual = course_author:course_features/cohorts/cohort_config.html#assign-learners-to-cohorts-manually\n    cohortautomatic = course_author:course_features/cohorts/cohorts_overview.html#all-automated-assignment\n\nthe `[locales]` section defines language codes, used with\nhelp_tokens_language_code to determine the language portion of the url::\n\n    [locales]\n    default = en\n    en = en\n    en_us = en\n\n\ncontext processor\n=================\n\nthe context processor is `\"help_tokens.context_processor\"`.  it adds a function\n`get_online_help_info`.  call it with a help token, and it will return a dict\nwith a `doc_url` entry, the help url. you can use it like this in a template::\n\n    <a href=\"${get_online_help_info('visibility')['doc_url']}\">...</a>\n\nthis interface is a bit verbose, but is to maintain backward compatibility with\na previous implementation of this context processor.\n\n\nredirection view\n================\n\nthe `help_tokens.urls` urls define a view that redirects to a help url. you can\ninclude it in your app::\n\n    # for redirecting to help pages.\n    url(r'^help_token/', include('help_tokens.urls')),\n\nthen visiting `help_token/foobar` will redirect to the url defined by the\n\"foobar\" help token.\n\n\nlicense\n*******\n\nthe code in this repository is licensed under the agpl 3.0 unless otherwise\nnoted.  please see ``license.txt`` for details.\n\nhow to contribute\n*****************\n\ncontributions are very welcome.\n\nplease read `how to contribute <https://github.com/openedx/.github/blob/master/contributing.md>`_ for details.\n\n\npr description template should be automatically applied if you are sending pr from github interface; otherwise you\ncan find it it at `pull_request_template.md <https://github.com/openedx/help-tokens/blob/master/.github/pull_request_template.md>`_\n\nissue report template should be automatically applied if you are sending it from github ui as well; otherwise you\ncan find it at `issue_template.md <https://github.com/openedx/help-tokens/blob/master/.github/issue_template.md>`_\n\nreporting security issues\n*************************\n\nplease do not report security issues in public. please email security@edx.org.\n\ngetting help\n************\n\nhave a question about this repository, or about open edx in general?  please\nrefer to this `list of resources`_ if you need any assistance.\n\n.. _list of resources: https://open.edx.org/getting-help\n\n\n.. |pypi-badge| image:: https://img.shields.io/pypi/v/help-tokens.svg\n    :target: https://pypi.python.org/pypi/help-tokens/\n    :alt: pypi\n\n.. |ci-badge| image:: https://github.com/openedx/help-tokens/workflows/python%20ci/badge.svg?branch=master\n    :target: https://github.com/openedx/help-tokens/actions?query=workflow%3a%22python+ci%22\n    :alt: ci\n\n.. |codecov-badge| image:: http://codecov.io/github/edx/help-tokens/coverage.svg?branch=master\n    :target: http://codecov.io/github/edx/help-tokens?branch=master\n    :alt: codecov\n\n.. |pyversions-badge| image:: https://img.shields.io/pypi/pyversions/help-tokens.svg\n    :target: https://pypi.python.org/pypi/help-tokens/\n    :alt: supported python versions\n\n.. |license-badge| image:: https://img.shields.io/github/license/edx/help-tokens.svg\n    :target: https://github.com/openedx/help-tokens/blob/master/license.txt\n    :alt: license\n\n\n\nchange log\n**********\n\n..\n   all enhancements and patches to help_tokens will be documented\n   in this file.  it adheres to the structure of http://keepachangelog.com/ ,\n   but in restructuredtext instead of markdown (for ease of incorporation into\n   sphinx documentation and the pypi description).\n\n   this project adheres to semantic versioning (http://semver.org/).\n\n.. there should always be an \"unreleased\" section for changes pending release.\n\n[2.3.0] - 2023-08-02\n====================\n\n* added support for django 4.2\n\n[2.2.0] - 2022-01-20\n====================\n\n* dropped support for django2.2, 3.0, 3.1 and 3.2\n* added django40 support in ci\n\n[2.1.0] - 2020-07-07\n====================\n\n* added support for django3.0, 3.1 and 3.2\n\n[2.0.0] - 2020-01-19\n====================\n\n* removed support of python3.5\n\n[1.1.0] - 2020-05-05\n====================\n\n* removed support of django < 2.2 version\n* added support for python 3.8\n\n[1.0.3] - 2017-07-17\n====================\n\n* updated tests to support django 1.11\n* updated dependency versions\n\n\n[1.0.2] - 2017-05-16\n====================\n\n* fixed the readme.\n\n\n[1.0.1] - 2017-05-15\n====================\n\n* first version on pypi.\n\n\n[1.0.0] - 2017-05-03\n====================\n\n* first release.\n",
+  "docs_url": null,
+  "keywords": "django edx",
+  "license": "agpl 3.0",
+  "name": "help-tokens",
+  "package_url": "https://pypi.org/project/help-tokens/",
+  "project_url": "https://pypi.org/project/help-tokens/",
+  "project_urls": {
+    "Homepage": "https://github.com/openedx/help-tokens"
+  },
+  "release_url": "https://pypi.org/project/help-tokens/2.3.0/",
+  "requires_dist": [
+    "Django"
+  ],
+  "requires_python": "",
+  "summary": "django app for linking to help pages with short tokens",
+  "version": "2.3.0",
+  "releases": [],
+  "developers": [
+    "edx",
+    "oscm@edx.org"
+  ],
+  "kwds": "help_tokens_books help_tokens help_token help_tokens_version help_tokens_ini_file",
+  "license_kwds": "agpl 3.0",
+  "libtype": "pypi",
+  "id": "pypi_help_tokens",
+  "homepage": "https://github.com/openedx/help-tokens",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_django"
+  ]
+}

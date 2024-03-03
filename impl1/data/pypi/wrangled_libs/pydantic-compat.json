@@ -1,0 +1,69 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "framework :: pydantic",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# pydantic-compat\n\n[![github](https://img.shields.io/github/license/pyapp-kit/pydantic-compat)\n](https://github.com/pyapp-kit/pydantic-compat/raw/main/license)\n[![pypi](https://img.shields.io/pypi/v/pydantic-compat.svg?color=green)](https://pypi.org/project/pydantic-compat)\n[![python version](https://img.shields.io/pypi/pyversions/pydantic-compat.svg?color=green)](https://python.org)\n[![ci](https://github.com/pyapp-kit/pydantic-compat/actions/workflows/ci.yml/badge.svg)](https://github.com/pyapp-kit/pydantic-compat/actions/workflows/ci.yml)\n[![codecov](https://codecov.io/gh/pyapp-kit/pydantic-compat/branch/main/graph/badge.svg)](https://codecov.io/gh/pyapp-kit/pydantic-compat)\n\n## motivation\n\npydantic 2 was a major release that completely changed the pydantic api.\n\nfor applications, this is not a big deal, as they can pin to whatever version of\npydantic they need. but for libraries that want to exist in a broader\nenvironment, pinning to a specific version of pydantic is not always an option\n(as it limits the ability to co-exist with other libraries).\n\nthis package provides (unofficial) compatibility mixins and function adaptors for pydantic\nv1-v2 cross compatibility. it allows you to use either v1 or v2 api names,\nregardless of the pydantic version installed. (prefer using v2 names when possible).\n\ntests are run on pydantic v1.8 and up\n\nthe api conversion is not exhaustive, but suffices for many of the use cases\ni have come across. it is in use by the following libraries:\n\n- [ome-types](https://github.com/tlambert03/ome-types)\n- [psygnal](https://github.com/pyapp-kit/psygnal)\n- [app-model](https://github.com/pyapp-kit/app-model)\n- [useq-schema](https://github.com/pymmcore-plus/useq-schema)\n\nfeel free to open an issue or pr if you find it useful, but lacking features\nyou need.\n\n## what does it do?\n\nnot much! :joy:\n\nmostly it serves to translate names from one api to another. it backports\nthe v2 api to v1 (so you can v2 names in a pydantic1 runtime),\nand forwards the v1 api to v2 (so you can use v1 names in a v2 runtime\nwithout deprecation warnings).\n\n> while pydantic2 does offer deprecated access to the v1 api, if you explicitly\n> wish to support pydantic1 without your users seeing deprecation warnings,\n> then you need to do a lot of name adaptation depending on the runtime\n> pydantic version. this package does that for you.\n\nit does _not_ do any significantly complex translation of api logic.\nfor custom types, you will still likely need to add class methods to\nsupport both versions of pydantic.\n\nit also does not prevent you from needing to know a what's changing\nunder the hood in pydantic 2. you should be running tests on both\nversions of pydantic to ensure your library works as expected. this\nlibrary just makes it much easier to support both versions in a single\ncodebase without a lot of ugly conditionals and boilerplate.\n\n## usage\n\n```py\nfrom pydantic import basemodel\nfrom pydantic_compat import pydanticcompatmixin\nfrom pydantic_compat import field_validator  # or 'validator'\nfrom pydantic_compat import model_validator  # or 'root_validator'\n\nclass mymodel(pydanticcompatmixin, basemodel):\n    x: int\n    y: int = 2\n\n    # prefer v2 dict, but v1 class config is supported\n    model_config = {'frozen': true}\n\n    @field_validator('x', mode='after')\n    def _check_x(cls, v):\n        if v != 42:\n            raise valueerror(\"that's not the answer!\")\n        return v\n\n    @model_validator('x', mode='after')\n    def _check_x(cls, v: mymodel):\n        # ...\n        return v\n```\n\nyou can now use the following attributes and methods regardless of the\npydantic version installed (without deprecation warnings):\n\n| v1 name                     | v2 name                     |\n| --------------------------- | --------------------------- |\n| `obj.dict()`                | `obj.model_dump()`          |\n| `obj.json()`                | `obj.model_dump_json()`     |\n| `obj.copy()`                | `obj.model_copy()`          |\n| `model.construct`           | `model.model_construct`     |\n| `model.schema`              | `model.model_json_schema`   |\n| `model.validate`            | `model.model_validate`      |\n| `model.parse_obj`           | `model.model_validate`      |\n| `model.parse_raw`           | `model.model_validate_json` |\n| `model.update_forward_refs` | `model.model_rebuild`       |\n| `model.__fields__`          | `model.model_fields`        |\n| `model.__fields_set__`      | `model.model_fields_set`    |\n\n\n## `field` notes\n\n- `pydantic_compat.field` will remove outdated fields (`const`) and translate\n  fields with new names:\n  | v1 name          | v2 name             |\n  | ---------------- | ------------------- |\n  | `min_items`      | `min_length`        |\n  | `max_items`      | `max_length`        |\n  | `regex`          | `pattern`           |\n  | `allow_mutation` | `not frozen`        |\n  | `metadata`       | `json_schema_extra` |\n- don't use `var = field(..., const='val')`, use `var: literal['val'] = 'val'`\n  it works in both v1 and v2\n- no attempt is made to convert between v1's `unique_items` and v2's `set[]`\n  semantics. see <https://github.com/pydantic/pydantic-core/issues/296> for\n  discussion.\n\n## api rules\n\n- both v1 and v2 names may be used (regardless of pydantic version), but\n  usage of v2 names are strongly recommended.\n- but the api must match the pydantic version matching the name you are using.\n  for example, if you are using `pydantic_compat.field_validator` then the\n  signature must match the pydantic (v2) `field_validator` signature (regardless)\n  of the pydantic version installed. similarly, if you choose to use\n  `pydantic_compat.validator` then the signature must match the pydantic\n  (v1) `validator` signature.\n\n## notable differences\n\n- `basemodel.__fields__` in v1 is a dict of `{'field_name' -> modelfield}`\n  whereas in v2 `basemodel.model_fields` is a dict of `{'field_name' ->\nfieldinfo}`. `fieldinfo` is a much simpler object that modelfield, so it is\n  difficult to directly support complicated v1 usage of `__fields__`.\n  `pydantic-compat` simply provides a name addaptor that lets you access many of\n  the attributes you may have accessed on `modelfield` in v1 while operating in\n  a v2 world, but `modelfield` methods will not be made available. you'll need\n  to update your usage accordingly.\n\n- in v2, `pydantic.model_validator(..., mode='after')` passes a model _instance_\n  to the validator function, whereas `pydantic.v1.root_validator(...,\npre=false)` passes a dict of `{'field_name' -> validated_value}` to the\n  validator function. in pydantic-compat, both decorators follow the semantics\n  of their corresponding pydantic versions, _but_ `root_validator` gains\n  parameter `construct_object: bool=false` that matches the `model_validator`\n  behavior (only when `mode=='after'`). if you want that behavior though, prefer\n  using `model_validator` directly.\n\n## todo:\n\n- serialization decorators\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd 3-clause license",
+  "name": "pydantic-compat",
+  "package_url": "https://pypi.org/project/pydantic-compat/",
+  "project_url": "https://pypi.org/project/pydantic-compat/",
+  "project_urls": {
+    "homepage": "https://github.com/pyapp-kit/pydantic-compat",
+    "repository": "https://github.com/pyapp-kit/pydantic-compat"
+  },
+  "release_url": "https://pypi.org/project/pydantic-compat/0.1.2/",
+  "requires_dist": [
+    "importlib-metadata; python_version < '3.8'",
+    "pydantic",
+    "black; extra == 'dev'",
+    "ipython; extra == 'dev'",
+    "mypy; extra == 'dev'",
+    "pdbpp; extra == 'dev'",
+    "pre-commit; extra == 'dev'",
+    "pytest; extra == 'dev'",
+    "pytest-cov; extra == 'dev'",
+    "rich; extra == 'dev'",
+    "ruff; extra == 'dev'",
+    "pytest-cov; extra == 'test'",
+    "pytest>=6.0; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "compatibility layer for pydantic v1/v2",
+  "version": "0.1.2",
+  "releases": [],
+  "developers": [
+    "talley.lambert@gmail.com"
+  ],
+  "kwds": "pydantic_compat pydantic pydantic2 pydantic1 pydanticcompatmixin",
+  "license_kwds": "bsd 3-clause license",
+  "libtype": "pypi",
+  "id": "pypi_pydantic_compat",
+  "homepage": "",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_importlib_metadata",
+    "pypi_ipython",
+    "pypi_mypy",
+    "pypi_pdbpp",
+    "pypi_pre_commit",
+    "pypi_pydantic",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_rich",
+    "pypi_ruff"
+  ]
+}

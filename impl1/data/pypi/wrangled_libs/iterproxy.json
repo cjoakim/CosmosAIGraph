@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "\n.. .. image:: https://readthedocs.org/projects/iterproxy/badge/?version=latest\n    :target: https://iterproxy.readthedocs.io/index.html\n    :alt: documentation status\n\n.. image:: https://github.com/machu-gwu/iterproxy-project/workflows/ci/badge.svg\n    :target: https://github.com/machu-gwu/iterproxy-project/actions?query=workflow:ci\n\n.. image:: https://codecov.io/gh/machu-gwu/iterproxy-project/branch/main/graph/badge.svg\n    :target: https://codecov.io/gh/machu-gwu/iterproxy-project\n\n.. image:: https://img.shields.io/pypi/v/iterproxy.svg\n    :target: https://pypi.python.org/pypi/iterproxy\n\n.. image:: https://img.shields.io/pypi/l/iterproxy.svg\n    :target: https://pypi.python.org/pypi/iterproxy\n\n.. image:: https://img.shields.io/pypi/pyversions/iterproxy.svg\n    :target: https://pypi.python.org/pypi/iterproxy\n\n.. image:: https://img.shields.io/badge/release_history!--none.svg?style=social\n    :target: https://github.com/machu-gwu/iterproxy-project/blob/main/release-history.rst\n\n.. image:: https://img.shields.io/badge/star_me_on_github!--none.svg?style=social\n    :target: https://github.com/machu-gwu/iterproxy-project\n\n------\n\n\n.. .. image:: https://img.shields.io/badge/link-document-blue.svg\n    :target: https://iterproxy.readthedocs.io/index.html\n\n.. .. image:: https://img.shields.io/badge/link-api-blue.svg\n    :target: https://iterproxy.readthedocs.io/py-modindex.html\n\n.. .. image:: https://img.shields.io/badge/link-source_code-blue.svg\n    :target: https://iterproxy.readthedocs.io/py-modindex.html\n\n.. image:: https://img.shields.io/badge/link-install-blue.svg\n    :target: `install`_\n\n.. image:: https://img.shields.io/badge/link-github-blue.svg\n    :target: https://github.com/machu-gwu/iterproxy-project\n\n.. image:: https://img.shields.io/badge/link-submit_issue-blue.svg\n    :target: https://github.com/machu-gwu/iterproxy-project/issues\n\n.. image:: https://img.shields.io/badge/link-request_feature-blue.svg\n    :target: https://github.com/machu-gwu/iterproxy-project/issues\n\n.. image:: https://img.shields.io/badge/link-download-blue.svg\n    :target: https://pypi.org/pypi/iterproxy#files\n\n\n\u23e9 welcome to ``iterproxy`` documentation\n==============================================================================\nyou may seen the following code style in many orm framework, this pattern provides a user friendly api to access items from the iterator object:\n\n.. code-block:: python\n\n    query(...).one()\n    query(...).one_or_none()\n    query(...).many(3)\n    query(...).all(5)\n    query(...).skip(5).many(3)\n\n`iterproxy <https://github.com/machu-gwu/iterproxy-project>`_ library can give any iterable object similar capabilities.\n\n\nusage example\n------------------------------------------------------------------------------\nconvert any iterable object to a ``iterproxy`` object:\n\n.. code-block:: python\n\n    from iterproxy import iterproxy\n\n    # suppose you have an iterable object\n    iterator = range(10)\n\n    # convert it to a iterproxy object\n    proxy = iterproxy(iterator)\n\naccess items from the ``iterproxy`` object:\n\n.. code-block:: python\n\n    proxy = iterproxy(range(10))\n\n    proxy.one() # it will return 0\n    proxy.many(3) # it will return [1, 2, 3]\n    proxy.skip(2).many(2) # it will skip [4, 5] and return [6, 7]\n    proxy.all() # it will return the rest [8, 9]\n    proxy.one_or_none() # it will return none\n\n``iterproxy.iter_chunks`` can group items into chunks having k items, the last chunk may have less items than k:\n\n.. code-block:: python\n\n    proxy = iterproxy(range(3))\n    list(proxy.iter_chunks(2)) # it will return [[0, 1], [2]]\n\nanother example:\n\n.. code-block:: python\n\n    proxy = iterproxy(range(10))\n    proxy.all() # it will return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]\n\nof course the ``iterproxy`` itself is a iterator:\n\n.. code-block:: python\n\n    for i in iterproxy(range(10)): # 0, 1, 2, ...\n        ...\n\nyou can use custom filter function to filter the result. other than the nesting style in built-in ``filter`` function, it use chain pattern.\n\n.. code-block:: python\n\n    def is_odd(x):\n        return x % 2 == 1\n\n    def gte_5(x):\n        return x >= 5\n\n    # with iterproxy, you can chain them\n    # it returns you [5, 7, 9]\n    for i in iterproxy(range(10)).filter(is_odd).filter(gte_5):\n        print(i)\n\n    # or put them together, by default, it is logic and\n    for i in iterproxy(range(10)).filter(is_odd, gte_5):\n        print(i)\n\n    # with the built-in filter, this is not that intuitive\n    for i in filter(gte_5, filter(is_odd, range(10))):\n        ...\n\nyou can also use compound logic ``and_``, ``or_``, ``not_``:\n\n.. code-block:: python\n\n    def is_odd(i):\n        return i % 2\n\n    def is_even(i):\n        return not (i % 2)\n\n    def lte_3(i):\n        return i <= 3\n\n    def gte_4(i):\n        return i >= 4\n\n    def lte_6(i):\n        return i <= 6\n\n    def gte_7(i):\n        return i >= 7\n\n    iterproxy(range(10)).filter(and_(gte_4, lte_6)).all() # [4, 5, 6]\n    iterproxy(range(10)).filter(or_(lte_3, gte_7)).all() # [0, 1, 2, 3, 7, 8, 9]\n    iterproxy(range(10)).filter(not_(is_odd)).all() # [0, 2, 4, 6, 8]\n\n    # of course you can nest and_, or_, not_\n    iterproxy(range(10)).filter(not_(and_(is_odd, or_(lte_3, gte_7)))).all() # [0, 2, 4, 5, 6, 8]\n\n(advanced) in order to enable type hint, you can do:\n\n.. code-block:: python\n\n    from iterproxy import iterproxy\n\n    class dog:\n        def bark(self):\n            pass\n\n    class dogiterproxy(iterproxy[dog]): # subclass from iterproxy[${yourtypehint}]\n        pass\n\n    many_dogs = [dog(),]*10\n\n    proxy = dogiterproxy(many_dogs)\n\n    proxy.one_or_none().bark()\n    for dog in proxy.many(2):\n        dog.bark()\n    for dog in proxy.skip(1).many(2):\n        dog.bark()\n    for dog in proxy.all():\n        dog.bark()\n\n    filtered_proxy = dogiterproxy(many_dogs).filter(lambda dog: true)\n    filtered_proxy.one_or_none().bark()\n    for dog in filtered_proxy.many(2):\n        dog.bark()\n    for dog in filtered_proxy.skip(1).many(2):\n        dog.bark()\n    for dog in filtered_proxy.all():\n        dog.bark()\n\n\n.. _install:\n\ninstall\n------------------------------------------------------------------------------\n\n``iterproxy`` is released on pypi, so all you need is:\n\n.. code-block:: console\n\n    $ pip install iterproxy\n\nto upgrade to latest version:\n\n.. code-block:: console\n\n    $ pip install --upgrade iterproxy\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "iterproxy",
+  "package_url": "https://pypi.org/project/iterproxy/",
+  "project_url": "https://pypi.org/project/iterproxy/",
+  "project_urls": {
+    "Download": "https://pypi.python.org/pypi/iterproxy/0.3.1#downloads",
+    "Homepage": "https://github.com/MacHu-GWU/iterproxy-project"
+  },
+  "release_url": "https://pypi.org/project/iterproxy/0.3.1/",
+  "requires_dist": [
+    "sphinx (==4.3.0) ; extra == 'docs'",
+    "sphinx-inline-tabs (==2021.8.17b10) ; extra == 'docs'",
+    "sphinx-jinja (==1.1.1) ; extra == 'docs'",
+    "sphinx-copybutton (==0.4.0) ; extra == 'docs'",
+    "rstobj (==1.2.1) ; extra == 'docs'",
+    "docfly (==1.0.2) ; extra == 'docs'",
+    "furo (==2021.8.31) ; extra == 'docs'",
+    "pytest ; extra == 'tests'",
+    "pytest-cov ; extra == 'tests'"
+  ],
+  "requires_python": "",
+  "summary": "give any iterable object capability to use .one(), .one_or_none(), .many(k), .skip(k), .all() api.",
+  "version": "0.3.1",
+  "releases": [],
+  "developers": [
+    "husanhe@gmail.com",
+    "sanhe_hu",
+    "unknown"
+  ],
+  "kwds": "iterproxy dogiterproxy badge filtered_proxy proxy",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_iterproxy",
+  "homepage": "https://github.com/machu-gwu/iterproxy-project",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_docfly",
+    "pypi_furo",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_rstobj",
+    "pypi_sphinx",
+    "pypi_sphinx_copybutton",
+    "pypi_sphinx_inline_tabs",
+    "pypi_sphinx_jinja"
+  ]
+}

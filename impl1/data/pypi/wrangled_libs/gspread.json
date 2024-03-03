@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: end users/desktop",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: office/business :: financial :: spreadsheet",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# google spreadsheets python api v4\n\n![main workflow](https://img.shields.io/github/actions/workflow/status/burnash/gspread/main.yaml?logo=github)\n![github licence](https://img.shields.io/pypi/l/gspread?logo=github)\n![github downloads](https://img.shields.io/github/downloads-pre/burnash/gspread/latest/total?logo=github)\n![documentation](https://img.shields.io/readthedocs/gspread?logo=readthedocs)\n![pypi download](https://img.shields.io/pypi/dm/gspread?logo=pypi)\n![pypi version](https://img.shields.io/pypi/v/gspread?logo=pypi)\n![python version](https://img.shields.io/pypi/pyversions/gspread?style=pypi)\n\nsimple interface for working with google sheets.\n\nfeatures:\n\n- open a spreadsheet by **title**, **key** or **url**.\n- read, write, and format cell ranges.\n- sharing and access control.\n- batching updates.\n\n## installation\n\n```sh\npip install gspread\n```\n\nrequires python 3.7+\n\n## basic usage\n\n1. [create credentials in google api console](http://gspread.readthedocs.org/en/latest/oauth2.html)\n\n2. start using gspread\n\n```python\nimport gspread\n\ngc = gspread.service_account()\n\n# open a sheet from a spreadsheet in one go\nwks = gc.open(\"where is the money lebowski?\").sheet1\n\n# update a range of cells using the top left corner address\nwks.update('a1', [[1, 2], [3, 4]])\n\n# or update a single cell\nwks.update('b42', \"it's down there somewhere, let me take another look.\")\n\n# format the header\nwks.format('a1:b1', {'textformat': {'bold': true}})\n```\n\n## v5.12 to v6.0 migration guide\n\n### upgrade from python 3.7\n\npython 3.7 is [end-of-life](https://devguide.python.org/versions/). gspread v6 requires a minimum of python 3.8.\n\n### change `worksheet.update` arguments\n\nthe first two arguments (`values` & `range_name`) have swapped (to `range_name` & `values`). either swap them (works in v6 only), or use named arguments (works in v5 & v6).\n\nas well, `values` can no longer be a list, and must be a 2d array.\n\n```diff\n- file.sheet1.update([[\"new\", \"values\"]])\n+ file.sheet1.update([[\"new\", \"values\"]]) # unchanged\n\n- file.sheet1.update(\"b2:c2\", [[\"54\", \"55\"]])\n+ file.sheet1.update([[\"54\", \"55\"]], \"b2:c2\")\n# or\n+ file.sheet1.update(range_name=\"b2:c2\", values=[[\"54\", \"55\"]])\n```\n\n### change colors from dictionary to text\n\nv6 uses hexadecimal color representation. change all colors to hex. you can use the compatibility function `gspread.utils.convert_colors_to_hex_value()` to convert a dictionary to a hex string.\n\n```diff\n- tab_color = {\"red\": 1, \"green\": 0.5, \"blue\": 1}\n+ tab_color = \"#ff7fff\"\nfile.sheet1.update_tab_color(tab_color)\n```\n\n### switch lastupdatetime from property to method\n\n```diff\n- age = spreadsheet.lastupdatetime\n+ age = spreadsheet.get_lastupdatetime()\n```\n\n### silence warnings\n\nin version 5 there are many warnings to mark deprecated feature/functions/methods.\nthey can be silenced by setting the `gspread_silence_warnings` environment variable to `1`\n\n## more examples\n\n### opening a spreadsheet\n\n```python\n# you can open a spreadsheet by its title as it appears in google docs\nsh = gc.open('my poor gym results') # <-- look ma, no keys!\n\n# if you want to be specific, use a key (which can be extracted from\n# the spreadsheet's url)\nsht1 = gc.open_by_key('0bmgg6no_6dprds1mn3d3mkdpa142wfrrdnrruwl1ufe')\n\n# or, if you feel really lazy to extract that key, paste the entire url\nsht2 = gc.open_by_url('https://docs.google.com/spreadsheet/ccc?key=0bm...fe&hl')\n```\n\n### creating a spreadsheet\n\n```python\nsh = gc.create('a new spreadsheet')\n\n# but that new spreadsheet will be visible only to your script's account.\n# to be able to access newly created spreadsheet you *must* share it\n# with your email. which brings us to\u2026\n```\n\n### sharing a spreadsheet\n\n```python\nsh.share('otto@example.com', perm_type='user', role='writer')\n```\n\n### selecting a worksheet\n\n```python\n# select worksheet by index. worksheet indexes start from zero\nworksheet = sh.get_worksheet(0)\n\n# by title\nworksheet = sh.worksheet(\"january\")\n\n# most common case: sheet1\nworksheet = sh.sheet1\n\n# get a list of all worksheets\nworksheet_list = sh.worksheets()\n```\n\n### creating a worksheet\n\n```python\nworksheet = sh.add_worksheet(title=\"a worksheet\", rows=\"100\", cols=\"20\")\n```\n\n### deleting a worksheet\n\n```python\nsh.del_worksheet(worksheet)\n```\n\n### getting a cell value\n\n```python\n# with label\nval = worksheet.get('b1').first()\n\n# with coords\nval = worksheet.cell(1, 2).value\n```\n\n### getting all values from a row or a column\n\n```python\n# get all values from the first row\nvalues_list = worksheet.row_values(1)\n\n# get all values from the first column\nvalues_list = worksheet.col_values(1)\n```\n\n### getting all values from a worksheet as a list of lists\n\n```python\nlist_of_lists = worksheet.get_values()\n```\n\n### getting a range of values\n\nreceive only the cells with a value in them\n```python\n>>> worksheet.get_values(\"a1:b4\")\n[['a1', 'b1'], ['a2']]\n```\n\nreceive a lists of lists matching the requested size\nregardless if values are empty or not\n\n```python\n>>> worksheet.get_values(\"a1:b4\", maintain_size=true)\n[['a1', 'b1'], ['a2', ''], ['', ''], ['', '']]\n```\n\n### finding a cell\n\n```python\n# find a cell with exact string value\ncell = worksheet.find(\"dough\")\n\nprint(\"found something at r%sc%s\" % (cell.row, cell.col))\n\n# find a cell matching a regular expression\namount_re = re.compile(r'(big|enormous) dough')\ncell = worksheet.find(amount_re)\n```\n\n### finding all matched cells\n\n```python\n# find all cells with string value\ncell_list = worksheet.findall(\"rug store\")\n\n# find all cells with regexp\ncriteria_re = re.compile(r'(small|room-tiering) rug')\ncell_list = worksheet.findall(criteria_re)\n```\n\n### updating cells\n\n```python\n# update a single cell\nworksheet.update('b1', 'bingo!')\n\n# update a range\nworksheet.update('a1:b2', [[1, 2], [3, 4]])\n\n# update multiple ranges at once\nworksheet.batch_update([{\n    'range': 'a1:b2',\n    'values': [['a1', 'b1'], ['a2', 'b2']],\n}, {\n    'range': 'j42:k43',\n    'values': [[1, 2], [3, 4]],\n}])\n```\n\n## documentation\n\n[documentation]\\: [https://gspread.readthedocs.io/][documentation]\n\n[documentation]: https://gspread.readthedocs.io/en/latest/\n\n### ask questions\n\nthe best way to get an answer to a question is to ask on [stack overflow with a gspread tag](http://stackoverflow.com/questions/tagged/gspread?sort=votes&pagesize=50).\n\n## contributors\n\n[list of contributors](https://github.com/burnash/gspread/graphs/contributors)\n\n## how to contribute\n\nplease make sure to take a moment and read the [code of conduct](https://github.com/burnash/gspread/blob/master/.github/code_of_conduct.md).\n\n### report issues\n\nplease report bugs and suggest features via the [github issues](https://github.com/burnash/gspread/issues).\n\nbefore opening an issue, search the tracker for possible duplicates. if you find a duplicate, please add a comment saying that you encountered the problem as well.\n\n### improve documentation\n\n[documentation](https://gspread.readthedocs.io/) is as important as code. if you know how to make it more consistent, readable and clear, please submit a pull request. the documentation files are in [`docs`](https://github.com/burnash/gspread/tree/master/docs) folder, use [restructuredtext](http://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html#rst-index) markup and rendered by [sphinx](http://www.sphinx-doc.org/).\n\n### contribute code\n\nplease make sure to read the [contributing guide](https://github.com/burnash/gspread/blob/master/.github/contributing.md) before making a pull request.\n\n",
+  "docs_url": null,
+  "keywords": "spreadsheets,google-spreadsheets,google-sheets",
+  "license": "",
+  "name": "gspread",
+  "package_url": "https://pypi.org/project/gspread/",
+  "project_url": "https://pypi.org/project/gspread/",
+  "project_urls": {
+    "Documentation": "https://gspread.readthedocs.io/en/latest/",
+    "Source": "https://github.com/burnash/gspread"
+  },
+  "release_url": "https://pypi.org/project/gspread/5.12.3/",
+  "requires_dist": [
+    "google-auth>=1.12.0",
+    "google-auth-oauthlib>=0.4.1"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "google spreadsheets python api",
+  "version": "5.12.3",
+  "releases": [],
+  "developers": [
+    "alifeee.web@outlook.com",
+    "fuss.here@gmail.com",
+    "lavigne958@gmail.com"
+  ],
+  "kwds": "gspread sheet spreadsheets sheet1 spreadsheet",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_gspread",
+  "homepage": "",
+  "release_count": 72,
+  "dependency_ids": [
+    "pypi_google_auth",
+    "pypi_google_auth_oauthlib"
+  ]
+}

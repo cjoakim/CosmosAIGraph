@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu general public license v2 (gplv2)",
+    "license :: other/proprietary license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "\n.. meta::\n    :description: confluent cloud sdk\n    :keywords: kafka, confluent, cloud, sdk\n\n=======================\nconfluent cloud sdk\n=======================\n\nsdk to interact with confluent cloud api\n\ninstallation\n=============\n\n.. code-block:: bash\n\n    pip install confluent-cloud-sdk\n\nimports\n---------\n\nto use confluent admin api sdk in a project\n\n\n.. code-block:: python\n\n    from confluent_cloud_sdk.client_factory import confluentclient\n    from confluent_cloud_sdk.confluent_iam_v2 import apikey\n    from confluent_cloud_sdk.confluent_iam_v2 import serviceaccount\n\n\ninitialize connection\n----------------------\n\n\n.. code-block:: python\n\n    client = confluentclient(\n        \"cloud_key_key\",\n        \"cloud_key_secret\",\n    )\n\nexample with secret in aws and list all assets\n------------------------------------------------\n\n.. code-block:: python\n\n    import json\n    from os import environ\n\n    from boto3.session import session\n    from confluent_cloud_sdk.client_factory import confluentclient\n    from confluent_cloud_sdk.confluent_iam_v2 import serviceaccount\n    from confluent_cloud_sdk.confluent_org_v2 import confluentenvironment\n    from confluent_cloud_sdk.confluent_cluster_v2 import kafkaclusterv2\n\n    from compose_x_common.aws import get_session\n\n\n    def get_confluent_admin_secret(\n        secret_arn: str,\n        session: session = none,\n        key_id: str = \"apikey\",\n        secret_id: str = \"apisecret\",\n    ) -> confluentclient:\n        session = get_session(session)\n        client = session.client(\"secretsmanager\")\n        value = json.loads(client.get_secret_value(secretid=secret_arn)[\"secretstring\"])\n        return confluentclient(value[key_id], value[secret_id])\n\n\n    cclient = get_confluent_admin_secret(environ.get(\"secret_arn\"))\n\n    envs = cclient.list_all(confluentenvironment)\n\n    for env in envs:\n        print(env.obj_id)\n        clusters = cclient.list_all(kafkaclusterv2, url_args=f\"?environment={env.obj_id}\")\n        for cluster in clusters:\n            print(cluster.obj_id)\n\n    svc_accounts = cclient.list_all(serviceaccount)\n    for svc_account in svc_accounts:\n        print(svc_account.obj_id)\n        svc_account.import_api_keys()\n        print([key.obj_id for key in svc_account.api_keys.values()])\n\nusage examples\n==================\n\nfor more details, see docs/usage.rst\n",
+  "docs_url": null,
+  "keywords": "kafka,confluent,sdk",
+  "license": "gpl-2-only",
+  "name": "confluent-cloud-sdk",
+  "package_url": "https://pypi.org/project/confluent-cloud-sdk/",
+  "project_url": "https://pypi.org/project/confluent-cloud-sdk/",
+  "project_urls": {
+    "Bug Tracker": "https://codeberg.org/compose-x/confluent-cloud-sdk/issues",
+    "Confluent API Documentation": "https://docs.confluent.io/cloud/current/api.html"
+  },
+  "release_url": "https://pypi.org/project/confluent-cloud-sdk/0.2.3/",
+  "requires_dist": [
+    "requests (>=2.27.1,<3.0.0)",
+    "compose-x-common (>=1.4,<2.0)",
+    "pydantic (>=1.10.2,<2.0.0)"
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "confluent cloud api sdk",
+  "version": "0.2.3",
+  "releases": [],
+  "developers": [
+    "john@ews-network.net",
+    "john_preston"
+  ],
+  "kwds": "confluent_cloud_sdk kafkaclusterv2 kafka cloud_key_key import_api_keys",
+  "license_kwds": "gpl-2-only",
+  "libtype": "pypi",
+  "id": "pypi_confluent_cloud_sdk",
+  "homepage": "",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_compose_x_common",
+    "pypi_pydantic",
+    "pypi_requests"
+  ]
+}

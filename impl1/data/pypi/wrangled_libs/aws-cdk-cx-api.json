@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 2",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# cloud executable api\n\nthis module is part of the [aws cloud development kit](https://github.com/aws/aws-cdk) project.\n\n## v2 feature flags\n\n* `@aws-cdk/aws-s3:createdefaultloggingpolicy`\n\nenable this feature flag to create an s3 bucket policy by default in cases where\nan aws service would automatically create the policy if one does not exist.\n\nfor example, in order to send vpc flow logs to an s3 bucket, there is a specific bucket policy\nthat needs to be attached to the bucket. if you create the bucket without a policy and then add the\nbucket as the flow log destination, the service will automatically create the bucket policy with the\nnecessary permissions. if you were to then try and add your own bucket policy cloudformation will throw\nand error indicating that a bucket policy already exists.\n\nin cases where we know what the required policy is we can go ahead and create the policy so we can\nremain in control of it.\n\nhttps://docs.aws.amazon.com/amazoncloudwatch/latest/logs/aws-logs-and-resource-policy.html#aws-logs-infrastructure-s3\n\n*cdk.json*\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/aws-s3:createdefaultloggingpolicy\": true\n  }\n}\n```\n\n* `@aws-cdk/aws-sns-subscriptions:restrictsqsdescryption`\n\nenable this feature flag to restrict the decryption of a sqs queue, which is subscribed to a sns topic, to\nonly the topic which it is subscribed to and not the whole sns service of an account.\n\npreviously the decryption was only restricted to the sns service principal. to make the sqs subscription more\nsecure, it is a good practice to restrict the decryption further and only allow the connected sns topic to decryption\nthe subscribed queue.\n\n*cdk.json*\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/aws-sns-subscriptions:restrictsqsdescryption\": true\n  }\n}\n```\n\n* @aws-cdk/aws-apigateway:disablecloudwatchrole\n\nenable this feature flag to change the default behavior for aws-apigateway.restapi and aws-apigateway.specrestapi\nto *not* create a cloudwatch role and account. there is only a single apigateway account per aws\nenvironment which means that each time you create a restapi in your account the apigateway account\nis overwritten. if at some point the newest restapi is deleted, the apigateway account and cloudwatch\nrole will also be deleted, breaking any existing apigateways that were depending on them.\n\nwhen this flag is enabled you should either create the apigateway account and cloudwatch role\nseparately *or* only enable the cloudwatchrole on a single restapi.\n\n*cdk.json*\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/aws-apigateway:disablecloudwatchrole\": true\n  }\n}\n```\n\n* `@aws-cdk/core:enablepartitionliterals`\n\nenable this feature flag to have `stack.partition` return a literal string for a stack's partition\nwhen the stack has a known region configured.  if the region is undefined, or set to an unknown value, the\n`stack.partition` will be the cloudformation intrinsic value `aws::partition`.  without this feature flag,\n`stack.partition` always returns the cloudformation intrinsic value `aws::partition`.\n\nthis feature will often simplify arn strings in cdk generated templates, for example:\n\n```yaml\n principal:\n   aws:\n     fn::join:\n       - \"\"\n       - - \"arn:\"\n         - ref: aws::partition\n         - :iam::123456789876:root\n```\n\nbecomes:\n\n```yaml\n principal:\n   aws: \"arn:aws:iam::123456789876:root\"\n```\n\n* `@aws-cdk/aws-ecs:disableexplicitdeploymentcontrollerforcircuitbreaker`\n\nenable this feature flag to avoid setting the \"ecs\" deployment controller when adding a circuit breaker to an\necs service, as this will trigger a full replacement which fails to deploy when using set service names.\nthis does not change any behaviour as the default deployment controller when it is not defined is ecs.\n\n*cdk.json*\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/aws-ecs:disableexplicitdeploymentcontrollerforcircuitbreaker\": true\n  }\n}\n```\n\n* `@aws-cdk/aws-s3:serveraccesslogsusebucketpolicy`\n\nenable this feature flag to use s3 bucket policy for granting permission fo server access logging\nrather than using the canned `logdeliverywrite` acl. acls do not work when object ownership is\nenabled on the bucket.\n\nthis flag uses a bucket policy statement to allow server access log delivery, following best\npractices for s3.\n\nhttps://docs.aws.amazon.com/amazons3/latest/userguide/enable-server-access-logging.html\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/aws-s3:serveraccesslogsusebucketpolicy\": true\n  }\n}\n```\n\n* `@aws-cdk/aws-rds:databaseproxyuniqueresourcename`\n\nenable this feature flag to use unique resource names for each `databaseproxy`.\n\npreviously, the default behavior for `databaseproxy` was to use `id` of the constructor for `dbproxyname`.\nin this case, users couldn't deploy `databaseproxy`s that have the same `id` in the same region.\n\nthis is a feature flag as the old behavior was technically incorrect, but users may have come to depend on it.\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/aws-rds:databaseproxyuniqueresourcename\": true\n  }\n}\n```\n\n* `@aws-cdk/aws-redshift:columnid`\n\nenable this feature flag to allow the cdk to track changes in redshift columns through their `id` attribute. this is a breaking change, as the `name` attribute was currently being used to track changes to redshift columns.\n\nenabling this feature flag comes at a risk for existing redshift columns, as the `name` attribute of a redshift column was currently being used. therefore, to change a redshift columns' `name` will essentially create a new column and delete the old one. this will cause data loss. if you choose to enable this flag, ensure that upon intial deployment (the first deployment after setting this feature flag), the `name` attribute of every column is not changed. after the intial deployment, you can freely change the `name` attribute of a column.\n\n*cdk.json*\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/aws-redshift:columnid\": true\n  }\n}\n```\n\n* `@aws-cdk/aws-stepfunctions-tasks:enableemrservicepolicyv2`\n\nenable this feature flag to use the `amazonemrservicepolicy_v2` managed policies for the emr service role.\n\nthis is a feature flag as the old behavior will be deprecated, but some resources may require manual\nintervention since they might not have the appropriate tags propagated automatically.\n\nhttps://docs.aws.amazon.com/emr/latest/managementguide/emr-managed-iam-policies.html\n\n*cdk.json*\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/aws-stepfunctions-tasks:enableemrservicepolicyv2\": true\n  }\n}\n```\n\n* `@aws-cdk/core:includeprefixinuniquenamegeneration`\n\nenable this feature flag to include the stack's prefixes to the name generation process.\n\nnot doing so can cause the name of stack to exceed 128 characters:\n\n* the name generation ensures it doesn't exceed 128 characters\n* without this feature flag, the prefix is prepended to the generated name, which result can exceed 128 characters\n\nthis is a feature flag as it changes the name generated for stacks. any cdk application deployed prior this fix will\nmost likely be generated with a new name, causing the stack to be recreated with the new name, and then deleting the old one.\nfor applications running on production environments this can be unmanageable.\n\n*cdk.json*\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/core:includeprefixinuniquenamegeneration\": true\n  }\n}\n```\n\n* `@aws-cdk/aws-lambda-nodejs:uselatestruntimeversion`\n\nenable this feature flag to automatically use the latest available nodejs version in the aws-lambda-nodejse.function construct.\n\nthis allows creation of new functions using a version that will automatically stay up to date without breaking bundling of existing functions that externalize packages included in their environemnt such as `aws-sdk`.\n\nfunctions defined previously will continue to function correctly as long as they pass an explicit runtime version, or do not exclude packages during bundling.\n\n*cdk.json*\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/aws-lambda-nodejs:uselatestruntimeversion\": true\n  }\n}\n```\n\n* `@aws-cdk/aws-codepipeline-actions:usenewdefaultbranchforcodecommitsource`\n\nenable this feature flag to update the default branch for codecommit source actions to `main`.\n\npreviously, the default branch for codecommit source actions was set to `master`.\nhowever, this convention is no longer supported, and repositories created after march 2021 now have `main` as\ntheir default branch.\n\n*cdk.json*\n\n```json\n{\n  \"context\": {\n    \"@aws-cdk/aws-codepipeline-actions:usenewdefaultbranchforcodecommitsource\": true\n  }\n}\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.cx-api",
+  "package_url": "https://pypi.org/project/aws-cdk.cx-api/",
+  "project_url": "https://pypi.org/project/aws-cdk.cx-api/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.cx-api/2.116.1/",
+  "requires_dist": [
+    "aws-cdk.cloud-assembly-schema ==2.116.1",
+    "jsii <2.0.0,>=1.93.0",
+    "publication >=0.0.3",
+    "typeguard ~=2.13.3"
+  ],
+  "requires_python": "~=3.8",
+  "summary": "cloud executable protocol",
+  "version": "2.116.1",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "bucket aws s3 createdefaultloggingpolicy amazonemrservicepolicy_v2",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.cx_api",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 461,
+  "dependency_ids": [
+    "pypi_aws_cdk.cloud_assembly_schema",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

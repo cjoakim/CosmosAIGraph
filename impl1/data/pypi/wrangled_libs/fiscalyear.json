@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: financial and insurance industry",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: office/business :: financial :: accounting",
+    "topic :: office/business :: scheduling"
+  ],
+  "description": ".. image:: https://github.com/adamjstewart/fiscalyear/actions/workflows/style.yaml/badge.svg\n   :target: https://github.com/adamjstewart/fiscalyear/actions/workflows/style.yaml\n\n.. image:: https://github.com/adamjstewart/fiscalyear/actions/workflows/tests.yaml/badge.svg\n   :target: https://github.com/adamjstewart/fiscalyear/actions/workflows/tests.yaml\n\n.. image:: https://codecov.io/gh/adamjstewart/fiscalyear/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/adamjstewart/fiscalyear\n\n.. image:: https://readthedocs.org/projects/fiscalyear/badge/?version=latest\n   :target: https://fiscalyear.readthedocs.io\n\n.. image:: https://badge.fury.io/py/fiscalyear.svg\n   :target: https://pypi.org/project/fiscalyear/\n\n.. image:: https://anaconda.org/conda-forge/fiscalyear/badges/version.svg\n   :target: https://anaconda.org/conda-forge/fiscalyear\n\n.. image:: https://img.shields.io/spack/v/py-torchgeo\n   :target: https://spack.readthedocs.io/en/latest/package_list.html#py-torchgeo\n\noverview\n========\n\n`fiscalyear <https://github.com/adamjstewart/fiscalyear>`_ is a small, lightweight python module providing helpful utilities for managing the fiscal calendar. it is designed as an extension of the built-in `datetime <https://docs.python.org/3/library/datetime.html>`_ and `calendar <https://docs.python.org/3/library/calendar.html>`_ modules, adding the ability to query the fiscal year, fiscal quarter, fiscal month, and fiscal day of a date or datetime object.\n\n\nbasic usage\n===========\n\n``fiscalyear`` provides several useful classes.\n\n\nfiscalyear\n----------\n\nthe ``fiscalyear`` class provides an object for storing information about the start and end of a particular fiscal year.\n\n.. code-block:: python\n\n   >>> from fiscalyear import *\n   >>> a = fiscalyear(2017)\n   >>> a.start\n   fiscaldatetime(2016, 10, 1, 0, 0)\n   >>> a.end\n   fiscaldatetime(2017, 9, 30, 23, 59, 59)\n   >>> a.isleap\n   false\n\nyou can also get the current ``fiscalyear`` with:\n\n.. code-block:: python\n\n   >>> fiscalyear.current()\n   fiscalyear(2018)\n\n\nfiscalquarter\n-------------\n\nthe ``fiscalyear`` class also allows you to query information about a specific fiscal quarter.\n\n.. code-block:: python\n\n   >>> a.q3.start\n   fiscaldatetime(2017, 4, 1, 0, 0)\n   >>> a.q3.end\n   fiscaldatetime(2017, 6, 30, 23, 59, 59)\n\n\nthese objects represent the standalone ``fiscalquarter`` class.\n\n.. code-block:: python\n\n   >>> b = fiscalquarter(2017, 3)\n   >>> b.start\n   fiscaldatetime(2017, 4, 1, 0, 0)\n   >>> b.end\n   fiscaldatetime(2017, 6, 30, 23, 59, 59)\n   >>> a.q3 == b\n   true\n   >>> b in a\n   true\n   >>> b.next_fiscal_quarter\n   fiscalquarter(2017, 4)\n\nyou can also get the current ``fiscalquarter`` with:\n\n.. code-block:: python\n\n   >>> fiscalquarter.current()\n   fiscalquarter(2018, 2)\n\n\nfiscalmonth\n-----------\n\nthe ``fiscalmonth`` class allows you to keep track of the fiscal month.\n\n.. code-block:: python\n\n   >>> c = fiscalmonth(2017, 9)\n   >>> c.start\n   fiscaldatetime(2017, 6, 1, 0, 0)\n   >>> c.end\n   fiscaldatetime(2017, 6, 30, 23, 59, 59)\n   >>> c in a\n   true\n   >>> c in b\n   true\n   >>> c.next_fiscal_month\n   fiscalmonth(2017, 10)\n\nyou can also get the current ``fiscalmonth`` with:\n\n.. code-block:: python\n\n   >>> fiscalmonth.current()\n   fiscalmonth(2018, 4)\n\n\nfiscalday\n---------\n\nto keep track of the fiscal day, use the ``fiscalday`` class.\n\n.. code-block:: python\n\n   >>> d = fiscalday(2017, 250)\n   >>> d.start\n   fiscaldatetime(2017, 6, 6, 0, 0)\n   >>> d.end\n   fiscaldatetime(2017, 6, 6, 23, 59, 59)\n   >>> d in a\n   true\n   >>> d in b\n   true\n   >>> d in c\n   true\n   >>> d.next_fiscal_day\n   fiscalday(2017, 251)\n\nyou can also get the current ``fiscalday`` with:\n\n.. code-block:: python\n\n   >>> fiscalday.current()\n   fiscalday(2018, 94)\n\n\nfiscaldatetime\n--------------\n\nthe start and end of each of the above objects are stored as instances of the ``fiscaldatetime`` class. this class provides all of the same features as the ``datetime`` class, with the addition of the ability to query the fiscal year, fiscal quarter, fiscal month, and fiscal day.\n\n.. code-block:: python\n\n   >>> e = fiscaldatetime.now()\n   >>> e\n   fiscaldatetime(2017, 4, 8, 20, 30, 31, 105323)\n   >>> e.fiscal_year\n   2017\n   >>> e.fiscal_quarter\n   3\n   >>> e.next_fiscal_quarter\n   fiscalquarter(2017, 4)\n   >>> e.fiscal_month\n   7\n   >>> e.fiscal_day\n   190\n\n\nfiscaldate\n----------\n\nif you don't care about the time component of the ``fiscaldatetime`` class, the ``fiscaldate`` class is right for you.\n\n.. code-block:: python\n\n   >>> f = fiscaldate.today()\n   >>> f\n   fiscaldate(2017, 4, 8)\n   >>> f.fiscal_year\n   2017\n   >>> f.prev_fiscal_year\n   fiscalyear(2016)\n\n\ninstallation\n============\n\n``fiscalyear`` has no dependencies, making it simple and easy to install. the recommended way to install ``fiscalyear`` is with ``pip``.\n\n.. code-block:: console\n\n   $ pip install fiscalyear\n\n\nfor alternate installation methods, see the `installation documentation <http://fiscalyear.readthedocs.io/en/latest/installation.html>`_.\n\n\ndocumentation\n=============\n\ndocumentation is hosted on `read the docs <http://fiscalyear.readthedocs.io/en/latest/index.html>`_.\n\n\n",
+  "docs_url": null,
+  "keywords": "fiscal year,fiscal quarter,calendar,datetime",
+  "license": "mit",
+  "name": "fiscalyear",
+  "package_url": "https://pypi.org/project/fiscalyear/",
+  "project_url": "https://pypi.org/project/fiscalyear/",
+  "project_urls": {
+    "Homepage": "https://github.com/adamjstewart/fiscalyear"
+  },
+  "release_url": "https://pypi.org/project/fiscalyear/0.4.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "utilities for managing the fiscal calendar",
+  "version": "0.4.0",
+  "releases": [],
+  "developers": [
+    "adam_j",
+    "ajstewart426@gmail.com"
+  ],
+  "kwds": "fiscaldate fiscalyear fiscal_year fiscalmonth fiscal_quarter",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_fiscalyear",
+  "homepage": "https://github.com/adamjstewart/fiscalyear",
+  "release_count": 6,
+  "dependency_ids": []
+}

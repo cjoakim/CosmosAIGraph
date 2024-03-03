@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: software development :: testing"
+  ],
+  "description": "pytest-flakes\n=============\n\npy.test plugin for efficiently checking python source with pyflakes.\n\n\nusage\n-----\n\ninstall via::\n\n    pip install pytest-flakes\n\nif you then type::\n\n    py.test --flakes\n\nevery file ending in ``.py`` will be discovered and run through pyflakes,\nstarting from the command line arguments.\n\nsimple usage example\n-----------------------------\n\nconsider you have this code::\n\n    # content of module.py\n\n    import os\n    from os.path import *\n\n    def some_function():\n        pass\n\nrunning it with pytest-flakes installed shows two issues::\n\n    $ py.test -q --flakes\n    f\n    ================================= failures =================================\n    ______________________________ pyflakes-check ______________________________\n    /tmp/doc-exec-685/module.py:2: unusedimport\n    'os' imported but unused\n    /tmp/doc-exec-685/module.py:3: importstarused\n    'from os.path import *' used; unable to detect undefined names\n    1 failed in 0.00 seconds\n\nthese are only two of the many issues that pytest-flakes can find.\n\nconfiguring pyflakes options per project and file\n-------------------------------------------------\n\nyou may configure pyflakes-checking options for your project\nby adding an ``flakes-ignore`` entry to your ``setup.cfg``\nor ``pytest.ini`` file like this::\n\n    # content of setup.cfg\n    [pytest]\n    flakes-ignore = importstarused\n\nthis would globally prevent complaints about star imports.\nrerunning with the above example will now look better::\n\n    $ py.test -q --flakes\n    f\n    ================================= failures =================================\n    _________________ pyflakes-check(ignoring importstarused) __________________\n    /tmp/doc-exec-685/module.py:2: unusedimport\n    'os' imported but unused\n    1 failed in 0.00 seconds\n\nbut of course we still would want to delete the ``import os`` line to\nhave a clean pass.\n\nif you have some files where you want to specifically ignore\nsome errors or warnings you can start a flakes-ignore line with\na glob-pattern and a space-separated list of codes::\n\n    # content of setup.cfg\n    [pytest]\n    flakes-ignore =\n        *.py unusedimport\n        doc/conf.py all\n\n\nignoring certain lines in files\n-------------------------------\n\nyou can ignore errors per line by appending special comments to them like this::\n\n    import sys # noqa\n    app # pragma: no flakes\n\n\nrunning pyflakes checks and no other tests\n------------------------------------------\n\nyou can restrict your test run to only perform \"flakes\" tests\nand not any other tests by typing::\n\n    py.test --flakes -m flakes\n\nthis will only run tests that are marked with the \"flakes\" keyword\nwhich is added for the flakes test items added by this plugin.\n\nif you are using pytest < 2.4, then use the following invocation\nto the same effect::\n\n    py.test --flakes -k flakes\n\n\nnotes\n-----\n\nthe repository of this plugin is at https://github.com/asmeurer/pytest-flakes\n\nfor more info on py.test see http://pytest.org\n\nthe code is partially based on ronny pfannschmidt's pytest-codecheckers plugin\nand holger krekel's pytest-pep8.\n\n\nchanges\n=======\n\n4.0.5 - 2021-12-02\n------------------\n- further fixes for deprecations in the upcoming pytest 7.0. [nicoddemus]\n\n4.0.4 - 2021-10-26\n------------------\n- fix pytest-flakes for deprecations in the upcoming pytest 7.0. [bluetech]\n- fix the pytest-flakes test suite in python 3.10. [bluetech]\n- replace travis ci with github actions. [bluetech]\n\n4.0.3 - 2020-11-27\n------------------\n\n- future proof some code against future versions of pytest. [ronnypfannschmidt]\n\n4.0.2 - 2020-09-18\n------------------\n\n- fix calling pytest --flakes directly on an __init__.py file. [akeeman]\n\n4.0.1 - 2020-07-28\n------------------\n\n- maintenance of pytest-flakes has moved from fschulze to asmeurer. the repo\n  for pytest-flakes is now at https://github.com/asmeurer/pytest-flakes/\n\n- fix test failures.\n  [asmeurer]\n\n- fix deprecation warnings from pytest.\n  [asmeurer]\n\n- fix invalid escape sequences.\n  [akeeman]\n\n4.0.0 - 2018-08-01\n------------------\n\n- require pytest >= 2.8.0 and remove pytest-cache requirement.\n  cache is included in pytest since that version.\n  [smarlowucf (sean marlow)]\n\n\n3.0.2 - 2018-05-16\n------------------\n\n- fix typo in name of ``flakes`` marker.\n  [fschulze]\n\n\n3.0.1 - 2018-05-16\n------------------\n\n- always register ``flakes`` marker, not only when the ``--flakes`` option\n  is used.\n  [fschulze]\n\n\n3.0.0 - 2018-05-16\n------------------\n\n- drop support for python 3.3. it still works so far, but isn't tested anymore.\n  [fschulze]\n\n- add ``flakes`` marker required since pytest 3.1.\n  [fschulze]\n\n- use pyflakes.api.ispythonfile to detect python files. this might test more\n  files than before and thus could cause previously uncaught failures.\n  [asmeurer (aaron meurer)]\n\n\n2.0.0 - 2017-05-12\n------------------\n\n- dropped support/testing for python 2.5, 2.6, 3.2.\n  [fschulze]\n\n- added testing for python 3.6.\n  [fschulze]\n\n- fixed some packaging and metadata errors.\n  [fladi (michael fladischer), fschulze]\n\n\n1.0.1 - 2015-09-17\n------------------\n\n- compatibility with upcoming pytest.\n  [ronnypfannschmidt (ronny pfannschmidt)]\n\n\n1.0.0 - 2015-05-01\n------------------\n\n- fix issue #6 - support pep263 for source file encoding.\n  [the-compiler (florian bruhin), fschulze]\n\n- clarified license to be mit like pytest-pep8 from which this is derived.\n  [fschulze]\n\n\n0.2 - 2013-02-11\n----------------\n\n- adapt to pytest-2.4.2 using ``add_marker()`` api.\n  [fschulze, hpk42 (holger krekel)]\n\n- allow errors to be skipped per line by appending # noqa or # pragma: no flakes\n  [fschulze, silviot (silvio tomatis)]\n\n- python 3.x compatibility.\n  [fschulze, encukou (petr viktorin)]\n\n\n0.1 - 2013-02-04\n----------------\n\n- initial release.\n  [fschulze (florian schulze)]\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "pytest-flakes",
+  "package_url": "https://pypi.org/project/pytest-flakes/",
+  "project_url": "https://pypi.org/project/pytest-flakes/",
+  "project_urls": {
+    "Homepage": "https://github.com/asmeurer/pytest-flakes"
+  },
+  "release_url": "https://pypi.org/project/pytest-flakes/4.0.5/",
+  "requires_dist": [
+    "pytest (>=5)",
+    "pyflakes"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "pytest plugin to check source code with pyflakes",
+  "version": "4.0.5",
+  "releases": [],
+  "developers": [
+    "florian_schulze"
+  ],
+  "kwds": "pyflakes pytest flakes pip ispythonfile",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_pytest_flakes",
+  "homepage": "https://github.com/asmeurer/pytest-flakes",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_pyflakes",
+    "pypi_pytest"
+  ]
+}

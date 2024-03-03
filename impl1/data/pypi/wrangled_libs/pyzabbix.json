@@ -1,0 +1,69 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: gnu library or lesser general public license (lgpl)",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: system :: monitoring",
+    "topic :: system :: networking :: monitoring",
+    "topic :: system :: systems administration"
+  ],
+  "description": "# pyzabbix\n\n**pyzabbix** is a python module for working with the [zabbix api](https://www.zabbix.com/documentation/current/manual/api/reference).\n\n[![ci](https://github.com/lukecyca/pyzabbix/actions/workflows/ci.yml/badge.svg)](https://github.com/lukecyca/pyzabbix/actions/workflows/ci.yml)\n[![pypi package version](https://img.shields.io/pypi/v/pyzabbix.svg)](https://pypi.org/project/pyzabbix/)\n[![pypi python versions](https://img.shields.io/pypi/pyversions/pyzabbix.svg)](https://pypi.org/project/pyzabbix/)\n\n## requirements\n\n- tested against zabbix 4.0 lts, 5.0 lts, 6.0 lts and 6.4.\n\n## documentation\n\n> [!note]\n> if you are looking for a `zabbix sender`, please use the [`zappix` library](https://pypi.org/project/zappix).\n\n### getting started\n\ninstall pyzabbix using pip:\n\n```bash\n$ pip install pyzabbix\n```\n\nyou can now import and use pyzabbix like so:\n\n```python\nfrom pyzabbix import zabbixapi\n\nzapi = zabbixapi(\"http://zabbixserver.example.com\")\nzapi.login(\"zabbix user\", \"zabbix pass\")\n# you can also authenticate using an api token instead of user/pass with zabbix >= 5.4\n# zapi.login(api_token='xxxxx')\nprint(\"connected to zabbix api version %s\" % zapi.api_version())\n\nfor h in zapi.host.get(output=\"extend\"):\n    print(h['hostid'])\n```\n\nrefer to the [zabbix api documentation](https://www.zabbix.com/documentation/current/manual/api/reference) and the [pyzabbix examples](https://github.com/lukecyca/pyzabbix/tree/master/examples) for more information.\n\n### customizing the http request\n\npyzabbix uses the [requests](https://requests.readthedocs.io/en/master/) library for http. you can customize the request parameters by configuring the [requests session](https://requests.readthedocs.io/en/master/user/advanced/#session-objects) object used by pyzabbix.\n\nthis is useful for:\n\n- customizing headers\n- enabling http authentication\n- enabling keep-alive\n- disabling ssl certificate verification\n\n```python\nfrom pyzabbix import zabbixapi\n\nzapi = zabbixapi(\"http://zabbixserver.example.com\")\n\n# enable http auth\nzapi.session.auth = (\"http user\", \"http password\")\n\n# disable ssl certificate verification\nzapi.session.verify = false\n\n# specify a timeout (in seconds)\nzapi.timeout = 5.1\n\n# login (in case of http auth, only the username is needed, the password, if passed, will be ignored)\nzapi.login(\"http user\", \"http password\")\n\n# you can also authenticate using an api token instead of user/pass with zabbix >= 5.4\n# zapi.login(api_token='xxxxx')\n```\n\n### enabling debug logging\n\nif you need to debug some issue with the zabbix api, you can enable the output of logging, pyzabbix already uses the default python logging facility but by default, it logs to \"null\", you can change this behavior on your program, here's an example:\n\n```python\nimport sys\nimport logging\nfrom pyzabbix import zabbixapi\n\nstream = logging.streamhandler(sys.stdout)\nstream.setlevel(logging.debug)\nlog = logging.getlogger('pyzabbix')\nlog.addhandler(stream)\nlog.setlevel(logging.debug)\n\n\nzapi = zabbixapi(\"http://zabbixserver.example.com\")\nzapi.login('admin','password')\n\n# you can also authenticate using an api token instead of user/pass with zabbix >= 5.4\n# zapi.login(api_token='xxxxx')\n\n```\n\nthe expected output is as following:\n\n```\nsending: {\n    \"params\": {\n        \"password\": \"password\",\n        \"user\": \"admin\"\n    },\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"user.login\",\n    \"id\": 2\n}\nresponse code: 200\nresponse body: {\n    \"jsonrpc\": \"2.0\",\n    \"result\": \".................\",\n    \"id\": 2\n}\n>>>\n```\n\n## development\n\nto develop this project, start by reading the `makefile` to have a basic understanding of the possible tasks.\n\ninstall the project and the dependencies in a virtual environment:\n\n```sh\nmake install\nsource .venv/bin/activate\n```\n\n## license\n\nlgpl 2.1 http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\n\nzabbix api python library.\n\noriginal ruby library is copyright (c) 2009 andrew nelson nelsonab(at)red-tux(dot)net\n\noriginal python library is copyright (c) 2009 brett lentz brett.lentz(at)gmail(dot)com\n\nthis library is free software; you can redistribute it and/or\nmodify it under the terms of the gnu lesser general public\nlicense as published by the free software foundation; either\nversion 2.1 of the license, or (at your option) any later version.\n\nthis library is distributed in the hope that it will be useful,\nbut without any warranty; without even the implied warranty of\nmerchantability or fitness for a particular purpose. see the gnu\nlesser general public license for more details.\n\nyou should have received a copy of the gnu lesser general public\nlicense along with this library; if not, write to the free software\nfoundation, inc., 51 franklin street, fifth floor, boston, ma 02110-1301 usa\n",
+  "docs_url": null,
+  "keywords": "zabbix monitoring api",
+  "license": "lgpl",
+  "name": "pyzabbix",
+  "package_url": "https://pypi.org/project/pyzabbix/",
+  "project_url": "https://pypi.org/project/pyzabbix/",
+  "project_urls": {
+    "Homepage": "http://github.com/lukecyca/pyzabbix"
+  },
+  "release_url": "https://pypi.org/project/pyzabbix/1.3.1/",
+  "requires_dist": [
+    "requests >=1.0",
+    "packaging",
+    "black ; extra == 'dev'",
+    "isort ; extra == 'dev'",
+    "mypy ; extra == 'dev'",
+    "pylint ; extra == 'dev'",
+    "pytest-cov ; extra == 'dev'",
+    "pytest-xdist ; extra == 'dev'",
+    "pytest ; extra == 'dev'",
+    "requests-mock ; extra == 'dev'",
+    "types-requests ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "zabbix api python interface",
+  "version": "1.3.1",
+  "releases": [],
+  "developers": [
+    "luke_cyca",
+    "me@lukecyca.com"
+  ],
+  "kwds": "pyzabbix zabbix zabbixapi zabbixserver zappix",
+  "license_kwds": "lgpl",
+  "libtype": "pypi",
+  "id": "pypi_pyzabbix",
+  "homepage": "http://github.com/lukecyca/pyzabbix",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_isort",
+    "pypi_mypy",
+    "pypi_packaging",
+    "pypi_pylint",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_xdist",
+    "pypi_requests",
+    "pypi_requests_mock",
+    "pypi_types_requests"
+  ]
+}

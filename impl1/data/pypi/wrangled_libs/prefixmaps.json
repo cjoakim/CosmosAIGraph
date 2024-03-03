@@ -1,0 +1,71 @@
+{
+  "classifiers": [
+    "development status :: 1 - planning",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: bio-informatics"
+  ],
+  "description": "# prefixmaps\n\na python library for retrieving semantic prefix maps.\n\na semantic prefix map will map a a prefix (e.g. `skos`) to a namespace (e.g `http://www.w3.org/2004/02/skos/core#`).\n\nthis repository and the corresponding library is designed to satisfy the following requirements:\n\n- generation of prefix maps in headers of rdf documents\n- use in tools that expand curies and short-form identifiers to uris that can be used as subjects of rdf triples\n- coverage of prefixes from multiple different domains\n- no single authoritative source of either prefixes or prefix-namespace mappings (clash-resilient)\n- preferred semantic namespace is prioritized over web urls\n- authority preferred prefix is prioritized where possible\n- each individual prefix map is case-insensitive bijective\n- prefix map composition and custom ordering of prefixmaps\n- lightweight / low footprint\n- fast (todo)\n- network-independence / versioned prefix maps\n- optional ability to retrieve latest from external authority on network\n\nwhat this is not intended for:\n\n- a general source of metadata about either prefixes or namespaces\n- a mechanism for resolving identifiers to web urls for humans to find information\n\n## installation\n\n```shell\npip install prefixmaps\n```\n\n## usage\n\nto use in combination with [curies](https://github.com/cthoyt/curies) library:\n\n```python\nfrom prefixmaps import load_converter\nfrom curies import converter\n\nconverter: converter = load_converter([\"obo\", \"bioregistry.upper\", \"linked_data\", \"prefixcc\"])\n\n>>> converter.expand(\"chebi:1\")\n'http://purl.obolibrary.org/obo/chebi_1'\n>>> converter.expand(\"geo:1\")\n'http://purl.obolibrary.org/obo/geo_1'\n>>> converter.expand(\"owl:class\")\n'http://www.w3.org/2002/07/owl#class'\n>>> converter.expand(\"flybase:fbgn123\")\n'http://identifiers.org/fb/fbgn123'\n```\n\n### alternate orderings / clash resilience\n\n- prefix.cc uses the prefix `geo` for geosparql `http://www.opengis.net/ont/geosparql#`\n- obo uses prefix `geo` for the [geographical entity ontology](https://obofoundry.org/ontology/geo), expanding to `http://purl.obolibrary.org/obo/geo_`\n- the bioregistry uses the prefix [`geo`](https://bioregistry.io/registry/geo) for ncbi geo, and \"re-mints\" a [`geogeo`](https://bioregistry.io/registry/geogeo) prefix for the obo ontology\n\nif we prioritize prefix.cc the obo prefix is ignored:\n\n```python\nconverter = load_converter([\"prefixcc\", \"obo\"])\n\n>>> converter.expand(\"geo:1\")\n>>> converter.expand(\"geo:1\")\n'http://www.opengis.net/ont/geosparql#1'\n```\n\neven though prefix expansion is case-sensitive, we intentionally block conflicts that differ only in case.\n\nif we push `bioregistry` at the start of the list then geogeo can be used as the prefix for the obo ontology:\n\n```python\nconverter = load_converter([\"bioregistry\", \"prefixcc\", \"obo\"])\n\n>>> converter.expand(\"geo:1\")\n'http://identifiers.org/geo/1'\n>>> converter.expand(\"geo:1\")\n>>> converter.expand(\"geogeo:1\")\n'http://purl.obolibrary.org/obo/geo_1'\n```\n\nnote that from the obo perspective, geogeo is non-canonical.\n\nwe get similar results using the upper-normalized variant of `bioregistry`:\n\n```python\nconverter = load_converter([\"bioregistry.upper\", \"prefixcc\", \"obo\"])\n\n>>> converter.expand(\"geo:1\")\n'http://identifiers.org/geo/1'\n>>> converter.expand(\"geo:1\")\n>>> converter.expand(\"geogeo:1\")\n'http://purl.obolibrary.org/obo/geo_1'\n```\n\nusers of obo ontologies will want to place obo at the start of the list:\n\n```python\nconverter = load_converter([\"obo\", \"bioregistry.upper\", \"prefixcc\"])\n\n>>> converter.expand(\"geo:1\")\n>>> converter.expand(\"geo:1\")\n'http://purl.obolibrary.org/obo/geo_1'\n>>> converter.expand(\"geogeo:1\")\n```\n\nnote under this ordering there is no prefix for ncbi geo. this is not\na major limitation as there is no canonical semantic rendering of ncbi\ngeo. this could be added in future with a unique obo prefix.\n\nyou can use the ready-made \"merged\" prefix set, which prioritizes obo:\n\n```python\nconverter = load_converter(\"merged\")\n\n>>> converter.expand(\"geogeo:1\")\n>>> converter.expand(\"geo:1\")\n'http://purl.obolibrary.org/obo/geo_1'\n>>> converter.expand(\"geo:1\")\n```\n\n### network independence and requesting latest versions\n\nby default, this will make use of metadata distributed alongside the package. this has certain advantages in terms\nof reproducibility, but it means if a new ontology or prefix is added to an upstream source you won't see this.\n\nto refresh and use the latest upstream:\n\n```python\nconverter = load_converter(\"obo\", refresh=true)\n```\n\nthis will perform a fetch from http://obofoundry.org/registry/obo_prefixes.ttl\n\n## context metadata\n\nsee [contexts.curated.yaml](src/prefixmaps/data/contexts.curated.yaml)\n\nsee the description fields\n\n## repository organization\n\ndata files containing pre-build prefix maps using sources like obo and bioregistry are distributed alongside the python\n\nlocation:\n\n * [src/prefixmaps/data](src/prefixmaps/data/)\n\n### csv field descriptions\n\n1. context: a unique handle for this context. this must be the same as the basename of the file\n2. prefix: corresponds to http://www.w3.org/ns/shacl#prefix\n3. namespace: corresponds to http://www.w3.org/ns/shacl#namespace\n4. canonical: true if this satisfies bijectivity\n\n\n### refreshing the data\n\nthe data can be refreshed in several ways:\n\n1. locally, you can use `tox` with:\n\n   ```shell\n   pip install tox tox-poetry\n   tox -e refresh\n   ```\n2. manually running and automatically committing via [this github actions workflow](https://github.com/linkml/prefixmaps/blob/main/.github/workflows/refresh.yaml).\n3. running makefile (warning, this requires some pre-configuration\n    \n    ```shell\n    make etl\n    ```\n\ntodo: make a github action that auto-releases new versions\n\nnote that prs should *not* be made against the individual csv files. these are generated from upstream sources.\n\nwe temporarily house a small number of curated prefixmaps such as [linked_data.yaml](https://github.com/linkml/prefixmaps/blob/main/src/prefixmaps/data/linked_data.curated.yaml), with the csv generated from the yaml.\n\nour goal is to ultimately cede these to upstream sources.\n\n\n\n## requesting new prefixes\n\nthis repo is not a prefix registry. its job is simply to aggregate\ndifferent prefix maps. request changes upstream.\n\n",
+  "docs_url": null,
+  "keywords": "semantic web,bioinformatics",
+  "license": "apache-2.0",
+  "name": "prefixmaps",
+  "package_url": "https://pypi.org/project/prefixmaps/",
+  "project_url": "https://pypi.org/project/prefixmaps/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/linkml/prefixmaps/issues",
+    "homepage": "https://github.com/linkml/prefixmaps",
+    "repository": "https://github.com/linkml/prefixmaps"
+  },
+  "release_url": "https://pypi.org/project/prefixmaps/0.2.1/",
+  "requires_dist": [
+    "Sphinx[docs] (>=7.2.6,<8.0.0) ; extra == \"docs\"",
+    "bioregistry[refresh] (>=0.10.65,<0.11.0) ; extra == \"refresh\"",
+    "click (>=8.1.3)",
+    "curies (>=0.5.3)",
+    "myst-parser[docs] (>=2.0.0,<3.0.0) ; extra == \"docs\"",
+    "pydantic (>=2.5,<3.0)",
+    "pyyaml (>=5.3.1)",
+    "rdflib[refresh] (>=6.2.0,<7.0.0) ; extra == \"refresh\"",
+    "requests[refresh] (>=2.28.1,<3.0.0) ; extra == \"refresh\"",
+    "sphinx-autodoc-typehints[docs] (>=1.23.4,<2.0.0) ; extra == \"docs\"",
+    "sphinx-click[docs] (>=4.3.0,<5.0.0) ; extra == \"docs\"",
+    "sphinx-rtd-theme[docs] (>=1.0.0,<2.0.0) ; extra == \"docs\"",
+    "tox (>=4.11.3,<5.0.0)"
+  ],
+  "requires_python": ">=3.9,<4.0",
+  "summary": "a python library for retrieving semantic prefix maps",
+  "version": "0.2.1",
+  "releases": [],
+  "developers": [
+    "cjm@berkeleybop.org",
+    "cmungall"
+  ],
+  "kwds": "prefixmaps prefixes ontologies rdf ontology",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_prefixmaps",
+  "homepage": "",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_bioregistry",
+    "pypi_click",
+    "pypi_curies",
+    "pypi_myst_parser",
+    "pypi_pydantic",
+    "pypi_pyyaml",
+    "pypi_rdflib",
+    "pypi_requests",
+    "pypi_sphinx",
+    "pypi_sphinx_autodoc_typehints",
+    "pypi_sphinx_click",
+    "pypi_sphinx_rtd_theme",
+    "pypi_tox"
+  ]
+}

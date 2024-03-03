@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# transformer-smaller-training-vocab\n\n[![pypi version](https://badge.fury.io/py/transformer-smaller-training-vocab.svg)](https://badge.fury.io/py/transformer-smaller-training-vocab)\n[![github issues](https://img.shields.io/github/issues/helpmefindaname/transformer-smaller-training-vocab.svg)](https://github.com/helpmefindaname/transformer-smaller-training-vocab/issues)\n[![license: mit](https://img.shields.io/badge/license-mit-brightgreen.svg)](https://opensource.org/licenses/mit)\n\n**docs** are available [here](https://helpmefindaname.github.io/transformer-smaller-training-vocab)\n\n## motivation\n\nhave you ever trained a transformer model and noticed that most tokens in the vocab are not used?\nlogically the token embeddings from those terms won't change, however they still take up memory and compute resources on your gpu.\none could assume that the embeddings are just a small part of the model and therefore aren't relevant, however looking at models like [xlm-roberta-large](https://huggingface.co/xlm-roberta-large) have 45.72% of parameters as \"word_embeddings\".\nbesides that, the gradient computation is done for the whole embedding weight, leading to gradient updates with very large amounts of 0s, eating a lot of memory, especially with state optimizers such as adam.\n\nto reduce these inconveniences, this package provides a simple and easy to use way to\n* gather usage statistics of the vocabulary\n* temporary reduce the vocabulary to include no tokens that won't be used during training\n* fit in the tokens back in after the training is finished, so the full version can be saved.\n\n\n### limitations\n\nthis library works fine, if you use any [fasttokenizer](https://huggingface.co/docs/transformers/main_classes/tokenizer#transformers.pretrainedtokenizerfast)\nhowever if you want to use a `slow` tokenizer, it get's more tricky as huggingface-transformers has - per current date - no interface for overwriting the vocabulary in transformers.\nso they require a custom implementation, currently the following tokenizers are supported:\n* xlmrobertatokenizer\n* robertatokenizer\n* berttokenizer\n\nif you want to use a tokenizer that is not on the list, please [create an issue](https://github.com/helpmefindaname/transformer-smaller-training-vocab/issues) for it.\n\n## quick start\n\n### requirements and installation\n\nthe project is based on transformers 4.1.0+, pytorch 1.8+ and python 3.8+\nthen, in your favorite virtual environment, simply run:\n\n```\npip install transformer-smaller-training-vocab\n```\n\n### example usage\n\nto use more efficient training, it is enough to do the following changes to an abitary training script:\n\n```diff\n\n  model = ...\n  tokenizer = ...\n  raw_datasets = ...\n  ...\n\n+ with reduce_train_vocab(model=model, tokenizer=tokenizer, texts=get_texts_from_dataset(raw_datasets, key=\"text\")):\n      def preprocess_function(examples):\n          result = tokenizer(examples[\"text\"], padding=padding, max_length=max_seq_length, truncation=true)\n          result[\"label\"] = [(label_to_id[l] if l != -1 else -1) for l in examples[\"label\"]]\n          return result\n    \n      raw_datasets = raw_datasets.map(\n          preprocess_function,\n          batched=true,\n      )\n    \n      trainer = trainer(\n          model=model,\n          train_dataset=raw_datasets[\"train\"],\n          eval_dataset=raw_datasets[\"validation\"],\n          tokenizer=tokenizer,\n          ...\n      )\n    \n      trainer.train()\n\n+ trainer.save_model()  # save model at the end to contain the full vocab again.\n```\n\ndone! the model will now be trained with only use the necessary parts of the token embeddings.\n\n## impact\n\nhere is a table to document how much impact this technique has on training:\n\n| **model** | **dataset** | **vocab reduction** | **model size reduction** |\n|-----------|-------------|---------------------|--------------------------|\n| [xlm-roberta-large](https://huggingface.co/xlm-roberta-large) | conll 03 (en) |  93.13% | 42.58% |\n| [xlm-roberta-base](https://huggingface.co/xlm-roberta-base) | conll 03 (en) | 93.13% | 64.31% |\n| [bert-base-cased](https://huggingface.co/bert-base-cased) | conll 03 (en) | 43.64% | 08.97% |\n| [bert-base-uncased](https://huggingface.co/bert-base-uncased) | conll 03 (en) | 47.62% | 10.19% |\n| [bert-large-uncased](https://huggingface.co/roberta-base) | conll 03 (en) | 47.62% | 04.44% |\n| [roberta-base](https://huggingface.co/roberta-base) | conll 03 (en) | 58.39% | 18.08% |\n| [roberta-large](https://huggingface.co/roberta-large) | conll 03 (en) | 58.39% | 08.45% |\n| [bert-base-cased](https://huggingface.co/bert-base-cased) | cola | 77.67% | 15.97% |\n| [roberta-base](https://huggingface.co/roberta-base) | cola | 86.08% | 26.66% |\n| [xlm-roberta-base](https://huggingface.co/xlm-roberta-base) | cola | 97.79% | 67.52% |\n| [bert-base-cased](https://huggingface.co/bert-base-cased) | mnli | 10.94% | 2.25% |\n| [roberta-base](https://huggingface.co/roberta-base) | mnli | 14.78% | 4.58% |\n| [xlm-roberta-base](https://huggingface.co/xlm-roberta-base) | mnli | 88.83% | 61.34% |\n| [bert-base-cased](https://huggingface.co/bert-base-cased) | mrpc | 49.93% | 10.27% |\n| [roberta-base](https://huggingface.co/roberta-base) | mrpc | 64.02% | 19.83% |\n| [xlm-roberta-base](https://huggingface.co/xlm-roberta-base) | mrpc | 94.88% | 65.52% |\n| [bert-base-cased](https://huggingface.co/bert-base-cased) | qnli | 8.62% | 1.77% |\n| [roberta-base](https://huggingface.co/roberta-base) | qnli | 17.64% | 5.46% |\n| [xlm-roberta-base](https://huggingface.co/xlm-roberta-base) | qnli | 87.57% | 60.47% |\n| [bert-base-cased](https://huggingface.co/bert-base-cased) | qqp | 7.69% | 1.58% |\n| [roberta-base](https://huggingface.co/roberta-base) | qqp | 5.91% | 1.83% |\n| [xlm-roberta-base](https://huggingface.co/xlm-roberta-base) | qqp | 85.40% | 58.98% |\n| [bert-base-cased](https://huggingface.co/bert-base-cased) | rte | 34.68% | 7.13% |\n| [roberta-base](https://huggingface.co/roberta-base) | rte | 50.49% | 15.64% |\n| [xlm-roberta-base](https://huggingface.co/xlm-roberta-base) | rte | 93.10% | 64.29% |\n| [bert-base-cased](https://huggingface.co/bert-base-cased) | sst2 | 62.39% | 12.83% |\n| [roberta-base](https://huggingface.co/roberta-base) | sst2 | 68.60% | 21.25% |\n| [xlm-roberta-base](https://huggingface.co/xlm-roberta-base) | sst2 | 96.25% | 66.47% |\n| [bert-base-cased](https://huggingface.co/bert-base-cased) | stsb | 51.35% | 10.56% |\n| [roberta-base](https://huggingface.co/roberta-base) | stsb | 64.37% | 19.93% |\n| [xlm-roberta-base](https://huggingface.co/xlm-roberta-base) | stsb | 94.88% | 65.52% |\n| [bert-base-cased](https://huggingface.co/bert-base-cased) | wnli | 93.66% | 19.26% |\n| [roberta-base](https://huggingface.co/roberta-base) | wnli | 96.03% | 29.74% |\n| [xlm-roberta-base](https://huggingface.co/xlm-roberta-base) | wnli | 99.25% | 68.54% |\n\n\nnotice that while those reduced embeddings imply slightly less computation effort, those gains are neglectable, as the gradient computation for the parameters of transformer layers are dominant.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "transformer-smaller-training-vocab",
+  "package_url": "https://pypi.org/project/transformer-smaller-training-vocab/",
+  "project_url": "https://pypi.org/project/transformer-smaller-training-vocab/",
+  "project_urls": {
+    "Homepage": "https://github.com/helpmefindaname/transformer-smaller-training-vocab",
+    "Repository": "https://github.com/helpmefindaname/transformer-smaller-training-vocab"
+  },
+  "release_url": "https://pypi.org/project/transformer-smaller-training-vocab/0.3.3/",
+  "requires_dist": [
+    "transformers[torch] (>=4.1,<5.0)",
+    "torch (>=1.8.0,<3.0.0,!=2.0.1)",
+    "sentencepiece (>=0.1.97,<0.2.0)"
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "temporary remove unused tokens during training to save ram and speed.",
+  "version": "0.3.3",
+  "releases": [],
+  "developers": [
+    "benedikt.fuchs.staw@hotmail.com",
+    "benedikt_fuchs"
+  ],
+  "kwds": "transformer tokenizers tokenizer reduce_train_vocab transformers",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_transformer_smaller_training_vocab",
+  "homepage": "https://github.com/helpmefindaname/transformer-smaller-training-vocab",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_sentencepiece",
+    "pypi_torch",
+    "pypi_transformers"
+  ]
+}

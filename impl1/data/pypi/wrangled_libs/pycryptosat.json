@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: c++",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "topic :: utilities"
+  ],
+  "description": "# pycryptosat sat solver\n\nthis directory provides python bindings to cryptominisat on the c++ level,\ni.e. when importing pycryptosat, the cryptominisat solver becomes part of the\npython process itself.\n\n## installing\n\n```\npip install pycryptosat\n```\n\n## compiling\nif you don't want to use the pip package, you can compile it as:\n\n```\napt-get install python-dev\npython -m build\n```\n\nto help with debug, you can also:\n```\npython setup.py bdist_wheel\n```\n\n## usage\n\nthe `pycryptosat` module has one object, `solver` that has two functions\n`solve` and `add_clause`.\n\nthe funcion `add_clause()` takes an iterable list of literals such as\n`[1, 2]` which represents the truth `1 or 2 = true`. for example,\n`add_clause([1])` sets variable `1` to `true`.\n\nthe function `solve()` solves the system of equations that have been added\nwith `add_clause()`:\n\n```\n>>> from pycryptosat import solver\n>>> s = solver()\n>>> s.add_clause([1, 2])\n>>> sat, solution = s.solve()\n>>> print sat\ntrue\n>>> print solution\n(none, true, true)\n```\n\nthe return value is a tuple. first part of the tuple indicates whether the\nproblem is satisfiable. in this case, it's `true`, i.e. satisfiable. the second\npart is a tuple contains the solution, preceded by none, so you can index into\nit with the variable number. e.g. `solution[1]` returns the value for\nvariable `1`.\n\nthe `solve()` method optionally takes an argument `assumptions` that\nallows the user to set values to specific variables in the solver in a temporary\nfashion. this means that in case the problem is satisfiable but e.g it's\nunsatisfiable if variable 2 is false, then `solve([-2])` will return\nunsat. however, a subsequent call to `solve()` will still return a solution.\nif instead of an assumption `add_clause()` would have been used, subsequent\n`solve()` calls would have returned unsatisfiable.\n\n`solver` takes the following keyword arguments:\n  * `time_limit`: the time limit (integer)\n  * `confl_limit`: the propagation limit (integer)\n  * `verbose`: the verbosity level (integer)\n\nboth `time_limit` and `confl_limit` set a budget to the solver. the former is based on time elapsed while the former is based on number of conflicts met during search. if the solver runs out of budget, it returns with `(none, none)`. if both limits are used, the solver will terminate whenever one of the limits are hit (whichever first). warning: results from `time_limit` may differ from run to run, depending on compute load, etc. use `confl_limit` for more reproducible runs.\n\n## example\n\nlet us consider the following clauses, represented using\nthe dimacs `cnf <http://en.wikipedia.org/wiki/conjunctive_normal_form>`_\nformat::\n\n```\np cnf 5 3\n1 -5 4 0\n-1 5 3 4 0\n-3 -4 0\n```\n\nhere, we have 5 variables and 3 clauses, the first clause being\n(x\\ :sub:`1`  or not x\\ :sub:`5` or x\\ :sub:`4`).\nnote that the variable x\\ :sub:`2` is not used in any of the clauses,\nwhich means that for each solution with x\\ :sub:`2` = true, we must\nalso have a solution with x\\ :sub:`2` = false.  in python, each clause is\nmost conveniently represented as a list of integers.  naturally, it makes\nsense to represent each solution also as a list of integers, where the sign\ncorresponds to the boolean value (+ for true and - for false) and the\nabsolute value corresponds to i\\ :sup:`th` variable::\n\n```\n>>> import pycryptosat\n>>> solver = pycryptosat.solver()\n>>> solver.add_clause([1, -5, 4])\n>>> solver.add_clause([-1, 5, 3, 4])\n>>> solver.add_clause([-3, -4])\n>>> solver.solve()\n(true, (none, true, false, false, true, true))\n```\n\nthis solution translates to: x\\ :sub:`1` = x\\ :sub:`4` = x\\ :sub:`5` = true,\nx\\ :sub:`2` = x\\ :sub:`3` = false\n\n# special options (e.g. largemem, etc)\n\nin case you need to e.g. have largemem, you must modify `setup.py` and add `'-dlarge_offsets'` to `extra_compile_args`. similarly for other options.\n",
+  "docs_url": null,
+  "keywords": "sat,cryptography",
+  "license": "copyright (c) 2009-2020 authors of cryptominisat, see authors file all rights reserved.  the general priciple of the licensing is as follows. everything that's needed to run/build/install/link the system is mit licensed. this allows easy distribution and running of the system everywhere. files that have no copyright header are also mit licensed. note that in case you compile with bliss, then bliss's gpl license affects the final executable and library.  everything else that's not needed to run/build/install/link is usually gplv2 licensed or compatible (see the copyright headers.) the only exceptions are the following files in docs/: * `splncs03.bat` which is under the lppl * `ieee.cls` which is covered by the ieee copyright policy   mit license ===================  permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"software\"), to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, subject to the following conditions:  the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software.    gpl license v2 ===================  this program is free software; you can redistribute it and/or modify it under the terms of the gnu general public license as published by the free software foundation; version 2 of the license.  this program is distributed in the hope that it will be useful, but without any warranty; without even the implied warranty of merchantability or fitness for a particular purpose.  see the gnu general public license for more details.  you should have received a copy of the gnu general public license along with this program; if not, write to the free software foundation, inc., 51 franklin street, fifth floor, boston, ma 02110-1301, usa. ",
+  "name": "pycryptosat",
+  "package_url": "https://pypi.org/project/pycryptosat/",
+  "project_url": "https://pypi.org/project/pycryptosat/",
+  "project_urls": {
+    "Homepage": "https://github.com/msoos/cryptominisat"
+  },
+  "release_url": "https://pypi.org/project/pycryptosat/5.11.19/",
+  "requires_dist": [],
+  "requires_python": ">=3.5",
+  "summary": "bindings to cryptominisat, an advanced sat solver",
+  "version": "5.11.19",
+  "releases": [],
+  "developers": [
+    "soos.mate@gmail.com"
+  ],
+  "kwds": "pycryptosat bdist_wheel cryptominisat python satisfiable",
+  "license_kwds": "licensing copyright license executable cryptominisat",
+  "libtype": "pypi",
+  "id": "pypi_pycryptosat",
+  "homepage": "https://github.com/msoos/cryptominisat",
+  "release_count": 23,
+  "dependency_ids": []
+}

@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "framework :: ipython",
+    "framework :: jupyter",
+    "intended audience :: education",
+    "intended audience :: other audience",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: scientific/engineering :: mathematics"
+  ],
+  "description": "cma-es covariance matrix adaptation evolution strategy\n======================================================\n\na stochastic numerical optimization algorithm for difficult (non-convex,\nill-conditioned, multi-modal, rugged, noisy) optimization problems in\ncontinuous search spaces, implemented in python.\n\ntypical domain of application are bound-constrained or unconstrained\nobjective functions with:\n\n* search space dimension between, say, 5 and (a few) 100,\n* no gradients available,\n* at least, say, 100 times dimension function evaluations needed to\n  get satisfactory solutions,\n* non-separable, ill-conditioned, or rugged/multi-modal landscapes.\n\nthe cma-es is quite reliable, however for small budgets (fewer function\nevaluations than, say, 100 times dimension) or in very small dimensions\nbetter (i.e. faster) methods are available.\n\nthe ``pycma`` module provides two independent implementations of the \ncma-es algorithm in the classes ``cma.cmaevolutionstrategy`` and \n``cma.purecma.cmaes``. \n\ninstallation\n------------\nthere are several ways of installation:\n\n* in the terminal command line type::\n\n      python -m pip install cma\n\n  typing just ``pip`` instead of ``python -m pip`` may be sufficient. or, \n  alternatively::\n\n      easy_install cma\n\n  the package will be downloaded and installed automatically. to\n  **upgrade** an existing installation, '``cma``' must be replaced by \n  '``-u cma``' in both cases. if you never heard of ``pip``, `see here`__.\n\n  __ http://www.pip-installer.org\n\n* download and unpack the ``cma-...tar.gz`` file and type::\n\n      pip install -e cma\n    \n  or::\n\n      python setup.py install\n\n  in the ``cma-...`` folder (under windows just\n  \"``setup.py install``\").\n\n* under windows one may also download the ms windows installer.\n\n\ninstallation **might require root privileges**. in this case, try \nthe ``--user`` option of pip or prepended with ``sudo``.\n\nthe folder ``cma`` from the ``tar`` archive can also be used without\nany installation (just ``import`` needs to find it).\n\nusage example\n-------------\nin a python shell::\n\n    >>> import cma\n    >>> help(cma)\n        <output omitted>\n    >>> es = cma.cmaevolutionstrategy(8 * [0], 0.5)\n    (5_w,10)-acma-es (mu_w=3.2,w_1=45%) in dimension 8 (seed=468976, tue may  6 19:14:06 2014)\n    >>> help(es)  # the same as help(cma.cmaevolutionstrategy)\n        <output omitted>\n    >>> es.optimize(cma.ff.rosen)\n    iterat #fevals   function value    axis ratio  sigma  minstd maxstd min:sec\n        1      10 1.042661803766204e+02 1.0e+00 4.50e-01  4e-01  5e-01 0:0.0\n        2      20 7.322331708590002e+01 1.2e+00 3.89e-01  4e-01  4e-01 0:0.0\n        3      30 6.048150359372417e+01 1.2e+00 3.47e-01  3e-01  3e-01 0:0.0\n      100    1000 3.165939452385367e+00 1.1e+01 7.08e-02  2e-02  7e-02 0:0.2\n      200    2000 4.157333035296804e-01 1.9e+01 8.10e-02  9e-03  5e-02 0:0.4\n      300    3000 2.413696640005903e-04 4.3e+01 9.57e-03  3e-04  7e-03 0:0.5\n      400    4000 1.271582136805314e-11 7.6e+01 9.70e-06  8e-08  3e-06 0:0.7\n      439    4390 1.062554035878040e-14 9.4e+01 5.31e-07  3e-09  8e-08 0:0.8\n    >>> es.result_pretty()  # pretty print result\n    termination on tolfun=1e-11\n    final/bestever f-value = 3.729752e-15 3.729752e-15\n    mean solution: [ 1.          1.          1.          1.          0.99999999  0.99999998\n      0.99999995  0.99999991]\n    std deviation: [  2.84303359e-09   2.74700402e-09   3.28154576e-09   5.92961588e-09\n       1.07700123e-08   2.12590385e-08   4.09374304e-08   8.16649754e-08]\n\noptimizes the 8-dimensional rosenbrock function with initial solution all\nzeros and initial ``sigma = 0.5``.\n\npretty much the same can be achieved a little less \"elaborate\" with::\n\n    >>> import cma\n    >>> xopt, es = cma.fmin2(cma.ff.rosen, 8 * [0], 0.5)\n        <output omitted>\n\nand a little more elaborate exposing the **ask-and-tell interface**::\n\n    >>> import cma\n    >>> es = cma.cmaevolutionstrategy(12 * [0], 0.5)\n    >>> while not es.stop():\n    ...     solutions = es.ask()\n    ...     es.tell(solutions, [cma.ff.rosen(x) for x in solutions])\n    ...     es.logger.add()  # write data to disc to be plotted\n    ...     es.disp()\n        <output omitted>\n    >>> es.result_pretty()\n        <output omitted>\n    >>> cma.plot()  # shortcut for es.logger.plot()\n\n.. figure:: http://www.cmap.polytechnique.fr/~nikolaus.hansen/rosen12.png\n    :alt: cma-es on rosenbrock function in dimension 8\n    :target: https://cma-es.github.io/cmaes_sourcecode_page.html#example\n    :align: center \n   \n    a single run on the 12-dimensional rosenbrock function. \n\n\nthe ``cmaoptions`` class manages options for ``cmaevolutionstrategy``,\ne.g. verbosity options can be found like::\n\n    >>> import cma\n    >>> cma.s.pprint(cma.cmaoptions('erb'))\n    {'verb_log': '1  #v verbosity: write data to files every verb_log iteration, writing can be time critical on fast to evaluate functions'\n     'verbose': '1  #v verbosity e.v. of initial/final message, -1 is very quiet, not yet implemented'\n     'verb_plot': '0  #v in fmin(): plot() is called every verb_plot iteration'\n     'verb_disp': '100  #v verbosity: display console output every verb_disp iteration'\n     'verb_filenameprefix': 'outcmaes  # output filenames prefix'\n     'verb_append': '0  # initial evaluation counter, if append, do not overwrite output files'\n     'verb_time': 'true  #v output timings on console'}\n\noptions are passed like::\n\n    >>> import cma\n    >>> es = cma.cmaevolutionstrategy(8 * [0], 0.5,\n                                      {'verb_disp': 1}) # display each iteration\n\n\ndocumentations\n--------------\nthe full package api documentation:\n\n* `version 3+`_ (recent)\n* `version 1.x`_\n\n.. _`version 3+`: https://cma-es.github.io/apidocs-pycma/\n.. _`version 1.x`: http://www.cmap.polytechnique.fr/~nikolaus.hansen/html-pythoncma/\n\nsee also\n\n* `github page hosting this code`_ and its `faq`_ (under development)\n* `general cma-es source code page`_ with practical hints\n* `cma-es on wikipedia`_\n\n.. _`github page hosting this code`: https://github.com/cma-es/pycma\n.. _`faq`: https://github.com/cma-es/pycma/issues?q=is:issue+label:faq\n.. _`general cma-es source code page`: https://cma-es.github.io/cmaes_sourcecode_page.html\n.. _`cma-es on wikipedia`: http://en.wikipedia.org/wiki/cma-es\n\ndependencies\n------------\n\n* required (unless for `cma.purecma`): ``numpy`` -- array processing for numbers, strings, records, and objects\n* optional (highly recommended): ``matplotlib`` -- python plotting package (includes ``pylab``)\n\nuse ``pip install numpy`` etc. for installation. the `cma.purecma` submodule can be used without any dependencies installed.\n\nlicense: bsd\n",
+  "docs_url": null,
+  "keywords": "optimization,cma-es,cmaes",
+  "license": "bsd",
+  "name": "cma",
+  "package_url": "https://pypi.org/project/cma/",
+  "project_url": "https://pypi.org/project/cma/",
+  "project_urls": {
+    "Homepage": "https://github.com/CMA-ES/pycma"
+  },
+  "release_url": "https://pypi.org/project/cma/3.3.0/",
+  "requires_dist": [
+    "numpy",
+    "moarchiving ; extra == 'constrained-solution-tracking'",
+    "matplotlib ; extra == 'plotting'"
+  ],
+  "requires_python": "",
+  "summary": "cma-es, covariance matrix adaptation evolution strategy for non-linear numerical optimization in python",
+  "version": "3.3.0",
+  "releases": [],
+  "developers": [
+    "authors_firstname.lastname@inria.fr",
+    "nikolaus_hansen"
+  ],
+  "kwds": "pythoncma optimization optimizes optimize cma",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_cma",
+  "homepage": "https://github.com/cma-es/pycma",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_matplotlib",
+    "pypi_moarchiving",
+    "pypi_numpy"
+  ]
+}

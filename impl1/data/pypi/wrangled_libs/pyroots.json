@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: mathematics",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "![image](https://travis-ci.org/pmav99/pyroots.svg?branch=master%0a%20:target:%20https://travis-ci.org/pmav99/pyroots)\n\npyroots\n=======\n\nabstract\n--------\n\na python library implementing various root finding methods for\nsingle-variable functions.\n\ncurrently the following methods have been implemented:\n\n-   the [bisect](http://en.wikipedia.org/wiki/bisection_method) method.\n-   the [ridder](http://en.wikipedia.org/wiki/ridders%27_method) method.\n-   the [brent](http://en.wikipedia.org/wiki/brent%27s_method) method.\n\nwith regard to `brent`'s method, there are two implementations, the\nfirst one uses inverse quadratic extrapolation (`brentq`) while the\nother ones uses hyperbolic extrapolation (`brenth`).\n\nif you don't know which method to use, you should probably use `brentq`.\nthat being said, `bisect` method is safe and slow (i.e. lots of iterations).\n\nexample\n-------\n\n```python\n# define the function whose root you are searching\ndef f(x, a):\n    return x ** 2 - a + 1\n\n# create the solver object (instead of brentq you could also import brenth/ridder/bisect)\nfrom pyroots import brentq\nbrent = brentq(epsilon=1e-5)\n\n# solve the function in `[-3, 0]` while `a` is equal to 2\nresult = brent(f, -3, 0, a=2)\nprint(result)\n```\n\nwill output:\n\n```\n converged : true\n   message : solution converged.\niterations :   6\nfunc calls :   9\n        x0 :    -1.0000000748530762\n      xtol :     0.0000000000000002\n     f(x0) :     0.0000001497061579\n   epsilon :     0.0000100000000000\n   x_steps : [-3, 0, -0.3333333333333333, -1.6666666666666665, -0.7777777777777779, -1.0686868686868687, -0.9917335278385606, -0.9997244260982788, -1.0000000748530762]\n  fx_steps : [8, -1, -0.8888888888888888, 1.7777777777777772, -0.3950617283950615, 0.14209162330374459, -0.01646460976088293, -0.0005510718624670563, 1.4970615791476405e-07]\n```\n\nrationale\n---------\n\nthe functionality of `pyroots` is already implemented in `scipy`, so the\nnatural question is why rediscover the wheel?\n\nwell, the main reason is that `scipy` is a huge dependency. `pyroots` on\nthe other hand is just a single package that is easily installed and\nthat you can easily bundle with `py2exe` or similar projects. it doesn't\neven need to get installed, just throw the `pyroots` folder in your\nproject and you are ready to go.\n\napart from that, the api used by `scipy`'s functions is not very\nuser-friendly. for example you can't use keyword arguments for your\nfunctions. moreover, in `scipy` there is no reliable way to define how\nmany digits of accuracy you want in the obtained root. for example, you\nmay ask for 6 digits, but scipy may calculate up to 14 (or 12 or\nwhatever) digits. the main implication of this \"glitch\" is that scipy's\nmethod may evaluate the function more times than those really needed. if\nthe function calculates something trivial like the functions in the\nfollowing examples, then these extra function calls are no big deal, but\nif your functions take significant time to evaluate ,e.g. more than\nseconds, then this can quickly become annoying, or even, simply\nunacceptable, e.g. the function takes some minutes to return a value.\n\ninstallation\n------------\n\nwith pip:\n\n    pip install pyroots\n\nusage\n-----\n\nall the solvers share the same api, so you can easily switch between the\nvarious methods.\n\n### function\n\nthe function whose root you are searching must take at least a single\nargument and return a single number. this first argument is also the\ndependent variable and, apart from that, the function can also take any\nnumber of positional/keyword arguments. for example the following\nfunctions are totally valid ones:\n\n```python\ndef f(x, a):\n    return x ** 2 - a + 1\n\ndef g(x, a, b, c=3):\n    return x ** 2 + a ** b - c\n```\n\nsolver objects\n--------------\n\nthe first thing you have to do is to create a `solver` object for the\nmethod you want to use:\n\n```python\nfrom pyroots import brentq\n\nbrent = brentq()\n```\n\nwhen you create the `solver` object, you can specify several parameters\nthat will affect the convergence. the most important are:\n\n-   epsilon which specifies the number of digits that will be taken\n    under consideration when checking for convergence. it defaults to\n    `1e-6`.\n-   `raise_on_fail` which will raise an exception if convergence failed.\n    it defaults to true.\n\nusing the above function definitions, in order to find the root of `f`\nyou must first define an interval that contains the root. let's say that\nthis interval is defined as `[xa, xb]`. in this case you will call the\nsolver like this:\n\n``` python\ndef f(x, a):\n    return x ** 2 - a + 1\n\nsolver = brentq()\nresult = solver(f, xa, xb, a=3)\n```\n\nresult objects\n--------------\n\nall the methods return a `result` object that has the following\nattributes:\n\n```\nresult.x0               # the root\nresult.fx0              # the value of ``f(x0)`\nresult.convergence      # true/false\nresult.iterations       # the number of iterations\nresult.func_calls       # the number of function evaluations.\nresult.msg              # a descriptive message regarding the convergence (or the failure of convergence)\nresult.x_steps          # a list containing the x values  that have been tried while the solver run\nresult.fx_steps         # a list containing the f(x) values that have been calculated while the solver run\n```\n\nif, for some reason, convergence cannot be achieved, then a\n`convergenceerror` is raised. if you don't want that to happen, then you\nhave to pass `false` as the value of `raise_on_fail` argument:\n\n```python\ndef f(x):\n    return x ** 2 - 1\n\nresult = brent(f, xa=-10, xb=-5, raise_on_fail=false)\nprint(result)\n```\n\napi\n---\n\neach solver factory has the following signature:\n\n```python\nsolverfactory(epsilon=1e-6, xtol=eps, max_iter=500, raise_on_fail=true, debug_precision=10)\n```\n\nwhere:\n\n-   `epsilon` is the required precision of the solution, i.e. a solution\n    is achieved when `|f(x0)|` is smaller than `epsilon`.\n-   `max_iter` is the maximum allowed number of iterations.\n-   `raise_on_fail` is a boolean flag indicating whether or not an\n    exception should be raised if convergence fails. it defaults to true\n\neach solver object has the following signature:\n\n```python\nsolver_object(f, xa, xb, *args, **kwargs)\n```\n\nwhere:\n\n-   `f` is the function whose root we are searching.\n-   `xa` is the lower bracket of the interval of the solution we search.\n-   `xb` is the upper bracket of the interval of the solution we search.\n-   `*args` are passed as positional arguments when `f` is evaluated.\n-   `**kwargs` are passed as keyword arguments when `f` is evaluated.\n\ndocumentation\n-------------\n\nfor the time being documentation is not yet ready, but the examples in\nthe readme should be enough to get your feet wet.\n\nthe source code repository of pyroots can be found at:\n<https://github.com/pmav99/pyroots>\n\nfeedback and contributions are greatly appreciated.\n\npmav99 \\<gmail\\>\n\n<https://www.embeddedrelated.com/showarticle/855.php>\n",
+  "docs_url": null,
+  "keywords": "numeric analysis,brent,bisect,ridder,solver,univariate",
+  "license": "bsd-3-clause",
+  "name": "pyroots",
+  "package_url": "https://pypi.org/project/pyroots/",
+  "project_url": "https://pypi.org/project/pyroots/",
+  "project_urls": {
+    "Documentation": "https://github.com/pmav99/pyroots",
+    "Homepage": "https://github.com/pmav99/pyroots",
+    "Repository": "https://github.com/pmav99/pyroots"
+  },
+  "release_url": "https://pypi.org/project/pyroots/0.5.0/",
+  "requires_dist": [],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+  "summary": "pure python single variable function solvers",
+  "version": "0.5.0",
+  "releases": [],
+  "developers": [
+    "panos_mavrogiorgos",
+    "pmav99@gmail.com"
+  ],
+  "kwds": "bisection_method methods solver 27_method solvers",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_pyroots",
+  "homepage": "https://github.com/pmav99/pyroots",
+  "release_count": 5,
+  "dependency_ids": []
+}

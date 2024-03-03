@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "envparse\n========\n``envparse`` is a simple utility to parse environment variables.\n\nif you use heroku and/or subscribe to the tenets of the\n`12 factor app <http://www.12factor.net/>`_\nyou'll be using a lot of environment variable-based configuration in your app.\n``os.environ`` is a great choice to start off with but over time you'll find\nyourself duplicating quite a bit of code around handling raw environment\nvariables.\n\n``envparse`` aims to eliminate this duplicated, often inconsistent parsing\ncode and instead provide a single, easy-to-use wrapper.\n\nideas, and code portions, have been taken from `django-environ\n<https://github.com/joke2k/django-environ>`_ project but made framework\nagnostic.\n\n\ninstalling\n----------\nthrough pypi::\n\n    $ pip install envparse\n\nmanually::\n\n    $ pip install git+https://github.com/rconradharris/envparse.git\n    or\n    $ git clone https://github.com/rconradharris/envparse && cd envparse\n    $ python setup.py install\n\n\nusage\n-----\nin your settings or configuration module, first either import the standard\nparser or one with a schema::\n\n    # standard\n    from envparse import env\n\n    # schema\n    from envparse import env\n    env = env(boolean_var=bool, list_var=dict(type=list, subtype=int))\n\n\n``env`` can then be called in two ways:\n\n* type explicit: ``env('env_var_name', type=type, ...)``\n* type implicit (for python builtin types only): ``env.type('env_var_name', ...)``\nif type is not specified, explicitly or implicitly, then the default\ntype is ``str``.\n\n\ncasting to a specified type::\n\n    # environment variable: mail_enabled=1\n\n    mail_enabled = env('mail_enabled', type=bool)\n    # or mail_enabled = env.bool('mail_enabled')\n    assert mail_enabled is true\n\ncasting nested types::\n\n    # environment variable: foo=1,2,3\n    foo = env('foo'), subtype=int)\n    # or: foo = env('foo', type=list, subtype=int)\n    # note that there is no way to implicitly call subtypes.\n    assert foo == [1, 2, 3]\n\nspecifying defaults::\n\n    # environment variable max_rows has not been defined\n\n    max_rows = env.int('max_rows', default=100)\n    assert max_rows == 100\n\nproxying values, useful in heroku for wiring up the environment variables they\nprovide to the ones that your app actually uses::\n\n    # environment variables: mailgun_smtp_login=foo,\n    # smtp_login='{{mailgun_smtp_login}}'\n\n    smtp_login = env('smtp_login')\n    assert smtp_login == 'foo'\n\nnow if you switch to using mandrill as an email provider, instead of having to\nmodify your app, you can simply make a configuration change::\n\n    smtp_login='{{mandrill_uesrname}}'\n\nthere are also a few convenience methods:\n\n* ``env.json``: parses json and returns a dict.\n* ``env.url``: parses a url and returns a ``urlparse.parseresult`` object.\n\n\ntype specific notes:\n\n* list: the expected environment variable format is ``foo=1,2,3`` and may\n  contain spaces between the commas as well as preceding or trailing whitespace.\n* dict: the expected environment variable format is ``foo='key1=val1,\n  key2=val2``. spaces are also allowed.\n* json: a regular json string such as ``foo='{\"foo\": \"bar\"}'`` is expected.\n\n\nschemas\n~~~~~~~\ndefine a schema so you can only need to provide the type, subtype, and defaults\nonce::\n\n    # environment variables: mail_enabled=0, list_int='1,2,3'\n\n    # bind schema to env object to get schema-based lookups\n    env = env(mail_enabled=bool, smtp_login=dict(type=str, default='foo'),\n              list_int=dict(type=list, subtype=int))\n    assert env('mail_enabled') is false\n    assert env('smtp_login') == 'foo' # not defined so uses default\n    assert env('list_int') == [1, 2, 3]\n\nthe ``env`` constructor takes values in the form of either: ``var_name=type``\nor ``var_name=dict`` where ``dict`` is a dictionary with either one or more of\nthe following keys specified: ``type``, ``subtype``, ``default``.\n\n\npre- and postprocessors\n~~~~~~~~~~~~~~~~~~~~~~~\npreprocessors are callables that are run on the environment variable string\nbefore any type casting takes place::\n\n    # environment variables: foo=bar\n\n    # preprocessor to change variable to uppercase\n    to_upper = lambda v: v.upper()\n    foo = env('foo', preprocessor=to_upper)\n    assert foo == 'bar'\n\npostprocessors are callables that are run after the type casting takes place.\nan example of one might be returning a datastructure expected by a framework::\n\n    # environment variable: redis_url='redis://:redispass@127.0.0.1:6379/0'\n    def django_redis(url):\n      return {'backend': 'django_redis.cache.rediscache',\n          'location': '{}:{}:{}'.format(url.hostname, url.port, url.path.strip('/')),\n          'options': {'password': url.password}}\n\n    redis_config = env('redis_url', postprocessor=django_redis)\n    assert redis_config == {'backend': 'django_redis.cache.rediscache',\n        'location': '127.0.0.1:6379:0', 'options': {'password': 'redispass'}}\n\n\nenvironment file\n~~~~~~~~~~~~~~~~\nread from a .env file (line delimited key=value)::\n\n    # this recurses up the directory tree until a file called '.env' is found.\n    env.read_env()\n\n    # manually specifying a path\n    env.read_env('/config/.myenv')\n\n    # values can be read as normal\n    env.int('foo')\n\n\ntests\n-----\n.. image:: https://secure.travis-ci.org/rconradharris/envparse.png?branch=master\n\nto run the tests install tox::\n\n    pip install tox\n\nthen run them with::\n\n    make test",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "envparse",
+  "package_url": "https://pypi.org/project/envparse/",
+  "project_url": "https://pypi.org/project/envparse/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "https://github.com/rconradharris/envparse"
+  },
+  "release_url": "https://pypi.org/project/envparse/0.2.0/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "simple environment variable parsing",
+  "version": "0.2.0",
+  "releases": [],
+  "developers": [
+    "rconradharris@gmail.com",
+    "rick_harris"
+  ],
+  "kwds": "envparse env_var_name read_env django environ",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_envparse",
+  "homepage": "https://github.com/rconradharris/envparse",
+  "release_count": 8,
+  "dependency_ids": []
+}

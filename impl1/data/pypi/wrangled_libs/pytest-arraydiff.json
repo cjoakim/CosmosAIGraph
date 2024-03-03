@@ -1,0 +1,60 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: testing",
+    "topic :: utilities"
+  ],
+  "description": ".. image:: https://zenodo.org/badge/doi/10.5281/zenodo.5811772.svg\n   :target: https://doi.org/10.5281/zenodo.5811772\n   :alt: 10.5281/zenodo.5811772\n\n.. image:: https://github.com/astropy/pytest-arraydiff/workflows/ci/badge.svg\n    :target: https://github.com/astropy/pytest-arraydiff/actions\n    :alt: ci status\n\n.. image:: https://img.shields.io/pypi/v/pytest-arraydiff.svg\n    :target: https://pypi.org/project/pytest-arraydiff\n    :alt: pypi status\n\nabout\n-----\n\nthis is a `py.test <http://pytest.org>`__ plugin to facilitate the\ngeneration and comparison of data arrays produced during tests, in particular\nin cases where the arrays are too large to conveniently hard-code them\nin the tests (e.g. ``np.testing.assert_allclose(x, [1, 2, 3])``).\n\nthe basic idea is that you can write a test that generates a numpy array (or\nother related objects depending on the format, e.g. pandas dataframe).\nyou can then either run the\ntests in a mode to **generate** reference files from the arrays, or you can run\nthe tests in **comparison** mode, which will compare the results of the tests to\nthe reference ones within some tolerance.\n\nat the moment, the supported file formats for the reference files are:\n\n-  a plain text-based format (based on numpy ``loadtxt`` output)\n-  the fits format (requires `astropy <http://www.astropy.org>`__). with this\n   format, tests can return either a numpy array for a fits hdu object.\n-  a pandas hdf5 format using the pandas hdfstore\n\nfor more information on how to write tests to do this, see the **using**\nsection below.\n\ninstalling\n----------\n\nthis plugin is compatible with python 2.7, and 3.5 and later, and\nrequires `pytest <http://pytest.org>`__ and\n`numpy <http://www.numpy.org>`__ to be installed.\n\nto install, you can do::\n\n    pip install pytest-arraydiff\n\nyou can check that the plugin is registered with pytest by doing::\n\n    py.test --version\n\nwhich will show a list of plugins::\n\n    this is pytest version 2.7.1, imported from ...\n    setuptools registered plugins:\n      pytest-arraydiff-0.1 at ...\n\nusing\n-----\n\nto use, you simply need to mark the function where you want to compare\narrays using ``@pytest.mark.array_compare``, and make sure that the\nfunction returns a plain numpy array::\n\n    python\n    import pytest\n    import numpy as np\n\n    @pytest.mark.array_compare\n    def test_succeeds():\n        return np.arange(3 * 5 * 4).reshape((3, 5, 4))\n\nto generate the reference data files, run the tests with the\n``--arraydiff-generate-path`` option with the name of the directory\nwhere the generated files should be placed::\n\n    py.test --arraydiff-generate-path=reference\n\nif the directory does not exist, it will be created. the directory will\nbe interpreted as being relative to where you are running ``py.test``.\nmake sure you manually check the reference arrays to ensure they are\ncorrect.\n\nonce you are happy with the generated data files, you should move them\nto a sub-directory called ``reference`` relative to the test files (this\nname is configurable, see below). you can also generate the baseline\narrays directly in the right directory.\n\nyou can then run the tests simply with::\n\n    py.test --arraydiff\n\nand the tests will pass if the arrays are the same. if you omit the\n``--arraydiff`` option, the tests will run but will only check that the\ncode runs without checking the output arrays.\n\noptions\n-------\n\nthe ``@pytest.mark.array_compare`` marker take an argument to specify\nthe format to use for the reference files:\n\n.. code:: python\n\n    @pytest.mark.array_compare(file_format='text')\n    def test_array():\n        ...\n\nthe default file format can also be specified using the\n``--arraydiff-default-format=<format>`` flag when running ``py.test``,\nand ``<format>`` should be either ``fits`` or ``text``.\n\nthe supported formats at this time are ``text`` and ``fits``, and\ncontributions for other formats are welcome. the default format is\n``text``.\n\nadditional arguments are the relative and absolute tolerances for floating\npoint values (which default to 1e-7 and 0, respectively):\n\n.. code:: python\n\n    @pytest.mark.array_compare(rtol=20, atol=0.1)\n    def test_array():\n        ...\n\nyou can also pass keyword arguments to the writers using the\n``write_kwargs``. for the ``text`` format, these arguments are passed to\n``savetxt`` while for the ``fits`` format they are passed to astropy's\n``fits.writeto`` function.\n\n.. code:: python\n\n    @pytest.mark.array_compare(file_format='fits', write_kwargs={'output_verify': 'silentfix'})\n    def test_array():\n        ...\n\nother options include the name of the reference directory (which\ndefaults to ``reference`` ) and the filename for the reference file\n(which defaults to the name of the test with a format-dependent\nextension).\n\n.. code:: python\n\n    @pytest.mark.array_compare(reference_dir='baseline_arrays',\n                                   filename='other_name.fits')\n    def test_array():\n        ...\n\nthe reference directory in the decorator above will be interpreted as\nbeing relative to the test file. note that the baseline directory can\nalso be a url (which should start with ``http://`` or ``https://`` and\nend in a slash).\n\nfinally, you can also set a custom baseline directory globally when\nrunning tests by running ``py.test`` with::\n\n    py.test --arraydiff --arraydiff-reference-path=baseline_arrays\n\nthis directory will be interpreted as being relative to where the tests\nare run. in addition, if both this option and the ``reference_dir``\noption in the ``array_compare`` decorator are used, the one in the\ndecorator takes precedence.\n\ntest failure example\n--------------------\n\nif the arrays produced by the tests are correct, then the test will\npass, but if they are not, the test will fail with a message similar to\nthe following::\n\n    e               assertionerror:\n    e\n    e               a: /var/folders/zy/t1l3sx310d3d6p0kyxqzlrnr0000gr/t/tmpbvjkzt_q/test_to_mask_rect-mode_subpixels-subpixels_18.txt\n    e               b: /var/folders/zy/t1l3sx310d3d6p0kyxqzlrnr0000gr/t/tmpbvjkzt_q/reference-test_to_mask_rect-mode_subpixels-subpixels_18.txt\n    e\n    e               not equal to tolerance rtol=1e-07, atol=0\n    e\n    e               (mismatch 47.22222222222222%)\n    e                x: array([[ 0.      ,  0.      ,  0.      ,  0.      ,  0.404012,  0.55    ,\n    e                        0.023765,  0.      ,  0.      ],\n    e                      [ 0.      ,  0.      ,  0.      ,  0.112037,  1.028704,  1.1     ,...\n    e                y: array([[ 0.      ,  0.      ,  0.      ,  0.      ,  0.367284,  0.5     ,\n    e                        0.021605,  0.      ,  0.      ],\n    e                      [ 0.      ,  0.      ,  0.      ,  0.101852,  0.935185,  1.      ,...\n\nthe file paths included in the exception are then available for\ninspection.\n\nrunning the tests for pytest-arraydiff\n--------------------------------------\n\nif you are contributing some changes and want to run the tests, first\ninstall the latest version of the plugin then do::\n\n    cd tests\n    py.test --arraydiff\n\nthe reason for having to install the plugin first is to ensure that the\nplugin is correctly loaded as part of the test suite.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "pytest-arraydiff",
+  "package_url": "https://pypi.org/project/pytest-arraydiff/",
+  "project_url": "https://pypi.org/project/pytest-arraydiff/",
+  "project_urls": {
+    "Homepage": "https://github.com/astropy/pytest-arraydiff"
+  },
+  "release_url": "https://pypi.org/project/pytest-arraydiff/0.6.1/",
+  "requires_dist": [
+    "pytest >=4.6",
+    "numpy",
+    "astropy ; extra == 'test'",
+    "pandas ; extra == 'test'",
+    "tables ; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "pytest plugin to help with comparing array output from tests",
+  "version": "0.6.1",
+  "releases": [],
+  "developers": [
+    "astropy.team@gmail.com",
+    "the_astropy_developers"
+  ],
+  "kwds": "pytest test_array test_succeeds astropy test_to_mask_rect",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_pytest_arraydiff",
+  "homepage": "https://github.com/astropy/pytest-arraydiff",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_astropy",
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_pytest",
+    "pypi_tables"
+  ]
+}

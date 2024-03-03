@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: other environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: software development :: internationalization"
+  ],
+  "description": "l18n\n====\n\n|copyright| 2014-2021 thomas khyn\n\nlocale internationalization package. translations for places, timezones ...\n\ntested with the latest minor versions of python 2 and 3.\n\nsupported languages: english, french, german, czech, chinese\n(`want to add yours?`_)\n\n\nwhat is l18n?\n-------------\n\nas you may have noticed, ``l18n`` is a contraction of ``i18n`` and ``l10n``,\nnamely 'internationalisation' and 'localization'. it basically provides\nlazy translations for names used for localization purposes (e.g. places and\ntimezones).\n\ni started writing ``l18n`` when i was looking for translations for the pytz_\nlibrary. indeed, on a multi-lingual site where users can select the timezone\nthey are in, it's much better if they can select in their language, as in some\ncases, the differences with the english name can be significant, hence the\nplace to look for it when it's sorted in alphabetical order.\n\nand as i am lazy, i thought of a way to - almost - automatically fetch the\ntranslations from the cldr_ (unicode's common locale data repository) database.\n\nintegrating function to link timezone to country codes, there was no reason not\nto try and provide translations also for the latter. in the near future, i -\nor contributors - may also add currencies or measurement units fetched from\nthe cldr database ...\n\n\nhow does it work?\n-----------------\n\nto use ``l18n``, you first need to install it. it works well with ``pip``::\n\n   pip install l18n\n\nthen, in your code::\n\n   >>> import l18n\n\n``l18n`` exposes several read-only dictionary-like objects:\n\nl18n.tz_cities\n\n   is a mapping between all the timezones listed in ``pytz.all_timezones``\n   and human-friendly **lazy** versions of the translated name of the city\n   in the current language (see `selecting the language`_ below). for example,\n   if the language is english::\n\n      >>> l18n.tz_cities['pacific/easter']\n      l18nlazystring <easter island>\n      >>> str(l18n.tz_cities['pacific/easter'])\n      'easter island'\n\n   in french, it would give::\n\n      >>> str(l18n.tz_cities['pacific/easter'])\n      '\u00eele de p\u00e2ques'\n\nl18n.tz_fullnames\n\n   is a mapping between all the timezones listed in ``pytz.all_timezones``\n   and **lazy** versions of the timezones' full names in the current language.\n   for example::\n\n      >>> str(l18n.tz_fullnames['pacific/easter'])\n      'pacific/easter island'  # or 'pacifique/\u00eele de p\u00e2ques' in french\n\n   it is interesting to note that for 3-components timezone names where the\n   local state or territory appears in the city name, ``l18n`` cleverly strips\n   this information so that it is not repeated::\n\n      >>> str(l18n.tz_fullnames['america/north_dakota/new_salem'])\n      'america/north dakota/new salem'\n\n   indeed::\n\n      >>> str(l18n.tz_cities['america/north_dakota/new_salem'])\n      'new salem, north dakota'\n\nl18n.territories\n\n   is a mapping between the territory codes as defined in the cldr_ and their\n   localized names, lazily defined. for example::\n\n      >>> str(l18n.territories['cz'])\n      'czech republic'  # or 'r\u00e9publique tch\u00e8que' in french\n\n\n.. note::\n\n   the values are translated each time they are evaluated, there is no caching.\n   this means that the same l18nlazystring / l18nlazystringslist instance can\n   be used and produce 2 different outputs if you change the language between\n   the evaluations.\n\n\n.. note::\n\n   the values in the above mentionned dictionaries can be overriden by your\n   own translations. the dictionaries are not read-only and values can be\n   added or removed at your convenience.\n\n\nlazy mappings special features (v.2016.6.3 onwards)\n---------------------------------------------------\n\nthe fore-mentioned ``tz_cities``, ``tz_fullnames`` and ``territories`` are not\nsimple dictionaries and provide additional features.\n\nsorting\n.......\n\nwhen iterating over an ``l18nmap``, the items, keys or values are *yielded* in\nalphabetical order **in the currently selected language**. for performance, the\nresults are cached by language, so the sort is only performed once per language.\nnote that the values are still lazy objects that are evaluated only when\nrendered into a string.\n\nsubsets\n.......\n\nit is possible to generate a new ``l18nmap`` from an existing one by using the\n``subset`` method and passing an iterable of ``keys`` that need to be kept in\nthe new mapping. any cached sort is also used to generate the new cache, so\nthat there is nothing to re-calculate in the new subset.\n\nfor example, one can generate a map of translations for\n``pytz.common_timezones``::\n\n   >>> common_cities = l18n.tz_cities.subset(pytz.common_timezones.keys())\n\n\nselecting the language\n----------------------\n\nby default, when importing ``l18n``, the current default locale is used (via\n``locale.getdefaultlocale()``). if it is not the one you want or if you need to\nchange it, it is rather easy::\n\n   >>> l18n.set_language('en')\n   >>> str(l18n.tz_cities['pacific/easter'])\n   'easter island'\n   >>> l18n.set_language('fr')\n   >>> str(l18n.tz_cities['pacific/easter'])\n   '\u00eele de p\u00e2ques'\n\nand in case you want to disable translation and use raw default strings::\n\n   >>> l18n.set_language(none)\n\n\nutilities\n---------\n\n``l18n`` also exposes a few functions that may be helpful in some cases:\n\n``l18n.utils.get_country_tzs(country_code)``\n\n   returns a list of locations for the given country code, sorted in\n   alphabetical order in the currently selected language\n\n``l18n.utils.get_country_code_from_tz(timezone)``\n\n   returns the country code from a given (untranslated) timezone\n\n\nversionning\n-----------\n\n``l18n``'s main version number matches ``pytz``'s version number. ``l18n``\n2014.10.x will be fully compatible with ``pytz`` 2014.10 whatever the value of\nx. indeed, the primary aim is to keep ``l18n``'s translation files consistent\nwith ``pytz``'s timezone names.\n\nbefore ``l18n`` 2016.6, the ``pytz`` version was pinned against the ``l18n``\nversion. now, ``l18n`` year.month can now be used with any subsequent ``pytz``\nversion. however, note that there may be missing translations if the 2 versions\nare too different from each other. in that case, open an issue_ to request a\nnew version of ``l18n`` to be published.\n\n\n.. _`want to add yours?`:\n\nwant to add a language?\n-----------------------\n\ngreat idea !! have a look at contribute.rst_.\n\n\nroadmap\n-------\n\n- add supported languages\n- add currencies and other stuff\n\n\n.. |copyright| unicode:: 0xa9\n\n.. _pytz: https://pypi.python.org/pypi/pytz/\n.. _cldr: http://cldr.unicode.org/\n.. _contribute.rst: https://github.com/tkhyn/l18n/src/tip/contribute.rst\n.. _issue: https://github.com/tkhyn/l18n/issues/new\n\n\n",
+  "docs_url": null,
+  "keywords": "pytz,translation,i18n",
+  "license": "",
+  "name": "l18n",
+  "package_url": "https://pypi.org/project/l18n/",
+  "project_url": "https://pypi.org/project/l18n/",
+  "project_urls": {
+    "Homepage": "https://github.com/tkhyn/l18n"
+  },
+  "release_url": "https://pypi.org/project/l18n/2021.3/",
+  "requires_dist": [
+    "pytz (>=2020.1)",
+    "six"
+  ],
+  "requires_python": "",
+  "summary": "internationalization for pytz timezones and territories",
+  "version": "2021.3",
+  "releases": [],
+  "developers": [
+    "thomas@ksytek.com",
+    "thomas_khyn"
+  ],
+  "kwds": "locale i18n localized l18n translations",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_l18n",
+  "homepage": "https://github.com/tkhyn/l18n",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_pytz",
+    "pypi_six"
+  ]
+}

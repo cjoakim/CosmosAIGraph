@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "framework :: flake8",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: quality assurance"
+  ],
+  "description": "picky parentheses\n=================\n\npicky parentheses is a [flake8](https://github.com/pycqa/flake8) plugin that\nnitpicks all things parentheses, brackets and braces.\nthe plugin has two components:\n 1. a checker that warns about redundant parentheses (with some exceptions).\n 2. a checker for parentheses, brackets, and braces alignment.\n    this component is very opinionated but has its own error codes so you can\n    easily disable it.\n\n\n## table of contents\n\n * [installation and usage](#installation-and-usage)\n * [error codes](#error-codes)\n * [details and exceptions](#details-and-exceptions)\n * [additional notes](#additional-notes)\n\n\n## installation and usage\nthis is a plugin for `flake8`. it supports python 3.7 - 3.12.  \nrefer to the documentation of `flake8` on how to run it on your code:\nhttps://flake8.pycqa.org/en/latest/\n\ntwo common options are to either install the plugin and then run `flake8`:\n```bash\npip install flake8-picky-parentheses\n\nflake8 '<path/to/your/code>'\n```\n\nor to let `flake8` fetch the plugin for you (requires `flake8 >= 5.0.0`):\n```bash\nflake8 --require-plugins flake8-picky-parentheses '<path/to/your/code>'\n```\n\nif you only want to run this plugin and bypass any other `flake8` checks, you\ncan use the `--select` option:\n```bash\nflake8 [other options] --select='par0,par1' '<path/to/your/code>'\n```\n\nwhere `par0` is the code for the redundant parentheses checker and `par1` is\nthe code for the parentheses alignment checker.\n\nif you, in turn want to disable the opinionated parentheses alignment checker,\nyou can use the `--ignore` or `--extend-ignore` option:\n```bash\nflake8 [other options] --extend-ignore='par1' '<path/to/your/code>'\n```\n\n\n## error codes\nthese are the error codes which you can get using this plugin:\n\n| code                | brief description                                                                           |\n|---------------------|---------------------------------------------------------------------------------------------|\n| [`par0xx`](#par0xx) | [group] redundant parentheses                                                               |\n| [`par001`](#par001) | redundant parentheses (general)                                                             |\n| [`par002`](#par002) | parentheses used for tuple unpacking                                                        |\n|                     |                                                                                             |\n| [`par1xx`](#par1xx) | [group] (opinionated) parentheses, brackets, braces not well-aligned                        |\n| [`par101`](#par101) | opening bracket is last, but closing is not on new line                                     |\n| [`par102`](#par102) | closing bracket has different indentation than the line with the opening bracket            |\n| [`par103`](#par103) | consecutive opening brackets at the end of the line must have consecutive closing brackets. |\n| [`par104`](#par104) | only operators and comments are allowed after a closing bracket on a new line               |\n\n### `par0xx`\nthese are the error codes for the redundant parentheses checker.\n#### `par001`\nit means that you use redundant parentheses, and they do not help readability.\nfor example:\n```python\n# bad\na = ((\"a\", \"b\"))\n```\n#### `par002`\nit means that you use parentheses for an unpacking expression. for example:\n```python\n# bad\n(a,) = \"b\"\n```\n\n#### `par1xx`\nthese are the error codes for the opinionated alignment checker.\n#### `par101`\nit means that the opening bracket is last in its line, but closing one is not\non a new line. for example:\n```python\n# bad\nif (\n        a == b):\n    c + d\n\n# good\nif (\n    a == b\n):\n    c + d\n\n# bad\na = [\n    1, 2,\n    3, 4]\n\n# good\na = [\n    1, 2,\n    3, 4\n]\n\n# good\na = [1, 2,\n     3, 4]\n```\n#### `par102`\nit means that closing bracket is on new line, but there is a indentation\nmismatch. for example:\n```python\n# bad\nif (\n    a == b\n        ):\n    c + d\n\n# good\nif (\n    a == b\n):\n    c + d\n\n# bad\na = [\n    1, 2,\n    3, 4\n    ]\n\n# good\na = [\n    1, 2,\n    3, 4\n]\n```\n\n#### `par103`\nit means that consecutive opening brackets at the end of a line must have\nconsecutive closing brackets.\n```python\n# bad\nanswer = func((\n    1, 2, 3, 4, 5,\n    )\n)\n\n# good\nanswer = func((\n    1, 2, 3, 4, 5,\n))\n```\n\n#### `par104`\nonly operators and comments are allowed after a closing bracket on a new line.\n```python\n# bad\na = func(\n    1, 2, 3, 4, 5\n) + 6\n\n# good\na = (\n    func(\n        1, 2, 3, 4, 5\n    )\n    + 6\n)\n```\n\n\n## details and exceptions\n\nthe redundant parentheses checker uses python's `tokenize` and `ast` module to\ntry to remove each pair of parentheses and see if the code still compiles and\nyields the same ast (i.e., is semantically equivalent).\nif it does, a flake (lint error) is reported. however, there are two notable\nexceptions to this rule:\n 1. parentheses for tuple literals.\n 2. a single pair or parentheses in expressions to highlight operator\n    precedence.\n    even if these parentheses are redundant, they help to divide parts of\n    expressions and show sequence of actions.\n 3. parts of slices.\n 4. multi-line<sup>[1)](#footnotes)</sup> `if` and `for` parts in comprehensions.\n 5. multi-line<sup>[1)](#footnotes)</sup> keyword arguments or argument defaults.\n 6. string concatenation over several lines in lists and tuples .\n\n\nexception type 1:\n```python\na = (\"a\",)     # good\na = \"a\",       # good\na = (\"a\")      # bad\na = ((\"a\"),)   # bad\na = ((\"a\",))   # bad\nfoo((\"a\",))    # good\nfoo(\"a\",)      # bad\n```\n\nexception type 2:\n```python\na = (1 + 2) + 3            # good\na = (1 + 2) % 3            # good\na = 1 and (2 + 3)          # good\na = (1 / 2) * 3            # good\na = not (1 + 2)            # good\na = (not 1) + 2            # good\na = 1 + (2 if a else 3)    # good\na = foo(*(a if b else c))  # good\na = foo(*(a + b))          # good\na = foo(**(a + b))         # good\na = (1 + 2)                # bad\na = 1 + (2)                # bad\na = ((not 1)) + 2          # bad\na = foo(*(a))              # bad\na = foo(**(a))             # bad\n```\n\nexception type 3:\n```python\nfoo[(1 + 2):10]    # good\nfoo[1:(1 + 2)]     # good\nfoo[1:5:(1 + 1)]   # good\nfoo[:(-bar)]       # good\nfoo[(1):]          # bad\nfoo[:(1)]          # bad\n```\n\nexception type 4:\n```python\n# good\na = (\n    b for b in c\n    if (\n        some_thing == other_thing\n        or whatever_but_long\n    )\n)\n\n# good\na = [\n    b for b in c\n    if (b\n        in d)\n]\n\n# bad\na = (\n    b for b in c\n    if (b in d)\n)\n\n# good\na = (\n    b for b in (c\n                + d)\n)\n\n# bad\na = (\n    b for b in (c + d)\n)\n```\n\nexception type 5:\n```python\n# good\nfoo(bar=(a\n         in b))\n\n# bad\nfoo(bar=(a in b))\n\n# good\ndef foo(bar=(a\n             is b)):\n    ...\n\n# bad\ndef foo(bar=(a is b)):\n    ...\n```\n\nexception type 6:\n\n```python\n# good\n[\n    \"a\",\n    (\n        \"b\"\n        \"c\"\n    ),\n    \"d\",\n]\n\n# this helps to avoid forgetting a comma at the end of a string spanning\n# multiple lines. compare with:\n[\n    \"a\",\n    \"b\"\n    \"c\"\n    \"d\",\n]\n# was the comma after \"b\" forgotten or was the string supposed to be \"bc\"?\n\n# bad\n[\n    (\n        \"a\" \"b\"\n    ),\n]\n```\n\n### footnotes:\n1. multi-line means that either\n   * the expression spans multiple lines, e.g.,\n     ```python\n     (a\n      + b)\n     ```\n   * or the first part of the expression is on a new line (e.g., if a name is very long), e.g.,\n     ```python\n     (\n         veeeeeeeeeeery_looooooong_name\n     )\n     ```\n     but also\n     ```python\n     (\n         a\n         + b\n     )\n     ```\n   multi-line expressions do **not** include\n   ```python\n   (a + b\n   )\n   ```\n\n## additional notes\n\nthis plugin was developed to improve the code quality of neo4j python projects.\n",
+  "docs_url": null,
+  "keywords": "flake8,plugin,redundant,superfluous,extraneous,unnecessary,parentheses,parenthesis,parens,brackets,linter,linting,codestyle,code style",
+  "license": "apache license 2.0",
+  "name": "flake8-picky-parentheses",
+  "package_url": "https://pypi.org/project/flake8-picky-parentheses/",
+  "project_url": "https://pypi.org/project/flake8-picky-parentheses/",
+  "project_urls": {
+    "Changelog": "https://github.com/robsdedude/flake8-picky-parentheses/blob/master/CHANGELOG.md",
+    "Homepage": "https://github.com/robsdedude/flake8-picky-parentheses",
+    "Issue Tracker": "https://github.com/robsdedude/flake8-picky-parentheses/issues",
+    "Source Code": "https://github.com/robsdedude/flake8-picky-parentheses"
+  },
+  "release_url": "https://pypi.org/project/flake8-picky-parentheses/0.5.3/",
+  "requires_dist": [
+    "flake8<7.0,>=3.7"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "flake8 plugin to nitpick about parenthesis, brackets, and braces",
+  "version": "0.5.3",
+  "releases": [],
+  "developers": [
+    "ivan_prychantovskyi"
+  ],
+  "kwds": "flake8 flake parentheses parenthesis brackets",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_flake8_picky_parentheses",
+  "homepage": "",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_flake8"
+  ]
+}

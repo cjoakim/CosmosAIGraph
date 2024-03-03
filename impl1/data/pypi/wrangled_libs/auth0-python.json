@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "![auth0 sdk for python](https://cdn.auth0.com/website/sdks/banners/auth0-python-banner.png)\n\n![release](https://img.shields.io/pypi/v/auth0-python)\n[![codecov](https://img.shields.io/codecov/c/github/auth0/auth0-python)](https://codecov.io/gh/auth0/auth0-python)\n![downloads](https://img.shields.io/pypi/dw/auth0-python)\n[![license](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/mit)\n[![circleci](https://img.shields.io/circleci/build/github/auth0/auth0-python)](https://circleci.com/gh/auth0/auth0-python)\n\n<div>\n\ud83d\udcda <a href=\"#documentation\">documentation</a> - \ud83d\ude80 <a href=\"#getting-started\">getting started</a> - \ud83d\udcbb <a href=\"#api-reference\">api reference</a> - \ud83d\udcac <a href=\"#feedback\">feedback</a>\n</div>\n\n\nlearn how to integrate auth0 with python.\n## documentation\n- [docs site](https://www.auth0.com/docs) - explore our docs site and learn more about auth0.\n\n## getting started\n### installation\nyou can install the auth0 python sdk using the following command.\n```\npip install auth0-python\n```\n\n> requires python 3.7 or higher.\n\n### usage\n\n#### authentication sdk\nthe authentication sdk is organized into components that mirror the structure of the\n[api documentation](https://auth0.com/docs/auth-api).\n\nif you need to sign up a user using their email and password, you can use the database object.\n\n```python\nfrom auth0.authentication import database\n\ndatabase = database('my-domain.us.auth0.com', 'my-client-id')\n\ndatabase.signup(email='user@domain.com', password='secr3t', connection='username-password-authentication')\n```\n\nif you need to authenticate a user using their email and password, you can use the `gettoken` object, which enables making requests to the `/oauth/token` endpoint.\n\n```python\nfrom auth0.authentication import gettoken\n\ntoken = gettoken('my-domain.us.auth0.com', 'my-client-id', client_secret='my-client-secret')\n\ntoken.login(username='user@domain.com', password='secr3t', realm='username-password-authentication')\n```\n\n#### management sdk\nto use the management library you will need to instantiate an auth0 object with a domain and a [management api v2 token](https://auth0.com/docs/api/management/v2/tokens). please note that these token last 24 hours, so if you need it constantly you should ask for it programmatically using the client credentials grant with a [non interactive client](https://auth0.com/docs/api/management/v2/tokens#1-create-and-authorize-a-client) authorized to access the api. for example:\n\n```python\nfrom auth0.authentication import gettoken\n\ndomain = 'myaccount.auth0.com'\nnon_interactive_client_id = 'exampleid'\nnon_interactive_client_secret = 'examplesecret'\n\nget_token = gettoken(domain, non_interactive_client_id, client_secret=non_interactive_client_secret)\ntoken = get_token.client_credentials('https://{}/api/v2/'.format(domain))\nmgmt_api_token = token['access_token']\n```\n\nthen use the token you've obtained as follows:\n\n```python\nfrom auth0.management import auth0\n\ndomain = 'myaccount.auth0.com'\nmgmt_api_token = 'mgmt_api_token'\n\nauth0 = auth0(domain, mgmt_api_token)\n```\n\nthe `auth0()` object is now ready to take orders, see our [connections example](https://github.com/auth0/auth0-python/blob/master/examples.md#connections) to find out how to use it!\n\nfor more code samples on how to integrate the auth0-python sdk in your python application, have a look at our [examples](https://github.com/auth0/auth0-python/blob/master/examples.md).\n\n## api reference\n\n### authentication endpoints\n\n- database ( `authentication.database` )\n- delegated ( `authentication.delegated` )\n- enterprise ( `authentication.enterprise` )\n- api authorization - get token ( `authentication.gettoken`)\n- passwordless ( `authentication.passwordless` )\n- revoketoken ( `authentication.revoketoken` )\n- social ( `authentication.social` )\n- users ( `authentication.users` )\n\n\n### management endpoints\n\n- actions() (`auth0().action`)\n- attackprotection() (`auth0().attack_protection`)\n- blacklists() ( `auth0().blacklists` )\n- branding() ( `auth0().branding` )\n- clientcredentials() ( `auth0().client_credentials` )\n- clientgrants() ( `auth0().client_grants` )\n- clients() ( `auth0().clients` )\n- connections() ( `auth0().connections` )\n- customdomains() ( `auth0().custom_domains` )\n- devicecredentials() ( `auth0().device_credentials` )\n- emailtemplates() ( `auth0().email_templates` )\n- emails() ( `auth0().emails` )\n- grants() ( `auth0().grants` )\n- guardian() ( `auth0().guardian` )\n- hooks() ( `auth0().hooks` )\n- jobs() ( `auth0().jobs` )\n- logstreams() ( `auth0().log_streams` )\n- logs() ( `auth0().logs` )\n- organizations() ( `auth0().organizations` )\n- prompts() ( `auth0().prompts` )\n- resourceservers() (`auth0().resource_servers` )\n- roles() ( `auth0().roles` )\n- rulesconfigs() ( `auth0().rules_configs` )\n- rules() ( `auth0().rules` )\n- stats() ( `auth0().stats` )\n- tenants() ( `auth0().tenants` )\n- tickets() ( `auth0().tickets` )\n- userblocks() (`auth0().user_blocks` )\n- usersbyemail() ( `auth0().users_by_email` )\n- users() ( `auth0().users` )\n\n## support policy\n\nour support lifecycle policy mirrors the [python support schedule](https://devguide.python.org/versions/). we do not support running the sdk on unsupported versions of python that have ceased to receive security updates. please ensure your environment remains up to date and running the latest python version possible.\n\n| sdk version | python version | support ends |\n|-------------|----------------|--------------|\n| 4.x         | 3.12           | oct 2028     |\n|             | 3.11           | oct 2027     |\n|             | 3.10           | oct 2026     |\n|             | 3.9            | oct 2025     |\n|             | 3.8            | oct 2024     |\n\n> as `pip` [reliably avoids](https://packaging.python.org/en/latest/tutorials/packaging-projects/#configuring-metadata) installing package updates that target incompatible python versions, we may opt to remove support for [end-of-life](https://en.wikipedia.org/wiki/cpython#version_history) python versions during minor sdk updates. these are not considered breaking changes by this sdk.\n\nthe following is a list of unsupported python versions, and the last sdk version supporting them:\n\n| python version | last sdk version supporting |\n|----------------|-----------------------------|\n| <= 3.7         | 4.6.1                       |\n| >= 2.0, <= 3.6 | 3.x                         |\n\nyou can determine what version of python you have installed by running:\n\n```\npython --version\n```\n\n## feedback\n\n### contributing\n\nwe appreciate feedback and contribution to this repo! before you get started, please see the following:\n\n- [auth0's general contribution guidelines](https://github.com/auth0/open-source-template/blob/master/general-contributing.md)\n- [auth0's code of conduct guidelines](https://github.com/auth0/open-source-template/blob/master/code-of-conduct.md)\n\n### raise an issue\n\nto provide feedback or report a bug, please [raise an issue on our issue tracker](https://github.com/auth0/auth0-python/issues).\n\n### vulnerability reporting\n\nplease do not report security vulnerabilities on the public github issue tracker. the [responsible disclosure program](https://auth0.com/responsible-disclosure-policy) details the procedure for disclosing security issues.\n\n---\n\n<p align=\"center\">\n  <picture>\n    <source media=\"(prefers-color-scheme: light)\" srcset=\"https://cdn.auth0.com/website/sdks/logos/auth0_light_mode.png\"   width=\"150\">\n    <source media=\"(prefers-color-scheme: dark)\" srcset=\"https://cdn.auth0.com/website/sdks/logos/auth0_dark_mode.png\" width=\"150\">\n    <img alt=\"auth0 logo\" src=\"https://cdn.auth0.com/website/sdks/logos/auth0_light_mode.png\" width=\"150\">\n  </picture>\n</p>\n<p align=\"center\">auth0 is an easy to implement, adaptable authentication and authorization platform. to learn more checkout <a href=\"https://auth0.com/why-auth0\">why auth0?</a></p>\n<p align=\"center\">\nthis project is licensed under the mit license. see the <a href=\"https://github.com/auth0/auth0-python/blob/master/license\"> license</a> file for more info.</p>\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "auth0-python",
+  "package_url": "https://pypi.org/project/auth0-python/",
+  "project_url": "https://pypi.org/project/auth0-python/",
+  "project_urls": {
+    "Homepage": "https://auth0.com",
+    "Repository": "https://github.com/auth0/auth0-python"
+  },
+  "release_url": "https://pypi.org/project/auth0-python/4.7.0/",
+  "requires_dist": [
+    "aiohttp (>=3.8.5,<4.0.0)",
+    "cryptography (>=41.0.5,<42.0.0)",
+    "pyjwt (>=2.8.0,<3.0.0)",
+    "pyopenssl (>=23.2.0,<24.0.0)",
+    "requests (>=2.31.0,<3.0.0)",
+    "urllib3 (>=2.0.7,<3.0.0)"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "",
+  "version": "4.7.0",
+  "releases": [],
+  "developers": [
+    "auth0",
+    "support@auth0.com"
+  ],
+  "kwds": "auth0 auth auth0_dark_mode auth0_light_mode oauth",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_auth0_python",
+  "homepage": "https://auth0.com",
+  "release_count": 57,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_cryptography",
+    "pypi_pyjwt",
+    "pypi_pyopenssl",
+    "pypi_requests",
+    "pypi_urllib3"
+  ]
+}

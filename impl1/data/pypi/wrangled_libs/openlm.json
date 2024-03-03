@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: text processing :: linguistic"
+  ],
+  "description": "# openlm\n\ndrop-in openai-compatible library that can call llms from other providers (e.g., huggingface, cohere, and more). \n\n```diff\n1c1\n< import openai\n---\n> import openlm as openai\n\ncompletion = openai.completion.create(\n    model=[\"bloom-560m\", \"cohere.ai/command\"], \n    prompt=[\"hello world!\", \"a second prompt!\"]\n)\nprint(completion)\n```\n### features\n* takes in the same parameters as openai's completion api and returns a similarly structured response. \n* call models from huggingface's inference endpoint api, cohere.ai, openai, or your custom implementation. \n* complete multiple prompts on multiple models in the same request. \n* very small footprint: openlm calls the inference apis directly rather than using multiple sdks.\n\n\n### installation\n```bash\npip install openlm\n```\n\n### examples\n\n- [import as openai](examples/as_openai.py)\n- [set up api keys via environment variables or pass a dict](examples/api_keys.py)\n- [add a custom model or provider](examples/custom_provider.py)\n- [complete multiple prompts on multiple models](examples/multiplex.py)\n\nopenlm currently supports the completion endpoint, but over time will support more standardized endpoints that make sense. \n\n### [example with response](examples/multiplex.py)\n\n```python\nimport sys\nfrom pathlib import path\n\nsys.path.append(str(path(__file__).resolve().parent.parent))\n\nimport openlm \nimport json\n\ncompletion = openlm.completion.create(\n    model=[\"ada\", \"huggingface.co/gpt2\", \"cohere.ai/command\"],\n    prompt=[\"the quick brown fox\", \"who jumped over the lazy dog?\"],\n    max_tokens=15\n)\nprint(json.dumps(completion, indent=4))\n```\n\n```json\n{\n    \"id\": \"504cc502-dc27-43e7-bcc3-b62e178c247e\",\n    \"object\": \"text_completion\",\n    \"created\": 1683583267,\n    \"choices\": [\n        {\n            \"id\": \"c0487ba2-935d-4dec-b191-f7eff962f117\",\n            \"model_idx\": 0,\n            \"model_name\": \"openai.com/ada\",\n            \"index\": 0,\n            \"created\": 1683583233,\n            \"text\": \" jumps into the much bigger brown bush.\\\" \\\"alright, people like you can\",\n            \"usage\": {\n                \"prompt_tokens\": 4,\n                \"completion_tokens\": 15,\n                \"total_tokens\": 19\n            },\n            \"extra\": {\n                \"id\": \"cmpl-7e3ccspjhxfx5yb0taju9on7rnypt\"\n            }\n        },\n        {\n            \"id\": \"bab92d11-5ba6-4da2-acca-1f3398a78c3e\",\n            \"model_idx\": 0,\n            \"model_name\": \"openai.com/ada\",\n            \"index\": 1,\n            \"created\": 1683583233,\n            \"text\": \"\\n\\nit turns out that saying one's name \\\"joe\\\" is the\",\n            \"usage\": {\n                \"prompt_tokens\": 7,\n                \"completion_tokens\": 15,\n                \"total_tokens\": 22\n            },\n            \"extra\": {\n                \"id\": \"cmpl-7e3cdbbqfy92i2zbsgodt5ickaipd\"\n            }\n        },\n        {\n            \"id\": \"be870636-9d9e-4f74-b8bd-d04766072a7b\",\n            \"model_idx\": 1,\n            \"model_name\": \"huggingface.co/gpt2\",\n            \"index\": 0,\n            \"created\": 1683583234,\n            \"text\": \"the quick brown foxes, and the short, snuggly fox-scented, soft foxes we have in our household\\u2026 all come in two distinct flavours: yellow and orange; and red and white. this mixture is often confused with\"\n        },\n        {\n            \"id\": \"c1abf535-54a9-4b72-8681-d3b4a601da88\",\n            \"model_idx\": 1,\n            \"model_name\": \"huggingface.co/gpt2\",\n            \"index\": 1,\n            \"created\": 1683583266,\n            \"text\": \"who jumped over the lazy dog? he probably got it, but there's only so much you do when you lose one.\\n\\nbut i will say for a moment that there's no way this guy might have picked a fight with donald trump.\"\n        },\n        {\n            \"id\": \"08e8c351-236a-4497-98f3-488cdc0b6b6a\",\n            \"model_idx\": 2,\n            \"model_name\": \"cohere.ai/command\",\n            \"index\": 0,\n            \"created\": 1683583267,\n            \"text\": \"\\njumps over the lazy dog.\",\n            \"extra\": {\n                \"request_id\": \"0bbb28c0-eb3d-4614-b4d9-1eca88c361ca\",\n                \"generation_id\": \"5288dd6f-3ecf-475b-b909-0b226be6a193\"\n            }\n        },\n        {\n            \"id\": \"49ce51e6-9a18-4093-957f-54a1557c8829\",\n            \"model_idx\": 2,\n            \"model_name\": \"cohere.ai/command\",\n            \"index\": 1,\n            \"created\": 1683583267,\n            \"text\": \"\\nthe quick brown fox.\",\n            \"extra\": {\n                \"request_id\": \"ab5d5e03-22a1-42cd-85b2-9b9704c79304\",\n                \"generation_id\": \"60493966-abf6-483c-9c47-2ea5c5eeb855\"\n            }\n        }\n    ],\n    \"usage\": {\n        \"prompt_tokens\": 11,\n        \"completion_tokens\": 30,\n        \"total_tokens\": 41\n    }\n}\n```\n\n### other languages\n[r2d4/llm.ts](https://github.com/r2d4/llm.ts) is a typescript library that has a similar api that sits on top of multiple language models.\n\n### roadmap\n- [ ] streaming api\n- [ ] embeddings api\n\n### contributing\ncontributions are welcome! please open an issue or submit a pr.\n\n### license\n[mit](license)\n\n",
+  "docs_url": null,
+  "keywords": "llm,ai,prompt,large language models,gpt-3,chatgpt",
+  "license": "mit",
+  "name": "openlm",
+  "package_url": "https://pypi.org/project/openlm/",
+  "project_url": "https://pypi.org/project/openlm/",
+  "project_urls": {
+    "repository": "https://github.com/r2d4/openlm"
+  },
+  "release_url": "https://pypi.org/project/openlm/0.0.5/",
+  "requires_dist": [
+    "requests (>=2,<3)"
+  ],
+  "requires_python": ">=3.8.1,<4.0",
+  "summary": "drop-in openai-compatible that can call llms from other providers",
+  "version": "0.0.5",
+  "releases": [],
+  "developers": [
+    "matt_rickard",
+    "pypi@matt-rickard.com"
+  ],
+  "kwds": "openai as_openai openlm pip apis",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_openlm",
+  "homepage": "",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

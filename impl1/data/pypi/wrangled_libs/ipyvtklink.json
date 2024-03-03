@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: ipython",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: multimedia :: graphics"
+  ],
+  "description": "# ipyvtklink\n\n[![binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/kitware/ipyvtklink/master)\n[![pypi](https://img.shields.io/pypi/v/ipyvtklink.svg?logo=python&logocolor=white)](https://pypi.org/project/ipyvtklink/)\n[![conda](https://img.shields.io/conda/vn/conda-forge/ipyvtklink.svg?logo=conda-forge&logocolor=white)](https://anaconda.org/conda-forge/ipyvtklink)\n\n*an ipywidget for vtkrenderwindow* (formerly `ipyvtk-simple`)\n\nthis is an early prototype of creating a jupyter interface to vtk. this toolkit\nis a proof of concept and a more polished tool will be available as\n[`ipyvtk`](https://github.com/kitware/ipyvtk) in the future.\n\nthe code here was implemented from the work done by [andras lasso](https://github.com/lassoan)\nunder an mit license (see [the source](https://github.com/slicer/slicerjupyter/blob/master/jupyternotebooks/jupyternotebookslib/interactive_view_widget.py)).\n\nthe goal is to enable this widget to work with any server side\n[`vtkrenderwindow`](https://vtk.org/doc/nightly/html/classvtkrenderwindow.html)\nthis render window could be from [vtk python](https://vtk.org/),\n[paraview](https://www.paraview.org/), or [pyvista](https://www.pyvista.org/).\n\nplease note that `vtk` is not listed as a requirement for this package to\nsimplify its installation in virtual environments where vtk may be built from\nsource or bundled with paraview and we do not want to install the wheels from\npypi.\n\n## installation\n\nfor use with pyvista, simply install with `pip` or `conda`:\n\n```\npip install ipyvtklink\n```\n\nor\n```\nconda install -c conda-forge ipyvtklink\n```\n\n## run in docker\n\na docker image is prebuilt and hosted in the ipyvtklink repository's packages.\n\nto run in docker:\n\n```\ndocker pull ghcr.io/kitware/ipyvtklink:latest\ndocker run -p 8888:8888 ghcr.io/kitware/ipyvtklink:latest\n```\n\nand open the `vtk.ipynb` notebook.\n\nadditionally, this can be used with paraview. an example is given in\n`paraview.ipynb` which can be run via:\n\n```\ndocker pull ghcr.io/kitware/ipyvtklink-paraview:latest\ndocker run -p 8878:8878 ghcr.io/kitware/ipyvtklink-paraview:latest\n```\n\n## examples\n\nyou may have to build jupyter lab extensions for this to work in lab. this is\nknown to work well in notebook.\n\n\n### pyvista\n\npyvista has fully implemented downstream support for `ipyvtklink`. see [pyvista's documentation](https://docs.pyvista.org/user-guide/jupyter/ipyvtk_plotting.html)\n\nsee the `pyvista.ipynb` for an original proof of concept.\n\n![demo-1](https://raw.githubusercontent.com/kitware/ipyvtklink/master/assets/demo-1.gif)\n\n![demo-2](https://raw.githubusercontent.com/kitware/ipyvtklink/master/assets/demo-2.gif)\n\n\n### python vtk\n\nthe widget here can be used with vtk. here is a minimal example showing how\nto pass any `vtkrenderwindow` to the `viewinteractivewidget`:\n\n```py\nimport vtk\nfrom ipyvtklink.viewer import viewinteractivewidget\n\n# create some data\ncylinder = vtk.vtkcylindersource()\ncylinder.setresolution(8)\nmapper = vtk.vtkpolydatamapper()\nmapper.setinputconnection(cylinder.getoutputport())\nactor = vtk.vtkactor()\nactor.setmapper(mapper)\n\n# set up render window\nren = vtk.vtkrenderer()\nren_win = vtk.vtkrenderwindow()\nren_win.setoffscreenrendering(1)\nren_win.setsize(600, 600)\nren_win.addrenderer(ren)\niren = vtk.vtkrenderwindowinteractor()\niren.setrenderwindow(ren_win)\nstyle = vtk.vtkinteractorstyletrackballcamera()\niren.setinteractorstyle(style)\n\n# add actor to scene\nren.addactor(actor)\nren.resetcamera()\n\n# display\nviewinteractivewidget(ren_win)\n```\n\n![demo-3](https://raw.githubusercontent.com/kitware/ipyvtklink/master/assets/demo-3.gif)\n\n\n### paraview python\n\nsee instructions above for running paraview in a docker container.\n\n```py\nimport paraview.simple as pvs\nfrom ipyvtklink.viewer import viewinteractivewidget\n\n# create data on the pipeline\nwavelet = pvs.wavelet()\ncontour = pvs.contour(input=wavelet)\ncontour.contourby = ['points', 'rtdata']\ncontour.isosurfaces = [63, 143, 170, 197, 276]\n\n# set the data as visible\npvs.show(contour)\n\n# fetch the view and render the scene\nview = pvs.getactiveview()\npvs.render(view)\n\n# fetch the renderwindow\nren_win = view.getclientsideobject().getrenderwindow()\n# display the renderwindow with the widget\nviewinteractivewidget(ren_win)\n```\n\n![demo-4](https://raw.githubusercontent.com/kitware/ipyvtklink/master/assets/demo-4.gif)\n",
+  "docs_url": null,
+  "keywords": "vtk plotting jupyter",
+  "license": "bsd 3-clause",
+  "name": "ipyvtklink",
+  "package_url": "https://pypi.org/project/ipyvtklink/",
+  "project_url": "https://pypi.org/project/ipyvtklink/",
+  "project_urls": {
+    "Homepage": "https://github.com/Kitware/ipyvtklink"
+  },
+  "release_url": "https://pypi.org/project/ipyvtklink/0.2.3/",
+  "requires_dist": [
+    "ipycanvas (>=0.5.0)",
+    "ipyevents (>=0.8.0)",
+    "ipywidgets (~=7.7)"
+  ],
+  "requires_python": ">=3.5.*",
+  "summary": "ipywidget for vtkrenderwindow",
+  "version": "0.2.3",
+  "releases": [],
+  "developers": [
+    "bane.sullivan@kitware.com",
+    "bane_sullivan"
+  ],
+  "kwds": "ipywidget ipyvtk_plotting ipyvtklink ipyvtk vtkrenderwindow",
+  "license_kwds": "bsd 3-clause",
+  "libtype": "pypi",
+  "id": "pypi_ipyvtklink",
+  "homepage": "https://github.com/kitware/ipyvtklink",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_ipycanvas",
+    "pypi_ipyevents",
+    "pypi_ipywidgets"
+  ]
+}

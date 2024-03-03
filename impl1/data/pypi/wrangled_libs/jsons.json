@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "[![python versions](https://img.shields.io/pypi/pyversions/jsons.svg)](https://img.shields.io/pypi/pyversions/jsons.svg)\n[![downloads](https://pepy.tech/badge/jsons)](https://pepy.tech/project/jsons)\n[![pypi version](https://badge.fury.io/py/jsons.svg)](https://badge.fury.io/py/jsons)\n[![code coverage](https://codecov.io/gh/ramonhagenaars/jsons/branch/master/graph/badge.svg)](https://codecov.io/gh/ramonhagenaars/jsons)\n[![scrutinizer code quality](https://scrutinizer-ci.com/g/ramonhagenaars/jsons/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ramonhagenaars/jsons/?branch=master)\n\n\n<p align='center'>\n  <a href='https://jsons.readthedocs.io/en/latest/'>\n    <img width='150' src='https://github.com/ramonhagenaars/jsons/raw/master/resources/jsons-logo.svg?sanitize=true' />\n  </a>\n</p>\n\n  - *turn python objects into dicts or (json)strings and back*\n  - *no changes required to your objects*\n  - *easily customizable and extendable*\n  - *works with dataclasses, attrs and popos*\n\n\u00f0\u00ff\u2019\u2014 this lib? leave a \u00e2\u02dc\u2026 and tell your colleagues!\n\nexample of a model to serialize:\n\n```python\n>>> @dataclass\n... class person:\n...    name: str\n...    birthday: datetime\n...\n>>> p = person('guido van rossum', birthday_guido)\n```\n\nexample of using jsons to serialize:\n\n```python\n>>> out = jsons.dump(p)\n>>> out\n{'birthday': '1956-01-31t12:00:00z', 'name': 'guido van rossum'}\n```\n\nexample of using jsons to deserialize:\n\n```python\n>>> p2 = jsons.load(out, person)\n>>> p2\nperson(name='guido van rossum', birthday=datetime.datetime(1956, 1, 31, 12, 0, tzinfo=datetime.timezone.utc))\n```\n\n# installation\n\n    pip install jsons\n\n# usage\n\n```python\nimport jsons\n\nsome_instance = jsons.load(some_dict, someclass)  # deserialization\nsome_dict = jsons.dump(some_instance)  # serialization\n```\n\nin some cases, you have instances that contain other instances that need (de)serialization, for instance with lists or dicts. you can use the\n`typing` classes for this as is demonstrated below.\n\n```python\nfrom typing import list, tuple\nimport jsons\n\n# for more complex deserialization with generic types, use the typing module\nlist_of_tuples = jsons.load(some_dict, list[tuple[aclass, anotherclass]])\n```\n\n(for more examples, see the\n[faq](https://jsons.readthedocs.io/en/latest/faq.html))\n\n# documentation \n\n  - [main documentation](https://jsons.readthedocs.io/en/latest/)\n  - [api docs](https://jsons.readthedocs.io/en/latest/api.html)\n  - [faq](https://jsons.readthedocs.io/en/latest/faq.html)\n\n# meta\n\n## recent updates\n\n### 1.6.3\n\n- bugfix: a string was sometimes unintentionally parsed into a datetime.\n\n### 1.6.2\n\n- bugfix: `fork_inst`s were not propagated in `default_list_deserializer` (thanks to patrickguenther).\n\n### 1.6.1\n\n- bugfix: loading dicts with hashed keys could cause an error due to being loaded twice (thanks to georgeharker).\n- bugfix: intenums were not serialized with their names when `use_enum_name=true` (thanks to georgeharker).\n- bugfix: named tuples did not use `typing.get_type_hints` for getting the types, causing trouble in future annotations (thanks to georgeharker).\n\n### 1.6.0\n\n- feature: support for python3.10.\n- feature: support for `attrs`.\n\n### 1.5.1\n\n- bugfix: `zoneinfo` failed to dump if attached to a `datetime`.\n\n### 1.5.0\n\n- feature: support for `zoneinfo` on python3.9+.\n- change: microseconds are no longer stripped by default (thanks to pietrodn).\n\n### 1.4.2\n\n- bugfix: get_origin did not work with python3.9+ parameterized collections (e.g. `dict[str, str]`).\n\n### 1.4.1\n\n- bugfix: types of attributes that are not in the constructor were not properly looked for. see issue #128.\n\n### 1.4.0\n\n- feature: defaultdicts can now be deserialized.\n- feature: dicts with any (hashable) key can now be dumped and loaded.\n- feature: suppress specific warnings.\n- bugfix: loading a verbose-serialized object in a list could sometimes deserialize that object as a parent class.\n- bugfix: unwanted stringification of nonevalues is now prevented in optionals and unions with nonetype.\n- bugfix: fixed a bug with postponed annotations and dataclasses. see also [issue34776](https://bugs.python.org/issue34776).\n- bugfix: types of attributes that are not in the constructor are now looked for in __annotations__.\n\n### 1.3.1\n\n- bugfix: fixed bug where classmethods were included in the serialized result.\n\n### 1.3.0\n\n- feature: added `warn_on_fail` parameter to `default_list_deserializer` that allows to continue deserialization upon errors.\n- feature: added `transform` that can transform an object to an object of another type.\n- feature: added serializer and deserializer for `pathlib.path` (thanks to alexmirrington).\n- change: when loading a list fails, the error message now points to the failing index.\n- bugfix: fixed bug when dumping an object with an innerclass. \n\n### 1.2.0\n\n- bugfix: fixed bug with postponed typehints (pep-563).\n- bugfix: loading an invalid value targeting an optional did not raise.\n- bugfix: loading a dict did not properly pass key_transformers.\n- bugfix: loading a namedtuple did not properly use key_transformers.\n- bugfix: utilized `__annotations__` in favor `_field_types` because of deprecation as of 3.8.\n\n### 1.1.2\n\n- feature: added `__version__` which can be imported from `jsons`\n- bugfix: dumping a tuple with ellipsis failed in strict mode.\n\n### 1.1.1\n\n  - feature: added a serializer for ``union`` types.\n  - change: exceptions are more clear upon deserialization failure (thanks to haluzpav).\n  - change: you can no longer announce a class with a custom name.\n  - bugfix: fixed dumping optional attributes.\n  - bugfix: dataclasses inheriting from ``jsonserializable`` always dumped their attributes as if in strict mode. \n\n### 1.1.0\n\n  - feature: added ``strict`` parameter to ``dump`` to indicate that dumping a certain ``cls`` will ignore any extra data.\n  - feature: when using ``dump(obj, cls=x)``, ``x`` can now be any class (previously, only a class with ``__slots__``).\n  - feature: support for dumping ``decimal`` (thanks to herdigiorgi).\n  - feature: primitives are now cast if possible when dumping (e.g. ``dump(5, str)``).\n  - feature: dumping iterables with generic types (e.g. ``dump(obj, list[str])``) will now dump with respect to that types (if ``strict``)\n  - feature: the ``default_dict`` serializer now optionally accepts types: ``optional[dict[str, type]]``.\n  - change: improved performance when dumping using ``strict=true`` (up to 4 times faster!).\n  - bugfix: ``set_validator`` with multiple types did not work.\n\n### 1.0.0\n\n  - feature: added a serializer/deserializer for `time`.\n  - feature: added a serializer/deserializer for `timezone`.\n  - feature: added a serializer/deserializer for `timedelta`.\n  - feature: added a serializer/deserializer for `date`.\n  - bugfix: dumping verbose did not store the types of dicts (`dict[k,\n    v]`).\n  - bugfix: loading with `list` (no generic type) failed.\n  - bugfix: loading with `dict` (no generic type) failed.\n  - bugfix: loading with `tuple` (no generic type) failed.\n\n\n## contributors\n\nspecial thanks to the following contributors of code, discussions or\nsuggestions:\n\n[patrickguenther](https://github.com/patrickguenther),\n[davetapley](https://github.com/davetapley),\n[pietrodn](https://github.com/pietrodn),\n[georgeharker](https://github.com/georgeharker),\n[aecay](https://github.com/aecay),\n[bibz](https://github.com/bibz),\n[thijss](https://github.com/thijss),\n[alexmirrington](https://github.com/alexmirrington),\n[tirkarthi](https://github.com/tirkarthi), \n[marksomething](https://github.com/marksomething), \n[herdigiorgi](https://github.com/herdigiorgi), \n[jochembroekhoff](https://github.com/jochembroekhoff), \n[robinklaassen](https://github.com/robinklaassen), \n[ahmetkucuk](https://github.com/ahmetkucuk), \n[casparjespersen](https://github.com/casparjespersen), \n[cypreess](https://github.com/cypreess), \n[gastlich](https://github.com/gastlich), \n[jmolinski](https://github.com/jmolinski), \n[haluzpav](https://github.com/haluzpav), \n[finetuned89](https://github.com/finetuned89)\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "jsons",
+  "package_url": "https://pypi.org/project/jsons/",
+  "project_url": "https://pypi.org/project/jsons/",
+  "project_urls": {
+    "Homepage": "https://github.com/ramonhagenaars/jsons"
+  },
+  "release_url": "https://pypi.org/project/jsons/1.6.3/",
+  "requires_dist": [
+    "typish (>=1.9.2)",
+    "attrs ; extra == 'test'",
+    "coverage ; extra == 'test'",
+    "codecov ; extra == 'test'",
+    "pytest ; extra == 'test'",
+    "scons ; extra == 'test'",
+    "dataclasses ; (python_version == \"3.6\") and extra == 'test'",
+    "tzdata ; (python_version >= \"3.9\") and extra == 'test'"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "for serializing python objects to json (dicts) and back",
+  "version": "1.6.3",
+  "releases": [],
+  "developers": [
+    "ramon.hagenaars@gmail.com",
+    "ramon_hagenaars"
+  ],
+  "kwds": "badge badges jsons pyversions code",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_jsons",
+  "homepage": "https://github.com/ramonhagenaars/jsons",
+  "release_count": 52,
+  "dependency_ids": [
+    "pypi_attrs",
+    "pypi_codecov",
+    "pypi_coverage",
+    "pypi_dataclasses",
+    "pypi_pytest",
+    "pypi_scons",
+    "pypi_typish",
+    "pypi_tzdata"
+  ]
+}

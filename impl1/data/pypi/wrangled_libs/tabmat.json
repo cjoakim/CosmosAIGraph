@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# efficient matrix representations for working with tabular data\n\n[![ci](https://github.com/quantco/tabmat/workflows/ci/badge.svg)](https://github.com/quantco/tabmat/actions)\n[![docs](https://readthedocs.org/projects/pip/badge/?version=latest&style=flat)](https://tabmat.readthedocs.io/)\n[![conda-forge](https://img.shields.io/conda/vn/conda-forge/tabmat?logocolor=white&logo=conda-forge)](https://anaconda.org/conda-forge/tabmat)\n[![pypiversion](https://img.shields.io/pypi/v/tabmat.svg?logo=pypi&logocolor=white)](https://pypi.org/project/tabmat)\n[![pythonversion](https://img.shields.io/pypi/pyversions/tabmat?logocolor=white&logo=python)](https://pypi.org/project/tabmat)\n\n## installation\n\nsimply install via conda-forge!\n```\nconda install -c conda-forge tabmat\n```\n\n<img src=\"https://raw.githubusercontent.com/quantco/tabmat/main/docs/_static/headline.png\" width=\"600px\">\n\n## getting started\n\nthe easiest way to start with tabmat is to use the convenience constructor `tabmat.from_pandas`.\n\n```python\nimport tabmat as tm\nimport numpy as np\n\ndense_array = np.random.normal(size=(100, 1))\n```\n\n## use case\n\ntl;dr: we provide matrix classes for efficiently building statistical algorithms with data that is partially dense, partially sparse and partially categorical.\n\ndata used in economics, actuarial science, and many other fields is often tabular, containing rows and columns. further common properties are also common:\n- it often is **very sparse**.\n- it often contains **a mix of dense and sparse** columns.\n- it often contains **categorical data**, processed into many columns of indicator values created by \"one-hot encoding.\"\n\nhigh-performance statistical applications often require fast computation of certain operations, such as\n- computing **sandwich products** of the data, ``transpose(x) @ diag(d) @ x``. a sandwich product shows up in the solution to weighted least squares, as well as in the hessian of the likelihood in generalized linear models such as poisson regression.\n- **matrix-vector products**, possibly on only a subset of the rows or columns. for example, when limiting computation to an \"active set\" in a l1-penalized coordinate descent implementation, we may only need to compute a matrix-vector product on a small subset of the columns.\n- computing all operations on **standardized predictors** which have mean zero and standard deviation one. this helps with numerical stability and optimizer efficiency in a wide range of machine learning algorithms.\n\n## this library and its design\n\nwe designed this library with the above use cases in mind. we built this library first for estimating generalized linear models, but expect it will be useful in a variety of econometric and statistical use cases. this library was borne out of our need for speed, and its unified api is motivated by the desire to work with a unified matrix api internal to our statistical algorithms.\n\ndesign principles:\n- speed and memory efficiency are paramount.\n- you don't need to sacrifice functionality by using this library: `densematrix` and `sparsematrix` subclass `np.ndarray` and `scipy.sparse.csc_matrix` respectively, and inherit behavior from those classes wherever it is not improved on.\n- as much as possible, syntax follows numpy syntax, and dimension-reducing operations (like `sum`) return numpy arrays, following numpy dimensions about the dimensions of results. the aim is to make these classes as close as possible to being drop-in replacements for ``numpy.ndarray``.  this is not always possible, however, due to the differing apis of ``numpy.ndarray`` and ``scipy.sparse``.\n- other operations, such as `toarray`, mimic scipy sparse syntax.\n- all matrix classes support matrix-vector products, sandwich products, and `getcol`.\n\nindividual subclasses may support significantly more operations.\n\n## matrix types\n- `densematrix` represents dense matrices, subclassing numpy nparray.  it additionally supports methods `getcol`, `toarray`, `sandwich`, `standardize`, and `unstandardize`.\n- `sparsematrix` represents column-major sparse data, subclassing `scipy.sparse.csc_matrix`. it additionally supports methods `sandwich` and `standardize`.\n- `categoricalmatrix` represents one-hot encoded categorical matrices. because all the non-zeros in these matrices are ones and because each row has only one non-zero, the data can be represented and multiplied much more efficiently than a generic sparse matrix.\n- `splitmatrix` represents matrices with both dense, sparse and categorical parts, allowing for a significant speedup in matrix multiplications.\n- `standardizedmatrix` efficiently and sparsely represents a matrix that has had its column normalized to have mean zero and variance one. even if the underlying matrix is sparse, such a normalized matrix will be dense. however, by storing the scaling and shifting factors separately, `standardizedmatrix` retains the original matrix sparsity. \n\n![wide data set](https://raw.githubusercontent.com/quantco/tabmat/main/images/wide_data_sandwich.png)\n\n## benchmarks\n\n[see here for detailed benchmarking.](https://tabmat.readthedocs.io/en/latest/benchmarks.html)\n\n## api documentation\n\n[see here for detailed api documentation.](https://tabmat.readthedocs.io/en/latest/api.html)\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "tabmat",
+  "package_url": "https://pypi.org/project/tabmat/",
+  "project_url": "https://pypi.org/project/tabmat/",
+  "project_urls": {
+    "Homepage": "https://github.com/Quantco/tabmat"
+  },
+  "release_url": "https://pypi.org/project/tabmat/3.1.13/",
+  "requires_dist": [
+    "numpy",
+    "pandas",
+    "scipy"
+  ],
+  "requires_python": ">=3.9",
+  "summary": "efficient matrix representations for working with tabular data.",
+  "version": "3.1.13",
+  "releases": [],
+  "developers": [
+    "noreply@quantco.com",
+    "quantco"
+  ],
+  "kwds": "tabmat csc_matrix pip categoricalmatrix tabular",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_tabmat",
+  "homepage": "https://github.com/quantco/tabmat",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_scipy"
+  ]
+}

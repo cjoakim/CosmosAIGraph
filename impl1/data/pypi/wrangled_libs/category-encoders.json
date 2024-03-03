@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "programming language :: python :: 3"
+  ],
+  "description": "categorical encoding methods\n============================\n\n[![downloads](https://pepy.tech/badge/category-encoders)](https://pepy.tech/project/category-encoders)\n[![downloads](https://pepy.tech/badge/category-encoders/month)](https://pepy.tech/project/category-encoders)\n![test suite and linting](https://github.com/scikit-learn-contrib/category_encoders/workflows/test%20suite%20and%20linting/badge.svg)\n[![doi](https://zenodo.org/badge/47077067.svg)](https://zenodo.org/badge/latestdoi/47077067)\n\na set of scikit-learn-style transformers for encoding categorical \nvariables into numeric by means of different techniques.\n\nimportant links\n---------------\n\ndocumentation: [http://contrib.scikit-learn.org/category_encoders/](http://contrib.scikit-learn.org/category_encoders/)\n\nencoding methods\n----------------\n__unsupervised:__\n * backward difference contrast [2][3]\n * basen [6]\n * binary [5]\n * gray [14]\n * count [10]\n * hashing [1]\n * helmert contrast [2][3]\n * ordinal [2][3]\n * one-hot [2][3]\n * rank hot [15]\n * polynomial contrast [2][3]\n * sum contrast [2][3]\n\n__supervised:__\n * catboost [11]\n * generalized linear mixed model [12] \n * james-stein estimator [9]\n * leaveoneout [4]\n * m-estimator [7]\n * target encoding [7]\n * weight of evidence [8]\n * quantile encoder [13]\n * summary encoder [13]\n\ninstallation\n------------\n\nthe package requires: `numpy`, `statsmodels`, and `scipy`.\n\nto install the package, execute:\n\n```shell\n$ python setup.py install\n```\n\nor \n\n```shell\npip install category_encoders\n```\n\nor\n\n```shell\nconda install -c conda-forge category_encoders\n```\n\nto install the development version, you may use:\n\n```shell\npip install --upgrade git+https://github.com/scikit-learn-contrib/category_encoders\n```\n\nusage\n-----\n\nall of the encoders are fully compatible sklearn transformers, so they can be used in pipelines or in your existing \nscripts. supported input formats include numpy arrays and pandas dataframes. if the cols parameter isn't passed, all \ncolumns with object or pandas categorical data type will be encoded. please see the docs for transformer-specific \nconfiguration options.\n\nexamples\n--------\nthere are two types of encoders: unsupervised and supervised. an unsupervised example:\n```python\nfrom category_encoders import *\nimport pandas as pd\nfrom sklearn.datasets import load_boston\n\n# prepare some data\nbunch = load_boston()\ny = bunch.target\nx = pd.dataframe(bunch.data, columns=bunch.feature_names)\n\n# use binary encoding to encode two categorical features\nenc = binaryencoder(cols=['chas', 'rad']).fit(x)\n\n# transform the dataset\nnumeric_dataset = enc.transform(x)\n```\n\nand a supervised example:\n```python\nfrom category_encoders import *\nimport pandas as pd\nfrom sklearn.datasets import load_boston\n\n# prepare some data\nbunch = load_boston()\ny_train = bunch.target[0:250]\ny_test = bunch.target[250:506]\nx_train = pd.dataframe(bunch.data[0:250], columns=bunch.feature_names)\nx_test = pd.dataframe(bunch.data[250:506], columns=bunch.feature_names)\n\n# use target encoding to encode two categorical features\nenc = targetencoder(cols=['chas', 'rad'])\n\n# transform the datasets\ntraining_numeric_dataset = enc.fit_transform(x_train, y_train)\ntesting_numeric_dataset = enc.transform(x_test)\n```\n\nfor the transformation of the _training_ data with the supervised methods, you should use `fit_transform()` method instead of `fit().transform()`, because these two methods _do not_ have to generate the same result. the difference can be observed with leaveoneout encoder, which performs a nested cross-validation for the _training_ data in `fit_transform()` method (to decrease over-fitting of the downstream model) but uses all the training data for scoring with `transform()` method (to get as accurate estimates as possible).\n\nfurthermore, you may benefit from following wrappers:\n * polynomialwrapper, which extends supervised encoders to support polynomial targets\n * nestedcvwrapper, which helps to prevent overfitting  \n\nadditional examples and benchmarks can be found in the `examples` directory.\n\ncontributing\n------------\n\ncategory encoders is under active development, if you'd like to be involved, we'd love to have you. check out the contributing.md file\nor open an issue on the github project to get started.\n\nreferences\n----------\n\n 1. kilian weinberger; anirban dasgupta; john langford; alex smola; josh attenberg (2009). feature hashing for large scale multitask learning. proc. icml.\n 2. contrast coding systems for categorical variables.  ucla: statistical consulting group. from https://stats.idre.ucla.edu/r/library/r-library-contrast-coding-systems-for-categorical-variables/.\n 3. gregory carey (2003). coding categorical variables. from http://psych.colorado.edu/~carey/courses/psyc5741/handouts/coding%20categorical%20variables%202006-03-03.pdf\n 4. owen zhang - leave one out encoding. from https://datascience.stackexchange.com/questions/10839/what-is-difference-between-one-hot-encoding-and-leave-one-out-encoding\n 5. beyond one-hot: an exploration of categorical variables. from http://www.willmcginnis.com/2015/11/29/beyond-one-hot-an-exploration-of-categorical-variables/\n 6. basen encoding and grid search in categorical variables. from http://www.willmcginnis.com/2016/12/18/basen-encoding-grid-search-category_encoders/\n 7. daniele miccii-barreca (2001). a preprocessing scheme for high-cardinality categorical attributes in classification and prediction problems. sigkdd explor. newsl. 3, 1. from http://dx.doi.org/10.1145/507533.507538\n 8. weight of evidence (woe) and information value explained. from https://www.listendata.com/2015/03/weight-of-evidence-woe-and-information.html\n 9. empirical bayes for multiple sample sizes. from http://chris-said.io/2017/05/03/empirical-bayes-for-multiple-sample-sizes/\n 10. simple count or frequency encoding. from https://www.datacamp.com/community/tutorials/encoding-methodologies\n 11. transforming categorical features to numerical features. from https://tech.yandex.com/catboost/doc/dg/concepts/algorithm-main-stages_cat-to-numberic-docpage/\n 12. andrew gelman and jennifer hill (2006). data analysis using regression and multilevel/hierarchical models. from https://faculty.psau.edu.sa/filedownload/doc-12-pdf-a1997d0d31f84d13c1cdc44ac39a8f2c-original.pdf\n 13. carlos mougan, david masip, jordi nin and oriol pujol (2021). quantile encoder: tackling high cardinality categorical features in regression problems. modeling decisions for artificial intelligence, 2021. springer international publishing https://link.springer.com/chapter/10.1007%2f978-3-030-85529-1_14\n 14. gray encoding. from https://en.wikipedia.org/wiki/gray_code \n 15. jacob buckman, aurko roy, colin raffel, ian goodfellow: thermometer encoding: one hot way to resist adversarial examples. from https://openreview.net/forum?id=s18su--cw\n 16. fairness implications of encoding protected categorical attributes. carlos mougan, jose alvarez, salvatore ruggieri, and steffen staab.  in proceedings of the 2023 aaai/acm conference on ai, ethics, and society, aies \u201921, https://arxiv.org/abs/2201.11358\n\n\n",
+  "docs_url": null,
+  "keywords": "python data science machine learning pandas sklearn",
+  "license": "bsd",
+  "name": "category-encoders",
+  "package_url": "https://pypi.org/project/category-encoders/",
+  "project_url": "https://pypi.org/project/category-encoders/",
+  "project_urls": {
+    "Download": "https://github.com/scikit-learn-contrib/category_encoders/tarball/2.6.3",
+    "Homepage": "https://github.com/scikit-learn-contrib/category_encoders"
+  },
+  "release_url": "https://pypi.org/project/category-encoders/2.6.3/",
+  "requires_dist": [
+    "numpy >=1.14.0",
+    "scikit-learn >=0.20.0",
+    "scipy >=1.0.0",
+    "statsmodels >=0.9.0",
+    "pandas >=1.0.5",
+    "patsy >=0.5.1",
+    "importlib-resources ; python_version < \"3.9\""
+  ],
+  "requires_python": "",
+  "summary": "a collection of sklearn transformers to encode categorical variables as numeric",
+  "version": "2.6.3",
+  "releases": [],
+  "developers": [
+    "will@pedalwrencher.com",
+    "will_mcginnis"
+  ],
+  "kwds": "category_encoders encoder encode encoders encoding",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_category_encoders",
+  "homepage": "https://github.com/scikit-learn-contrib/category_encoders",
+  "release_count": 32,
+  "dependency_ids": [
+    "pypi_importlib_resources",
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_patsy",
+    "pypi_scikit_learn",
+    "pypi_scipy",
+    "pypi_statsmodels"
+  ]
+}

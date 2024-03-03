@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: gnu general public license v3 (gplv3)",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: version control",
+    "topic :: utilities"
+  ],
+  "description": "# [vulners api v3](https://vulners.com) python wrapper\n\n\n# description\npython 2/3 library for the [vulners database](https://vulners.com).\nit provides *search, data retrieval, archive and vulnerability scanning* api's for the integration purposes.\nwith this library you can create powerful security tools and get access to the world largest security database.\n\n## python version\nlibrary was tested on a *python2* and *python3*.\n\n## how to install\n\npackage is available with [pypi](https://pypi.python.org/pypi) \n\nyou can use pip for the installation\n\n```bash\npip install -u vulners\n```\n\n## obtaining vulners api key\n\nplease, register at [vulners website](https://vulners.com).\ngo to the personal menu by clicking at your name at the right top corner.\nfollow \"api keys\" tab.\ngenerate api key with scope \"api\" and use it with the library.\n\n# functions and methods\n\nall the callable methods are using [vulners rest api](https://vulners.com/docs).\n\n### search in database\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\nheartbleed_related = vulners_api.find_all(\"heartbleed\", limit=10)\n```\n### get information about document by identificator\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\ncve_2017_14174 = vulners_api.get_bulletin(\"cve-2017-14174\")\n```\n### get information about multiple documents by identificators\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\ncve_data = vulners_api.get_multiple_bulletins([\"cve-2017-14174\", \"cve-2016-1175\"])\n```\n### search for the public available exploits\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\nwordpress_exploits = vulners_api.find_exploit_all(\"wordpress 4.7.0\")\n```\n### get vulnerabilities and exploits by software name and version\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\n\nresults = vulners_api.get_software_vulnerabilities(\"httpd\", \"1.3\")\nvulnerabilities_list = [results[key] for key in results if key not in (\"info\", \"blog\", \"bugbounty\")]\n```\n### get vulnerabilities by cpe product and version string\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\n\ncpe_results = vulners_api.get_cpe_vulnerabilities(\"cpe:/a:cybozu:garoon:4.2.1\")\ncpe_vulnerabilities_list = [cpe_results[key] for key in cpe_results if key not in (\"info\", \"blog\", \"bugbounty\")]\n```\n### get references for the vulnerability\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\nreferences = vulners_api.get_bulletin_references(\"cve-2014-0160\")\n```\n### get windows kb superseeding and parentseeding information\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\n# superseeding information will be returned as a dict\n# with two keys: \"superseeds\" and \"parentseeds\".\n# superseeds means \"what kb are covered by this kb\".\n# parentseeds means \"what kb are covering this kb\".\nsuperseeds = vulners_api.get_kb_seeds(\"kb4524135\")\n```\n### get windows kb updates list and download urls\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\nmicrosoft_updates_for_kb = vulners_api.get_kb_updates(\"kb4524135\")\nupdates_download_links = [update[\"href\"] for update in microsoft_updates_for_kb]\n```\n### score any vulnerability description using [vulners ai](https://lab.wallarm.com/new-from-wallarm-research-first-ai-based-tool-to-predict-vulnerability-risk-2d0a7e9b3474)\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\ntext_ai_score = vulners_api.get_ai_score(\"my cool vulnerability description\")\n```\n### get possible query autocompletions\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\npossible_autocomplete = vulners_api.query_autocomplete(\"heartbleed\")\n\n```\n### download whole database collection and work with data locally\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\nall_cve = vulners_api.get_collection(\"cve\")\n```\n### audit windows hosts for installed security kb\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\nwin_vulners = vulners_api.kb_audit(os=\"windows server 2012 r2\", kb_list=[\"kb4072650\", \"kb2959936\", \"kb2894856\", \"kb2896496\"])\nneed_2_install_kb = win_vulners[\"kbmissed\"]\naffected_cve = win_vulners[\"cvelist\"]\n```\n### audit linux hosts for vulnerabilities (rpm/deb based)\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\n\n# example for centos 7\n# you can use it for any rpm based os\n# execute command: rpm -qa --qf '%{name}-%{version}-%{release}.%{arch}\\\\n'\n# use it as package variable input\n\ncentos_vulnerabilities = vulners_api.os_audit(os=\"centos\", version=\"7\", packages=[\"glibc-common-2.17-157.el7_3.5.x86_64\"])\nvulnerable_packages = centos_vulnerabilities.get(\"packages\")\nmissed_patches_ids = centos_vulnerabilities.get(\"vulnerabilities\")\ncve_list = centos_vulnerabilities.get(\"cvelist\")\nhow_to_fix = centos_vulnerabilities.get(\"cumulativefix\")\n\n# example for debian 8\n# you can use it for any deb based os\n# execute command: dpkg-query -w -f='${package} ${version} ${architecture}\\\\n'\n# use it as package variable input\n\ndebian_vulnerabilities = vulners_api.os_audit(os=\"debian\", version=\"8\", packages=['uno-libs3 4.3.3-2+deb8u7 amd64'])\n```\n\n### download linux (rpm/deb based) vulnerability assessment data for local processing\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\n\n# example for centos 7\ncentos_vulnerabilities_data = vulners_api.get_distributive(\"centos\", \"7\")\n```\n### download web application vulnerability detection regex collection\n```python\nimport vulners\n\nvulners_api = vulners.vulnersapi(api_key=\"your_api_key_here\")\nrules = vulners_api.get_web_application_rules()\n```\n",
+  "docs_url": null,
+  "keywords": "security,network,vulners,vulnerability,cve",
+  "license": "",
+  "name": "vulners",
+  "package_url": "https://pypi.org/project/vulners/",
+  "project_url": "https://pypi.org/project/vulners/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/vulners/2.1.1/",
+  "requires_dist": [
+    "requests (>=2.31.0,<3.0.0)",
+    "six (>=1.16.0,<2.0.0)",
+    "appdirs (>=1.4.4,<2.0.0)"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "python library and command-line utility for vulners (https://vulners.com)",
+  "version": "2.1.1",
+  "releases": [],
+  "developers": [
+    "isox@vulners.com",
+    "kirill_ermakov"
+  ],
+  "kwds": "vulners_api vulnersapi get_software_vulnerabilities vulnerabilities_list vulnerable_packages",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_vulners",
+  "homepage": "",
+  "release_count": 51,
+  "dependency_ids": [
+    "pypi_appdirs",
+    "pypi_requests",
+    "pypi_six"
+  ]
+}

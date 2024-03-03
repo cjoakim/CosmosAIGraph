@@ -1,0 +1,37 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# nr-stream\n\nthis package provides utilities for writing functional-style code in python. the package originally contained only\nthe `stream` class, hence the name, but since we've adopted the terminology for letting us *streamline* large chunks\nof our code.\n\n## api\n\n### optional objects\n\nrepresents an optional value, i.e. one that either has a valid value or is `none`. the class is useful to\nchain modifications and have them execute based on whether a value is available or not.\n\n__example__\n\n```py\nimport os\nfrom nr.stream import optional\n\nopt = optional(os.getenv(\"somevar\"))\nvalue = opt.or_else_get(lambda: do_something_else())\nvalue = opt.or_else_raise(lambda: exception(\"somevar not set\"))\nopt = opt.map(lambda value: value + \" another value\")\nlen(opt.stream().count())  # 0 or 1\n```\n\n### refreshable objects\n\na refreshable is a container for a value that can be updated and inform listeners. a chained operations on a\nrefreshable will be replayed if the parent refreshable is updated. this is eager evaluation, not lazy evaluation\nand allows performant calls to `.get()` without going through a lazy chain of operations each time.\n\nunlike `optional` or `stream`, the `refreshable` knows no \"empty\" state.\n\nthis class is often useful to pass configuration data around in your application. it allows making modifications\nto the configuration and have it automatically propagate throughout the application.\n\n__example__\n\n```py\nfrom nr.stream import refreshable\n\nroot = refreshable[int | none](none)\nchild = root.map(lambda v: 42 if v is none else v)\n\nprint(root.get())  # none\nprint(child.get()) # 42\nroot.update(10)\nprint(root.get())  # 10\nprint(child.get()) # 10\n```\n\n### stream objects\n\nthe stream class wraps an iterable and allows you to build a chain of modifiers on top of it. this often\ngreatly simplifies consecutive operations on an iterable object and its items.\n\n__example__\n\n```py\nfrom nr.stream import stream\n\nvalues = [3, 6, 4, 7, 1, 2, 5]\nassert list(stream(values).chunks(values, 3, fill=0).map(sum)) == [13, 10, 5]\n```\n\n> __important__: stream objects always immediately convert the object passed to an iterator. this means\n> that you cannot branch stream objects, as both forks will share the same initial iterator.\n\n### supplier objects\n\nthe supplier class allows you to lazily evaluate the retrieval of a value, as well as chain modifications\non top of it and even trace the lineage of these modifications. it provides convenience methods such as\n`.map()`, `.once()`, `.get_or_raise()`. unlike an `optional`, a supplier will treat `none` as a valid value\nand instead separately track the state of \"no value\".\n\ntrying to read a value from an empty supplier raises a `supplier.empty` exception. note that suppliers _always_\nevaluate lazily, unlike `optional`.\n\n__example__\n\n```py\nfrom nr.stream import supplier\n\nsup = supplier.of(42)\nsup = sup.map(lambda value: print(value))\nassert sup.get() == none  # prints: 42\nassert sup.get() == none  # prints: 42\n\nsupplier.void().get()  # raises supplier.empty\n```\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "nr-stream",
+  "package_url": "https://pypi.org/project/nr-stream/",
+  "project_url": "https://pypi.org/project/nr-stream/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/nr-stream/1.1.5/",
+  "requires_dist": [],
+  "requires_python": ">=3.6,<4.0",
+  "summary": "",
+  "version": "1.1.5",
+  "releases": [],
+  "developers": [
+    "niklas_rosenstein",
+    "rosensteinniklas@gmail.com"
+  ],
+  "kwds": "streamline stream lambda python optional",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_nr_stream",
+  "homepage": "",
+  "release_count": 19,
+  "dependency_ids": []
+}

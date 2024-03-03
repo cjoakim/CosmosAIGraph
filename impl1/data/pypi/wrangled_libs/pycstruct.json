@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: software development :: build tools"
+  ],
+  "description": "# pycstruct\r\n\r\n[![appveyor](https://ci.appveyor.com/api/projects/status/github/midstar/pycstruct?svg=true)](https://ci.appveyor.com/api/projects/status/github/midstar/pycstruct)\r\n[![coverage status](https://coveralls.io/repos/github/midstar/pycstruct/badge.svg?branch=head)](https://coveralls.io/github/midstar/pycstruct?branch=head)\r\n[![documentation](https://readthedocs.org/projects/pycstruct/badge/?version=latest)](https://pycstruct.readthedocs.io/en/latest/?badge=latest)\r\n\r\npycstruct is a python library for converting binary data to and from ordinary\r\npython dictionaries or specific instance objects.\r\n\r\ndata is defined similar to what is done in c language structs, unions,\r\nbitfields and enums.\r\n\r\ntypical usage of this library is read/write binary files or binary data\r\ntransmitted over a network.\r\n\r\nfollowing complex c types are supported:\r\n\r\n- structs\r\n- unions\r\n- bitfields\r\n- enums\r\n\r\nthese types may consist of any traditional data types (integer, unsigned integer, \r\nboolean and float) between 1 to 8 bytes large, arrays (lists), and strings (ascii/utf-8).\r\n\r\nstructs, unions, bitfields and enums can be embedded inside other structs/unions\r\nin any level. \r\n\r\nindividual elements can be stored / read in any byte order and alignment.\r\n\r\npycstruct also supports parsing of existing c language source code to\r\nautomatically generate the pycstruct definitions / instances.\r\n\r\ncheckout the full documentation [here](https://pycstruct.readthedocs.io/en/latest/).\r\n\r\n## installation\r\n\r\nsimply install the package using pip:\r\n\r\n    python3 -m pip install pycstruct\r\n\r\n## example\r\n\r\nfollowing c has a structure (person) with a set of elements\r\nthat are written to a binary file.\r\n\r\n```c\r\n#include <stdio.h>\r\n#include <stdbool.h>\r\n#include <string.h>\r\n\r\n#pragma pack(1) // to secure no padding is added in struct\r\n\r\nstruct person \r\n{ \r\n    char name[50];\r\n    unsigned int age;\r\n    float height;\r\n    bool is_male;\r\n    unsigned int nbr_of_children;\r\n    unsigned int child_ages[10];\r\n};\r\n\r\n\r\nvoid main(void) {\r\n    struct person p;\r\n    memset(&p, 0, sizeof(struct person));\r\n\r\n    strcpy(p.name, \"foo bar\");\r\n    p.age = 42;\r\n    p.height = 1.75; // m\r\n    p.is_male = true;\r\n    p.nbr_of_children = 2;\r\n    p.child_ages[0] = 7;\r\n    p.child_ages[1] = 9;\r\n\r\n    file *f = fopen(\"simple_example.dat\", \"w\");\r\n    fwrite(&p, sizeof(struct person), 1, f);\r\n    fclose(f);\r\n}\r\n```\r\n\r\nto read the binary file using pycstruct following code \r\nrequired.\r\n\r\n```python\r\nimport pycstruct\r\n\r\nperson = pycstruct.structdef()\r\nperson.add('utf-8', 'name', length=50)\r\nperson.add('uint32', 'age')\r\nperson.add('float32','height')\r\nperson.add('bool8', 'is_male')\r\nperson.add('uint32', 'nbr_of_children')\r\nperson.add('uint32', 'child_ages', length=10)\r\n\r\nwith open('simple_example.dat', 'rb') as f:\r\n    inbytes = f.read()\r\n\r\n# dictionary representation\r\nresult = person.deserialize(inbytes)\r\nprint('dictionary object:')\r\nprint(str(result))\r\n\r\n# alternative, instance representation\r\ninstance = person.instance(inbytes)\r\nprint('\\ninstance object:')\r\nprint(f'name: {instance.name}')\r\nprint(f'nbr_of_children: {instance.nbr_of_children}')\r\nprint(f'child_ages[1]: {instance.child_ages[1]}')\r\n```\r\n\r\nthe produced output will be::\r\n\r\n    {'name': 'foo bar', 'is_male': true, 'nbr_of_children': 2, \r\n     'age': 42, 'child_ages': [7, 9, 0, 0, 0, 0, 0, 0, 0, 0], \r\n     'height': 1.75}\r\n\r\n    instance object:\r\n    name: foo bar\r\n    nbr_of_children: 2\r\n    child_ages[1]: 9\r\n\r\nto write a binary file from python using the same structure\r\nusing pycstruct following code is required.\r\n\r\n```python\r\nimport pycstruct\r\n\r\nperson = pycstruct.structdef()\r\nperson.add('utf-8', 'name', length=50)\r\nperson.add('uint32', 'age')\r\nperson.add('float32','height')\r\nperson.add('bool8', 'is_male')\r\nperson.add('uint32', 'nbr_of_children')\r\nperson.add('uint32', 'child_ages', length=10)\r\n\r\n# dictionary representation\r\nmrgreen = {}\r\nmrgreen['name'] = \"mr green\"\r\nmrgreen['age'] = 50\r\nmrgreen['height'] = 1.93\r\nmrgreen['is_male'] = true\r\nmrgreen['nbr_of_children'] = 3\r\nmrgreen['child_ages'] = [13,24,12]\r\nbuffer = person.serialize(mrgreen)\r\n\r\n# alternative, instance representation\r\nmrgreen = person.instance()\r\nmrgreen.name = \"mr green\"\r\nmrgreen.age = 50\r\nmrgreen.height = 1.93\r\nmrgreen.is_male = true\r\nmrgreen.nbr_of_children = 3\r\nmrgreen.child_ages[0] = 13\r\nmrgreen.child_ages[1] = 24\r\nmrgreen.child_ages[2] = 12\r\nbuffer = bytes(mrgreen)\r\n\r\n# write to file\r\nf = open('simple_example_mr_green.dat','wb')\r\nf.write(buffer)\r\nf.close()\r\n```\r\n\r\n## parsing source files\r\n\r\npycstruct also supports parsing c source code defined in external\r\nfiles or defined in strings.\r\n\r\nassume the c code listed in the first example is named\r\nsimple_example.c. then you could parse the source\r\ncode instead of manually creating the definitions:\r\n\r\n```python\r\nimport pycstruct\r\n\r\ndefinitions = pycstruct.parse_file('simple_example.c')\r\n\r\nwith open('simple_example.dat', 'rb') as f:\r\n    inbytes = f.read()\r\n\r\n# dictionary representation\r\nresult = definitions['person'].deserialize(inbytes)\r\nprint(str(result))\r\n\r\n# alternative, instance representation\r\ninstance = definitions['person'].instance(inbytes)\r\n```\r\n\r\nthe produced output will be the same as in the first example (the dictionary).\r\n\r\n## full documentation\r\n\r\ncheckout the full documentation [here](https://pycstruct.readthedocs.io/en/latest/).\r\n\r\n## author and license\r\n\r\nthis application is written by joel midstj\u00e3\u00a4rna and is licensed under the mit license.\r\n",
+  "docs_url": null,
+  "keywords": "struct,enum,bitfield,binary,protocol,dict,dictionary",
+  "license": "mit",
+  "name": "pycstruct",
+  "package_url": "https://pypi.org/project/pycstruct/",
+  "project_url": "https://pypi.org/project/pycstruct/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/midstar/pycstruct/issues",
+    "Documentation": "https://pycstruct.readthedocs.io/en/latest/",
+    "Homepage": "http://github.com/midstar/pycstruct",
+    "Source Code": "https://github.com/midstar/pycstruct"
+  },
+  "release_url": "https://pypi.org/project/pycstruct/0.12.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "binary data handling in python using dictionaries",
+  "version": "0.12.1",
+  "releases": [],
+  "developers": [
+    "joel.midstjarna@gmail.com"
+  ],
+  "kwds": "pycstruct python3 structdef struct python",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pycstruct",
+  "homepage": "http://github.com/midstar/pycstruct",
+  "release_count": 22,
+  "dependency_ids": []
+}

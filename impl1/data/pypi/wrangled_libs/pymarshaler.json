@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# pymarshaler - marshal and unmarshal python objects\n\n## disclaimer\nthis tool is in no way production ready\n\n## about\npymarshaler allows you to marshal and unmarshal any python object directly to and from a json formatted string. \n\npymarshaler takes advantage of python's new [typing support](https://docs.python.org/3/library/typing.html). by reading class init param types, we are able to walk down nested json structures and assign appropriate values.\n\n## basic usage\n\n### declare a class with typing information \n\nnote, we can use regular old classes as long as their init methods are annotated properly, but it's preferable to use dataclasses whenever possible\n\n```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass test:\n    \n    name: str\n```\n\nthat's it! we can now marshal, and more importantly, unmarshal this object to and from json.\n\n```python\nfrom pymarshaler.marshal import marshal\nimport json\n\ntest_instance = test('foo')\nblob = marshal.marshal(test_instance)\nprint(blob.decode())\n>>> '{name: foo}'\n\nmarshal = marshal()\nresult = marshal.unmarshal(test, json.loads(blob))\nprint(result.name)\n>>> 'foo'\n```\n\nwe also use `marshal.unmarshal_str(cls, str)` if we want to unmarshal directly from the blob source.\n\nthis is a pretty trivial example, lets add in a nested class\n\n```python\nfrom dataclasses import dataclass\n\n@dataclass\nclass storestest:\n    \n    test: test\n\n    \nstores_test = storestest(test('foo'))\nblob = marshal.marshal(stores_test)\nprint(blob)\n>>> '{test: {name: foo}}'\n\nresult = marshal.unmarshal(storestest, json.loads(blob))\nprint(result.test.name)\n>>> 'foo'\n```\n\nas you can see, adding a nested class is as simple as as adding a basic structure.\n\npymarshaler will fail when encountering an unknown field by default, however you can configure it to ignore unknown fields\n\n```python\nfrom pymarshaler.marshal import marshal \nfrom pymarshaler.arg_delegates import argbuilderfactory\n\nmarshal = marshal()\nblob = {'test': 'foo', 'unused_field': 'blah'}\nresult = marshal.unmarshal(test, blob)\n>>> 'found unknown field (unused_field: blah). if you would like to skip unknown fields create a marshal object who can skip ignore_unknown_fields'\n\nmarhsal = marshal(ignore_unknown_fields=true)\nresult = marshal.unmarshal(test, blob)\nprint(result.name)\n>>> 'foo'\n```\n\n## advanced usage\n\nwe can use pymarshaler to handle containers as well. again we take advantage of python's robust typing system\n\n```python\nfrom dataclasses import dataclass\nfrom pymarshaler.marshal import marshal\nfrom typing import set\nimport json\n\n@dataclass\nclass testcontainer:\n \n    container: set[str]\n    \n\nmarshal = marshal()\ncontainer_instance = testcontainer({'foo', 'bar'})        \nblob = marshal.marshal(container_instance)\nprint(blob.decode())\n>>> '{container: [\"foo\", \"bar\"]}'\n\nresult = marshal.unmarshal(testcontainer,json.loads(blob))\nprint(result.container)\n>>> '{foo, bar}'\n```\n\npymarshaler can also handle containers that store user defined types. the `set[str]` could easily have been `set[userdefinedtype]`\n\npymarshaler also supports default values, and will use any default values supplied in the `__init__` if those values aren't present in the json data.\n\n```python\nfrom dataclasses import dataclass\nfrom pymarshaler.marshal import marshal\n\n@dataclass\nclass testwithdefault:\n    \n    name: str = 'foo'\n\n\nmarshal = marshal()\nresult = marshal.unmarshal(testwithdefault, {})\nprint(result.name)\n>>> 'foo'\n```\npymarshaler will raise an error if any non-default attributes aren't given\n\npymarshaler also supports a validate method on creation of the python object. this method will be called before being returned to the user.\n\n```python\nfrom dataclasses import dataclass\nfrom pymarshaler.marshal import marshal\n\n\n@dataclass\nclass testwithvalidate:\n    \n    name: str\n\n    def validate(self):\n        print(f'my name is {self.name}!')\n\n\nmarshal = marshal()\nresult = marshal.unmarshal(testwithvalidate, {'name': 'foo'})\n>>> 'my name is foo!'\n```\n\nthis can be used to validate the python object right at construction, potentially raising an error if any of the fields have invalid values\n\nit's also possible to register your own custom unmarshaler for specific user defined classes by passing in a function pointer that will \"resolve\" the raw data\n\n```python\nfrom dataclasses import dataclass\n\nfrom pymarshaler.marshal import marshal\n\n\n@dataclass\nclass classwithmessage:\n    message: str\n\n\nclass classwithcustomdelegate:\n\n    def __init__(self, message_obj: classwithmessage):\n        self.message_obj = message_obj\n\n\ndef custom_delegate(data):\n    return classwithcustomdelegate(classwithmessage(data['message']))\n\n\nmarshal = marshal()\nmarshal.register_delegate(classwithcustomdelegate, custom_delegate)\nresult = marshal.unmarshal(classwithcustomdelegate, {'message': 'hello from the custom delegate!'})\nprint(result.message_obj)\n>>> 'hello from the custom delegate!'\n```\n\nthe result from any delegate should be the initialized resulting class instance\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pymarshaler",
+  "package_url": "https://pypi.org/project/pymarshaler/",
+  "project_url": "https://pypi.org/project/pymarshaler/",
+  "project_urls": {
+    "Homepage": "https://github.com/hgromer/pymarshaler"
+  },
+  "release_url": "https://pypi.org/project/pymarshaler/0.4.2/",
+  "requires_dist": [
+    "python-dateutil",
+    "setuptools",
+    "orjson"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "package to marshal and unmarshal python objects",
+  "version": "0.4.2",
+  "releases": [],
+  "developers": [
+    "hernan_romer",
+    "nanug33@gmail.com"
+  ],
+  "kwds": "pymarshaler marshal python json test_instance",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pymarshaler",
+  "homepage": "https://github.com/hgromer/pymarshaler",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_orjson",
+    "pypi_python_dateutil",
+    "pypi_setuptools"
+  ]
+}

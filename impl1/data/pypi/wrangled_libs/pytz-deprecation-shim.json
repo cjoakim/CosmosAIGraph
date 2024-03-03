@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "pytz_deprecation_shim: shims to help you safely remove pytz\n===========================================================\n\n``pytz`` has served the python community well for many years, but it is no\nlonger the best option for providing time zones. ``pytz`` has a non-standard\ninterface that is `very easy to misuse\n<https://blog.ganssle.io/articles/2018/03/pytz-fastest-footgun.html>`_; this\ninterface was necessary when ``pytz`` was created, because ``datetime`` had no\nway to represent ambiguous datetimes, but this was solved in in python 3.6,\nwhich added a ``fold`` attribute to datetimes in `pep 495\n<https://www.python.org/dev/peps/pep-0495/>`_. with the addition of the\n``zoneinfo`` module in python 3.9 (`pep 615\n<https://www.python.org/dev/peps/pep-0615/>`_), there has never been a better\ntime to migrate away from ``pytz``.\n\nhowever, since ``pytz`` time zones are used very differently from a standard\n``tzinfo``, and many libraries have built ``pytz`` zones into their standard\ntime zone interface (and thus may have users relying on the existence of the\n``localize`` and ``normalize`` methods); this library provides shim classes\nthat are compatible with both pep 495 and ``pytz``'s interface, to make it\neasier for libraries to deprecate ``pytz``.\n\nusage\n=====\n\nthis library is intended for *temporary usage only*, and should allow you to\ndrop your dependency on ``pytz`` while also giving your users notice that\neventually you will remove support for the ``pytz``-specific interface.\n\nwithin your own code, use ``pytz_deprecation_shim.timezone`` shims as if they\nwere ``zoneinfo`` or ``dateutil.tz`` zones \u2014 do not use ``localize`` or\n``normalize``:\n\n.. code-block:: pycon\n\n    >>> import pytz_deprecation_shim as pds\n    >>> from datetime import datetime, timedelta\n    >>> la = pds.timezone(\"america/los_angeles\")\n\n    >>> dt = datetime(2020, 10, 31, 12, tzinfo=la)\n    >>> print(dt)\n    2020-10-31 12:00:00-07:00\n\n    >>> dt.tzname()\n    'pdt'\n\n\ndatetime addition will work `like normal python datetime arithmetic\n<https://blog.ganssle.io/articles/2018/02/aware-datetime-arithmetic.html>`_,\neven across a daylight saving time transition:\n\n.. code-block:: pycon\n\n    >>> dt_add = dt + timedelta(days=1)\n\n    >>> print(dt_add)\n    2020-11-01 12:00:00-08:00\n\n    >>> dt_add.tzname()\n    'pst'\n\nhowever, if you have exposed a time zone to end users who are using ``localize``\nand/or ``normalize`` or any other ``pytz``-specific features (or if you've\nfailed to convert some of your own code all the way), those users will see\na warning (rather than an exception) when they use those features:\n\n.. code-block:: pycon\n\n    >>> dt = la.localize(datetime(2020, 10, 31, 12))\n    <stdin>:1: pytzusagewarning: the localize method is no longer necessary, as\n    this time zone supports the fold attribute (pep 495). for more details on\n    migrating to a pep 495-compliant implementation, see\n    https://pytz-deprecation-shim.readthedocs.io/en/latest/migration.html\n\n     >>> print(dt)\n    2020-10-31 12:00:00-07:00\n    >>> dt.tzname()\n    'pdt'\n\n    >>> dt_add = la.normalize(dt + timedelta(days=1))\n    <stdin>:1: pytzusagewarning: the normalize method is no longer necessary,\n    as this time zone supports the fold attribute (pep 495). for more details\n    on migrating to a pep 495-compliant implementation, see\n    https://pytz-deprecation-shim.readthedocs.io/en/latest/migration.html\n\n    >>> print(dt_add)\n    2020-11-01 12:00:00-08:00\n    >>> dt_add.tzname()\n    'pst'\n\nfor iana time zones, calling ``str()`` on the shim zones (and indeed on ``pytz``\nand ``zoneinfo`` zones as well) returns the iana key, so end users who would\nlike to actively migrate to a ``zoneinfo`` (or ``backports.zoneinfo``) can do\nso:\n\n.. code-block:: pycon\n\n    >>> from zoneinfo import zoneinfo\n    >>> la = pds.timezone(\"america/los_angeles\")\n    >>> la_zi = zoneinfo(str(la))\n    >>> print(la_zi)\n    zoneinfo.zoneinfo(key='america/los_angeles')\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "pytz-deprecation-shim",
+  "package_url": "https://pypi.org/project/pytz-deprecation-shim/",
+  "project_url": "https://pypi.org/project/pytz-deprecation-shim/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/pganssle/pytz-deprecation-shim/issues",
+    "Documentation": "https://pytz-deprecation-shim.readthedocs.io",
+    "Homepage": "https://github.com/pganssle/pytz-deprecation-shim",
+    "Source": "https://github.com/pganssle/pytz-deprecation-shim"
+  },
+  "release_url": "https://pypi.org/project/pytz-deprecation-shim/0.1.0.post0/",
+  "requires_dist": [
+    "python-dateutil ; python_version < \"3.6\"",
+    "tzdata ; python_version >= \"3.6\"",
+    "backports.zoneinfo ; python_version >= \"3.6\" and python_version < \"3.9\""
+  ],
+  "requires_python": "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7",
+  "summary": "shims to make deprecation of pytz easier",
+  "version": "0.1.0.post0",
+  "releases": [],
+  "developers": [
+    "paul@ganssle.io",
+    "paul_ganssle"
+  ],
+  "kwds": "pytz_deprecation_shim pytz pycon timezone pytzusagewarning",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_pytz_deprecation_shim",
+  "homepage": "https://github.com/pganssle/pytz-deprecation-shim",
+  "release_count": 2,
+  "dependency_ids": [
+    "pypi_backports.zoneinfo",
+    "pypi_python_dateutil",
+    "pypi_tzdata"
+  ]
+}

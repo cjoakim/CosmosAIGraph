@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: software development :: libraries"
+  ],
+  "description": "tmdbv3api\n=========\n\n.. image:: https://travis-ci.org/anthonybloomer/tmdbv3api.svg?branch=master\n    :target: https://travis-ci.org/anthonybloomer/tmdbv3api\n    :alt: build status\n\n.. image:: https://codecov.io/gh/anthonybloomer/tmdbv3api/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/anthonybloomer/tmdbv3api\n    :alt: codecov\n\n.. image:: https://img.shields.io/github/v/release/anthonybloomer/tmdbv3api\n    :target: https://github.com/anthonybloomer/tmdbv3api/releases\n    :alt: github release (latest by date)\n\n.. image:: https://img.shields.io/pypi/v/tmdbv3api\n    :target: https://pypi.org/project/tmdbv3api/\n    :alt: pypi\n\n.. image:: https://img.shields.io/pypi/dm/tmdbv3api.svg\n    :target: https://pypi.org/project/tmdbv3api/\n    :alt: downloads\n\n.. image:: https://img.shields.io/github/commits-since/anthonybloomer/tmdbv3api/latest\n    :target: https://github.com/anthonybloomer/tmdbv3api/commits/master\n    :alt: github commits since latest release (by date) for a branch\n\na lightweight python library for the movie database (tmdb) api. the tmdb api is a resource for developers to integrate movie, tv show and cast data along with posters or movie fan art. themoviedb.org is a free and community edited database.\n\nregister an account: https://www.themoviedb.org/account/signup\n\ncheck out the api documentation: https://developers.themoviedb.org/3/getting-started/introduction\n\ninstall\n~~~~~~~\n\ntmdbv3api is available on the python package index (pypi) at\nhttps://pypi.python.org/pypi/tmdbv3api\n\nyou can install tmdbv3api using pip.\n\n::\n\n    $ pip install tmdbv3api\n\nusage\n~~~~~\n\nthe first step is to initialize a tmdb object and set your api key.\n\n.. code:: python\n\n    from tmdbv3api import tmdb\n    tmdb = tmdb()\n    tmdb.api_key = 'your_api_key'\n\nalternatively, you can export your api key as an environment variable.\n\n.. code:: bash\n\n    $ export tmdb_api_key='your_api_key'\n\nother configuration settings include defining your ``language`` and enabling ``debug`` mode, for example:\n\n.. code:: python\n\n    tmdb.language = 'en'\n    tmdb.debug = true\n\nthen to communicate with tmdb, create an instance of one of the objects\nand call that instances methods. for example, to retrieve movie\nrecommendations for a given movie id:\n\n.. code:: python\n\n    from tmdbv3api import movie\n\n    movie = movie()\n\n    recommendations = movie.recommendations(movie_id=111)\n\n    for recommendation in recommendations:\n        print(recommendation.title)\n        print(recommendation.overview)\n\nexamples\n~~~~~~~~\n\nget the list of popular movies on the movie database. this list\nrefreshes every day.\n\n.. code:: python\n\n\n    movie = movie()\n    popular = movie.popular()\n\n    for p in popular:\n        print(p.id)\n        print(p.title)\n        print(p.overview)\n        print(p.poster_path)\n\n\nget the primary information about a movie.\n\n.. code:: python\n\n    m = movie.details(343611)\n\n    print(m.title)\n    print(m.overview)\n    print(m.popularity)\n\nsearch for movies by title.\n\n.. code:: python\n\n    search = movie.search('mad max')\n\n    for res in search:\n        print(res.id)\n        print(res.title)\n        print(res.overview)\n        print(res.poster_path)\n        print(res.vote_average)\n\nget the similar movies for a specific movie id.\n\n.. code:: python\n\n    similar = movie.similar(777)\n\n    for result in similar:\n        print(result.title)\n        print(result.overview)\n\nsearch for tv shows by title.\n\n.. code:: python\n\n    tv = tv()\n    show = tv.search('breaking bad')\n\n    for result in show:\n        print(result.name)\n        print(result.overview)\n\nget the similar tv shows for a specific tv id.\n\n.. code:: python\n\n    similar = tv.similar(1396)\n\n    for show in similar:\n        print(show.name)\n        print(show.overview)\n\nget the details of tv season for a specific tv id.\n\n.. code:: python\n\n    season = season()\n    show_season = season.details(1396, 1)\n    print(show_season.air_date)\n    print(len(show_season.episodes))\n\nget the general person information for a specific id.\n\n.. code:: python\n\n    person = person()\n    p = person.details(12)\n\n    print(p.name)\n    print(p.biography)\n\ndiscover movies by different types of data like average rating, number\nof votes, genres and certifications.\n\n.. code:: python\n\n\n    # what movies are in theatres?\n\n    discover = discover()\n    movie = discover.discover_movies({\n        'primary_release_date.gte': '2017-01-20',\n        'primary_release_date.lte': '2017-01-25'\n    })\n\n    # what are the most popular movies?\n\n    movie = discover.discover_movies({\n        'sort_by': 'popularity.desc'\n    })\n\n    # what are the most popular kids movies?\n\n    movie = discover.discover_movies({\n        'certification_country': 'us',\n        'certification.lte': 'g',\n        'sort_by': 'popularity.desc'\n    })\n\ndiscover tv shows by different types of data like average rating, number\nof votes, genres, the network they aired on and air dates.\n\n.. code:: python\n\n    # what are the most popular tv shows?\n\n    show = discover.discover_tv_shows({\n        'sort_by': 'popularity.desc'\n    })\n\n    # what are the best dramas?\n\n    show = discover.discover_tv_shows({\n        'with_genres': 18,\n        'sort_by': 'vote_average.desc',\n        'vote_count.gte': 10\n    })\n\nlogin to your account and add some movie recommendations to your tmdb watchlist.\n\n.. code:: python\n\n    from tmdbv3api import account\n    from tmdbv3api import authentication\n    from tmdbv3api import tmdb, movie\n\n    username = \"your_username\"\n    password = \"your_password\"\n\n    tmdb = tmdb()\n    tmdb.api_key = \"your_api_key\"\n\n    auth = authentication(username=username, password=password)\n\n    account = account()\n    details = account.details()\n\n    print(\"you are logged in as %s. your account id is %s.\" % (details.username, details.id))\n    print(\"this session expires at: %s\" % auth.expires_at)\n\n    movie = movie()\n\n    s = movie.search(\"gangs of new york\")\n    first_result = s[0]\n    recommendations = movie.recommendations(first_result.id)\n\n    for recommendation in recommendations:\n        print(\"adding %s (%s) to watchlist.\" % (recommendation.title, recommendation.release_date))\n        account.add_to_watchlist(details.id, recommendation.id, \"movie\")\n\n\nrunning tests\n~~~~~~~~~~~~~\n\nyou can run the tests via the command line. you must export your tmdb api key and session id  as an environment variables.\n\nyour session id can be obtained by running ``authentication(username, password).session_id``\n\nmac\n++++++++++++++++++++++++\n\n.. code:: bash\n\n    $ export tmdb_api_key='your_api_key'\n    $ export tmdb_session_id='your_session_id'\n\nwindows (command prompt)\n++++++++++++++++++++++++\n\n.. code:: bash\n\n    $ setx tmdb_api_key \"your_api_key\"\n    $ setx tmdb_session_id \"your_session_id\"\n\nwindows (powershell)\n++++++++++++++++++++++++\n\n.. code:: bash\n\n    $ $env:tmdb_api_key=\"your_api_key\"\n    $ $env:tmdb_session_id=\"your_session_id\"\n\nafter you've set up your environmental variables then run:\n\n.. code:: bash\n\n    $ python -m unittest discover tests/\n",
+  "docs_url": null,
+  "keywords": "movie,tvmovie database,tmdb,wrapper,database,themoviedb,moviedb,api",
+  "license": "mit",
+  "name": "tmdbv3api",
+  "package_url": "https://pypi.org/project/tmdbv3api/",
+  "project_url": "https://pypi.org/project/tmdbv3api/",
+  "project_urls": {
+    "Homepage": "https://github.com/AnthonyBloomer/tmdbv3api"
+  },
+  "release_url": "https://pypi.org/project/tmdbv3api/1.9.0/",
+  "requires_dist": [
+    "requests"
+  ],
+  "requires_python": "",
+  "summary": "a lightweight python library for the movie database (tmdb) api.",
+  "version": "1.9.0",
+  "releases": [],
+  "developers": [
+    "ant0@protonmail.ch",
+    "anthony_bloomer"
+  ],
+  "kwds": "discover_movies moviedb tmdbv3api releases latest",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_tmdbv3api",
+  "homepage": "https://github.com/anthonybloomer/tmdbv3api",
+  "release_count": 35,
+  "dependency_ids": [
+    "pypi_requests"
+  ]
+}

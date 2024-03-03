@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: utilities"
+  ],
+  "description": "fancycompleter: colorful python tab completion\n==============================================\n\nwhat is is?\n-----------\n\n`fancycompleter` is a module to improve your experience in python by\nadding tab completion to the interactive prompt. it is an extension of\nthe stdlib\\'s\n[rlcompleter](http://docs.python.org/library/rlcompleter.html) module.\n\nits best feature is that the completions are displayed in different\ncolors, depending on their type:\n\n![image](http://bitbucket.org/antocuni/fancycompleter/raw/5bf506e05ce7/screenshot.png)\n\nin the image above, strings are shown in green, functions in blue,\nintegers and boolean in yellows, `none` in gray, types and classes in\nfuchsia. everything else is plain white.\n\n`fancycompleter` is compatible with python 3. however, by default colors\ndon\\'t work on python 3, see the section [how do i get\ncolors?](#how-do-i-get-colors) for details.\n\nother features\n--------------\n\n-   to save space on screen, `fancycompleter` only shows the characters\n    \"after the dot\". by contrast, in the example above `rlcompleter`\n    shows everything prepended by `\"sys.\"`.\n-   if we press `<tab>` at the beginning of the line, a real tab\n    character is inserted, instead of trying to complete. this is useful\n    when typing function bodies or multi-line statements at the prompt.\n-   unlike `rlcompleter`, `fancycompleter` **does** complete expressions\n    containing dictionary or list indexing. for example,\n    `mydict['foo'].<tab>` works (assuming that `mydict` is a dictionary\n    and that it contains the key `'foo'`, of course :-)).\n-   starting from python 2.6, if the completed name is a callable,\n    `rlcompleter` automatically adds an open parenthesis `(`. this is\n    annoying in case we do not want to really call it, so\n    `fancycompleter` disable this behaviour.\n\ninstallation\n------------\n\nfirst, install the module with `pip` or `easy_install`:\n\n    $ pip install fancycompleter\n\nthen, at the python interactive prompt:\n\n    >>> import fancycompleter\n    >>> fancycompleter.interact(persist_history=true)\n    >>>\n\nif you want to enable `fancycompleter` automatically at startup, you can\nadd those two lines at the end of your\n[pythonstartup](http://docs.python.org/using/cmdline.html#envvar-pythonstartup)\nscript.\n\nif you do **not** have a `pythonstartup` script, the\nfollowing command will create one for you in `~/python_startup.py`:\n\n    $ python -m fancycompleter install\n\non windows, `install` automatically sets the `pythonstartup` environment\nvariable. on other systems, you need to add the proper command in\n`~/.bashrc` or equivalent.\n\n**note**: depending on your particular system, `interact` might need to\nplay dirty tricks in order to display colors, although everything should\n\"just work\". in particular, the call to `interact` should be the last\nline in the startup file, else the next lines might not be executed. see\nsection [what is really going on?](#what-is-really-going-on) for\ndetails.\n\nhow do i get colors?\n--------------------\n\nif you are using **pypy**, you can stop reading now, as `fancycompleter`\nwill work out of the box.\n\nif you are using **cpython on linux/osx** and you installed\n`fancycompleter` with `pip` or `easy_install`, they automatically\ninstalled `pyrepl` as a requirement, and you should also get colors out\nof the box. if for some reason you don\\'t want to use `pyrepl`, you\nshould keep on reading.\n\nby default, in cpython line input and tab completion are handled by [gnu\nreadline](http://tiswww.case.edu/php/chet/readline/rltop.html) (at least\non linux). however, `readline` explicitly strips escape sequences from\nthe completions, so completions with colors are not displayed correctly.\n\nthere are two ways to solve it:\n\n> -   (suggested) don\\'t use `readline` at all and rely on\n>     [pyrepl](http://codespeak.net/pyrepl/)\n> -   use a patched version of `readline` to allow colors\n\nby default, `fancycompleter` tries to use `pyrepl` if it finds it. to\nget colors you need a recent version, \\>= 0.8.2.\n\nstarting from version 0.6.1, `fancycompleter` works also on **windows**,\nrelying on [pyreadline](https://pypi.python.org/pypi/pyreadline). at the\nmoment of writing, the latest version of `pyreadline` is 2.1, which does\n**not** support colored completions; here is the [pull\nrequest](https://github.com/pyreadline/pyreadline/pull/48) which adds\nsupport for them. to enable colors, you can install `pyreadline` from\n[this fork](https://github.com/antocuni/pyreadline) using the following\ncommand:\n\n    pip install --upgrade https://github.com/antocuni/pyreadline/tarball/master\n\nif you are using **python 3**, `pyrepl` does not work, and thus is not\ninstalled. your only option to get colors is to use a patched\n`readline`, as explained below.\n\ni really want to use readline\n-----------------------------\n\nthis method is not really recommended, but if you really want, you can\nuse use a patched readline: you can find the patches in the `misc/`\ndirectory:\n\n> -   for\n>     [readline-5.2](http://bitbucket.org/antocuni/fancycompleter/src/tip/misc/readline-escape-5.2.patch)\n> -   for\n>     [readline-6.0](http://bitbucket.org/antocuni/fancycompleter/src/tip/misc/readline-escape-6.0.patch)\n\nyou can also try one of the following precompiled versions, which has\nbeen tested on ubuntu 10.10: remember to put them in a place where the\nlinker can find them, e.g. by setting `ld_library_path`:\n\n> -   readline-6.0 for\n>     [32-bit](http://bitbucket.org/antocuni/fancycompleter/src/tip/misc/libreadline.so.6-32bit)\n> -   readline-6.0 for\n>     [64-bit](http://bitbucket.org/antocuni/fancycompleter/src/tip/misc/libreadline.so.6-64bit)\n\nonce it is installed, you should double-check that you can find it, e.g.\nby running `ldd` on python\\'s `readline.so` module:\n\n    $ ldd /usr/lib/python2.6/lib-dynload/readline.so | grep readline\n            libreadline.so.6 => /home/antocuni/local/32/lib/libreadline.so.6 (0x00ee7000)\n\nfinally, you need to force `fancycompleter` to use colors, since by\ndefault, it uses colors only with `pyrepl`: you can do it by placing a\ncustom config file in `~/.fancycompleterrc.py`. an example config file\nis\n[here](http://bitbucket.org/antocuni/fancycompleter/src/tip/misc/fancycompleterrc.py)\n(remind that you need to put a dot in front of the filename!).\n\ncustomization\n-------------\n\nto customize the configuration of fancycompleter, you need to put a file\nnamed `.fancycompleterrc.py` in your home directory. the file must\ncontain a class named `config` inheriting from `defaultconfig` and\noverridding the desired values.\n\nwhat is really going on?\n------------------------\n\nthe default and preferred way to get colors is to use `pyrepl`. however,\nthere is no way to tell cpython to use `pyrepl` instead of the built-in\nreadline at the interactive prompt: this means that even if we install\nour completer inside pyrepl\\'s readline library, the interactive prompt\nwon\\'t see it.\n\nthe issue is simply solved by avoiding to use the built-in prompt:\ninstead, we use a pure python replacement based on\n[code.interactiveconsole](http://docs.python.org/library/code.html#code.interactiveconsole).\nthis brings us also some niceties, such as the ability to do multi-line\nediting of the history.\n\nthe console is automatically run by `fancycompleter.interact()`,\nfollowed by `sys.exit()`: this way, if we execute it from the script in\n`pythonstartup`, the interpreter exits as soon as we finish the use the\nprompt (e.g. by pressing ctrl-d, or by calling `quit()`). this way, we\navoid to enter the built-in prompt and we get a behaviour which closely\nresembles the default one. this is why in this configuration lines after\n`fancycompleter.interact()` might not be run.\n\nnote that if we are using `readline` instead of `pyrepl`, the trick is\nnot needed and thus `interact()` will simply returns, letting the\nbuilt-in prompt to show up. the same is true if we are running pypy, as\nits built-in prompt is based on pyrepl anyway.\n\n",
+  "docs_url": null,
+  "keywords": "rlcompleter prompt tab color completion",
+  "license": "bsd",
+  "name": "fancycompleter",
+  "package_url": "https://pypi.org/project/fancycompleter/",
+  "project_url": "https://pypi.org/project/fancycompleter/",
+  "project_urls": {
+    "Homepage": "https://github.com/pdbpp/fancycompleter"
+  },
+  "release_url": "https://pypi.org/project/fancycompleter/0.9.1/",
+  "requires_dist": [
+    "pyrepl (>=0.8.2)",
+    "pyreadline ; platform_system == \"Windows\""
+  ],
+  "requires_python": "",
+  "summary": "colorful tab completion for python prompt",
+  "version": "0.9.1",
+  "releases": [],
+  "developers": [
+    "anto.cuni@gmail.com",
+    "antonio_cuni",
+    "daniel_hahler"
+  ],
+  "kwds": "fancycompleter fancycompleterrc prompt colors colorful",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_fancycompleter",
+  "homepage": "https://github.com/pdbpp/fancycompleter",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_pyreadline",
+    "pypi_pyrepl"
+  ]
+}

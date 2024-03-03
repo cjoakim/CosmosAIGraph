@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "============================\natlassian jwt authentication\n============================\n\n.. image:: https://github.com/atlassian/asap-authentication-python/workflows/tests/badge.svg\n.. image:: https://img.shields.io/pypi/v/atlassian-jwt-auth.svg\n   :target: https://pypi.org/project/atlassian-jwt-auth\n\nthis package provides an implementation of the `service to service authentication <https://s2sauth.bitbucket.io/spec/>`_ specification.\n\n----\n\ninstallation\n============\n\nto install simply run\n\n.. code:: sh\n\n    $ pip install atlassian-jwt-auth\n\nusing this library\n==================\n\nto create a jwt for authentication\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code:: python\n\n    import atlassian_jwt_auth\n\n\n    signer = atlassian_jwt_auth.create_signer('issuer', 'issuer/key', private_key_pem)\n    a_jwt = signer.generate_jwt('audience')\n\n\nto create a jwt using a file on disk in the conventional location\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\neach time you call ``generate_jwt`` this will find the latest active key file (ends with ``.pem``) and use it to generate your jwt.\n\n.. code:: python\n\n    import atlassian_jwt_auth\n\n\n    signer = atlassian_jwt_auth.create_signer_from_file_private_key_repository('issuer', '/opt/jwtprivatekeys')\n    a_jwt = signer.generate_jwt('audience')\n\nto create a jwt using a data uri\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code:: python\n\n    import atlassian_jwt_auth\n    from atlassian_jwt_auth.key import datauriprivatekeyretriever\n\n    key_id, private_key_pem = datauriprivatekeyretriever('your base64 encoded data uri').load('issuer')\n    signer = atlassian_jwt_auth.create_signer('issuer', 'issuer/key', private_key_pem)\n    a_jwt = signer.generate_jwt('audience')\n\n\n\nto make an authenticated http request\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nif you use the ``atlassian_jwt_auth.contrib.requests.jwtauth`` provider, you\ncan automatically generate jwt tokens when using the ``requests`` library to\nperform authenticated http requests.\n\n.. code:: python\n\n    import atlassian_jwt_auth\n    from atlassian_jwt_auth.contrib.requests import jwtauth\n\n    signer = atlassian_jwt_auth.create_signer('issuer', 'issuer/key', private_key_pem)\n    response = requests.get(\n        'https://your-url',\n        auth=jwtauth(signer, 'audience')\n    )\n\none can also use ``atlassian_jwt_auth.contrib.aiohttp.jwtauth``\nto authenticate ``aiohttp`` requests:\n\n.. code:: python\n\n    import aiohttp\n\n    import atlassian_jwt_auth\n    from atlassian_jwt_auth.contrib.aiohttp import jwtauth\n\n    signer = atlassian_jwt_auth.create_signer('issuer', 'issuer/key', private_key_pem)\n\n    async with aiohttp.clientsession() as session:\n        async with session.get('https://your-url',\n                               auth=jwtauth(signer, 'audience')) as resp:\n            ...\n\n\nif you want to reuse tokens that have the same claim within their period of validity\nthen pass through `reuse_jwts=true` when calling  `create_signer`.\nfor example:\n\n\n.. code:: python\n\n    import atlassian_jwt_auth\n    from atlassian_jwt_auth.contrib.requests import jwtauth\n\n    signer = atlassian_jwt_auth.create_signer('issuer', 'issuer/key', private_key_pem, reuse_jwts=true)\n    response = requests.get(\n        'https://your-url',\n        auth=jwtauth(signer, 'audience')\n    )\n\n\n\nto verify a jwt\n~~~~~~~~~~~~~~~\n\n.. code:: python\n\n    import atlassian_jwt_auth\n\n    public_key_retriever = atlassian_jwt_auth.httpspublickeyretriever('https://example.com')\n    verifier = atlassian_jwt_auth.jwtauthverifier(public_key_retriever)\n    verified_claims = verifier.verify_jwt(a_jwt, 'audience')\n\nfor python versions starting from ``python 3.5``, note this library no longer supports python 3.5, ``atlassian_jwt_auth.contrib.aiohttp``\nprovides drop-in replacements for the components that\nperform http requests, so that they use ``aiohttp`` instead of ``requests``:\n\n.. code:: python\n\n    import atlassian_jwt_auth.contrib.aiohttp\n\n    public_key_retriever = atlassian_jwt_auth.contrib.aiohttp.httpspublickeyretriever('https://example.com')\n    verifier = atlassian_jwt_auth.contrib.aiohttp.jwtauthverifier(public_key_retriever)\n    verified_claims = await verifier.verify_jwt(a_jwt, 'audience')\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "atlassian-jwt-auth",
+  "package_url": "https://pypi.org/project/atlassian-jwt-auth/",
+  "project_url": "https://pypi.org/project/atlassian-jwt-auth/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/atlassian/asap-authentication-python/issues",
+    "Homepage": "https://github.com/atlassian/asap-authentication-python",
+    "Source Code": "https://github.com/atlassian/asap-authentication-python"
+  },
+  "release_url": "https://pypi.org/project/atlassian-jwt-auth/17.0.1/",
+  "requires_dist": [
+    "PyJWT (<3.0.0,>=2.4.0)",
+    "PyJWT[crypto] (<3.0.0,>=2.4.0)",
+    "requests (<3.0.0,>=2.8.1)",
+    "CacheControl (==0.12.14)"
+  ],
+  "requires_python": "",
+  "summary": "python implementation of the atlassian service to service authentication specification.",
+  "version": "17.0.1",
+  "releases": [],
+  "developers": [
+    "atlassian",
+    "dblack@atlassian.com"
+  ],
+  "kwds": "atlassian_jwt_auth jwtauthverifier jwtauth verify_jwt generate_jwt",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_atlassian_jwt_auth",
+  "homepage": "https://github.com/atlassian/asap-authentication-python",
+  "release_count": 74,
+  "dependency_ids": [
+    "pypi_cachecontrol",
+    "pypi_pyjwt",
+    "pypi_requests"
+  ]
+}

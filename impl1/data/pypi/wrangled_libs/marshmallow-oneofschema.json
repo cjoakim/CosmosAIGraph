@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "=======================\nmarshmallow-oneofschema\n=======================\n\n.. image:: https://dev.azure.com/sloria/sloria/_apis/build/status/marshmallow-code.marshmallow-oneofschema?branchname=master\n    :target: https://dev.azure.com/sloria/sloria/_build/latest?definitionid=13&branchname=master\n    :alt: build status\n\n.. image:: https://badgen.net/badge/marshmallow/3\n    :target: https://marshmallow.readthedocs.io/en/latest/upgrading.html\n    :alt: marshmallow 3 compatible\n\nan extension to marshmallow to support schema (de)multiplexing.\n\nmarshmallow is a fantastic library for serialization and deserialization of data.\nfor more on that project see its `github <https://github.com/marshmallow-code/marshmallow>`_\npage or its `documentation <http://marshmallow.readthedocs.org/en/latest/>`_.\n\nthis library adds a special kind of schema that actually multiplexes other schemas\nbased on object type. when serializing values, it uses get_obj_type() method\nto get object type name. then it uses ``type_schemas`` name-to-schema mapping\nto get schema for that particular object type, serializes object using that\nschema and adds an extra field with name of object type. deserialization is reverse.\n\ninstalling\n----------\n\n::\n\n    $ pip install marshmallow-oneofschema\n\nexample\n-------\n\nthe code below demonstrates how to set up a polymorphic schema. for the full context check out the tests.\nonce setup the schema should act like any other schema. if it does not then please file an issue.\n\n.. code:: python\n\n    import marshmallow\n    import marshmallow.fields\n    from marshmallow_oneofschema import oneofschema\n\n\n    class foo:\n        def __init__(self, foo):\n            self.foo = foo\n\n\n    class bar:\n        def __init__(self, bar):\n            self.bar = bar\n\n\n    class fooschema(marshmallow.schema):\n        foo = marshmallow.fields.string(required=true)\n\n        @marshmallow.post_load\n        def make_foo(self, data, **kwargs):\n            return foo(**data)\n\n\n    class barschema(marshmallow.schema):\n        bar = marshmallow.fields.integer(required=true)\n\n        @marshmallow.post_load\n        def make_bar(self, data, **kwargs):\n            return bar(**data)\n\n\n    class myuberschema(oneofschema):\n        type_schemas = {\"foo\": fooschema, \"bar\": barschema}\n\n        def get_obj_type(self, obj):\n            if isinstance(obj, foo):\n                return \"foo\"\n            elif isinstance(obj, bar):\n                return \"bar\"\n            else:\n                raise exception(\"unknown object type: {}\".format(obj.__class__.__name__))\n\n\n    myuberschema().dump([foo(foo=\"hello\"), bar(bar=123)], many=true)\n    # => [{'type': 'foo', 'foo': 'hello'}, {'type': 'bar', 'bar': 123}]\n\n    myuberschema().load(\n        [{\"type\": \"foo\", \"foo\": \"hello\"}, {\"type\": \"bar\", \"bar\": 123}], many=true\n    )\n    # => [foo('hello'), bar(123)]\n\nby default get_obj_type() returns obj.__class__.__name__, so you can just reuse that\nto save some typing:\n\n.. code:: python\n\n    class myuberschema(oneofschema):\n        type_schemas = {\"foo\": fooschema, \"bar\": barschema}\n\nyou can customize type field with `type_field` class property:\n\n.. code:: python\n\n    class myuberschema(oneofschema):\n        type_field = \"object_type\"\n        type_schemas = {\"foo\": fooschema, \"bar\": barschema}\n\n\n    myuberschema().dump([foo(foo=\"hello\"), bar(bar=123)], many=true)\n    # => [{'object_type': 'foo', 'foo': 'hello'}, {'object_type': 'bar', 'bar': 123}]\n\nyou can use resulting schema everywhere marshmallow.schema can be used, e.g.\n\n.. code:: python\n\n    import marshmallow as m\n    import marshmallow.fields as f\n\n\n    class myotherschema(m.schema):\n        items = f.list(f.nested(myuberschema))\n\nlicense\n-------\n\nmit licensed. see the bundled `license <https://github.com/marshmallow-code/marshmallow-oneofschema/blob/master/license>`_ file for more details.\n\n\n",
+  "docs_url": null,
+  "keywords": "serialization,deserialization,json,marshal,marshalling,schema,validation,multiplexing,demultiplexing,polymorphic",
+  "license": "mit",
+  "name": "marshmallow-oneofschema",
+  "package_url": "https://pypi.org/project/marshmallow-oneofschema/",
+  "project_url": "https://pypi.org/project/marshmallow-oneofschema/",
+  "project_urls": {
+    "Homepage": "https://github.com/marshmallow-code/marshmallow-oneofschema"
+  },
+  "release_url": "https://pypi.org/project/marshmallow-oneofschema/3.0.1/",
+  "requires_dist": [
+    "marshmallow (<4.0.0,>=3.0.0)",
+    "pytest ; extra == 'dev'",
+    "mock ; extra == 'dev'",
+    "flake8 (==3.9.2) ; extra == 'dev'",
+    "flake8-bugbear (==21.4.3) ; extra == 'dev'",
+    "pre-commit (~=2.7) ; extra == 'dev'",
+    "tox ; extra == 'dev'",
+    "flake8 (==3.9.2) ; extra == 'lint'",
+    "flake8-bugbear (==21.4.3) ; extra == 'lint'",
+    "pre-commit (~=2.7) ; extra == 'lint'",
+    "pytest ; extra == 'tests'",
+    "mock ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "marshmallow multiplexing schema",
+  "version": "3.0.1",
+  "releases": [],
+  "developers": [
+    "maxim.kulkin@gmail.com",
+    "maxim_kulkin",
+    "sloria1@gmail.com",
+    "steven_loria"
+  ],
+  "kwds": "marshmallow_oneofschema sloria serializes azure marshmallow",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_marshmallow_oneofschema",
+  "homepage": "https://github.com/marshmallow-code/marshmallow-oneofschema",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_flake8",
+    "pypi_flake8_bugbear",
+    "pypi_marshmallow",
+    "pypi_mock",
+    "pypi_pre_commit",
+    "pypi_pytest",
+    "pypi_tox"
+  ]
+}

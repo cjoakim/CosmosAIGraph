@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# pydeequ\n\npydeequ is a python api for [deequ](https://github.com/awslabs/deequ), a library built on top of apache spark for defining \"unit tests for data\", which measure data quality in large datasets. pydeequ is written to support usage of deequ in python.\n\n[![license](https://img.shields.io/badge/license-apache%202.0-blue.svg)](https://opensource.org/licenses/apache-2.0) ![coverage](https://img.shields.io/badge/coverage-90%25-green)\n\nthere are 4 main components of deequ, and they are:\n- metrics computation:\n    - `profiles` leverages analyzers to analyze each column of a dataset.\n    - `analyzers` serve here as a foundational module that computes metrics for data profiling and validation at scale.\n- constraint suggestion:\n    - specify rules for various groups of analyzers to be run over a dataset to return back a collection of constraints suggested to run in a verification suite.\n- constraint verification:\n    - perform data validation on a dataset with respect to various constraints set by you.   \n- metrics repository\n    - allows for persistence and tracking of deequ runs over time.\n\n![](imgs/pydeequ_architecture.jpg)\n\n## \ud83c\udf89 announcements \ud83c\udf89\n- **new!!!** 1.1.0 release of python deequ has been published to pypi https://pypi.org/project/pydeequ/. this release brings many recency upgrades including support up to spark 3.3.0! any feedbacks are welcome through github issues.\n- with pydeequ v0.1.8+, we now officially support spark3 ! just make sure you have an environment variable `spark_version` to specify your spark version! \n- we've release a blogpost on integrating pydeequ onto aws leveraging services such as aws glue, athena, and sagemaker! check it out: [monitor data quality in your data lake using pydeequ and aws glue](https://aws.amazon.com/blogs/big-data/monitor-data-quality-in-your-data-lake-using-pydeequ-and-aws-glue/).\n- check out the [pydeequ release announcement blogpost](https://aws.amazon.com/blogs/big-data/testing-data-quality-at-scale-with-pydeequ/) with a tutorial walkthrough the amazon reviews dataset!\n- join the pydeequ community on [pydeequ slack](https://join.slack.com/t/pydeequ/shared_invite/zt-te6bntpu-yaqpy7bhin8lu0nxpzs47q) to chat with the devs!\n\n## quickstart\n\nthe following will quickstart you with some basic usage. for more in-depth examples, take a look in the [`tutorials/`](tutorials/) directory for executable jupyter notebooks of each module. for documentation on supported interfaces, view the [`documentation`](https://pydeequ.readthedocs.io/).\n\n### installation\n\nyou can install [pydeequ via pip](https://pypi.org/project/pydeequ/).\n\n```\npip install pydeequ\n```\n\n### set up a pyspark session\n```python\nfrom pyspark.sql import sparksession, row\nimport pydeequ\n\nspark = (sparksession\n    .builder\n    .config(\"spark.jars.packages\", pydeequ.deequ_maven_coord)\n    .config(\"spark.jars.excludes\", pydeequ.f2j_maven_coord)\n    .getorcreate())\n\ndf = spark.sparkcontext.parallelize([\n            row(a=\"foo\", b=1, c=5),\n            row(a=\"bar\", b=2, c=6),\n            row(a=\"baz\", b=3, c=none)]).todf()\n```\n\n### analyzers\n\n```python\nfrom pydeequ.analyzers import *\n\nanalysisresult = analysisrunner(spark) \\\n                    .ondata(df) \\\n                    .addanalyzer(size()) \\\n                    .addanalyzer(completeness(\"b\")) \\\n                    .run()\n\nanalysisresult_df = analyzercontext.successmetricsasdataframe(spark, analysisresult)\nanalysisresult_df.show()\n```\n\n### profile\n\n```python\nfrom pydeequ.profiles import *\n\nresult = columnprofilerrunner(spark) \\\n    .ondata(df) \\\n    .run()\n\nfor col, profile in result.profiles.items():\n    print(profile)\n```\n\n### constraint suggestions\n\n```python\nfrom pydeequ.suggestions import *\n\nsuggestionresult = constraintsuggestionrunner(spark) \\\n             .ondata(df) \\\n             .addconstraintrule(default()) \\\n             .run()\n\n# constraint suggestions in json format\nprint(suggestionresult)\n```\n\n### constraint verification\n\n```python\nfrom pydeequ.checks import *\nfrom pydeequ.verification import *\n\ncheck = check(spark, checklevel.warning, \"review check\")\n\ncheckresult = verificationsuite(spark) \\\n    .ondata(df) \\\n    .addcheck(\n        check.hassize(lambda x: x >= 3) \\\n        .hasmin(\"b\", lambda x: x == 0) \\\n        .iscomplete(\"c\")  \\\n        .isunique(\"a\")  \\\n        .iscontainedin(\"a\", [\"foo\", \"bar\", \"baz\"]) \\\n        .isnonnegative(\"b\")) \\\n    .run()\n\ncheckresult_df = verificationresult.checkresultsasdataframe(spark, checkresult)\ncheckresult_df.show()\n```\n\n### repository\n\nsave to a metrics repository by adding the `userepository()` and `saveorappendresult()` calls to your analysis runner.\n```python\nfrom pydeequ.repository import *\nfrom pydeequ.analyzers import *\n\nmetrics_file = filesystemmetricsrepository.helper_metrics_file(spark, 'metrics.json')\nrepository = filesystemmetricsrepository(spark, metrics_file)\nkey_tags = {'tag': 'pydeequ hello world'}\nresultkey = resultkey(spark, resultkey.current_milli_time(), key_tags)\n\nanalysisresult = analysisrunner(spark) \\\n    .ondata(df) \\\n    .addanalyzer(approxcountdistinct('b')) \\\n    .userepository(repository) \\\n    .saveorappendresult(resultkey) \\\n    .run()\n```\n\nto load previous runs, use the `repository` object to load previous results back in.\n\n```python\nresult_metrep_df = repository.load() \\\n    .before(resultkey.current_milli_time()) \\\n    .foranalyzers([approxcountdistinct('b')]) \\\n    .getsuccessmetricsasdataframe()\n```\n\n### wrapping up\n\nafter you've ran your jobs with pydeequ, be sure to shut down your spark session to prevent any hanging processes. \n\n```python\nspark.sparkcontext._gateway.shutdown_callback_server()\nspark.stop()\n```\n\n## [contributing](https://github.com/awslabs/python-deequ/blob/master/contributing.md)\nplease refer to the [contributing doc](https://github.com/awslabs/python-deequ/blob/master/contributing.md) for how to contribute to pydeequ.\n\n## [license](https://github.com/awslabs/python-deequ/blob/master/license)\n\nthis library is licensed under the apache 2.0 license.\n\n******\n\n## contributing developer setup\n\n1. setup [sdkman](#setup-sdkman)\n1. setup [java](#setup-java)\n1. setup [apache spark](#setup-apache-spark)\n1. install [poetry](#poetry)\n1. run [tests locally](#running-tests-locally)\n\n### setup sdkman\n\nsdkman is a tool for managing parallel versions of multiple software development kits on any unix based\nsystem. it provides a convenient command line interface for installing, switching, removing and listing\ncandidates. sdkman! installs smoothly on mac osx, linux, wsl, cygwin, etc... support bash and zsh shells. see\ndocumentation on the [sdkman! website](https://sdkman.io).\n\nopen your favourite terminal and enter the following:\n\n```bash\n$ curl -s https://get.sdkman.io | bash\nif the environment needs tweaking for sdkman to be installed,\nthe installer will prompt you accordingly and ask you to restart.\n\nnext, open a new terminal or enter:\n\n$ source \"$home/.sdkman/bin/sdkman-init.sh\"\n\nlastly, run the following code snippet to ensure that installation succeeded:\n\n$ sdk version\n```\n\n### setup java\n\ninstall java now open favourite terminal and enter the following:\n\n```bash\nlist the adoptopenjdk openjdk versions\n$ sdk list java\n\nto install for java 11\n$ sdk install java 11.0.10.hs-adpt\n\nto install for java 11\n$ sdk install java 8.0.292.hs-adpt\n```\n\n### setup apache spark\n\ninstall java now open favourite terminal and enter the following:\n\n```bash\nlist the apache spark versions:\n$ sdk list spark\n\nto install for spark 3\n$ sdk install spark 3.0.2\n```\n\n### poetry\n\npoetry [commands](https://python-poetry.org/docs/cli/#search)\n\n```bash\npoetry install\n\npoetry update\n\n# --tree: list the dependencies as a tree.\n# --latest (-l): show the latest version.\n# --outdated (-o): show the latest version but only for packages that are outdated.\npoetry show -o\n```\n\n## running tests locally\n\ntake a look at tests in `tests/dataquality` and `tests/jobs`\n\n```bash\n$ poetry run pytest\n```",
+  "docs_url": null,
+  "keywords": "deequ,pydeequ,data-engineering,data-quality,data-profiling,dataquality,dataunittest,data-unit-tests,data-profilers",
+  "license": "apache-2.0",
+  "name": "pydeequ",
+  "package_url": "https://pypi.org/project/pydeequ/",
+  "project_url": "https://pypi.org/project/pydeequ/",
+  "project_urls": {
+    "Documentation": "https://pydeequ.readthedocs.io",
+    "Homepage": "https://pydeequ.readthedocs.io",
+    "Repository": "https://github.com/awslabs/python-deequ"
+  },
+  "release_url": "https://pypi.org/project/pydeequ/1.2.0/",
+  "requires_dist": [
+    "numpy (>=1.14.1)",
+    "pandas (>=0.23.0)",
+    "pyspark (>=2.4.7,<3.3.0) ; extra == \"pyspark\""
+  ],
+  "requires_python": ">=3.7,<4",
+  "summary": "pydeequ - unit tests for data",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "calvin_wang",
+    "calviwan@amazon.com"
+  ],
+  "kwds": "profiling deequ metrics_file spark_version pydeequ_architecture",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_pydeequ",
+  "homepage": "https://pydeequ.readthedocs.io",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_pyspark"
+  ]
+}

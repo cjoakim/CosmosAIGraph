@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# fastprogress\n\na fast and simple progress bar for jupyter notebook and console. created by sylvain gugger for fast.ai.\n\n<img src=\"https://github.com/fastai/fastprogress/raw/master/images/cifar_train.gif\" width=\"600\">\n\n## install\n\nto install simply use\n```\npip install fastprogress\n```\nor:\n```\nconda install -c fastai fastprogress\n```\nnote that this requires python 3.6 or later.\n\n## usage\n\n### example 1\n\nhere is a simple example. each bar takes an iterator as a main argument, and we can specify the second bar is nested with the first by adding the argument `parent=mb`. we can then:\n- add a comment in the first bar by changing the value of `mb.main_bar.comment`\n- add a comment in the second bar by changing the value of `mb.child.comment`\n- write a line between the two bars with `mb.write('message')`\n\n``` python\nfrom fastprogress.fastprogress import master_bar, progress_bar\nfrom time import sleep\nmb = master_bar(range(10))\nfor i in mb:\n    for j in progress_bar(range(100), parent=mb):\n        sleep(0.01)\n        mb.child.comment = f'second bar stat'\n    mb.main_bar.comment = f'first bar stat'\n    mb.write(f'finished loop {i}.')\n    #mb.update_graph(graphs, x_bounds, y_bounds)\n```\n\n<img src=\"https://github.com/fastai/fastprogress/raw/master/images/pb_basic.gif\" width=\"600\">\n\n### example 2\n\nto add a graph that get plots as the training goes, just use the command `mb.update_graphs`. it will create the figure on its first use. arguments are:\n- `graphs`: a list of graphs to be plotted (each of the form `[x,y]`)\n- `x_bounds`: the min and max values of the x axis (if `none`, it will those given by the graphs)\n- `y_bounds`: the min and max values of the y axis (if `none`, it will those given by the graphs)\n\nnote that it's best to specify `x_bounds` and `y_bounds`, otherwise the box will change as the loop progresses.\n\nadditionally, we can give the label of each graph via the command `mb.names` (should have as many elements as the graphs argument).\n\n``` python\nimport numpy as np\nmb = master_bar(range(10))\nmb.names = ['cos', 'sin']\nfor i in mb:\n    for j in progress_bar(range(100), parent=mb):\n        if j%10 == 0:\n            k = 100 * i + j\n            x = np.arange(0, 2*k*np.pi/1000, 0.01)\n            y1, y2 = np.cos(x), np.sin(x)\n            graphs = [[x,y1], [x,y2]]\n            x_bounds = [0, 2*np.pi]\n            y_bounds = [-1,1]\n            mb.update_graph(graphs, x_bounds, y_bounds)\n            mb.child.comment = f'second bar stat'\n    mb.main_bar.comment = f'first bar stat'\n    mb.write(f'finished loop {i}.')\n```\n\n<img src=\"https://github.com/fastai/fastprogress/raw/master/images/pb_cos.gif\" width=\"600\">\n\nhere is the rendering in console:\n\n<img src=\"https://github.com/fastai/fastprogress/raw/master/images/pb_console.gif\" width=\"800\">\n\nif the script using this is executed with a redirect to a file, only the results of the `.write` method will be printed in that file.\n\n### example 3\n\nhere is an example that a typical machine learning training loop can use. it also demonstrates how to set `y_bounds` dynamically.\n\n```\ndef plot_loss_update(epoch, epochs, mb, train_loss, valid_loss):\n    \"\"\" dynamically print the loss plot during the training/validation loop.\n        expects epoch to start from 1.\n    \"\"\"\n    x = range(1, epoch+1)\n    y = np.concatenate((train_loss, valid_loss))\n    graphs = [[x,train_loss], [x,valid_loss]]\n    x_margin = 0.2\n    y_margin = 0.05\n    x_bounds = [1-x_margin, epochs+x_margin]\n    y_bounds = [np.min(y)-y_margin, np.max(y)+y_margin]\n\n    mb.update_graph(graphs, x_bounds, y_bounds)\n```\n\nand here is an emulation of a training loop that uses this function:\n\n```\nfrom fastprogress.fastprogress import master_bar, progress_bar\nfrom time import sleep\nimport numpy as np\nimport random\n\nepochs = 5\nmb = master_bar(range(1, epochs+1))\n# optional: graph legend: if not set, the default is 'train'/'valid'\n# mb.names = ['first', 'second']\ntrain_loss, valid_loss = [], []\nfor epoch in mb:\n    # emulate train sub-loop\n    for batch in progress_bar(range(2), parent=mb): sleep(0.2)\n    train_loss.append(0.5 - 0.06 * epoch + random.uniform(0, 0.04))\n\n    # emulate validation sub-loop\n    for batch in progress_bar(range(2), parent=mb): sleep(0.2)\n    valid_loss.append(0.5 - 0.03 * epoch + random.uniform(0, 0.04))\n\n    plot_loss_update(epoch, epochs, mb, train_loss, valid_loss)\n```\n\nand the output:\n\n<img src=\"https://github.com/fastai/fastprogress/raw/master/images/pb_graph.gif\" alt=\"output\">\n\n----\n\ncopyright 2017 onwards, fast.ai. licensed under the apache license, version 2.0 (the \"license\"); you may not use this file except in compliance with the license. a copy of the license is provided in the license file in this repository.\n\n\n",
+  "docs_url": null,
+  "keywords": "jupyter notebook progressbar",
+  "license": "apache software license 2.0",
+  "name": "fastprogress",
+  "package_url": "https://pypi.org/project/fastprogress/",
+  "project_url": "https://pypi.org/project/fastprogress/",
+  "project_urls": {
+    "Homepage": "https://github.com/fastai/fastprogress"
+  },
+  "release_url": "https://pypi.org/project/fastprogress/1.0.3/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "a nested progress with plotting options for fastai",
+  "version": "1.0.3",
+  "releases": [],
+  "developers": [
+    "info@fast.ai",
+    "sylvain_gugger"
+  ],
+  "kwds": "progress_bar progressbar jupyter master_bar main_bar",
+  "license_kwds": "apache software license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_fastprogress",
+  "homepage": "https://github.com/fastai/fastprogress",
+  "release_count": 27,
+  "dependency_ids": []
+}

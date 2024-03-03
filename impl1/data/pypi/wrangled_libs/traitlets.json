@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "framework :: ipython",
+    "framework :: jupyter",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "intended audience :: system administrators",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "typing :: typed"
+  ],
+  "description": "# traitlets\n\n[![tests](https://github.com/ipython/traitlets/actions/workflows/tests.yml/badge.svg)](https://github.com/ipython/traitlets/actions/workflows/tests.yml)\n[![documentation status](https://readthedocs.org/projects/traitlets/badge/?version=latest)](https://traitlets.readthedocs.io/en/latest/?badge=latest)\n[![tidelift](https://tidelift.com/subscription/pkg/pypi-traitlets)](https://tidelift.com/badges/package/pypi/traitlets)\n\n|               |                                      |\n| ------------- | ------------------------------------ |\n| **home**      | https://github.com/ipython/traitlets |\n| **pypi-repo** | https://pypi.org/project/traitlets/  |\n| **docs**      | https://traitlets.readthedocs.io/    |\n| **license**   | modified bsd license                 |\n\ntraitlets is a pure python library enabling:\n\n- the enforcement of strong typing for attributes of python objects\n  (typed attributes are called _\"traits\"_);\n- dynamically calculated default values;\n- automatic validation and coercion of trait attributes when attempting a\n  change;\n- registering for receiving notifications when trait values change;\n- reading configuring values from files or from command line\n  arguments - a distinct layer on top of traitlets, so you may use\n  traitlets without the configuration machinery.\n\nits implementation relies on the [descriptor](https://docs.python.org/howto/descriptor.html)\npattern, and it is a lightweight pure-python alternative of the\n[_traits_ library](https://docs.enthought.com/traits/).\n\ntraitlets powers the configuration system of ipython and jupyter\nand the declarative api of ipython interactive widgets.\n\n## installation\n\nfor a local installation, make sure you have\n[pip installed](https://pip.pypa.io/en/stable/installing/) and run:\n\n```bash\npip install traitlets\n```\n\nfor a **development installation**, clone this repository, change into the\n`traitlets` root directory, and run pip:\n\n```bash\ngit clone https://github.com/ipython/traitlets.git\ncd traitlets\npip install -e .\n```\n\n## running the tests\n\n```bash\npip install \"traitlets[test]\"\npy.test traitlets\n```\n\n## code styling\n\n`traitlets` has adopted automatic code formatting so you shouldn't\nneed to worry too much about your code style.\nas long as your code is valid,\nthe pre-commit hook should take care of how it should look.\n\nto install `pre-commit` locally, run the following::\n\n```\npip install pre-commit\npre-commit install\n```\n\nyou can invoke the pre-commit hook by hand at any time with::\n\n```\npre-commit run\n```\n\nwhich should run any autoformatting on your code\nand tell you about any errors it couldn't fix automatically.\nyou may also install [black integration](https://github.com/psf/black#editor-integration)\ninto your text editor to format code automatically.\n\nif you have already committed files before setting up the pre-commit\nhook with `pre-commit install`, you can fix everything up using\n`pre-commit run --all-files`. you need to make the fixing commit\nyourself after that.\n\nsome of the hooks only run on ci by default, but you can invoke them by\nrunning with the `--hook-stage manual` argument.\n\n## usage\n\nany class with trait attributes must inherit from `hastraits`.\nfor the list of available trait types and their properties, see the\n[trait types](https://traitlets.readthedocs.io/en/latest/trait_types.html)\nsection of the documentation.\n\n### dynamic default values\n\nto calculate a default value dynamically, decorate a method of your class with\n`@default({traitname})`. this method will be called on the instance, and\nshould return the default value. in this example, the `_username_default`\nmethod is decorated with `@default('username')`:\n\n```python\nimport getpass\nfrom traitlets import hastraits, unicode, default\n\nclass identity(hastraits):\n    username = unicode()\n\n    @default('username')\n    def _username_default(self):\n        return getpass.getuser()\n```\n\n### callbacks when a trait attribute changes\n\nwhen a trait changes, an application can follow this trait change with\nadditional actions.\n\nto do something when a trait attribute is changed, decorate a method with\n[`traitlets.observe()`](https://traitlets.readthedocs.io/en/latest/api.html?highlight=observe#traitlets.observe).\nthe method will be called with a single argument, a dictionary which contains\nan owner, new value, old value, name of the changed trait, and the event type.\n\nin this example, the `_num_changed` method is decorated with `` @observe(`num`) ``:\n\n```python\nfrom traitlets import hastraits, integer, observe\n\nclass traitletsexample(hastraits):\n    num = integer(5, help=\"a number\").tag(config=true)\n\n    @observe('num')\n    def _num_changed(self, change):\n        print(\"{name} changed from {old} to {new}\".format(**change))\n```\n\nand is passed the following dictionary when called:\n\n```python\n{\n  'owner': object,  # the hastraits instance\n  'new': 6,         # the new value\n  'old': 5,         # the old value\n  'name': \"foo\",    # the name of the changed trait\n  'type': 'change', # the event type of the notification, usually 'change'\n}\n```\n\n### validation and coercion\n\neach trait type (`int`, `unicode`, `dict` etc.) may have its own validation or\ncoercion logic. in addition, we can register custom cross-validators\nthat may depend on the state of other attributes. for example:\n\n```python\nfrom traitlets import hastraits, traiterror, int, bool, validate\n\nclass parity(hastraits):\n    value = int()\n    parity = int()\n\n    @validate('value')\n    def _valid_value(self, proposal):\n        if proposal['value'] % 2 != self.parity:\n            raise traiterror('value and parity should be consistent')\n        return proposal['value']\n\n    @validate('parity')\n    def _valid_parity(self, proposal):\n        parity = proposal['value']\n        if parity not in [0, 1]:\n            raise traiterror('parity should be 0 or 1')\n        if self.value % 2 != parity:\n            raise traiterror('value and parity should be consistent')\n        return proposal['value']\n\nparity_check = parity(value=2)\n\n# changing required parity and value together while holding cross validation\nwith parity_check.hold_trait_notifications():\n    parity_check.value = 1\n    parity_check.parity = 1\n```\n\nhowever, we **recommend** that custom cross-validators don't modify the state\nof the hastraits instance.\n\n## about the ipython development team\n\nthe ipython development team is the set of all contributors to the ipython project.\nthis includes all of the ipython subprojects.\n\nthe core team that coordinates development on github can be found here:\nhttps://github.com/jupyter/.\n\n## our copyright policy\n\nipython uses a shared copyright model. each contributor maintains copyright\nover their contributions to ipython. but, it is important to note that these\ncontributions are typically only changes to the repositories. thus, the ipython\nsource code, in its entirety is not the copyright of any single person or\ninstitution. instead, it is the collective copyright of the entire ipython\ndevelopment team. if individual contributors want to maintain a record of what\nchanges/contributions they have specific copyright on, they should indicate\ntheir copyright in the commit message of the change, when they commit the\nchange to one of the ipython repositories.\n\nwith this in mind, the following banner should be used in any source code file\nto indicate the copyright and license terms:\n\n```\n# copyright (c) ipython development team.\n# distributed under the terms of the modified bsd license.\n```\n",
+  "docs_url": null,
+  "keywords": "interactive,interpreter,shell,web",
+  "license": "bsd 3-clause license  - copyright (c) 2001-, ipython development team  all rights reserved.  redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:  1. redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.  2. redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.  3. neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.  this software is provided by the copyright holders and contributors \"as is\" and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. in no event shall the copyright holder or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.",
+  "name": "traitlets",
+  "package_url": "https://pypi.org/project/traitlets/",
+  "project_url": "https://pypi.org/project/traitlets/",
+  "project_urls": {
+    "Documentation": "https://traitlets.readthedocs.io",
+    "Funding": "https://numfocus.org",
+    "Homepage": "https://github.com/ipython/traitlets",
+    "Source": "https://github.com/ipython/traitlets",
+    "Tracker": "https://github.com/ipython/traitlets/issues"
+  },
+  "release_url": "https://pypi.org/project/traitlets/5.14.0/",
+  "requires_dist": [
+    "myst-parser; extra == 'docs'",
+    "pydata-sphinx-theme; extra == 'docs'",
+    "sphinx; extra == 'docs'",
+    "argcomplete>=3.0.3; extra == 'test'",
+    "mypy>=1.7.0; extra == 'test'",
+    "pre-commit; extra == 'test'",
+    "pytest-mock; extra == 'test'",
+    "pytest-mypy-testing; extra == 'test'",
+    "pytest<7.5,>=7.0; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "traitlets python configuration system",
+  "version": "5.14.0",
+  "releases": [],
+  "developers": [
+    "ipython-dev@python.org"
+  ],
+  "kwds": "traitlets traitletsexample hold_trait_notifications trait_types traitname",
+  "license_kwds": "copyright liability liable redistributions redistribution",
+  "libtype": "pypi",
+  "id": "pypi_traitlets",
+  "homepage": "",
+  "release_count": 50,
+  "dependency_ids": [
+    "pypi_argcomplete",
+    "pypi_mypy",
+    "pypi_myst_parser",
+    "pypi_pre_commit",
+    "pypi_pydata_sphinx_theme",
+    "pypi_pytest",
+    "pypi_pytest_mock",
+    "pypi_pytest_mypy_testing",
+    "pypi_sphinx"
+  ]
+}

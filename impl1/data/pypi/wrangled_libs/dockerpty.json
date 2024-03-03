@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: terminals",
+    "topic :: terminals :: terminal emulators/x terminals"
+  ],
+  "description": "# docker pty\n\nprovides the functionality needed to operate the pseudo-tty (pty) allocated to\na docker container, using the python client.\n\n[![build status](https://travis-ci.org/d11wtq/dockerpty.svg?branch=master)]\n(https://travis-ci.org/d11wtq/dockerpty)\n\n## installation\n\nvia pip:\n\n```\npip install dockerpty\n```\n\ndependencies:\n\n  * docker-py>=0.3.2\n\nhowever, this library does not explicitly declare this dependency in pypi for a\nnumber of reasons. it is assumed you have it installed.\n\n## usage\n\nthe following example will run busybox in a docker container and place the user\nat the shell prompt via python.\n\nthis obviously only works when run in a terminal.\n\n``` python\nimport docker\nimport dockerpty\n\nclient = docker.client()\ncontainer = client.create_container(\n    image='busybox:latest',\n    stdin_open=true,\n    tty=true,\n    command='/bin/sh',\n)\n\ndockerpty.start(client, container)\n```\n\nkeyword arguments passed to `start()` will be forwarded onto the client to\nstart the container.\n\nwhen the dockerpty is started, control is yielded to the container's pty until\nthe container exits, or the container's pty is closed.\n\nthis is a safe operation and all resources are restored back to their original\nstates.\n\n> **note:** dockerpty does support attaching to non-tty containers to stream\ncontainer output, though it is obviously not possible to 'control' the\ncontainer if you do not allocate a pseudo-tty.\n\nif you press `c-p c-q`, the container's pty will be closed, but the container\nwill keep running. in other words, you will have detached from the container\nand can re-attach with another `dockerpty.start()` call.\n\n## tests\n\nif you want to hack on dockerpty and send a pr, you'll need to run the tests.\nin the features/ directory, are features/user stories for how dockerpty is\nsupposed to work. to run them:\n\n```\n-bash$ pip install -r requirements-dev.txt\n-bash$ behave features/\n```\n\nyou'll need to have docker installed and running locally. the tests use busybox\ncontainer as a test fixture, so are not too heavy.\n\nstep definitions are defined in features/steps/.\n\nthere are also unit tests for the parts of the code that are not inherently\ndependent on controlling a tty. to run those:\n\n```\n-bash$ pip install -r requirements-dev.txt\n-bash$ py.test tests/\n```\n\ntravis ci runs this build inside a uml kernel that is new enough to run docker.\nyour pr will need to pass the build before i can merge it.\n\n  - travis ci build: https://travis-ci.org/d11wtq/dockerpty\n\n## how it works\n\nin a terminal, the three file descriptors stdin, stdout and stderr are all\nconnected to the controlling terminal (tty). when you pass the `tty=true` flag\nto docker's `create_container()`, docker allocates a fake tty inside the\ncontainer (a pty) to which the container's stdin, stdout and stderr are all\nconnected.\n\nthe docker api provides a way to access the three sockets connected to the pty.\nif with access to the host system's tty file descriptors and the container's\npty file descriptors, it is trivial to simply 'pipe' data written to these file\ndescriptors between the host and the container. doing this makes the user's\nterminal effectively become the pseudo-terminal from inside the container.\n\nin reality it's a bit more complicated than this, since care must be taken to\nput the host terminal into raw mode (where keys such as enter are not\ninterpreted with any special meaning) and restore it on exit. additionally, the\ncontainer's stdout and stderr streams along with `sys.stdin` must be made\nnon-blocking so that they can be used with `select()` without blocking the main\nprocess. these attributes are restored on exit.\n\nthe size of a terminal cannot be controlled by sending data to stdin and can\nonly be controlled by the terminal program itself. since the pseudo-terminal is\nrunning inside a real terminal, it is import that the size of the pty be kept\nthe same as that of the presenting tty. for this reason, docker provides an api\ncall to resize the allocated pty. a sigwinch handler is used to detect window\nsize changes and resize the pseudo-terminal as needed.\n\n## contributors\n\n  - primary author: [chris corbyn](https://github.com/d11wtq)\n  - collaborator: [daniel nephin](https://github.com/dnephin)\n  - contributor: [stephen moore](https://github.com/delfick)\n  - contributor: [ben firshman](https://github.com/bfirsh)\n\n## copyright & licensing\n\ncopyright &copy; 2014 chris corbyn. see the license.txt file for details.",
+  "docs_url": null,
+  "keywords": "docker,tty,pty,terminal",
+  "license": "apache 2.0",
+  "name": "dockerpty",
+  "package_url": "https://pypi.org/project/dockerpty/",
+  "project_url": "https://pypi.org/project/dockerpty/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "https://github.com/d11wtq/dockerpty"
+  },
+  "release_url": "https://pypi.org/project/dockerpty/0.4.1/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "python library to use the pseudo-tty of a docker container",
+  "version": "0.4.1",
+  "releases": [],
+  "developers": [
+    "chris@w3style.co.uk",
+    "chris_corbyn"
+  ],
+  "kwds": "dockerpty pypi docker pty create_container",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_dockerpty",
+  "homepage": "https://github.com/d11wtq/dockerpty",
+  "release_count": 24,
+  "dependency_ids": []
+}

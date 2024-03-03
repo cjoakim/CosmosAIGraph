@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# htbuilder \u2014 tiny html string builder for python\n\nhtbuilder lets you build html strings using a purely functional syntax in python.\nwhy use templating languages when you can just use functions?\n\n(ps: if you like this, check out [jsbuild](https://github.com/tvst/jsbuild) which\nlets you build javascript strings by simply annotating python functions!)\n\n## installation\n\njust pip it!\n\n```py\npip install htbuilder\n```\n\n## usage\n\njust import tags like `div` with `from htbuilder import div`, then call them:\n\n```py\n# import any tag you want from htbuilder, and it just works!\n# (this syntax requires python 3.7+. see below for an alternate syntax)\nfrom htbuilder import div\n\ndom = div('hello world!')\n```\n\nthen you can get the string output by calling `str()` on it:\n\n```py\nstr(dom)\n# returns '<div>hello world!</div>'\n```\n\n...which means you can also just `print()` to see it in the terminal:\n\n```py\nprint(dom)\n# prints '<div>hello world!</div>'\n```\n\nto specify attributes, call the tag builder with keyword args:\n\n```py\nprint(\n  div(id='sidebar', foo='bar')\n)\n# prints '<div id=\"sidebar\" foo=\"bar\"></div>'\n```\n\nto specify both attributes and children, first specify the attributes using\nkeyword args, then pass the children afterwards **inside a new\nset of parentheses**:\n\n```py\nprint(\n  div(id='sidebar', foo='bar')(\n    \"hello world!\"\n  )\n)\n# prints '<div id=\"sidebar\" foo=\"bar\">hello world!</div>'\n```\n\nthis is required because python doesn't allow you to pass keyword arguments\n_before_ you pass normal arguments.\n\n\n## multiple children\n\nwant to output multiple children? just pass them all as arguments:\n\n```py\nfrom htbuilder import div, ul, li, img\n\ndom = (\n  div(id='container')(\n    ul(_class='greetings')(\n      li('hello'),\n      li('hi'),\n      li('whattup'),\n    )\n  )\n)\n\nprint(dom)\n\n# prints this (but without added spacing):\n# <div id=\"container\">\n#   <ul class=\"greetings\">\n#     <li>hello</li>\n#     <li>hi</li>\n#     <li>whattup</li>\n#   </ul>\n# </div>\n```\n\n## programmatically add children\n\nyou can also pass any iterable to specify multiple children, which means you can\nsimply use things like generator expressions for great awesome:\n\n```py\nfrom htbuilder import div, ul, li, img\n\nimage_paths = [\n  'http://myimages.com/foo1.jpg',\n  'http://myimages.com/foo2.jpg',\n  'http://myimages.com/foo3.jpg',\n]\n\ndom = (\n  div(id='container')(\n    ul(_class='image-list')(\n      li(img(src=image_path, _class='large-image'))\n      for image_path in image_paths\n    )\n  )\n)\n\nprint(dom)\n# prints:\n# <div id=\"container\">\n#   <ul class=\"image-list\">\n#     <li><img src=\"http://myimages.com/foo1.jpg\" class=\"large-image\"/></li>\n#     <li><img src=\"http://myimages.com/foo2.jpg\" class=\"large-image\"/></li>\n#     <li><img src=\"http://myimages.com/foo3.jpg\" class=\"large-image\"/></li>\n#   </ul>\n# </div>\n```\n\n## conditionally add elements\n\nand because it's just python, you can use an if/else expression to conditionally\ninsert elements:\n\n```py\nuse_bold = true\n\ndom = (\n  div(\n      b(\"bold text\")\n    if use_bold else\n      \"normal text\"\n  )\n)\n\nprint(dom)\n# prints: <div><b>bold text</b></div>\n```\n\n## styling\n\nwe provide helpers to write styles without having to pass huge style strings as\narguments. instead, just use handy builders like `styles()`, `classes()`,\n`fonts()`, along with helpers you can import from the `units` and `funcs`\nmodules.\n\n```py\n# styles, classes, and fonts are special imports to help build attribute strings.\nfrom htbuilder import div, styles, classes, fonts\n\n# you can import anything from .units and .funcs to make it easier to specify\n# units like \"%\" and \"px\", as well as functions like \"rgba()\" and \"rgba()\".\nfrom htbuilder.units import percent, px\nfrom htbuilder.funcs import rgba, rgb\n\nbottom_margin = 10\nis_big = true\n\ndom = (\n  div(\n    _class=classes('btn', big=is_big)\n    style=styles(\n        color='black',\n        font_family=fonts('comic sans', 'sans-serif'),\n        margin=px(0, 0, bottom_margin, 0),\n        padding=(px(10), percent(5))\n        box_shadow=[\n            (0, 0, px(10), rgba(0, 0, 0, 0.1)),\n            (0, 0, '2px', rgb(0, 0, 0)),\n        ],\n    )\n  )\n)\n\n# prints:\n# <div\n#   class=\"btn big\"\n#   style=\"\n#     color: black;\n#     font-family: \"comic sans\", \"sans-serif\";\n#     margin: 0 0 10px 0;\n#     padding: 10px 5%;\n#     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1), 0 0 2px rgb(0, 0, 0);\n#   \"></div>\n```\n\n\n## underscores are magic\n\n### use underscores instead of dashes\n\nlike most popular languages, python doesn't support dashes in identifiers. so if you want to build\nan element that includes dashes in the tag name or attributes, like `<my-element foo-bar=\"baz\">`, you can\ndo so by using underscores instead:\n\n```py\nfrom htbuilder import my_element\n\ndom = my_element(foo_bar=\"baz\")\n\nprint(dom)\n# prints:\n# <my-element foo-bar=\"baz\"></my-element>\n```\n\n### prefix with underscore to avoid reserved words\n\nthe word `class` is reserved in python, so if you want to set an element's `class` attribute you\nshould prepend it with an underscore like this:\n\n```py\ndom = div(_class=\"myclass\")\n\nprint(dom)\n# prints:\n# <div class=\"myclass\"></div>\n```\n\nthis works because underscores preceding or following any identifier are automatically stripped away\nfor you.\n\n\n## working with python &lt; 3.7\n\nif using python &lt; 3.7, the import should look like this instead:\n\n```py\nfrom htbuilder import h\n\ndiv = h.div\nul = h.ul\nli = h.li\nimg = h.img\n# ...etc\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2",
+  "name": "htbuilder",
+  "package_url": "https://pypi.org/project/htbuilder/",
+  "project_url": "https://pypi.org/project/htbuilder/",
+  "project_urls": {
+    "Homepage": "https://github.com/tvst/htbuilder"
+  },
+  "release_url": "https://pypi.org/project/htbuilder/0.6.2/",
+  "requires_dist": [
+    "more-itertools"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "a purely-functional html builder for python. think jsx rather than templates.",
+  "version": "0.6.2",
+  "releases": [],
+  "developers": [
+    "me@thiagot.com",
+    "thiago_teixeira"
+  ],
+  "kwds": "html htbuilder python templating javascript",
+  "license_kwds": "apache 2",
+  "libtype": "pypi",
+  "id": "pypi_htbuilder",
+  "homepage": "https://github.com/tvst/htbuilder",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_more_itertools"
+  ]
+}

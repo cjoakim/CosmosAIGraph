@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "flask-executor\n==============\n\n[![build status](https://github.com/dchevell/flask-executor/actions/workflows/tests.yml/badge.svg)\n[![coverage status](https://coveralls.io/repos/github/dchevell/flask-executor/badge.svg)](https://coveralls.io/github/dchevell/flask-executor)\n[![pypi version](https://img.shields.io/pypi/v/flask-executor.svg)](https://pypi.python.org/pypi/flask-executor)\n[![github license](https://img.shields.io/github/license/dchevell/flask-executor.svg)](https://github.com/dchevell/flask-executor/blob/master/license)\n\nsometimes you need a simple task queue without the overhead of separate worker processes or powerful-but-complex libraries beyond your requirements. flask-executor is an easy to use wrapper for the `concurrent.futures` module that lets you initialise and configure executors via common flask application patterns. it's a great way to get up and running fast with a lightweight in-process task queue.\n\ninstallation\n------------\n\nflask-executor is available on pypi and can be installed with:\n\n    pip install flask-executor\n\n\nquick start\n-----------\n\nhere's a quick example of using flask-executor inside your flask application:\n\n```python\nfrom flask import flask\nfrom flask_executor import executor\n\napp = flask(__name__)\n\nexecutor = executor(app)\n\n\ndef send_email(recipient, subject, body):\n    # magic to send an email\n    return true\n\n\n@app.route('/signup')\ndef signup():\n    # do signup form\n    executor.submit(send_email, recipient, subject, body)\n```\n\n\ncontexts\n--------\n\nwhen calling `submit()` or `map()` flask-executor will wrap `threadpoolexecutor` callables with a\ncopy of both the current application context and current request context. code that must be run in\nthese contexts or that depends on information or configuration stored in `flask.current_app`,\n`flask.request` or `flask.g` can be submitted to the executor without modification.\n\nnote: due to limitations in python's default object serialisation and a lack of shared memory space between subprocesses, contexts cannot be pushed to `processpoolexecutor()` workers.\n\n\nfutures\n-------\n\nyou may want to preserve access to futures returned from the executor, so that you can retrieve the\nresults in a different part of your application. flask-executor allows futures to be stored within\nthe executor itself and provides methods for querying and returning them in different parts of your\napp::\n\n```python\n@app.route('/start-task')\ndef start_task():\n    executor.submit_stored('calc_power', pow, 323, 1235)\n    return jsonify({'result':'success'})\n\n@app.route('/get-result')\ndef get_result():\n    if not executor.futures.done('calc_power'):\n        return jsonify({'status': executor.futures._state('calc_power')})\n    future = executor.futures.pop('calc_power')\n    return jsonify({'status': done, 'result': future.result()})\n```\n\n\ndecoration\n----------\n\nflask-executor lets you decorate methods in the same style as distributed task queues like\ncelery:\n\n```python\n@executor.job\ndef fib(n):\n    if n <= 2:\n        return 1\n    else:\n        return fib(n-1) + fib(n-2)\n\n@app.route('/decorate_fib')\ndef decorate_fib():\n    fib.submit(5)\n    fib.submit_stored('fibonacci', 5)\n    fib.map(range(1, 6))\n    return 'ok'\n```\n\n\ndefault callbacks\n-----------------\n\nfuture objects can have callbacks attached by using `future.add_done_callback`. flask-executor\nlets you specify default callbacks that will be applied to all new futures created by the executor:\n\n```python\ndef some_callback(future):\n    # do something with future\n\nexecutor.add_default_done_callback(some_callback)\n\n# callback will be added to the below task automatically\nexecutor.submit(pow, 323, 1235)\n```\n\n\npropagate exceptions\n--------------------\n\nnormally any exceptions thrown by background threads or processes will be swallowed unless explicitly\nchecked for. to instead surface all exceptions thrown by background tasks, flask-executor can add\na special default callback that raises any exceptions thrown by tasks submitted to the executor::\n\n```python\napp.config['executor_propagate_exceptions'] = true\n```\n\n\ndocumentation\n-------------\n\ncheck out the full documentation at [flask-executor.readthedocs.io](https://flask-executor.readthedocs.io)!\n",
+  "docs_url": null,
+  "keywords": "flask,concurrent.futures",
+  "license": "mit",
+  "name": "flask-executor",
+  "package_url": "https://pypi.org/project/Flask-Executor/",
+  "project_url": "https://pypi.org/project/Flask-Executor/",
+  "project_urls": {
+    "Homepage": "https://github.com/dchevell/flask-executor"
+  },
+  "release_url": "https://pypi.org/project/Flask-Executor/1.0.0/",
+  "requires_dist": [
+    "Flask",
+    "futures (>=3.1.1) ; python_version == \"2.7\"",
+    "pytest ; extra == 'test'",
+    "flask-sqlalchemy ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "an easy to use flask wrapper for concurrent.futures",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "chevell@gmail.com",
+    "dave_chevell"
+  ],
+  "kwds": "flask_executor flask executor executors processpoolexecutor",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flask_executor",
+  "homepage": "https://github.com/dchevell/flask-executor",
+  "release_count": 24,
+  "dependency_ids": [
+    "pypi_flask",
+    "pypi_flask_sqlalchemy",
+    "pypi_futures",
+    "pypi_pytest"
+  ]
+}

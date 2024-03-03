@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "this project is no longer active. see https://github.com/thriftrw/thriftrw-python/issues/164.\n\n``thriftrw``\n============\n\n|test| |coverage| |docs|\n\n``thriftrw`` is a python library to serialize and deserialize thrift types.\n\n`documentation <http://thriftrw.readthedocs.org/en/latest/>`_ is available on\nread the docs.\n\n.. |test| image:: https://github.com/thriftrw/thriftrw-python/actions/workflows/python.yml/badge.svg\n   :target: https://github.com/thriftrw/thriftrw-python/actions/workflows/python.yml\n\n.. |coverage| image:: https://coveralls.io/repos/thriftrw/thriftrw-python/badge.svg?branch=master&service=github\n    :target: https://coveralls.io/github/thriftrw/thriftrw-python?branch=master\n\n\n.. |docs| image:: https://readthedocs.org/projects/thriftrw/badge/?version=latest\n    :target: https://readthedocs.org/projects/thriftrw/?badge=latest\n\nfeatures\n--------\n\n* no code generation. the ``.thrift`` files are parsed and compiled in-memory\n  at runtime.\n* no assumptions about how bytes are sent or received. the library\n  concerns itself with serialization and deserialization only.\n* forward and cyclic references in types.\n\nexample\n-------\n\ngiven the ``.thrift`` file,::\n\n    // blog.thrift\n\n    typedef string postuuid\n\n    typedef binary richtext\n\n    union body {\n        1: string plaintext\n        2: richtext richtext\n    }\n\n    struct postdetails {\n        1: required string author\n        2: required string subject\n        3: required body body\n    }\n\n    exception unauthorizedrequesterror {\n    }\n\n    service blogservice {\n        postuuid newpost(1: postdetails post)\n            throws (1: unauthorizedrequesterror unauthorized);\n    }\n\n\nyou can use the library to send and receive requests and responses like so,\n\n.. code-block:: python\n\n    # client.py\n\n    import thriftrw\n\n    blog = thriftrw.load('blog.thrift')\n    blogservice = blog.blogservice\n\n    def new_post():\n        post = blog.postdetails(\n            author='...',\n            subject='...',\n            body=blog.body(plaintext='hello, world!')\n        )\n\n        request = blogservice.newpost.request(post)\n        payload = blog.dumps(request)\n\n        # send_to_server is implemented by the user.\n        response_payload = send_to_server(payload)\n        response = blog.loads(blogservice.newpost.response, response_payload)\n        if response.unauthorized is not none:\n            raise response.unauthorized\n        else:\n            return response.success\n\n\n.. code-block:: python\n\n    # server.py\n\n    import thriftrw\n\n    blog = thriftrw.load('blog.thrift')\n    blogservice = blog.blogservice\n\n    # the user's server handler calls handle_new_post with the payload.\n    def handle_new_post(request_payload):\n        request = blog.loads(blogservice.newpost.request, request_payload)\n        if request.post.author != 'admin':\n            response = blogservice.newpost.response(\n                unauthorized=blog.unauthorizedrequesterror()\n            )\n        else:\n            # create_post is implemented by the user.\n            post_uuid = create_post(request.post)\n            response = blogservice.newpost.response(success=post_uuid)\n\n        return blog.dumps(response)\n\nmessage envelopes\n~~~~~~~~~~~~~~~~~\n\nnote that this example sends and receives just the request/response payload. it\ndoes not wrap the payload in a message envelope as expected by apache thrift.\nif you want to send or receive standard apache thrift requests to talk to other\napache thrift services, you have to use the ``loads.message`` and\n``dumps.message`` apis. for example,\n\n.. code-block:: python\n\n    # client.py\n\n    def new_post():\n        post = blog.postdetails(...)\n        request = blogservice.newpost.request(post)\n        payload = blog.dumps.message(request)\n        # ^ instead of using blog.dumps, we use blog.dumps.message to indicate\n        # that we want the request wrapped in a message envelope.\n\n\n        response_payload = send_to_server(payload)\n\n        # similarly, instead of using blog.loads, we use blog.loads.message to\n        # indicate that we want to parse a response stored inside a message.\n        response_message = blog.loads.message(blogservice, response_payload)\n        response = response_message.body\n\n        if response.unauthorized is not none:\n            raise response.unauthorized\n        else:\n            return response.success\n\n\n.. code-block:: python\n\n    # server.py\n\n    def handle_request(request_payload):\n        message = blog.loads.message(blogservice, request_payload)\n        if message.name == 'newpost':\n            request = message.body\n            # ...\n            response = blogservice.newpost.response(success=post_uuid)\n            return blog.dumps.message(response, seqid=message.seqid)\n            # as before, we use blog.dumps.message instead of blog.dumps.\n            # it is important that the server use the same seqid in the\n            # response as what was used in the request, otherwise the client\n            # will not be able to process out-of-order responses.\n        else:\n            raise exception('unknown method %s' % message.name)\n\nfor more information, see `overview\n<http://thriftrw.readthedocs.org/en/latest/overview.html>`_.\n\ncaveats\n-------\n\n* only the thrift binary protocol is supported at this time.\n\nrelated\n-------\n\n* `thriftrw-node <https://github.com/thriftrw/thriftrw-node>`_\n* `thriftrw-go <https://github.com/thriftrw/thriftrw-go>`_\n\nlicense\n-------\n\n::\n\n    copyright (c) 2015 uber technologies, inc.\n\n    permission is hereby granted, free of charge, to any person obtaining a copy\n    of this software and associated documentation files (the \"software\"), to deal\n    in the software without restriction, including without limitation the rights\n    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n    copies of the software, and to permit persons to whom the software is\n    furnished to do so, subject to the following conditions:\n    the above copyright notice and this permission notice shall be included in\n    all copies or substantial portions of the software.\n    the software is provided \"as is\", without warranty of any kind, express or\n    implied, including but not limited to the warranties of merchantability,\n    fitness for a particular purpose and noninfringement. in no event shall the\n    authors or copyright holders be liable for any claim, damages or other\n    liability, whether in an action of contract, tort or otherwise, arising from,\n    out of or in connection with the software or the use or other dealings in\n    the software.\n",
+  "docs_url": "https://pythonhosted.org/thriftrw/",
+  "keywords": "",
+  "license": "mit",
+  "name": "thriftrw",
+  "package_url": "https://pypi.org/project/thriftrw/",
+  "project_url": "https://pypi.org/project/thriftrw/",
+  "project_urls": {
+    "Homepage": "https://github.com/thriftrw/thriftrw-python"
+  },
+  "release_url": "https://pypi.org/project/thriftrw/1.9.0/",
+  "requires_dist": [
+    "ply"
+  ],
+  "requires_python": "",
+  "summary": "a library to serialize and deserialize thrift values.",
+  "version": "1.9.0",
+  "releases": [],
+  "developers": [
+    "abg@uber.com",
+    "abhinav_gupta"
+  ],
+  "kwds": "thriftrw thrift serialize deserialize serialization",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_thriftrw",
+  "homepage": "https://github.com/thriftrw/thriftrw-python",
+  "release_count": 31,
+  "dependency_ids": [
+    "pypi_ply"
+  ]
+}

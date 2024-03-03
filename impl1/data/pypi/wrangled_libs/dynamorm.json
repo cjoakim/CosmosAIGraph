@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: database",
+    "topic :: internet",
+    "topic :: software development :: libraries"
+  ],
+  "description": "dynamorm\n========\n\n.. image:: https://img.shields.io/travis/nerdwalletoss/dynamorm.svg\n           :target: https://travis-ci.org/nerdwalletoss/dynamorm\n\n.. image:: https://img.shields.io/codecov/c/github/nerdwalletoss/dynamorm.svg\n           :target: https://codecov.io/github/nerdwalletoss/dynamorm\n\n.. image:: https://img.shields.io/pypi/v/dynamorm.svg\n           :target: https://pypi.python.org/pypi/dynamorm\n           :alt: latest pypi version\n\n.. image:: https://img.shields.io/pypi/pyversions/dynamorm.svg\n           :target: https://pypi.python.org/pypi/dynamorm\n           :alt: supported python versions\n\n----\n\n*this package is a work in progress -- feedback / suggestions / etc welcomed!*\n\npython + dynamodb \u2661\n\ndynamorm (pronounced *dynamo-r-m*) is a python object & relation mapping library for amazon's `dynamodb`_ service.\n\nthe project has two goals:\n\n1. **abstract away the interaction with the underlying dynamodb libraries**.  python access to the dynamodb service has evolved quickly, from `dynamo v1 in boto to dynamo v2 in boto`_ and then the `new resource model in boto3`_.  by providing a consistent interface that will feel familiar to users of other python orms (sqlalchemy, django, peewee, etc) means that we can always provide best-practices for queries and take advantages of new features without needing to refactor any application logic.\n\n2. **delegate schema validation and serialization to more focused libraries**.  building \"orm\" semantics is \"easy\", doing data validation and serialization is not.  we support both `marshmallow`_ and `schematics`_ for building your object schemas.  you can take advantage of the full power of these libraries as they are transparently exposed in your code.\n\n.. _dynamodb: http://aws.amazon.com/dynamodb/\n.. _dynamo v1 in boto to dynamo v2 in boto: http://boto.cloudhackers.com/en/latest/migrations/dynamodb_v1_to_v2.html\n.. _new resource model in boto3: http://boto3.readthedocs.io/en/latest/guide/dynamodb.html\n.. _marshmallow: https://marshmallow.readthedocs.io/en/latest/\n.. _schematics: https://schematics.readthedocs.io/en/latest/\n\n\nsupported schema validation libraries\n-------------------------------------\n\n* `schematics`_ >= 2.1.0\n* `marshmallow`_ >= 2.15.1\n\n\nexample\n-------\n\n.. code-block:: python\n\n    import datetime\n\n    from dynamorm import dynamodel, globalindex, projectall\n\n    # in this example we'll use marshmallow, but you can also use schematics too!\n    # you can see that you have to import the schema library yourself, it is not abstracted at all\n    from marshmallow import fields\n\n    # our objects are defined as dynamodel classes\n    class book(dynamodel):\n        # define our dynamodb properties\n        class table:\n            name = 'prod-books'\n            hash_key = 'isbn'\n            read = 25\n            write = 5\n\n        class byauthor(globalindex):\n            name = 'by-author'\n            hash_key = 'author'\n            read = 25\n            write = 5\n            projection = projectall()\n\n        # define our data schema, each property here will become a property on instances of the book class\n        class schema:\n            isbn = fields.string(validate=validate_isbn)\n            title = fields.string()\n            author = fields.string()\n            publisher = fields.string()\n\n            # note: marshmallow uses the `missing` keyword during deserialization, which occurs when we save\n            # an object to dynamo and the attr has no value, versus the `default` keyword, which is used when\n            # we load a document from dynamo and the value doesn't exist or is null.\n            year = fields.number(missing=lambda: datetime.datetime.utcnow().year)\n\n\n    # store new documents directly from dictionaries\n    book.put({\n        \"isbn\": \"12345678910\",\n        \"title\": \"foo\",\n        \"author\": \"mr. bar\",\n        \"publisher\": \"publishorama\"\n    })\n\n    # work with the classes as objects.  you can pass attributes from the schema to the constructor\n    foo = book(isbn=\"12345678910\", title=\"foo\", author=\"mr. bar\",\n               publisher=\"publishorama\")\n    foo.save()\n\n    # or assign attributes\n    foo = book()\n    foo.isbn = \"12345678910\"\n    foo.title = \"foo\"\n    foo.author = \"mr. bar\"\n    foo.publisher = \"publishorama\"\n\n    # in all cases they go through schema validation, calls to .put or .save can result in validationerror\n    foo.save()\n\n    # you can then fetch, query and scan your tables.\n    # get on the hash key, and/or range key\n    book = book.get(isbn=\"12345678910\")\n\n    # update items, with conditions\n    # here our condition ensures we don't have a race condition where someone else updates the title first\n    book.update(title='corrected foo', conditions=(title=book.title,))\n\n    # query based on the keys\n    book.query(isbn__begins_with=\"12345\")\n\n    # scan based on attributes\n    book.scan(author=\"mr. bar\")\n    book.scan(author__ne=\"mr. bar\")\n\n    # query based on indexes\n    book.byauthor.query(author=\"mr. bar\")\n\n\ndocumentation\n=============\n\nfull documentation is built from the sources each build and can be found online at:\n\nhttps://nerdwalletoss.github.io/dynamorm/\n\n\nthe ``tests/`` also contain the most complete documentation on how to actually use the library, so you are encouraged to read through them to really familiarize yourself with some of the more advanced concepts and use cases.\n\n\n",
+  "docs_url": "https://pythonhosted.org/dynamorm/",
+  "keywords": "",
+  "license": "apache license version 2.0",
+  "name": "dynamorm",
+  "package_url": "https://pypi.org/project/dynamorm/",
+  "project_url": "https://pypi.org/project/dynamorm/",
+  "project_urls": {
+    "Homepage": "https://github.com/NerdWalletOSS/DynamORM"
+  },
+  "release_url": "https://pypi.org/project/dynamorm/0.11.0/",
+  "requires_dist": [
+    "blinker (<2.0,>=1.4)",
+    "boto3 (<2.0,>=1.3)",
+    "six",
+    "marshmallow (<4,>=2.15.1) ; extra == 'marshmallow'",
+    "schematics (<3,>=2.1.0) ; extra == 'schematics'"
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4",
+  "summary": "dynamorm is a python object & relation mapping library for amazon's dynamodb service.",
+  "version": "0.11.0",
+  "releases": [],
+  "developers": [
+    "evan@borgstrom.ca",
+    "evan_borgstrom"
+  ],
+  "kwds": "dynamorm _dynamo _dynamodb dynamodel dynamodb_v1_to_v2",
+  "license_kwds": "apache license version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_dynamorm",
+  "homepage": "https://github.com/nerdwalletoss/dynamorm",
+  "release_count": 58,
+  "dependency_ids": [
+    "pypi_blinker",
+    "pypi_boto3",
+    "pypi_marshmallow",
+    "pypi_schematics",
+    "pypi_six"
+  ]
+}

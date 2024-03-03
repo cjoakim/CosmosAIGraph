@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# unleash-client-python\n\n![](https://github.com/unleash/unleash-client-python/workflows/ci/badge.svg?branch=main) [![coverage status](https://coveralls.io/repos/github/unleash/unleash-client-python/badge.svg?branch=main)](https://coveralls.io/github/unleash/unleash-client-python?branch=main) [![pypi version](https://badge.fury.io/py/unleashclient.svg)](https://badge.fury.io/py/unleashclient) ![pypi - python version](https://img.shields.io/pypi/pyversions/unleashclient.svg) [![license: mit](https://img.shields.io/badge/license-mit-yellow.svg)](https://opensource.org/licenses/mit)\n\n\nthis is the python client for [unleash](https://github.com/unleash/unleash).  it implements [client specifications 1.0](https://docs.getunleash.io/client-specification) and checks compliance based on spec in [unleash/client-specifications](https://github.com/unleash/client-specification)\n\nwhat it supports:\n* default activation strategies using 32-bit [murmurhash3](https://en.wikipedia.org/wiki/murmurhash)\n* custom strategies\n* full client lifecycle:\n    * client registers with unleash server\n    * client periodically fetches feature toggles and stores to on-disk cache\n    * client periodically sends metrics to unleash server\n* tested on linux (ubuntu), osx, and windows\n\ncheck out the [project documentation](https://unleash.github.io/unleash-client-python/) and the [changelog](https://docs.getunleash.io/unleash-client-python/changelog.html).\n\n## installation\n\ncheck out the package on [pypi](https://pypi.org/project/unleashclient/)!\n\n```bash\npip install unleashclient\n```\n\n## for flask users\n\nif you're looking into running unleash from flask, you might want to take a look at [_flask-unleash_, the unleash flask extension](https://github.com/unleash/flask-unleash). the extension builds upon this sdk to reduce the amount of boilerplate code you need to write to integrate with flask. of course, if you'd rather use this package directly, that will work too.\n\n## usage\n\n### initialization\n\n```python\nfrom unleashclient import unleashclient\n\nclient = unleashclient(\n    url=\"https://unleash.herokuapp.com\",\n    app_name=\"my-python-app\",\n    custom_headers={'authorization': '<api token>'})\n\nclient.initialize_client()\n```\n\nfor more information about configuring `unleashclient`, check out the [project reference docs](https://docs.getunleash.io/unleash-client-python/unleashclient.html)!\n\n### checking if a feature is enabled\n\na check of a simple toggle:\n```python\nclient.is_enabled(\"my_toggle\")\n```\n\nto supply application context, use the second positional argument:\n\n```python\napp_context = {\"userid\": \"test@email.com\"}\nclient.is_enabled(\"user_id_toggle\", app_context)\n```\n\n#### fallback function and default values\n\nyou can specify a fallback function for cases where the client doesn't recognize the toggle by using the `fallback_function` keyword argument:\n\n```python\ndef custom_fallback(feature_name: str, context: dict) -> bool:\n    return true\n\nclient.is_enabled(\"my_toggle\", fallback_function=custom_fallback)\n```\n\nyou can also use the `fallback_function` argument to replace the obsolete `default_value` keyword argument by using a lambda that ignores its inputs. whatever the lambda returns will be used as the default value.\n\n```python\nclient.is_enabled(\"my_toggle\", fallback_function=lambda feature_name, context: true)\n```\n\nthe fallback function **must** accept the feature name and context as positional arguments in that order.\n\nthe client will evaluate the fallback function only if an exception occurs when calling the `is_enabled()` method. this happens when the client can't find the feature flag. the client _may_ also throw other, general exceptions.\n\nfor more information about usage, see the [usage documentation](https://docs.getunleash.io/unleash-client-python/usage.html).\n\n### getting a variant\n\nchecking for a variant:\n```python\ncontext = {'userid': '2'}  # context must have userid, sessionid, or remoteaddr.  if none are present, distribution will be random.\n\nvariant = client.get_variant(\"variant_toggle\", context)\n\nprint(variant)\n> {\n>    \"name\": \"variant1\",\n>    \"payload\": {\n>        \"type\": \"string\",\n>        \"value\": \"val1\"\n>        },\n>    \"enabled\": true\n> }\n```\n\nfor more information about variants, see the [variant documentation](https://docs.getunleash.io/advanced/toggle_variants).\n\n## developing\n\nfor development, you'll need to setup the environment to run the tests. this repository is using\ntox to run the test suite to test against multiple versions of python. running the tests is as simple as running this command in the makefile:\n\n```\ntox -e py311\n```\n\nthis command will take care of downloading the client specifications and putting them in the correct place in the repository, and install all the dependencies you need.\n\nhowever, there are some caveats to this method. there is no easy way to run a single test, and running the entire test suite can be slow.\n\n### manual setup\n\nfirst, make sure you have pip or pip3 installed.\n\nthen setup your viritual environment:\n\nlinux & mac:\n\n```\npython3 -m venv venv\nsource venv/bin/activate\n```\n\nwindows + cmd:\n\n```\npython -m venv venv\nvenv\\scripts\\activate.bat\n```\n\npowershell:\n\n```\npython -m venv venv\nvenv\\scripts\\activate.bat\n```\n\nonce you've done your setup, run:\n```\npip install -r requirements.txt\n```\n\nrun the get-spec script to download the client specifications tests:\n```\n./scripts/get-spec.sh\n```\n\nnow you can run the tests by running `pytest` in the root directory.\n\nin order to run a single test, run the following command:\n\n```\npytest testfile.py::function_name\n\n# example: pytest tests/unit_tests/test_client.py::test_consistent_results\n```\n\n### linting\n\nin order to lint all the files you can run the following command:\n\n```\nmake fmt\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "unleashclient",
+  "package_url": "https://pypi.org/project/UnleashClient/",
+  "project_url": "https://pypi.org/project/UnleashClient/",
+  "project_urls": {
+    "Changelog": "https://github.com/Unleash/unleash-client-python/blob/main/CHANGELOG.md",
+    "Documentation": "https://docs.getunleash.io/unleash-client-python",
+    "Homepage": "https://github.com/Unleash/unleash-client-python",
+    "Issues": "https://github.com/Unleash/unleash-client-python/issues",
+    "Repository": "https://github.com/Unleash/unleash-client-python"
+  },
+  "release_url": "https://pypi.org/project/UnleashClient/5.11.1/",
+  "requires_dist": [
+    "requests",
+    "fcache",
+    "mmhash3",
+    "apscheduler <4.0.0",
+    "importlib-metadata",
+    "python-dateutil",
+    "semver <4.0.0"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "python client for the unleash feature toggle system!",
+  "version": "5.11.1",
+  "releases": [],
+  "developers": [
+    "ivanklee86@gmail.com"
+  ],
+  "kwds": "pyversions unleashclient pytest pypi pip3",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_unleashclient",
+  "homepage": "",
+  "release_count": 55,
+  "dependency_ids": [
+    "pypi_apscheduler",
+    "pypi_fcache",
+    "pypi_importlib_metadata",
+    "pypi_mmhash3",
+    "pypi_python_dateutil",
+    "pypi_requests",
+    "pypi_semver"
+  ]
+}

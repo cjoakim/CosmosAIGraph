@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# asyncmy - a fast asyncio mysql/mariadb driver\n\n[![image](https://img.shields.io/pypi/v/asyncmy.svg?style=flat)](https://pypi.python.org/pypi/asyncmy)\n[![image](https://img.shields.io/github/license/long2ice/asyncmy)](https://github.com/long2ice/asyncmy)\n[![pypi](https://github.com/long2ice/asyncmy/actions/workflows/pypi.yml/badge.svg)](https://github.com/long2ice/asyncmy/actions/workflows/pypi.yml)\n[![ci](https://github.com/long2ice/asyncmy/actions/workflows/ci.yml/badge.svg)](https://github.com/long2ice/asyncmy/actions/workflows/ci.yml)\n\n## introduction\n\n`asyncmy` is a fast asyncio mysql/mariadb driver, which reuse most of [pymysql](https://github.com/pymysql/pymysql)\nand [aiomysql](https://github.com/aio-libs/aiomysql) but rewrite core protocol with [cython](https://cython.org/) to\nspeedup.\n\n## features\n\n- api compatible with [aiomysql](https://github.com/aio-libs/aiomysql).\n- faster by [cython](https://cython.org/).\n- mysql replication protocol support with `asyncio`.\n- tested both mysql and mariadb in [ci](https://github.com/long2ice/asyncmy/blob/dev/.github/workflows/ci.yml).\n\n## benchmark\n\nthe result comes from [benchmark](./benchmark).\n\n> the device is imac pro(2017) i9 3.6ghz 48g and mysql version is 8.0.26.\n\n![benchmark](./images/benchmark.png)\n\n### conclusion\n\n- there is no doubt that `mysqlclient` is the fastest mysql driver.\n- all kinds of drivers have a small gap except `select`.\n- `asyncio` could enhance `insert`.\n- `asyncmy` performs remarkable when compared to other drivers.\n\n## install\n\n```shell\npip install asyncmy\n```\n\n### installing on windows\n\nto install asyncmy on windows, you need to install the tools needed to build it.\n\n1. download *microsoft c++ build tools* from https://visualstudio.microsoft.com/visual-cpp-build-tools/\n2. run cmd as admin (not required but recommended) and navigate to the folder when your installer is downloaded\n3. installer executable should look like this `vs_buildtools__xxxxxxxxx.xxxxxxxxxx.exe`, it will be easier if you rename\n   it to just `vs_buildtools.exe`\n4. run this command (make sure you have about 5-6gb of free storage)\n\n```shell\nvs_buildtools.exe --norestart --passive --downloadtheninstall --includerecommended --add microsoft.visualstudio.workload.nativedesktop --add microsoft.visualstudio.workload.vctools --add microsoft.visualstudio.workload.msbuildtools\n```\n\n5. wait until the installation is finished\n6. after installation will finish, restart your computer\n7. install asyncmy via pip\n\n```shell\npip install asyncmy\n```\n\nnow you can uninstall previously installed tools.\n\n## usage\n\n### use `connect`\n\n`asyncmy` provides a way to connect to mysql database with simple factory function `asyncmy.connect()`. use this\nfunction if you want just one connection to the database, consider connection pool for multiple connections.\n\n```py\nfrom asyncmy import connect\nfrom asyncmy.cursors import dictcursor\nimport asyncio\n\n\nasync def run():\n    conn = await connect()\n    async with conn.cursor(cursor=dictcursor) as cursor:\n        await cursor.execute(\"create database if not exists test\")\n        await cursor.execute(\n            \"\"\"create table if not exists test.asyncmy\n    (\n        `id`       int primary key auto_increment,\n        `decimal`  decimal(10, 2),\n        `date`     date,\n        `datetime` datetime,\n        `float`    float,\n        `string`   varchar(200),\n        `tinyint`  tinyint\n    )\"\"\"\n        )\n\n\nif __name__ == '__main__':\n    asyncio.run(run())\n```\n\n### use `pool`\n\n`asyncmy` provides connection pool as well as plain connection objects.\n\n```py\nimport asyncmy\nimport asyncio\n\n\nasync def run():\n    pool = await asyncmy.create_pool()\n    async with pool.acquire() as conn:\n        async with conn.cursor() as cursor:\n            await cursor.execute(\"select 1\")\n            ret = await cursor.fetchone()\n            assert ret == (1,)\n\n\nif __name__ == '__main__':\n    asyncio.run(run())\n```\n\n## replication\n\n`asyncmy` supports mysql replication protocol\nlike [python-mysql-replication](https://github.com/noplay/python-mysql-replication), but powered by `asyncio`.\n\n```py\nfrom asyncmy import connect\nfrom asyncmy.replication import binlogstream\nimport asyncio\n\n\nasync def run():\n    conn = await connect()\n    ctl_conn = await connect()\n\n    stream = binlogstream(\n        conn,\n        ctl_conn,\n        1,\n        master_log_file=\"binlog.000172\",\n        master_log_position=2235312,\n        resume_stream=true,\n        blocking=true,\n    )\n    async for event in stream:\n        print(event)\n\n\nif __name__ == '__main__':\n    asyncio.run(run())\n```\n\n## thanksto\n\n> asyncmy is build on top of these awesome projects.\n\n- [pymysql](https://github/pymysql/pymysql), a pure python mysql client.\n- [aiomysql](https://github.com/aio-libs/aiomysql), a library for accessing a mysql database from the asyncio.\n- [python-mysql-replication](https://github.com/noplay/python-mysql-replication), pure python implementation of mysql\n  replication protocol build on top of pymysql.\n\n## license\n\nthis project is licensed under the [apache-2.0](./license) license.\n\n",
+  "docs_url": null,
+  "keywords": "driver,asyncio,mysql",
+  "license": "apache-2.0",
+  "name": "asyncmy",
+  "package_url": "https://pypi.org/project/asyncmy/",
+  "project_url": "https://pypi.org/project/asyncmy/",
+  "project_urls": {
+    "Documentation": "https://github.com/long2ice/asyncmy",
+    "Homepage": "https://github.com/long2ice/asyncmy",
+    "Repository": "https://github.com/long2ice/asyncmy.git"
+  },
+  "release_url": "https://pypi.org/project/asyncmy/0.2.9/",
+  "requires_dist": [],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "a fast asyncio mysql driver",
+  "version": "0.2.9",
+  "releases": [],
+  "developers": [
+    "long2ice",
+    "long2ice@gmail.com"
+  ],
+  "kwds": "mariadb asyncio pymysql aiomysql asyncmy",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_asyncmy",
+  "homepage": "https://github.com/long2ice/asyncmy",
+  "release_count": 21,
+  "dependency_ids": []
+}

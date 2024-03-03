@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development"
+  ],
+  "description": "==============\nhtml sanitizer\n==============\n\nthis is a allowlist-based and very opinionated html sanitizer that\ncan be used both for untrusted and trusted sources. it attempts to clean\nup the mess made by various rich text editors and or copy-pasting to\nmake styling of webpages simpler and more consistent. it builds on the\nexcellent html cleaner in lxml_ to make the result both valid and safe.\n\nhtml sanitizer goes further than e.g. bleach_ in that it not only\nensures that content is safe and tags and attributes conform to a given\nallowlist, but also applies additional transforms to html fragments.\n\ngoals\n=====\n\n- clean up html fragments using a very restricted set of allowed tags\n  and attributes.\n- convert *some* tags (such as ``<span style=\"...\">``, ``<b>`` and\n  ``<i>``) into either ``<strong>`` or ``<em>`` (but never both).\n- absolutely disallow all inline styles.\n- normalize whitespace by removing repeated line breaks, empty\n  paragraphs and other empty elements.\n- merge adjacent tags of the same type (such as several ``<strong>`` or\n  ``<h3>`` directly after each other.\n- automatically remove redundant list markers inside ``<li>`` tags.\n- clean up some uglyness such as paragraphs inside paragraphs or list\n  elements etc.\n- normalize unicode.\n\nusage\n=====\n\n    >>> from html_sanitizer import sanitizer\n    >>> sanitizer = sanitizer()  # default configuration\n    >>> sanitizer.sanitize('<span style=\"font-weight:bold\">some text</span>')\n    '<strong>some text</strong>'\n\nsettings\n========\n\n- bold spans and ``b`` tags are converted into ``strong`` tags, italic\n  spans and ``i`` tags into ``em`` tags (if ``strong`` and ``em`` are\n  allowed at all)\n- inline styles and scripts will always be dropped.\n- a ``div`` element is used to wrap the html fragment for the parser,\n  therefore ``div`` tags are not allowed.\n\nthe default settings are::\n\n    default_settings = {\n        \"tags\": {\n            \"a\", \"h1\", \"h2\", \"h3\", \"strong\", \"em\", \"p\", \"ul\", \"ol\",\n            \"li\", \"br\", \"sub\", \"sup\", \"hr\",\n        },\n        \"attributes\": {\"a\": (\"href\", \"name\", \"target\", \"title\", \"id\", \"rel\")},\n        \"empty\": {\"hr\", \"a\", \"br\"},\n        \"separate\": {\"a\", \"p\", \"li\"},\n        \"whitespace\": {\"br\"},\n        \"keep_typographic_whitespace\": false,\n        \"add_nofollow\": false,\n        \"autolink\": false,\n        \"sanitize_href\": sanitize_href,\n        \"element_preprocessors\": [\n            # convert span elements into em/strong if a matching style rule\n            # has been found. strong has precedence, strong & em at the same\n            # time is not supported\n            bold_span_to_strong,\n            italic_span_to_em,\n            tag_replacer(\"b\", \"strong\"),\n            tag_replacer(\"i\", \"em\"),\n            tag_replacer(\"form\", \"p\"),\n            target_blank_noopener,\n        ],\n        \"element_postprocessors\": [],\n        \"is_mergeable\": lambda e1, e2: true,\n    }\n\nthe keys' meaning is as follows:\n\n- ``tags``: a ``set()`` of allowed tags.\n- ``attributes``: a ``dict()`` mapping tags to their allowed attributes.\n- ``empty``: tags which are allowed to be empty. by default, empty tags\n  (containing no text or only whitespace) are dropped.\n- ``separate``: tags which are not merged if they appear as siblings. by\n  default, tags of the same type are merged.\n- ``whitespace``: tags which are treated as whitespace and removed from\n  the beginning or end of other tags' content.\n- ``keep_typographic_whitespace``: keep typographically used space\n  characters like non-breaking space etc.\n- ``add_nofollow``: whether to add ``rel=\"nofollow\"`` to all links.\n- ``autolink``: enable lxml_'s autolinker_. may be either a boolean or a\n  dictionary; a dictionary is passed as keyword arguments to\n  ``autolink``.\n- ``sanitize_href``: a callable that gets anchor's ``href`` value and\n  returns a sanitized version. the default implementation checks whether\n  links start with a few allowed prefixes, and if not, returns a single\n  hash (``#``).\n- ``element_preprocessors`` and ``element_postprocessors``: additional\n  filters that are called on all elements in the tree. the tree is\n  processed in reverse depth-first order. under certain circumstances\n  elements are processed more than once (search the code for\n  ``backlog.append``). preprocessors are run before whitespace\n  normalization, postprocessors afterwards.\n- ``is_mergeable``: adjacent elements which aren't kept ``separate`` are\n  merged by default. this callable can be used to prevent merging of\n  adjacent elements e.g. when their classes do not match\n  (``lambda e1, e2: e1.get('class') == e2.get('class')``)\n\nsettings can be specified partially when initializing a sanitizer\ninstance, but are still checked for consistency. for example, it is not\nallowed to have tags in ``empty`` that are not in ``tags``, that is,\ntags that are allowed to be empty but at the same time not allowed at\nall. the ``sanitizer`` constructor raises ``typeerror`` exceptions when\nit detects inconsistencies.\n\nan example for an even more restricted configuration might be::\n\n    >>> from html_sanitizer import sanitizer\n    >>> sanitizer = sanitizer({\n    ...     'tags': ('h1', 'h2', 'p'),\n    ...     'attributes': {},\n    ...     'empty': set(),\n    ...     'separate': set(),\n    ... })\n\nthe rationale for such a restricted set of allowed tags (e.g. no\nimages) is documented in the `design decisions`_ section of\ndjango-content-editor_'s documentation.\n\ndjango\n======\n\nhtml sanitizer does not depend on django, but ships with a module which\nmakes configuring sanitizers using django settings easier. usage is as\nfollows::\n\n    >>> from html_sanitizer.django import get_sanitizer\n    >>> sanitizer = get_sanitizer([name=...])\n\ndifferent sanitizers can be configured. the default configuration is\naptly named ``'default'``. example settings follow::\n\n    html_sanitizers = {\n        'default': {\n          'tags': ...,\n        },\n        ...\n    }\n\nthe ``'default'`` configuration is special: if it isn't explicitly\ndefined, the default configuration above is used instead. non-existing\nconfigurations will lead to ``improperlyconfigured`` exceptions.\n\nthe ``get_sanitizer`` function caches sanitizer instances, so feel free\nto call it as often as you want to.\n\n\nsecurity issues\n===============\n\nplease report security issues to me directly at mk@feinheit.ch.\n\n\n.. _bleach: https://bleach.readthedocs.io/\n.. _django: https://www.djangoproject.com/\n.. _django-content-editor: http://django-content-editor.readthedocs.io/\n.. _feincms: https://pypi.python.org/pypi/feincms\n.. _feincms-cleanse: https://pypi.python.org/pypi/feincms-cleanse\n.. _design decisions: http://django-content-editor.readthedocs.io/en/latest/#design-decisions\n.. _lxml: http://lxml.de/\n.. _autolinker: http://lxml.de/api/lxml.html.clean-module.html\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-3-clause",
+  "name": "html-sanitizer",
+  "package_url": "https://pypi.org/project/html-sanitizer/",
+  "project_url": "https://pypi.org/project/html-sanitizer/",
+  "project_urls": {
+    "Homepage": "https://github.com/matthiask/html-sanitizer/"
+  },
+  "release_url": "https://pypi.org/project/html-sanitizer/2.2.0/",
+  "requires_dist": [
+    "beautifulsoup4",
+    "lxml>=4.9.1"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "html sanitizer",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "mk@feinheit.ch"
+  ],
+  "kwds": "html_sanitizers html_sanitizer sanitize_href get_sanitizer lxml_",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_html_sanitizer",
+  "homepage": "",
+  "release_count": 28,
+  "dependency_ids": [
+    "pypi_beautifulsoup4",
+    "pypi_lxml"
+  ]
+}

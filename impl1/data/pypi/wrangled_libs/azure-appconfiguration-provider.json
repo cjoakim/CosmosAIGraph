@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# azure app configuration python provider client library for python\n\nazure app configuration is a managed service that helps developers centralize their application configurations simply and securely. this provider adds additional functionality above the azure-sdk-for-python.\n\nusing the provider enables loading sets of configurations from an azure app configuration store in a managed way.\n\n## getting started\n\n### get credentials\n\nuse the [azure cli][azure_cli] snippet below to get the connection string from the configuration store.\n\n```powershell\naz appconfig credential list --name <config-store-name>\n```\n\nalternatively, get the connection string from the azure portal.\n\n### creating a provider\n\nyou can create a client with a connection string:\n\n```python\nconfig = load(connection_string=\"your-connection-string\")\n```\n\nor with aad:\n\n```python\nconfig = load(endpoint=\"your-endpoint\", credential=defaultazurecredential())\n```\n\nthese providers will by default load all configurations with `(no label)` from your configuration store.\n\n### features\n\ncurrently the azure app configuration provider enables:\n\n* connecting to an app configuration store using a connection string or azure active directory.\n* selecting multiple sets of configurations using `settingselector`.\n* trim prefixes off key names.\n* resolving key vault references, requires aad.\n* secret resolver, resolve key vault references locally without connecting to key vault.\n* json content type\n\n#### future features\n\nlist of features we are going to add to the python provider in the future.\n\n* geo-replication support\n* feature management\n* dynamic refresh\n* configuration placeholders\n\n## examples\n\n### selecting configurations\n\nyou can refine or expand the configurations loaded from your store by using `settingselector`s. setting selectors provide a way to pass a key filter and label filter into the provider.\n\n```python\nselects = {settingselector(key_filter=\"*\", label_filter=\"\\0\"), settingselector(key_filter=\"*\", label_filter=\"dev\")}\nconfig = load(endpoint=endpoint, credential=defaultazurecredential(), selects=selects)\n```\nin this example all configuration with empty label and the dev label are loaded. because the dev selector is listed last, any configurations from dev take priority over those with `(no label)` when duplicates are found.\n\n### trimming keys\n\nyou can trim the prefix off of keys by providing a list of trimmed key prefixes to the provider. for example, if you have the key(s) like `/application/message` in your configuration store, you could trim `/application/` from them.\n\n```python\ntrim_prefixes={\"/application/\"}\nconfig = load(endpoint=endpoint, credential=defaultazurecredential(), trim_prefixes=trim_prefixes)\nprint(config[\"message\"])\n```\n\n### resolving key vault references\n\nkey vault references can be resolved by providing credentials to your key vault to the provider using `azureappconfigurationkeyvaultoptions`.\n\n#### with credentials\n\nyou can provide `azureappconfigurationkeyvaultoptions` with a credential and all key vault references will be resolved with it. the provider will attempt to connect to any key vault referenced with the credential provided.\n\n```python\nkey_vault_options = azureappconfigurationkeyvaultoptions(credential=defaultazurecredential())\nconfig = load(endpoint=endpoint, credential=defaultazurecredential(), key_vault_options=key_vault_options)\n```\n### with clients\n\nyou can provide `azureappconfigurationkeyvaultoptions` with a list of `secretclients`.\n\n```python\nkey_vault_options = azureappconfigurationkeyvaultoptions(\n    client_configs={key_vault_uri: {'credential': credential}})\nconfig = load(endpoint=endpoint, credential=defaultazurecredential(), key_vault_options=key_vault_options)\n```\n\n### secret resolver\n\nif no credentials or clients are provided a secret resolver can be used. secret resolver provides a way to return any value you want to a key vault reference.\n\n```python\ndef secret_resolver(uri):\n    return \"from secret resolver\"\n\nkey_vault_options = azureappconfigurationkeyvaultoptions(\n    secret_resolver=secret_resolver)\nconfig = load(endpoint=endpoint, credential=defaultazurecredential(), key_vault_options=key_vault_options)\n```\n\n## key concepts\n\n## troubleshooting\n\n## next steps\n\ncheck out our django and flask examples to see how to use the provider in a web application.\n\n### [django](https://github.com/azure/appconfiguration/tree/main/examples/python/python-django-webapp-sample)\n\n### [flask](https://github.com/azure/appconfiguration/tree/main/examples/python/python-flask-webapp-sample)\n\n## contributing\n\nthis project welcomes contributions and suggestions. most contributions require\nyou to agree to a contributor license agreement (cla) declaring that you have\nthe right to, and actually do, grant us the rights to use your contribution.\nfor details, visit https://cla.microsoft.com.\n\nwhen you submit a pull request, a cla-bot will automatically determine whether\nyou need to provide a cla and decorate the pr appropriately (e.g., label,\ncomment). simply follow the instructions provided by the bot. you will only\nneed to do this once across all repos using our cla.\n\nthis project has adopted the\n[microsoft open source code of conduct][code_of_conduct]. for more information,\nsee the code of conduct faq or contact opencode@microsoft.com with any\nadditional questions or comments.\n\n[azure_cli]: https://learn.microsoft.com/cli/azure/appconfig\n[cla]: https://cla.microsoft.com\n[code_of_conduct]: https://opensource.microsoft.com/codeofconduct/\n[coc_faq]: https://opensource.microsoft.com/codeofconduct/faq/\n[coc_contact]: mailto:opencode@microsoft.com\n\n\n# release history\n\n## 1.0.0 (2023-03-09)\n\n### breaking changes\n* renamed `load_provider` to `load`\n* added `azureappconfigurationkeyvaultoptions` to take in a `client_configs` a mapping of endpoints to client kwargs instead of taking in the whole client.\n* removed `azureappconfigurationkeyvaultoptions` `secret_clients`, `client_configs` should be used instead.\n* made key_filter and label_filter kwargs for setting selector\n* renamed `trimmed_key_prefixes` to `trim_prefixes`\n\n### other changes\n* made empty_label a constant. i.e. \"\\0\"\n\n## 1.0.0b2 (2023-02-15)\n\n### features added\n* added async support\n* added missing methods for mapping api\n* made load method properties unordered.\n\n### breaking changes\n* changes how load works. moves if from azureappconfigurationprovider.load to load_provider.\n* removed custom key vault error\n* removed unneeded __repr__ and copy methods.\n* all feature flags are added to there own key and have there prefix removed\n\n### bugs fixed\n* fixed issue where key vault clients couldn't be set in some situations\n\n### other changes\n* updated method docs\n* fixed load doc that used `selector` instead of `selects`.\n* fixed cli link in readme.\n\n## 1.0.0b1 (2022-10-13)\n\nnew azure app configuration provider\n\nprovides additional support above the azure app configuration sdk. enables:\n* connecting to an azure app configuration store\n* selecting multiple keys using setting selector\n* resolve key vault references when supplied azureappconfigurationkeyvaultoptions\n\nthe azure app configuration provider once loaded returns a dictionary of key/value pairs to use in configuration.\n\n```python\nendpoint = \"https://<your-store>.azconfig.io\"\ndefault_credential = defaultazurecredential()\nconfig = azureappconfigurationprovider.load(\n    endpoint=endpoint, credential=default_credential)\nprint(config[\"message\"])\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "azure-appconfiguration-provider",
+  "package_url": "https://pypi.org/project/azure-appconfiguration-provider/",
+  "project_url": "https://pypi.org/project/azure-appconfiguration-provider/",
+  "project_urls": {
+    "Homepage": "https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/appconfiguration/azure-appconfiguration-provider"
+  },
+  "release_url": "https://pypi.org/project/azure-appconfiguration-provider/1.0.0/",
+  "requires_dist": [
+    "msrest (>=0.6.21)",
+    "azure-core (<2.0.0,>=1.24.0)",
+    "azure-appconfiguration (<2.0.0,>=1.4.0)",
+    "azure-keyvault-secrets (<5.0.0,>=4.3.0)"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "microsoft app configuration provider library for python",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "azpysdkhelp@microsoft.com",
+    "microsoft_corporation"
+  ],
+  "kwds": "azureappconfigurationprovider azure_cli azureappconfigurationkeyvaultoptions azure appconfig",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_azure_appconfiguration_provider",
+  "homepage": "https://github.com/azure/azure-sdk-for-python/tree/main/sdk/appconfiguration/azure-appconfiguration-provider",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_azure_appconfiguration",
+    "pypi_azure_core",
+    "pypi_azure_keyvault_secrets",
+    "pypi_msrest"
+  ]
+}

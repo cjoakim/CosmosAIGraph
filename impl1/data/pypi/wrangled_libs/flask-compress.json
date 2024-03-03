@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# flask-compress\n\n[![build](https://github.com/colour-science/flask-compress/actions/workflows/ci.yaml/badge.svg)](https://github.com/colour-science/flask-compress/actions/workflows/ci.yaml)\n[![version](https://img.shields.io/pypi/v/flask-compress.svg)](https://pypi.python.org/pypi/flask-compress)\n[![downloads](https://static.pepy.tech/badge/flask-compress)](https://pypi.python.org/pypi/flask-compress)\n\nflask-compress allows you to easily compress your [flask](http://flask.pocoo.org/) application's responses with gzip, deflate or brotli. it originally started as a fork of [flask-gzip](https://github.com/closeio/flask-gzip).\n\nthe preferred solution is to have a server (like [nginx](http://wiki.nginx.org/main)) automatically compress the static files for you. if you don't have that option flask-compress will solve the problem for you.\n\n\n## how it works\n\nflask-compress both adds the various headers required for a compressed response and compresses the response data. \nthis makes serving compressed static files extremely easy.\n\ninternally, every time a request is made the extension will check if it matches one of the compressible mime types\nand whether the client and the server use some common compression algorithm, and will automatically attach the \nappropriate headers.\n\nto determine the compression algorithm, the `accept-encoding` request header is inspected, respecting the\nquality factor as described in [mdn docs](https://developer.mozilla.org/en-us/docs/web/http/headers/accept-encoding). \nif no requested compression algorithm is supported by the server, we don't compress the response. if, on the other\nhand, multiple suitable algorithms are found and are requested with the same quality factor, we choose the first one\ndefined in the `compress_algorithm` option (see below). \n\n\n## installation\n\nif you use pip then installation is simply:\n\n```shell\n$ pip install --user flask-compress\n```\n\nor, if you want the latest github version:\n\n```shell\n$ pip install --user git+git://github.com/colour-science/flask-compress.git\n```\n\nyou can also install flask-compress via easy install:\n\n```shell\n$ easy_install flask-compress\n```\n\n\n## using flask-compress\n\n### globally\n\nflask-compress is incredibly simple to use. in order to start compressing your flask application's assets, the first thing to do is let flask-compress know about your [`flask.flask`](http://flask.pocoo.org/docs/latest/api/#flask.flask) application object.\n\n```python\nfrom flask import flask\nfrom flask_compress import compress\n\napp = flask(__name__)\ncompress(app)\n```\n\nin many cases, however, one cannot expect a flask instance to be ready at import time, and a common pattern is to return a flask instance from within a function only after other configuration details have been taken care of. in these cases, flask-compress provides a simple function, `flask_compress.compress.init_app`, which takes your application as an argument.\n\n```python\nfrom flask import flask\nfrom flask_compress import compress\n\ncompress = compress()\n\ndef start_app():\n    app = flask(__name__)\n    compress.init_app(app)\n    return app\n```\n\nin terms of automatically compressing your assets, passing your [`flask.flask`](http://flask.pocoo.org/docs/latest/api/#flask.flask) object to the `flask_compress.compress` object is all that needs to be done.\n\n### per-view compression\n\ncompression is possible per view using the `@compress.compressed()` decorator. make sure to disable global compression first.\n\n```python\nfrom flask import flask\nfrom flask_compress import compress\n\napp = flask(__name__)\napp.config[\"compress_register\"] = false  # disable default compression of all eligible requests\ncompress = compress()\ncompress.init_app(app)\n\n# compress this view specifically\n@app.route(\"/test\")\n@compress.compressed()\ndef view():\n   pass\n```\n\n### cache example\n\nflask-compress can be integrated with caching mechanisms to serve compressed responses directly from the cache. this can significantly reduce server load and response times.  \nhere is an example of how to configure flask-compress with caching using flask-caching.  \nthe example demonstrates how to create a simple cache instance with a 1-hour timeout, and use it to cache compressed responses for incoming requests.\n\n```python\n# initializing flask app\napp = flask(__name__)\n\ncache = cache(app, config={\n    'cache_type': 'simple',\n    'cache_default_timeout': 60*60  # 1 hour cache timeout\n})\n\n# define a function to return cache key for incoming requests\ndef get_cache_key(request):\n    return request.url\n\n# initialize flask-compress\ncompress = compress()\ncompress.init_app(app)\n\n# set up cache for compressed responses\ncompress.cache = cache\ncompress.cache_key = get_cache_key\n```\n\n## options\n\nwithin your flask application's settings you can provide the following settings to control the behavior of flask-compress. none of the settings are required.\n\n| option | description | default |\n| ------ | ----------- | ------- |\n| `compress_mimetypes` | set the list of mimetypes to compress here. | `[`<br>`'application/javascript',`<br>`'application/json',`<br>`'text/css',`<br>`'text/html',`<br>`'text/javascript',`<br>`'text/xml',`<br>`]` |\n| `compress_level` | specifies the gzip compression level. | `6` |\n| `compress_br_level` | specifies the brotli compression level. ranges from 0 to 11. | `4` |\n| `compress_br_mode` | for brotli, the compression mode. the options are 0, 1, or 2. these correspond to \"generic\", \"text\" (for utf-8 input), and \"font\" (for woff 2.0). | `0` |\n| `compress_br_window` | for brotli, this specifies the base-2 logarithm of the sliding window size. ranges from 10 to 24. | `22` |\n| `compress_br_block` | for brotli, this provides the base-2 logarithm of the maximum input block size. if zero is provided, value will be determined based on the quality. ranges from 16 to 24. | `0` |\n| `compress_deflate_level` | specifies the deflate compression level. | `-1` |\n| `compress_min_size` | specifies the minimum file size threshold for compressing files. | `500` |\n| `compress_cache_key` | specifies the cache key method for lookup/storage of response data. | `none` |\n| `compress_cache_backend` | specified the backend for storing the cached response data. | `none` |\n| `compress_register` | specifies if compression should be automatically registered. | `true` |\n| `compress_algorithm` | supported compression algorithms. | `['br', 'gzip', 'deflate']` |\n| `compress_streams` | compress content streams. | `true` |\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "flask-compress",
+  "package_url": "https://pypi.org/project/Flask-Compress/",
+  "project_url": "https://pypi.org/project/Flask-Compress/",
+  "project_urls": {
+    "Homepage": "https://github.com/colour-science/flask-compress"
+  },
+  "release_url": "https://pypi.org/project/Flask-Compress/1.14/",
+  "requires_dist": [
+    "flask",
+    "brotli ; platform_python_implementation != \"PyPy\"",
+    "brotlicffi ; platform_python_implementation == \"PyPy\""
+  ],
+  "requires_python": "",
+  "summary": "compress responses in your flask app with gzip, deflate or brotli.",
+  "version": "1.14",
+  "releases": [],
+  "developers": [
+    "thomas.mansencal@gmail.com",
+    "thomas_mansencal"
+  ],
+  "kwds": "flask_compress flask compress_mimetypes gzip compress_br_window",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flask_compress",
+  "homepage": "https://github.com/colour-science/flask-compress",
+  "release_count": 24,
+  "dependency_ids": [
+    "pypi_brotli",
+    "pypi_brotlicffi",
+    "pypi_flask"
+  ]
+}

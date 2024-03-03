@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "topic :: software development :: libraries"
+  ],
+  "description": "<img src=\"https://github.com/fatiando/pooch/raw/main/doc/_static/readme-banner.png\" alt=\"pooch: a friend to fetch your data files\">\n\n<p align=\"center\">\n<a href=\"https://www.fatiando.org/pooch\"><strong>documentation</strong> (latest)</a> \u2022\n<a href=\"https://www.fatiando.org/pooch/dev\"><strong>documentation</strong> (main branch)</a> \u2022\n<a href=\"https://github.com/fatiando/pooch/blob/main/contributing.md\"><strong>contributing</strong></a> \u2022\n<a href=\"https://www.fatiando.org/contact/\"><strong>contact</strong></a>\n</p>\n\n<p align=\"center\">\npart of the <a href=\"https://www.fatiando.org\"><strong>fatiando a terra</strong></a> project\n</p>\n\n<p align=\"center\">\n<a href=\"https://pypi.python.org/pypi/pooch\"><img src=\"http://img.shields.io/pypi/v/pooch.svg?style=flat-square\" alt=\"latest version on pypi\"></a>\n<a href=\"https://github.com/conda-forge/pooch-feedstock\"><img src=\"https://img.shields.io/conda/vn/conda-forge/pooch.svg?style=flat-square\" alt=\"latest version on conda-forge\"></a>\n<a href=\"https://codecov.io/gh/fatiando/pooch\"><img src=\"https://img.shields.io/codecov/c/github/fatiando/pooch/main.svg?style=flat-square\" alt=\"test coverage status\"></a>\n<a href=\"https://pypi.python.org/pypi/pooch\"><img src=\"https://img.shields.io/pypi/pyversions/pooch.svg?style=flat-square\" alt=\"compatible python versions.\"></a>\n<a href=\"https://doi.org/10.21105/joss.01943\"><img src=\"https://img.shields.io/badge/doi-10.21105%2fjoss.01943-blue?style=flat-square\" alt=\"doi used to cite pooch\"></a>\n</p>\n\n## about\n\n*does your python package include sample datasets?\nare you shipping them with the code?\nare they getting too big?*\n\n**pooch** is here to help! it will manage a data *registry* by downloading your\ndata files from a server only when needed and storing them locally in a data\n*cache* (a folder on your computer).\n\nhere are pooch's main features:\n\n* pure python and minimal dependencies.\n* download a file only if necessary (it's not in the data cache or needs to be\n  updated).\n* verify download integrity through sha256 hashes (also used to check if a file\n  needs to be updated).\n* designed to be extended: plug in custom download (ftp, scp, etc) and\n  post-processing (unzip, decompress, rename) functions.\n* includes utilities to unzip/decompress the data upon download to save loading\n  time.\n* can handle basic http authentication (for servers that require a login) and\n  printing download progress bars.\n* easily set up an environment variable to overwrite the data cache location.\n\n*are you a scientist or researcher? pooch can help you too!*\n\n* automatically download your data files so you don't have to keep them in your\n  github repository.\n* make sure everyone running the code has the same version of the data files\n  (enforced through the sha256 hashes).\n\n## example\n\nfor a **scientist downloading a data file** for analysis:\n\n```python\nimport pooch\nimport pandas as pd\n\n# download a file and save it locally, returning the path to it.\n# running this again will not cause a download. pooch will check the hash\n# (checksum) of the downloaded file against the given value to make sure\n# it's the right file (not corrupted or outdated).\nfname_bathymetry = pooch.retrieve(\n    url=\"https://github.com/fatiando-data/caribbean-bathymetry/releases/download/v1/caribbean-bathymetry.csv.xz\",\n    known_hash=\"md5:a7332aa6e69c77d49d7fb54b764caa82\",\n)\n\n# pooch can also download based on a doi from certain providers.\nfname_gravity = pooch.retrieve(\n    url=\"doi:10.5281/zenodo.5882430/southern-africa-gravity.csv.xz\",\n    known_hash=\"md5:1dee324a14e647855366d6eb01a1ef35\",\n)\n\n# load the data with pandas\ndata_bathymetry = pd.read_csv(fname_bathymetry)\ndata_gravity = pd.read_csv(fname_gravity)\n```\n\nfor **package developers** including sample data in their projects:\n\n```python\n\"\"\"\nmodule mypackage/datasets.py\n\"\"\"\nimport pkg_resources\nimport pandas\nimport pooch\n\n# get the version string from your project. you have one of these, right?\nfrom . import version\n\n# create a new friend to manage your sample data storage\ngoodboy = pooch.create(\n    # folder where the data will be stored. for a sensible default, use the\n    # default cache folder for your os.\n    path=pooch.os_cache(\"mypackage\"),\n    # base url of the remote data store. will call .format on this string\n    # to insert the version (see below).\n    base_url=\"https://github.com/myproject/mypackage/raw/{version}/data/\",\n    # pooches are versioned so that you can use multiple versions of a\n    # package simultaneously. use pep440 compliant version number. the\n    # version will be appended to the path.\n    version=version,\n    # if a version as a \"+xx.xxxxx\" suffix, we'll assume that this is a dev\n    # version and replace the version with this string.\n    version_dev=\"main\",\n    # an environment variable that overwrites the path.\n    env=\"mypackage_data_dir\",\n    # the cache file registry. a dictionary with all files managed by this\n    # pooch. keys are the file names (relative to *base_url*) and values\n    # are their respective sha256 hashes. files will be downloaded\n    # automatically when needed (see fetch_gravity_data).\n    registry={\"gravity-data.csv\": \"89y10phsdwhs09whljwc09whcowsdhcwodcydw\"}\n)\n# you can also load the registry from a file. each line contains a file\n# name and it's sha256 hash separated by a space. this makes it easier to\n# manage large numbers of data files. the registry file should be packaged\n# and distributed with your software.\ngoodboy.load_registry(\n    pkg_resources.resource_stream(\"mypackage\", \"registry.txt\")\n)\n\n# define functions that your users can call to get back the data in memory\ndef fetch_gravity_data():\n    \"\"\"\n    load some sample gravity data to use in your docs.\n    \"\"\"\n    # fetch the path to a file in the local storage. if it's not there,\n    # we'll download it.\n    fname = goodboy.fetch(\"gravity-data.csv\")\n    # load it with numpy/pandas/etc\n    data = pandas.read_csv(fname)\n    return data\n```\n\n## projects using pooch\n\n* [scipy](https://github.com/scipy/scipy)\n* [scikit-image](https://github.com/scikit-image/scikit-image)\n* [metpy](https://github.com/unidata/metpy)\n* [icepack](https://github.com/icepack/icepack)\n* [histolab](https://github.com/histolab/histolab)\n* [seaborn-image](https://github.com/sarthakjariwala/seaborn-image)\n* [ensaio](https://github.com/fatiando/ensaio)\n* [open ar-sandbox](https://github.com/cgre-aachen/open_ar_sandbox)\n* [climlab](https://github.com/climlab/climlab)\n* [napari](https://github.com/napari/napari)\n* [mne-python](https://github.com/mne-tools/mne-python)\n* [gemgis](https://github.com/cgre-aachen/gemgis)\n\n*if you're using pooch, send us a pull request adding your project to the list.*\n\n## getting involved\n\n\ud83d\udde8\ufe0f **contact us:**\nfind out more about how to reach us at\n[fatiando.org/contact](https://www.fatiando.org/contact/).\n\n\ud83d\udc69\ud83c\udffe\u200d\ud83d\udcbb **contributing to project development:**\nplease read our\n[contributing guide](https://github.com/fatiando/pooch/blob/main/contributing.md)\nto see how you can help and give feedback.\n\n\ud83e\uddd1\ud83c\udffe\u200d\ud83e\udd1d\u200d\ud83e\uddd1\ud83c\udffc **code of conduct:**\nthis project is released with a\n[code of conduct](https://github.com/fatiando/community/blob/main/code_of_conduct.md).\nby participating in this project you agree to abide by its terms.\n\n> **imposter syndrome disclaimer:**\n> we want your help. **no, really.** there may be a little voice inside your\n> head that is telling you that you're not ready, that you aren't skilled\n> enough to contribute. we assure you that the little voice in your head is\n> wrong. most importantly, **there are many valuable ways to contribute besides\n> writing code**.\n>\n> *this disclaimer was adapted from the*\n> [metpy project](https://github.com/unidata/metpy).\n\n## license\n\nthis is free software: you can redistribute it and/or modify it under the terms\nof the **bsd 3-clause license**. a copy of this license is provided in\n[`license.txt`](https://github.com/fatiando/pooch/blob/main/license.txt).\n",
+  "docs_url": null,
+  "keywords": "data,download,caching,http",
+  "license": "bsd 3-clause license",
+  "name": "pooch",
+  "package_url": "https://pypi.org/project/pooch/",
+  "project_url": "https://pypi.org/project/pooch/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/fatiando/pooch/issues",
+    "Documentation": "https://www.fatiando.org/pooch",
+    "Homepage": "https://github.com/fatiando/pooch",
+    "Release Notes": "https://github.com/fatiando/pooch/releases",
+    "Source Code": "https://github.com/fatiando/pooch"
+  },
+  "release_url": "https://pypi.org/project/pooch/1.8.0/",
+  "requires_dist": [
+    "platformdirs >=2.5.0",
+    "packaging >=20.0",
+    "requests >=2.19.0",
+    "tqdm <5.0.0,>=4.41.0 ; extra == 'progress'",
+    "paramiko >=2.7.0 ; extra == 'sftp'",
+    "xxhash >=1.4.3 ; extra == 'xxhash'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "\"pooch manages your python library's sample data files: it automatically downloads and stores them in a local directory, with support for versioning and corruption checks.\"",
+  "version": "1.8.0",
+  "releases": [],
+  "developers": [
+    "fatiandoaterra@protonmail.com",
+    "leouieda@gmail.com",
+    "the_pooch_developers"
+  ],
+  "kwds": "github file files repository href",
+  "license_kwds": "bsd 3-clause license",
+  "libtype": "pypi",
+  "id": "pypi_pooch",
+  "homepage": "https://github.com/fatiando/pooch",
+  "release_count": 32,
+  "dependency_ids": [
+    "pypi_packaging",
+    "pypi_paramiko",
+    "pypi_platformdirs",
+    "pypi_requests",
+    "pypi_tqdm",
+    "pypi_xxhash"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "==========================================\npriority: a http/2 priority implementation\n==========================================\n\n.. image:: https://github.com/python-hyper/priority/workflows/ci/badge.svg\n    :target: https://github.com/python-hyper/priority/actions\n    :alt: build status\n.. image:: https://codecov.io/gh/python-hyper/priority/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/python-hyper/priority\n    :alt: code coverage\n.. image:: https://readthedocs.org/projects/priority/badge/?version=latest\n    :target: https://priority.readthedocs.io/en/latest/\n    :alt: documentation status\n.. image:: https://img.shields.io/badge/chat-join_now-brightgreen.svg\n    :target: https://gitter.im/python-hyper/community\n    :alt: chat community\n\n.. image:: https://raw.github.com/python-hyper/documentation/master/source/logo/hyper-black-bg-white.png\n\n\npriority is a pure-python implementation of the priority logic for http/2, set\nout in `rfc 7540 section 5.3 (stream priority)`_. this logic allows for clients\nto express a preference for how the server allocates its (limited) resources to\nthe many outstanding http requests that may be running over a single http/2\nconnection.\n\nspecifically, this python implementation uses a variant of the implementation\nused in the excellent `h2o`_ project. this original implementation is also the\ninspiration for `nghttp2's`_ priority implementation, and generally produces a\nvery clean and even priority stream. the only notable changes from h2o's\nimplementation are small modifications to allow the priority implementation to\nwork cleanly as a separate implementation, rather than being embedded in a\nhttp/2 stack directly.\n\nwhile priority information in http/2 is only a suggestion, rather than an\nenforceable constraint, where possible servers should respect the priority\nrequests of their clients.\n\nusing priority\n--------------\n\npriority has a simple api. streams are inserted into the tree: when they are\ninserted, they may optionally have a weight, depend on another stream, or\nbecome an exclusive dependent of another stream.\n\n.. code-block:: python\n\n    >>> p = priority.prioritytree()\n    >>> p.insert_stream(stream_id=1)\n    >>> p.insert_stream(stream_id=3)\n    >>> p.insert_stream(stream_id=5, depends_on=1)\n    >>> p.insert_stream(stream_id=7, weight=32)\n    >>> p.insert_stream(stream_id=9, depends_on=7, weight=8)\n    >>> p.insert_stream(stream_id=11, depends_on=7, exclusive=true)\n\nonce streams are inserted, the stream priorities can be requested. this allows\nthe server to make decisions about how to allocate resources.\n\niterating the tree\n~~~~~~~~~~~~~~~~~~\n\nthe tree in this algorithm acts as a gate. its goal is to allow one stream\n\"through\" at a time, in such a manner that all the active streams are served as\nevenly as possible in proportion to their weights.\n\nthis is handled in priority by iterating over the tree. the tree itself is an\niterator, and each time it is advanced it will yield a stream id. this is the\nid of the stream that should next send data.\n\nthis looks like this:\n\n.. code-block:: python\n\n    >>> for stream_id in p:\n    ...     send_data(stream_id)\n\nif each stream only sends when it is 'ungated' by this mechanism, the server\nwill automatically be emitting stream data in conformance to rfc 7540.\n\nupdating the tree\n~~~~~~~~~~~~~~~~~\n\nif for any reason a stream is unable to proceed (for example, it is blocked on\nhttp/2 flow control, or it is waiting for more data from another service), that\nstream is *blocked*. the ``prioritytree`` should be informed that the stream is\nblocked so that other dependent streams get a chance to proceed. this can be\ndone by calling the ``block`` method of the tree with the stream id that is\ncurrently unable to proceed. this will automatically update the tree, and it\nwill adjust on the fly to correctly allow any streams that were dependent on\nthe blocked one to progress.\n\nfor example:\n\n.. code-block:: python\n\n    >>> for stream_id in p:\n    ...     send_data(stream_id)\n    ...     if blocked(stream_id):\n    ...         p.block(stream_id)\n\nwhen a stream goes from being blocked to being unblocked, call the ``unblock``\nmethod to place it back into the sequence. both the ``block`` and ``unblock``\nmethods are idempotent and safe to call repeatedly.\n\nadditionally, the priority of a stream may change. when it does, the\n``reprioritize`` method can be used to update the tree in the wake of that\nchange. ``reprioritize`` has the same signature as ``insert_stream``, but\napplies only to streams already in the tree.\n\nremoving streams\n~~~~~~~~~~~~~~~~\n\na stream can be entirely removed from the tree by calling ``remove_stream``.\nnote that this is not idempotent. further, calling ``remove_stream`` and then\nre-adding it *may* cause a substantial change in the shape of the priority\ntree, and *will* cause the iteration order to change.\n\nlicense\n-------\n\npriority is made available under the mit license. for more details, see the\nlicense file in the repository.\n\nauthors\n-------\n\npriority is maintained by cory benfield, with contributions from others. for\nmore details about the contributors, please see contributors.rst in the\nrepository.\n\n\n.. _rfc 7540 section 5.3 (stream priority): https://tools.ietf.org/html/rfc7540#section-5.3\n.. _nghttp2's: https://nghttp2.org/blog/2015/11/11/stream-scheduling-utilizing-http2-priority/\n.. _h2o: https://h2o.examp1e.net/\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "priority",
+  "package_url": "https://pypi.org/project/priority/",
+  "project_url": "https://pypi.org/project/priority/",
+  "project_urls": {
+    "Changelog": "https://github.com/python-hyper/priority/blob/master/HISTORY.rst",
+    "Documentation": "https://python-hyper.org/projects/priority/",
+    "Homepage": "https://github.com/python-hyper/priority/",
+    "Source": "https://github.com/python-hyper/priority/",
+    "Tracker": "https://github.com/python-hyper/priority/issues"
+  },
+  "release_url": "https://pypi.org/project/priority/2.0.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.6.1",
+  "summary": "a pure-python implementation of the http/2 priority tree",
+  "version": "2.0.0",
+  "releases": [],
+  "developers": [
+    "cory@lukasa.co.uk",
+    "cory_benfield"
+  ],
+  "kwds": "prioritytree priority priorities hyper badge",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_priority",
+  "homepage": "https://github.com/python-hyper/priority/",
+  "release_count": 9,
+  "dependency_ids": []
+}

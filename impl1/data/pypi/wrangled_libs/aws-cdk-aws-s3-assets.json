@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws cdk assets\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\nassets are local files or directories which are needed by a cdk app. a common\nexample is a directory which contains the handler code for a lambda function,\nbut assets can represent any artifact that is needed for the app's operation.\n\nwhen deploying a cdk app that includes constructs with assets, the cdk toolkit\nwill first upload all the assets to s3, and only then deploy the stacks. the s3\nlocations of the uploaded assets will be passed in as cloudformation parameters\nto the relevant stacks.\n\nthe following javascript example defines a directory asset which is archived as\na .zip file and uploaded to s3 during deployment.\n\n```python\nasset = assets.asset(self, \"sampleasset\",\n    path=path.join(__dirname, \"sample-asset-directory\")\n)\n```\n\nthe following javascript example defines a file asset, which is uploaded as-is\nto an s3 bucket during deployment.\n\n```python\nasset = assets.asset(self, \"sampleasset\",\n    path=path.join(__dirname, \"file-asset.txt\")\n)\n```\n\n## attributes\n\n`asset` constructs expose the following deploy-time attributes:\n\n* `s3bucketname` - the name of the assets s3 bucket.\n* `s3objectkey` - the s3 object key of the asset file (whether it's a file or a zip archive)\n* `s3objecturl` - the s3 object url of the asset (i.e. s3://mybucket/mykey.zip)\n* `httpurl` - the s3 http url of the asset (i.e. https://s3.us-east-1.amazonaws.com/mybucket/mykey.zip)\n\nin the following example, the various asset attributes are exported as stack outputs:\n\n```python\nasset = assets.asset(self, \"sampleasset\",\n    path=path.join(__dirname, \"sample-asset-directory\")\n)\n\ncdk.cfnoutput(self, \"s3bucketname\", value=asset.s3_bucket_name)\ncdk.cfnoutput(self, \"s3objectkey\", value=asset.s3_object_key)\ncdk.cfnoutput(self, \"s3httpurl\", value=asset.http_url)\ncdk.cfnoutput(self, \"s3objecturl\", value=asset.s3_object_url)\n```\n\n## permissions\n\niam roles, users or groups which need to be able to read assets in runtime will should be\ngranted iam permissions. to do that use the `asset.grantread(principal)` method:\n\nthe following example grants an iam group read permissions on an asset:\n\n```python\ngroup = iam.group(self, \"myusergroup\")\nasset.grant_read(group)\n```\n\n## how does it work\n\nwhen an asset is defined in a construct, a construct metadata entry\n`aws:cdk:asset` is emitted with instructions on where to find the asset and what\ntype of packaging to perform (`zip` or `file`). furthermore, the synthesized\ncloudformation template will also include two cloudformation parameters: one for\nthe asset's bucket and one for the asset s3 key. those parameters are used to\nreference the deploy-time values of the asset (using `{ ref: \"param\" }`).\n\nthen, when the stack is deployed, the toolkit will package the asset (i.e. zip\nthe directory), calculate an md5 hash of the contents and will render an s3 key\nfor this asset within the toolkit's asset store. if the file doesn't exist in\nthe asset store, it is uploaded during deployment.\n\n> the toolkit's asset store is an s3 bucket created by the toolkit for each\n> environment the toolkit operates in (environment = account + region).\n\nnow, when the toolkit deploys the stack, it will set the relevant cloudformation\nparameters to point to the actual bucket and key for each asset.\n\n## asset bundling\n\nwhen defining an asset, you can use the `bundling` option to specify a command\nto run inside a docker container. the command can read the contents of the asset\nsource from `/asset-input` and is expected to write files under `/asset-output`\n(directories mapped inside the container). the files under `/asset-output` will\nbe zipped and uploaded to s3 as the asset.\n\nthe following example uses custom asset bundling to convert a markdown file to html:\n\n```python\nasset = assets.asset(self, \"bundledasset\",\n    path=path.join(__dirname, \"markdown-asset\"),  # /asset-input and working directory in the container\n    bundling=bundlingoptions(\n        image=dockerimage.from_build(path.join(__dirname, \"alpine-markdown\")),  # build an image\n        command=[\"sh\", \"-c\", \"\"\"\n                        markdown index.md > /asset-output/index.html\n                      \"\"\"\n        ]\n    )\n)\n```\n\nthe bundling docker image (`image`) can either come from a registry (`dockerimage.fromregistry`)\nor it can be built from a `dockerfile` located inside your project (`dockerimage.frombuild`).\n\nyou can set the `cdk_docker` environment variable in order to provide a custom\ndocker program to execute. this may sometime be needed when building in\nenvironments where the standard docker cannot be executed (see\nhttps://github.com/aws/aws-cdk/issues/8460 for details).\n\nuse `local` to specify a local bundling provider. the provider implements a\nmethod `trybundle()` which should return `true` if local bundling was performed.\nif `false` is returned, docker bundling will be done:\n\n```python\n@jsii.implements(ilocalbundling)\nclass mybundle:\n    def try_bundle(self, output_dir, *, image, entrypoint=none, command=none, volumes=none, environment=none, workingdirectory=none, user=none, local=none, outputtype=none, securityopt=none):\n        can_run_locally = true # replace with actual logic\n        if can_run_locally:\n            # perform local bundling here\n            return true\n        return false\n\nassets.asset(self, \"bundledasset\",\n    path=\"/path/to/asset\",\n    bundling=bundlingoptions(\n        local=mybundle(),\n        # docker bundling fallback\n        image=dockerimage.from_registry(\"alpine\"),\n        entrypoint=[\"/bin/sh\", \"-c\"],\n        command=[\"bundle\"]\n    )\n)\n```\n\nalthough optional, it's recommended to provide a local bundling method which can\ngreatly improve performance.\n\nif the bundling output contains a single archive file (zip or jar) it will be\nuploaded to s3 as-is and will not be zipped. otherwise the contents of the\noutput directory will be zipped and the zip file will be uploaded to s3. this\nis the default behavior for `bundling.outputtype` (`bundlingoutput.auto_discover`).\n\nuse `bundlingoutput.not_archived` if the bundling output must always be zipped:\n\n```python\nasset = assets.asset(self, \"bundledasset\",\n    path=\"/path/to/asset\",\n    bundling=bundlingoptions(\n        image=dockerimage.from_registry(\"alpine\"),\n        command=[\"command-that-produces-an-archive.sh\"],\n        output_type=bundlingoutput.not_archived\n    )\n)\n```\n\nuse `bundlingoutput.archived` if the bundling output contains a single archive file and\nyou don't want it to be zipped.\n\n## cloudformation resource metadata\n\n> note: this section is relevant for authors of aws resource constructs.\n\nin certain situations, it is desirable for tools to be able to know that a certain cloudformation\nresource is using a local asset. for example, sam cli can be used to invoke aws lambda functions\nlocally for debugging purposes.\n\nto enable such use cases, external tools will consult a set of metadata entries on aws cloudformation\nresources:\n\n* `aws:asset:path` points to the local path of the asset.\n* `aws:asset:property` is the name of the resource property where the asset is used\n\nusing these two metadata entries, tools will be able to identify that assets are used\nby a certain resource, and enable advanced local experiences.\n\nto add these metadata entries to a resource, use the\n`asset.addresourcemetadata(resource, property)` method.\n\nsee https://github.com/aws/aws-cdk/issues/1432 for more details\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-s3-assets",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-s3-assets/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-s3-assets/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-s3-assets/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.assets (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.aws-s3 (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "aws-cdk.cx-api (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "deploy local files and directories to s3",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "cdk assets cdk_docker asset deploys",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_s3_assets",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 249,
+  "dependency_ids": [
+    "pypi_aws_cdk.assets",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.aws_s3",
+    "pypi_aws_cdk.core",
+    "pypi_aws_cdk.cx_api",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

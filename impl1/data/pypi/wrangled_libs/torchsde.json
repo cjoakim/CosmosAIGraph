@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3"
+  ],
+  "description": "# pytorch implementation of differentiable sde solvers ![python package](https://github.com/google-research/torchsde/workflows/python%20package/badge.svg?branch=dev)\nthis library provides [stochastic differential equation (sde)](https://en.wikipedia.org/wiki/stochastic_differential_equation) solvers with gpu support and efficient backpropagation.\n\n---\n<p align=\"center\">\n  <img width=\"600\" height=\"450\" src=\"./assets/latent_sde.gif\">\n</p>\n\n## installation\n```shell script\npip install torchsde\n```\n\n**requirements:** python >=3.8 and pytorch >=1.6.0.\n\n## documentation\navailable [here](./documentation.md).\n\n## examples\n### quick example\n```python\nimport torch\nimport torchsde\n\nbatch_size, state_size, brownian_size = 32, 3, 2\nt_size = 20\n\nclass sde(torch.nn.module):\n    noise_type = 'general'\n    sde_type = 'ito'\n\n    def __init__(self):\n        super().__init__()\n        self.mu = torch.nn.linear(state_size, \n                                  state_size)\n        self.sigma = torch.nn.linear(state_size, \n                                     state_size * brownian_size)\n\n    # drift\n    def f(self, t, y):\n        return self.mu(y)  # shape (batch_size, state_size)\n\n    # diffusion\n    def g(self, t, y):\n        return self.sigma(y).view(batch_size, \n                                  state_size, \n                                  brownian_size)\n\nsde = sde()\ny0 = torch.full((batch_size, state_size), 0.1)\nts = torch.linspace(0, 1, t_size)\n# initial state y0, the sde is solved over the interval [ts[0], ts[-1]].\n# ys will have shape (t_size, batch_size, state_size)\nys = torchsde.sdeint(sde, y0, ts)\n```\n\n### notebook\n\n[`examples/demo.ipynb`](examples/demo.ipynb) gives a short guide on how to solve sdes, including subtle points such as fixing the randomness in the solver and the choice of *noise types*.\n\n### latent sde\n\n[`examples/latent_sde.py`](examples/latent_sde.py) learns a *latent stochastic differential equation*, as in section 5 of [\\[1\\]](https://arxiv.org/pdf/2001.01328.pdf).\nthe example fits an sde to data, whilst regularizing it to be like an [ornstein-uhlenbeck](https://en.wikipedia.org/wiki/ornstein%e2%80%93uhlenbeck_process) prior process.\nthe model can be loosely viewed as a [variational autoencoder](https://en.wikipedia.org/wiki/autoencoder#variational_autoencoder_(vae)) with its prior and approximate posterior being sdes. this example can be run via\n```shell script\npython -m examples.latent_sde --train-dir <train_dir>\n```\nthe program outputs figures to the path specified by `<train_dir>`.\ntraining should stabilize after 500 iterations with the default hyperparameters.\n\n### neural sdes as gans\n[`examples/sde_gan.py`](examples/sde_gan.py) learns an sde as a gan, as in [\\[2\\]](https://arxiv.org/abs/2102.03657), [\\[3\\]](https://arxiv.org/abs/2105.13493). the example trains an sde as the generator of a gan, whilst using a [neural cde](https://github.com/patrick-kidger/neuralcde) [\\[4\\]](https://arxiv.org/abs/2005.08926) as the discriminator. this example can be run via\n\n```shell script\npython -m examples.sde_gan\n```\n\n## citation\n\nif you found this codebase useful in your research, please consider citing either or both of:\n\n```\n@article{li2020scalable,\n  title={scalable gradients for stochastic differential equations},\n  author={li, xuechen and wong, ting-kam leonard and chen, ricky t. q. and duvenaud, david},\n  journal={international conference on artificial intelligence and statistics},\n  year={2020}\n}\n```\n\n```\n@article{kidger2021neuralsde,\n  title={neural {sde}s as {i}nfinite-{d}imensional {gan}s},\n  author={kidger, patrick and foster, james and li, xuechen and oberhauser, harald and lyons, terry},\n  journal={international conference on machine learning},\n  year={2021}\n}\n```\n\n## references\n\n\\[1\\] xuechen li, ting-kam leonard wong, ricky t. q. chen, david duvenaud. \"scalable gradients for stochastic differential equations\". *international conference on artificial intelligence and statistics.* 2020. [[arxiv]](https://arxiv.org/pdf/2001.01328.pdf)\n\n\\[2\\] patrick kidger, james foster, xuechen li, harald oberhauser, terry lyons. \"neural sdes as infinite-dimensional gans\". *international conference on machine learning* 2021. [[arxiv]](https://arxiv.org/abs/2102.03657)\n\n\\[3\\] patrick kidger, james foster, xuechen li, terry lyons. \"efficient and accurate gradients for neural sdes\". 2021. [[arxiv]](https://arxiv.org/abs/2105.13493)\n\n\\[4\\] patrick kidger, james morrill, james foster, terry lyons, \"neural controlled differential equations for irregular time series\". *neural information processing systems* 2020. [[arxiv]](https://arxiv.org/abs/2005.08926)\n\n---\nthis is a research project, not an official google product. \n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "torchsde",
+  "package_url": "https://pypi.org/project/torchsde/",
+  "project_url": "https://pypi.org/project/torchsde/",
+  "project_urls": {
+    "Homepage": "https://github.com/google-research/torchsde"
+  },
+  "release_url": "https://pypi.org/project/torchsde/0.2.6/",
+  "requires_dist": [
+    "numpy (>=1.19)",
+    "scipy (>=1.5)",
+    "torch (>=1.6.0)",
+    "trampoline (>=0.1.2)"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "sde solvers and stochastic adjoint sensitivity analysis in pytorch.",
+  "version": "0.2.6",
+  "releases": [],
+  "developers": [
+    "hello@kidger.site",
+    "lxuechen@cs.stanford.edu",
+    "xuechen_li"
+  ],
+  "kwds": "latent_sde stochastic_differential_equation sde sde_gan torchsde",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_torchsde",
+  "homepage": "https://github.com/google-research/torchsde",
+  "release_count": 2,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_scipy",
+    "pypi_torch",
+    "pypi_trampoline"
+  ]
+}

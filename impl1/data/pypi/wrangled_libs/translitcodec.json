@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: libraries",
+    "topic :: utilities"
+  ],
+  "description": "best-effort representations using smaller coded character sets (ascii,\niso 8859, etc.).  the translation tables used by the codecs are from\nthe ``transtab`` collection by markus kuhn.\n\nthree types of transliterating codecs are provided:\n\n  \"long\", using as many characters as needed to make a natural\n   replacement.  for example, \\u00e4 latin small letter a with\n   diaeresis ``\u00e4`` will be replaced with ``ae``.\n\n  \"short\", using the minimum number of characters to make a\n  replacement.  for example, \\u00e4 latin small letter a with\n  diaeresis ``\u00e4`` will be replaced with ``a``.\n\n  \"one\", only performing single character replacements.  characters\n  that can not be transliterated with a single character are passed\n  through unchanged. for example, \\u2639 white frowning face ``\u2639``\n  will be passed through unchanged.\n\nusing the codecs is simple::\n\n  >>> import translitcodec\n  >>> import codecs\n  >>> codecs.encode('f\u00e1cil \u20ac \u263a', 'translit/long')\n  'facil eur :-)'\n  >>> codecs.encode('f\u00e1cil \u20ac \u263a', 'translit/short')\n  'facil e :-)'\n\nthe codecs return unicode by default.  to receive a bytestring back,\neither chain the output of encode() to another codec, or append the\nname of the desired byte encoding to the codec name::\n\n  >>> codecs.encode('f\u00e1cil \u20ac \u263a', 'translit/one').encode('ascii', 'replace')\n  'facil e ?'\n  >>> 'f\u00e1cil \u20ac \u263a'.encode('translit/one/ascii', 'replace')\n  'facil e ?'\n\nthe package also supplies a 'transliterate' codec, an alias for\n'translit/long'.\n\nanother way to use the library is to use an error handle.\nerror handles are available:\n\n  * 'strict/translit/long', 'strict/translit/short', 'strict/translit/one' - similar to 'strict'\n  * 'ignore/translit/long', 'ignore/translit/short', 'ignore/translit/one' - similar to 'ignore'\n  * 'replace/translit/long', 'replace/translit/short', 'replace/translit/one' - similar to 'replace'\n\nthese error handles above, work similarly to python's built-in ones.\nthe difference is that transliteration is attempted first.\n\n  >>> codecs.encode('za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 \u20ac \u263a\u53e6!@#', 'iso-8859-2', 'replace/translit/long').decode('iso-8859-2')\n  'za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 eur :-)?!@#'\n  >>> codecs.encode('za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 \u20ac \u263a\u53e6!@#', 'iso-8859-2', 'replace/translit/short').decode('iso-8859-2')\n  'za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 e :-)?!@#'\n  >>> codecs.encode('za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 \u20ac \u263a\u53e6!@#', 'iso-8859-2', 'replace/translit/one').decode('iso-8859-2')\n  'za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 e ??!@#'\n  >>> codecs.encode('za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 \u20ac \u263a\u53e6!@#', 'iso-8859-2', 'ignore/translit/long').decode('iso-8859-2')\n  'za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 eur :-)!@#'\n  >>> codecs.encode('za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 \u20ac \u263a\u53e6!@#', 'iso-8859-2', 'ignore/translit/short').decode('iso-8859-2')\n  'za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 e :-)!@#'\n  >>> codecs.encode('za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 \u20ac \u263a\u53e6!@#', 'iso-8859-2', 'ignore/translit/one').decode('iso-8859-2')\n  'za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144 e !@#'\n\ntranslitcodec changes\n=====================\n\n0.7.0\n-----\nreleased on may 8, 2021\n\n- added support for error handles\n- fixed conversion of the german eszett char\n\n0.6.0\n-----\nreleased on december 13, 2020\n\n- add support for python 3.9\n\n0.5.2\n-----\nreleased on january 19, 2020\n\n- install package with setuptools\n\n0.5.1\n-----\nreleased on january 19, 2020\n\n- add python_requires to prevent installation with python 2 packages\n\n0.5\n---\nreleased on january 18, 2020\n\n- complete coverage of the vietnamese alphabet\n\n- removed python 2 support\n\n0.4\n---\nreleased on may 11, 2015\n\n- added python 3 compatibility\n\n0.3\n---\n\nreleased on february 14, 2011\n\n- fixes to the transtab table rebuilding tool.\n\n- added translitcodec.__version__\n\n0.2\n---\n\nreleased on january 27, 2011\n\n- resolves issue of \"typeerror: character mapping must return integer,\n  none or unicode\" when a blank value (eg: \\n{zero width space} \\u200b)\n  was encoded.  unicode blanks are now returned.\n\n- characters in the ascii range are no longer included in the translation\n  tables.\n\n0.1\n---\n\nreleased on december 28, 2008\n\n- initial packaged release.",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "translitcodec",
+  "package_url": "https://pypi.org/project/translitcodec/",
+  "project_url": "https://pypi.org/project/translitcodec/",
+  "project_urls": {
+    "Homepage": "https://github.com/claudep/translitcodec"
+  },
+  "release_url": "https://pypi.org/project/translitcodec/0.7.0/",
+  "requires_dist": [],
+  "requires_python": ">=3",
+  "summary": "unicode to 8-bit charset transliteration codec",
+  "version": "0.7.0",
+  "releases": [],
+  "developers": [
+    "jason_kirtland",
+    "jek@discorporate.us"
+  ],
+  "kwds": "translitcodec encoding transliteration transliterating unicode",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_translitcodec",
+  "homepage": "https://github.com/claudep/translitcodec",
+  "release_count": 7,
+  "dependency_ids": []
+}

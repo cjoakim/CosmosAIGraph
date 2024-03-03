@@ -1,0 +1,69 @@
+{
+  "classifiers": [
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# objsize\n\n[![coverage status](https://coveralls.io/repos/github/liran-funaro/objsize/badge.svg?branch=master)](https://coveralls.io/github/liran-funaro/objsize?branch=master) [![downloads](https://static.pepy.tech/badge/objsize)](https://pepy.tech/project/objsize)\n\nthe `objsize` python package allows for the exploration and\nmeasurement of an object\u2019s complete memory usage in bytes, including its\nchild objects. this process, often referred to as deep size calculation,\nis achieved through python\u2019s internal garbage collection (gc) mechanism.\n\nthe `objsize` package is designed to ignore shared objects, such as\n`none`, types, modules, classes, functions, and lambdas, because they\nare shared across many instances. one of the key performance features of\n`objsize` is that it avoids recursive calls, ensuring a faster and\nsafer execution.\n\n## key features\n\n* traverse objects\u2019 subtree\n* calculates the size of objects, including nested objects (deep size), in bytes\n* exclude non-exclusive objects\n* exclude specified objects subtree\n* provides flexibility by allowing users to define custom handlers for:\n  - object\u2019s size calculation\n  - object\u2019s referents (i.e., its children)\n  - object filter (skip specific objects)\n\n## documentation\n\n| [`objsize`](https://liran-funaro.github.io/objsize/library/objsize.html#module-objsize)   | traversal over python's objects subtree and calculating the total size of the subtree (deep size).   |\n|-------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|\n\n# install\n\n```bash\npip install objsize==0.7.0\n```\n\n# basic usage\n\ncalculate the size of the object including all its members in bytes.\n\n```pycon\n>>> import objsize\n>>> objsize.get_deep_size(dict(arg1='hello', arg2='world'))\n340\n```\n\nit is possible to calculate the deep size of multiple objects by passing\nmultiple arguments:\n\n```pycon\n>>> objsize.get_deep_size(['hello', 'world'], dict(arg1='hello', arg2='world'), {'hello', 'world'})\n628\n```\n\n# complex data\n\n`objsize` can calculate the size of an object\u2019s entire subtree in\nbytes regardless of the type of objects in it, and its depth.\n\nhere is a complex data structure, for example, that include a self\nreference:\n\n```python\nmy_data = list(range(3)), list(range(3, 6))\n\nclass myclass:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n        self.d = {'x': x, 'y': y, 'self': self}\n\n    def __repr__(self):\n        return f\"{self.__class__.__name__}()\"\n\nmy_obj = myclass(*my_data)\n```\n\nwe can calculate `my_obj` deep size, including its stored data.\n\n```pycon\n>>> objsize.get_deep_size(my_obj)\n724\n```\n\nwe might want to ignore non-exclusive objects such as the ones stored in\n`my_data`.\n\n```pycon\n>>> objsize.get_deep_size(my_obj, exclude=[my_data])\n384\n```\n\nor simply let `objsize` detect that automatically:\n\n```pycon\n>>> objsize.get_exclusive_deep_size(my_obj)\n384\n```\n\n# non shared functions or classes\n\n`objsize` filters functions, lambdas, and classes by default since\nthey are usually shared among many objects. for example:\n\n```pycon\n>>> method_dict = {\"identity\": lambda x: x, \"double\": lambda x: x*2}\n>>> objsize.get_deep_size(method_dict)\n232\n```\n\nsome objects, however, as illustrated in the above example, have unique\nfunctions not shared by other objects. due to this, it may be useful to\ncount their sizes. you can achieve this by providing an alternative\nfilter function.\n\n```pycon\n>>> objsize.get_deep_size(method_dict, filter_func=objsize.shared_object_filter)\n986\n```\n\nnotes:\n\n* the default filter function is\n  [`objsize.traverse.shared_object_or_function_filter()`](https://liran-funaro.github.io/objsize/library/objsize.traverse.html#objsize.traverse.shared_object_or_function_filter).\n* when using [`objsize.traverse.shared_object_filter()`](https://liran-funaro.github.io/objsize/library/objsize.traverse.html#objsize.traverse.shared_object_filter), shared functions and\n  lambdas are also counted, but builtin functions are still excluded.\n\n# special cases\n\nsome objects handle their data in a way that prevents python\u2019s gc from\ndetecting it. the user can supply a special way to calculate the actual\nsize of these objects.\n\n## case 1: [`torch`](https://pytorch.org/docs/stable/torch.html#module-torch)\n\nusing a simple calculation of the object size won\u2019t work for\n[`torch.tensor`](https://pytorch.org/docs/stable/tensors.html#torch.tensor).\n\n```pycon\n>>> import torch\n>>> objsize.get_deep_size(torch.rand(200))\n72\n```\n\nso the user can define its own size calculation handler for such cases:\n\n```python\nimport objsize\nimport sys\nimport torch\n\ndef get_size_of_torch(o):\n    # `objsize.safe_is_instance` catches `referenceerror` caused by `weakref` objects\n    if objsize.safe_is_instance(o, torch.tensor):\n        return sys.getsizeof(o) + (o.element_size() * o.nelement())\n    else:\n        return sys.getsizeof(o)\n```\n\nthen use it as follows:\n\n```pycon\n>>> objsize.get_deep_size(\n...   torch.rand(200),\n...   get_size_func=get_size_of_torch\n... )\n872\n```\n\nthe above approach may neglect the object\u2019s internal structure. the user\ncan help `objsize` to find the object\u2019s hidden storage by supplying it\nwith its own referent and filter functions:\n\n```python\nimport objsize\nimport gc\nimport torch\n\ndef get_referents_torch(*objs):\n    # yield all native referents\n    yield from gc.get_referents(*objs)\n    for o in objs:\n        # if the object is a torch tensor, then also yield its storage\n        if type(o) == torch.tensor:\n            yield o.untyped_storage()\n\n# `torch.dtype` is a common object like python's types.\nmysharedobjects = (*objsize.sharedobjectorfunctiontype, torch.dtype)\n\ndef filter_func(o):\n    return not objsize.safe_is_instance(o, mysharedobjects)\n```\n\nthen use these as follows:\n\n```pycon\n>>> objsize.get_deep_size(\n...   torch.rand(200),\n...   get_referents_func=get_referents_torch,\n...   filter_func=filter_func\n... )\n928\n```\n\n## case 2: [`weakref`](https://docs.python.org/3/library/weakref.html#module-weakref)\n\nusing a simple calculation of the object size won\u2019t work for\n`weakref.proxy`.\n\n```pycon\n>>> from collections import userlist\n>>> o = userlist([0]*100)\n>>> objsize.get_deep_size(o)\n1032\n>>> import weakref\n>>> o_ref = weakref.proxy(o)\n>>> objsize.get_deep_size(o_ref)\n72\n```\n\nto mitigate this, you can provide a method that attempts to fetch the\nproxy\u2019s referents:\n\n```python\nimport weakref\nimport gc\n\ndef get_weakref_referents(*objs):\n    yield from gc.get_referents(*objs)\n    for o in objs:\n        if type(o) in weakref.proxytypes:\n            try:\n                yield o.__repr__.__self__\n            except referenceerror:\n                pass\n```\n\nthen use it as follows:\n\n```pycon\n>>> objsize.get_deep_size(o_ref, get_referents_func=get_weakref_referents)\n1104\n```\n\nafter the referenced object will be collected, then the size of the\nproxy object will be reduced.\n\n```pycon\n>>> del o\n>>> gc.collect()\n>>> # wait for the object to be collected\n>>> objsize.get_deep_size(o_ref, get_referents_func=get_weakref_referents)\n72\n```\n\n# object size settings\n\nto avoid repeating the input settings when handling the special cases\nabove, you can use the [`objsizesettings`](https://liran-funaro.github.io/objsize/library/objsize.traverse.html#objsize.traverse.objsizesettings) class.\n\n```pycon\n>>> torch_objsize = objsize.objsizesettings(\n...   get_referents_func=get_referents_torch,\n...   filter_func=filter_func,\n... )\n>>> torch_objsize.get_deep_size(torch.rand(200))\n928\n>>> torch_objsize.get_deep_size(torch.rand(300))\n1328\n```\n\nsee [`objsizesettings`](https://liran-funaro.github.io/objsize/library/objsize.traverse.html#objsize.traverse.objsizesettings) for the\nlist of configurable parameters.\n\n# traversal\n\na user can implement its own function over the entire subtree using the\ntraversal method, which traverses all the objects in the subtree.\n\n```pycon\n>>> for o in objsize.traverse_bfs(my_obj):\n...     print(o)\n...\nmyclass()\n{'x': [0, 1, 2], 'y': [3, 4, 5], 'd': {'x': [0, 1, 2], 'y': [3, 4, 5], 'self': myclass()}}\n[0, 1, 2]\n[3, 4, 5]\n{'x': [0, 1, 2], 'y': [3, 4, 5], 'self': myclass()}\n2\n1\n0\n5\n4\n3\n```\n\nsimilar to before, non-exclusive objects can be ignored.\n\n```pycon\n>>> for o in objsize.traverse_exclusive_bfs(my_obj):\n...     print(o)\n...\nmyclass()\n{'x': [0, 1, 2], 'y': [3, 4, 5], 'd': {'x': [0, 1, 2], 'y': [3, 4, 5], 'self': myclass()}}\n{'x': [0, 1, 2], 'y': [3, 4, 5], 'self': myclass()}\n```\n\n# alternative\n\n[pympler](https://pythonhosted.org/pympler/) also supports\ndetermining an object deep size via `pympler.asizeof()`. there are two\nmain differences between `objsize` and `pympler`.\n\n1. `objsize` has additional features:\n   * traversing the object subtree: iterating all the object\u2019s\n     descendants one by one.\n   * excluding non-exclusive objects. that is, objects that are also\n     referenced from somewhere else in the program. this is true for\n     calculating the object\u2019s deep size and for traversing its\n     descendants.\n2. `objsize` has a simple and robust implementation with significantly\n   fewer lines of code, compared to `pympler`. the pympler\n   implementation uses recursion, and thus have to use a maximal depth\n   argument to avoid reaching python\u2019s max depth. `objsize`, however,\n   uses bfs which is more efficient and simple to follow. moreover, the\n   pympler implementation carefully takes care of any object type.\n   `objsize` archives the same goal with a simple and generic\n   implementation, which has fewer lines of code.\n\n# license: bsd-3\n\ncopyright (c) 2006-2023, liran funaro.\nall rights reserved.\n\nredistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n1. redistributions of source code must retain the above copyright\n   notice, this list of conditions and the following disclaimer.\n2. redistributions in binary form must reproduce the above copyright\n   notice, this list of conditions and the following disclaimer in the\n   documentation and/or other materials provided with the distribution.\n3. neither the name of the copyright holder nor the\n   names of its contributors may be used to endorse or promote products\n   derived from this software without specific prior written permission.\n\nthis software is provided by the copyright holders and contributors \u201cas is\u201d\nand any express or implied warranties, including, but not limited to, the\nimplied warranties of merchantability and fitness for a particular purpose\nare disclaimed. in no event shall the copyright holder or contributors be\nliable for any direct, indirect, incidental, special, exemplary, or\nconsequential damages (including, but not limited to, procurement of\nsubstitute goods or services; loss of use, data, or profits; or business\ninterruption) however caused and on any theory of liability, whether in\ncontract, strict liability, or tort (including negligence or otherwise)\narising in any way out of the use of this software, even if advised of the\npossibility of such damage.\n",
+  "docs_url": null,
+  "keywords": "object-size,recursive,deep,traversal,object,size,debug,deep-object-size",
+  "license": "bsd-3-clause",
+  "name": "objsize",
+  "package_url": "https://pypi.org/project/objsize/",
+  "project_url": "https://pypi.org/project/objsize/",
+  "project_urls": {
+    "Homepage": "https://github.com/liran-funaro/objsize"
+  },
+  "release_url": "https://pypi.org/project/objsize/0.7.0/",
+  "requires_dist": [
+    "bumpver ; extra == 'dev'",
+    "black ; extra == 'dev'",
+    "isort ; extra == 'dev'",
+    "flake8 ; extra == 'dev'",
+    "pylint ; extra == 'dev'",
+    "mypy ; extra == 'dev'",
+    "pip-tools ; extra == 'dev'",
+    "pytest ; extra == 'dev'",
+    "pytest-cov ; extra == 'dev'",
+    "coveralls ; extra == 'dev'",
+    "pyyaml ; extra == 'dev'",
+    "sphinx ; extra == 'docs'",
+    "sphinx-rtd-theme ; extra == 'docs'",
+    "sphinx-rtd-dark-mode ; extra == 'docs'",
+    "myst-parser ; extra == 'docs'",
+    "sphinx-markdown-builder (>=0.6.0) ; extra == 'docs'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "traversal over python's objects subtree and calculate the total size of the subtree in bytes (deep size).",
+  "version": "0.7.0",
+  "releases": [],
+  "developers": [
+    "liran.funaro@gmail.com"
+  ],
+  "kwds": "get_deep_size objsize get_exclusive_deep_size get_size_func torch_objsize",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_objsize",
+  "homepage": "",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_bumpver",
+    "pypi_coveralls",
+    "pypi_flake8",
+    "pypi_isort",
+    "pypi_mypy",
+    "pypi_myst_parser",
+    "pypi_pip_tools",
+    "pypi_pylint",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pyyaml",
+    "pypi_sphinx",
+    "pypi_sphinx_markdown_builder",
+    "pypi_sphinx_rtd_dark_mode",
+    "pypi_sphinx_rtd_theme"
+  ]
+}

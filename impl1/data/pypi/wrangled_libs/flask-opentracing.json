@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "#################\nflask-opentracing\n#################\n\nthis package enables distributed tracing in flask applications via `the opentracing project`_. once a production system contends with real concurrency or splits into many services, crucial (and formerly easy) tasks become difficult: user-facing latency optimization, root-cause analysis of backend errors, communication about distinct pieces of a now-distributed system, etc. distributed tracing follows a request on its journey from inception to completion from mobile/browser all the way to the microservices. \n\nas core services and libraries adopt opentracing, the application builder is no longer burdened with the task of adding basic tracing instrumentation to their own code. in this way, developers can build their applications with the tools they prefer and benefit from built-in tracing instrumentation. opentracing implementations exist for major distributed tracing systems and can be bound or swapped with a one-line configuration change.\n\nif you want to learn more about the underlying python api, visit the python `source code`_.\n\nif you are migrating from the 0.x series, you may want to read the list of `breaking changes`_.\n\n.. _the opentracing project: http://opentracing.io/\n.. _source code: https://github.com/opentracing/opentracing-python\n.. _breaking changes: #breaking-changes-from-0-x\n\ninstallation\n============\n\nrun the following command:\n\n.. code-block:: \n\n    $ pip install flask-opentracing\n\nusage\n=====\n\nthis flask extension allows for tracing of flask apps using the opentracing api. all\nthat it requires is for a ``flasktracing`` tracer to be initialized using an\ninstance of an opentracing tracer. you can either trace all requests to your site, or use function decorators to trace certain individual requests.\n\n**note:** `optional_args` in both cases are any number of attributes (as strings) of `flask.request` that you wish to set as tags on the created span\n\ninitialize\n----------\n\n`flasktracing` wraps the tracer instance that's supported by opentracing. to create a `flasktracing` object, you can either pass in a tracer object directly or a callable that returns the tracer object. for example:\n\n.. code-block:: python\n\n    import opentracing\n    from flask_opentracing import flasktracing\n\n    opentracing_tracer = ## some opentracing tracer implementation\n    tracing = flasktracing(opentracing_tracer, ...)\n\nor\n\n.. code-block:: python\n\n    import opentracing\n    from flask_opentracing import flasktracing\n\n    def initialize_tracer():\n        ...\n        return opentracing_tracer\n\n    tracing = flasktracing(initialize_tracer, ...)\n\n\ntrace all requests\n------------------\n\n.. code-block:: python\n\n    import opentracing\n    from flask_opentracing import flasktracing\n\n    app = flask(__name__)\n\n    opentracing_tracer = ## some opentracing tracer implementation\n    tracing = flasktracing(opentracing_tracer, true, app, [optional_args])\n\ntrace individual requests\n-------------------------\n\n.. code-block:: python\n\n    import opentracing\n    from flask_opentracing import flasktracing\n\n    app = flask(__name__)\n\n    opentracing_tracer = ## some opentracing tracer implementation  \n    tracing = flasktracing(opentracing_tracer)\n\n    @app.route('/some_url')\n    @tracing.trace(optional_args)\n    def some_view_func():\n    \t...     \n    \treturn some_view \n\naccessing spans manually\n------------------------\n\nin order to access the span for a request, we've provided an method `flasktracing.get_span(request)` that returns the span for the request, if it is exists and is not finished. this can be used to log important events to the span, set tags, or create child spans to trace non-rpc events. if no request is passed in, the current request will be used.\n\ntracing an rpc\n--------------\n\nif you want to make an rpc and continue an existing trace, you can inject the current span into the rpc. for example, if making an http request, the following code will continue your trace across the wire:\n\n.. code-block:: python\n\n    @tracing.trace()\n    def some_view_func(request):\n        new_request = some_http_request\n        current_span = tracing.get_span(request)\n        text_carrier = {}\n        opentracing_tracer.inject(span, opentracing.format.text_map, text_carrier)\n        for k, v in text_carrier.iteritems():\n            new_request.add_header(k,v)\n        ... # make request\n\nexamples\n========\n\nsee `examples`_ to view and run an example of two flask applications\nwith integrated opentracing tracers.\n\n.. _examples: https://github.com/opentracing-contrib/python-flask/tree/master/example\n\n`this tutorial <http://blog.scoutapp.com/articles/2018/01/15/tutorial-tracing-python-flask-requests-with-opentracing>`_ has a step-by-step guide for using `flask-opentracing` with `jaeger <https://github.com/jaegertracing/jaeger>`_.\n\nbreaking changes from 0.x\n=========================\n\nstarting with the 1.0 version, a few changes have taken place from previous versions:\n\n* ``flasktracer`` has been renamed to ``flasktracing``, although ``flasktracing``\n  can be used still as a deprecated name.\n* when passing an ``application`` object at ``flasktracing`` creation time,\n  ``trace_all_requests`` defaults to ``true``.\n* when no ``opentracing.tracer`` is provided, ``flasktracing`` will rely on the\n  global tracer.\n\nfurther information\n===================\n\nif you're interested in learning more about the opentracing standard, please visit `opentracing.io`_ or `join the mailing list`_. if you would like to implement opentracing in your project and need help, feel free to send us a note at `community@opentracing.io`_.\n\n.. _opentracing.io: http://opentracing.io/\n.. _join the mailing list: http://opentracing.us13.list-manage.com/subscribe?u=180afe03860541dae59e84153&id=19117aa6cd\n.. _community@opentracing.io: community@opentracing.io",
+  "docs_url": "https://pythonhosted.org/Flask-OpenTracing/",
+  "keywords": "",
+  "license": "bsd",
+  "name": "flask-opentracing",
+  "package_url": "https://pypi.org/project/Flask-OpenTracing/",
+  "project_url": "https://pypi.org/project/Flask-OpenTracing/",
+  "project_urls": {
+    "Download": "https://github.com/opentracing-contrib/python-flask/tarball/1.1.0",
+    "Homepage": "http://github.com/opentracing-contrib/python-flask"
+  },
+  "release_url": "https://pypi.org/project/Flask-OpenTracing/1.1.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "opentracing support for flask applications",
+  "version": "1.1.0",
+  "releases": [],
+  "developers": [
+    "kathy_camenzind",
+    "kcamenzind@lightstep.com"
+  ],
+  "kwds": "flask_opentracing flasktracing flask tracing flasktracer",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_flask_opentracing",
+  "homepage": "http://github.com/opentracing-contrib/python-flask",
+  "release_count": 12,
+  "dependency_ids": []
+}

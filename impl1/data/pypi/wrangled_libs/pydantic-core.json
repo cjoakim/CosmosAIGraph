@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "framework :: pydantic",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: rust",
+    "typing :: typed"
+  ],
+  "description": "# pydantic-core\n\n[![ci](https://github.com/pydantic/pydantic-core/workflows/ci/badge.svg?event=push)](https://github.com/pydantic/pydantic-core/actions?query=event%3apush+branch%3amain+workflow%3aci)\n[![coverage](https://codecov.io/gh/pydantic/pydantic-core/branch/main/graph/badge.svg)](https://codecov.io/gh/pydantic/pydantic-core)\n[![pypi](https://img.shields.io/pypi/v/pydantic-core.svg)](https://pypi.python.org/pypi/pydantic-core)\n[![versions](https://img.shields.io/pypi/pyversions/pydantic-core.svg)](https://github.com/pydantic/pydantic-core)\n[![license](https://img.shields.io/github/license/pydantic/pydantic-core.svg)](https://github.com/pydantic/pydantic-core/blob/main/license)\n\nthis package provides the core functionality for [pydantic](https://docs.pydantic.dev) validation and serialization.\n\npydantic-core is currently around 17x faster than pydantic v1.\nsee [`tests/benchmarks/`](./tests/benchmarks/) for details.\n\n## example of direct usage\n\n_note: you should not need to use pydantic-core directly; instead, use pydantic, which in turn uses pydantic-core._\n\n```py\nfrom pydantic_core import schemavalidator, validationerror\n\n\nv = schemavalidator(\n    {\n        'type': 'typed-dict',\n        'fields': {\n            'name': {\n                'type': 'typed-dict-field',\n                'schema': {\n                    'type': 'str',\n                },\n            },\n            'age': {\n                'type': 'typed-dict-field',\n                'schema': {\n                    'type': 'int',\n                    'ge': 18,\n                },\n            },\n            'is_developer': {\n                'type': 'typed-dict-field',\n                'schema': {\n                    'type': 'default',\n                    'schema': {'type': 'bool'},\n                    'default': true,\n                },\n            },\n        },\n    }\n)\n\nr1 = v.validate_python({'name': 'samuel', 'age': 35})\nassert r1 == {'name': 'samuel', 'age': 35, 'is_developer': true}\n\n# pydantic-core can also validate json directly\nr2 = v.validate_json('{\"name\": \"samuel\", \"age\": 35}')\nassert r1 == r2\n\ntry:\n    v.validate_python({'name': 'samuel', 'age': 11})\nexcept validationerror as e:\n    print(e)\n    \"\"\"\n    1 validation error for model\n    age\n      input should be greater than or equal to 18\n      [type=greater_than_equal, context={ge: 18}, input_value=11, input_type=int]\n    \"\"\"\n```\n\n## getting started\n\nyou'll need rust stable [installed](https://rustup.rs/), or rust nightly if you want to generate accurate coverage.\n\nwith rust and python 3.7+ installed, compiling pydantic-core should be possible with roughly the following:\n\n```bash\n# clone this repo or your fork\ngit clone git@github.com:pydantic/pydantic-core.git\ncd pydantic-core\n# create a new virtual env\npython3 -m venv env\nsource env/bin/activate\n# install dependencies and install pydantic-core\nmake install\n```\n\nthat should be it, the example shown above should now run.\n\nyou might find it useful to look at [`python/pydantic_core/_pydantic_core.pyi`](./python/pydantic_core/_pydantic_core.pyi) and\n[`python/pydantic_core/core_schema.py`](./python/pydantic_core/core_schema.py) for more information on the python api,\nbeyond that, [`tests/`](./tests) provide a large number of examples of usage.\n\nif you want to contribute to pydantic-core, you'll want to use some other make commands:\n* `make build-dev` to build the package during development\n* `make build-prod` to perform an optimised build for benchmarking\n* `make test` to run the tests\n* `make testcov` to run the tests and generate a coverage report\n* `make lint` to run the linter\n* `make format` to format python and rust code\n* `make` to run `format build-dev lint test`\n\n## profiling\n\nit's possible to profile the code using the [`flamegraph` utility from `flamegraph-rs`](https://github.com/flamegraph-rs/flamegraph). (tested on linux.) you can install this with `cargo install flamegraph`.\n\nrun `make build-profiling` to install a release build with debugging symbols included (needed for profiling).\n\nonce that is built, you can profile pytest benchmarks with (e.g.):\n\n```bash\nflamegraph -- pytest tests/benchmarks/test_micro_benchmarks.py -k test_list_of_ints_core_py --benchmark-enable\n```\nthe `flamegraph` command will produce an interactive svg at `flamegraph.svg`.\n\n## releasing\n\n1. bump package version locally. do not just edit `cargo.toml` on github, you need both `cargo.toml` and `cargo.lock` to be updated.\n2. make a pr for the version bump and merge it.\n3. go to https://github.com/pydantic/pydantic-core/releases and click \"draft a new release\"\n4. in the \"choose a tag\" dropdown enter the new tag `v<the.new.version>` and select \"create new tag on publish\" when the option appears.\n5. enter the release title in the form \"v<the.new.version> <yyyy-mm-dd>\"\n6. click generate release notes button\n7. click publish release\n8. go to https://github.com/pydantic/pydantic-core/actions and ensure that all build for release are done successfully.\n9. go to https://pypi.org/project/pydantic-core/ and ensure that the latest release is published.\n10. done \ud83c\udf89\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pydantic-core",
+  "package_url": "https://pypi.org/project/pydantic-core/",
+  "project_url": "https://pypi.org/project/pydantic-core/",
+  "project_urls": {
+    "Funding": "https://github.com/sponsors/samuelcolvin",
+    "Homepage": "https://github.com/pydantic/pydantic-core",
+    "Source": "https://github.com/pydantic/pydantic-core"
+  },
+  "release_url": "https://pypi.org/project/pydantic-core/2.14.6/",
+  "requires_dist": [
+    "typing-extensions >=4.6.0, !=4.7.0"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "",
+  "version": "2.14.6",
+  "releases": [],
+  "developers": [
+    "s@muelcolvin.com"
+  ],
+  "kwds": "pydantic_core _pydantic_core pydantic pyversions pytest",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pydantic_core",
+  "homepage": "https://github.com/pydantic/pydantic-core",
+  "release_count": 88,
+  "dependency_ids": [
+    "pypi_typing_extensions"
+  ]
+}

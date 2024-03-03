@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "environment :: web environment",
+    "framework :: django",
+    "intended audience :: developers",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "# collectfast\n\na faster collectstatic command.\n\n[![test suite](https://github.com/antonagestam/collectfast/workflows/test%20suite/badge.svg)](https://github.com/antonagestam/collectfast/actions?query=workflow%3a%22test+suite%22+branch%3amaster)\n[![static analysis](https://github.com/antonagestam/collectfast/workflows/static%20analysis/badge.svg?branch=master)](https://github.com/antonagestam/collectfast/actions?query=workflow%3a%22static+analysis%22+branch%3amaster)\n[![test coverage](https://api.codeclimate.com/v1/badges/ae25f7543fea0bbccb01/test_coverage)](https://codeclimate.com/github/antonagestam/collectfast/test_coverage)\n[![maintainability](https://api.codeclimate.com/v1/badges/ae25f7543fea0bbccb01/maintainability)](https://codeclimate.com/github/antonagestam/collectfast/maintainability)\n\n**features**\n\n- efficiently decide what files to upload using cached checksums\n- parallel file uploads\n\n**supported storage backends**\n\n- `storages.backends.s3boto3.s3boto3storage`\n- `storages.backends.gcloud.googlecloudstorage`\n- `django.core.files.storage.filesystemstorage`\n\nrunning django's `collectstatic` command can become painfully slow as more and\nmore files are added to a project, especially when heavy libraries such as\njquery ui are included in source code. collectfast customizes the builtin\n`collectstatic` command, adding different optimizations to make uploading large\namounts of files much faster.\n\n\n## installation\n\ninstall the app using pip:\n\n```bash\n$ python3 -m pip install collectfast\n```\n\nmake sure you have this in your settings file and add `'collectfast'` to your\n`installed_apps`, before `'django.contrib.staticfiles'`:\n\n```python\nstaticfiles_storage = \"storages.backends.s3boto3.s3boto3storage\"\ncollectfast_strategy = \"collectfast.strategies.boto3.boto3strategy\"\ninstalled_apps = (\n    # ...\n    'collectfast',\n)\n```\n\n**note:** `'collectfast'` must come before `'django.contrib.staticfiles'` in\n`installed_apps`.\n\n**note:** the boto strategy will set `preload_metadata` on the remote storage\nto `true`, see [#30][issue-30].\n\n[issue-30]: https://github.com/antonagestam/collectfast/issues/30\n\n##### upload strategies\n\ncollectfast strategy|storage backend\n---|---\ncollectfast.strategies.boto3.boto3strategy|storages.backends.s3boto3.s3boto3storage\ncollectfast.strategies.gcloud.googlecloudstrategy|storages.backends.gcloud.googlecloudstorage\ncollectfast.strategies.filesystem.filesystemstrategy|django.core.files.storage.filesystemstorage\n\ncustom strategies can also be made for backends not listed above by\nimplementing the `collectfast.strategies.strategy` abc.\n\n\n## usage\n\ncollectfast overrides django's builtin `collectstatic` command so just run\n`python manage.py collectstatic` as normal.\n\nyou can disable collectfast by using the `--disable-collectfast` option or by\nsetting `collectfast_enabled = false` in your settings file.\n\n### setting up a dedicated cache backend\n\nit's recommended to setup a dedicated cache backend for collectfast. every time\ncollectfast does not find a lookup for a file in the cache it will trigger a\nlookup to the storage backend, so it's recommended to have a fairly high\n`timeout` setting.\n\nconfigure your dedicated cache with the `collectfast_cache` setting:\n\n```python\ncaches = {\n    'default': {\n        # your default cache\n    },\n    'collectfast': {\n        # your dedicated collectfast cache\n    },\n}\n\ncollectfast_cache = 'collectfast'\n```\n\nif `collectfast_cache` isn't set, the `default` cache will be used.\n\n**note:** collectfast will never clean the cache of obsolete files. to clean\nout the entire cache, use `cache.clear()`. [see docs for django's cache\nframework][django-cache].\n\n**note:** we recommend you to set the `max_entries` setting if you have more\nthan 300 static files, see [#47][issue-47].\n\n[django-cache]: https://docs.djangoproject.com/en/stable/topics/cache/\n[issue-47]: https://github.com/antonagestam/collectfast/issues/47\n\n### enable parallel uploads\n\nthe parallelization feature enables parallel file uploads using python's\n`concurrent.futures` module. enable it by setting the `collectfast_threads`\nsetting.\n\nto enable parallel uploads, a dedicated cache backend must be setup and it must\nuse a backend that is thread-safe, i.e. something other than django's default\nlocmemcache.\n\n```python\ncollectfast_threads = 20\n```\n\n\n## debugging\n\nby default, collectfast will suppress any exceptions that happens when copying\nand let django's `collectstatic` handle it. to debug those suppressed errors\nyou can set `collectfast_debug = true` in your django settings file.\n\n\n## contribution\n\nplease feel free to contribute by using issues and pull requests. discussion is\nopen and welcome.\n\n### testing\n\nthe test suite is built to run against live s3 and gcloud buckets. you can\ndisable live tests by setting `skip_live_tests=true` or running `make\ntest-skip-live`. to run live tests locally you need to provide api credentials\nto test against. add the credentials to a file named `storage-credentials` in\nthe root of the project directory:\n\n```bash\nexport aws_access_key_id='...'\nexport aws_secret_access_key='...'\nexport gcloud_credentials='{...}'  # google cloud credentials as json\n```\n\ninstall test dependencies and target django version:\n\n```bash\npython3 -m pip install -r test-requirements.txt\npython3 -m pip install django==2.2\n```\n\nrun test suite:\n\n```bash\nmake test\n```\n\ncode quality tools are broken out from test requirements because some of them\nonly install on python >= 3.7.\n\n```bash\npython3 -m pip install -r lint-requirements.txt\n```\n\nrun linters and static type check:\n\n```bash\nmake lint\n```\n\n\n## license\n\ncollectfast is licensed under the mit license, see license file for more\ninformation.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "collectfast",
+  "package_url": "https://pypi.org/project/Collectfast/",
+  "project_url": "https://pypi.org/project/Collectfast/",
+  "project_urls": {
+    "Homepage": "https://github.com/antonagestam/collectfast/"
+  },
+  "release_url": "https://pypi.org/project/Collectfast/2.2.0/",
+  "requires_dist": [
+    "Django (>=2.2)",
+    "django-storages (>=1.6)",
+    "typing-extensions"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "a faster collectstatic",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "anton_agestam",
+    "git@antonagestam.se"
+  ],
+  "kwds": "collectfast_debug collectfast_strategy workflows collectfast_cache collectfast_enabled",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_collectfast",
+  "homepage": "https://github.com/antonagestam/collectfast/",
+  "release_count": 36,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_django_storages",
+    "pypi_typing_extensions"
+  ]
+}

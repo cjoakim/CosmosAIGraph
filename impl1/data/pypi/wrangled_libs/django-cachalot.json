@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: django",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.1",
+    "framework :: django :: 4.2",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http"
+  ],
+  "description": "django cachalot\n===============\n\ncaches your django orm queries and automatically invalidates them.\n\ndocumentation: http://django-cachalot.readthedocs.io\n\n----\n\n.. image:: http://img.shields.io/pypi/v/django-cachalot.svg?style=flat-square&maxage=3600\n   :target: https://pypi.python.org/pypi/django-cachalot\n\n.. image:: https://img.shields.io/pypi/pyversions/django-cachalot\n    :target: https://django-cachalot.readthedocs.io/en/latest/\n\n.. image:: https://github.com/noripyt/django-cachalot/actions/workflows/ci.yml/badge.svg\n   :target: https://github.com/noripyt/django-cachalot/actions/workflows/ci.yml\n\n.. image:: http://img.shields.io/coveralls/noripyt/django-cachalot/master.svg?style=flat-square&maxage=3600\n   :target: https://coveralls.io/r/noripyt/django-cachalot?branch=master\n\n.. image:: http://img.shields.io/scrutinizer/g/noripyt/django-cachalot/master.svg?style=flat-square&maxage=3600\n   :target: https://scrutinizer-ci.com/g/noripyt/django-cachalot/\n\n.. image:: https://img.shields.io/discord/773656139207802881\n    :target: https://discord.gg/wfgfbk8rsu\n\n----\n\ntable of contents:\n\n- quickstart\n- usage\n- hacking\n- benchmark\n- third-party cache comparison\n- discussion\n\nquickstart\n----------\n\ncachalot officially supports python 3.7-3.11 and django 3.2, 4.1, 4.2 with the databases postgresql, sqlite, and mysql.\n\nnote: an upper limit on django version is set for your safety. please do not ignore it.\n\nusage\n-----\n\n#. ``pip install django-cachalot``\n#. add ``'cachalot',`` to your ``installed_apps``\n#. if you use multiple servers with a common cache server,\n   `double check their clock synchronisation <https://django-cachalot.readthedocs.io/en/latest/limits.html#multiple-servers>`_\n#. if you modify data outside django\n   \u2013\u00a0typically after restoring a sql database\u00a0\u2013,\n   use the `manage.py command <https://django-cachalot.readthedocs.io/en/latest/quickstart.html#command>`_\n#. be aware of `the few other limits <https://django-cachalot.readthedocs.io/en/latest/limits.html#limits>`_\n#. if you use\n   `django-debug-toolbar <https://github.com/jazzband/django-debug-toolbar>`_,\n   you can add ``'cachalot.panels.cachalotpanel',``\n   to your ``debug_toolbar_panels``\n#. enjoy!\n\nhacking\n-------\n\nto start developing, install the requirements\nand run the tests via tox.\n\nmake sure you have the following services:\n\n* memcached\n* redis\n* postgresql\n* mysql\n\nfor setup:\n\n#. install: ``pip install -r requirements/hacking.txt``\n#. for postgresql: ``create role cachalot login superuser;``\n#. run: ``tox --current-env`` to run the test suite on your current python version.\n#. you can also run specific databases and django versions: ``tox -e py38-django3.1-postgresql-redis``\n\nbenchmark\n---------\n\ncurrently, benchmarks are supported on linux and mac/darwin.\nyou will need a database called \"cachalot\" on mysql and postgresql.\nadditionally, on postgresql, you will need to create a role\ncalled \"cachalot.\" you can also run the benchmark, and it'll raise\nerrors with specific instructions for how to fix it.\n\n#. install: ``pip install -r requirements/benchmark.txt``\n#. run: ``python benchmark.py``\n\nthe output will be in benchmark/today's_date/\n\ntodo create docker-compose file to allow for easier running of data.\n\nthird-party cache comparison\n----------------------------\n\nthere are three main third party caches: cachalot, cache-machine, and cache-ops. which do you use? we suggest a mix:\n\ntl;dr use cachalot for cold or modified <50 times per minutes (most people should stick with only cachalot since you\nmost likely won't need to scale to the point of needing cache-machine added to the bowl). if you're an enterprise that\nalready has huge statistics, then mixing cold caches for cachalot and your hot caches with cache-machine is the best\nmix. however, when performing joins with ``select_related`` and ``prefetch_related``, you can\nget a nearly 100x speed up for your initial deployment.\n\nrecall, cachalot caches the entire table. that's where its inefficiency stems from: if you keep updating the records,\nthen the cachalot constantly invalidates the table and re-caches. luckily caching is very efficient, it's just the cache\ninvalidation part that kills all our systems. look at note 1 below to see how reddit deals with it.\n\ncachalot is more-or-less intended for cold caches or \"just-right\" conditions. if you find a partition library for\ndjango (also authored but work-in-progress by `andrew chen wang`_), then the caching will work better since sharding\nthe cold/accessed-the-least records aren't invalidated as much.\n\ncachalot is good when there are <50 modifications per minute on a hot cached table. this is mostly due to cache invalidation. it's the same with any cache,\nwhich is why we suggest you use cache-machine for hot caches. cache-machine caches individual objects, taking up more in the memory store but\ninvalidates those individual objects instead of the entire table like cachalot.\n\nyes, the bane of our entire existence lies in cache invalidation and naming variables. why does cachalot suck when\nstuck with a huge table that's modified rapidly? since you've mixed your cold (90% of) with your hot (10% of) records,\nyou're caching and invalidating an entire table. it's like trying to boil 1 ton of noodles inside one pot instead of\n100 pots boiling 1 ton of noodles. which is more efficient? the splitting up of them.\n\nnote 1: my personal experience with caches stems from reddit's: https://redditblog.com/2017/01/17/caching-at-reddit/\n\nnote 2: technical comparison: https://django-cachalot.readthedocs.io/en/latest/introduction.html#comparison-with-similar-tools\n\ndiscussion\n----------\n\nhelp? technical chat? `it's here on discord <https://discord.gg/wfgfbk8rsu>`_.\n\nlegacy chats:\n\n- https://gitter.im/django-cachalot/lobby\n- https://join.slack.com/t/cachalotdjango/shared_invite/zt-dd0tj27b-cih6vlasojawntg~ii5~qw\n\n.. _andrew chen wang: https://github.com/andrew-chen-wang\n\n.. image:: https://raw.github.com/noripyt/django-cachalot/master/django-cachalot.jpg\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "django-cachalot",
+  "package_url": "https://pypi.org/project/django-cachalot/",
+  "project_url": "https://pypi.org/project/django-cachalot/",
+  "project_urls": {
+    "Homepage": "https://github.com/noripyt/django-cachalot"
+  },
+  "release_url": "https://pypi.org/project/django-cachalot/2.6.1/",
+  "requires_dist": [
+    "Django (<4.3,>=3.2)"
+  ],
+  "requires_python": "",
+  "summary": "caches your django orm queries and automatically invalidates them.",
+  "version": "2.6.1",
+  "releases": [],
+  "developers": [
+    "acwangpython@gmail.com",
+    "bertrand_bordage"
+  ],
+  "kwds": "django django3 cachalot cachalotdjango cachalotpanel",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_django_cachalot",
+  "homepage": "https://github.com/noripyt/django-cachalot",
+  "release_count": 43,
+  "dependency_ids": [
+    "pypi_django"
+  ]
+}

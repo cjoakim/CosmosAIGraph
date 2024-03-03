@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: testing"
+  ],
+  "description": "================\npytest-reportlog\n================\n\n|python| |version| |anaconda| |ci| |black|\n\n.. |version| image:: http://img.shields.io/pypi/v/pytest-reportlog.svg\n  :target: https://pypi.python.org/pypi/pytest-reportlog\n\n.. |anaconda| image:: https://img.shields.io/conda/vn/conda-forge/pytest-reportlog.svg\n    :target: https://anaconda.org/conda-forge/pytest-reportlog\n\n.. |ci| image:: https://github.com/pytest-dev/pytest-reportlog/workflows/test/badge.svg\n  :target: https://github.com/pytest-dev/pytest-reportlog/actions\n\n.. |python| image:: https://img.shields.io/pypi/pyversions/pytest-reportlog.svg\n  :target: https://pypi.python.org/pypi/pytest-reportlog/\n\n.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg\n  :target: https://github.com/ambv/black\n\nreplacement for the ``--resultlog`` option, focused in simplicity and extensibility.\n\n.. note::\n    this plugin was created so developers can try out the candidate to replace the\n    `deprecated --resultlog <https://docs.pytest.org/en/latest/deprecations.html#result-log-result-log>`__ option.\n\n    if you use ``--resultlog``, please try out ``--report-log`` and provide feedback.\n\nusage\n=====\n\ninstall ``pytest-reportlog`` as a test requirement in your test environment.\n\nthe ``--report-log=file`` option writes a file in `json lines <https://jsonlines.org/>`__ format as the test session executes.\n\neach line of the report log contains a self contained json object corresponding to a testing event,\nsuch as a collection or a test result report. the file is guaranteed to be flushed after writing\neach line, so systems can read and process events in real-time.\n\neach json object contains a special key ``$report_type``, which contains a unique identifier for\nthat kind of report object. for future compatibility, consumers of the file should ignore reports\nthey don't recognize, as well as ignore unknown properties/keys in json objects that they do know,\nas future pytest versions might enrich the objects with more properties/keys.\n\ncompression\n===========\n\ncommon compression suffixes like `.gz`, `.bz2` and `.xz` will automatically use the requested compression format.\nthe implementations from the python stdlib are used and must be enabled in the python builds.\n\nexample\n-------\n\nconsider this file:\n\n.. code-block:: python\n\n    # content of test_report_example.py\n\n\n    def test_ok():\n        assert 5 + 5 == 10\n\n\n    def test_fail():\n        assert 4 + 4 == 1\n\n\n::\n\n    $ pytest test_report_example.py -q --report-log=log.jsonl\n    .f                                                                   [100%]\n    ================================= failures =================================\n    ________________________________ test_fail _________________________________\n\n        def test_fail():\n    >       assert 4 + 4 == 1\n    e       assert (4 + 4) == 1\n\n    test_report_example.py:8: assertionerror\n    ------------------- generated report log file: log.jsonl --------------------\n    1 failed, 1 passed in 0.12s\n\nthe generated ``log.jsonl`` will contain a json object per line:\n\n::\n\n    $ cat log.jsonl\n    {\"pytest_version\": \"5.2.2\", \"$report_type\": \"sessionstart\"}\n    {\"nodeid\": \"\", \"outcome\": \"passed\", \"longrepr\": null, \"result\": null, \"sections\": [], \"$report_type\": \"collectreport\"}\n    {\"nodeid\": \"test_report_example.py\", \"outcome\": \"passed\", \"longrepr\": null, \"result\": null, \"sections\": [], \"$report_type\": \"collectreport\"}\n    {\"nodeid\": \"test_report_example.py::test_ok\", \"location\": [\"test_report_example.py\", 0, \"test_ok\"], \"keywords\": {\"test_ok\": 1, \"pytest-reportlog\": 1, \"test_report_example.py\": 1}, \"outcome\": \"passed\", \"longrepr\": null, \"when\": \"setup\", \"user_properties\": [], \"sections\": [], \"duration\": 0.0, \"$report_type\": \"testreport\"}\n    {\"nodeid\": \"test_report_example.py::test_ok\", \"location\": [\"test_report_example.py\", 0, \"test_ok\"], \"keywords\": {\"test_ok\": 1, \"pytest-reportlog\": 1, \"test_report_example.py\": 1}, \"outcome\": \"passed\", \"longrepr\": null, \"when\": \"call\", \"user_properties\": [], \"sections\": [], \"duration\": 0.0, \"$report_type\": \"testreport\"}\n    {\"nodeid\": \"test_report_example.py::test_ok\", \"location\": [\"test_report_example.py\", 0, \"test_ok\"], \"keywords\": {\"test_ok\": 1, \"pytest-reportlog\": 1, \"test_report_example.py\": 1}, \"outcome\": \"passed\", \"longrepr\": null, \"when\": \"teardown\", \"user_properties\": [], \"sections\": [], \"duration\": 0.00099945068359375, \"$report_type\": \"testreport\"}\n    {\"nodeid\": \"test_report_example.py::test_fail\", \"location\": [\"test_report_example.py\", 4, \"test_fail\"], \"keywords\": {\"test_fail\": 1, \"pytest-reportlog\": 1, \"test_report_example.py\": 1}, \"outcome\": \"passed\", \"longrepr\": null, \"when\": \"setup\", \"user_properties\": [], \"sections\": [], \"duration\": 0.0, \"$report_type\": \"testreport\"}\n    {\"nodeid\": \"test_report_example.py::test_fail\", \"location\": [\"test_report_example.py\", 4, \"test_fail\"], \"keywords\": {\"test_fail\": 1, \"pytest-reportlog\": 1, \"test_report_example.py\": 1}, \"outcome\": \"failed\", \"longrepr\": {\"reprcrash\": {\"path\": \"d:\\\\projects\\\\pytest-reportlog\\\\test_report_example.py\", \"lineno\": 6, \"message\": \"assert (4 + 4) == 1\"}, \"reprtraceback\": {\"reprentries\": [{\"type\": \"reprentry\", \"data\": {\"lines\": [\"    def test_fail():\", \">       assert 4 + 4 == 1\", \"e       assert (4 + 4) == 1\"], \"reprfuncargs\": {\"args\": []}, \"reprlocals\": null, \"reprfileloc\": {\"path\": \"test_report_example.py\", \"lineno\": 6, \"message\": \"assertionerror\"}, \"style\": \"long\"}}], \"extraline\": null, \"style\": \"long\"}, \"sections\": [], \"chain\": [[{\"reprentries\": [{\"type\": \"reprentry\", \"data\": {\"lines\": [\"    def test_fail():\", \">       assert 4 + 4 == 1\", \"e       assert (4 + 4) == 1\"], \"reprfuncargs\": {\"args\": []}, \"reprlocals\": null, \"reprfileloc\": {\"path\": \"test_report_example.py\", \"lineno\": 6, \"message\": \"assertionerror\"}, \"style\": \"long\"}}], \"extraline\": null, \"style\": \"long\"}, {\"path\": \"d:\\\\projects\\\\pytest-reportlog\\\\test_report_example.py\", \"lineno\": 6, \"message\": \"assert (4 + 4) == 1\"}, null]]}, \"when\": \"call\", \"user_properties\": [], \"sections\": [], \"duration\": 0.0009992122650146484, \"$report_type\": \"testreport\"}\n    {\"nodeid\": \"test_report_example.py::test_fail\", \"location\": [\"test_report_example.py\", 4, \"test_fail\"], \"keywords\": {\"test_fail\": 1, \"pytest-reportlog\": 1, \"test_report_example.py\": 1}, \"outcome\": \"passed\", \"longrepr\": null, \"when\": \"teardown\", \"user_properties\": [], \"sections\": [], \"duration\": 0.0, \"$report_type\": \"testreport\"}\n    {\"exitstatus\": 1, \"$report_type\": \"sessionfinish\"}\n\n\nrecord_property\n---------------\n\nthe ``record_property`` fixture allows to log additional information for a test, just like with junitxml format.\nconsider this test file:\n\n.. code-block:: python\n\n    def test_function(record_property):\n        record_property(\"price\", 12.34)\n        record_property(\"fruit\", \"banana\")\n        assert true\n\nthis information will be recorded in the report json objects under the ``user_properties`` key as follows::\n\n    ..., \"user_properties\": [[\"price\", 12.34], [\"fruit\", \"banana\"]], ...\n\nnote that this nested list construct is just the json representation\nof a list of tuples (name-value pairs).\n",
+  "docs_url": null,
+  "keywords": "pytest",
+  "license": "mit",
+  "name": "pytest-reportlog",
+  "package_url": "https://pypi.org/project/pytest-reportlog/",
+  "project_url": "https://pypi.org/project/pytest-reportlog/",
+  "project_urls": {
+    "Homepage": "https://github.com/pytest-dev/pytest-reportlog"
+  },
+  "release_url": "https://pypi.org/project/pytest-reportlog/0.4.0/",
+  "requires_dist": [
+    "pytest",
+    "pre-commit ; extra == 'dev'",
+    "tox ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "replacement for the --resultlog option, focused in simplicity and extensibility",
+  "version": "0.4.0",
+  "releases": [],
+  "developers": [
+    "bruno_oliveira",
+    "nicoddemus@gmail.com"
+  ],
+  "kwds": "pytest_version pytest reportlog test_report_example pyversions",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_reportlog",
+  "homepage": "https://github.com/pytest-dev/pytest-reportlog",
+  "release_count": 6,
+  "dependency_ids": [
+    "pypi_pre_commit",
+    "pypi_pytest",
+    "pypi_tox"
+  ]
+}

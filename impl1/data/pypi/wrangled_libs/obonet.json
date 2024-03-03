@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: scientific/engineering :: bio-informatics",
+    "topic :: scientific/engineering :: information analysis"
+  ],
+  "description": "# obonet: load obo-formatted ontologies into networkx\n\n[![github actions ci build status](https://img.shields.io/github/actions/workflow/status/dhimmel/obonet/build.yaml?branch=main&label=actions&style=for-the-badge&logo=github&logocolor=white)](https://github.com/dhimmel/obonet/actions)  \n[![software license](https://img.shields.io/pypi/l/obonet?style=for-the-badge&logo=freebsd&logocolor=white)](https://github.com/dhimmel/obonet/blob/main/license)  \n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=python&logocolor=white)](https://github.com/psf/black)  \n[![pypi](https://img.shields.io/pypi/v/obonet.svg?style=for-the-badge&logo=pypi&logocolor=white)](https://pypi.org/project/obonet/)  \n\n\nread obo-formatted ontologies in python.\n`obonet` is\n\n+ user friendly\n+ succinct\n+ pythonic\n+ modern\n+ simple and tested\n+ lightweight\n+ [`networkx`](https://networkx.readthedocs.io/en/stable/overview.html) leveraging\n\nthis python package loads obo serialized ontologies into networks.\nthe function `obonet.read_obo()` takes an `.obo` file and returns a [`networkx.multidigraph`](https://networkx.github.io/documentation/stable/reference/classes/multigraph.html) representation of the ontology.\nthe parser was designed for the obo specification version [1.2](https://owlcollab.github.io/oboformat/doc/go.format.obo-1_2.html) & [1.4](https://owlcollab.github.io/oboformat/doc/go.format.obo-1_4.html).\n\n## usage\n\nsee [`pyproject.toml`](pyproject.toml) for the minimum python version required and the dependencies.\nobo files can be read from a path, url, or open file handle.\ncompression is inferred from the path's extension.\nsee example usage below:\n\n```python\nimport networkx\nimport obonet\n\n# read the taxrank ontology\nurl = 'https://github.com/dhimmel/obonet/raw/main/tests/data/taxrank.obo'\ngraph = obonet.read_obo(url)\n\n# or read the xz-compressed taxrank ontology\nurl = 'https://github.com/dhimmel/obonet/raw/main/tests/data/taxrank.obo.xz'\ngraph = obonet.read_obo(url)\n\n# number of nodes\nlen(graph)\n\n# number of edges\ngraph.number_of_edges()\n\n# check if the ontology is a dag\nnetworkx.is_directed_acyclic_graph(graph)\n\n# mapping from term id to name\nid_to_name = {id_: data.get('name') for id_, data in graph.nodes(data=true)}\nid_to_name['taxrank:0000006']  # taxrank:0000006 is species\n\n# find all superterms of species. note that networkx.descendants gets\n# superterms, while networkx.ancestors returns subterms.\nnetworkx.descendants(graph, 'taxrank:0000006')\n```\n\nfor a more detailed tutorial, see the [**gene ontology example notebook**](https://github.com/dhimmel/obonet/blob/main/examples/go-obonet.ipynb).\n\n## comparison\n\nthis package specializes in reading obo files into a `newtorkx.multidigraph`.\na more general ontology-to-networkx reader is available in the python [nxontology package](https://github.com/related-sciences/nxontology) via the `nxontology.imports.pronto_to_multidigraph` function.\nthis function takes a `pronto.ontology` object,\nwhich can be loaded from an obo file, obo graphs json file, or ontology web language 2 rdf/xml file (owl).\nusing `pronto_to_multidigraph` allows creating a multidigraph similar to the created by `obonet`,\nwith some differences in the amount of metadata retained.\n\nthe primary focus of the `nxontology` package is to provide an `nxontology` class for representing ontologies based around a `networkx.digraph`.\nnxontology provides optimized implementations for computing node similarity and other intrinsic ontology metrics.\nthere are two important differences between a digraph for nxontology and the multidigraph produced by obonet:\n\n1. nxontology is based on a digraph that does not allow multiple edges between the same two nodes.\n   multiple edges between the same two nodes must therefore be collapsed.\n   by default, it only considers _is a_ / `rdfs:subclassof` relationships,\n   but using `pronto_to_multidigraph` to create the nxontology allows for retaining additional relationship types, like _part of_ in the case of the gene ontology.\n\n2. nxontology reverses the direction of relationships so edges go from superterm to subterm.\n   traditionally in ontologies, the _is a_ relationships go from subterm to superterm,\n   but this is confusing.\n   nxontology reverses edges so functions such as _ancestors_ refer to more general concepts and _descendants_ refer to more specific concepts.\n\nthe `nxontology.imports.multidigraph_to_digraph` function converts from a multidigraph, like the one produced by obonet, to a digraph by filtering to the desired relationship types, reversing edges, and collapsing parallel edges.\n\n## installation\n\nthe recommended approach is to install the latest release from [pypi](https://pypi.org/project/obonet/) using:\n\n```sh\npip install obonet\n```\n\nhowever, if you'd like to install the most recent version from github, use:\n\n```sh\npip install git+https://github.com/dhimmel/obonet.git#egg=obonet\n```\n\n## contributing\n\n[![github issues](https://img.shields.io/github/issues/dhimmel/obonet.svg?style=for-the-badge)](https://github.com/dhimmel/obonet/issues)\n\nwe welcome feature suggestions and community contributions.\ncurrently, only reading obo files is supported.\n\n## develop\n\nsome development commands:\n\n```bash\n# create virtual environment\npython3 -m venv ./env\n\n# activate virtual environment\nsource env/bin/activate\n\n# editable installation for development\npip install --editable \".[dev]\"\n\n# install pre-commit hooks\npre-commit install\n\n# run all pre-commit checks\npre-commit run --all\n\n# run tests\npytest\n\n# generate changelog for release notes\ngit fetch --tags origin main\nold_tag=$(git describe --tags --abbrev=0)\ngit log --oneline --decorate=no --reverse $old_tag..head\n```\n\nmaintainers can make a new release at <https://github.com/dhimmel/obonet/releases/new>.\n",
+  "docs_url": null,
+  "keywords": "obo,ontology,networkx,parser,network",
+  "license": "bsd-2-clause-patent",
+  "name": "obonet",
+  "package_url": "https://pypi.org/project/obonet/",
+  "project_url": "https://pypi.org/project/obonet/",
+  "project_urls": {
+    "Homepage": "https://github.com/dhimmel/obonet",
+    "Source": "https://github.com/dhimmel/obonet",
+    "Tracker": "https://github.com/dhimmel/obonet/issues"
+  },
+  "release_url": "https://pypi.org/project/obonet/1.0.0/",
+  "requires_dist": [
+    "networkx",
+    "pre-commit ; extra == 'dev'",
+    "pytest ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "parse obo formatted ontologies into networkx",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "daniel.himmelstein@gmail.com"
+  ],
+  "kwds": "networkx ontologies badge owlcollab obonet",
+  "license_kwds": "bsd-2-clause-patent",
+  "libtype": "pypi",
+  "id": "pypi_obonet",
+  "homepage": "",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_networkx",
+    "pypi_pre_commit",
+    "pypi_pytest"
+  ]
+}

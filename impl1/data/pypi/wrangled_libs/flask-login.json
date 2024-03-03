@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: web environment",
+    "framework :: flask",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# flask-login\n\n![tests](https://github.com/maxcountryman/flask-login/workflows/tests/badge.svg)\n[![coverage](https://coveralls.io/repos/maxcountryman/flask-login/badge.svg?branch=main&service=github)](https://coveralls.io/github/maxcountryman/flask-login?branch=main)\n[![software license](https://img.shields.io/badge/license-mit-brightgreen.svg)](license)\n\nflask-login provides user session management for flask. it handles the common\ntasks of logging in, logging out, and remembering your users' sessions over\nextended periods of time.\n\nflask-login is not bound to any particular database system or permissions\nmodel. the only requirement is that your user objects implement a few methods,\nand that you provide a callback to the extension capable of loading users from\ntheir id.\n\n## installation\n\ninstall the extension with pip:\n\n```sh\n$ pip install flask-login\n```\n\n## usage\n\nonce installed, the flask-login is easy to use. let's walk through setting up\na basic application. also please note that this is a very basic guide: we will\nbe taking shortcuts here that you should never take in a real application.\n\nto begin we'll set up a flask app:\n\n```python\nimport flask\n\napp = flask.flask(__name__)\napp.secret_key = 'super secret string'  # change this!\n```\n\nflask-login works via a login manager. to kick things off, we'll set up the\nlogin manager by instantiating it and telling it about our flask app:\n\n```python\nimport flask_login\n\nlogin_manager = flask_login.loginmanager()\n\nlogin_manager.init_app(app)\n```\n\nto keep things simple we're going to use a dictionary to represent a database\nof users. in a real application, this would be an actual persistence layer.\nhowever it's important to point out this is a feature of flask-login: it\ndoesn't care how your data is stored so long as you tell it how to retrieve it!\n\n```python\n# our mock database.\nusers = {'foo@bar.tld': {'password': 'secret'}}\n```\n\nwe also need to tell flask-login how to load a user from a flask request and\nfrom its session. to do this we need to define our user object, a\n`user_loader` callback, and a `request_loader` callback.\n\n```python\nclass user(flask_login.usermixin):\n    pass\n\n\n@login_manager.user_loader\ndef user_loader(email):\n    if email not in users:\n        return\n\n    user = user()\n    user.id = email\n    return user\n\n\n@login_manager.request_loader\ndef request_loader(request):\n    email = request.form.get('email')\n    if email not in users:\n        return\n\n    user = user()\n    user.id = email\n    return user\n```\n\nnow we're ready to define our views. we can start with a login view, which will\npopulate the session with authentication bits. after that we can define a view\nthat requires authentication.\n\n```python\n@app.route('/login', methods=['get', 'post'])\ndef login():\n    if flask.request.method == 'get':\n        return '''\n               <form action='login' method='post'>\n                <input type='text' name='email' id='email' placeholder='email'/>\n                <input type='password' name='password' id='password' placeholder='password'/>\n                <input type='submit' name='submit'/>\n               </form>\n               '''\n\n    email = flask.request.form['email']\n    if email in users and flask.request.form['password'] == users[email]['password']:\n        user = user()\n        user.id = email\n        flask_login.login_user(user)\n        return flask.redirect(flask.url_for('protected'))\n\n    return 'bad login'\n\n\n@app.route('/protected')\n@flask_login.login_required\ndef protected():\n    return 'logged in as: ' + flask_login.current_user.id\n```\n\nfinally we can define a view to clear the session and log users out:\n\n```python\n@app.route('/logout')\ndef logout():\n    flask_login.logout_user()\n    return 'logged out'\n```\n\nwe now have a basic working application that makes use of session-based\nauthentication. to round things off, we should provide a callback for login\nfailures:\n\n```python\n@login_manager.unauthorized_handler\ndef unauthorized_handler():\n    return 'unauthorized', 401\n```\n\ndocumentation for flask-login is available on [readthedocs](https://flask-login.readthedocs.io/en/latest/).\nfor complete understanding of available configuration, please refer to the [source code](https://github.com/maxcountryman/flask-login).\n\n\n## contributing\n\nwe welcome contributions! if you would like to hack on flask-login, please\nfollow these steps:\n\n1. fork this repository\n2. make your changes\n3. install the dev requirements with `pip install -r requirements/dev.txt`\n4. submit a pull request after running `tox` (ensure it does not error!)\n\nplease give us adequate time to review your submission. thanks!\n",
+  "docs_url": "https://pythonhosted.org/Flask-Login/",
+  "keywords": "",
+  "license": "mit",
+  "name": "flask-login",
+  "package_url": "https://pypi.org/project/Flask-Login/",
+  "project_url": "https://pypi.org/project/Flask-Login/",
+  "project_urls": {
+    "Changes": "https://github.com/maxcountryman/flask-login/blob/main/CHANGES.md",
+    "Documentation": "https://flask-login.readthedocs.io/",
+    "Homepage": "https://github.com/maxcountryman/flask-login",
+    "Issue Tracker": "https://github.com/maxcountryman/flask-login/issues",
+    "Source Code": "https://github.com/maxcountryman/flask-login"
+  },
+  "release_url": "https://pypi.org/project/Flask-Login/0.6.3/",
+  "requires_dist": [
+    "Flask >=1.0.4",
+    "Werkzeug >=1.0.1"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "user authentication and session management for flask.",
+  "version": "0.6.3",
+  "releases": [],
+  "developers": [
+    "leafstormrush@gmail.com",
+    "matthew_frazier",
+    "max_countryman"
+  ],
+  "kwds": "flask_login flask login_user login_manager loginmanager",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_flask_login",
+  "homepage": "https://github.com/maxcountryman/flask-login",
+  "release_count": 25,
+  "dependency_ids": [
+    "pypi_flask",
+    "pypi_werkzeug"
+  ]
+}

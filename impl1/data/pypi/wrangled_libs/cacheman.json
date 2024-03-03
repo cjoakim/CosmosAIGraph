@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "topic :: utilities"
+  ],
+  "description": "|build status|\n\ncacheman\n========\n\na python interface for managing dependent caches.\n\n\u2018ba-bop-ba-dop-bop\u2019\n\ndescription\n-----------\n\nthis module acts as a dependency manager for caches and is ideal for\ninstances where a program has many repeated computations that could be\nsafely persisted. this usually entails a db layer to house key value\npairs. however, such a layer is sometimes overkill and managing a db\nalong with a project can be more effort than it\u2019s worth. that\u2019s where\ncacheman comes in and provides an interface through which you can define\nsavers, loaders, builders, and dependencies with disk-based defaults.\n\nby default all caches will auto save when 10k changes occur over 60\nseconds, 10 changes occur over 300 seconds (but after 60 seconds), or 1\nchange occurs within 900 seconds (after 300 seconds). this behavior can\nbe changed by instantiating an autosynccache from the autosync\nsubmodule.\n\ndependencies\n------------\n\npsutil \u2013 for asynchronous cache saving\n\nfeatures\n--------\n\n-  drop in replacement for local memory dictionaries\n-  default persistent pickle caches\n-  non-persistent caching\n-  cache load/save/delete hooks w/ defaults\n-  cache validation hooks\n-  cache builder hooks\n-  dependent invalidation\n-  auto-syncing caches\n\nhow to use\n----------\n\nbelow are some simple examples for how to use the repository.\n\nsetting up a simple persistent cache\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n::\n\n   from cacheman import cacher\n\n   manager = cacher.get_cache_manager() # optional manager name argument can be used here\n   cache = manager.register_cache('my_simple_cache') # you now have a cache!\n   print cache.get('my_key') # `none` first run, 'my_value' if this code was executed earlier\n   cache['my_key'] = 'my_value'\n   cache.save() # changes are now persisted to disk\n   manager.save_cache_contents('my_simple_cache') # alternative way to save a cache\n\nnon-persistent caches\n~~~~~~~~~~~~~~~~~~~~~\n\n::\n\n   from cacheman import cacher\n\n   manager = cacher.get_cache_manager()\n   cache = manager.register_custom_cache('my_simple_cache', persistent=false) # you cache won't save to disk\n   cache.save() # this is a no-op\n\nregistering hooks\n~~~~~~~~~~~~~~~~~\n\n::\n\n   from cacheman import cacher\n   from cacheman import cachewrap\n\n   def my_saver(cache_name, contents):\n       print(\"save requested on {} cache content: {}\".format(cache_name, contents))\n\n   def my_loader(cache_name):\n       return { 'load': 'faked' }\n\n   manager = cacher.get_cache_manager()\n\n   cache = cachewrap.persistentcache('my_cache', saver=my_saver, loader=my_loader)\n   # can also use manager to set savers/loaders\n   #manager.retrieve_cache('my_cache')\n   #manager.register_saver('my_cache', my_saver)\n   #manager.register_loader('my_cache', my_loader)\n\n   cache.save() # will print 'save ... : { 'load': 'faked' }'\n   cache['new'] = 'real' # add something to the cache\n   cache.save() # will print 'save ... : { 'load': 'faked', 'new': 'real' }'\n\ndependent caches\n~~~~~~~~~~~~~~~~\n\n::\n\n   from cacheman import cacher\n\n   manager = cacher.get_cache_manager()\n   edge_cache = manager.retrieve_cache('edge_cache')\n   root_cache = manager.register_cache('root_cache')\n   manager.register_dependent_cache('root_cache', 'edge_cache')\n\n   def set_processed_value():\n       # computes and caches 'processed' from root's 'raw' value\n       processed = edge_cache.get('processed')\n       if processed is none:\n           processed = (root_cache.get('raw') or 0) * 5\n           edge_cache['processed'] = processed\n       return processed\n\n   # a common problem with caching computed or dependent values:\n   print set_processed_value() # 0 without raw value\n   root_cache['raw'] = 1\n   print set_processed_value() # still 0 because it's cache in edge\n\n   # now we use cache invalidation to tell downstream caches they're no longer valid\n   root_cache.invalidate() # invalidates dependent caches\n   print edge_cache # prints {} even though we only invalidated the root_cache\n   root_cache['raw'] = 1\n   print set_processed_value() # now 5 because the edge was cleared before the request\n   print edge_cache # can see {'processed': 5} propogated\n\nsetting cache directory\n~~~~~~~~~~~~~~~~~~~~~~~\n\n::\n\n   from cacheman import cacher\n\n   # default cache directory is '/tmp/general_cacher' or 'user\\appadata\\local\\temp\\general_cache'\n   # all pickle caches now save to namespaced directories within the base_cache_directory directory\n   manager = cacher.get_cache_manager(base_cache_directory='secret/cache/location')\n\n   cache = manager.register_cache('my_cache')\n   cache['new'] = 'real' # add something to the cache\n   cache.save('my_cache') # will save contents to 'secret/cache/location/general_cache/my_cache.pkl'\n\nnavigating the repo\n-------------------\n\n.. _cacheman-1:\n\ncacheman\n~~~~~~~~\n\npackage wrapper for the repo.\n\ntests\n~~~~~\n\nall unit tests for the repo.\n\nlanguage preferences\n--------------------\n\n-  google style guide\n-  object oriented (with a few exceptions)\n\ntodo\n----\n\n-  better argument checks\n-  changelog\n\nauthor\n------\n\nauthor(s): matthew seal\n\n.. |build status| image:: https://travis-ci.org/mseal/py_cache_manager.svg?branch=master\n   :target: https://travis-ci.org/mseal/py_cache_manager\n",
+  "docs_url": null,
+  "keywords": "tables,data,analysis,extraction",
+  "license": "new bsd",
+  "name": "cacheman",
+  "package_url": "https://pypi.org/project/CacheMan/",
+  "project_url": "https://pypi.org/project/CacheMan/",
+  "project_urls": {
+    "Download": "https://github.com/MSeal/py_cache_manager/tarball/v2.2.0",
+    "Homepage": "https://github.com/MSeal/py_cache_manager"
+  },
+  "release_url": "https://pypi.org/project/CacheMan/2.2.0/",
+  "requires_dist": [
+    "psutil (>=2.1.0)"
+  ],
+  "requires_python": "",
+  "summary": "a dependent cache manager",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "matthew_seal",
+    "mseal007@gmail.com"
+  ],
+  "kwds": "py_cache_manager general_cacher general_cache cacher cache",
+  "license_kwds": "new bsd",
+  "libtype": "pypi",
+  "id": "pypi_cacheman",
+  "homepage": "https://github.com/mseal/py_cache_manager",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_psutil"
+  ]
+}

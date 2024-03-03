@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: zope public license",
+    "natural language :: english",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development"
+  ],
+  "description": "*************************\nbasic inter-process locks\n*************************\n\nthe zc.lockfile package provides a basic portable implementation of\ninterprocess locks using lock files.  the purpose if not specifically\nto lock files, but to simply provide locks with an implementation\nbased on file-locking primitives.  of course, these locks could be\nused to mediate access to *other* files.  for example, the zodb file\nstorage implementation uses file locks to mediate access to\nfile-storage database files.  the database files and lock file files\nare separate files.\n\n.. contents::\n\ndetailed documentation\n**********************\n\nlock file support\n=================\n\nthe zodb lock_file module provides support for creating file system\nlocks.  these are locks that are implemented with lock files and\nos-provided locking facilities.  to create a lock, instantiate a\nlockfile object with a file name:\n\n    >>> import zc.lockfile\n    >>> lock = zc.lockfile.lockfile('lock')\n\nif we try to lock the same name, we'll get a lock error:\n\n    >>> import zope.testing.loggingsupport\n    >>> handler = zope.testing.loggingsupport.installedhandler('zc.lockfile')\n    >>> try:\n    ...     zc.lockfile.lockfile('lock')\n    ... except zc.lockfile.lockerror:\n    ...     print(\"can't lock file\")\n    can't lock file\n\n.. we don't log failure to acquire.\n\n    >>> for record in handler.records: # doctest: +ellipsis\n    ...     print(record.levelname+' '+record.getmessage())\n\nto release the lock, use it's close method:\n\n    >>> lock.close()\n\nthe lock file is not removed.  it is left behind:\n\n    >>> import os\n    >>> os.path.exists('lock')\n    true\n\nof course, now that we've released the lock, we can create it again:\n\n    >>> lock = zc.lockfile.lockfile('lock')\n    >>> lock.close()\n\n.. cleanup\n\n    >>> import os\n    >>> os.remove('lock')\n\nhostname in lock file\n=====================\n\nin a container environment (e.g. docker), the pid is typically always\nidentical even if multiple containers are running under the same operating\nsystem instance.\n\nclearly, inspecting lock files doesn't then help much in debugging. to identify\nthe container which created the lock file, we need information about the\ncontainer in the lock file. since docker uses the container identifier or name\nas the hostname, this information can be stored in the lock file in addition to\nor instead of the pid.\n\nuse the ``content_template`` keyword argument to ``lockfile`` to specify a\ncustom lock file content format:\n\n    >>> lock = zc.lockfile.lockfile('lock', content_template='{pid};{hostname}')\n    >>> lock.close()\n\nif you now inspected the lock file, you would see e.g.:\n\n    $ cat lock\n     123;myhostname\n\n\nchange history\n***************\n\n3.0.post1 (2023-02-28)\n======================\n\n- add ``python_requires`` to ``setup.py`` to prevent installing on not\n  supported old python versions.\n\n\n3.0 (2023-02-23)\n================\n\n- add support for python 3.9, 3.10, 3.11.\n\n- drop support for python 2.7, 3.5, 3.6.\n\n- drop support for deprecated ``python setup.py test``.\n\n\n2.0 (2019-08-08)\n================\n\n- extracted new ``simplelockfile`` that removes implicit behavior\n  writing to the lock file, and instead allows a subclass to define\n  that behavior.\n  (`#15 <https://github.com/zopefoundation/zc.lockfile/issues/15>`_)\n\n- ``simplelockfile`` and thus ``lockfile`` are now new-style classes.\n  any clients relying on ``lockfile`` being an old-style class will\n  need to be adapted.\n\n- drop support for python 3.4.\n\n- add support for python 3.8b3.\n\n\n1.4 (2018-11-12)\n================\n\n- claim support for python 3.6 and 3.7.\n\n- drop python 2.6 and 3.3.\n\n\n1.3.0 (2018-04-23)\n==================\n\n- stop logging failure to acquire locks. clients can do that if they wish.\n\n- claim support for python 3.4 and 3.5.\n\n- drop python 3.2 support because pip no longer supports it.\n\n1.2.1 (2016-06-19)\n==================\n\n- fixed: unlocking and locking didn't work when a multiprocessing\n  process was running (and presumably other conditions).\n\n1.2.0 (2016-06-09)\n==================\n\n- added the ability to include the hostname in the lock file content.\n\n- code and rest markup cosmetics.\n  [alecghica]\n\n1.1.0 (2013-02-12)\n==================\n\n- added trove classifiers and made setup.py zest.releaser friendly.\n\n- added python 3.2, 3.3 and pypy 1.9 support.\n\n- removed python 2.4 and python 2.5 support.\n\n1.0.2 (2012-12-02)\n==================\n\n- fixed: the fix included in 1.0.1 caused multiple pids to be written\n  to the lock file\n\n1.0.1 (2012-11-30)\n==================\n\n- fixed: when there was lock contention, the pid in the lock file was\n  lost.\n\n  thanks to daniel moisset reporting the problem and providing a fix\n  with tests.\n\n- added test extra to declare test dependency on ``zope.testing``.\n\n- using python's ``doctest`` module instead of depreacted\n  ``zope.testing.doctest``.\n\n1.0.0 (2008-10-18)\n==================\n\n- fixed a small bug in error logging.\n\n1.0.0b1 (2007-07-18)\n====================\n\n- initial release\n",
+  "docs_url": null,
+  "keywords": "lock",
+  "license": "zpl 2.1",
+  "name": "zc.lockfile",
+  "package_url": "https://pypi.org/project/zc.lockfile/",
+  "project_url": "https://pypi.org/project/zc.lockfile/",
+  "project_urls": {
+    "Homepage": "https://github.com/zopefoundation/zc.lockfile"
+  },
+  "release_url": "https://pypi.org/project/zc.lockfile/3.0.post1/",
+  "requires_dist": [
+    "setuptools",
+    "zope.testing ; extra == 'test'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "basic inter-process locks",
+  "version": "3.0.post1",
+  "releases": [],
+  "developers": [
+    "zope-dev@zope.dev",
+    "zope_foundation"
+  ],
+  "kwds": "lock_file lockfile simplelockfile locking locks",
+  "license_kwds": "zpl 2.1",
+  "libtype": "pypi",
+  "id": "pypi_zc.lockfile",
+  "homepage": "https://github.com/zopefoundation/zc.lockfile",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_setuptools",
+    "pypi_zope.testing"
+  ]
+}

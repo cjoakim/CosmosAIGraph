@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: scientific/engineering :: mathematics",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# struct2tensor\n\n[![python](https://img.shields.io/badge/python%20-3.8%7c3.9-blue)](https://github.com/google/struct2tensor)\n[![pypi](https://badge.fury.io/py/struct2tensor.svg)](https://badge.fury.io/py/struct2tensor)\n\n<!--*\nfreshness: { owner: 'iindyk' reviewed: '2022-04-27' }\n*-->\n\n## introduction\nstruct2tensor is a library for parsing structured data inside of tensorflow.\nin particular, it makes it easy to manipulate structured data, e.g., slicing,\nflattening, copying substructures, and so on, as part of a tensorflow model\ngraph. the notebook in 'examples/prensor_playground.ipynb' provides a few\nexamples of struct2tensor in action and an introduction to the main\nconcepts. you can\n[run the notebook in your browser](https://colab.research.google.com/github/google/struct2tensor/blob/master/examples/prensor_playground.ipynb)\nthrough google's colab environment, or [download the\nfile](examples/prensor_playground.ipynb) to run it in your own jupyter\nenvironment.\n\n\nthere are two main use cases of this repo:\n\n1.  to create a pip package. the pip package contains plug-ins (opkernels) to an\n    existing tensorflow installation.\n2.  to staticlly link with tensorflow-serving.\n\nas these processes are independent, one can follow either set of directions\nbelow.\n\n## use a pre-built linux pip package.\n\n\nfrom a virtual environment, run:\n\n```bash\npip install struct2tensor\n```\n### nightly packages\n\nstruct2tensor also hosts nightly packages at https://pypi-nightly.tensorflow.org\non google cloud. to install the latest nightly package, please use the following\ncommand:\n\n```bash\npip install --extra-index-url https://pypi-nightly.tensorflow.org/simple struct2tensor\n```\n\nthis will install the nightly packages for the major dependencies of\nstruct2tensor such as tensorflow metadata (tfmd).\n\n## creating a pip package.\n\nthe struct2tensor pip package is useful for creating models.\nit works with tensorflow 2.x.\n\nin order to unify the process, we recommend compiling struct2tensor inside\na docker container.\n\n\n### downloading the code\n\ngo to your home directory.\n\ndownload the source code.\n\n```bash\ngit clone https://github.com/google/struct2tensor.git\ncd ~/struct2tensor\n```\n\n### use docker-compose\ninstall [docker-compose](https://docs.docker.com/compose/).\n\nuse it to build a pip wheel for python 3.8 with tensorflow version 2:\n\n```bash\ndocker-compose build --build-arg python_version=3.8 manylinux2014\ndocker-compose run -e tf_version=released_tf_2 manylinux2014\n```\n\nthis will create a manylinux package in the ~/struct2tensor/dist directory.\n\n\n## creating a static library\n\nin order to construct a static library for tensorflow-serving, we run:\n\n```bash\nbazel build -c opt struct2tensor:struct2tensor_kernels_and_ops\n```\n\nthis can also be linked into another library.\n\n## [tensorflow serving](https://github.com/tensorflow/serving) docker image\n\nstruct2tensor needs a couple of custom tensorflow ops to function. if you train\na model with struct2tensor and wants to serve it with tensorflow serving, the\ntensorflow serving binary needs to link with those custom ops. we have a\npre-built docker image that contains such a binary. the `dockerfile` is\navailable at `tools/tf_serving_docker/dockerfile`. the image is available at\n`gcr.io/tfx-oss-public/s2t_tf_serving`.\n\nplease see the `dockerfile` for details. but in brief, the image exposes port\n8500 as the grpc endpoint and port 8501 as the rest endpoint. you can set\ntwo environment variables `model_base_path` and `model_name` to point it to\nyour model (either mount it to the container, or put your model on gcs).\nit will look for a saved model at\n`${model_base_path}/${model_name}/${version_number}`, where `version_number`\nis an integer.\n\n\n## compatibility\n\nstruct2tensor                                                          | tensorflow\n---------------------------------------------------------------------- | ----------\n[0.45.0](https://github.com/google/struct2tensor/releases/tag/v0.45.0) | 2.13.0\n[0.44.0](https://github.com/google/struct2tensor/releases/tag/v0.44.0) | 2.12.0\n[0.43.0](https://github.com/google/struct2tensor/releases/tag/v0.43.0) | 2.11.0\n[0.42.0](https://github.com/google/struct2tensor/releases/tag/v0.42.0) | 2.10.0\n[0.41.0](https://github.com/google/struct2tensor/releases/tag/v0.41.0) | 2.9.0\n[0.40.0](https://github.com/google/struct2tensor/releases/tag/v0.40.0) | 2.9.0\n[0.39.0](https://github.com/google/struct2tensor/releases/tag/v0.39.0) | 2.8.0\n[0.38.0](https://github.com/google/struct2tensor/releases/tag/v0.38.0) | 2.8.0\n[0.37.0](https://github.com/google/struct2tensor/releases/tag/v0.37.0) | 2.7.0\n[0.36.0](https://github.com/google/struct2tensor/releases/tag/v0.36.0) | 2.7.0\n[0.35.0](https://github.com/google/struct2tensor/releases/tag/v0.35.0) | 2.6.0\n[0.34.0](https://github.com/google/struct2tensor/releases/tag/v0.34.0) | 2.6.0\n[0.33.0](https://github.com/google/struct2tensor/releases/tag/v0.33.0) | 2.5.0\n[0.32.0](https://github.com/google/struct2tensor/releases/tag/v0.32.0) | 2.5.0\n[0.31.0](https://github.com/google/struct2tensor/releases/tag/v0.31.0) | 2.5.0\n[0.30.0](https://github.com/google/struct2tensor/releases/tag/v0.30.0) | 2.4.0\n[0.29.0](https://github.com/google/struct2tensor/releases/tag/v0.29.0) | 2.4.0\n[0.28.0](https://github.com/google/struct2tensor/releases/tag/v0.28.0) | 2.4.0\n[0.27.0](https://github.com/google/struct2tensor/releases/tag/v0.27.0) | 2.4.0\n[0.26.0](https://github.com/google/struct2tensor/releases/tag/v0.26.0) | 2.3.0\n[0.25.0](https://github.com/google/struct2tensor/releases/tag/v0.25.0) | 2.3.0\n[0.24.0](https://github.com/google/struct2tensor/releases/tag/v0.24.0) | 2.3.0\n[0.23.0](https://github.com/google/struct2tensor/releases/tag/v0.23.0) | 2.3.0\n[0.22.0](https://github.com/google/struct2tensor/releases/tag/v0.22.0) | 2.2.0\n[0.21.1](https://github.com/google/struct2tensor/releases/tag/v0.21.1) | 2.1.0\n[0.21.0](https://github.com/google/struct2tensor/releases/tag/v0.21.0) | 2.1.0\n0.0.1.dev*                                                             | 1.15\n\n\n",
+  "docs_url": null,
+  "keywords": "tensorflow protobuf machine learning",
+  "license": "apache 2.0",
+  "name": "struct2tensor",
+  "package_url": "https://pypi.org/project/struct2tensor/",
+  "project_url": "https://pypi.org/project/struct2tensor/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/struct2tensor/0.45.0/",
+  "requires_dist": [
+    "numpy >=1.22",
+    "protobuf <5,>=3.20.3",
+    "pyarrow <11,>=10",
+    "tensorflow-metadata <1.15.0,>=1.14.0",
+    "tensorflow <3,>=2.13"
+  ],
+  "requires_python": "",
+  "summary": "struct2tensor is a package for parsing and manipulating structured data for tensorflow",
+  "version": "0.45.0",
+  "releases": [],
+  "developers": [
+    "google_llc",
+    "tensorflow-extended-dev@googlegroups.com"
+  ],
+  "kwds": "tensorflow struct2tensor_kernels_and_ops struct2tensor structured substructures",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_struct2tensor",
+  "homepage": "",
+  "release_count": 33,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_protobuf",
+    "pypi_pyarrow",
+    "pypi_tensorflow",
+    "pypi_tensorflow_metadata"
+  ]
+}

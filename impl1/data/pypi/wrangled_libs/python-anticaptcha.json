@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "python-anticaptcha\n==================\n\n.. image:: https://github.com/ad-m/python-anticaptcha/workflows/python%20package/badge.svg\n  :target: https://github.com/ad-m/python-anticaptcha/actions?workflow=python+package\n\n.. image:: https://img.shields.io/pypi/v/python-anticaptcha.svg\n  :target: https://pypi.org/project/python-anticaptcha/\n  :alt: python package\n\n.. image:: https://badges.gitter.im/python-anticaptcha/lobby.svg\n  :target: https://gitter.im/python-anticaptcha/lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link\n  :alt: join the chat at https://gitter.im/python-anticaptcha/lobby\n\n.. image:: https://img.shields.io/pypi/pyversions/python-anticaptcha.svg\n  :target: https://github.com/ad-m/python-anticaptcha/blob/master/setup.py\n  :alt: python compatibility\n\n.. introduction-start\n\nclient library for solve captchas with `anticaptcha.com support`_.\nthe library supports both python 2.7 and python 3.\n\nthe library is cyclically and automatically tested for proper operation. we are constantly making the best efforts for its effective operation.\n\nin case of any problems with integration - `read the documentation`_, `create an issue`_, use `gitter`_ or contact privately.\n\n.. _read the documentation: http://python-anticaptcha.readthedocs.io/en/latest/\n.. _anticaptcha.com support: http://getcaptchasolution.com/i1hvnzdymd\n.. _create an issue: https://github.com/ad-m/python-anticaptcha/issues/new\n.. _gitter: https://gitter.im/python-anticaptcha/lobby\n\n.. introduction-end\n\n\ngetting started\n---------------\n\n.. getting-started-start\n\ninstall as standard python package using::\n\n    pip install python-anticaptcha\n\n.. getting-started-end\n\n\nusage\n-----\n\n.. usage-start\n\nto use this library do you need `anticaptcha.com`_ api key.\n\nsolve recaptcha\n###############\n\nexample snippet for recaptcha:\n\n.. code:: python\n\n    from python_anticaptcha import anticaptchaclient, nocaptchataskproxylesstask\n\n    api_key = '174faff8fbc769e94a5862391ecfd010'\n    site_key = '6le-wvksaaaaapbmrtvw0q4muexq9bi0djwx_mj-'  # grab from site\n    url = 'https://www.google.com/recaptcha/api2/demo'\n\n    client = anticaptchaclient(api_key)\n    task = nocaptchataskproxylesstask(url, site_key)\n    job = client.createtask(task)\n    job.join()\n    print job.get_solution_response()\n\nthe full integration example is available in file ``examples/recaptcha.py``.\n\nif you only process few page many times to increase reliability, you can specify\nwhether the captcha is visible or not. this parameter is not required, as is the\nsystem detects invisible sitekeys automatically, and needs several recursive\nmeasures for automated training and analysis. for provide that pass\n``is_invisible`` parameter to ``nocaptchataskproxylesstask`` or ``nocaptchatask`` eg.:\n\n.. code:: python\n\n    from python_anticaptcha import anticaptchaclient, nocaptchataskproxylesstask\n\n    api_key = '174faff8fbc769e94a5862391ecfd010'\n    site_key = '6lc-0dyuaaaaaopm3rgobcfkjie5stmzvzfhbbnx'  # grab from site\n    url = 'https://losangeles.craigslist.org/lac/kid/d/housekeeper-sitting-pet-care/6720136191.html'\n\n    client = anticaptchaclient(api_key)\n    task = nocaptchataskproxylesstask(url, site_key, is_invisible=true)\n    job = client.createtask(task)\n    job.join()\n    print job.get_solution_response()\n\n\nsolve text captcha\n##################\n\nexample snippet for text captcha:\n\n.. code:: python\n\n    from python_anticaptcha import anticaptchaclient, imagetotexttask\n\n    api_key = '174faff8fbc769e94a5862391ecfd010'\n    captcha_fp = open('examples/captcha_ms.jpeg', 'rb')\n    client = anticaptchaclient(api_key)\n    task = imagetotexttask(captcha_fp)\n    job = client.createtask(task)\n    job.join()\n    print job.get_captcha_text()\n\nsolve funcaptcha\n################\n\nexample snippet for funcaptcha:\n\n.. code:: python\n\n    from python_anticaptcha import anticaptchaclient, funcaptchatask, proxy\n    ua = 'mozilla/5.0 (macintosh; intel mac os x 10_10_1) applewebkit/537.36 ' \\\n         '(khtml, like gecko) chrome/39.0.2171.95 safari/537.36'\n\n    api_key = '174faff8fbc769e94a5862391ecfd010'\n    site_key = 'de0b0bb7-1ee4-4d70-1853-31b835d4506b'  # grab from site\n    url = 'https://www.google.com/recaptcha/api2/demo'\n    proxy = proxy.parse_url(\"socks5://login:password@123.123.123.123\")\n\n    client = anticaptchaclient(api_key)\n    task = funcaptchatask(url, site_key, proxy=proxy, user_agent=user_agent)\n    job = client.createtask(task)\n    job.join()\n    print job.get_token_response()\n\nreport incorrect image\n######################\n\nexample snippet for reporting an incorrect image task:\n\n.. code:: python\n\n    from python_anticaptcha import anticaptchaclient, imagetotexttask\n\n    api_key = '174faff8fbc769e94a5862391ecfd010'\n    captcha_fp = open('examples/captcha_ms.jpeg', 'rb')\n    client = anticaptchaclient(api_key)\n    task = imagetotexttask(captcha_fp)\n    job = client.createtask(task)\n    job.join()\n    print job.get_captcha_text()\n    job.report_incorrect()\n\nsetup proxy\n###########\n\nthe library is not responsible for managing the proxy server. however, we point to\nthe possibility of simply launching such a server by:\n\n.. code::\n\n    pip install mitmproxy\n    mitmweb -p 9190 -b 0.0.0.0 --ignore '.' --socks\n\nnext to in your application use something like:\n\n.. code:: python\n\n    proxy = proxy.parse_url(\"socks5://123.123.123.123:9190\")\n\nwe recommend entering ip-based access control for incoming addresses to proxy. ip address required by\n`anticaptcha.com`_ is:\n\n.. code::\n\n    69.65.41.21\n    209.212.146.168\n\n.. _anticaptcha.com: http://getcaptchasolution.com/p9bwplkicx\n\nerror handling\n##############\n\nin the event of an application error, the anticaptchaexception exception is thrown. to handle the exception, do the following:\n\n.. code:: python\n\n    from python_anticaptcha import anticatpchaexception, imagetotexttask\n\n    try:\n        # any actions\n    except anticatpchaexception as e:\n        if e.error_code == 'error_zero_balance':\n            notify_about_no_funds(e.error_id, e.error_code, e.error_description)\n        else:\n            raise\n\n.. usage-end\n\nversioning\n----------\n\nwe use `semver`_ for versioning. for the versions available, see the\n`tags on this repository`_.\n\nauthors\n-------\n\n-  **adam dobrawy** - *initial work* - `ad-m`_\n\nsee also the list of `contributors`_ who participated in this project.\n\nlicense\n-------\n\nthis project is licensed under the mit license - see the `license.md`_\nfile for details\n\n.. _semver: http://semver.org/\n.. _tags on this repository: https://github.com/ad-m/python-anticaptcha/tags\n.. _ad-m: https://github.com/ad-m\n.. _contributors: https://github.com/ad-m/python-anticaptcha/contributors\n.. _license.md: license.md\n\n\n",
+  "docs_url": null,
+  "keywords": "recaptcha captcha development",
+  "license": "mit",
+  "name": "python-anticaptcha",
+  "package_url": "https://pypi.org/project/python-anticaptcha/",
+  "project_url": "https://pypi.org/project/python-anticaptcha/",
+  "project_urls": {
+    "Homepage": "https://github.com/ad-m/python-anticaptcha"
+  },
+  "release_url": "https://pypi.org/project/python-anticaptcha/1.0.0/",
+  "requires_dist": [
+    "requests",
+    "six",
+    "sphinx ; extra == 'docs'",
+    "retry ; extra == 'tests'",
+    "nose2 ; extra == 'tests'",
+    "selenium ; extra == 'tests'"
+  ],
+  "requires_python": "",
+  "summary": "client library for solve captchas with anticaptcha.com support.",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "adam_dobrawy",
+    "anticaptcha@jawnosc.tk"
+  ],
+  "kwds": "python_anticaptcha recaptcha captcha_fp captcha_ms _anticaptcha",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python_anticaptcha",
+  "homepage": "https://github.com/ad-m/python-anticaptcha",
+  "release_count": 19,
+  "dependency_ids": [
+    "pypi_nose2",
+    "pypi_requests",
+    "pypi_retry",
+    "pypi_selenium",
+    "pypi_six",
+    "pypi_sphinx"
+  ]
+}

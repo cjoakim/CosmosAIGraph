@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: version control",
+    "topic :: text processing"
+  ],
+  "description": "what the patch!?\n================\n\nwhat the patch!? is a library for both parsing and applying patch files.\n\nstatus\n------\n\n.. image:: https://github.com/cscorley/whatthepatch/workflows/build/badge.svg\n\nthis has been released as 1.0, but has never had much active development. the\nfunctions are stable and have been reliable for several years, even if they\nare not ideally implemented. pull requests will always be considered, merged,\nand released; however, issues may not ever be fixed by the maintainer.\n\ncontribute\n^^^^^^^^^^\n\n#. fork this repository\n#. create a new branch to work on\n#. commit your tests and/or changes\n#. push and create a pull request here!\n\nfeatures\n--------\n\n- parsing of almost all ``diff`` formats (except forwarded ed):\n\n  - normal (default, --normal)\n  - copied context (-c, --context)\n  - unified context (-u, --unified)\n  - ed script (-e, --ed)\n  - rcs ed script (-n, --rcs)\n\n- parsing of several scm patches:\n\n  - cvs\n  - svn\n  - git\n\ninstallation\n------------\n\nthis library is available on `pypi <https://pypi.org/project/whatthepatch/>`_\nand can be installed via pip:\n\n.. code-block:: bash\n\n    $ pip install whatthepatch\n\nusage\n=====\n\nlet us say we have a patch file containing some changes, aptly named\n'somechanges.patch':\n\n.. code-block:: diff\n\n    --- lao\t2012-12-26 23:16:54.000000000 -0600\n    +++ tzu\t2012-12-26 23:16:50.000000000 -0600\n    @@ -1,7 +1,6 @@\n    -the way that can be told of is not the eternal way;\n    -the name that can be named is not the eternal name.\n     the nameless is the origin of heaven and earth;\n    -the named is the mother of all things.\n    +the named is the mother of all things.\n    +\n     therefore let there always be non-being,\n       so we may see their subtlety,\n      and let there always be being,\n    @@ -9,3 +8,6 @@\n     the two are the same,\n     but after they are produced,\n       they have different names.\n    +they both may be called deep and profound.\n    +deeper and more profound,\n    +the door of all subtleties!\n\n\nparsing\n-------\n\nhere is how we would use what the patch!? in python to get the changeset for\neach diff in the patch:\n\n.. code-block:: python\n\n    >>> import whatthepatch\n    >>> import pprint\n    >>> with open('tests/casefiles/diff-unified.diff') as f:\n    ...     text = f.read()\n    ...\n    >>> for diff in whatthepatch.parse_patch(text):\n    ...     print(diff) # doctest: +ellipsis, +normalize_whitespace\n    ...\n    diff(header=header(index_path=none,\n                       old_path='lao',\n                       old_version='2013-01-05 16:56:19.000000000 -0600',\n                       new_path='tzu',\n                       new_version='2013-01-05 16:56:35.000000000 -0600'),\n         changes=[change(old=1, new=none, line='the way that can be told of is not the eternal way;', hunk=1),\n                  change(old=2, new=none, line='the name that can be named is not the eternal name.', hunk=1),\n                  change(old=3, new=1, line='the nameless is the origin of heaven and earth;', hunk=1),\n                  change(old=4, new=none, line='the named is the mother of all things.', hunk=1),\n                  change(old=none, new=2, line='the named is the mother of all things.', hunk=1),\n                  change(old=none, new=3, line='', hunk=1),\n                  change(old=5, new=4, line='therefore let there always be non-being,', hunk=1),\n                  change(old=6, new=5, line='  so we may see their subtlety,', hunk=1),\n                  change(old=7, new=6, line='and let there always be being,', hunk=1),\n                  change(old=9, new=8, line='the two are the same,', hunk=2),\n                  change(old=10, new=9, line='but after they are produced,', hunk=2),\n                  change(old=11, new=10, line='  they have different names.', hunk=2),\n                  change(old=none, new=11, line='they both may be called deep and profound.', hunk=2),\n                  change(old=none, new=12, line='deeper and more profound,', hunk=2),\n                  change(old=none, new=13, line='the door of all subtleties!', hunk=2)],\n         text='...')\n\nthe changes are listed as they are in the patch, but instead of the +/- syntax\nof the patch, we get a tuple of two numbers and the text of the line.\nwhat these numbers indicate are as follows:\n\n#. ``( old=1, new=none, ... )`` indicates line 1 of the file lao was **removed**.\n#. ``( old=none, new=2, ... )`` indicates line 2 of the file tzu was **inserted**.\n#. ``( old=5, new=4, ... )`` indicates that line 5 of lao and line 4 of tzu are **equal**.\n\nplease note that not all patch formats provide the actual lines modified, so some\nresults will have the text portion of the tuple set to ``none``.\n\napplying\n--------\n\nto apply a diff to some lines of text, first read the patch and parse it.\n\n.. code-block:: python\n\n    >>> import whatthepatch\n    >>> with open('tests/casefiles/diff-default.diff') as f:\n    ...     text = f.read()\n    ...\n    >>> with open('tests/casefiles/lao') as f:\n    ...     lao = f.read()\n    ...\n    >>> diff = [x for x in whatthepatch.parse_patch(text)]\n    >>> diff = diff[0]\n    >>> tzu = whatthepatch.apply_diff(diff, lao)\n    >>> tzu  # doctest: +normalize_whitespace\n    ['the nameless is the origin of heaven and earth;',\n     'the named is the mother of all things.',\n     '',\n     'therefore let there always be non-being,',\n     '  so we may see their subtlety,',\n     'and let there always be being,',\n     '  so we may see their outcome.',\n     'the two are the same,',\n     'but after they are produced,',\n     '  they have different names.',\n     'they both may be called deep and profound.',\n     'deeper and more profound,',\n     'the door of all subtleties!']\n\nif apply does not satisfy your needs and you are on a system that has\n``patch`` in ``path``, you can also call ``apply_diff(diff, lao,\nuse_patch=true)``. the default is false, and patch is not necessary to apply\ndiffs to text.\n\n",
+  "docs_url": null,
+  "keywords": "patch,diff,parser",
+  "license": "",
+  "name": "whatthepatch",
+  "package_url": "https://pypi.org/project/whatthepatch/",
+  "project_url": "https://pypi.org/project/whatthepatch/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/cscorley/whatthepatch/issues",
+    "Homepage": "https://github.com/cscorley/whatthepatch"
+  },
+  "release_url": "https://pypi.org/project/whatthepatch/1.0.5/",
+  "requires_dist": [],
+  "requires_python": ">=3.7",
+  "summary": "a patch parsing and application library.",
+  "version": "1.0.5",
+  "releases": [],
+  "developers": [
+    "cscorley@gmail.com"
+  ],
+  "kwds": "parse_patch patches diffs apply_diff use_patch",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_whatthepatch",
+  "homepage": "",
+  "release_count": 12,
+  "dependency_ids": []
+}

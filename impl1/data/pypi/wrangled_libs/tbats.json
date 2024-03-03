@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# bats and tbats time series forecasting\n\npackage provides bats and tbats time series forecasting methods described in:\n\n> de livera, a.m., hyndman, r.j., & snyder, r. d. (2011), forecasting time series with complex seasonal patterns using exponential smoothing, journal of the american statistical association, 106(496), 1513-1527.\n\n\n## installation\n\nfrom pypi:\n\n```bash\npip install tbats\n```\n\nimport via:\n\n```python\nfrom tbats import bats, tbats\n```\n\n## minimal working example:\n\n```python\nfrom tbats import tbats\nimport numpy as np\n\n# required on windows for multi-processing,\n# see https://docs.python.org/2/library/multiprocessing.html#windows\nif __name__ == '__main__':\n    np.random.seed(2342)\n    t = np.array(range(0, 160))\n    y = 5 * np.sin(t * 2 * np.pi / 7) + 2 * np.cos(t * 2 * np.pi / 30.5) + \\\n        ((t / 20) ** 1.5 + np.random.normal(size=160) * t / 50) + 10\n    \n    # create estimator\n    estimator = tbats(seasonal_periods=[14, 30.5])\n    \n    # fit model\n    fitted_model = estimator.fit(y)\n    \n    # forecast 14 steps ahead\n    y_forecasted = fitted_model.forecast(steps=14)\n    \n    # summarize fitted model\n    print(fitted_model.summary())\n```\n\nreading model details\n\n```python\n# time series analysis\nprint(fitted_model.y_hat) # in sample prediction\nprint(fitted_model.resid) # in sample residuals\nprint(fitted_model.aic)\n\n# reading model parameters\nprint(fitted_model.params.alpha)\nprint(fitted_model.params.beta)\nprint(fitted_model.params.x0)\nprint(fitted_model.params.components.use_box_cox)\nprint(fitted_model.params.components.seasonal_harmonics)\n```\n\nsee **examples** directory for more details.\n\n## troubleshooting\n\nbats and tbats tries multitude of models under the hood and **may appear slow when fitting** to long time series. in order to speed it up you can start with constrained model search space. it is recommended to run it without box-cox transformation and arma errors modelling that are the slowest model elements:\n\n```python\n# create estimator\nestimator = tbats(\n    seasonal_periods=[14, 30.5],\n    use_arma_errors=false,  # shall try only models without arma\n    use_box_cox=false  # will not use box-cox\n)\nfitted_model = estimator.fit(y)\n```\n\nin some environment configurations parallel computation of models freezes. reason for this is unclear yet. if **the process appears to be stuck** you can try running it on a single core:\n\n```python\nestimator = tbats(\n    seasonal_periods=[14, 30.5],\n    n_jobs=1\n)\nfitted_model = estimator.fit(y)\n```\n\n## for contributors\n\nbuilding package:\n\n```bash\npip install -e .[dev]\n```\n\nunit and integration tests:\n\n```bash\npytest test/\n```\n\nr forecast package comparison tests. those do not run with default test command, you need r and forecast package installed:\n```bash\npytest test_r/\n```\n\n## comparison to r implementation\n\npython implementation is meant to be as much as possible equivalent to r implementation in forecast package.\n\n- bats in r https://www.rdocumentation.org/packages/forecast/versions/8.4/topics/bats\n- tbats in r: https://www.rdocumentation.org/packages/forecast/versions/8.4/topics/tbats\n\n\n\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "tbats",
+  "package_url": "https://pypi.org/project/tbats/",
+  "project_url": "https://pypi.org/project/tbats/",
+  "project_urls": {
+    "Homepage": "https://github.com/intive-DataScience/tbats"
+  },
+  "release_url": "https://pypi.org/project/tbats/1.1.3/",
+  "requires_dist": [
+    "numpy",
+    "scipy",
+    "pmdarima",
+    "scikit-learn",
+    "pip-tools ; extra == 'dev'",
+    "pytest ; extra == 'dev'",
+    "rpy2 ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "bats and tbats for time series forecasting",
+  "version": "1.1.3",
+  "releases": [],
+  "developers": [
+    "grzegorz.skorupa@intive.com",
+    "grzegorz_skorupa"
+  ],
+  "kwds": "forecast forecasting y_forecasted seasonal_periods tbats",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_tbats",
+  "homepage": "https://github.com/intive-datascience/tbats",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_pip_tools",
+    "pypi_pmdarima",
+    "pypi_pytest",
+    "pypi_rpy2",
+    "pypi_scikit_learn",
+    "pypi_scipy"
+  ]
+}

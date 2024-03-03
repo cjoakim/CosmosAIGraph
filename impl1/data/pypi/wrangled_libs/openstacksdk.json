@@ -1,0 +1,72 @@
+{
+  "classifiers": [
+    "environment :: openstack",
+    "intended audience :: information technology",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "============\nopenstacksdk\n============\n\nopenstacksdk is a client library for building applications to work\nwith openstack clouds. the project aims to provide a consistent and\ncomplete set of interactions with openstack's many services, along with\ncomplete documentation, examples, and tools.\n\nit also contains an abstraction interface layer. clouds can do many things, but\nthere are probably only about 10 of them that most people care about with any\nregularity. if you want to do complicated things, the per-service oriented\nportions of the sdk are for you. however, if what you want is to be able to\nwrite an application that talks to any openstack cloud regardless of\nconfiguration, then the cloud abstraction layer is for you.\n\nmore information about the history of openstacksdk can be found at\nhttps://docs.openstack.org/openstacksdk/latest/contributor/history.html\n\ngetting started\n---------------\n\nopenstacksdk aims to talk to any openstack cloud. to do this, it requires a\nconfiguration file. openstacksdk favours ``clouds.yaml`` files, but can also\nuse environment variables. the ``clouds.yaml`` file should be provided by your\ncloud provider or deployment tooling. an example:\n\n.. code-block:: yaml\n\n    clouds:\n      mordred:\n        region_name: dallas\n        auth:\n          username: 'mordred'\n          password: xxxxxxx\n          project_name: 'demo'\n          auth_url: 'https://identity.example.com'\n\nopenstacksdk will look for ``clouds.yaml`` files in the following locations:\n\n* ``.`` (the current directory)\n* ``$home/.config/openstack``\n* ``/etc/openstack``\n\nopenstacksdk consists of three layers. most users will make use of the *proxy*\nlayer. using the above ``clouds.yaml``, consider listing servers:\n\n.. code-block:: python\n\n    import openstack\n\n    # initialize and turn on debug logging\n    openstack.enable_logging(debug=true)\n\n    # initialize connection\n    conn = openstack.connect(cloud='mordred')\n\n    # list the servers\n    for server in conn.compute.servers():\n        print(server.to_dict())\n\nopenstacksdk also contains a higher-level *cloud* layer based on logical\noperations:\n\n.. code-block:: python\n\n    import openstack\n\n    # initialize and turn on debug logging\n    openstack.enable_logging(debug=true)\n\n    # initialize connection\n    conn = openstack.connect(cloud='mordred')\n\n    # list the servers\n    for server in conn.list_servers():\n        print(server.to_dict())\n\nthe benefit of this layer is mostly seen in more complicated operations that\ntake multiple steps and where the steps vary across providers. for example:\n\n.. code-block:: python\n\n    import openstack\n\n    # initialize and turn on debug logging\n    openstack.enable_logging(debug=true)\n\n    # initialize connection\n    conn = openstack.connect(cloud='mordred')\n\n    # upload an image to the cloud\n    image = conn.create_image(\n        'ubuntu-trusty', filename='ubuntu-trusty.qcow2', wait=true)\n\n    # find a flavor with at least 512m of ram\n    flavor = conn.get_flavor_by_ram(512)\n\n    # boot a server, wait for it to boot, and then do whatever is needed\n    # to get a public ip address for it.\n    conn.create_server(\n        'my-server', image=image, flavor=flavor, wait=true, auto_ip=true)\n\nfinally, there is the low-level *resource* layer. this provides support for the\nbasic crud operations supported by rest apis and is the base building block for\nthe other layers. you typically will not need to use this directly:\n\n.. code-block:: python\n\n    import openstack\n    import openstack.config.loader\n    import openstack.compute.v2.server\n\n    # initialize and turn on debug logging\n    openstack.enable_logging(debug=true)\n\n    # initialize connection\n    conn = openstack.connect(cloud='mordred')\n\n    # list the servers\n    for server in openstack.compute.v2.server.server.list(session=conn.compute):\n        print(server.to_dict())\n\n.. _openstack.config:\n\nconfiguration\n-------------\n\nopenstacksdk uses the ``openstack.config`` module to parse configuration.\n``openstack.config`` will find cloud configuration for as few as one cloud and\nas many as you want to put in a config file. it will read environment variables\nand config files, and it also contains some vendor specific default values so\nthat you don't have to know extra info to use openstack\n\n* if you have a config file, you will get the clouds listed in it\n* if you have environment variables, you will get a cloud named `envvars`\n* if you have neither, you will get a cloud named `defaults` with base defaults\n\nyou can view the configuration identified by openstacksdk in your current\nenvironment by running ``openstack.config.loader``. for example:\n\n.. code-block:: bash\n\n   $ python -m openstack.config.loader\n\nmore information at https://docs.openstack.org/openstacksdk/latest/user/config/configuration.html\n\nsupported services\n------------------\n\nthe following services are currently supported. a full list of all available\nopenstack service can be found in the `project navigator`__.\n\n.. __: https://www.openstack.org/software/project-navigator/openstack-components#openstack-services\n\n.. note::\n\n   support here does not guarantee full-support for all apis. it simply means\n   some aspect of the project is supported.\n\n.. list-table:: supported services\n   :widths: 15 25 10 40\n   :header-rows: 1\n\n   * - service\n     - description\n     - cloud layer\n     - proxy & resource layer\n\n   * - **compute**\n     -\n     -\n     -\n\n   * - nova\n     - compute\n     - \u2714\n     - \u2714 (``openstack.compute``)\n\n   * - **hardware lifecycle**\n     -\n     -\n     -\n\n   * - ironic\n     - bare metal provisioning\n     - \u2714\n     - \u2714 (``openstack.baremetal``, ``openstack.baremetal_introspection``)\n\n   * - cyborg\n     - lifecycle management of accelerators\n     - \u2714\n     - \u2714 (``openstack.accelerator``)\n\n   * - **storage**\n     -\n     -\n     -\n\n   * - cinder\n     - block storage\n     - \u2714\n     - \u2714 (``openstack.block_storage``)\n\n   * - swift\n     - object store\n     - \u2714\n     - \u2714 (``openstack.object_store``)\n\n   * - cinder\n     - shared filesystems\n     - \u2714\n     - \u2714 (``openstack.shared_file_system``)\n\n   * - **networking**\n     -\n     -\n     -\n\n   * - neutron\n     - networking\n     - \u2714\n     - \u2714 (``openstack.network``)\n\n   * - octavia\n     - load balancing\n     - \u2714\n     - \u2714 (``openstack.load_balancer``)\n\n   * - designate\n     - dns\n     - \u2714\n     - \u2714 (``openstack.dns``)\n\n   * - **shared services**\n     -\n     -\n     -\n\n   * - keystone\n     - identity\n     - \u2714\n     - \u2714 (``openstack.identity``)\n\n   * - placement\n     - placement\n     - \u2714\n     - \u2714 (``openstack.placement``)\n\n   * - glance\n     - image storage\n     - \u2714\n     - \u2714 (``openstack.image``)\n\n   * - barbican\n     - key management\n     - \u2714\n     - \u2714 (``openstack.key_manager``)\n\n   * - **workload provisioning**\n     -\n     -\n     -\n\n   * - magnum\n     - container orchestration engine provisioning\n     - \u2714\n     - \u2714 (``openstack.container_infrastructure_management``)\n\n   * - **orchestration**\n     -\n     -\n     -\n\n   * - heat\n     - orchestration\n     - \u2714\n     - \u2714 (``openstack.orchestration``)\n\n   * - senlin\n     - clustering\n     - \u2714\n     - \u2714 (``openstack.clustering``)\n\n   * - mistral\n     - workflow\n     - \u2714\n     - \u2714 (``openstack.workflow``)\n\n   * - zaqar\n     - messaging\n     - \u2714\n     - \u2714 (``openstack.message``)\n\n   * - **application lifecycle**\n     -\n     -\n     -\n\n   * - masakari\n     - instances high availability service\n     - \u2714\n     - \u2714 (``openstack.instance_ha``)\n\nlinks\n-----\n\n* `issue tracker <https://storyboard.openstack.org/#!/project/openstack/openstacksdk>`_\n* `code review <https://review.opendev.org/#/q/status:open+project:openstack/openstacksdk,n,z>`_\n* `documentation <https://docs.openstack.org/openstacksdk/latest/>`_\n* `pypi <https://pypi.org/project/openstacksdk/>`_\n* `mailing list <http://lists.openstack.org/cgi-bin/mailman/listinfo/openstack-discuss>`_\n* `release notes <https://docs.openstack.org/releasenotes/openstacksdk>`_\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "openstacksdk",
+  "package_url": "https://pypi.org/project/openstacksdk/",
+  "project_url": "https://pypi.org/project/openstacksdk/",
+  "project_urls": {
+    "Homepage": "https://docs.openstack.org/openstacksdk/"
+  },
+  "release_url": "https://pypi.org/project/openstacksdk/2.0.0/",
+  "requires_dist": [
+    "PyYAML (>=3.13)",
+    "cryptography (>=2.7)",
+    "decorator (>=4.4.1)",
+    "dogpile.cache (>=0.6.5)",
+    "iso8601 (>=0.1.11)",
+    "jmespath (>=0.9.0)",
+    "jsonpatch (!=1.20,>=1.16)",
+    "keystoneauth1 (>=3.18.0)",
+    "netifaces (>=0.10.4)",
+    "os-service-types (>=1.7.0)",
+    "pbr (!=2.1.0,>=2.0.0)",
+    "platformdirs (>=3)",
+    "requestsexceptions (>=1.2.0)",
+    "importlib-metadata (>=1.7.0) ; (python_version<'3.8')"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "an sdk for building applications to work with openstack",
+  "version": "2.0.0",
+  "releases": [],
+  "developers": [
+    "openstack",
+    "openstack-discuss@lists.openstack.org"
+  ],
+  "kwds": "openstack openstacksdk _openstack cloud clouds",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_openstacksdk",
+  "homepage": "https://docs.openstack.org/openstacksdk/",
+  "release_count": 121,
+  "dependency_ids": [
+    "pypi_cryptography",
+    "pypi_decorator",
+    "pypi_dogpile.cache",
+    "pypi_importlib_metadata",
+    "pypi_iso8601",
+    "pypi_jmespath",
+    "pypi_jsonpatch",
+    "pypi_keystoneauth1",
+    "pypi_netifaces",
+    "pypi_os_service_types",
+    "pypi_pbr",
+    "pypi_platformdirs",
+    "pypi_pyyaml",
+    "pypi_requestsexceptions"
+  ]
+}

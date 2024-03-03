@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# vaa\n\nvalidators adapter makes validation by any existing validator with the same interface.\n\nsupported validators:\n\n| validator | adapter |\n| --------- | ------- |\n| [cerberus](http://docs.python-cerberus.org/en/stable/) | `va.cerberus` |\n| [django forms](https://docs.djangoproject.com/en/2.2/topics/forms/) | `va.django` |\n| [marshmallow](https://marshmallow.readthedocs.io/en/stable/) | `va.marshmallow` |\n| [pyschemes](https://github.com/spy16/pyschemes) | `va.pyschemes` |\n| [django rest framework](https://www.django-rest-framework.org/) | `va.restframework` |\n| [wtforms](https://wtforms.readthedocs.io/en/stable/) | `va.wtforms` |\n\n```bash\npython3 -m pip install --user vaa\n```\n\n## example\n\n```python\nimport marshmallow\nimport vaa\n\n@vaa.marshmallow\nclass scheme(marshmallow.schema):\n  id = marshmallow.fields.int(required=true)\n  name = marshmallow.fields.str(required=true)\n```\n\n## validating data\n\nall schemes adopted by vaa has the same interface:\n\n```python\nvalidator = scheme({'id': '1', 'name': 'oleg'})\nvalidator.is_valid()    # true\nvalidator.cleaned_data  # {'name': 'oleg', 'id': 1}\n\nvalidator = scheme({'id': 'no', 'name': 'oleg'})\nvalidator.is_valid()    # false\nvalidator.errors        # [error(message='not a valid integer.', field='id')]\n```\n\n## simple scheme\n\nif you want to do validation with simple function, you can use `va.simple` adapter. for example, you want to check that in dict `{'a': ..., 'b': ...}` both values are positive. there are many ways to do so.\n\nit can return `bool`:\n\n```python\n@vaa.simple\ndef validate(a, b) -> bool:\n  return a > 0 and b > 0\n```\n\nor return message for error:\n\n```python\n@vaa.simple\ndef validate(a, b) -> bool:\n  if a > 0 and b > 0:\n    return true\n  return 'should be positive'\n```\n\nor return errors dict:\n\n```python\n@vaa.simple\ndef validate(a, b) -> bool:\n  if a <= 0:\n    return {'a': 'should be positive'}\n  if b <= 0:\n    return {'b': 'should be positive'}\n  return true\n```\n\nor raise `va.validationerror` with error message or dict:\n\n```python\n@vaa.simple\ndef validate(a, b) -> bool:\n  if a > 0 and b > 0:\n      return true\n  raise vaa.validationerror('should be positive')\n```\n\nalso, if you want to get the original dict without unpacking it into keyword arguments, do a function that accepts only one `_` argument:\n\n```python\n@vaa.simple\ndef validate(_):\n  return _['a'] > 0 and _['b'] > 0\n```\n\nin that dict keys can be accessed as attributes:\n\n```python\n@vaa.simple\ndef validate(_):\n  return _.a > 0 and _.b > 0\n```\n\nchoose the best way and follow it. avoid mixing them in one project.\n\n## unknown scheme\n\nif you're making a library that should accept any validator without explicit vaa usage, use `vaa.wrap`:\n\n```python\nclass scheme(marshmallow.schema):\n  id = marshmallow.fields.int(required=true)\n  name = marshmallow.fields.str(required=true)\n\nvalidator = vaa.wrap(scheme)({'id': 'no', 'name': 'oleg'})\nvalidator = scheme({'id': 'no', 'name': 'oleg'})\nvalidator.is_valid()    # false\nvalidator.errors        # [error(message='not a valid integer.', field='id')]\n```\n",
+  "docs_url": null,
+  "keywords": "none",
+  "license": "none",
+  "name": "vaa",
+  "package_url": "https://pypi.org/project/vaa/",
+  "project_url": "https://pypi.org/project/vaa/",
+  "project_urls": {
+    "Homepage": "https://github.com/life4/vaa"
+  },
+  "release_url": "https://pypi.org/project/vaa/0.2.1/",
+  "requires_dist": [
+    "cerberus; extra == \"validators\"",
+    "django; extra == \"validators\"",
+    "djangorestframework; extra == \"validators\"",
+    "marshmallow>=3.0.1; extra == \"validators\"",
+    "pyschemes; extra == \"validators\"",
+    "pytest; extra == \"tests\"",
+    "wtforms; extra == \"validators\""
+  ],
+  "requires_python": "",
+  "summary": "validators adapter. the common interface for all validators.",
+  "version": "0.2.1",
+  "releases": [],
+  "developers": [
+    "gram_orsinium",
+    "master_fess@mail.ru"
+  ],
+  "kwds": "validators validator validate is_valid validationerror",
+  "license_kwds": "none",
+  "libtype": "pypi",
+  "id": "pypi_vaa",
+  "homepage": "",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_cerberus",
+    "pypi_django",
+    "pypi_djangorestframework",
+    "pypi_marshmallow",
+    "pypi_pyschemes",
+    "pypi_pytest",
+    "pypi_wtforms"
+  ]
+}

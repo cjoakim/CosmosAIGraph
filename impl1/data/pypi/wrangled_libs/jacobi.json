@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: os independent",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3",
+    "topic :: scientific/engineering"
+  ],
+  "description": ".. |jacobi| image:: https://hdembinski.github.io/jacobi/_images/logo.svg\n   :alt: jacobi\n\n|jacobi|\n========\n\n.. image:: https://img.shields.io/pypi/v/jacobi\n   :target: https://pypi.org/project/jacobi\n.. image:: https://img.shields.io/badge/github-docs-success\n   :target: https://hdembinski.github.io/jacobi\n.. image:: https://img.shields.io/badge/github-source-blue\n   :target: https://github.com/hdembinski/jacobi\n.. image:: https://zenodo.org/badge/270612858.svg\n   :target: https://zenodo.org/badge/latestdoi/270612858\n\nfast numerical derivatives for analytic functions with arbitrary round-off error and error propagation.\n\n`click here for full documentation <https://hdembinski.github.io/jacobi>`_.\n\nfeatures\n--------\n\n- robustly compute the generalised jacobi matrix for an arbitrary real analytic mapping \u211d\u207f \u2192 \u211d\u2071\u00b9 \u00d7 ... \u00d7 \u211d\u2071\u207f\n- derivative is either computed to specified accuracy (to save computing time) or until maximum precision of function is reached\n- algorithm based on john d'errico's `derivest <https://de.mathworks.com/matlabcentral/fileexchange/13490-adaptive-robust-numerical-differentiation>`_: works even with functions that have large round-off error\n- up to 1000x faster than `numdifftools <https://pypi.org/project/numdifftools>`_ at equivalent precision\n- returns error estimates for derivatives\n- supports arbitrary auxiliary function arguments\n- perform statistical error propagation based on numerically computed jacobian\n- lightweight package, only depends on numpy\n\nplanned features\n----------------\n\n- compute the hessian matrix numerically with the same algorithm\n- further generalize the calculation to support function arguments with shape (n, k), in that case compute the jacobi matrix for each of the k vectors of length n\n\nexamples\n--------\n\n.. code-block:: python\n\n  from matplotlib import pyplot as plt\n  import numpy as np\n  from jacobi import jacobi\n\n\n  # function of one variable with auxiliary argument; returns a vector\n  def f(x):\n      return np.sin(x) / x\n\n\n  x = np.linspace(-10, 10, 200)\n  fx = f(x)\n\n  # f(x) is a simple vectorized function, jacobian is diagonal\n  fdx, fdxe = jacobi(f, x, diagonal=true)\n  # fdxe is uncertainty estimate for derivative\n\n  plt.plot(x, fx, color=\"k\", label=\"$f(x) = sin(x) / x$\")\n  plt.plot(x, fdx, label=\"$f'(x)$ computed with jacobi\")\n  scale = 14\n  plt.fill_between(\n      x,\n      fdx - fdxe * 10**scale,\n      fdx + fdxe * 10**scale,\n      label=f\"$f'(x)$ error estimate$\\\\times \\\\, 10^{{{scale}}}$\",\n      facecolor=\"c0\",\n      alpha=0.5,\n  )\n  plt.legend()\n\n.. image:: https://hdembinski.github.io/jacobi/_images/example.svg\n\n.. code-block:: python\n\n  from jacobi import propagate\n  import numpy as np\n  from scipy.special import gamma\n\n\n  # arbitrarily complex function that calls compiled libraries, numba-jitted code, etc.\n  def fn(x):\n      r = np.empty(3)\n      r[0] = 1.5 * np.exp(-x[0] ** 2)\n      r[1] = gamma(x[1] ** 3.1)\n      r[2] = np.polyval([1, 2, 3], x[0])\n      return r  # x and r have different lengths\n\n  # fn accepts a parameter vector x, which has an associated covariance matrix xcov\n  x = [1.0, 2.0]\n  xcov = [[1.1, 0.1], [0.1, 2.3]]\n  y, ycov = propagate(fn, x, xcov)  # y=f(x) and ycov = j xcov j^t\n\n\ncomparison to numdifftools\n--------------------------\n\nspeed\n^^^^^\n\njacobi makes better use of vectorized computation than numdifftools and converges rapidly if the derivative is trivial. this leads to a dramatic speedup in some cases.\n\nsmaller run-time is better (and ratio > 1).\n\n.. image:: https://hdembinski.github.io/jacobi/_images/speed.svg\n\nprecision\n^^^^^^^^^\n\nthe machine precision is indicated by the dashed line. jacobi is comparable in accuracy to numdifftools. the error estimate has the right order of magnitude but slightly underestimates the true deviation. this does not matter for most applications.\n\n.. image:: https://hdembinski.github.io/jacobi/_images/precision.svg\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "copyright 2020 hans dembinski  permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"software\"), to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, subject to the following conditions:  the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software. ",
+  "name": "jacobi",
+  "package_url": "https://pypi.org/project/jacobi/",
+  "project_url": "https://pypi.org/project/jacobi/",
+  "project_urls": {
+    "documentation": "https://hdembinski.github.io/jacobi/",
+    "repository": "https://github.com/hdembinski/jacobi"
+  },
+  "release_url": "https://pypi.org/project/jacobi/0.9.2/",
+  "requires_dist": [
+    "numpy",
+    "sphinx ; extra == 'doc'",
+    "sphinx-rtd-theme ; extra == 'doc'",
+    "ipykernel ; extra == 'doc'",
+    "numdifftools ; extra == 'plot'",
+    "matplotlib ; extra == 'plot'",
+    "pytest ; extra == 'test'",
+    "pytest-benchmark ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "compute numerical derivatives",
+  "version": "0.9.2",
+  "releases": [],
+  "developers": [
+    "hans.dembinski@gmail.com",
+    "hans_dembinski"
+  ],
+  "kwds": "jacobi numerically numerical matlabcentral shields",
+  "license_kwds": "copyright liable liability copies dembinski",
+  "libtype": "pypi",
+  "id": "pypi_jacobi",
+  "homepage": "",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_ipykernel",
+    "pypi_matplotlib",
+    "pypi_numdifftools",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_pytest_benchmark",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme"
+  ]
+}

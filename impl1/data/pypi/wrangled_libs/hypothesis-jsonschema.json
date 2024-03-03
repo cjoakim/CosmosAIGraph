@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: hypothesis",
+    "intended audience :: developers",
+    "license :: osi approved :: mozilla public license 2.0 (mpl 2.0)",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: education :: testing",
+    "topic :: software development :: testing",
+    "typing :: typed"
+  ],
+  "description": "# hypothesis-jsonschema\n\na [hypothesis](https://hypothesis.readthedocs.io) strategy for generating data\nthat matches some [json schema](https://json-schema.org/).\n\n[here's the pypi page.](https://pypi.org/project/hypothesis-jsonschema/)\n\n## api\n\nthe public api consists of just one function: `hypothesis_jsonschema.from_schema`,\nwhich takes a json schema and returns a strategy for allowed json objects.\n\n```python\nfrom hypothesis import given\n\nfrom hypothesis_jsonschema import from_schema\n\n\n@given(from_schema({\"type\": \"integer\", \"minimum\": 1, \"exclusivemaximum\": 10}))\ndef test_integers(value):\n    assert isinstance(value, int)\n    assert 1 <= value < 10\n\n\n@given(\n    from_schema(\n        {\"type\": \"string\", \"format\": \"card\"},\n        # standard formats work out of the box.  custom formats are ignored\n        # by default, but you can pass custom strategies for them - e.g.\n        custom_formats={\"card\": st.sampled_from(example_card_numbers)},\n    )\n)\ndef test_card_numbers(value):\n    assert isinstance(value, str)\n    assert re.match(r\"^\\d{4} \\d{4} \\d{4} \\d{4}$\", value)\n\n\n@given(from_schema({}, allow_x00=false, codec=\"utf-8\").map(json.dumps))\ndef test_card_numbers(payload):\n    assert isinstance(payload, str)\n    assert \"\\0\" not in payload  # use allow_x00=false to exclude null characters\n    # if you want to restrict generated strings characters which are valid in\n    # a specific character encoding, you can do that with the `codec=` argument.\n    payload.encode(codec=\"utf-8\")\n```\n\nfor more details on property-based testing and how to use or customise\nstrategies, [see the hypothesis docs](https://hypothesis.readthedocs.io/).\n\njsonschema drafts 04, 05, and 07 are fully tested and working.\nas of version 0.11, this includes resolving non-recursive references!\n\n\n## supported versions\n\n`hypothesis-jsonschema` requires python 3.6 or later.\nin general, 0.x versions will require very recent versions of all dependencies\nbecause i don't want to deal with compatibility workarounds.\n\n`hypothesis-jsonschema` may make backwards-incompatible changes at any time\nbefore version 1.x - that's what semver means! - but i've kept the api surface\nsmall enough that this should be avoidable.  the main source of breaks will be\nif or when schema that never really worked turn into explicit errors instead\nof generating values that don't quite match.\n\nyou can [sponsor me](https://github.com/sponsors/zac-hd) to get priority\nsupport, roadmap input, and prioritized feature development.\n\n\n## contributing to `hypothesis-jsonschema`\n\nwe love external contributions - and try to make them both easy and fun.\nyou can [read more details in our contributing guide](https://github.com/zac-hd/hypothesis-jsonschema/blob/master/contributing.md),\nand [see everyone who has contributed on github](https://github.com/zac-hd/hypothesis-jsonschema/graphs/contributors).\nthanks, everyone!\n\n\n### changelog\n\npatch notes [can be found in `changelog.md`](https://github.com/zac-hd/hypothesis-jsonschema/blob/master/changelog.md).\n\n\n### security contact information\nto report a security vulnerability, please use the\n[tidelift security contact](https://tidelift.com/security).\ntidelift will coordinate the fix and disclosure.\n",
+  "docs_url": null,
+  "keywords": "python testing fuzzing property-based-testing json-schema",
+  "license": "mpl 2.0",
+  "name": "hypothesis-jsonschema",
+  "package_url": "https://pypi.org/project/hypothesis-jsonschema/",
+  "project_url": "https://pypi.org/project/hypothesis-jsonschema/",
+  "project_urls": {
+    "Funding": "https://github.com/sponsors/Zac-HD",
+    "Homepage": "https://github.com/Zac-HD/hypothesis-jsonschema"
+  },
+  "release_url": "https://pypi.org/project/hypothesis-jsonschema/0.23.0/",
+  "requires_dist": [
+    "hypothesis >=6.84.3",
+    "jsonschema >=4.18.0"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "generate test data from json schemata with hypothesis",
+  "version": "0.23.0",
+  "releases": [],
+  "developers": [
+    "zac@zhd.dev",
+    "zac_hatfield"
+  ],
+  "kwds": "hypothesis_jsonschema test_integers jsonschema test_card_numbers testing",
+  "license_kwds": "mpl 2.0",
+  "libtype": "pypi",
+  "id": "pypi_hypothesis_jsonschema",
+  "homepage": "https://github.com/zac-hd/hypothesis-jsonschema",
+  "release_count": 60,
+  "dependency_ids": [
+    "pypi_hypothesis",
+    "pypi_jsonschema"
+  ]
+}

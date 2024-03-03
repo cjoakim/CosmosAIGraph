@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: microsoft :: windows",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: system :: systems administration :: authentication/directory"
+  ],
+  "description": "===========\nwinkerberos\n===========\n:info: see `github <https://github.com/mongodb-labs/winkerberos>`_ for the latest source.\n:author: bernie hackett <bernie@mongodb.com>\n\nabout\n=====\n\na native kerberos client implementation for python on windows. this module\nmimics the api of `pykerberos <https://pypi.python.org/pypi/pykerberos>`_ to\nimplement kerberos authentication with microsoft's security support provider\ninterface (sspi). it supports python 2.7 and 3.5+.\n\ninstallation\n============\n\nwinkerberos is in the `python package index (pypi)\n<https://pypi.python.org/pypi/winkerberos>`_. use `pip\n<https://pypi.python.org/pypi/pip>`_ to install it::\n\n  python -m pip install winkerberos\n\nwinkerberos requires windows 7 / windows server 2008 r2 or newer.\n\nbuilding and installing from source\n===================================\n\nyou must have the correct version of vc++ installed for your version of\npython:\n\n- python 3.5+ - visual studio 2015+ (any version)\n- python 2.7 - `microsoft visual c++ compiler for python 2.7`_\n\n.. _`microsoft visual c++ compiler for python 2.7`: https://www.microsoft.com/en-us/download/details.aspx?id=44266\n\nonce you have the required compiler installed, run the following command from\nthe root directory of the winkerberos source::\n\n    python setup.py install\n\nbuilding html documentation\n===========================\n\nfirst install `sphinx <https://pypi.python.org/pypi/sphinx>`_::\n\n    python -m pip install sphinx\n\nthen run the following command from the root directory of the winkerberos\nsource::\n\n    python setup.py doc\n\nexamples\n========\n\nthis is a simplified example of a complete authentication session\nfollowing rfc-4752, section 3.1:\n\n.. code-block:: python\n\n    import winkerberos as kerberos\n\n    def send_response_and_receive_challenge(response):\n        # your server communication code here...\n        pass\n\n    def authenticate_kerberos(service, user, channel_bindings=none):\n        # initialize the context object with a service principal.\n        status, ctx = kerberos.authgssclientinit(service)\n\n        # gssapi is a \"client goes first\" sasl mechanism. send the\n        # first \"response\" to the server and recieve its first\n        # challenge.\n        if channel_bindings is not none:\n            status = kerberos.authgssclientstep(\n                ctx, \"\", channel_bindings=channel_bindings)\n        else:\n            status = kerberos.authgssclientstep(ctx, \"\")\n        response = kerberos.authgssclientresponse(ctx)\n        challenge = send_response_and_receive_challenge(response)\n\n        # keep processing challenges and sending responses until\n        # authgssclientstep reports auth_gss_complete.\n        while status == kerberos.auth_gss_continue:\n            if channel_bindings is not none:\n                status = kerberos.authgssclientstep(\n                    ctx, challenge, channel_bindings=channel_bindings)\n            else:\n                status = kerberos.authgssclientstep(ctx, challenge)\n\n            response = kerberos.authgssclientresponse(ctx) or ''\n            challenge = send_response_and_receive_challenge(response)\n\n        # decrypt the server's last challenge\n        kerberos.authgssclientunwrap(ctx, challenge)\n        data = kerberos.authgssclientresponse(ctx)\n        # encrypt a response including the user principal to authorize.\n        kerberos.authgssclientwrap(ctx, data, user)\n        response = kerberos.authgssclientresponse(ctx)\n\n        # complete authentication.\n        send_response_and_receive_challenge(response)\n\nchannel bindings can be generated with help from the cryptography_ module. see\n`<https://tools.ietf.org/html/rfc5929#section-4.1>`_ for the rules regarding\nhash algorithm choice:\n\n.. code-block:: python\n\n    from cryptography import x509\n    from cryptography.hazmat.backends import default_backend\n    from cryptography.hazmat.primitives import hashes\n\n    def channel_bindings(ssl_socket):\n        server_certificate = ssl_socket.getpeercert(true)\n        cert = x509.load_der_x509_certificate(server_certificate, default_backend())\n        hash_algorithm = cert.signature_hash_algorithm\n        if hash_algorithm.name in ('md5', 'sha1'):\n            digest = hashes.hash(hashes.sha256(), default_backend())\n        else:\n            digest = hashes.hash(hash_algorithm, default_backend())\n        digest.update(server_certificate)\n        application_data = b\"tls-server-end-point:\" + digest.finalize()\n        return kerberos.channelbindings(application_data=application_data)\n\n\n.. _cryptography: https://pypi.python.org/pypi/cryptography\n\nviewing api documentation without sphinx\n========================================\n\nuse the help function in the python interactive shell:\n\n.. code-block:: python\n\n    >>> import winkerberos\n    >>> help(winkerberos)\n\n",
+  "docs_url": null,
+  "keywords": "kerberos,sspi,gssapi",
+  "license": "apache license, version 2.0",
+  "name": "winkerberos",
+  "package_url": "https://pypi.org/project/winkerberos/",
+  "project_url": "https://pypi.org/project/winkerberos/",
+  "project_urls": {
+    "Homepage": "https://github.com/mongodb-labs/winkerberos"
+  },
+  "release_url": "https://pypi.org/project/winkerberos/0.9.1/",
+  "requires_dist": [],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+  "summary": "high level interface to sspi for kerberos client auth",
+  "version": "0.9.1",
+  "releases": [],
+  "developers": [
+    "bernie@mongodb.com",
+    "bernie_hackett"
+  ],
+  "kwds": "authenticate_kerberos kerberos authgssclientinit authgssclientstep authgssclientunwrap",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_winkerberos",
+  "homepage": "https://github.com/mongodb-labs/winkerberos",
+  "release_count": 10,
+  "dependency_ids": []
+}

@@ -1,0 +1,71 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: asyncio",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http"
+  ],
+  "description": "==================================\nasync http client/server framework\n==================================\n\n.. image:: https://raw.githubusercontent.com/aio-libs/aiohttp/master/docs/aiohttp-plain.svg\n   :height: 64px\n   :width: 64px\n   :alt: aiohttp logo\n\n|\n\n.. image:: https://github.com/aio-libs/aiohttp/workflows/ci/badge.svg\n   :target: https://github.com/aio-libs/aiohttp/actions?query=workflow%3aci\n   :alt: github actions status for master branch\n\n.. image:: https://codecov.io/gh/aio-libs/aiohttp/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/aio-libs/aiohttp\n   :alt: codecov.io status for master branch\n\n.. image:: https://badge.fury.io/py/aiohttp.svg\n   :target: https://pypi.org/project/aiohttp\n   :alt: latest pypi package version\n\n.. image:: https://readthedocs.org/projects/aiohttp/badge/?version=latest\n   :target: https://docs.aiohttp.org/\n   :alt: latest read the docs\n\n.. image:: https://img.shields.io/matrix/aio-libs:matrix.org?label=discuss%20on%20matrix%20at%20%23aio-libs%3amatrix.org&logo=matrix&server_fqdn=matrix.org&style=flat\n   :target: https://matrix.to/#/%23aio-libs:matrix.org\n   :alt: matrix room \u2014 #aio-libs:matrix.org\n\n.. image:: https://img.shields.io/matrix/aio-libs-space:matrix.org?label=discuss%20on%20matrix%20at%20%23aio-libs-space%3amatrix.org&logo=matrix&server_fqdn=matrix.org&style=flat\n   :target: https://matrix.to/#/%23aio-libs-space:matrix.org\n   :alt: matrix space \u2014 #aio-libs-space:matrix.org\n\n\nkey features\n============\n\n- supports both client and server side of http protocol.\n- supports both client and server web-sockets out-of-the-box and avoids\n  callback hell.\n- provides web-server with middleware and pluggable routing.\n\n\ngetting started\n===============\n\nclient\n------\n\nto get something from the web:\n\n.. code-block:: python\n\n  import aiohttp\n  import asyncio\n\n  async def main():\n\n      async with aiohttp.clientsession() as session:\n          async with session.get('http://python.org') as response:\n\n              print(\"status:\", response.status)\n              print(\"content-type:\", response.headers['content-type'])\n\n              html = await response.text()\n              print(\"body:\", html[:15], \"...\")\n\n  asyncio.run(main())\n\nthis prints:\n\n.. code-block::\n\n    status: 200\n    content-type: text/html; charset=utf-8\n    body: <!doctype html> ...\n\ncoming from `requests <https://requests.readthedocs.io/>`_ ? read `why we need so many lines <https://aiohttp.readthedocs.io/en/latest/http_request_lifecycle.html>`_.\n\nserver\n------\n\nan example using a simple server:\n\n.. code-block:: python\n\n    # examples/server_simple.py\n    from aiohttp import web\n\n    async def handle(request):\n        name = request.match_info.get('name', \"anonymous\")\n        text = \"hello, \" + name\n        return web.response(text=text)\n\n    async def wshandle(request):\n        ws = web.websocketresponse()\n        await ws.prepare(request)\n\n        async for msg in ws:\n            if msg.type == web.wsmsgtype.text:\n                await ws.send_str(\"hello, {}\".format(msg.data))\n            elif msg.type == web.wsmsgtype.binary:\n                await ws.send_bytes(msg.data)\n            elif msg.type == web.wsmsgtype.close:\n                break\n\n        return ws\n\n\n    app = web.application()\n    app.add_routes([web.get('/', handle),\n                    web.get('/echo', wshandle),\n                    web.get('/{name}', handle)])\n\n    if __name__ == '__main__':\n        web.run_app(app)\n\n\ndocumentation\n=============\n\nhttps://aiohttp.readthedocs.io/\n\n\ndemos\n=====\n\nhttps://github.com/aio-libs/aiohttp-demos\n\n\nexternal links\n==============\n\n* `third party libraries\n  <http://aiohttp.readthedocs.io/en/latest/third_party.html>`_\n* `built with aiohttp\n  <http://aiohttp.readthedocs.io/en/latest/built_with.html>`_\n* `powered by aiohttp\n  <http://aiohttp.readthedocs.io/en/latest/powered_by.html>`_\n\nfeel free to make a pull request for adding your link to these pages!\n\n\ncommunication channels\n======================\n\n*aio-libs discussions*: https://github.com/aio-libs/aiohttp/discussions\n\n*gitter chat* https://gitter.im/aio-libs/lobby\n\nwe support `stack overflow\n<https://stackoverflow.com/questions/tagged/aiohttp>`_.\nplease add *aiohttp* tag to your question there.\n\nrequirements\n============\n\n- async-timeout_\n- attrs_\n- multidict_\n- yarl_\n- frozenlist_\n\noptionally you may install the aiodns_ library (highly recommended for sake of speed).\n\n.. _aiodns: https://pypi.python.org/pypi/aiodns\n.. _attrs: https://github.com/python-attrs/attrs\n.. _multidict: https://pypi.python.org/pypi/multidict\n.. _frozenlist: https://pypi.org/project/frozenlist/\n.. _yarl: https://pypi.python.org/pypi/yarl\n.. _async-timeout: https://pypi.python.org/pypi/async_timeout\n\nlicense\n=======\n\n``aiohttp`` is offered under the apache 2 license.\n\n\nkeepsafe\n========\n\nthe aiohttp community would like to thank keepsafe\n(https://www.getkeepsafe.com) for its support in the early days of\nthe project.\n\n\nsource code\n===========\n\nthe latest developer version is available in a github repository:\nhttps://github.com/aio-libs/aiohttp\n\nbenchmarks\n==========\n\nif you are interested in efficiency, the asyncio community maintains a\nlist of benchmarks on the official wiki:\nhttps://github.com/python/asyncio/wiki/benchmarks\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2",
+  "name": "aiohttp",
+  "package_url": "https://pypi.org/project/aiohttp/",
+  "project_url": "https://pypi.org/project/aiohttp/",
+  "project_urls": {
+    "CI: GitHub Actions": "https://github.com/aio-libs/aiohttp/actions?query=workflow%3ACI",
+    "Chat: Matrix": "https://matrix.to/#/#aio-libs:matrix.org",
+    "Chat: Matrix Space": "https://matrix.to/#/#aio-libs-space:matrix.org",
+    "Coverage: codecov": "https://codecov.io/github/aio-libs/aiohttp",
+    "Docs: Changelog": "https://docs.aiohttp.org/en/stable/changes.html",
+    "Docs: RTD": "https://docs.aiohttp.org",
+    "GitHub: issues": "https://github.com/aio-libs/aiohttp/issues",
+    "GitHub: repo": "https://github.com/aio-libs/aiohttp",
+    "Homepage": "https://github.com/aio-libs/aiohttp"
+  },
+  "release_url": "https://pypi.org/project/aiohttp/3.9.1/",
+  "requires_dist": [
+    "attrs >=17.3.0",
+    "multidict <7.0,>=4.5",
+    "yarl <2.0,>=1.0",
+    "frozenlist >=1.1.1",
+    "aiosignal >=1.1.2",
+    "async-timeout <5.0,>=4.0 ; python_version < \"3.11\"",
+    "brotlicffi ; (platform_python_implementation != \"CPython\") and extra == 'speedups'",
+    "Brotli ; (platform_python_implementation == \"CPython\") and extra == 'speedups'",
+    "aiodns ; (sys_platform == \"linux\" or sys_platform == \"darwin\") and extra == 'speedups'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "async http client/server framework (asyncio)",
+  "version": "3.9.1",
+  "releases": [],
+  "developers": [
+    "team@aiohttp.org"
+  ],
+  "kwds": "aiohttp branch badge status logo",
+  "license_kwds": "apache 2",
+  "libtype": "pypi",
+  "id": "pypi_aiohttp",
+  "homepage": "https://github.com/aio-libs/aiohttp",
+  "release_count": 228,
+  "dependency_ids": [
+    "pypi_aiodns",
+    "pypi_aiosignal",
+    "pypi_async_timeout",
+    "pypi_attrs",
+    "pypi_brotli",
+    "pypi_brotlicffi",
+    "pypi_frozenlist",
+    "pypi_multidict",
+    "pypi_yarl"
+  ]
+}

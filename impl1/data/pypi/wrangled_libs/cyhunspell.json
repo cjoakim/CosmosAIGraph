@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "topic :: utilities"
+  ],
+  "description": "[![build status](https://travis-ci.org/mseal/cython_hunspell.svg?branch=master)](https://travis-ci.org/mseal/cython_hunspell)\n[![pypi version shields.io](https://img.shields.io/pypi/v/cyhunspell.svg)](https://pypi.python.org/pypi/cyhunspell/)\n[![pypi pyversions](https://img.shields.io/pypi/pyversions/cyhunspell.svg)](https://pypi.python.org/pypi/cyhunspell/)\n[![license: mit](https://img.shields.io/badge/license-mit-yellow.svg)](https://opensource.org/licenses/mit)\n\n# cyhunspell\ncython wrapper on hunspell dictionary\n\n## description\nthis repository provides a wrapper on hunspell to be used natively in python. the\nmodule uses cython to link between the c++ and python code, with some additional\nfeatures. there's very little python overhead as all the heavy lifting is done\non the c++ side of the module interface, which gives optimal performance.\n\nthe hunspell library will cache any corrections, you can use persistent caching by\nadding the `use_disk_cache` argument to a hunspell constructor. otherwise it uses\nin-memory caching.\n\n## installing\n\nfor the simplest install simply run:\n\n    pip install cyhunspell\n\nthis will install the hunspell 1.7.0 c++ bindings on your behalf for your platform.\n\n## dependencies\n\ncacheman -- for (optionally asynchronous) persistent caching\n\n## non-python dependencies\n\n### hunspell\n\nthe library installs [hunspell](http://hunspell.github.io/) version 1.7.0. as new version of hunspell become\navailable this library will provide new versions to match.\n\n## features\n\nspell checking & spell suggestions\n* see http://hunspell.github.io/\n\n## how to use\n\nbelow are some simple examples for how to use the repository.\n\n### creating a hunspell object\n\n```python\nfrom hunspell import hunspell\nh = hunspell()\n```\n\nyou now have a usable hunspell object that can make basic queries for you.\n\n```python\nh.spell('test') # true\n```\n\n### spelling\n\nit's a simple task to ask if a particular word is in the dictionary.\n\n```python\nh.spell('correct') # true\nh.spell('incorect') # false\n```\n\nthis will only ever return true or false, and won't give suggestions about why it\nmight be wrong. it also depends on your choice of dictionary.\n\n### suggestions\n\nif you want to get a suggestion from hunspell, it can provide a corrected label\ngiven a basestring input.\n\n```python\nh.suggest('incorect') # ('incorrect', 'correction', corrector', 'correct', 'injector')\n```\n\nthe suggestions are in sorted order, where the lower the index the closer to the\ninput string.\n\n#### suffix match\n\n```python\nh.suffix_suggest('do') # ('doing', 'doth', 'doer', 'doings', 'doers', 'doest')\n```\n\n### stemming\n\nthe module can also stem words, providing the stems for pluralization and other\ninflections.\n\n```python\nh.stem('testers') # ('tester', 'test')\nh.stem('saves') # ('save',)\n```\n\n#### analyze\n\nlike stemming but return morphological analysis of the input instead.\n\n```python\nh.analyze('permanently') # (' st:permanent fl:y',)\n```\n\n#### generate\n\ngenerate methods are *not* provided at this time due to the 1.7.0 build not producing\nany results for any inputs, included the documented one. if this is fixed or someone\nidentifies the issue in the call pattern this will be added to the library in the\nfuture.\n\n### bulk requests\n\nyou can also request bulk actions against hunspell. this will trigger a threaded\n(without a gil) request to perform the action requested. currently just 'suggest'\nand 'stem' are bulk requestable.\n\n```python\nh.bulk_suggest(['correct', 'incorect'])\n# {'incorect': ('incorrect', 'correction', 'corrector', 'correct', 'injector'), 'correct': ('correct',)}\nh.bulk_suffix_suggest(['cat', 'do'])\n# {'do': ('doing', 'doth', 'doer', 'doings', 'doers', 'doest'), 'cat': ('cater', 'cats', \"cat's\", 'caters')}\nh.bulk_stem(['stems', 'currencies'])\n# {'currencies': ('currency',), 'stems': ('stem',)}\nh.bulk_analyze(['dog', 'permanently'])\n# {'permanently': (' st:permanent fl:y',), 'dog': (' st:dog',)}\n```\n\nby default it spawns number of cpus threads to perform the operation. you can\noverwrite the concurrency as well.\n\n```python\nh.set_concurrency(4) # four threads will now be used for bulk requests\n```\n\n### dictionaries\n\nyou can also specify the language or dictionary you wish to use.\n\n```python\nh = hunspell('en_ca') # canadian english\n```\n\nby default you have the following dictionaries available\n* en_au\n* en_ca\n* en_gb\n* en_nz\n* en_us\n* en_za\n\nhowever you can download your own and point hunspell to your custom dictionaries.\n\n```python\nh = hunspell('en_gb-large', hunspell_data_dir='/custom/dicts/dir')\n```\n\n#### adding dictionaries\n\nyou can also add new dictionaries at runtime by calling the add_dic method.\n\n```python\nh.add_dic(os.path.join(path_to, 'special.dic'))\n```\n\n#### adding words\n\nyou can add individual words to a dictionary at runtime.\n\n```python\nh.add('sillly')\n```\n\nfurthermore you can attach an affix to the word when doing this by providing a\nsecond argument\n\n```python\nh.add('silllies', \"is:plural\")\n```\n\n#### removing words\n\nmuch like adding, you can remove words.\n\n```python\nh.remove(word)\n```\n\n### asynchronous caching\n\nif you want to have hunspell cache suggestions and stems you can pass it a directory\nto house such caches.\n\n```python\nh = hunspell(disk_cache_dir='/tmp/hunspell/cache/dir')\n```\n\nthis will save all suggestion and stem requests periodically and in the background.\nthe cache will fork after a number of new requests over particular time ranges and\nsave the cache contents while the rest of the program continues onward. yo'll never\nhave to explicitly save your caches to disk, but you can if you so choose.\n\n```python\nh.save_cache()\n```\n\notherwise the hunspell object will cache such requests locally in memory and not\npersist that memory.\n\n## language preferences\n\n* google style guide\n* object oriented (with a few exceptions)\n\n## known workarounds\n\n- on windows very long file paths, or paths saved in a different encoding than the system require special handling by hunspell to load dictionary files. to circumvent this on windows setups, either set `system_encoding='utf-8'` in the `hunspell` constructor or set the environment variable `hunspell_path_encoding=utf-8`. then you must re-encode your `hunspell_data_dir` in utf-8 by passing that argument name to the `hunspell` constructor or setting the `hunspell_data` environment variable. this is a restriction of hunspell / windows operations.\n\n## author\nauthor(s): tim rodriguez and matthew seal\n\n## license\nmit\n\n\n",
+  "docs_url": null,
+  "keywords": "hunspell,spelling,correction",
+  "license": "mit + mpl 1.1/gpl 2.0/lgpl 2.1",
+  "name": "cyhunspell",
+  "package_url": "https://pypi.org/project/cyhunspell/",
+  "project_url": "https://pypi.org/project/cyhunspell/",
+  "project_urls": {
+    "Download": "https://github.com/MSeal/cython_hunspell/tarball/v2.0.2",
+    "Homepage": "https://github.com/MSeal/cython_hunspell"
+  },
+  "release_url": "https://pypi.org/project/cyhunspell/2.0.2/",
+  "requires_dist": [
+    "cacheman (>=2.0.6)",
+    "cython (==0.29.21) ; extra == 'dev'",
+    "wheel ; extra == 'dev'",
+    "twine ; extra == 'dev'",
+    "pytest ; extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "a wrapper on hunspell for use in python",
+  "version": "2.0.2",
+  "releases": [],
+  "developers": [
+    "matthew_seal",
+    "mseal007@gmail.com"
+  ],
+  "kwds": "cython_hunspell pyversions cyhunspell cython hunspell_path_encoding",
+  "license_kwds": "mit + mpl 1.1/gpl 2.0/lgpl 2.1",
+  "libtype": "pypi",
+  "id": "pypi_cyhunspell",
+  "homepage": "https://github.com/mseal/cython_hunspell",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_cacheman",
+    "pypi_cython",
+    "pypi_pytest",
+    "pypi_twine",
+    "pypi_wheel"
+  ]
+}

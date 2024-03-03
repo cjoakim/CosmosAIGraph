@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "topic :: database",
+    "topic :: database :: database engines/servers",
+    "topic :: database :: front-ends",
+    "topic :: system :: systems administration"
+  ],
+  "description": "## quickstart for users\n\nso, your friendly neighborhood mongogranter says you know have access to a\ndatabase through your email address. what now? first, install mongogrant:\n```bash\npip install mongogrant\n```\nnext, request a token link to be sent to your email:\n```\nmgrant init mcurie@espci.fr \\\n  --endpoint https://grantmedb.materialsproject.org\n```\nclick the link in your email to prove you're you, copy the fetch token from the\nloaded page, and then run:\n```\nmgrant settoken wh054900d70k3ny35y0u423\n```\nfinally, get credentials for your database. here, marie is asking mongogrant to\nprint out db.json and my_launchpad.yaml starter files for\n[fireworks](https://materialsproject.github.io/fireworks/) and\n[atomate](https://atomate.org/):\n```\nmgrant db mongodb03.nersc.gov fw_mc_polonium \\\n  --role readwrite \\\n  --atomate-starters\n```\n## about mongogrant\n\nmongogrant is a utility to grant username and password\ncredentials for read and readwrite roles on various databases\non various hosts to owners of email addresses.\n\na server administrator has fine-grained control via\nallow/deny rules for granting tokens and credentials.\npeople request an email that contains a one-time link. that\nlink gives a user a fetch token. all tokens expire and\nexpiration time is customizable. people then use the\nmongogrant client to make requests like\n\n```python\nfrom mongogrant.client import client\n\n# config file on disk has tokens and host/db aliases\n# `client()` with no args looks to\n# ~/.mongogrant.json for config\nclient = client()\n\n# no config yet? set one up with at least one remote for fetching credentials\n# see below for how to obtain <fetch_token> for a given <endpoint>.\nclient.set_remote(\"https://grantmedb.materialsproject.org\", \"<fetch_token>\")\n\n# set some aliases if you'd like:\nclient.set_alias(\"dev\", \"mongodb03.nersc.gov\", \"host\")\nclient.set_alias(\"prod\", \"mongodb04.nersc.gov\", \"host\")\nclient.set_alias(\"fireworks\", \"fw_dw_phonons\", \"db\")\n\n# pymongo.database.database with read role\nsource_db = client.db(\"ro:dev/fireworks\")\n# readwrite role: config stores \"prod\" host alias and \"fireworks\" db alias\ntarget_db = client.db(\"rw:prod/fireworks\")\n\n# ...do database stuff!\n```\n\none can also go entirely through a running app's api:\n\n```bash\n> # using the httpie command line http client (https://httpie.org/)\n> # install via `{brew,apt-get,pip,...} install httpie`\n> http get https://grantmedb.materialsproject.org/gettoken/<your_email>\nhttp/1.1 200 ok\nconnection: keep-alive\ncontent-length: 59\ncontent-type: application/json\ndate: thu, 17 may 2018 18:05:30 gmt\nserver: nginx/1.10.3\n\n{\n    \"msg\": \"sent link to <your_email> to retrieve token.\"\n}\n\n> http get https://grantmedb.materialsproject.org/verifytoken/<verify_token>\nhttp/1.1 200 ok\nconnection: keep-alive\ncontent-encoding: gzip\ncontent-type: text/html; charset=utf-8\ndate: thu, 17 may 2018 18:06:17 gmt\nserver: nginx/1.10.3\ntransfer-encoding: chunked\n\nfetch token: <fetch_token> (expires 2018-06-19 18:05:30.508000 utc)\n\n> # end-of-line \"\\\" below only necessary if command spans two lines.\n> http --form post https://grantmedb.materialsproject.org/grant/<fetch_token> \\\n>   role=readwrite host=mongodb03.nersc.gov db=dw_phonons\nhttp/1.1 200 ok\nconnection: keep-alive\ncontent-length: 108\ncontent-type: application/json\ndate: thu, 17 may 2018 18:11:22 gmt\nserver: nginx/1.10.3\n\n{\n    \"password\": \"<password>\",\n    \"username\": \"dwinston_lbl.gov_readwrite\"\n}\n\n>\n```\n\nyou can run a \"server\" on your laptop in a jupyer notebook\nand manage allow/deny rules, grant / revoke grants of\ncredentials, etc. a small flask app\nis included as an example for deploying a server to which\nclients can connect to obtain tokens and credentials. \n\n## set up a server\n\n```python\nfrom mongogrant.config import config\nfrom mongogrant.server import server, check, path, seed, mailgun\n\nserver = server(config(check=check, path=path, seed=seed()))\nserver.set_mgdb(\"mongodb://mgserver:mgserverpass@my.host.com/mongogrant\")\nserver.set_mailer(mailgun, dict(\n    api_key=\"your_key\",\n    base_url=\"https://api.mailgun.net/v3/your_domain\",\n    from_addr=\"mongogrant@your_domain\"))\nserver.set_admin_client(\n    host=\"other1.host.com\",\n    username=\"mongoadmin\",\n    password=\"mongoadminpass\")\nserver.set_admin_client(\n    host=\"other2.host.com\",\n    username=\"mongoadmin\",\n    password=\"mongoadminpass\")\n```\n\n### appointing others to set allow/deny rules\n\na mongogrant server admin can add \"ruler\" users who can set allow/deny rules for users via the `mgrant` cli. an admin sets a ruler document in the `server.mgdb` collection, e.g.\n```python\nserver.mgdb.rulers.replace_one(\n    {\"email\": \"starlord@lbl.gov\"},\n    {\n        \"email\": \"starlord@lbl.gov\",\n        \"hosts\": [\"mongodb03.nersc.gov\"],\n        \"dbs\": [\"mp_\", \"fw_\"],\n        \"emails\": [\"@lbl.gov\"],\n        \"which\": [\"allow\"]\n    },\n    upsert=true)\n```\nallows user `starlord@lbl.gov` to set `allow` rules for any user with an \"@lbl.gov\" email address on the mongo host \"mongodb03.nersc.gov\" for any database name prefixed with \"mp_\" or \"fw_\". any field in a ruler document can be set to \"all\" rather than an array.\n\n\n\n",
+  "docs_url": null,
+  "keywords": "mongodb pymongo authentication authorization",
+  "license": "modified bsd",
+  "name": "mongogrant",
+  "package_url": "https://pypi.org/project/mongogrant/",
+  "project_url": "https://pypi.org/project/mongogrant/",
+  "project_urls": {
+    "Homepage": "https://github.com/materialsproject/mongogrant/"
+  },
+  "release_url": "https://pypi.org/project/mongogrant/0.3.3/",
+  "requires_dist": [
+    "Click",
+    "pymongo (>=3.8)",
+    "Flask (>=1.0)",
+    "requests"
+  ],
+  "requires_python": ">=3",
+  "summary": "generate and grant credentials for mongodb databases",
+  "version": "0.3.3",
+  "releases": [],
+  "developers": [
+    "feedback@materialsproject.org",
+    "mp_team"
+  ],
+  "kwds": "mongogrant mongogranter mongoadmin mongoadminpass mongodb03",
+  "license_kwds": "modified bsd",
+  "libtype": "pypi",
+  "id": "pypi_mongogrant",
+  "homepage": "https://github.com/materialsproject/mongogrant/",
+  "release_count": 29,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_flask",
+    "pypi_pymongo",
+    "pypi_requests"
+  ]
+}

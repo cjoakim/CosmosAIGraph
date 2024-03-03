@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: other/proprietary license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3"
+  ],
+  "description": "=============\nawscli-cwlogs\n=============\n\nthis awscli plugin provides the ``pull``, ``push`` and ``filter`` commands to access aws cloudwatch logs service.\n\n\nthe awscli-cwlogs package works on python versions:\n\n* 2.6.5 and greater\n* 2.7.x and greater\n* 3.3.x and greater\n\n\n------------\ninstallation\n------------\n\nthe easiest way to install awscli-cwlogs is to use `pip`_::\n\n    $ pip install awscli-cwlogs\n\nor, if you are not installing in a ``virtualenv``::\n\n    $ sudo pip install awscli-cwlogs\n\nif you have the awscli-cwlogs installed and want to upgrade to the latest version\nyou can run::\n\n    $ pip install --upgrade awscli-cwlogs\n\nthis will install the awscli-cwlogs package as well as all dependencies, including awscli.\n\n.. attention::\n    if you have awscli installed, installing awscli-cwlogs might upgrade or downgrade your awscli depending on whether the awscli version you have is older or newer than what the awscli-cwlogs depends on. after installing awscli-cwlogs, you can run ``pip install --upgrade awscli`` to upgrade your awscli though potentially the latest awscli might not work well with the plugin. if you want to isolate awscli-cwlogs plugin from your existing awscli, you may consider ``virtaulenv``. be careful that awscli by default stores its configuration to ~/.aws/config (or in %userprofile%\\.aws\\config on windows), to also isolate the configuration, you can define a separate config file ``export aws_config_file=/path/to/config_file``.\n\n\n---------------\ngetting started\n---------------\n\nbefore using awscli-cwlogs plugin, you need to `configure awscli <http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html>`__ first.\n\nonce that's done, to enable awscli-cwlogs, you can run::\n\n    $ aws configure set plugins.cwlogs cwlogs\n\nthe above command adds below section to your aws config file::\n\n    [plugins]\n    cwlogs = cwlogs\n\nto verify if awscli-cwlogs plugin is installed and configured properly, you can run::\n\n    $ aws logs help\n\nyou will see the ``pull``, ``push`` and ``fitler`` commands from available commands, otherwise it means the cwlogs plugin is not registered properly.\n\nif you see ``importerror: no module named cwlogs`` error, it means the cwlogs plugin is registered in config file, but the plugin is not installed.\n\n^^^^^^^^\nexamples\n^^^^^^^^\n.............\n push command\n.............\nyou can use ``aws logs push help`` to check supported options.\nthe ``push`` command is used by cloudwatch logs agent, check the `cloudwatch logs agent reference <https://docs.aws.amazon.com/amazoncloudwatch/latest/developerguide/agentreference.html>`__ to see all supported options or if you want to keep the ``push`` command running.\n\n1) uploading a single log event to cloudwatch logs service. the log group and log stream get created automatically if they don't exist.\n\n::\n\n    echo \"hello world\" | aws logs push --log-group-name myloggroup --log-stream-name mylogstream\n\n2) the following ``push`` command pushes log events from a syslog file to log stream which is specified by ``/var/log/syslog`` and ``myhost1`` and exits after pushing all log events. this command doesn't push the incremental log events. to achieve that, use ``tail -f file | aws logs push ...``.\n\n::\n\n    cat /var/log/kernel.log | aws logs push --log-group-name /var/log/syslog --log-stream-name myhost1 --datetime-format '%b %d %h:%m:%s' --time-zone local --encoding ascii\n\n3) the following ``push`` command pushes log events from multiple files based on configuration file. the ``initial_position`` determines where to start if the state of  ``file`` is not available.\n\n::\n\n    aws logs push --config-file push.cfg\n\n::\n\n    [general]\n    state_file = push-state\n    [logstream-messages]\n    datetime_format = %b %d %h:%m:%s\n    time_zone = local\n    file = /var/log/messages\n    file_fingerprint_lines = 1\n    log_group_name = /var/log/messages\n    log_stream_name = {hostname}\n    initial_position = start_of_file\n    encoding = utf_8\n    buffer_duration = 5000\n    [logstream-system.log]\n    datetime_format = %b %d %h:%m:%s\n    time_zone = utc\n    file = /var/log/system.log\n    file_fingerprint_lines = 1-3\n    log_group_name = /var/log/system.log\n    log_stream_name = {hostname}\n    initial_position = end_of_file\n    encoding = ascii\n    buffer_duration = 10000\n\n\n.............\n pull command\n.............\nyou can use ``aws logs pull help`` to check supported options.\n\n1) the following ``pull`` command pulls log events starting at ``2014-01-23t00:00:00z`` from one log stream which is specified by ``website1/access_log`` and ``webhost-001`` and exits after pulling all log events.\n\n::\n\n    aws logs pull --log-group-name website1/access_log --log-stream-name webhost-001 --start-time 2014-01-23t00:00:00z\n\n2) when invoked with the ``--end-time`` option, the following ``pull`` command pulls all log events between ``2014-01-23t00:00:00z`` (inclusive) and ``2014-01-23t01:00:00z`` (not inclusive).\n\n::\n\n    aws logs pull --log-group-name website1/access_log --log-stream-name webhost-001 --start-time 2014-01-23t00:00:00z --end-time 2014-01-23t01:00:00z\n\n3) when invoked with the ``--follow`` option, the following ``pull`` command does not exit after pulling all log events, but polls continuously for new log events.\n\n::\n\n    aws logs pull --log-group-name website1/access_log --log-stream-name webhost-001 --start-time 2014-01-23t00:00:00z --follow\n\n4) when invoked with the ``--output-format`` option, the following ``pull`` command only outputs the message field. by default, the output format is ``\"{timestamp} {message}\"``. ingestion time can be included with ``\"{timestamp} {ingestiontime} {message}\"``.\n\n\n::\n\n    aws logs pull --log-group-name website1/access_log --log-stream-name webhost-001 --start-time 2014-01-23t00:00:00z --output-format \"{message}\"\n\n...............\n filter command\n...............\nsee `this aws developer guide <http://docs.aws.amazon.com/amazoncloudwatch/latest/developerguide/searchdatafilterpattern.html>`__.\n\n.. _pip: ht`tp://www.pip-installer.org/en/latest/",
+  "docs_url": null,
+  "keywords": "",
+  "license": "amazon software license",
+  "name": "awscli-cwlogs",
+  "package_url": "https://pypi.org/project/awscli-cwlogs/",
+  "project_url": "https://pypi.org/project/awscli-cwlogs/",
+  "project_urls": {
+    "Homepage": "http://aws.amazon.com/cli/"
+  },
+  "release_url": "https://pypi.org/project/awscli-cwlogs/1.4.6/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "awscli cloudwatch logs plugin",
+  "version": "1.4.6",
+  "releases": [],
+  "developers": [
+    "amazon"
+  ],
+  "kwds": "awscli amazoncloudwatch cloudwatch log_stream_name aws_config_file",
+  "license_kwds": "amazon software license",
+  "libtype": "pypi",
+  "id": "pypi_awscli_cwlogs",
+  "homepage": "http://aws.amazon.com/cli/",
+  "release_count": 8,
+  "dependency_ids": []
+}

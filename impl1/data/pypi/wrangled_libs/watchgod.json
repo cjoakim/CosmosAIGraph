@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "environment :: console",
+    "environment :: macos x",
+    "framework :: anyio",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: system administrators",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: filesystems"
+  ],
+  "description": "# watchgod\n\n[![ci](https://github.com/samuelcolvin/watchgod/workflows/ci/badge.svg?event=push)](https://github.com/samuelcolvin/watchgod/actions?query=event%3apush+branch%3amaster+workflow%3aci)\n[![coverage](https://codecov.io/gh/samuelcolvin/watchgod/branch/master/graph/badge.svg)](https://codecov.io/gh/samuelcolvin/watchgod)\n[![pypi](https://img.shields.io/pypi/v/watchgod.svg)](https://pypi.python.org/pypi/watchgod)\n[![license](https://img.shields.io/github/license/samuelcolvin/watchgod.svg)](https://github.com/samuelcolvin/watchgod/blob/master/license)\n\nsimple, modern file watching and code reload in python.\n\n---\n\n## notice - package renamed to `watchfiles`\n\n**please note:** this package (watchgod) has been renamed to [watchfiles](https://pypi.org/project/watchfiles/). \nplease replace `watchgod` with `watchfiles`, see [the migration guide](https://watchfiles.helpmanual.io/migrating/)\nfor help and instructions on switching.\n\nas well as a better name, `watchfiles` has a whole new backend based on rust-notify which makes watching\nfor filesystem events much more efficient.\n\n**the package under the name `watchgod` will not be further developed and will only receive critical security fixes.**\n\n---\n\n## usage\n\nto watch for changes in a directory:\n\n```python\nfrom watchgod import watch\n\nfor changes in watch('./path/to/dir'):\n    print(changes)\n```\n\nto run a function and restart it when code changes:\n\n```python\nfrom watchgod import run_process\n\ndef foobar(a, b, c):\n    ...\n\nrun_process('./path/to/dir', foobar, args=(1, 2, 3))\n```\n\n`run_process` uses `pythonwatcher` so only changes to python files will prompt a\nreload, see **custom watchers** below.\n\nif you need notifications about change events as well as to restart a process you can\nuse the `callback` argument to pass a function which will be called on every file change\nwith one argument: the set of file changes.\n\n## installation\n\n```bash\npip install watchgod\n```\n\n## asynchronous methods\n\n*watchgod* comes with an asynchronous equivalents of `watch`: `awatch` which uses\na `threadpoolexecutor` to iterate over files.\n\n```python\nimport asyncio\nfrom watchgod import awatch\n\nasync def main():\n    async for changes in awatch('/path/to/dir'):\n        print(changes)\n\nasyncio.run(main())\n```\n\nthere's also an asynchronous equivalents of `run_process`: `arun_process` which in turn\nuses `awatch`:\n\n```python\nimport asyncio\nfrom watchgod import arun_process\n\ndef foobar(a, b, c):\n    ...\n\nasync def main():\n    await arun_process('./path/to/dir', foobar, args=(1, 2, 3))\n\nasyncio.run(main())\n```\n\n`arun_process` uses `pythonwatcher` so only changes to python files will prompt a\nreload, see **custom watchers** below.\n\nthe signature of `arun_process` is almost identical to `run_process` except that\nthe optional `callback` argument must be a coroutine, not a function.\n\n## custom watchers\n\n\n*watchgod* comes with the following watcher classes which can be used via the `watcher_cls`\nkeyword argument to any of the methods above.\n\nfor example:\n\n```python\nfor changes in watch(directoryin, watcher_cls=regexpwatcher, watcher_kwargs=dict(re_files=r'^.*(\\.mp3)$')):\n   print (changes)\n```\n\nfor more details, checkout\n[`watcher.py`](https://github.com/samuelcolvin/watchgod/blob/master/watchgod/watcher.py),\nit's pretty simple.\n\n* **allwatcher** the base watcher, all files are checked for changes.\n\n* **defaultwatcher** the watcher used by default by `watch` and `awatch`, commonly ignored files\n  like `*.swp`, `*.pyc` and `*~` are ignored along with directories like\n  `.git`.\n\n* **pythonwatcher** specific to python files, only `*.py`, `*.pyx` and `*.pyd` files are watched.\n\n* **defaultdirwatcher** is the base for `defaultwatcher` and `defaultdirwatcher`. it takes care of ignoring\n  some regular directories.\n\n\nif these classes aren't sufficient you can define your own watcher, in particular\nyou will want to override `should_watch_dir` and `should_watch_file`. unless you're\ndoing something very odd, you'll want to inherit from `defaultdirwatcher`.\n\nnote that events related to *directories* are not reported (e.g. creation of a\ndirectory), but new files in new directories will be reported.\n\n## cli\n\n*watchgod* also comes with a cli for running and reloading python code.\n\nlets say you have `foobar.py`:\n\n```python\nfrom aiohttp import web\n\nasync def handle(request):\n    return web.response(text='testing')\n\napp = web.application()\napp.router.add_get('/', handle)\n\ndef main():\n    web.run_app(app, port=8000)\n```\n\nyou could run this and reload it when any file in the current directory changes with::\n\n    watchgod foobar.main\n\nin case you need to ignore certain files or directories, you can use the argument\n `--ignore-paths`.\n\nrun `watchgod --help` for more options. *watchgod* is also available as a python executable module\nvia `python -m watchgod ...`.\n\n## why no inotify / kqueue / fsevent / winapi support\n\n*watchgod* (for now) uses file polling rather than the os's built in file change notifications.\n\nthis is not an oversight, it's a decision with the following rationale:\n\n1. polling is \"fast enough\", particularly since pep 471 introduced fast `scandir`.\n  for reasonably large projects like the tutorcruncher code base with 850 files and 300k lines\n  of code, *watchgod* can scan the entire tree in ~24ms. with a scan interval of 400ms that is roughly\n  5% of one cpu - perfectly acceptable load during development.\n2. the clue is in the title, there are at least 4 different file notification systems to integrate\n  with, most of them not trivial. that is all before we get to changes between different os versions.\n3. polling works well when you want to group or \"debounce\" changes.\n  let's say you're running a dev server and you change branch in git, 100 files change.\n  do you want to reload the dev server 100 times or once? right.\n  polling periodically will likely group these changes into one event. if you're receiving a\n  stream of events you need to delay execution of the reload when you receive the first event\n  to see if it's part of a group of file changes. this is not trivial.\n\nall that said, i might still use rust's \"notify\" crate to do the heavy lifting of file watching,\nsee[#25](https://github.com/samuelcolvin/watchgod/issues/25).\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "watchgod",
+  "package_url": "https://pypi.org/project/watchgod/",
+  "project_url": "https://pypi.org/project/watchgod/",
+  "project_urls": {
+    "Homepage": "https://github.com/samuelcolvin/watchfiles"
+  },
+  "release_url": "https://pypi.org/project/watchgod/0.8.2/",
+  "requires_dist": [
+    "anyio (<4,>=3.0.0)"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "simple, modern file watching and code reload in python.",
+  "version": "0.8.2",
+  "releases": [],
+  "developers": [
+    "s@muelcolvin.com",
+    "samuel_colvin"
+  ],
+  "kwds": "watcher_kwargs watcher_cls watchgod pythonwatcher should_watch_dir",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_watchgod",
+  "homepage": "https://github.com/samuelcolvin/watchfiles",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_anyio"
+  ]
+}

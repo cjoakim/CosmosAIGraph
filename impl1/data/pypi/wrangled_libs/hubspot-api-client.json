@@ -1,0 +1,44 @@
+{
+  "classifiers": [],
+  "description": "# hubspot-api-python\n\npython [hubspot api](https://developers.hubspot.com/docs/api/overview) v3 sdk(client) files and sample apps\n\nsample applications can be found in [sample apps](https://github.com/hubspot/sample-apps-list)\n\n## documentation\n\nsee the [api docs](https://developers.hubspot.com/docs/api/overview).\n\n## installation\n\nif you just want to use the package, run:\n\n```bash\npip install --upgrade hubspot-api-client\n```\n\n### requirements\n\nmake sure you have [python 3.5+](https://docs.python.org/3/) and [pip](https://pypi.org/project/pip/) installed.\n\n\n## quickstart\n\n\n### configuring hubspot client\n\n```python\nfrom hubspot import hubspot\n\napi_client = hubspot(access_token='your_access_token')\n\n# or set your access token later\napi_client = hubspot()\napi_client.access_token = 'your_access_token'\n```\n\nyou'll need to create a [private app](https://developers.hubspot.com/docs/api/private-apps) to get your access token or you can obtain oauth2 access token.\n\n#### hapikey support:\n\nplease, note that hapikey is no longer supported after v5.1.0. you can get more info about hapikey sunset [here](https://developers.hubspot.com/changelog/upcoming-api-key-sunset). also, plese, visit a [migration guide](https://developers.hubspot.com/docs/api/migrate-an-api-key-integration-to-a-private-app) if you need help with a migration process.\n\n### oauth api\n\n#### obtain oauth2 access token:\n\n```python\nfrom hubspot.auth.oauth import apiexception\n\ntry:\n    tokens = api_client.auth.oauth.tokens_api.create(\n        grant_type=\"authorization_code\",\n        redirect_uri='http://localhost',\n        client_id='client_id',\n        client_secret='client_secret',\n        code='code'\n    )\nexcept apiexception as e:\n    print(\"exception when calling create_token method: %s\\n\" % e)\n```\n\n### crm api\n\n\n#### create contact:\n\n```python\nfrom hubspot.crm.contacts import simplepublicobjectinputforcreate\nfrom hubspot.crm.contacts.exceptions import apiexception\n\ntry:\n    simple_public_object_input_for_create = simplepublicobjectinputforcreate(\n        properties={\"email\": \"email@example.com\"}\n    )\n    api_response = api_client.crm.contacts.basic_api.create(\n        simple_public_object_input_for_create=simple_public_object_input_for_create\n    )\nexcept apiexception as e:\n    print(\"exception when creating contact: %s\\n\" % e)\n```\n\n#### get contact by id:\n\n```python\nfrom hubspot.crm.contacts import apiexception\n\ntry:\n    contact_fetched = api_client.crm.contacts.basic_api.get_by_id('contact_id')\nexcept apiexception as e:\n    print(\"exception when requesting contact by id: %s\\n\" % e)\n```\n\n#### get custom objects page:\n\n```python\nfrom hubspot.crm.objects import apiexception\n\ntry:\n    my_custom_objects_page = api_client.crm.objects.basic_api.get_page(object_type=\"my_custom_object_type\")\nexcept apiexception as e:\n    print(\"exception when requesting custom objects: %s\\n\" % e)\n```\n\n#### get all:\n\n`get_all` method is available for all objects (companies, contacts, deals and etc).\n\n```python\nall_contacts = api_client.crm.contacts.get_all()\n```\n\nplease note that pagination is used under the hood to get all results.\n\n## search:\n\n`do_search` method is available for all objects (companies, contacts, deals and etc).\n\n### example search by date:\n```python\nimport hubspot\n\nfrom dateutil import parser\nfrom pprint import pprint\nfrom hubspot.crm.contacts import publicobjectsearchrequest, apiexception\n\napi_client = hubspot.client.create(access_token=\"your_access_token\")\n\n# timestamp in milliseconds\ndate = str(int(parser.isoparse(\"xxxx-xx-xxtxx:xx:xx.xxxz\").timestamp() * 1000))\npublic_object_search_request = publicobjectsearchrequest(\n    filter_groups=[\n        {\n            \"filters\": [\n                {\n                    \"value\": date,\n                    \"propertyname\": \"lastmodifieddate\",\n                    \"operator\": \"eq\"\n                }\n            ]\n        }\n    ], limit=10\n)\ntry:\n    api_response = api_client.crm.contacts.search_api.do_search(public_object_search_request=public_object_search_request)\n    pprint(api_response)\nexcept apiexception as e:\n    print(\"exception when calling search_api->do_search: %s\\n\" % e)\n\n```\n\n### cms api\n\n#### get audit logs:\n\n```python\nfrom hubspot.cms.audit_logs import apiexception\n\ntry:\n    audit_logs_page = api_client.cms.audit_logs.default_api.get_page()\nexcept apiexception as e:\n    print(\"exception when calling cards_api->create: %s\\n\" % e)\n```\n\n### using utils\n\n#### get oauth url:\n\n```python\nfrom hubspot.utils.oauth import get_auth_url\n\nauth_url = get_auth_url(\n    scopes=('contacts',),\n    client_id='client_id',\n    redirect_uri='http://localhost'\n)\n```\n\n#### validate hubspot request signature\n\n[example](./sample-apps/webhooks-app/src/routes/webhooks.py) of usage from [webhooks sample app](./sample-apps/webhooks-app):\n\n```python\nimport os\n\nfrom datetime import datetime\nfrom flask import request\nfrom hubspot.utils.signature import signature\n\nsignature.is_valid(\n        signature=request.headers[\"x-hubspot-signature\"],\n        client_secret=os.getenv(\"hubspot_client_secret\"),\n        request_body=request.data.decode(\"utf-8\"),\n        http_uri=request.base_url,\n        signature_version=request.headers[\"x-hubspot-signature-version\"],\n        timestamp=datetime.now().timestamp()\n\n)\n```\n\n### retry middleware\n\nyou can pass an instance of [urllib3.util.retry.retry](https://urllib3.readthedocs.io/en/latest/reference/urllib3.util.html) class to configure http client retries.\nwith internal error retry middleware:\n\n```python\nfrom hubspot import hubspot\nfrom urllib3.util.retry import retry\n\nretry = retry(\n    total=3,\n    backoff_factor=0.3,\n    status_forcelist=(500, 502, 504),\n)\napi_client = hubspot(retry=retry)\n```\nor with rate limit retry middleware:\n\n```python\nfrom hubspot import hubspot\nfrom urllib3.util.retry import retry\n\nretry = retry(\n    total=5,\n    status_forcelist=(429,),\n)\napi_client = hubspot(retry=retry)\n```\n\n### convert response object to dict\n\n`to_dict` method is available for most response objects\n\n```python\ncontacts = api_client.crm.contacts.basic_api.get_page()\nfor contact in contacts:\n    print(contact.to_dict())\n```\n\n## sample apps\n\nplease, take a look at our [sample apps](https://github.com/hubspot/sample-apps-list)\n\n## contributing\n\ninstall the package locally:\n\n```\npip install -e .\n```\n\nset up the development virtualenv:\n\n```\nmake\n```\n\nrun tests:\n```\nmake test\n```\n\nrun [black](https://github.com/psf/black) for code formatting:\n```\nmake fmt\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "hubspot-api-client",
+  "package_url": "https://pypi.org/project/hubspot-api-client/",
+  "project_url": "https://pypi.org/project/hubspot-api-client/",
+  "project_urls": {
+    "Homepage": "https://github.com/HubSpot/hubspot-api-python"
+  },
+  "release_url": "https://pypi.org/project/hubspot-api-client/8.2.0/",
+  "requires_dist": [
+    "urllib3 >=1.15",
+    "six >=1.10",
+    "certifi",
+    "python-dateutil",
+    "pytest ; extra == 'dev'",
+    "black ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "hubspot api client",
+  "version": "8.2.0",
+  "releases": [],
+  "developers": [
+    "hubspot",
+    "support@hubspot.com"
+  ],
+  "kwds": "hubspot_client_secret hubspot pip api_client sdk",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_hubspot_api_client",
+  "homepage": "https://github.com/hubspot/hubspot-api-python",
+  "release_count": 55,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_certifi",
+    "pypi_pytest",
+    "pypi_python_dateutil",
+    "pypi_six",
+    "pypi_urllib3"
+  ]
+}

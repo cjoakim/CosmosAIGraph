@@ -1,0 +1,70 @@
+{
+  "classifiers": [
+    "development status :: 2 - pre-alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# eth-bloom\n\n[![join the conversation on discord](https://img.shields.io/discord/809793915578089484?color=blue&label=chat&logo=discord&logocolor=white)](https://discord.gg/ghryrvpb84)\n[![build status](https://circleci.com/gh/ethereum/eth-bloom.svg?style=shield)](https://circleci.com/gh/ethereum/eth-bloom)\n[![pypi version](https://badge.fury.io/py/eth-bloom.svg)](https://badge.fury.io/py/eth-bloom)\n[![python versions](https://img.shields.io/pypi/pyversions/eth-bloom.svg)](https://pypi.python.org/pypi/eth-bloom)\n\na python implementation of the bloom filter used by ethereum.\n\n> this library and repository was previously located at https://github.com/pipermerriam/ethereum-bloom.  it was transferred to the ethereum foundation github in november 2017 and renamed to `eth-bloom`.  the pypi package was also renamed from `ethereum-bloom` to \\`eth-bloom.\n\nread more in the documentation below. [view the change log](https://github.com/ethereum/eth-bloom/blob/master/changelog.rst).\n\nfor more information on what ethereum bloom filters are see [here](what_is_eth-bloom.txt).\n\n## quickstart\n\n```sh\npython -m pip install eth-bloom\n```\n\n## usage\n\nthe `bloomfilter` object\n\n```python\n>>> from eth_bloom import bloomfilter\n>>> b = bloomfilter()\n>>> b'a value' in b  # check whether a value is present\nfalse\n>>> b.add(b'a value')  # add a single value\n>>> b'a value' in b\ntrue\n>>> int(b)  # cast to an integer\n3458628712844765018311492773359360516229024449585949240367644166080576879632652362184119765613545163153674691520749911733485693171622325900647078772681584616740134230153806267998022370194756399579977294154062696916779055028045657302214591620589415314367270329881298073237757853875497241510733954508399863880080986777555986663988492288946856978031023631618215522505971170427986911575695114157059398791122395379400594948096\n>>> bin(b)  # cast to a binary string\n'0b100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'\n```\n\nyou can also add an iterable of items to a bloom filter.\n\n```python\n>>> b = bloomfilter()\n>>> b'value-a' in b\nfalse\n>>> b'value-b' in b\nfalse\n>>> b.extend([b'value-a', b'value-b'])\n>>> b'value-a' in b\ntrue\n>>> b'value-b' in b\ntrue\n```\n\nyou can initialize a bloom filter from an iterable of byte strings.\n\n```python\n>>> b = bloomfilter.from_iterable([b'value-a', b'value-b'])  # initialize from an iterable of values.\n>>> b'value-a' in b\ntrue\n>>> b'value-b' in b\ntrue\n```\n\nyou can initialize a bloom filter from the integer representation of the bloom bits.\n\n```python\n>>> b = bloomfilter(3458628712844765018311492773359360516229024449585949240367644166080576879632652362184119765613545163153674691520749911733485693171622325900647078772681584616740134230153806267998022370194756399579977294154062696916779055028045657302214591620589415314367270329881298073237757853875497241510733954508399863880080986777555986663988492288946856978031023631618215522505971170427986911575695114157059398791122395379400594948096)\n>>> b'a value' in b\ntrue\n```\n\nyou can also merge bloom filters\n\n```python\n>>> from eth_bloom import bloomfilter\n>>> b1 = bloomfilter()\n>>> b2 = bloomfilter()\n>>> b1.add(b'a')\n>>> b1.add(b'common')\n>>> b2.add(b'b')\n>>> b2.add(b'common')\n>>> b'a' in b1\ntrue\n>>> b'b' in b1\nfalse\n>>> b'common' in b1\ntrue\n>>> b'a' in b2\nfalse\n>>> b'b' in b2\ntrue\n>>> b'common' in b2\ntrue\n>>> b3 = b1 + b2  # using addition\n>>> b'a' in b3\ntrue\n>>> b'b' in b3\ntrue\n>>> b'common' in b3\ntrue\n>>> b4 = b1 | b2  # or using bitwise or\n>>> b'a' in b4\ntrue\n>>> b'b' in b4\ntrue\n>>> b'common' in b4\ntrue\n>>> b1 |= b2  # or using in-place operations (works with += too)\n>>> b'a' in b1\ntrue\n>>> b'b' in b1\ntrue\n>>> b'common' in b1\ntrue\n```\n\n## developer setup\n\nif you would like to hack on eth-bloom, please check out the [snake charmers\ntactical manual](https://github.com/ethereum/snake-charmers-tactical-manual)\nfor information on how we do:\n\n- testing\n- pull requests\n- documentation\n\nwe use [pre-commit](https://pre-commit.com/) to maintain consistent code style. once\ninstalled, it will run automatically with every commit. you can also run it manually\nwith `make lint`. if you need to make a commit that skips the `pre-commit` checks, you\ncan do so with `git commit --no-verify`.\n\n### development environment setup\n\nyou can set up your dev environment with:\n\n```sh\ngit clone git@github.com:ethereum/eth-bloom.git\ncd eth-bloom\nvirtualenv -p python3 venv\n. venv/bin/activate\npython -m pip install -e \".[dev]\"\npre-commit install\n```\n\n### release setup\n\nto release a new version:\n\n```sh\nmake release bump=$$version_part_to_bump$$\n```\n\n#### how to bumpversion\n\nthe version format for this repo is `{major}.{minor}.{patch}` for stable, and\n`{major}.{minor}.{patch}-{stage}.{devnum}` for unstable (`stage` can be alpha or beta).\n\nto issue the next version in line, specify which part to bump,\nlike `make release bump=minor` or `make release bump=devnum`. this is typically done from the\nmaster branch, except when releasing a beta (in which case the beta is released from master,\nand the previous stable branch is released from said branch).\n\nif you are in a beta version, `make release bump=stage` will switch to a stable.\n\nto issue an unstable version when the current version is stable, specify the\nnew version explicitly, like `make release bump=\"--new-version 4.0.0-alpha.1 devnum\"`\n",
+  "docs_url": null,
+  "keywords": "ethereum blockchain evm trie merkle",
+  "license": "mit",
+  "name": "eth-bloom",
+  "package_url": "https://pypi.org/project/eth-bloom/",
+  "project_url": "https://pypi.org/project/eth-bloom/",
+  "project_urls": {
+    "Homepage": "https://github.com/ethereum/eth-bloom"
+  },
+  "release_url": "https://pypi.org/project/eth-bloom/3.0.0/",
+  "requires_dist": [
+    "eth-hash[pycryptodome] >=0.4.0",
+    "build >=0.9.0 ; extra == 'dev'",
+    "bumpversion >=0.5.3 ; extra == 'dev'",
+    "ipython ; extra == 'dev'",
+    "pre-commit >=3.4.0 ; extra == 'dev'",
+    "tox >=4.0.0 ; extra == 'dev'",
+    "twine ; extra == 'dev'",
+    "wheel ; extra == 'dev'",
+    "towncrier <22,>=21 ; extra == 'dev'",
+    "hypothesis >=3.31.2 ; extra == 'dev'",
+    "pytest >=7.0.0 ; extra == 'dev'",
+    "pytest-xdist >=2.4.0 ; extra == 'dev'",
+    "towncrier <22,>=21 ; extra == 'docs'",
+    "hypothesis >=3.31.2 ; extra == 'test'",
+    "pytest >=7.0.0 ; extra == 'test'",
+    "pytest-xdist >=2.4.0 ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8, <4",
+  "summary": "a python implementation of the bloom filter used by ethereum",
+  "version": "3.0.0",
+  "releases": [],
+  "developers": [
+    "snakecharmers@ethereum.org",
+    "the_ethereum_foundation"
+  ],
+  "kwds": "eth_bloom bloom bloomfilter pyversions eth",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_eth_bloom",
+  "homepage": "https://github.com/ethereum/eth-bloom",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_build",
+    "pypi_bumpversion",
+    "pypi_eth_hash",
+    "pypi_hypothesis",
+    "pypi_ipython",
+    "pypi_pre_commit",
+    "pypi_pytest",
+    "pypi_pytest_xdist",
+    "pypi_towncrier",
+    "pypi_tox",
+    "pypi_twine",
+    "pypi_wheel"
+  ]
+}

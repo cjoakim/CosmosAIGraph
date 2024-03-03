@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: science/research",
+    "intended audience :: telecommunications industry",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: multimedia :: sound/audio :: analysis",
+    "topic :: multimedia :: sound/audio :: sound synthesis"
+  ],
+  "description": "# stempeg = stems + ffmpeg\n\n\n[![build status](https://travis-ci.org/faroit/stempeg.svg?branch=master)](https://travis-ci.org/faroit/stempeg)\n[![latest version](https://img.shields.io/pypi/v/stempeg.svg)](https://pypi.python.org/pypi/stempeg)\n[![supported python versions](https://img.shields.io/pypi/pyversions/stempeg.svg)](https://pypi.python.org/pypi/stempeg)\n\npython package to read and write [stem](https://www.native-instruments.com/en/specials/stems/) audio files.\ntechnically, stems are audio containers that combine multiple audio streams and metadata in a single audio file. this makes it ideal to playback multitrack audio, where users can select the audio sub-stream during playback (e.g. supported by vlc). \n\nunder the hood, _stempeg_ uses [ffmpeg](https://www.ffmpeg.org/) for reading and writing multistream audio, optionally [mp4box](https://github.com/gpac/gpac) is used to create stem files that are compatible with native instruments hardware and software.\n\n#### features\n\n- robust and fast interface for ffmpeg to read and write any supported format from/to numpy.\n- reading supports seeking and duration.\n- control container and codec as well as bitrate when compressed audio is written. \n- store multi-track audio within audio formats by aggregate streams into channels (concatenation of pairs of\nstereo channels).\n- support for internal ffmpeg resampling furing read and write.\n- create mp4 stems compatible to native instruments traktor.\n- using multiprocessing to speed up reading substreams and write multiple files.\n\n## installation\n\n### 1. installation of ffmpeg library\n\n_stempeg_ relies on [ffmpeg](https://www.ffmpeg.org/) (>= 3.2 is suggested).\n\nthe installation if ffmpeg differ among operating systems. if you use [anaconda](https://anaconda.org/anaconda/python) you can install ffmpeg on windows/mac/linux using the following command:\n\n```\nconda install -c conda-forge ffmpeg\n```\n\nnote that for better quality encoding it is recommended to install ffmpeg with `libfdk-aac` codec support as following:\n\n* _macos_: use homebrew: `brew install ffmpeg --with-fdk-aac`\n* _ubuntu/debian linux_: see installation script [here](https://gist.github.com/rafaelbiriba/7f2d7c6f6c3d6ae2a5cb).\n* _docker_: `docker pull jrottenberg/ffmpeg`\n\n### 1a. (optional) installation of mp4box\n\nif you plan to write stem files with full compatibility with native instruments traktor dj hardware and software, you need to install [mp4box](https://github.com/gpac/gpac).\n\n* _macos_: use homebrew: `brew install gpac`\n* _ubuntu/debian linux_: `apt-get install gpac`\n\nfurther installation instructions for all operating systems can be found [here](https://gpac.wp.imt.fr/downloads/).\n\n### 2. installation of the _stempeg_ package\n\na) installation via pypi using pip\n\n```\npip install stempeg\n```\n\nb) installation via conda\n\n```\nconda install -c conda-forge stempeg\n```\n\n## usage\n\n![stempeg_scheme](https://user-images.githubusercontent.com/72940/102477776-16960a00-405d-11eb-9389-1ea9263cf99d.png)\n\n### reading audio\n\nstempeg can read multi-stream and single stream audio files, thus, it can replace your normal audio loaders for 1d or 2d (mono/stereo) arrays.\n\nby default [`read_stems`](https://faroit.com/stempeg/read.html#stempeg.read.read_stems), assumes that multiple substreams can exit (default `reader=stempeg.streamsreader()`). \nto support multi-stream, even when the audio container doesn't support multiple streams\n(e.g. wav), streams can be mapped to multiple pairs of channels. in that\ncase, `reader=stempeg.channelsreader()`, can be passed. also see:\n[`stempeg.channelswriter`](https://faroit.com/stempeg/write.html#stempeg.write.channelswriter).\n\n```python\nimport stempeg\ns, rate = stempeg.read_stems(stempeg.example_stem_path())\n```\n\n`s` is a numpy tensor that includes the time domain signals scaled to `[-1..1]`. the shape is `(stems, samples, channels)`. an detailed documentation of the `read_stems` can [be viewed here](https://faroit.com/stempeg/read.html#stempeg.read.read_stems). note, a small stems excerpt from [the easton ellises](https://www.heise.de/ct/artikel/c-t-remix-wettbewerb-the-easton-ellises-2542427.html#englisch), licensed under creative commons cc by-nc-sa 3.0 is included and can be accessed using `stempeg.example_stem_path()`.\n\n#### reading individual streams\n\nindividual substreams of the stem file can be read by passing the corresponding stem id (starting from 0):\n\n```python\ns, rate = stempeg.read_stems(stempeg.example_stem_path(), stem_id=[0, 1])\n```\n\n#### read excerpts (set seek position)\n\nexcerpts from the stem instead of the full file can be read by providing start (`start`) and duration (`duration`) in seconds to `read_stems`:\n\n```python\ns, _ = stempeg.read_stems(stempeg.example_stem_path(), start=1, duration=1.5)\n# read from second 1.0 to second 2.5\n```\n\n### writing audio\n\nas seen in the flow chart above, stempeg supports multiple ways to write multi-track audio.\n\n#### write multi-channel audio\n\n[`stempeg.write_audio`](http://faroit.com/stempeg/write.html#stempeg.write.write_audio) can be used for single-stream, multi-channel audio files.\nstempeg wraps a number of ffmpeg parameter to resample the output sample rate and adjust the audio codec, if necessary.\n\n```python\nstempeg.write_audio(path=\"out.mp4\", data=s, sample_rate=44100.0, output_sample_rate=48000.0, codec='aac', bitrate=256000)\n```\n\n#### writing multi-stream audio\n\nwriting stem files from a numpy tensor can done with.\n\n```python\nstempeg.write_stems(path=\"output.stem.mp4\", data=s, sample_rate=44100, writer=stempeg.streamswriter())\n```\n\nas seen in the flow chart above, stempeg supports multiple ways to write multi-stream audio. \neach of the method has different number of parameters. to select a method one of the following setting and be passed:\n\n* `stempeg.fileswriter`\n    stems will be saved into multiple files. for the naming,\n    `basename(path)` is ignored and just the\n    parent of `path`  and its `extension` is used.\n* `stempeg.channelswriter`\n    stems will be saved as multiple channels.\n* `stempeg.streamswriter` **(default)**.\n    stems will be saved into a single a multi-stream file.\n* `stempeg.nistemswriter`\n    stem will be saved into a single multistream audio.\n    additionally native instruments stems compabible\n    metadata is added. this requires the installation of\n    `mp4box`. \n\n> :warning: __warning__: muxing stems using _ffmpeg_ leads to multi-stream files not compatible with native instrument hardware or software. please use [mp4box](https://github.com/gpac/gpac) if you use the `stempeg.nistemswriter()`\n\nfor more information on writing stems, see  [`stempeg.write_stems`](https://faroit.com/stempeg/write.html#stempeg.write.write_stems).\nan example that documents the advanced features of the writer, see [readwrite.py](/examples/readwrite.py).\n\n### use the command line tools\n\n_stempeg_ provides a convenient cli tool to convert a stem to multiple wavfiles. the `-s` switch sets the start, the `-t` switch sets the duration.\n\n```bash\nstem2wav the easton ellises - falcon 69.stem.mp4 -s 1.0 -t 2.5\n```\n\n## f.a.q\n\n#### how can i improve the reading performance?\n\n`read_stems` is called repeatedly, it always does two system calls, one for getting the file info and one for the actual reading speed this up you could provide the `info` object to `read_stems` if the number of streams, the number of channels and the sample rate is identical.\n\n```python\nfile_path = stempeg.example_stem_path()\ninfo = stempeg.info(file_path)\ns, _ = stempeg.read_stems(file_path, info=info)\n```\n\n#### how can the quality of the encoded stems be increased\n\nfor __encoding__ it is recommended to use the fraunhofer aac encoder (`libfdk_aac`) which is not included in the default ffmpeg builds. note that the conda version currently does _not_ include `fdk-aac`. if `libfdk_aac` is not installed _stempeg_ will use the default `aac` codec which will result in slightly inferior audio quality.\n\n\n",
+  "docs_url": null,
+  "keywords": "stems audio reader",
+  "license": "",
+  "name": "stempeg",
+  "package_url": "https://pypi.org/project/stempeg/",
+  "project_url": "https://pypi.org/project/stempeg/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/faroit/stempeg/issues",
+    "Homepage": "http://github.com/faroit/stempeg"
+  },
+  "release_url": "https://pypi.org/project/stempeg/0.2.3/",
+  "requires_dist": [
+    "numpy (>=1.6)",
+    "ffmpeg-python (>=0.2.0)",
+    "pytest ; extra == 'tests'"
+  ],
+  "requires_python": "",
+  "summary": "read and write stem/multistream audio files",
+  "version": "0.2.3",
+  "releases": [],
+  "developers": [
+    "fabian",
+    "mail@faroit.com"
+  ],
+  "kwds": "stempeg read_stems stempeg_scheme _stempeg_ _ffmpeg_",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_stempeg",
+  "homepage": "http://github.com/faroit/stempeg",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_ffmpeg_python",
+    "pypi_numpy",
+    "pypi_pytest"
+  ]
+}

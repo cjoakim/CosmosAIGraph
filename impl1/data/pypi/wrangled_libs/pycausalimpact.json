@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: unix",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: scientific/engineering"
+  ],
+  "description": "# causal impact [![build status](https://travis-ci.com/dafiti/causalimpact.svg?branch=master)](https://travis-ci.com/dafiti/causalimpact) [![coverage status](https://coveralls.io/repos/github/dafiti/causalimpact/badge.svg?branch=master)](https://coveralls.io/github/dafiti/causalimpact?branch=master) [![pypi version](https://badge.fury.io/py/pycausalimpact.svg)](https://badge.fury.io/py/pycausalimpact) [![pyversions](https://img.shields.io/pypi/pyversions/pycausalimpact.svg)](https://pypi.python.org/pypi/pycausalimpact) [![github license](https://img.shields.io/github/license/dafiti/causalimpact.svg)](https://github.com/dafiti/causalimpact/blob/master/license)\n\npython causal impact (or causal inference) implementation of [google's](https://github.com/google/causalimpact) model with all functionalities fully ported and tested.\n\n## how it works\nthe main goal of the algorithm is to infer  the expected effect a given intervention (or any action) had on some response variable by analyzing differences between expected and observed time series data.\n\ndata is divided in two parts: the first one is what is known as the \"pre-intervention\" period and the concept of [bayesian structural time series](https://en.wikipedia.org/wiki/bayesian_structural_time_series)  is used to fit a model that best explains what has been observed. the fitted model is used in the second part of data (\"post-intervention\" period) to forecast what the response would look like had the intervention not taken place. the inferences are based on the differences between observed response to the predicted one which yields the absolute and relative expected effect the intervention caused on data.\n\nthe model makes as assumption (which is recommended to be confirmed in your data) that the response variable can be precisely modeled by a linear regression with what is known as \"covariates\" (or `x`) that **must not** be affected by the intervention that took place (for instance, if a company wants to infer what impact a given marketing campaign will have on its \"revenue\", then its daily \"visits\" cannot be used as a covariate as probably the total visits might be affected by the campaign. \n\nit is more commonly used to infer the impact that marketing interventions have on businesses such as the expected revenue associated to a given campaign or even to assert more precisely the revenue a given channel brings in by completely turning it off (also known as \"hold-out\" tests). it's important to note though that the model can be extensively used in different areas and subjects; any intervention on time series data can potentially be modeled and inferences be made upon observed and predicted data.\n\nplease refer to <a href=http://nbviewer.jupyter.org/github/dafiti/causalimpact/blob/master/examples/getting_started.ipynb>getting started</a> in the `examples` folder for more information.\n\n## installation\n\n    pip install pycausalimpact\n\n## requirements\n\n - python{2.7, 3.6, 3.7, 3.8} \\*\n - numpy\n - scipy\n - statsmodels\n - matplotlib\n - jinja2\n\n\\* **we no longer support python2.7!** please refer to the tag `0.0.16` (`pip install pycausalimpact==0.0.16`) for the latest available supported version.\n\n## getting started\nwe recommend this [presentation](https://www.youtube.com/watch?v=gtgzfcltmm8) by kay brodersen (one of the creators of the causal impact implementation in r).\n\nwe also created this introductory [ipython notebook](http://nbviewer.jupyter.org/github/dafiti/causalimpact/blob/master/examples/getting_started.ipynb) with examples of how to use this package.\n\n### simple example\nhere's a simple example (which can also be found in the original google's r implementation) running in python:\n\n```python\nimport numpy as np\nimport pandas as pd\nfrom statsmodels.tsa.arima_process import armaprocess\nfrom causalimpact import causalimpact\n\n\nnp.random.seed(12345)\nar = np.r_[1, 0.9]\nma = np.array([1])\narma_process = armaprocess(ar, ma)\nx = 100 + arma_process.generate_sample(nsample=100)\ny = 1.2 * x + np.random.normal(size=100)\ny[70:] += 5\n\ndata = pd.dataframe({'y': y, 'x': x}, columns=['y', 'x'])\npre_period = [0, 69]\npost_period = [70, 99]\n\nci = causalimpact(data, pre_period, post_period)\nprint(ci.summary())\nprint(ci.summary(output='report'))\nci.plot()\n```\n\n![alt text](https://raw.githubusercontent.com/dafiti/causalimpact/master/examples/ci_plot.png)\n\n## differences between python and r packages\none thing you'll notice when using this package is that sometimes results will converge to be similar to the r package output and at times it may yield different conclusions.\n\nthis is a quite complex topic and we have discussed it more throroughly on the issues number [#34](https://github.com/dafiti/causalimpact/issues/34), [#37](https://github.com/dafiti/causalimpact/issues/37) and [#40](https://github.com/dafiti/causalimpact/issues/40) which we highly recommend the reading.\n\nin a nutshell, python implementation relies on [statsmodels](https://github.com/statsmodels/statsmodels) which uses a classical kalman filter approach for solving the statespace equations whereas r\\`s uses a bayesian approach (from [bsts](https://github.com/cran/bsts) package) with a stochastic kalman filter technique; both algorithms are expected to converge to similar final statespace solution [(ref)](https://stackoverflow.com/questions/57300211/local-level-model-not-fully-optimizing-irregular-state/57316141?noredirect=1#comment101157526_57316141).\n\nstill, despite the similarities, both packages uses different assumptions for prior initalizations as well as for steps involved in the optimization process: while in r we find an approach that relies on user prior knowledge, python uses classical statistical techniques aiming to maximize the likelihood function expressed in terms of the structural time series components.\n\nas we discuss in the previously mentioned issues, it's hard to tell which is right or \"more right\"; each package has its own assumptions and its own techniques making it up for the final user to decide what is appropriate or not. we recommend comparing results from both packages in your use cases to have a more general idea whether there's convergence in conclusions or not.\n\nas a final note, when using this python package, **we highly recommend setting the prior as none** like so:\n\n    ci = causalimpact(data, pre_period, post_period, prior_level_sd=none)\n\nthis will let statsmodel itself do the optimization for the prior on the local level component. if you are confident that your local level prior should be a given specific value (say `0.01`), then it's probably ok to use it there, otherwise you run the risk of obtaining sub-optimal solutions as a result.\n\n## contributing, bugs, questions\ncontributions are more than welcome! if you want to propose new changes, fix bugs or improve something feel free to fork the repository and send us a pull request. you can also open new [`issues`](https://github.com/dafiti/causalimpact/issues) for reporting bugs and general problems.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pycausalimpact",
+  "package_url": "https://pypi.org/project/pycausalimpact/",
+  "project_url": "https://pypi.org/project/pycausalimpact/",
+  "project_urls": {
+    "Homepage": "https://github.com/dafiti/causalimpact"
+  },
+  "release_url": "https://pypi.org/project/pycausalimpact/0.1.1/",
+  "requires_dist": [
+    "numpy",
+    "scipy",
+    "statsmodels (>=0.11.0)",
+    "matplotlib (>=2.2.3)",
+    "jinja2 (>=2.10)",
+    "ipython ; extra == 'docs'",
+    "jupyter ; extra == 'docs'",
+    "pytest ; extra == 'testing'",
+    "pytest-cov ; extra == 'testing'",
+    "mock ; extra == 'testing'",
+    "tox ; extra == 'testing'"
+  ],
+  "requires_python": "",
+  "summary": "python version of google's causal impact model",
+  "version": "0.1.1",
+  "releases": [],
+  "developers": [
+    "willian.fuks@gmail.com",
+    "willian_fuks"
+  ],
+  "kwds": "pyversions pycausalimpact causalimpact pypi causal",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pycausalimpact",
+  "homepage": "https://github.com/dafiti/causalimpact",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_ipython",
+    "pypi_jinja2",
+    "pypi_jupyter",
+    "pypi_matplotlib",
+    "pypi_mock",
+    "pypi_numpy",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_scipy",
+    "pypi_statsmodels",
+    "pypi_tox"
+  ]
+}

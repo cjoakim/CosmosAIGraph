@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# sshfs\n\nsshfs is an implementation of [fsspec](https://github.com/intake/filesystem_spec/) for\nthe sftp protocol using [asyncssh](https://github.com/ronf/asyncssh).\n\n## features\n\n- a complete implementation of the fsspec protocol through sftp\n- supports features outside of the sftp (e.g server side copy through ssh command execution)\n- quite fast (compared to alternatives like paramiko)\n- builtin channel management\n- async! (thanks to `asyncssh`)\n\n## tutorial\n\ninstall the `sshfs` from pypi or the conda-forge. this will install `fsspec`\nand register `sshfs` for `ssh://` urls, so you can open files using:\n\n```py\nfrom fsspec import open\n\nwith open('ssh://[user@]host[:port]/path/to/file', \"w\") as file:\n    file.write(\"hello world!\")\n\nwith open('ssh://[user@]host[:port]/path/to/file', \"r\") as file:\n    print(file.read())\n```\n\nfor more operations, you can use the `sshfilesystem` class directly:\n\n```py\nfrom sshfs import sshfilesystem\n```\n\nto connect with a password, you can simply specify `username`/`password`\nas keyword arguments and connect to the host of your choosing;\n\n```py\n# connect with a password\nfs = sshfilesystem(\n    '127.0.0.1',\n    username='sam',\n    password='fishing'\n)\n```\n\nif you want to use a private key to authenticate, you can either\npass a string pointing to the path of the key, or give a list of\nthem to be tried:\n\n```py\n# or with a private key\nfs = sshfilesystem(\n    'ssh.example.com',\n    client_keys=['/path/to/ssh/key']\n)\n```\n\nnote: you can also pass `client_keys` as an argument to `fsspec.open`.\n\nall operations and their descriptions are specified [here](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.spec.abstractfilesystem).\nhere are a few example calls you can make, starting with `info()` which allows you to retrieve the metadata about given path;\n\n```py\n>>> details = fs.info('/tmp')\n>>> print(f'{details[\"name\"]!r} is a {details[\"type\"]}!')\n'/tmp/' is a directory!\n>>>\n>>> crontab = fs.info('/etc/crontab')\n>>> print(f'{crontab[\"name\"]!r} is a {crontab[\"type\"]}!')\n'/etc/crontab' is a file!\n```\n\nyou can also create new files through either putting a local file with `put_file` or opening a file in write mode;\n\n```py\n>>> with fs.open('/tmp/message.dat', 'wb') as stream:\n...     stream.write(b'super secret messsage!')\n...\n```\n\nand either download it through `get_file` or simply read it on the fly with opening it;\n\n```py\n>>> with fs.open('/tmp/message.dat') as stream:\n...     print(stream.read())\n...\nb'super secret messsage!'\n```\n\nthere are also a lot of other basic filesystem operations, such as `mkdir`, `touch` and `find`;\n\n```py\n>>> fs.mkdir('/tmp/dir')\n>>> fs.mkdir('/tmp/dir/eggs')\n>>> fs.touch('/tmp/dir/spam')\n>>> fs.touch('/tmp/dir/eggs/quux')\n>>>\n>>> for file in fs.find('/tmp/dir'):\n...     print(file)\n...\n/tmp/dir/eggs/quux\n/tmp/dir/spam\n```\n\nif you want to list a directory but not it's children, you can use `ls()`;\n\n```py\n>>> [(detail['name'], detail['type']) for detail in fs.ls('/tmp/dir', detail=true)]\n[('/tmp/dir/spam', 'file'), ('/tmp/dir/eggs', 'directory')]\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "sshfs",
+  "package_url": "https://pypi.org/project/sshfs/",
+  "project_url": "https://pypi.org/project/sshfs/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/sshfs/2023.10.0/",
+  "requires_dist": [
+    "fsspec >=2021.8.1",
+    "asyncssh <3,>=2.11.0",
+    "asyncssh[bcrypt] ; extra == 'bcrypt'",
+    "asyncssh[fido2] ; extra == 'fido2'",
+    "asyncssh[gssapi] ; extra == 'gssapi'",
+    "asyncssh[libnacl] ; extra == 'libnacl'",
+    "asyncssh[python-pkcs11] ; extra == 'pkcs11'",
+    "asyncssh[pyopenssl] ; extra == 'pyopenssl'",
+    "asyncssh[pywin32] ; extra == 'pywin32'"
+  ],
+  "requires_python": "",
+  "summary": "ssh filesystem -- async ssh/sftp backend for fsspec",
+  "version": "2023.10.0",
+  "releases": [],
+  "developers": [],
+  "kwds": "sshfs sftp sshfilesystem asyncssh ssh",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_sshfs",
+  "homepage": "",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_asyncssh",
+    "pypi_fsspec"
+  ]
+}

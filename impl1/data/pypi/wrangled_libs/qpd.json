@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# query pandas-like dataframes using sql\n\nqpd let you run the same sql (`select` for now) statements on different computing frameworks with pandas-like interfaces.\ncurrently, it support [pandas](https://pandas.pydata.org/), [dask](https://dask.org/) and [ray](https://ray.io/)\n(via [modin](https://github.com/modin-project/modin) on ray).\n\nqpd directly translates sql into pandas-like operations to run on the backend computing frameworks, so it can be significantly\nfaster than some other approaches, for example, to dump pandas dataframes into sqlite, run sql and convert the result back into\na pandas dataframe. however, the top priorities of qpd are **correctness** and **consistency**. it ensures the results of\nimplemented sql features following sql convention, and it ensures consistent behavior regardless of backend computing frameworks.\na typical case is `groupby().agg()`. in pandas or pandas like frameworks, if any of the group keys is null, the default\nbehavior is to drop that group, however, in sql they are not dropped. qpd follows the sql way.\n\nqpd syntax is a subset of the intersection of [spark sql](https://spark.apache.org/sql/) and [sqlite](https://www.sqlite.org/index.html).\nthe correctness and consistency are extensively tested against sqlite. practically, spark sql and sqlite are highly consistent\non both syntax and behavior. so, in other words, qpd enables you to run common sqls and get the same result on pandas, sqlite, spark, dask,\nray and other backends that qpd will support in the future.\n\nsql is one of the most important data processing languages. it is very *scale agnostic*, and one of the major goals of the fugue project\nis to enrich sql and make sql *platform agnostic*. qpd, as a subproject of fugue, focuses on running sql on pandas-like frameworks, it is\nan essential component to achieve the ultimate goal.\n\n## installation\n\nqpd can be installed from pypi:\n\n```bash\npip install qpd # install qpd + pandas\n```\n\nif you want to use ray or dask as the backend, you will need to install qpd with one of the targets:\n\n```bash\npip install qpd[dask] # install qpd + dask[dataframe]\npip install qpd[ray] # install qpd + ray\npip install qpd[all] # install all dependencies above\n```\n\n## using qpd\n\n### on pandas\n\n```python\nfrom qpd_pandas import run_sql_on_pandas\nimport pandas as pd\n\ndf = pd.dataframe([[0,1],[2,3],[0,5]], columns=[\"a\",\"b\"])\nres = run_sql_on_pandas(\"select a, sum(b) as b, count(*) as c from df group by a\", {\"df\": df})\nprint(res)\n```\n\n### on dask\n\nplease read [this](https://distributed.dask.org/en/latest/quickstart.html) to learn the best\npractice for initializing dask.\n\n```python\nfrom qpd_dask import run_sql_on_dask\nimport dask.dataframe as pd\nimport pandas\n\ndf = pd.from_pandas(pandas.dataframe([[0,1],[2,3],[0,5]], columns=[\"a\",\"b\"]))\nres = run_sql_on_dask(\"select a, sum(b) as b, count(*) as c from df group by a\", {\"df\": df})\nprint(res.compute())  # dask dataframe is lazy, you need to call compute\n```\n\n### on ray\n\nplease read [this](https://docs.ray.io/en/ray-0.3.1/api.html#starting-ray) to learn the best\npractice for initializing ray. and read [this](https://modin.readthedocs.io/en/latest/using_modin.html)\nfor initializing modin + ray.\n\n*please don't use dask as modin backend if you want to use qpd, it's not tested*\n\n```python\nimport ray\nray.init()\n\nfrom qpd_ray import run_sql_on_ray\nimport modin.pandas as pd\n\ndf = pd.dataframe([[0,1],[2,3],[0,5]], columns=[\"a\",\"b\"])\nres = run_sql_on_ray(\"select a, sum(b) as b, count(*) as c from df group by a\", {\"df\": df})\nprint(res)\n```\n\n### ignoring case in sql\n\nby default, qpd requires users to use upper cased keywords, otherwise syntax errors will be raised.\nhowever if you really don't like this behavior, you can turn it off, the parameter is `ignore_case`,\nhere is an example:\n\n```python\nfrom qpd_pandas import run_sql_on_pandas\nimport pandas as pd\n\ndf = pd.dataframe([[0,1],[2,3],[0,5]], columns=[\"a\",\"b\"])\nres = run_sql_on_pandas(\n    \"select a, sum(b) as b, count(*) as c from df group by a\",\n    {\"df\": df}, ignore_case=true)\nprint(res)\n```\n\n\n## things to clarify\n\n### qpd on spark (koalas)?\nno, that will not happen. qpd is using spark sql\n[syntax file](https://github.com/apache/spark/blob/master/sql/catalyst/src/main/antlr4/org/apache/spark/sql/catalyst/parser/sqlbase.g4).\nspark sql is highly optimized. if we create a koalas backend, correctness and consistency can\nbe guaranteed, but there will be no performance advantage. so for spark, please use spark sql.\nif you use fugue sql on spark backend, it will also directly use spark to run the sql statements.\nwe don't see the value to make qpd run on spark.\n\n\n## update history\n\n* 0.4.4: remove triad version constraint\n* 0.4.3: fix packing issue\n* 0.4.2: refactor to use the latest triad, fix packaging issues\n* 0.4.1: make pandas 2 compatible\n* 0.4.0: support arbitrary column name\n* 0.2.6: update pandas indexer import\n* 0.2.5: update antlr to 4.9\n* 0.2.4: fix a bug: set operations will alter the input dataframe to add columns\n* 0.2.3: refactor and extract out pandaslikeutils class\n* 0.2.2: accept constant select without `from`, `select 1 as a, 'b' as b`\n* <= 0.2.1: pandas, dask, ray sql support\n\n\n",
+  "docs_url": null,
+  "keywords": "pandas sql",
+  "license": "apache-2.0",
+  "name": "qpd",
+  "package_url": "https://pypi.org/project/qpd/",
+  "project_url": "https://pypi.org/project/qpd/",
+  "project_urls": {
+    "Homepage": "http://github.com/goodwanghan/qpd"
+  },
+  "release_url": "https://pypi.org/project/qpd/0.4.4/",
+  "requires_dist": [
+    "pandas (>=1.2.0)",
+    "triad (>=0.9.0)",
+    "adagio",
+    "antlr4-python3-runtime (<4.12,>=4.11.1)",
+    "dask[dataframe,distributed] ; extra == 'all'",
+    "cloudpickle (>=1.4.0) ; extra == 'all'",
+    "dask[dataframe,distributed] ; extra == 'dask'",
+    "cloudpickle (>=1.4.0) ; extra == 'dask'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "query pandas using sql",
+  "version": "0.4.4",
+  "releases": [],
+  "developers": [
+    "goodwanghan@gmail.com",
+    "han_wang"
+  ],
+  "kwds": "run_sql_on_pandas qpd_pandas from_pandas pandas pandaslikeutils",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_qpd",
+  "homepage": "http://github.com/goodwanghan/qpd",
+  "release_count": 23,
+  "dependency_ids": [
+    "pypi_adagio",
+    "pypi_antlr4_python3_runtime",
+    "pypi_cloudpickle",
+    "pypi_dask",
+    "pypi_pandas",
+    "pypi_triad"
+  ]
+}

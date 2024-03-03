@@ -1,0 +1,41 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# pyterminate\n[![ci](https://github.com/jeremyephron/pyterminate/actions/workflows/ci.yml/badge.svg)](https://github.com/jeremyephron/pyterminate/actions/workflows/ci.yml)\n[![pypi downloads](https://img.shields.io/pypi/dm/pyterminate.svg?label=pypi%20downloads)](\nhttps://pypi.org/project/pyterminate/)\n\nreliably run cleanup code upon program termination.\n\n## table of contents\n\n- [why does this exist?](#why-does-this-exist)\n- [what can it do?](#what-can-it-do)\n- [quickstart](#quickstart)\n- [tips, tricks, and other notes](#tips-tricks-and-other-notes)\n  - [duplicate registration after forking](#duplicate-registration-after-forking)\n  - [multiprocessing start method](#multiprocessing-start-method)\n\n## why does this exist?\n\nthere are currently two builtin modules for handling termination behavior\nin python: [`atexit`](https://docs.python.org/3/library/atexit.html) and\n[`signal`](https://docs.python.org/3/library/signal.html). however, using them\ndirectly leads to a lot of repeated boilerplate code, and some non-obvious\nbehaviors that can be easy to accidentally get wrong, which is why i wrote this\npackage.\n\nthe `atexit` module is currently insufficient since it fails to handle signals.\nthe `signal` module is currently insufficient since it fails to handle normal\nor exception-caused exits.\n\ntypical approaches would include frequently repeated code registering a\nfunction both with `atexit` and on desired signals. however, extra care\nsometimes needs to be taken to ensure the function doesn't run twice (or is\nidempotent), and that a previously registered signal handler gets called.\n\n## what can it do?\n\nthis packages does or allows the following behavior:\n\n- register a function to be called on program termination\n    - always on normal or exception-caused termination: `@pyterminate.register`\n    - configurable for any desired signals:<br/>\n      `@pyterminate.register(signals=(signal.sigint, signal.sigabrt))`\n\n- allows multiple functions to be registered\n\n- will call previous registered signal handlers\n\n- allows zero or non-zero exit codes on captured signals:<br/>\n  `@pyterminate.register(successful_exit=true)`\n\n- allows suppressing or throwing of `keyboardinterrupt` on `sigint`:<br/>\n  `@pyterminate.register(keyboard_interrupt_on_sigint=true)`\n    - you may want to throw a `keyboardinterrupt` if there is additional\n      exception handling defined.\n\n- allows functions to be unregistered: `pyterminate.unregister(func)`\n\n- ignore requested signals while registered function is executing, ensuring\n  that it is not interrupted.\n  - it's important to note that `sigkill` and calls to `os._exit()` cannot be\n    ignored.\n\n## quickstart\n\n```bash\npython3 -m pip install pyterminate\n```\n\n```python3\nimport signal\n\nimport pyterminate\n\n\n@pyterminate.register(\n    args=(none,),\n    kwargs={\"b\": 42},\n    signals=(signal.sigint, signal.sigterm),\n    successful_exit=true,\n    keyboard_interrupt_on_sigint=true\n)\ndef cleanup(*args, **kwargs):\n    ...\n\n# or\n\npyterminate.register(cleanup, ...)\n```\n\n## tips, tricks, and other notes\n\n### duplicate registration after forking\n\nsince creating a new process through forking duplicates the entire process,\nany previously registered functions will also be registered in the forked\nprocess. this is an obvious consequence of forking, but important to \nconsider if the registered functions are accessing shared resources. to \navoid this behavior, you can unregister the function at the beginning of\nthe forked process, gate based on the process' id, or use any other \nsynchronization method that's appropriate.\n\n### multiprocessing start method\n\nwhen starting processes with python's\n[`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html)\nmodule, the `fork` method will fail to call registered functions on exit, since\nthe process is ended with `os._exit()` internally, which bypasses all cleanup\nand immediately kills the process.\n\none way of getting around this are using the `\"spawn\"` start method if that\nis acceptable for your application. another method is to register your function\nto a user-defined signal, and wrap your process code in try-except block,\nraising the user-defined signal at the end. `pyterminate` provides this\nfunctionality in the form of the `exit_with_signal` decorator, which simply\nwraps the decorated function in a try-finally block, and raises the given\nsignal. example usage:\n\n```python3\nimport multiprocessing as mp\nimport signal\n\nimport pyterminate\n\n\n@pyterminate.exit_with_signal(signal.sigusr1)\ndef run_process():\n\n    @pyterminate.register(signals=[signal.sigusr1, signal.sigint, signal.sigterm])\n    def cleanup():\n        ...\n\n    ...\n\n\nif __name__ == \"__main__\"\n    mp.set_start_method(\"fork\")\n\n    proc = mp.process(target=run_process)\n    proc.start()\n\n    try:\n        proc.join(timeout=300)\n    except timeouterror:\n        proc.terminate()\n        proc.join()\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pyterminate",
+  "package_url": "https://pypi.org/project/pyterminate/",
+  "project_url": "https://pypi.org/project/pyterminate/",
+  "project_urls": {
+    "Homepage": "https://github.com/jeremyephron/pyterminate"
+  },
+  "release_url": "https://pypi.org/project/pyterminate/0.0.8/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "exit programs gracefully.",
+  "version": "0.0.8",
+  "releases": [],
+  "developers": [
+    "jeremy_ephron",
+    "jeremye@cs.stanford.edu"
+  ],
+  "kwds": "pyterminate cleanup pypi run_process multiprocessing",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pyterminate",
+  "homepage": "https://github.com/jeremyephron/pyterminate",
+  "release_count": 6,
+  "dependency_ids": []
+}

@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "\n# microsoft authentication extensions for python\n\nthe microsoft authentication extensions for python offers secure mechanisms for client applications to perform cross-platform token cache serialization and persistence. it gives additional support to the [microsoft authentication library for python (msal)](https://github.com/azuread/microsoft-authentication-library-for-python).\n\nmsal python supports an in-memory cache by default and provides the [serializabletokencache](https://msal-python.readthedocs.io/en/latest/#msal.serializabletokencache) to perform cache serialization. you can read more about this in the msal python [documentation](https://docs.microsoft.com/en-us/azure/active-directory/develop/msal-python-token-cache-serialization). developers are required to implement their own cache persistance across multiple platforms and microsoft authentication extensions makes this simpler.\n\nthe supported platforms are windows, mac and linux.\n- windows - [dpapi](https://docs.microsoft.com/en-us/dotnet/standard/security/how-to-use-data-protection) is used for encryption.\n- mac - the mac keychain is used.\n- linux - [libsecret](https://wiki.gnome.org/projects/libsecret) is used for encryption.\n\n> note: it is recommended to use this library for cache persistance support for public client applications such as desktop apps only. in web applications, this may lead to scale and performance issues. web applications are recommended to persist the cache in session. take a look at this [webapp sample](https://github.com/azure-samples/ms-identity-python-webapp).\n\n## installation\n\nyou can find microsoft authentication extensions for python on [pypi](https://pypi.org/project/msal-extensions/).\n1. if you haven't already, [install and/or upgrade the pip](https://pip.pypa.io/en/stable/installing/)\n   of your python environment to a recent version. we tested with pip 18.1.\n2. run `pip install msal-extensions`.\n\n## versions\n\nthis library follows [semantic versioning](http://semver.org/).\n\nyou can find the changes for each version under\n[releases](https://github.com/azuread/microsoft-authentication-extensions-for-python/releases).\n\n## usage\n\n### creating an encrypted token cache file to be used by msal\n\nthe microsoft authentication extensions library provides the `persistedtokencache` which accepts a platform-dependent persistence instance. this token cache can then be used to instantiate the `publicclientapplication` in msal python.\n\nthe token cache includes a file lock, and auto-reload behavior under the hood.\n\n\n\nhere is an example of this pattern for multiple platforms (taken from the complete [sample here](https://github.com/azuread/microsoft-authentication-extensions-for-python/blob/dev/sample/token_cache_sample.py)):\n\n```python\ndef build_persistence(location, fallback_to_plaintext=false):\n    \"\"\"build a suitable persistence instance based your current os\"\"\"\n    try:\n        return build_encrypted_persistence(location)\n    except:\n        if not fallback_to_plaintext:\n            raise\n        logging.warning(\"encryption unavailable. opting in to plain text.\")\n        return filepersistence(location)\n\npersistence = build_persistence(\"token_cache.bin\")\nprint(\"type of persistence: {}\".format(persistence.__class__.__name__))\nprint(\"is this persistence encrypted?\", persistence.is_encrypted)\n\ncache = persistedtokencache(persistence)\n```\nnow you can use it in an msal application like this:\n```python\napp = msal.publicclientapplication(\"my_client_id\", token_cache=cache)\n```\n\n### creating an encrypted persistence file to store your own data\n\nhere is an example of this pattern for multiple platforms (taken from the complete [sample here](https://github.com/azuread/microsoft-authentication-extensions-for-python/blob/dev/sample/persistence_sample.py)):\n\n```python\ndef build_persistence(location, fallback_to_plaintext=false):\n    \"\"\"build a suitable persistence instance based your current os\"\"\"\n    try:\n        return build_encrypted_persistence(location)\n    except:  # pylint: disable=bare-except\n        if not fallback_to_plaintext:\n            raise\n        logging.warning(\"encryption unavailable. opting in to plain text.\")\n        return filepersistence(location)\n\npersistence = build_persistence(\"storage.bin\", fallback_to_plaintext=false)\nprint(\"type of persistence: {}\".format(persistence.__class__.__name__))\nprint(\"is this persistence encrypted?\", persistence.is_encrypted)\n\ndata = {  # it can be anything, here we demonstrate an arbitrary json object\n    \"foo\": \"hello world\",\n    \"bar\": \"\",\n    \"service_principle_1\": \"blah blah...\",\n    }\n\npersistence.save(json.dumps(data))\nassert json.loads(persistence.load()) == data\n```\n\n## python version support policy\n\npython versions which are 6 months older than their\n[end-of-life cycle defined by python software foundation (psf)](https://devguide.python.org/versions/#versions)\nwill not receive new feature updates from this library.\n\n\n## community help and support\n\nwe leverage stack overflow to work with the community on supporting azure active directory and its sdks, including this one!\nwe highly recommend you ask your questions on stack overflow (we're all on there!).\nalso browse existing issues to see if someone has had your question before.\n\nwe recommend you use the \"msal\" tag so we can see it!\nhere is the latest q&a on stack overflow for msal:\n[http://stackoverflow.com/questions/tagged/msal](http://stackoverflow.com/questions/tagged/msal)\n\n\n## contributing\n\nall code is licensed under the mit license and we triage actively on github.\n\nthis project welcomes contributions and suggestions.  most contributions require you to agree to a\ncontributor license agreement (cla) declaring that you have the right to, and actually do, grant us\nthe rights to use your contribution. for details, visit https://cla.microsoft.com.\n\nwhen you submit a pull request, a cla-bot will automatically determine whether you need to provide\na cla and decorate the pr appropriately (e.g., label, comment). simply follow the instructions\nprovided by the bot. you will only need to do this once across all repos using our cla.\n\n\n## we value and adhere to the microsoft open source code of conduct\n\nthis project has adopted the [microsoft open source code of conduct](https://opensource.microsoft.com/codeofconduct/). for more information see the [code of conduct faq](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "msal-extensions",
+  "package_url": "https://pypi.org/project/msal-extensions/",
+  "project_url": "https://pypi.org/project/msal-extensions/",
+  "project_urls": {
+    "Changelog": "https://github.com/AzureAD/microsoft-authentication-extensions-for-python/releases"
+  },
+  "release_url": "https://pypi.org/project/msal-extensions/1.1.0/",
+  "requires_dist": [
+    "msal <2.0.0,>=0.4.1",
+    "packaging",
+    "portalocker <3,>=1.0 ; platform_system != \"Windows\"",
+    "portalocker <3,>=1.6 ; platform_system == \"Windows\""
+  ],
+  "requires_python": ">=3.7",
+  "summary": "microsoft authentication library extensions (msal ex) provides a persistence api that can save your data on disk, encrypted on windows, macos and linux. concurrent data access will be coordinated by a file lock mechanism.",
+  "version": "1.1.0",
+  "releases": [],
+  "developers": [],
+  "kwds": "token_cache serializabletokencache token_cache_sample persistedtokencache azure",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_msal_extensions",
+  "homepage": "",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_msal",
+    "pypi_packaging",
+    "pypi_portalocker"
+  ]
+}

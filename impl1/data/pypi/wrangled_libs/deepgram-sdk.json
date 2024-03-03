@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3"
+  ],
+  "description": "# deepgram python sdk\n\n[![discord](https://dcbadge.vercel.app/api/server/xwracdbtw4?style=flat)](https://discord.gg/xwracdbtw4) [![github workflow status](https://img.shields.io/github/workflow/status/deepgram/deepgram-python-sdk/ci)](https://github.com/deepgram/deepgram-python-sdk/actions/workflows/ci.yml) [![pypi](https://img.shields.io/pypi/v/deepgram-sdk)](https://pypi.org/project/deepgram-sdk/)\n[![contributor covenant](https://img.shields.io/badge/contributor%20covenant-v2.0%20adopted-ff69b4.svg?style=flat-rounded)](./.github/code_of_conduct.md)\n\nofficial python sdk for [deepgram](https://www.deepgram.com/). power your apps with world-class speech and language ai models.\n\n> this sdk only supports hosted usage of api.deepgram.com.\n\n- [deepgram python sdk](#deepgram-python-sdk)\n- [documentation](#documentation)\n- [getting an api key](#getting-an-api-key)\n- [requirements](#requirements)\n- [installation](#installation)\n- [quickstarts](#quickstarts)\n  - [prerecorded audio transcription quickstart](#prerecorded-audio-transcription-quickstart)\n  - [live audio transcription quickstart](#live-audio-transcription-quickstart)\n- [examples](#examples)\n- [development and contributing](#development-and-contributing)\n- [getting help](#getting-help)\n\n# documentation\n\nyou can learn more about the deepgram api at [developers.deepgram.com](https://developers.deepgram.com/docs).\n\n# getting an api key\n\n\ud83d\udd11 to access the deepgram api you will need a [free deepgram api key](https://console.deepgram.com/signup?jump=keys).\n\n# requirements\n\n[python](https://www.python.org/downloads/) (version ^3.10)\n\n> **_note:_** althought many older versions should work.\n\n# installation\n\n```sh\npip install deepgram-sdk\n```\n\n# quickstarts\n\nthis sdk aims to reduce complexity and abtract/hide some internal deepgram details that clients shouldn't need to know about.  however you can still tweak options and settings if you need.\n\n## prerecorded audio transcription quickstart\n\nyou can find a [walkthrough](https://developers.deepgram.com/docs/pre-recorded-audio-transcription) on our documentation site. transcribing pre-recorded audio can be done using the following sample code:\n\n```python\naudio_url = {\n    \"url\": \"https://static.deepgram.com/examples/bueller-life-moves-pretty-fast.wav\"\n}\n\n# step 1 create a deepgram client using the api key from environment variables\ndeepgram = deepgramclient()\n\n# step 2 call the transcribe_url method on the prerecorded class\noptions = prerecordedoptions(\n    model=\"nova\",\n    smart_format=true,\n    summarize=\"v2\",\n)\nurl_response = deepgram.listen.prerecorded.v(\"1\").transcribe_url(audio_url, options)\nprint(url_response)\n```\n\n## live audio transcription quickstart\n\nyou can find a [walkthrough](https://developers.deepgram.com/docs/live-streaming-audio-transcription) on our documentation site. transcribing live audio can be done using the following sample code:\n\n```python\ndeepgram = deepgramclient()\n\n# create a websocket connection to deepgram\noptions = liveoptions(\n    punctuate=true,\n    language=\"en-us\",\n    encoding=\"linear16\",\n    channels=1,\n    sample_rate=16000,\n)\n\ndef on_message(result=none):\n    if result is none:\n        return\n    sentence = result.channel.alternatives[0].transcript\n    if len(sentence) == 0:\n        return\n    print(f\"speaker: {sentence}\")\n\ndef on_metadata(metadata=none):\n    if metadata is none:\n        return\n    print(f\"\\n{metadata}\\n\")\n\n\ndef on_error(error=none):\n    if error is none:\n        return\n    print(f\"\\n{error}\\n\")\n\ndg_connection = deepgram.listen.live.v(\"1\")\ndg_connection.start(options)\n\ndg_connection.on(livetranscriptionevents.transcript, on_message)\ndg_connection.on(livetranscriptionevents.metadata, on_metadata)\ndg_connection.on(livetranscriptionevents.error, on_error)\n\n# create microphone\nmicrophone = microphone(dg_connection.send)\n\n# start microphone\nmicrophone.start()\n\n# wait until finished\ninput(\"press enter to stop recording...\\n\\n\")\n\n# wait for the microphone to close\nmicrophone.finish()\n\n# indicate that we've finished\ndg_connection.finish()\n\nprint(\"finished\")\n```\n\n# examples\n\nthere are examples for **every** api call in this sdk. you can find all of these examples in the [examples folder](https://github.com/deepgram/deepgram-python-sdk/tree/main/examples) at the root of this repo.\n\nthese examples provide:\n\n- prerecorded audio transcription:\n\n    - from an audio file - [examples/prerecorded/file](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/prerecorded/file/main.py)\n    - from an url - [examples/prerecorded/url](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/prerecorded/url/main.py)\n\n- live audio transcription:\n\n    - from a microphone - [examples/streaming/microphone](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/streaming/microphone/main.py)\n    - from an http endpoint - [examples/streaming/http](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/streaming/http/main.py)\n\n- management api exercise the full [crud](https://en.wikipedia.org/wiki/create,_read,_update_and_delete) operations for:\n\n    - balances - [examples/manage/balances](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/manage/balances/main.py)\n    - invitations - [examples/manage/invitations](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/manage/invitations/main.py)\n    - keys - [examples/manage/keys](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/manage/keys/main.py)\n    - members - [examples/manage/members](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/manage/members/main.py)\n    - projects - [examples/manage/projects](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/manage/projects/main.py)\n    - scopes - [examples/manage/scopes](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/manage/scopes/main.py)\n    - usage - [examples/manage/usage](https://github.com/deepgram/deepgram-python-sdk/blob/main/examples/manage/usage/main.py)\n\nto run each example set the `deepgram_api_key` as an environment variable, then `cd` into each example folder and execute the example: `go run main.py`.\n\n# development and contributing\n\ninterested in contributing? we \u2764\ufe0f pull requests!\n\nto make sure our community is safe for all, be sure to review and agree to our\n[code of conduct](./code_of_conduct.md). then see the\n[contribution](./contributing.md) guidelines for more information.\n\n# getting help\n\nwe love to hear from you so if you have questions, comments or find a bug in the\nproject, let us know! you can either:\n\n- [open an issue in this repository](https://github.com/deepgram/deepgram-python-sdk/issues/new)\n- [join the deepgram github discussions community](https://github.com/orgs/deepgram/discussions)\n- [join the deepgram discord community](https://discord.gg/xwracdbtw4)\n",
+  "docs_url": null,
+  "keywords": "deepgram,deepgram speech-to-text",
+  "license": "mit",
+  "name": "deepgram-sdk",
+  "package_url": "https://pypi.org/project/deepgram-sdk/",
+  "project_url": "https://pypi.org/project/deepgram-sdk/",
+  "project_urls": {
+    "Homepage": "https://github.com/deepgram/deepgram-python-sdk"
+  },
+  "release_url": "https://pypi.org/project/deepgram-sdk/3.0.0/",
+  "requires_dist": [
+    "httpx",
+    "websockets",
+    "dataclasses-json",
+    "typing-extensions",
+    "python-dotenv",
+    "asyncio",
+    "aiohttp",
+    "verboselogs"
+  ],
+  "requires_python": "",
+  "summary": "the official python sdk for the deepgram automated speech recognition platform.",
+  "version": "3.0.0",
+  "releases": [],
+  "developers": [
+    "deepgram",
+    "devrel@deepgram.com"
+  ],
+  "kwds": "deepgram deepgramclient deepgram_api_key transcript transcription",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_deepgram_sdk",
+  "homepage": "https://github.com/deepgram/deepgram-python-sdk",
+  "release_count": 58,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_asyncio",
+    "pypi_dataclasses_json",
+    "pypi_httpx",
+    "pypi_python_dotenv",
+    "pypi_typing_extensions",
+    "pypi_verboselogs",
+    "pypi_websockets"
+  ]
+}

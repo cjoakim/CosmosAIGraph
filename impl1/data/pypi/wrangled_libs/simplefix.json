@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: networking"
+  ],
+  "description": "\n=========\nsimplefix\n=========\n\n|  |build status|  |docs|  |coverage|  |python|\n|  |pypi|  |pepy downloads|  |pepy monthly|\n\nintroduction\n============\n\n`fix <http://www.fixtradingcommunity.org/pg/structure/tech-specs/fix-protocol>`_\n(financial information exchange) protocol is a widely-used,\ntext-based protocol for interaction between parties in financial\ntrading.  banks, brokers, clearing firms, exchanges, and other general\nmarket participants use fix protocol for all phases of electronic\ntrading.\n\ntypically, a fix implementation exists as a fix engine: a standalone\nservice that acts as a gateway for other applications (matching\nengines, trading algos, etc) and implements the fix protocol.  the\nmost popular open source fix engine is probably one of the versions of\n`quickfix <https://github.com/quickfix/quickfix>`_.\n\nthis package provides a *simple* implementation of the fix\napplication-layer protocol.  it does no socket handling, and does not\nimplement fix recovery or any message persistence.  it supports the\ncreation, encoding, and decoding of fix messages.\n\nlicence\n=======\n\nthe module is licensed under the `mit license <https://opensource.org/licenses/mit>`_.\nwhile this is not legal advice, in short this means you're free to do\nwhatever you like with this code, with the exception of claiming you\nwrote it.\n\ninstallation\n============\n\nfor most users, the easiest and best way to install simplefix is using `pip`:\n\n.. code-block:: shell\n\n    pip install simplefix\n\nall releases are uploaded to pypi and available for installation, so you\ncan pin a known, tested version in your project's `requirements.txt` or\n`project.toml` (or whatever your build system uses). see the\n`pypi project page <https://pypi.org/project/simplefix/>`_ for the full\nlist of available versions.\n\nsource code releases are also available, together with some basic release\nnotes, from the project's\n`github releases <https://github.com/da4089/simplefix/releases>`_ page.\n\nbasic usage\n===========\n\nsee the `programmer's guide <https://simplefix.readthedocs.io>`_ for\nmore information.\n\ncreating messages\n-----------------\n\nto create a fix message, first create an instance of the fixmessage class.\n\n.. code-block:: python\n\n    msg = simplefix.fixmessage()\n\nyou can then add fields to the message as required.  you should add the\nstandard header tags 8, 34, 35, 49, 52, and 56 to all messages.  for most\ntags, using ``append_pair()`` is the easiest way to add a field to the message.\nwhen adding a *utctimestamp*  value (ie, for tag 52) using\n``append_utc_timestamp()`` will take care of the formatting for you.\n\n``append_string()`` will decompose a \"tag=value\" string and add it as a proper\nfield; ``append_strings()`` will do the same for a sequence of \"tag=value\"\nstrings.   ``append_data()`` will correctly append a data field, setting the\nlength tag's value, and putting the value tag after the length in the\nformatted message.\n\nonce all fields are set, calling ``encode()`` will return a byte buffer\ncontaining the correctly formatted fix message, with fields in the required\norder, and automatically added and set values for the bodylength (9) and\nchecksum (10) fields.\n\nnote that if you want to manually control the ordering of all fields, the\nvalue of the bodylength or checksum fields, there's a 'raw' flag to the\n``encode()`` method that disables this functionality.  this is useful for\ncreating known-bad messages for testing purposes.\n\nparsing messages\n----------------\n\nto extract fix messages from a byte buffer, such as that received from a\nsocket, you should first create an instance of the ``fixparser`` class.  for\neach byte string received, append it to the internal reassembly buffer using\n``append_buffer()`` .  at any time, you can call ``get_message()`` : if there's\nno complete message in the parser's internal buffer, it'll return none,\notherwise, it'll return a ``fixmessage`` instance.\n\nonce you've received a ``fixmessage`` from ``get_message()`` , you can: check\nthe number of fields with ``count()`` , retrieve the value of a field using\n``get()`` or the built-in \"[ ]\" syntax, or iterate over all the fields using\n\"for ... in ...\".\n\nmembers of repeating groups can be accessed using ``get(tag, nth)``, where the\n\"nth\" value is an integer indicating which occurrence of the tag to return\n(note that the first occurrence is number one, not zero).\n\n\ncontributing\n============\n\ncomments, suggestions, bug reports, bug fixes -- all contributions to\nthis project are welcomed.  see the project's `github\n<https://github.com/da4089/simplefix>`_ page for access to the latest\nsource code, and please open an `issue\n<https://github.com/da4089/simplefix/issues>`_ for comments,\nsuggestions, and bugs.\n\nsee the contributing.rst file for more detailed instructions.\n\n\n\n.. |build status| image:: https://github.com/da4089/simplefix/actions/workflows/build.yml/badge.svg?event=push\n    :target: https://github.com/da4089/simplefix/actions/workflows/build.yml\n    :alt: build status\n.. |docs| image:: https://readthedocs.org/projects/simplefix/badge/?version=latest\n    :target: http://simplefix.readthedocs.io/en/latest/\n    :alt: docs\n.. |coverage| image:: https://coveralls.io/repos/github/da4089/simplefix/badge.svg?branch=master\n    :target: https://coveralls.io/github/da4089/simplefix?branch=master\n    :alt: coverage\n.. |pypi| image:: https://img.shields.io/pypi/v/simplefix.svg\n    :target: https://pypi.python.org/pypi/simplefix\n    :alt: pypi\n.. |python| image:: https://img.shields.io/pypi/pyversions/simplefix.svg\n    :target: https://pypi.python.org/pypi/simplefix\n    :alt: python\n.. |pepy downloads| image:: https://pepy.tech/badge/simplefix\n    :target: https://pepy.tech/project/simplefix\n    :alt: pypi downloads\n.. |pepy monthly| image:: https://pepy.tech/badge/simplefix/month\n    :target: https://pepy.tech/project/simplefix\n    :alt: pypi monthly downloads\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "simplefix",
+  "package_url": "https://pypi.org/project/simplefix/",
+  "project_url": "https://pypi.org/project/simplefix/",
+  "project_urls": {
+    "Homepage": "https://github.com/da4089/simplefix"
+  },
+  "release_url": "https://pypi.org/project/simplefix/1.0.17/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "simple fix protocol implementation for python",
+  "version": "1.0.17",
+  "releases": [],
+  "developers": [
+    "d+simplefix@0x1.org",
+    "david_arnold"
+  ],
+  "kwds": "protocol fixparser fixtradingcommunity quickfix simplefix",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_simplefix",
+  "homepage": "https://github.com/da4089/simplefix",
+  "release_count": 17,
+  "dependency_ids": []
+}

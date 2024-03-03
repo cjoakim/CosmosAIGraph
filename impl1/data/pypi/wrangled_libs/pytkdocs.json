@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: isc license (iscl)",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: documentation",
+    "topic :: software development",
+    "topic :: software development :: documentation",
+    "topic :: utilities",
+    "typing :: typed"
+  ],
+  "description": "# pytkdocs\n\n[![ci](https://github.com/pawamoy/pytkdocs/workflows/ci/badge.svg)](https://github.com/pawamoy/pytkdocs/actions?query=workflow%3aci)\n[![documentation](https://img.shields.io/badge/docs-mkdocs%20material-blue.svg?style=flat)](https://pawamoy.github.io/pytkdocs/)\n[![pypi version](https://img.shields.io/pypi/v/pytkdocs.svg)](https://pypi.org/project/pytkdocs/)\n[![conda version](https://img.shields.io/conda/vn/conda-forge/pytkdocs)](https://anaconda.org/conda-forge/pytkdocs)\n[![gitpod](https://img.shields.io/badge/gitpod-workspace-blue.svg?style=flat)](https://gitpod.io/#https://github.com/pawamoy/pytkdocs)\n[![gitter](https://badges.gitter.im/join%20chat.svg)](https://gitter.im/pytkdocs/community)\n\nload python objects documentation.\n\n## installation\n\nwith `pip`:\n```bash\npip install pytkdocs\n```\n\nwith [`pipx`](https://github.com/pipxproject/pipx):\n```bash\npython3.7 -m pip install --user pipx\npipx install pytkdocs\n```\n\nwith `conda`:\n```python\nconda install -c conda-forge pytkdocs\n```\n\n## usage\n\n`pytkdocs` accepts json on standard input and writes json on standard output.\n\ninput format:\n\n```json\n{\n  \"objects\": [\n    {\n      \"path\": \"pytkdocs\",\n      \"new_path_syntax\": false,\n      \"members\": true,\n      \"inherited_members\": false,\n      \"filters\": [\n        \"!^_[^_]\"\n      ],\n      \"docstring_style\": \"google\",\n      \"docstring_options\": {\n        \"replace_admonitions\": true\n      }\n    }\n  ]\n}\n```\n\noutput format:\n\n```json\n{\n  \"loading_errors\": [\n    \"string (message)\"\n  ],\n  \"parsing_errors\": {\n    \"string (object)\": [\n      \"string (message)\"\n    ]\n  },\n  \"objects\": [\n    {\n      \"name\": \"pytkdocs\",\n      \"path\": \"pytkdocs\",\n      \"category\": \"module\",\n      \"file_path\": \"/media/data/dev/pawamoy/pytkdocs/src/pytkdocs/__init__.py\",\n      \"relative_file_path\": \"pytkdocs/__init__.py\",\n      \"properties\": [\n        \"special\"\n      ],\n      \"parent_path\": \"pytkdocs\",\n      \"has_contents\": true,\n      \"docstring\": \"pytkdocs package.\\n\\nload python objects documentation.\",\n      \"docstring_sections\": [\n        {\n          \"type\": \"markdown\",\n          \"value\": \"pytkdocs package.\\n\\nload python objects documentation.\"\n        }\n      ],\n      \"source\": {\n        \"code\": \"\\\"\\\"\\\"\\npytkdocs package.\\n\\nload python objects documentation.\\n\\\"\\\"\\\"\\n\\nfrom typing import list\\n\\n__all__: list[str] = []\\n\",\n        \"line_start\": 1\n      },\n      \"children\": {\n        \"pytkdocs.__all__\": {\n          \"name\": \"__all__\",\n          \"path\": \"pytkdocs.__all__\",\n          \"category\": \"attribute\",\n          \"file_path\": \"/media/data/dev/pawamoy/pytkdocs/src/pytkdocs/__init__.py\",\n          \"relative_file_path\": \"pytkdocs/__init__.py\",\n          \"properties\": [\n            \"special\"\n          ],\n          \"parent_path\": \"pytkdocs\",\n          \"has_contents\": false,\n          \"docstring\": null,\n          \"docstring_sections\": [],\n          \"source\": {},\n          \"children\": {},\n          \"attributes\": [],\n          \"methods\": [],\n          \"functions\": [],\n          \"modules\": [],\n          \"classes\": []\n        }\n      },\n      \"attributes\": [\n        \"pytkdocs.__all__\"\n      ],\n      \"methods\": [],\n      \"functions\": [],\n      \"modules\": [\n        \"pytkdocs.__main__\",\n        \"pytkdocs.cli\",\n        \"pytkdocs.loader\",\n        \"pytkdocs.objects\",\n        \"pytkdocs.parsers\",\n        \"pytkdocs.properties\",\n        \"pytkdocs.serializer\"\n      ],\n      \"classes\": []\n    }\n  ]\n}\n```\n\n## command-line\n\nrunning `pytkdocs` without argument will read the whole standard input,\nand output the result once.\n\nrunning `pytkdocs --line-by-line` will enter an infinite loop,\nwhere at each iteration one line is read on the standard input,\nand the result is written back on one line.\nthis allows other programs to use `pytkdocs` in a subprocess,\nfeeding it single lines of json, and reading back single lines of json as well.\nthis mode was actually implemented specifically for\n[mkdocstrings](https://github.com/pawamoy/mkdocstrings).\n\n## configuration\n\nthe configuration options available are:\n\n- `new_path_syntax`: when set to true, this option forces the use of the new object path syntax,\n  which uses a colon (`:`) to delimit modules from other objects.\n\n- `filters`: filters are regular expressions that allow to select or un-select objects based on their name.\n  they are applied recursively (on every child of every object).\n  if the expression starts with an exclamation mark,\n  it will filter out objects matching it (the exclamation mark is removed before evaluation).\n  if not, objects matching it are selected.\n  every regular expression is performed against every name.\n  it allows fine-grained filtering. example:\n\n    - `!^_`: filter out every object whose name starts with `_` (private/protected)\n    - `^__`: but still select those who start with two `_` (class-private)\n    - `!^__.*__$`: except those who also end with two `_` (specials)\n\n- `members`: this option allows to explicitly select the members of the top-object.\n  if `true`, select every members that passes filters. if `false`, select nothing.\n  if it's a list of names, select only those members, and apply filters on their children only.\n\n- `inherited_members`: true or false (default). when enabled, inherited members will be selected as well.\n\n- `docstring_style`: the docstring style to use when parsing the docstring. `google`, `restructured-text`<sup>1</sup> and `numpy`<sup>2</sup>.\n\n- `docstring_options`: options to pass to the docstring parser.\n    - `replace_admonitions` boolean option (default: true). when enabled, this option will\n      replace titles of an indented block by their markdown admonition equivalent:\n      `admonitiontype: title` will become `!!! admonitiontype \"title\"`.\n    - `trim_doctest_flags` boolean option (default: true). when enabled, all doctest\n      flags (of the form `# doctest: +flag` and `<blankline>`) located within python\n      example blocks will be removed from the parsed output.\n\n    the `google` docstring style accepts both options. the `numpy` style only accepts `trim_doctest_flags`. the `restructured-text` style does not accept any options.\n\n<sup>1</sup>: restructured text parsing is in active development and is not feature complete yet.</br>\n<sup>2</sup>: the following sections are currently not supported : `notes`, `see also`, `warns` and `references`.\n\n### details on `new_path_syntax`\n\nexample:\n\n<table>\n  <tr>\n      <td>new syntax</td>\n      <td><code>package.module:class.attribute</code></td>\n  </tr>\n  <tr>\n      <td>old syntax</td>\n      <td><code>package.module.class.attribute</code></td>\n  </tr>\n</table>\n\n- if there is a colon is an object's path, `pytkdocs` splits the path accordingly,\n  regardless of the value of `new_path_syntax`.\n- if there isn't a colon, and `new_path_syntax` is false, `pytkdocs` uses the\n  old importing behavior.\n- if there isn't a colon, and `new_path_syntax` is true, `pytkdocs` uses the new\n  importing behavior and therefore considers that the path points to a module.\n\n",
+  "docs_url": null,
+  "keywords": "python,source,signature,docs",
+  "license": "",
+  "name": "pytkdocs",
+  "package_url": "https://pypi.org/project/pytkdocs/",
+  "project_url": "https://pypi.org/project/pytkdocs/",
+  "project_urls": {
+    "Changelog": "https://pawamoy.github.io/pytkdocs/changelog",
+    "Discussions": "https://github.com/pawamoy/pytkdocs/discussions",
+    "Documentation": "https://pawamoy.github.io/pytkdocs",
+    "Funding": "https://github.com/sponsors/pawamoy",
+    "Gitter": "https://gitter.im/pytkdocs/community",
+    "Homepage": "https://pawamoy.github.io/pytkdocs",
+    "Issues": "https://github.com/pawamoy/pytkdocs/issues",
+    "Repository": "https://github.com/pawamoy/pytkdocs"
+  },
+  "release_url": "https://pypi.org/project/pytkdocs/0.16.1/",
+  "requires_dist": [
+    "astunparse>=1.6; python_version < '3.9'",
+    "cached-property>=1.5; python_version < '3.8'",
+    "typing-extensions>=3.7; python_version < '3.8'",
+    "docstring_parser>=0.7; extra == \"numpy-style\""
+  ],
+  "requires_python": ">=3.7",
+  "summary": "load python objects documentation.",
+  "version": "0.16.1",
+  "releases": [],
+  "developers": [
+    "pawamoy@pm.me"
+  ],
+  "kwds": "pytkdocs npytkdocs badges badge python3",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pytkdocs",
+  "homepage": "",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_astunparse",
+    "pypi_cached_property",
+    "pypi_docstring_parser",
+    "pypi_typing_extensions"
+  ]
+}

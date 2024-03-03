@@ -1,0 +1,73 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon managed streaming for apache kafka construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\n[amazon msk](https://aws.amazon.com/msk/) is a fully managed service that makes it easy for you to build and run applications that use apache kafka to process streaming data.\n\nthe following example creates an msk cluster.\n\n```python\n# vpc: ec2.vpc\n\ncluster = msk.cluster(self, \"cluster\",\n    cluster_name=\"mycluster\",\n    kafka_version=msk.kafkaversion.v2_8_1,\n    vpc=vpc\n)\n```\n\n## allowing connections\n\nto control who can access the cluster, use the `.connections` attribute. for a list of ports used by msk, refer to the [msk documentation](https://docs.aws.amazon.com/msk/latest/developerguide/client-access.html#port-info).\n\n```python\n# vpc: ec2.vpc\n\ncluster = msk.cluster(self, \"cluster\",\n    cluster_name=\"mycluster\",\n    kafka_version=msk.kafkaversion.v2_8_1,\n    vpc=vpc\n)\n\ncluster.connections.allow_from(\n    ec2.peer.ipv4(\"1.2.3.4/8\"),\n    ec2.port.tcp(2181))\ncluster.connections.allow_from(\n    ec2.peer.ipv4(\"1.2.3.4/8\"),\n    ec2.port.tcp(9094))\n```\n\n## cluster endpoints\n\nyou can use the following attributes to get a list of the kafka broker or zookeeper node endpoints\n\n```python\n# cluster: msk.cluster\n\ncfnoutput(self, \"bootstrapbrokers\", value=cluster.bootstrap_brokers)\ncfnoutput(self, \"bootstrapbrokerstls\", value=cluster.bootstrap_brokers_tls)\ncfnoutput(self, \"bootstrapbrokerssaslscram\", value=cluster.bootstrap_brokers_sasl_scram)\ncfnoutput(self, \"zookeeperconnection\", value=cluster.zookeeper_connection_string)\ncfnoutput(self, \"zookeeperconnectiontls\", value=cluster.zookeeper_connection_string_tls)\n```\n\n## importing an existing cluster\n\nto import an existing msk cluster into your cdk app use the `.fromclusterarn()` method.\n\n```python\ncluster = msk.cluster.from_cluster_arn(self, \"cluster\", \"arn:aws:kafka:us-west-2:1234567890:cluster/a-cluster/11111111-1111-1111-1111-111111111111-1\")\n```\n\n## client authentication\n\n[msk supports](https://docs.aws.amazon.com/msk/latest/developerguide/kafka_apis_iam.html) the following authentication mechanisms.\n\n> only one authentication method can be enabled.\n\n### tls\n\nto enable client authentication with tls set the `certificateauthorityarns` property to reference your acm private ca. [more info on private cas.](https://docs.aws.amazon.com/msk/latest/developerguide/msk-authentication.html)\n\n```python\nimport aws_cdk.aws_acmpca as acmpca\n\n# vpc: ec2.vpc\n\ncluster = msk.cluster(self, \"cluster\",\n    cluster_name=\"mycluster\",\n    kafka_version=msk.kafkaversion.v2_8_1,\n    vpc=vpc,\n    encryption_in_transit=msk.encryptionintransitconfig(\n        client_broker=msk.clientbrokerencryption.tls\n    ),\n    client_authentication=msk.clientauthentication.tls(\n        certificate_authorities=[\n            acmpca.certificateauthority.from_certificate_authority_arn(self, \"certificateauthority\", \"arn:aws:acm-pca:us-west-2:1234567890:certificate-authority/11111111-1111-1111-1111-111111111111\")\n        ]\n    )\n)\n```\n\n### sasl/scram\n\nenable client authentication with [sasl/scram](https://docs.aws.amazon.com/msk/latest/developerguide/msk-password.html):\n\n```python\n# vpc: ec2.vpc\n\ncluster = msk.cluster(self, \"cluster\",\n    cluster_name=\"mycluster\",\n    kafka_version=msk.kafkaversion.v2_8_1,\n    vpc=vpc,\n    encryption_in_transit=msk.encryptionintransitconfig(\n        client_broker=msk.clientbrokerencryption.tls\n    ),\n    client_authentication=msk.clientauthentication.sasl(\n        scram=true\n    )\n)\n```\n\n### sasl/iam\n\nenable client authentication with [iam](https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html):\n\n```python\n# vpc: ec2.vpc\n\ncluster = msk.cluster(self, \"cluster\",\n    cluster_name=\"mycluster\",\n    kafka_version=msk.kafkaversion.v2_8_1,\n    vpc=vpc,\n    encryption_in_transit=msk.encryptionintransitconfig(\n        client_broker=msk.clientbrokerencryption.tls\n    ),\n    client_authentication=msk.clientauthentication.sasl(\n        iam=true\n    )\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-msk",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-msk/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-msk/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-msk/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-acmpca (==1.204.0)",
+    "aws-cdk.aws-ec2 (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.aws-logs (==1.204.0)",
+    "aws-cdk.aws-s3 (==1.204.0)",
+    "aws-cdk.aws-secretsmanager (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "aws-cdk.custom-resources (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::msk",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk kafka_apis_iam kafka_version aws kafka",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_msk",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 250,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_acmpca",
+    "pypi_aws_cdk.aws_ec2",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.aws_logs",
+    "pypi_aws_cdk.aws_s3",
+    "pypi_aws_cdk.aws_secretsmanager",
+    "pypi_aws_cdk.core",
+    "pypi_aws_cdk.custom_resources",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "license :: other/proprietary license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# \u03bc-awk\nthis is a tiny python implementation of a line processor with awk-like semantics. you write a set of regex-based rules. the program loops through the lines of some input file, running the matching functions on lines that match.\n\nthis package is too small by any margin to qualify for the status of \"package\", but i keep finding myself copy-pasting this code,making small improvements every time otherwise.\n\n## install\nit is considered best practice to use a virtual environment. i recommend using [`poetry`](https://python-poetry.org/). if you do use poetry, you can add it to your project by running:\n\n```\npoetry add mawk\n```\n\notherwise, using `pip`:\n\n```\npip install mawk\n```\n\n## tutorial\na \u03bc-awk routine is a set of methods that are triggered on regexes. the routine will recieve the `re.match` object and is expected to return one of three things:\n\n* `none`: ignore that i was ever called, continue to find another rule\n* `[]`: the rule completed successfully, but didn't generate any output\n* `[\"any\", \"number of\", \"strings\"]`: replace the given input line with these lines\n\nsuppose we want to create an outline from a markdown document, we may filter on lines starting with a `#` character.\nyou then write a class that derives from `mawk.ruleset` and decorate its methods with `mawk.on_match`.\n\n```python\nfrom dataclasses import dataclass\nimport mawk\nimport re\n\n\n@dataclass\nclass outliner(mawk.ruleset):\n    ignore: bool = false\n\n    @mawk.on_match(r\"^#.*$\")\n    def on_header(self, m: re.match):\n        if self.ignore:\n            return\n        return [m[0]]\n\n    @mawk.on_match(r\"^```\")\n    def on_codeblock(self, _):\n        self.ignore = not self.ignore\n        return []\n\n    @mawk.always\n    def otherwise(self, _):\n        return []\n\n\nif __name__ == \"__main__\":\n    with open(\"readme.md\", \"r\") as f:\n        print(outliner().run(f.read()))\n```\n\nthis will output:\n\n```\n# \u03bc-awk\n## install\n## tutorial\n## license\n```\n\nnote that we had to ignore the content of code-blocks, so that the expected output above isn't included in the real output.\n\nthe `mawk.always` decorator always matches; the passed argument is therefore a `str` not `re.match`. rules are matched in order of definition; by default only the first match is used.\n\n## license\ncopyright 2023, the netherlands escience center.\nthis package is distributed under the apache 2 license, see license.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2",
+  "name": "mawk",
+  "package_url": "https://pypi.org/project/mawk/",
+  "project_url": "https://pypi.org/project/mawk/",
+  "project_urls": {
+    "Homepage": "https://github.com/jhidding/mawk",
+    "Repository": "https://github.com/jhidding/mawk"
+  },
+  "release_url": "https://pypi.org/project/mawk/0.1.4/",
+  "requires_dist": [],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "a minimalist implementation of an awk-like model in python",
+  "version": "0.1.4",
+  "releases": [],
+  "developers": [
+    "j.hidding@esciencecenter.nl",
+    "johan_hidding"
+  ],
+  "kwds": "python regexes regex poetry pip",
+  "license_kwds": "apache 2",
+  "libtype": "pypi",
+  "id": "pypi_mawk",
+  "homepage": "https://github.com/jhidding/mawk",
+  "release_count": 5,
+  "dependency_ids": []
+}

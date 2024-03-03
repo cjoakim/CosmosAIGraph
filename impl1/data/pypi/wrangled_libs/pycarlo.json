@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: build tools"
+  ],
+  "description": "# pycarlo\n\nmonte carlo's alpha python sdk!\n\n## installation\n\nrequires python 3.7 or greater. normally you can install and update using pip. for instance:\n\n```\nvirtualenv venv\n. venv/bin/activate\n\npip install -u pycarlo\n```\n\ndevelopers of the sdk can use:\n\n```\nmake install-with-tests \n. venv/bin/activate\n```\n\n## overview\n\npycarlo comprises two components: `core` and `features`.\n\nall monte carlo api queries and mutations that you could \nexecute via the api are supported via the `core` library. operations can be executed as first class objects, using \n[sgqlc](https://github.com/profusion/sgqlc), or as raw gql with variables. in both cases, a consistent object where \nfields can be referenced by dot notation and the more pythonic snake_case is returned for ease of use. \n\nthe `features` library provides additional convenience for performing common operations like with dbt, \ncircuit breaking, and pii filtering.\n\nnote that an api key is required to use the sdk. see [here](https://docs.getmontecarlo.com/docs/creating-an-api-token)\nfor details on how to generate one.\n\n## basic usage\n\n### core\n\n```python\n\nfrom pycarlo.core import client, query, mutation\n\n# first create a client. this creates a session using the 'default' profile from '~/.mcd/profiles.ini'.\n# this profile is created automatically via `montecarlo configure` on the cli.\n# see the session subsection for customizations, options and alternatives (e.g. using the environment, params, named profiles, etc.)\nclient = client()\n\n# now you can can execute a query. for instance, getuser (selecting the email field).\n# this would be like executing -\n#     curl --location --request post 'https://api.getmontecarlo.com/graphql' \\\n#     --header 'x-mcd-id: <id>' \\\n#     --header 'x-mcd-token: <token>' \\\n#     --header 'content-type: application/json' \\\n#     --data-raw '{\"query\": \"query {getuser {email}}\"}'\n# notice how the camelcase from the graphql query is converted to snake_case in both the request and response.\nquery = query()\nquery.get_user.__fields__('email')\nprint(client(query).get_user.email)\n\n# you can also execute a query that requires variables. for instance, testtelnetconnection (selecting all fields).\nquery = query()\nquery.test_telnet_connection(host='montecarlodata.com', port=443)\nprint(client(query))\n\n# if necessary, you can always generate (e.g. print) the raw query that would be executed.\nprint(query)\n# query {\n#   testtelnetconnection(host: \"montecarlodata.com\", port: 443) {\n#     success\n#     validations {\n#       type\n#       message\n#     }\n#     warnings {\n#       type\n#       message\n#     }\n#   }\n# }\n\n# if you are not a fan of sgqlc operations (query and mutation) you can also execute any raw query using the client.\n# for instance, if we want the first 10 tables from gettables.\nget_table_query = \"\"\"\nquery gettables{\n  gettables(first: 10) {\n    edges {\n      node {\n        fulltableid\n      }\n    }\n  }\n}\n\"\"\"\nresponse = client(get_table_query)\n# this returns a box object where fields can be accessed using dot notation. \n# notice how unlike with the api the response uses the more pythonic snake_case.\nfor edge in response.get_tables.edges:\n  print(edge.node.full_table_id)\n# the response can still be processed as a standard dictionary.\nprint(response['get_tables']['edges'][0]['node']['full_table_id'])\n\n# you can also execute any mutations too. for instance, generatecollectortemplate (selecting the templatelaunchurl).\nmutation = mutation()\nmutation.generate_collector_template().dc.template_launch_url()\nprint(client(mutation))\n\n# any errors will raise a gqlerror with details. for instance, executing above with an invalid region.\nmutation = mutation()\nmutation.generate_collector_template(region='artemis')\nprint(client(mutation))\n# pycarlo.common.errors.gqlerror: [{'message': 'region \"\\'artemis\\'\" not currently active.'...]\n```\nnote that you can find monte carlo's api reference [here](https://apidocs.getmontecarlo.com/).\n\nfor details and additional examples on how to map (convert) graphql queries to `sgqlc` operations please refer to the \ndocs [here](https://sgqlc.readthedocs.io/en/latest/sgqlc.operation.html).\n\n### features\nyou can use [pydoc](https://docs.python.org/3.8/library/pydoc.html) to retrieve documentation \non any feature packages (`pydoc pycarlo.features`).\n\nfor instance for [circuit breakers](https://docs.getmontecarlo.com/docs/circuit-breakers):\n```shell\npydoc pycarlo.features.circuit_breakers.service\n```\n\n## session configuration\n\nby default, when creating a client the `default` profile from `~/.mcd/profiles.ini` is used. this file created\nvia [montecarlo configure](https://docs.getmontecarlo.com/docs/using-the-cli#setting-up-the-cli) on the cli.\nnote that you can find monte carlo's cli reference [here](https://clidocs.getmontecarlo.com/).\n\nyou can override this usage by creating a custom `session`. for instance, if you want to pass the id and token:\n\n```python\nfrom pycarlo.core import client, session\n\nclient = client(session=session(mcd_id='foo', mcd_token='bar'))\n```\n\nsessions support the following params:\n\n- mcd_id: api key id.\n- mcd_token: api secret.\n- mcd_profile: named profile containing credentials. this is created via the cli (\n  e.g. `montecarlo configure --profile-name zeus`).\n- mcd_config_path: path to file containing credentials. defaults to `~/.mcd/`.\n\nyou can also specify the api key, secret or profile name using the following environment variables:\n\n- mcd_default_api_id\n- mcd_default_api_token\n- mcd_default_profile\n\nwhen creating a session any explicitly passed `mcd_id` and `mcd_token` params take precedence, followed by environmental \nvariables and then any config-file options.\n\nenvironment variables can be mixed with passed credentials, but not the config-file profile.\n\n**we do not recommend passing `mcd_token` as it is a secret and can be accidentally committed.**\n\n## integration gateway api\nthere are features that require the integration gateway api instead of the regular graphql application api, \nfor example airflow callbacks invoked by the `airflow-mcd` library.\n\nto use the gateway you need to initialize the `session` object passing a `scope` parameter and \nthen use `make_request` to invoke gateway endpoints:\n```python\nfrom pycarlo.core import client, session\n\nclient = client(session=session(mcd_id='foo', mcd_token='bar', scope='airflowcallbacks'))\nresponse = client.make_request(path='/airflow/callbacks', method='post', body={}, timeout_in_seconds=20)\n```\n\n## advanced configuration\n\nthe following values also be set by the environment:\n\n- mcd_verbose_errors: enable logging. this includes a trace id for each session and request.\n- mcd_api_endpoint: customize the endpoint where queries and mutations are executed.\n\n## tests and releases\nto update queries and mutations via introspection, use `make generate`.\n\n`make test` can be used to run all tests locally. circleci manages all testing for deployment.\nwhen ready for a review, create a pr against `main`.\n\nwhen ready to release, create a new [github release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) \nwith a tag using semantic versioning (e.g. `v0.42.0`) and circleci will test and publish to pypi. note that an existing \nversion will not be deployed.\n\n## references\n- dashboard: https://getmontecarlo.com\n- product docs: https://docs.getmontecarlo.com\n- status page: https://status.getmontecarlo.com\n- api (and sdk): https://apidocs.getmontecarlo.com\n- cli: https://clidocs.getmontecarlo.com\n\n## license\n\napache 2.0 - see the [license](http://www.apache.org/licenses/license-2.0) for more information.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache software license (apache 2.0)",
+  "name": "pycarlo",
+  "package_url": "https://pypi.org/project/pycarlo/",
+  "project_url": "https://pypi.org/project/pycarlo/",
+  "project_urls": {
+    "Homepage": "https://www.montecarlodata.com/"
+  },
+  "release_url": "https://pypi.org/project/pycarlo/0.8.11/",
+  "requires_dist": [
+    "dataclasses-json <6.0.0,>=0.5.7",
+    "python-box >=5.0.0",
+    "requests <3.0.0,>=2.0.0",
+    "sgqlc <17.0,>=14.1"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "monte carlo's python sdk",
+  "version": "0.8.11",
+  "releases": [],
+  "developers": [
+    "info@montecarlodata.com",
+    "monte_carlo_data"
+  ],
+  "kwds": "pycarlo montecarlo pip pythonic carlo",
+  "license_kwds": "apache software license (apache 2.0)",
+  "libtype": "pypi",
+  "id": "pypi_pycarlo",
+  "homepage": "https://www.montecarlodata.com/",
+  "release_count": 49,
+  "dependency_ids": [
+    "pypi_dataclasses_json",
+    "pypi_python_box",
+    "pypi_requests",
+    "pypi_sgqlc"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu general public license v3 (gplv3)",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "![tests](https://github.com/lykos153/annexremote/actions/workflows/unittests.yml/badge.svg) [![pypi version](https://badge.fury.io/py/annexremote.svg)](https://badge.fury.io/py/annexremote)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n\n\n# annexremote\nhelper module to easily develop special remotes for [git annex](https://git-annex.branchable.com).\nannexremote handles all the protocol stuff for you, so you can focus on the remote itself.\nit implements the complete [external special remote protocol](https://git-annex.branchable.com/design/external_special_remote_protocol)\nand fulfils all specifications regarding whitespaces etc. this is ensured by an excessive test suite.\n\n[documentation](https://lykos153.github.io/annexremote/annexremote/)\n\n(also have a look at the [examples](examples) and [git-annex-remote-googledrive](https://github.com/lykos153/git-annex-remote-googledrive) which is based on annexremote.)\n\n## getting started\n### prerequisites\nyou need python3 installed on your system.\n\n### installing\n`pip3 install annexremote`\n\n### running the tests\nif you want to run the tests, copy the content of the `tests` folder to the same location as `annexremote.py`.\nthen use a test discovery like [pytest](https://github.com/pytest-dev/pytest) to run them.\n\n### usage\n\nimport the necessary classes\n\n```python\nfrom annexremote import master\nfrom annexremote import specialremote\nfrom annexremote import remoteerror\n```\n\nnow create your special remote class. it must subtype ``specialremote`` and implement at least the 6 basic methods:\n\n```python\nclass myremote(specialremote):\n    def initremote(self):\n        # initialize the remote, eg. create the folders\n        # raise remoteerror if the remote couldn't be initialized\n\n    def prepare(self):\n        # prepare to be used, eg. open tcp connection, authenticate with the server etc.\n        # raise remoteerror if not ready to use\n\n    def transfer_store(self, key, filename):\n        # store the file in `filename` to a unique location derived from `key`\n        # raise remoteerror if the file couldn't be stored\n\n    def transfer_retrieve(self, key, filename):\n        # get the file identified by `key` and store it to `filename`\n        # raise remoteerror if the file couldn't be retrieved\n\n    def checkpresent(self, key):\n        # return true if the key is present in the remote\n        # return false if the key is not present\n        # raise remoteerror if the presence of the key couldn't be determined, eg. in case of connection error\n        \n    def remove(self, key):\n        # remove the key from the remote\n        # raise remoteerror if it couldn't be removed\n        # note that removing a not existing key isn't considered an error\n```\n\nin your ``main`` function, link your remote to the master class and initialize the protocol:\n\n```python\ndef main():\n    master = master()\n    remote = myremote(master)\n    master.linkremote(remote)\n    master.listen()\n\nif __name__ == \"__main__\":\n    main()\n```\n\nnow save your program as ``git-annex-remote-$something`` and make it executable.\n\n``chmod +x git-annex-remote-$something``\n(you'll need the sheebang line ``#!/usr/bin/env python3``)\n\nthat's it. now you've created your special remote.\n\n#### export remotes\nimport and subtype `exportremote` instead of `specialremote`:\n\n```python\n# ...\nfrom annexremote import exportremote\n\nclass myremote(exportremote):\n    # implement the remote methods just like in the above example and then additionally:\n    \n    def transferexport_store(self, key, local_file, remote_file):\n        # store the file located at `local_file` to `remote_file` on the remote\n        # raise remoteerror if the file couldn't be stored\n\n    def transferexport_retrieve(self, key, local_file, remote_file):\n        # get the file located at `remote_file` from the remote and store it to `local_file`\n        # raise remoteerror if the file couldn't be retrieved\n\n    def checkpresentexport(self, key, remote_file):\n        # return true if the file `remote_file` is present in the remote\n        # return false if not\n        # raise remoteerror if the presence of the file couldn't be determined, eg. in case of connection error\n\n    def removeexport(self, key, remote_file):\n        # remove the file in `remote_file` from the remote\n        # raise remoteerror if it couldn't be removed\n        # note that removing a not existing key isn't considered an error\n\n    def removeexportdirectory(self, remote_directory):\n        # remove the directory `remote_directory` from the remote\n        # raise remoteerror if it couldn't be removed\n        # note that removing a not existing directory isn't considered an error\n\n    def renameexport(self, key, filename, new_filename):\n        # move the remote file in `name` to `new_name`\n        # raise remoteerror if it couldn't be moved\n\n```\n\n#### logging\nthis module includes a streamhandler to send log records to git annex via the special remote protocol (using debug). you can use it like this:\n\n```python\n...\nimport logging\n...\n\ndef main():\n    master = master()\n    remote = myremote(master)\n    master.linkremote(remote)\n\n    logger = logging.getlogger()\n    logger.addhandler(master.logginghandler())\n\n    master.listen()\n\nif __name__ == \"__main__\":\n    main()\n```\n\n\n## license\n\nthis project is licensed under gplv3 - see the [license](license) file for details\n\n",
+  "docs_url": null,
+  "keywords": "git-annex,remote",
+  "license": "gpl-3.0-only",
+  "name": "annexremote",
+  "package_url": "https://pypi.org/project/annexremote/",
+  "project_url": "https://pypi.org/project/annexremote/",
+  "project_urls": {
+    "Documentation": "https://lykos153.github.io/AnnexRemote",
+    "Source": "https://github.com/Lykos153/AnnexRemote"
+  },
+  "release_url": "https://pypi.org/project/annexremote/1.6.4/",
+  "requires_dist": [
+    "sphinx ; extra == 'doc'",
+    "coverage ; extra == 'tests'",
+    "pytest ; extra == 'tests'"
+  ],
+  "requires_python": "",
+  "summary": "git annex special remotes made easy",
+  "version": "1.6.4",
+  "releases": [],
+  "developers": [
+    "silvio@booq.org"
+  ],
+  "kwds": "external_special_remote_protocol annex annexremote git remote_file",
+  "license_kwds": "gpl-3.0-only",
+  "libtype": "pypi",
+  "id": "pypi_annexremote",
+  "homepage": "",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_pytest",
+    "pypi_sphinx"
+  ]
+}

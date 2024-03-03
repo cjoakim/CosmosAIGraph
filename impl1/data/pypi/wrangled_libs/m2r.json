@@ -1,0 +1,39 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "framework :: sphinx :: extension",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.7",
+    "topic :: text processing"
+  ],
+  "description": "\nno more updates\n===============\n\nfeel free to fork and update.\n\n----\n\nold readme\n\nm2r\n===\n\n\n.. image:: https://img.shields.io/pypi/v/m2r.svg\n   :target: https://pypi.python.org/pypi/m2r\n   :alt: pypi\n\n\n.. image:: https://img.shields.io/pypi/pyversions/m2r.svg\n   :target: https://pypi.python.org/pypi/m2r\n   :alt: pypi version\n\n\n.. image:: https://img.shields.io/badge/docs-latest-brightgreen.svg\n   :target: https://miyakogi.github.io/m2r\n   :alt: documentation\n\n\n.. image:: https://travis-ci.org/miyakogi/m2r.svg?branch=master\n   :target: https://travis-ci.org/miyakogi/m2r\n   :alt: build status\n\n\n.. image:: https://codecov.io/gh/miyakogi/m2r/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/miyakogi/m2r\n   :alt: codecov\n\n\n----\n\nm2r converts a markdown file including restructuredtext (rst) markups to a valid\nrst format.\n\nwhy another converter?\n----------------------\n\ni wanted to write sphinx document in markdown, since it's widely used now and\neasy to write code blocks and lists. however, converters using pandoc or\nrecommonmark do not support many rst markups and sphinx extensions. for\nexample, rst's reference link like ``see `ref`_`` (this is very convenient in\nlong document in which same link appears multiple times) will be converted to\na code block in html like ``see <code>ref</code>_``\\ , which is not expected.\n\nfeatures\n--------\n\n\n* basic markdown and some extensions (see below)\n\n  * inline/block-level raw html\n  * fenced-code block\n  * tables\n  * footnotes (\\ ``[^1]``\\ )\n\n* inline- and block-level rst markups\n\n  * single- and multi-line directives (\\ ``.. directive::``\\ )\n  * inline-roles (\\ ``:code:`print(1)` ...``\\ )\n  * ref-link (\\ ``see `ref`_``\\ )\n  * footnotes (\\ ``[#fn]_``\\ )\n  * math extension inspired by `recommonmark <https://recommonmark.readthedocs.io/en/latest/index.html>`_\n\n* sphinx extension\n\n  * add markdown support for sphinx\n  * ``mdinclude`` directive to include markdown from md or rst files\n  * option to parse relative links into ref and doc directives (\\ ``m2r_parse_relative_links``\\ )\n\n* pure python implementation\n\n  * pandoc is not required\n\ninstallation\n------------\n\npython 3.7+ is required.\n\n.. code-block::\n\n   pip install m2r\n\nor,\n\n.. code-block::\n\n   python3 -m pip install m2r\n\nusage\n-----\n\ncommand line\n^^^^^^^^^^^^\n\n``m2r`` command converts markdown file to rst format.\n\n.. code-block::\n\n   m2r your_document.md [your_document2.md ...]\n\nthen you will find ``your_document.rst`` in the same directory.\n\nprogrammatic use\n^^^^^^^^^^^^^^^^\n\nimport ``m2r.convert`` function and call it with markdown text.\nthen it will return converted text.\n\n.. code-block:: python\n\n   from m2r import convert\n   rst = convert('# title\\n\\nsentence.')\n   print(rst)\n   # title\n   # =====\n   #\n   # sentence.\n\nor, use ``parse_from_file`` function to load markdown file and obtain converted\ntext.\n\n.. code-block:: python\n\n   from m2r import parse_from_file\n   output = parse_from_file('markdown_file.md')\n\nthis is an example of setup.py to write readme in markdown, and publish it to\npypi as rst format.\n\n.. code-block:: python\n\n   readme_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'readme.md')\n   try:\n       from m2r import parse_from_file\n       readme = parse_from_file(readme_file)\n   except importerror:\n       # m2r may not be installed in user environment\n       with open(readme_file) as f:\n           readme = f.read()\n   setup(\n       ...,\n       long_description=readme,\n       ...,\n   )\n\nsphinx integration\n^^^^^^^^^^^^^^^^^^\n\nin your conf.py, add the following lines.\n\n.. code-block:: python\n\n   extensions = [\n       ...,\n       'm2r',\n   ]\n\n   # source_suffix = '.rst'\n   source_suffix = ['.rst', '.md']\n\nwrite index.md and run ``make html``.\n\nwhen ``m2r`` extension is enabled on sphinx and ``.md`` file is loaded, m2r\nconverts to rst and pass to sphinx, not making new ``.rst`` file.\n\nmdinclude directive\n~~~~~~~~~~~~~~~~~~~\n\nlike ``.. include:: file`` directive, ``.. mdinclude:: file`` directive inserts\nmarkdown file at the line.\n\nnote: do not use ``.. include:: file`` directive to include markdown file even if\nin the markdown file, please use ``.. mdinclude:: file`` instead.\n\nrestrictions\n------------\n\n\n* in the rst's directives, markdown is not available. please write in rst.\n* column alignment of tables is not supported. (rst does not support this feature)\n* heading with overline-and-underline is not supported.\n\n  * heading with underline is ok\n\n* rst heading marks are currently hard-coded and unchangeable.\n\n  * h1: ``=``\\ , h2: ``-``\\ , h3: ``^``\\ , h4: ``~``\\ , h5: ``\"``\\ , h6: ``#``\n\nif you find any bug or unexpected behaviour, please report it to\n`issues <https://github.com/miyakogi/m2r/issues>`_.\n\nexample\n-------\n\nsee `example document <https://miyakogi.github.io/m2r/example.html>`_ and `its\nsource code <https://github.com/miyakogi/m2r/blob/master/docs/example.md>`_.\n\ni'm using m2r for writing user guide of `wdom <https://github.com/miyakogi/wdom>`_.\nso you can see it as another example. its `html is\nhere <http://wdom-py.readthedocs.io/en/latest/guide/index.html>`_\\ , and `its\nsource code is here <https://github.com/miyakogi/wdom/tree/dev/docs/guide>`_.\n\ndemo editor\n^^^^^^^^^^^\n\ndemo editor of m2r is available.\nif you are interested in m2r, please try it.\n\n`https://github.com/miyakogi/m2rdemo <https://github.com/miyakogi/m2rdemo>`_\n\nacknowledgement\n---------------\n\nm2r is written as an extension of\n`mistune <http://mistune.readthedocs.io/en/latest/>`_\\ , which is highly extensible\npure-python markdown parser.\nwithout the mistune, i couldn't write this. thank you!\n\nlicence\n-------\n\n`mit <https://github.com/miyakogi/m2r/blob/master/license>`_\n",
+  "docs_url": null,
+  "keywords": "markdown restructuredtext sphinx-extension",
+  "license": "mit",
+  "name": "m2r",
+  "package_url": "https://pypi.org/project/m2r/",
+  "project_url": "https://pypi.org/project/m2r/",
+  "project_urls": {
+    "Homepage": "https://github.com/miyakogi/m2r"
+  },
+  "release_url": "https://pypi.org/project/m2r/0.3.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "markdown and restructuredtext in a single file.",
+  "version": "0.3.1",
+  "releases": [],
+  "developers": [
+    "hiroyuki_takagi",
+    "miyako.dev@gmail.com"
+  ],
+  "kwds": "sphinx markdown_file markdown markups m2r_parse_relative_links",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_m2r",
+  "homepage": "https://github.com/miyakogi/m2r",
+  "release_count": 19,
+  "dependency_ids": []
+}

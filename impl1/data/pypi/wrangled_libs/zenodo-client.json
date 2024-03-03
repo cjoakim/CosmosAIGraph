@@ -1,0 +1,71 @@
+{
+  "classifiers": [
+    "development status :: 1 - planning",
+    "environment :: console",
+    "framework :: pytest",
+    "framework :: sphinx",
+    "framework :: tox",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "<!--\n<p align=\"center\">\n  <img src=\"docs/source/logo.png\" height=\"150\">\n</p>\n-->\n\n<h1 align=\"center\">\n  zenodo client\n</h1>\n\n<p align=\"center\">\n    <a href=\"https://github.com/cthoyt/zenodo-client/actions?query=workflow%3atests\">\n        <img alt=\"tests\" src=\"https://github.com/cthoyt/zenodo-client/workflows/tests/badge.svg\" />\n    </a>\n    <a href=\"https://github.com/cthoyt/cookiecutter-python-package\">\n        <img alt=\"cookiecutter template from @cthoyt\" src=\"https://img.shields.io/badge/cookiecutter-snekpack-blue\" /> \n    </a>\n    <a href=\"https://pypi.org/project/zenodo_client\">\n        <img alt=\"pypi\" src=\"https://img.shields.io/pypi/v/zenodo_client\" />\n    </a>\n    <a href=\"https://pypi.org/project/zenodo_client\">\n        <img alt=\"pypi - python version\" src=\"https://img.shields.io/pypi/pyversions/zenodo_client\" />\n    </a>\n    <a href=\"https://github.com/cthoyt/zenodo-client/blob/main/license\">\n        <img alt=\"pypi - license\" src=\"https://img.shields.io/pypi/l/zenodo_client\" />\n    </a>\n    <a href='https://zenodo_client.readthedocs.io/en/latest/?badge=latest'>\n        <img src='https://readthedocs.org/projects/zenodo_client/badge/?version=latest' alt='documentation status' />\n    </a>\n    <a href=\"https://zenodo.org/badge/latestdoi/343513445\">\n        <img src=\"https://zenodo.org/badge/343513445.svg\" alt=\"doi\">\n    </a>\n</p>\n\na wrapper for the zenodo api.\n\n## \ud83d\udcaa getting started\n\nthe first example shows how you can set some configuration then never worry about whether it's been\nuploaded already or not - all baked in with [`pystow`](https://github.com/cthoyt/pystow). on the\nfirst time this script is run, the new deposition is made, published, and the identifier is stored\nwith the given key in your `~/.config/zenodo.ini`. next time it's run, the deposition will be looked\nup, and the data will be uploaded. versioning is given automatically by date, and if multiple\nversions are uploaded on one day, then a dash and the revision are appended.\n\n```python\nfrom zenodo_client import creator, metadata, ensure_zenodo\n\n# define the metadata that will be used on initial upload\ndata = metadata(\n    title='test upload 3',\n    upload_type='dataset',\n    description='test description',\n    creators=[\n        creator(\n            name='hoyt, charles tapley',\n            affiliation='harvard medical school',\n            orcid='0000-0003-4423-4370',\n        ),\n    ],\n)\nres = ensure_zenodo(\n    key='test3',  # this is a unique key you pick that will be used to store\n                  # the numeric deposition id on your local system's cache\n    data=data,\n    paths=[\n        '/users/cthoyt/desktop/test1.png',\n    ],\n    sandbox=true,  # remove this when you're ready to upload to real zenodo\n)\nfrom pprint import pprint\n\npprint(res.json())\n```\n\na real-world example can be found here: https://github.com/cthoyt/nsockg.\n\nthe following example shows how to use the zenodo uploader if you already know what your deposition\nidentifier is.\n\n```python\nfrom zenodo_client import update_zenodo\n\n# the id from your deposition\nsandbox_dep_id = '724868'\n\n# paths to local files. good to use in combination with resources that are always\n# dumped to the same place by a given script\npaths = [\n    # os.path.join(database_directory, 'alts_sample.tsv')\n    '/users/cthoyt/desktop/alts_sample.tsv',\n]\n\n# don't forget to set the zenodo_api_token environment variable or\n# any valid way to get zenodo/api_token from pystow.\nupdate_zenodo(sandbox_dep_id, paths)\n```\n\nthe following example shows how to look up the latest version of a record.\n\n```python\nfrom zenodo_client import zenodo\n\nzenodo = zenodo()\nooh_na_na_record = '4020486'\nnew_record = zenodo.get_latest_record(ooh_na_na_record)\n```\n\neven further, the latest version of `names.tsv.gz` can be automatically downloaded to the\n`~/.data/zenodo/<conceptrecid>/<version>/<path>` via `pystow` with:\n\n```python\nfrom zenodo_client import zenodo\n\nzenodo = zenodo()\nooh_na_na_record = '4020486'\nnew_record = zenodo.download_latest(ooh_na_na_record, 'names.tsv.gz')\n```\n\na real-world example can be found [here](https://github.com/pyobo/pyobo/blob/master/src/pyobo/resource_utils.py)\nwhere the latest build of the [ooh na na](https://cthoyt.com/2020/04/18/ooh-na-na.html) nomenclature\ndatabase is automatically downloaded from zenodo, even though the pyobo package only hardcodes the\nfirst deposition id.\n\n### command line interface\n\nthe zenodo_client command line tool is automatically installed. it can be used from the shell with\nthe `--help` flag to show all subcommands:\n\n```shell\n$ zenodo_client --help\n```\n\nit can be run with `zenodo_client <deposition id> <path 1> ... <path n>`\n\n## \u2b07\ufe0f installation\n\nthe most recent release can be installed from\n[pypi](https://pypi.org/project/zenodo_client/) with:\n\n```bash\n$ pip install zenodo_client\n```\n\nthe most recent code and data can be installed directly from github with:\n\n```bash\n$ pip install git+https://github.com/cthoyt/zenodo-client.git\n```\n\nto install in development mode, use the following:\n\n```bash\n$ git clone git+https://github.com/cthoyt/zenodo-client.git\n$ cd zenodo-client\n$ pip install -e .\n```\n\n## \u2696\ufe0f license\n\nthe code in this package is licensed under the mit license.\n\n## \ud83d\ude4f contributing\n\ncontributions, whether filing an issue, making a pull request, or forking, are appreciated. see\n[contributing.rst](https://github.com/cthoyt/zenodo-client/blob/master/contributing.rst) for more\ninformation on getting involved.\n\n## \ud83c\udf6a cookiecutter acknowledgement\n\nthis package was created with [@audreyr](https://github.com/audreyr)'s\n[cookiecutter](https://github.com/cookiecutter/cookiecutter) package\nusing [@cthoyt](https://github.com/cthoyt)'s\n[cookiecutter-python-package](https://github.com/cthoyt/cookiecutter-python-package) template.\n\n## \ud83d\udee0\ufe0f development\n\nthe final section of the readme is for if you want to get involved by making a code contribution.\n\n### \u2753 testing\n\nafter cloning the repository and installing `tox` with `pip install tox`, the unit tests in\nthe `tests/` folder can be run reproducibly with:\n\n```shell\n$ tox\n```\n\nadditionally, these tests are automatically re-run with each commit in\na [github action](https://github.com/cthoyt/zenodo-client/actions?query=workflow%3atests).\n\n### \ud83d\udce6 making a release\n\nafter installing the package in development mode and installing\n`tox` with `pip install tox`, the commands for making a new release are contained within\nthe `finish` environment in `tox.ini`. run the following from the shell:\n\n```shell\n$ tox -e finish\n```\n\nthis script does the following:\n\n1. uses bumpversion to switch the version number in the `setup.cfg` and\n   `src/zenodo_client/version.py` to not have the `-dev` suffix\n2. packages the code in both a tar archive and a wheel\n3. uploads to pypi using `twine`. be sure to have a `.pypirc` file configured to avoid the need for\n   manual input at this step\n4. push to github. you'll need to make a release going with the commit where the version was bumped.\n5. bump the version to the next patch. if you made big changes and want to bump the version by\n   minor, you can use `tox -e bumpversion minor` after.\n",
+  "docs_url": null,
+  "keywords": "cookiecutter,snekpack,zenodo",
+  "license": "mit",
+  "name": "zenodo-client",
+  "package_url": "https://pypi.org/project/zenodo-client/",
+  "project_url": "https://pypi.org/project/zenodo-client/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/cthoyt/zenodo-client/issues",
+    "Download": "https://github.com/cthoyt/zenodo-client/releases",
+    "Homepage": "https://github.com/cthoyt/zenodo-client",
+    "Source Code": "https://github.com/cthoyt/zenodo-client"
+  },
+  "release_url": "https://pypi.org/project/zenodo-client/0.3.2/",
+  "requires_dist": [
+    "pydantic",
+    "pystow (>=0.4.9)",
+    "requests",
+    "click",
+    "more-click",
+    "typing-extensions",
+    "sphinx ; extra == 'docs'",
+    "sphinx-rtd-theme ; extra == 'docs'",
+    "sphinx-click ; extra == 'docs'",
+    "sphinx-autodoc-typehints ; extra == 'docs'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a wrapper for the zenodo api.",
+  "version": "0.3.2",
+  "releases": [],
+  "developers": [
+    "charles_tapley_hoyt",
+    "cthoyt@gmail.com"
+  ],
+  "kwds": "cookiecutter zenodo_client zenodo_api_token zenodo update_zenodo",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_zenodo_client",
+  "homepage": "https://github.com/cthoyt/zenodo-client",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_more_click",
+    "pypi_pydantic",
+    "pypi_pystow",
+    "pypi_requests",
+    "pypi_sphinx",
+    "pypi_sphinx_autodoc_typehints",
+    "pypi_sphinx_click",
+    "pypi_sphinx_rtd_theme",
+    "pypi_typing_extensions"
+  ]
+}

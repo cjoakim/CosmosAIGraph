@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon ecs service discovery construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\nthis module is part of the [aws cloud development kit](https://github.com/aws/aws-cdk) project.\n\nthis package contains constructs for working with **aws cloud map**\n\naws cloud map is a fully managed service that you can use to create and\nmaintain a map of the backend services and resources that your applications\ndepend on.\n\nfor further information on aws cloud map,\nsee the [aws cloud map documentation](https://docs.aws.amazon.com/cloud-map)\n\n## http namespace example\n\nthe following example creates an aws cloud map namespace that\nsupports api calls, creates a service in that namespace, and\nregisters an instance to it:\n\n```python\nimport aws_cdk.core as cdk\nimport aws_cdk.aws_servicediscovery as servicediscovery\n\napp = cdk.app()\nstack = cdk.stack(app, \"aws-servicediscovery-integ\")\n\nnamespace = servicediscovery.httpnamespace(stack, \"mynamespace\",\n    name=\"covfefe\"\n)\n\nservice1 = namespace.create_service(\"nonipservice\",\n    description=\"service registering non-ip instances\"\n)\n\nservice1.register_non_ip_instance(\"nonipinstance\",\n    custom_attributes={\"arn\": \"arn:aws:s3:::mybucket\"}\n)\n\nservice2 = namespace.create_service(\"ipservice\",\n    description=\"service registering ip instances\",\n    health_check=servicediscovery.healthcheckconfig(\n        type=servicediscovery.healthchecktype.http,\n        resource_path=\"/check\"\n    )\n)\n\nservice2.register_ip_instance(\"ipinstance\",\n    ipv4=\"54.239.25.192\"\n)\n\napp.synth()\n```\n\n## private dns namespace example\n\nthe following example creates an aws cloud map namespace that\nsupports both api calls and dns queries within a vpc, creates a\nservice in that namespace, and registers a loadbalancer as an\ninstance:\n\n```python\nimport aws_cdk.aws_ec2 as ec2\nimport aws_cdk.aws_elasticloadbalancingv2 as elbv2\nimport aws_cdk.core as cdk\nimport aws_cdk.aws_servicediscovery as servicediscovery\n\napp = cdk.app()\nstack = cdk.stack(app, \"aws-servicediscovery-integ\")\n\nvpc = ec2.vpc(stack, \"vpc\", max_azs=2)\n\nnamespace = servicediscovery.privatednsnamespace(stack, \"namespace\",\n    name=\"boobar.com\",\n    vpc=vpc\n)\n\nservice = namespace.create_service(\"service\",\n    dns_record_type=servicediscovery.dnsrecordtype.a_aaaa,\n    dns_ttl=cdk.duration.seconds(30),\n    load_balancer=true\n)\n\nloadbalancer = elbv2.applicationloadbalancer(stack, \"lb\", vpc=vpc, internet_facing=true)\n\nservice.register_load_balancer(\"loadbalancer\", loadbalancer)\n\napp.synth()\n```\n\n## public dns namespace example\n\nthe following example creates an aws cloud map namespace that\nsupports both api calls and public dns queries, creates a service in\nthat namespace, and registers an ip instance:\n\n```python\nimport aws_cdk.core as cdk\nimport aws_cdk.aws_servicediscovery as servicediscovery\n\napp = cdk.app()\nstack = cdk.stack(app, \"aws-servicediscovery-integ\")\n\nnamespace = servicediscovery.publicdnsnamespace(stack, \"namespace\",\n    name=\"foobar.com\"\n)\n\nservice = namespace.create_service(\"service\",\n    name=\"foo\",\n    dns_record_type=servicediscovery.dnsrecordtype.a,\n    dns_ttl=cdk.duration.seconds(30),\n    health_check=servicediscovery.healthcheckconfig(\n        type=servicediscovery.healthchecktype.https,\n        resource_path=\"/healthcheck\",\n        failure_threshold=2\n    )\n)\n\nservice.register_ip_instance(\"ipinstance\",\n    ipv4=\"54.239.25.192\",\n    port=443\n)\n\napp.synth()\n```\n\nfor dns namespaces, you can also register instances to services with cname records:\n\n```python\nimport aws_cdk.core as cdk\nimport aws_cdk.aws_servicediscovery as servicediscovery\n\napp = cdk.app()\nstack = cdk.stack(app, \"aws-servicediscovery-integ\")\n\nnamespace = servicediscovery.publicdnsnamespace(stack, \"namespace\",\n    name=\"foobar.com\"\n)\n\nservice = namespace.create_service(\"service\",\n    name=\"foo\",\n    dns_record_type=servicediscovery.dnsrecordtype.cname,\n    dns_ttl=cdk.duration.seconds(30)\n)\n\nservice.register_cname_instance(\"cnameinstance\",\n    instance_cname=\"service.pizza\"\n)\n\napp.synth()\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-servicediscovery",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-servicediscovery/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-servicediscovery/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-servicediscovery/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-ec2 (==1.204.0)",
+    "aws-cdk.aws-elasticloadbalancingv2 (==1.204.0)",
+    "aws-cdk.aws-route53 (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::servicediscovery",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk aws_servicediscovery aws_ec2 aws aws_elasticloadbalancingv2",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_servicediscovery",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_ec2",
+    "pypi_aws_cdk.aws_elasticloadbalancingv2",
+    "pypi_aws_cdk.aws_route53",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

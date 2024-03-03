@@ -1,0 +1,70 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: system administrators",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: communications",
+    "topic :: scientific/engineering :: human machine interfaces",
+    "topic :: software development",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: user interfaces",
+    "topic :: system",
+    "topic :: system :: console fonts",
+    "topic :: system :: logging",
+    "topic :: system :: shells",
+    "topic :: system :: system shells",
+    "topic :: system :: systems administration",
+    "topic :: terminals",
+    "topic :: utilities"
+  ],
+  "description": "coloredlogs: colored terminal output for python's logging module\n================================================================\n\n.. image:: https://travis-ci.org/xolox/python-coloredlogs.svg?branch=master\n   :target: https://travis-ci.org/xolox/python-coloredlogs\n\n.. image:: https://coveralls.io/repos/github/xolox/python-coloredlogs/badge.svg?branch=master\n   :target: https://coveralls.io/github/xolox/python-coloredlogs?branch=master\n\nthe `coloredlogs` package enables colored terminal output for python's logging_\nmodule. the coloredformatter_ class inherits from `logging.formatter`_ and uses\n`ansi escape sequences`_ to render your logging messages in color. it uses only\nstandard colors so it should work on any unix terminal. it's currently tested\non python 2.7, 3.5+ and pypy (2 and 3). on windows `coloredlogs` automatically\ntries to enable native ansi support (on up-to-date windows 10 installations)\nand falls back on using colorama_ (if installed). here is a screen shot of the\ndemo that is printed when the command ``coloredlogs --demo`` is executed:\n\n.. image:: https://coloredlogs.readthedocs.io/en/latest/_images/defaults.png\n\nnote that the screenshot above includes custom logging levels defined by my\nverboselogs_ package: if you install both `coloredlogs` and `verboselogs` it\nwill just work (`verboselogs` is of course not required to use\n`coloredlogs`).\n\n.. contents::\n   :local:\n\ninstallation\n------------\n\nthe `coloredlogs` package is available on pypi_ which means installation should\nbe as simple as:\n\n.. code-block:: console\n\n   $ pip install coloredlogs\n\nthere's actually a multitude of ways to install python packages (e.g. the `per\nuser site-packages directory`_, `virtual environments`_ or just installing\nsystem wide) and i have no intention of getting into that discussion here, so\nif this intimidates you then read up on your options before returning to these\ninstructions \ud83d\ude09.\n\noptional dependencies\n~~~~~~~~~~~~~~~~~~~~~\n\nnative ansi support on windows requires an up-to-date windows 10 installation.\nif this is not working for you then consider installing the colorama_ package:\n\n.. code-block:: console\n\n   $ pip install colorama\n\nonce colorama_ is installed it will be used automatically.\n\nusage\n-----\n\nhere's an example of how easy it is to get started:\n\n.. code-block:: python\n\n   import coloredlogs, logging\n\n   # create a logger object.\n   logger = logging.getlogger(__name__)\n\n   # by default the install() function installs a handler on the root logger,\n   # this means that log messages from your code and log messages from the\n   # libraries that you use will all show up on the terminal.\n   coloredlogs.install(level='debug')\n\n   # if you don't want to see log messages from libraries, you can pass a\n   # specific logger object to the install() function. in this case only log\n   # messages originating from that logger will show up on the terminal.\n   coloredlogs.install(level='debug', logger=logger)\n\n   # some examples.\n   logger.debug(\"this is a debugging message\")\n   logger.info(\"this is an informational message\")\n   logger.warning(\"this is a warning message\")\n   logger.error(\"this is an error message\")\n   logger.critical(\"this is a critical message\")\n\nformat of log messages\n----------------------\n\nthe coloredformatter_ class supports user defined log formats so you can use\nany log format you like. the default log format is as follows::\n\n %(asctime)s %(hostname)s %(name)s[%(process)d] %(levelname)s %(message)s\n\nthis log format results in the following output::\n\n 2015-10-23 03:32:22 peter-macbook coloredlogs.demo[30462] debug message with level 'debug'\n 2015-10-23 03:32:23 peter-macbook coloredlogs.demo[30462] verbose message with level 'verbose'\n 2015-10-23 03:32:24 peter-macbook coloredlogs.demo[30462] info message with level 'info'\n ...\n\nyou can customize the log format and styling using environment variables as\nwell as programmatically, please refer to the `online documentation`_ for\ndetails.\n\nenabling millisecond precision\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nif you're switching from `logging.basicconfig()`_ to `coloredlogs.install()`_\nyou may notice that timestamps no longer include milliseconds. this is because\ncoloredlogs doesn't output milliseconds in timestamps unless you explicitly\ntell it to. there are three ways to do that:\n\n1. the easy way is to pass the `milliseconds` argument to `coloredlogs.install()`_::\n\n    coloredlogs.install(milliseconds=true)\n\n   this became supported in `release 7.1`_ (due to `#16`_).\n\n2. alternatively you can change the log format `to include 'msecs'`_::\n\n    %(asctime)s,%(msecs)03d %(hostname)s %(name)s[%(process)d] %(levelname)s %(message)s\n\n   here's what the call to `coloredlogs.install()`_ would then look like::\n\n    coloredlogs.install(fmt='%(asctime)s,%(msecs)03d %(hostname)s %(name)s[%(process)d] %(levelname)s %(message)s')\n\n   customizing the log format also enables you to change the delimiter that\n   separates seconds from milliseconds (the comma above). this became possible\n   in `release 3.0`_ which added support for user defined log formats.\n\n3. if the use of ``%(msecs)d`` isn't flexible enough you can instead add ``%f``\n   to the date/time format, it will be replaced by the value of ``%(msecs)03d``.\n   support for the ``%f`` directive was added to `release 9.3`_ (due to `#45`_).\n\ncustom logging fields\n~~~~~~~~~~~~~~~~~~~~~\n\nthe following custom log format fields are supported:\n\n- ``%(hostname)s`` provides the hostname of the local system.\n- ``%(programname)s`` provides the name of the currently running program.\n- ``%(username)s`` provides the username of the currently logged in user.\n\nwhen `coloredlogs.install()`_ detects that any of these fields are used in the\nformat string the applicable logging.filter_ subclasses are automatically\nregistered to populate the relevant log record fields.\n\nchanging text styles and colors\n-------------------------------\n\nthe online documentation contains `an example of customizing the text styles and\ncolors <https://coloredlogs.readthedocs.io/en/latest/api.html#changing-the-colors-styles>`_.\n\ncolored output from cron\n------------------------\n\nwhen `coloredlogs` is used in a cron_ job, the output that's e-mailed to you by\ncron won't contain any ansi escape sequences because `coloredlogs` realizes\nthat it's not attached to an interactive terminal. if you'd like to have colors\ne-mailed to you by cron there are two ways to make it happen:\n\n.. contents::\n   :local:\n\nmodifying your crontab\n~~~~~~~~~~~~~~~~~~~~~~\n\nhere's an example of a minimal crontab::\n\n    mailto=\"your-email-address@here\"\n    content_type=\"text/html\"\n    * * * * * root coloredlogs --to-html your-command\n\nthe ``coloredlogs`` program is installed when you install the `coloredlogs`\npython package. when you execute ``coloredlogs --to-html your-command`` it runs\n``your-command`` under the external program ``script`` (you need to have this\ninstalled). this makes ``your-command`` think that it's attached to an\ninteractive terminal which means it will output ansi escape sequences which\nwill then be converted to html by the ``coloredlogs`` program. yes, this is a\nbit convoluted, but it works great :-)\n\nmodifying your python code\n~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthe coloredcronmailer_ class provides a context manager that automatically\nenables html output when the ``$content_type`` variable has been correctly set\nin the crontab.\n\nthis requires my capturer_ package which you can install using ``pip install\n'coloredlogs[cron]'``. the ``[cron]`` extra will pull in capturer_ 2.4 or newer\nwhich is required to capture the output while silencing it - otherwise you'd\nget duplicate output in the emails sent by ``cron``.\n\nthe context manager can also be used to retroactively silence output that has\nalready been produced, this can be useful to avoid spammy cron jobs that have\nnothing useful to do but still email their output to the system administrator\nevery few minutes :-).\n\ncontact\n-------\n\nthe latest version of `coloredlogs` is available on pypi_ and github_. the\n`online documentation`_ is available on read the docs and includes a\nchangelog_. for bug reports please create an issue on github_. if you have\nquestions, suggestions, etc. feel free to send me an e-mail at\n`peter@peterodding.com`_.\n\nlicense\n-------\n\nthis software is licensed under the `mit license`_.\n\n\u00a9 2020 peter odding.\n\n\n.. external references:\n.. _#16: https://github.com/xolox/python-coloredlogs/issues/16\n.. _#45: https://github.com/xolox/python-coloredlogs/issues/45\n.. _ansi escape sequences: https://en.wikipedia.org/wiki/ansi_escape_code#colors\n.. _capturer: https://pypi.org/project/capturer\n.. _changelog: https://coloredlogs.readthedocs.org/en/latest/changelog.html\n.. _colorama: https://pypi.org/project/colorama\n.. _coloredcronmailer: https://coloredlogs.readthedocs.io/en/latest/api.html#coloredlogs.converter.coloredcronmailer\n.. _coloredformatter: https://coloredlogs.readthedocs.io/en/latest/api.html#coloredlogs.coloredformatter\n.. _coloredlogs.install(): https://coloredlogs.readthedocs.io/en/latest/api.html#coloredlogs.install\n.. _cron: https://en.wikipedia.org/wiki/cron\n.. _github: https://github.com/xolox/python-coloredlogs\n.. _logging.basicconfig(): https://docs.python.org/2/library/logging.html#logging.basicconfig\n.. _logging.filter: https://docs.python.org/3/library/logging.html#filter-objects\n.. _logging.formatter: https://docs.python.org/2/library/logging.html#logging.formatter\n.. _logging: https://docs.python.org/2/library/logging.html\n.. _mit license: https://en.wikipedia.org/wiki/mit_license\n.. _online documentation: https://coloredlogs.readthedocs.io/\n.. _per user site-packages directory: https://www.python.org/dev/peps/pep-0370/\n.. _peter@peterodding.com: peter@peterodding.com\n.. _pypi: https://pypi.org/project/coloredlogs\n.. _release 3.0: https://coloredlogs.readthedocs.io/en/latest/changelog.html#release-3-0-2015-10-23\n.. _release 7.1: https://coloredlogs.readthedocs.io/en/latest/changelog.html#release-7-1-2017-07-15\n.. _release 9.3: https://coloredlogs.readthedocs.io/en/latest/changelog.html#release-9-3-2018-04-29\n.. _to include 'msecs': https://stackoverflow.com/questions/6290739/python-logging-use-milliseconds-in-time-format\n.. _verboselogs: https://pypi.org/project/verboselogs\n.. _virtual environments: http://docs.python-guide.org/en/latest/dev/virtualenvs/\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "coloredlogs",
+  "package_url": "https://pypi.org/project/coloredlogs/",
+  "project_url": "https://pypi.org/project/coloredlogs/",
+  "project_urls": {
+    "Homepage": "https://coloredlogs.readthedocs.io"
+  },
+  "release_url": "https://pypi.org/project/coloredlogs/15.0.1/",
+  "requires_dist": [
+    "humanfriendly (>=9.1)",
+    "capturer (>=2.4) ; extra == 'cron'"
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+  "summary": "colored terminal output for python's logging module",
+  "version": "15.0.1",
+  "releases": [],
+  "developers": [
+    "peter@peterodding.com",
+    "peter_odding"
+  ],
+  "kwds": "_coloredlogs coloredlogs _coloredformatter coloredformatter_ _logging",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_coloredlogs",
+  "homepage": "https://coloredlogs.readthedocs.io",
+  "release_count": 63,
+  "dependency_ids": [
+    "pypi_capturer",
+    "pypi_humanfriendly"
+  ]
+}

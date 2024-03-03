@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 6 - mature",
+    "intended audience :: financial and insurance industry",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "======================================================\nnumexpr: fast numerical expression evaluator for numpy\n======================================================\n\n:author: david m. cooke, francesc alted, and others.\n:maintainer: francesc alted\n:contact: faltet@gmail.com\n:url: https://github.com/pydata/numexpr\n:documentation: http://numexpr.readthedocs.io/en/latest/\n:travis ci: |travis|\n:github actions: |actions|\n:pypi: |version|\n:doi: |doi|\n:readthedocs: |docs|\n\n.. |actions| image:: https://github.com/pydata/numexpr/workflows/build/badge.svg\n        :target: https://github.com/pydata/numexpr/actions\n.. |travis| image:: https://travis-ci.org/pydata/numexpr.png?branch=master\n        :target: https://travis-ci.org/pydata/numexpr\n.. |docs| image:: https://readthedocs.org/projects/numexpr/badge/?version=latest\n        :target: http://numexpr.readthedocs.io/en/latest\n.. |doi| image:: https://zenodo.org/badge/doi/10.5281/zenodo.2483274.svg\n        :target:  https://doi.org/10.5281/zenodo.2483274\n.. |version| image:: https://img.shields.io/pypi/v/numexpr.png\n        :target: https://pypi.python.org/pypi/numexpr\n\n\nwhat is numexpr?\n----------------\n\nnumexpr is a fast numerical expression evaluator for numpy.  with it,\nexpressions that operate on arrays (like :code:`'3*a+4*b'`) are accelerated\nand use less memory than doing the same calculation in python.\n\nin addition, its multi-threaded capabilities can make use of all your\ncores -- which generally results in substantial performance scaling compared\nto numpy.\n\nlast but not least, numexpr can make use of intel's vml (vector math\nlibrary, normally integrated in its math kernel library, or mkl).\nthis allows further acceleration of transcendent expressions.\n\n\nhow numexpr achieves high performance\n-------------------------------------\n\nthe main reason why numexpr achieves better performance than numpy is\nthat it avoids allocating memory for intermediate results. this\nresults in better cache utilization and reduces memory access in\ngeneral. due to this, numexpr works best with large arrays.\n\nnumexpr parses expressions into its own op-codes that are then used by\nan integrated computing virtual machine. the array operands are split\ninto small chunks that easily fit in the cache of the cpu and passed\nto the virtual machine. the virtual machine then applies the\noperations on each chunk. it's worth noting that all temporaries and\nconstants in the expression are also chunked. chunks are distributed among\nthe available cores of the cpu, resulting in highly parallelized code\nexecution.\n\nthe result is that numexpr can get the most of your machine computing\ncapabilities for array-wise computations. common speed-ups with regard\nto numpy are usually between 0.95x (for very simple expressions like\n:code:`'a + 1'`) and 4x (for relatively complex ones like :code:`'a*b-4.1*a > 2.5*b'`),\nalthough much higher speed-ups can be achieved for some functions  and complex\nmath operations (up to 15x in some cases).\n\nnumexpr performs best on matrices that are too large to fit in l1 cpu cache.\nin order to get a better idea on the different speed-ups that can be achieved\non your platform, run the provided benchmarks.\n\ninstallation\n------------\n\nfrom wheels\n^^^^^^^^^^^\n\nnumexpr is available for install via `pip` for a wide range of platforms and\npython versions (which may be browsed at: https://pypi.org/project/numexpr/#files).\ninstallation can be performed as::\n\n    pip install numexpr\n\nif you are using the anaconda or miniconda distribution of python you may prefer\nto use the `conda` package manager in this case::\n\n    conda install numexpr\n\nfrom source\n^^^^^^^^^^^\n\non most \\*nix systems your compilers will already be present. however if you\nare using a virtual environment with a substantially newer version of python than\nyour system python you may be prompted to install a new version of `gcc` or `clang`.\n\nfor windows, you will need to install the microsoft visual c++ build tools\n(which are free) first. the version depends on which version of python you have\ninstalled:\n\nhttps://wiki.python.org/moin/windowscompilers\n\nfor python 3.6+ simply installing the latest version of msvc build tools should\nbe sufficient. note that wheels found via pip do not include mkl support. wheels\navailable via `conda` will have mkl, if the mkl backend is used for numpy.\n\nsee `requirements.txt` for the required version of numpy.\n\nnumexpr is built in the standard python way::\n\n  python setup.py build install\n\nyou can test `numexpr` with::\n\n  python -c \"import numexpr; numexpr.test()\"\n\ndo not test numexpr in the source directory or you will generate import errors.\n\nenable intel\u00ae mkl support\n^^^^^^^^^^^^^^^^^^^^^^^^^\n\nnumexpr includes support for intel's mkl library. this may provide better\nperformance on intel architectures, mainly when evaluating transcendental\nfunctions (trigonometrical, exponential, ...).\n\nif you have intel's mkl, copy the `site.cfg.example` that comes with the\ndistribution to `site.cfg` and edit the latter file to provide correct paths to\nthe mkl libraries in your system.  after doing this, you can proceed with the\nusual building instructions listed above.\n\npay attention to the messages during the building process in order to know\nwhether mkl has been detected or not.  finally, you can check the speed-ups on\nyour machine by running the `bench/vml_timing.py` script (you can play with\ndifferent parameters to the `set_vml_accuracy_mode()` and `set_vml_num_threads()`\nfunctions in the script so as to see how it would affect performance).\n\nusage\n-----\n\n::\n\n  >>> import numpy as np\n  >>> import numexpr as ne\n\n  >>> a = np.arange(1e6)   # choose large arrays for better speedups\n  >>> b = np.arange(1e6)\n\n  >>> ne.evaluate(\"a + 1\")   # a simple expression\n  array([  1.00000000e+00,   2.00000000e+00,   3.00000000e+00, ...,\n           9.99998000e+05,   9.99999000e+05,   1.00000000e+06])\n\n  >>> ne.evaluate('a*b-4.1*a > 2.5*b')   # a more complex one\n  array([false, false, false, ...,  true,  true,  true], dtype=bool)\n\n  >>> ne.evaluate(\"sin(a) + arcsinh(a/b)\")   # you can also use functions\n  array([        nan,  1.72284457,  1.79067101, ...,  1.09567006,\n          0.17523598, -0.09597844])\n\n  >>> s = np.array([b'abba', b'abbb', b'abbcdef'])\n  >>> ne.evaluate(\"b'abba' == s\")   # string arrays are supported too\n  array([ true, false, false], dtype=bool)\n\n\ndocumentation\n-------------\n\nplease see the official documentation at `numexpr.readthedocs.io <https://numexpr.readthedocs.io>`_.\nincluded is a user guide, benchmark results, and the reference api.\n\n\nauthors\n-------\n\nplease see `authors.txt <https://github.com/pydata/numexpr/blob/master/authors.txt>`_.\n\n\nlicense\n-------\n\nnumexpr is distributed under the `mit <http://www.opensource.org/licenses/mit-license.php>`_ license.\n\n\n.. local variables:\n.. mode: text\n.. coding: utf-8\n.. fill-column: 70\n.. end:\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "numexpr",
+  "package_url": "https://pypi.org/project/numexpr/",
+  "project_url": "https://pypi.org/project/numexpr/",
+  "project_urls": {
+    "Homepage": "https://github.com/pydata/numexpr"
+  },
+  "release_url": "https://pypi.org/project/numexpr/2.8.8/",
+  "requires_dist": [
+    "numpy >=1.13.3"
+  ],
+  "requires_python": ">=3.9",
+  "summary": "fast numerical expression evaluator for numpy",
+  "version": "2.8.8",
+  "releases": [],
+  "developers": [
+    "david_m",
+    "robbmcleod@gmail.com",
+    "robert_a"
+  ],
+  "kwds": "numexpr numpy numerical python evaluator",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_numexpr",
+  "homepage": "https://github.com/pydata/numexpr",
+  "release_count": 51,
+  "dependency_ids": [
+    "pypi_numpy"
+  ]
+}

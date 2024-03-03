@@ -1,0 +1,62 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "[![circleci](https://circleci.com/gh/google/pybadges.svg?style=svg)](https://circleci.com/gh/google/pybadges)\n![pypi](https://img.shields.io/pypi/v/pybadges.svg)\n![versions](https://img.shields.io/pypi/pyversions/pybadges.svg)\n   \n# pybadges\n\npybadges is a python library and command line tool that allows you to create\ngithub-style badges as svg images. for example:\n\n![pip installation](https://github.com/google/pybadges/raw/master/tests/golden-images/pip.svg?sanitize=true)\n![pip installation](https://github.com/google/pybadges/raw/master/tests/golden-images/license.svg?sanitize=true)\n![pip installation](https://github.com/google/pybadges/raw/master/tests/golden-images/build-passing.svg?sanitize=true)\n\nthe aesthetics of the generated badges matches the  visual design found in this\n[specification](https://github.com/badges/shields/blob/master/spec/specification.md).\n\nthe implementation of the library was heavily influenced by\n[shields.io](https://github.com/badges/shields) and the javascript\n[badge-maker](https://github.com/badges/shields/tree/master/badge-maker#badge-maker) library.\n\n## getting started\n\n### installing\n\npybadges can be installed using [pip](https://pypi.org/project/pip/):\n\n```sh\npip install pybadges\n```\n\nto test that installation was successful, try:\n```sh\npython -m pybadges --left-text=build --right-text=failure --right-color='#c00' --browser\n```\n\nyou will see a badge like this in your browser:\n\n![pip installation](https://github.com/google/pybadges/raw/master/tests/golden-images/build-failure.svg?sanitize=true)\n\n## usage\n\npybadges can be used both from the command line and as a python library.\n\nthe command line interface is a great way to experiment with the api before\nwriting python code.\n\nyou could also look at the [example server](https://github.com/google/pybadges/tree/master/server-example).\n\n### command line usage\n\ncomplete documentation of pybadges command arguments can be found using the `--help`\nflag:\n\n```sh\npython -m pybadges --help\n```\n\nbut the following usage demonstrates every interesting option:\n```sh\npython -m pybadges \\\n    --left-text=complete \\\n    --right-text=example \\\n    --left-color=green \\\n    --right-color='#fb3' \\\n    --left-link=http://www.complete.com/ \\\n    --right-link=http://www.example.com \\\n    --logo='data:image/png;base64,ivborw0kggoaaaansuheugaaaaiaaaaccaiaaad91jpzaaaad0leqvqi12p4zwad/xkyaa/+af8ihnluaaaaaelftksuqmcc' \\\n    --embed-logo \\\n    --whole-title=\"badge title\" \\\n    --left-title=\"left title\" \\\n    --right-title=\"right title\" \\\n    --browser\n```\n\n![pip installation](https://github.com/google/pybadges/raw/master/tests/golden-images/complete.svg?sanitize=true)\n\n#### a note about `--logo` and `--embed-logo`\n\nnote that the `--logo` option can include a regular url:\n\n```sh\npython -m pybadges \\\n    --left-text=\"python\" \\\n    --right-text=\"3.2, 3.3, 3.4, 3.5, 3.6\" \\\n    --whole-link=\"https://www.python.org/\" \\\n    --browser \\\n    --logo='https://dev.w3.org/svg/tools/svgweb/samples/svg-files/python.svg'\n```\n\n![pip installation](https://github.com/google/pybadges/raw/master/tests/golden-images/python.svg?sanitize=true)\n\nif the `--logo` option is set, the `--embed-logo` option can also be set.\nthe `--embed-logo` option causes the content of the url provided in `--logo`\nto be embedded in the badge rather than be referenced through a link.\n\nthe advantage of using this option is an extra http request will not be required\nto render the badge and that some browsers will not load image references at all.\n\nyou can see the difference in your browser:\n\n![--embed-logo=yes](https://github.com/google/pybadges/raw/master/tests/golden-images/embedded-logo.svg?sanitize=true) ![--embed-logo=no](https://github.com/google/pybadges/raw/master/tests/golden-images/no-embedded-logo.svg?sanitize=true)\n\n#### a note about `--(whole|left|right)-title`\n\nthe `title` element is usually displayed as a\n[pop-up by browsers](https://developer.mozilla.org/en-us/docs/web/svg/element/title)\nbut is currently\n[filtered by github](https://github.com/github/markup/issues/1267).\n\n\n### library usage\n\npybadges is primarily meant to be used as a python library.\n\n```python\nfrom pybadges import badge\ns = badge(left_text='coverage', right_text='23%', right_color='red')\n# s is a string that contains the badge data as an svg image.\nprint(s[:40]) # => <svg height=\"20\" width=\"191.0\" xmlns=\"ht\n```\n\nthe keyword arguments to `badge()` are identical to the command flags names\ndescribed above except with keyword arguments using underscore instead of\nhyphen/minus (e.g. `--left-text` => `left_text=`)\n\n#### server usage\n\npybadges can be used to serve badge images on the web. \n\n[server-example](https://github.com/google/pybadges/tree/master/server-example)\ncontains an example of serving badge images from a\n[flask server](https://flask.palletsprojects.com/).\n\n### caveats\n\n - pybadges uses a pre-calculated table of text widths and\n   [kerning](https://en.wikipedia.org/wiki/kerning) distances\n   (for western glyphs) to determine the size of the badge.\n   so eastern european languages may be rendered less well than\n   western european ones:\n\n   ![pip installation](https://github.com/google/pybadges/raw/master/tests/golden-images/saying-russian.svg?sanitize=true)\n\n   and glyphs not present in deja vu sans (the default font) may\n   be rendered very poorly:\n\n    ![pip installation](https://github.com/google/pybadges/raw/master/tests/golden-images/saying-chinese.svg?sanitize=true)\n\n - pybadges does not have any explicit support for languages that\n   are written right-to-left (e.g. arabic, hebrew) and the displayed\n   text direction may be incorrect:\n\n    ![pip installation](https://github.com/google/pybadges/raw/master/tests/golden-images/saying-arabic.svg?sanitize=true)\n\n## development\n\n```sh\ngit clone https://github.com/google/pybadges.git\ncd pybadges\npython -m virtualenv venv\nsource venv/bin/activate\n# installs in edit mode and with development dependencies.\npip install -e .[dev]\nnox\n```\n\nif you'd like to contribute your changes back to pybadges, please read the\n[contributor guide.](contributing.md)\n\n## versioning\n\nwe use [semver](http://semver.org/) for versioning.\n\n## license\n\nthis project is licensed under the apache license - see the [license](license) file for details\n\nthis is not an officially supported google product.\n",
+  "docs_url": null,
+  "keywords": "github gh-badges badge shield status",
+  "license": "apache-2.0",
+  "name": "pybadges",
+  "package_url": "https://pypi.org/project/pybadges/",
+  "project_url": "https://pypi.org/project/pybadges/",
+  "project_urls": {
+    "Homepage": "https://github.com/google/pybadges"
+  },
+  "release_url": "https://pypi.org/project/pybadges/3.0.1/",
+  "requires_dist": [
+    "Jinja2 <4,>=3",
+    "requests <3,>=2.22.0",
+    "Flask >=2.0 ; extra == 'dev'",
+    "fonttools >=3.26 ; extra == 'dev'",
+    "nox ; extra == 'dev'",
+    "Pillow >=5 ; extra == 'dev'",
+    "pytest >=3.6 ; extra == 'dev'",
+    "xmldiff >=2.4 ; extra == 'dev'",
+    "Pillow <10,>=6 ; extra == 'pil-measurement'"
+  ],
+  "requires_python": ">=3.4",
+  "summary": "a library and command-line tool for generating github-style badges",
+  "version": "3.0.1",
+  "releases": [],
+  "developers": [
+    "brian@sweetapp.com",
+    "brian_quinlan"
+  ],
+  "kwds": "badges badge pybadges pyversions svg",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_pybadges",
+  "homepage": "https://github.com/google/pybadges",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_flask",
+    "pypi_fonttools",
+    "pypi_jinja2",
+    "pypi_nox",
+    "pypi_pillow",
+    "pypi_pytest",
+    "pypi_requests",
+    "pypi_xmldiff"
+  ]
+}

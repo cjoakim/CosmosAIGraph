@@ -1,0 +1,72 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: asyncio",
+    "framework :: bottle",
+    "framework :: django",
+    "framework :: flask",
+    "framework :: pylons",
+    "framework :: pyramid",
+    "framework :: pytest",
+    "framework :: turbogears",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": ".. figure:: https://raw.githubusercontent.com/wiki/ets-labs/python-dependency-injector/img/logo.svg\n   :target: https://github.com/ets-labs/python-dependency-injector\n\n| \n\n.. image:: https://img.shields.io/pypi/v/dependency_injector.svg\n   :target: https://pypi.org/project/dependency-injector/\n   :alt: latest version\n   \n.. image:: https://img.shields.io/pypi/l/dependency_injector.svg\n   :target: https://pypi.org/project/dependency-injector/\n   :alt: license\n\n.. image:: https://img.shields.io/pypi/pyversions/dependency_injector.svg\n   :target: https://pypi.org/project/dependency-injector/\n   :alt: supported python versions\n   \n.. image:: https://img.shields.io/pypi/implementation/dependency_injector.svg\n   :target: https://pypi.org/project/dependency-injector/\n   :alt: supported python implementations\n\n.. image:: https://pepy.tech/badge/dependency-injector\n   :target: https://pepy.tech/project/dependency-injector\n   :alt: downloads\n\n.. image:: https://pepy.tech/badge/dependency-injector/month\n   :target: https://pepy.tech/project/dependency-injector\n   :alt: downloads\n\n.. image:: https://pepy.tech/badge/dependency-injector/week\n   :target: https://pepy.tech/project/dependency-injector\n   :alt: downloads\n\n.. image:: https://img.shields.io/pypi/wheel/dependency-injector.svg\n   :target: https://pypi.org/project/dependency-injector/\n   :alt: wheel\n\n.. image:: https://img.shields.io/github/actions/workflow/status/ets-labs/python-dependency-injector/tests-and-linters.yml?branch=master\n   :target: https://github.com/ets-labs/python-dependency-injector/actions\n   :alt: build status\n\n.. image:: https://coveralls.io/repos/github/ets-labs/python-dependency-injector/badge.svg?branch=master\n   :target: https://coveralls.io/github/ets-labs/python-dependency-injector?branch=master\n   :alt: coverage status\n\nwhat is ``dependency injector``?\n================================\n\n``dependency injector`` is a dependency injection framework for python.\n\nit helps implement the dependency injection principle.\n\nkey features of the ``dependency injector``:\n\n- **providers**. provides ``factory``, ``singleton``, ``callable``, ``coroutine``, ``object``,\n  ``list``, ``dict``, ``configuration``, ``resource``, ``dependency``, and ``selector`` providers\n  that help assemble your objects.\n  see `providers <https://python-dependency-injector.ets-labs.org/providers/index.html>`_.\n- **overriding**. can override any provider by another provider on the fly. this helps in testing\n  and configuring dev/stage environment to replace api clients with stubs etc. see\n  `provider overriding <https://python-dependency-injector.ets-labs.org/providers/overriding.html>`_.\n- **configuration**. reads configuration from ``yaml``, ``ini``, and ``json`` files, ``pydantic`` settings,\n  environment variables, and dictionaries.\n  see `configuration provider <https://python-dependency-injector.ets-labs.org/providers/configuration.html>`_.\n- **resources**. helps with initialization and configuring of logging, event loop, thread\n  or process pool, etc. can be used for per-function execution scope in tandem with wiring.\n  see `resource provider <https://python-dependency-injector.ets-labs.org/providers/resource.html>`_.\n- **containers**. provides declarative and dynamic containers.\n  see `containers <https://python-dependency-injector.ets-labs.org/containers/index.html>`_.\n- **wiring**. injects dependencies into functions and methods. helps integrate with\n  other frameworks: django, flask, aiohttp, sanic, fastapi, etc.\n  see `wiring <https://python-dependency-injector.ets-labs.org/wiring.html>`_.\n- **asynchronous**. supports asynchronous injections.\n  see `asynchronous injections <https://python-dependency-injector.ets-labs.org/providers/async.html>`_.\n- **typing**. provides typing stubs, ``mypy``-friendly.\n  see `typing and mypy <https://python-dependency-injector.ets-labs.org/providers/typing_mypy.html>`_.\n- **performance**. fast. written in ``cython``.\n- **maturity**. mature and production-ready. well-tested, documented, and supported.\n\n.. code-block:: python\n\n   from dependency_injector import containers, providers\n   from dependency_injector.wiring import provide, inject\n\n\n   class container(containers.declarativecontainer):\n\n       config = providers.configuration()\n\n       api_client = providers.singleton(\n           apiclient,\n           api_key=config.api_key,\n           timeout=config.timeout,\n       )\n\n       service = providers.factory(\n           service,\n           api_client=api_client,\n       )\n\n\n   @inject\n   def main(service: service = provide[container.service]) -> none:\n       ...\n\n\n   if __name__ == \"__main__\":\n       container = container()\n       container.config.api_key.from_env(\"api_key\", required=true)\n       container.config.timeout.from_env(\"timeout\", as_=int, default=5)\n       container.wire(modules=[__name__])\n\n       main()  # <-- dependency is injected automatically\n\n       with container.api_client.override(mock.mock()):\n           main()  # <-- overridden dependency is injected automatically\n\nwhen you call the ``main()`` function the ``service`` dependency is assembled and injected automatically.\n\nwhen you do testing, you call the ``container.api_client.override()`` method to replace the real api\nclient with a mock. when you call ``main()``, the mock is injected.\n\nyou can override any provider with another provider.\n\nit also helps you in a re-configuring project for different environments: replace an api client\nwith a stub on the dev or stage.\n\nwith the ``dependency injector``, object assembling is consolidated in a container. dependency injections are defined explicitly.\nthis makes it easier to understand and change how an application works.\n\n.. figure:: https://raw.githubusercontent.com/wiki/ets-labs/python-dependency-injector/img/di-readme.svg\n   :target: https://github.com/ets-labs/python-dependency-injector\n\nvisit the docs to know more about the\n`dependency injection and inversion of control in python <https://python-dependency-injector.ets-labs.org/introduction/di_in_python.html>`_.\n\ninstallation\n------------\n\nthe package is available on the `pypi`_::\n\n    pip install dependency-injector\n\ndocumentation\n-------------\n\nthe documentation is available `here <https://python-dependency-injector.ets-labs.org/>`_.\n\nexamples\n--------\n\nchoose one of the following:\n\n- `application example (single container) <https://python-dependency-injector.ets-labs.org/examples/application-single-container.html>`_\n- `application example (multiple containers) <https://python-dependency-injector.ets-labs.org/examples/application-multiple-containers.html>`_\n- `decoupled packages example (multiple containers) <https://python-dependency-injector.ets-labs.org/examples/decoupled-packages.html>`_\n- `boto3 example <https://python-dependency-injector.ets-labs.org/examples/boto3.html>`_\n- `django example <https://python-dependency-injector.ets-labs.org/examples/django.html>`_\n- `flask example <https://python-dependency-injector.ets-labs.org/examples/flask.html>`_\n- `aiohttp example <https://python-dependency-injector.ets-labs.org/examples/aiohttp.html>`_\n- `sanic example <https://python-dependency-injector.ets-labs.org/examples/sanic.html>`_\n- `fastapi example <https://python-dependency-injector.ets-labs.org/examples/fastapi.html>`_\n- `fastapi + redis example <https://python-dependency-injector.ets-labs.org/examples/fastapi-redis.html>`_\n- `fastapi + sqlalchemy example <https://python-dependency-injector.ets-labs.org/examples/fastapi-sqlalchemy.html>`_\n\ntutorials\n---------\n\nchoose one of the following:\n\n- `flask web application tutorial <https://python-dependency-injector.ets-labs.org/tutorials/flask.html>`_\n- `aiohttp rest api tutorial <https://python-dependency-injector.ets-labs.org/tutorials/aiohttp.html>`_\n- `asyncio monitoring daemon tutorial <https://python-dependency-injector.ets-labs.org/tutorials/asyncio-daemon.html>`_\n- `cli application tutorial <https://python-dependency-injector.ets-labs.org/tutorials/cli.html>`_\n\nconcept\n-------\n\nthe framework stands on the `pep20 (the zen of python) <https://www.python.org/dev/peps/pep-0020/>`_ principle:\n\n.. code-block:: bash\n\n   explicit is better than implicit\n\nyou need to specify how to assemble and where to inject the dependencies explicitly.\n\nthe power of the framework is in its simplicity.\n``dependency injector`` is a simple tool for the powerful concept.\n\nfrequently asked questions\n--------------------------\n\nwhat is dependency injection?\n - dependency injection is a principle that decreases coupling and increases cohesion\n\nwhy should i do the dependency injection?\n - your code becomes more flexible, testable, and clear \ud83d\ude0e\n\nhow do i start applying the dependency injection?\n - you start writing the code following the dependency injection principle\n - you register all of your application components and their dependencies in the container\n - when you need a component, you specify where to inject it or get it from the container\n\nwhat price do i pay and what do i get?\n - you need to explicitly specify the dependencies\n - it will be extra work in the beginning\n - it will payoff as project grows\n\nhave a question?\n - open a `github issue <https://github.com/ets-labs/python-dependency-injector/issues>`_\n\nfound a bug?\n - open a `github issue <https://github.com/ets-labs/python-dependency-injector/issues>`_\n\nwant to help?\n - |star| star the ``dependency injector`` on the `github <https://github.com/ets-labs/python-dependency-injector/>`_\n - |new| start a new project with the ``dependency injector``\n - |tell| tell your friend about the ``dependency injector``\n\nwant to contribute?\n - |fork| fork the project\n - |pull| open a pull request to the ``develop`` branch\n\n.. _pypi: https://pypi.org/project/dependency-injector/\n\n.. |star| unicode:: u+2b50 u+fe0f .. star sign1\n.. |new| unicode:: u+1f195 .. new sign\n.. |tell| unicode:: u+1f4ac .. tell sign\n.. |fork| unicode:: u+1f500 .. fork sign\n.. |pull| unicode:: u+2b05 u+fe0f .. pull sign\n",
+  "docs_url": null,
+  "keywords": "dependency injection,di,inversion of control,ioc,factory,singleton,design patterns,flask",
+  "license": "bsd new",
+  "name": "dependency-injector",
+  "package_url": "https://pypi.org/project/dependency-injector/",
+  "project_url": "https://pypi.org/project/dependency-injector/",
+  "project_urls": {
+    "Download": "https://pypi.python.org/pypi/dependency_injector",
+    "Homepage": "https://github.com/ets-labs/python-dependency-injector"
+  },
+  "release_url": "https://pypi.org/project/dependency-injector/4.41.0/",
+  "requires_dist": [
+    "six (<=1.16.0,>=1.7.0)",
+    "aiohttp ; extra == 'aiohttp'",
+    "flask ; extra == 'flask'",
+    "pydantic ; extra == 'pydantic'",
+    "pyyaml ; extra == 'yaml'"
+  ],
+  "requires_python": "",
+  "summary": "dependency injection framework for python",
+  "version": "4.41.0",
+  "releases": [],
+  "developers": [
+    "rmogilatov@gmail.com",
+    "roman_mogylatov"
+  ],
+  "kwds": "dependency_injector flask dependency di_in_python injects",
+  "license_kwds": "bsd new",
+  "libtype": "pypi",
+  "id": "pypi_dependency_injector",
+  "homepage": "https://github.com/ets-labs/python-dependency-injector",
+  "release_count": 247,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_flask",
+    "pypi_pydantic",
+    "pypi_pyyaml",
+    "pypi_six"
+  ]
+}

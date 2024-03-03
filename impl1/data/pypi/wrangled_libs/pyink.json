@@ -1,0 +1,71 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: quality assurance"
+  ],
+  "description": "*pyink*, pronounced p\u012b-\u02c8i\u014bk, is a python formatter, forked from\n*[black](https://github.com/psf/black)* with a few different formatting\nbehaviors. we intend to keep rebasing on top of *black*'s latest changes.\n\n# why *pyink*?\n\nwe would love to adopt *black*, but adopting it overnight is too disruptive to\nthe thousands of developers working in our monorepo. we also have other python\ntooling that assumes certain formatting, it would be a too big task to update\nthem all at once. we decided to maintain a few local patches to *black* as a\nmedium-term solution, and release them as a separate tool called *pyink*.\n\n*pyink* is intended to be an adoption helper, and we wish to remove as many\npatches as possible in the future.\n\n# what are the main differences?\n\n*   support only formatting selected line ranges, using the `--pyink-lines=`\n    argument (see [psf/black#830](https://github.com/psf/black/issues/830)).\n\n*   support two-space indentation, using the `pyink-indentation` option.\n\n*   support inferring preferred quote style by calculating the majority in a\n    file, using the `pyink-use-majority-quotes` option.\n\n*   do not wrap trailing pragma comments if the line exceeds the length only\n    because of the pragma (see\n    [psf/black#2843](https://github.com/psf/black/issues/2843)). example\n\n    ```python\n    # pyink:\n    result = some_other_module._private_function(arg=\"value\")  # pylint: disable=protected-access\n\n    # black:\n    result = some_other_module._private_function(\n        arg=\"value\"\n    )  # pylint: disable=protected-access\n    ```\n\n*   do not wrap imports in parentheses and move them to separate lines (see\n    [psf/black#3324](https://github.com/psf/black/issues/3324)). example:\n\n    ```python\n    # pyink:\n    from very_long_top_level_package_name.sub_package.another_level import a_long_module\n\n    # black:\n    from very_long_top_level_package_name.sub_package.another_level import (\n        a_long_module,\n    )\n    ```\n\n*   prefer not breaking lines between immediately nested brackets (see\n    [psf/black#1811](https://github.com/psf/black/issues/1811)). example:\n\n    ```python\n    # pyink:\n    secrets = frozenset({\n        1001,\n        1002,\n        1003,\n        1004,\n        1005,\n        1006,\n        1007,\n        1008,\n        1009,\n    })\n\n    # black:\n    secrets = frozenset(\n        {\n            1001,\n            1002,\n            1003,\n            1004,\n            1005,\n            1006,\n            1007,\n            1008,\n            1009,\n        }\n    )\n    ```\n\n*   add an empty line between class statements without docstrings, and the first\n    method. we expect we will simply remove this difference from *pyink* at some\n    point. example:\n\n    ```python\n    # pyink:\n    class mytest(unittest.testcase):\n\n        def test_magic(self):\n            ...\n\n    # black:\n    class mytest(unittest.testcase):\n        def test_magic(self):\n            ...\n    ```\n\n*   module docstrings are formatted same as other docstrings (see\n    [psf/black#3493](https://github.com/psf/black/issues/3493)).\n\n*   existing parentheses around strings are kept if the content does not fit on\n    a single line. this is related to https://github.com/psf/black/pull/3640\n    where we still want to keep the parentheses around the implicitly\n    concatenated strings if the code already uses them, making it more obvious\n    it's a single function argument. example:\n\n    ```python\n    # original code:\n    func1(\n        (\n            \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\"\n            \" incididunt ut labore et dolore magna aliqua ut enim ad minim\"\n        ),\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\",\n    )\n\n    func2(\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\"\n        \" incididunt ut labore et dolore magna aliqua ut enim ad minim\",\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\",\n    )\n\n    # pyink:\n    func1(\n        (\n            \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\"\n            \" incididunt ut labore et dolore magna aliqua ut enim ad minim\"\n        ),\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\",\n    )\n\n    func2(\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\"\n        \" incididunt ut labore et dolore magna aliqua ut enim ad minim\",\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\",\n    )\n\n    # black:\n    func1(\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\"\n        \" incididunt ut labore et dolore magna aliqua ut enim ad minim\",\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\",\n    )\n\n    func2(\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\"\n        \" incididunt ut labore et dolore magna aliqua ut enim ad minim\",\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\",\n    )\n    ```\n\n*   temporarily disabled the following _black_ future style changes:\n\n    *   https://github.com/psf/black/pull/2916\n    *   https://github.com/psf/black/pull/2278\n\n## historical differences\n\nthese are differences that existed in the past. we have upstreamed them to\n*black* so they are now identical.\n\n*   wrap concatenated strings in parens for function arguments (see\n    [psf/black#3292](https://github.com/psf/black/issues/3292)). example:\n\n    ```python\n    # new:\n    function_call(\n        (\n            \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\"\n            \" incididunt ut labore et dolore magna aliqua ut enim ad minim\"\n        ),\n        \" veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo\",\n    )\n\n    # old:\n    function_call(\n        \" lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor\"\n        \" incididunt ut labore et dolore magna aliqua ut enim ad minim\",\n        \" veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo\",\n    )\n    ```\n\n*   prefer splitting right hand side of assignment statements\n    (see [psf/black#1498](https://github.com/psf/black/issues/1498)). example:\n\n    ```python\n    # new:\n    some_dictionary[\"some_key\"] = (\n        some_long_expression_causing_long_line\n    )\n\n    # old:\n    some_dictionary[\n        \"some_key\"\n    ] = some_long_expression_causing_long_line\n    ```\n\n# how do i use *pyink*?\n\nsame as `black`, except you'll use `pyink`. all `black` command line options are\nsupported by `pyink`. to configure the options in the `pyproject.toml` file, you\nneed to put them in the `[tool.pyink]` section instead of `[tool.black]`.\n\nthere are also a few *pyink* only options:\n\n```\n  --pyink / --no-pyink            enable the pyink formatting mode. disabling\n                                  it should behave the same as black.\n                                  [default: pyink]\n  --pyink-indentation [2|4]       the number of spaces used for indentation.\n                                  [default: 4]\n  --pyink-lines start-end         range of lines to format. must be specified\n                                  as \"start-end\", index is 1-based and\n                                  inclusive on both ends.\n  --pyink-use-majority-quotes     when normalizing string quotes, infer\n                                  preferred quote style by calculating the\n                                  majority in the file. multi-line strings and\n                                  docstrings are excluded from this as they\n                                  always use double quotes.\n```\n\n## is there a vs code extension for *pyink*?\n\nno, but with a bit workaround, you can use the\n[black formatter](https://marketplace.visualstudio.com/items?itemname=ms-python.black-formatter)\nextension. after installing *pyink* and the extension, you can set these in vs\ncode's `settings.json`:\n\n```json\n{\n    \"[python]\": {\n        \"editor.defaultformatter\": \"ms-python.black-formatter\"\n    },\n    \"black-formatter.path\": [\n        \"path/to/pyink\"\n    ]\n}\n```\n\n## can i use *pyink* with the [pre-commit](https://pre-commit.com/) framework?\n\nyes! you can put the following in your `.pre-commit-config.yaml` file:\n\n```yaml\nrepos:\n  - repo: https://github.com/google/pyink\n    rev: 23.3.0\n    hooks:\n      - id: pyink\n        # it is recommended to specify the latest version of python\n        # supported by your project here, or alternatively use\n        # pre-commit's default_language_version, see\n        # https://pre-commit.com/#top_level-default_language_version\n        language_version: python3.9\n```\n\n# why the name?\n\nwe want a name with the same number of characters as *black*, to make patching\neasier. and squid ink is black.\n\n# license\n\n[mit](./license)\n\n# contributing\n\nsee the [contribution guide](./contributing.md).\n\n# changelog\n\nsee [changes.md](./changes.md).\n\n# disclaimer\n\nthis is not an officially supported google product.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pyink",
+  "package_url": "https://pypi.org/project/pyink/",
+  "project_url": "https://pypi.org/project/pyink/",
+  "project_urls": {
+    "Changelog": "https://github.com/google/pyink/blob/pyink/CHANGES.md",
+    "Homepage": "https://github.com/google/pyink"
+  },
+  "release_url": "https://pypi.org/project/pyink/23.10.0/",
+  "requires_dist": [
+    "black==23.10.0",
+    "click>=8.0.0",
+    "mypy-extensions>=0.4.3",
+    "packaging>=22.0",
+    "pathspec>=0.9.0",
+    "platformdirs>=2",
+    "tomli>=1.1.0; python_version < '3.11'",
+    "typing-extensions>=4.0.1; python_version < '3.11'",
+    "colorama>=0.4.3; extra == 'colorama'",
+    "ipython>=7.8.0; extra == 'jupyter'",
+    "tokenize-rt>=3.2.0; extra == 'jupyter'",
+    "uvloop>=0.15.2; extra == 'uvloop'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "pyink is a python formatter, forked from black with slightly different behavior.",
+  "version": "23.10.0",
+  "releases": [],
+  "developers": [
+    "pyink-maintainers@google.com"
+  ],
+  "kwds": "pyink pylint python3 patching python",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pyink",
+  "homepage": "",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_click",
+    "pypi_colorama",
+    "pypi_ipython",
+    "pypi_mypy_extensions",
+    "pypi_packaging",
+    "pypi_pathspec",
+    "pypi_platformdirs",
+    "pypi_tokenize_rt",
+    "pypi_tomli",
+    "pypi_typing_extensions",
+    "pypi_uvloop"
+  ]
+}

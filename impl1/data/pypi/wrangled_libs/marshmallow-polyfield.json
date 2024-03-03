@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "=====================\nmarshmallow-polyfield\n=====================\n\n.. image:: https://travis-ci.com/bachmann1234/marshmallow-polyfield.svg?branch=master\n    :target: https://travis-ci.com/bachmann1234/marshmallow-polyfield\n    :alt: build status\n.. image:: https://coveralls.io/repos/bachmann1234/marshmallow-polyfield/badge.svg?branch=master&service=github\n    :target: https://coveralls.io/github/bachmann1234/marshmallow-polyfield?branch=master\n    :alt: coverage status\n\nthis branch supports marshmallow 3.0 and above. for 2.0 support see `the 2.0 branch <https://github.com/bachmann1234/marshmallow-polyfield/tree/polyfield-2support>`_ \n\nan unofficial extension to marshmallow to allow for polymorphic fields.\n\nmarshmallow is a fantastic library for serialization and deserialization of data.\nfor more on that project see its `github <https://github.com/marshmallow-code/marshmallow>`_ page or its `documentation <http://marshmallow.readthedocs.org/en/latest/>`_.\n\nthis project adds a custom field designed for polymorphic types. this allows you to define a schema that says \"this field accepts anything of type x\"\n\nthe secret to this field is that you need to define two functions. one to be used when serializing, and another for deserializing. these functions\ntake in the raw value and return the schema to use.\n\nthis field should support the same properties as other marshmallow fields. i have worked with *required* *allow_none* and *many*.\n\nlast version support v2 is tagged final_v2_version\n\ninstalling\n----------\n::\n\n    $ pip install marshmallow-polyfield\n\nimporting\n---------\nhere is how to import the necessary field class\n::\n\n    from marshmallow_polyfield import polyfield\n\nexample\n-------\n\nthe code below demonstrates how to setup a schema with a polyfield. for the full context check out the tests.\nonce setup the schema should act like any other schema. if it does not then please file an issue.\n\n.. code:: python\n\n    def shape_schema_serialization_disambiguation(base_object, parent_obj):\n        class_to_schema = {\n            rectangle.__name__: rectangleschema,\n            triangle.__name__: triangleschema\n        }\n        try:\n            return class_to_schema[base_object.__class__.__name__]()\n        except keyerror:\n            pass\n\n        raise typeerror(\"could not detect type. \"\n                        \"did not have a base or a length. \"\n                        \"are you sure this is a shape?\")\n\n\n    def shape_schema_deserialization_disambiguation(object_dict, parent_object_dict):\n        if object_dict.get(\"base\"):\n            return triangleschema()\n        elif object_dict.get(\"length\"):\n            return rectangleschema()\n\n        raise typeerror(\"could not detect type. \"\n                        \"did not have a base or a length. \"\n                        \"are you sure this is a shape?\")\n\n\n    class contrivedshapeclass(object):\n        def __init__(self, main, others):\n            self.main = main\n            self.others = others\n\n        def __eq__(self, other):\n            return self.__dict__ == other.__dict__\n\n\n    class contrivedshapeclassschema(schema):\n        main = polyfield(\n            serialization_schema_selector=shape_schema_serialization_disambiguation,\n            deserialization_schema_selector=shape_schema_deserialization_disambiguation,\n            required=true\n        )\n        others = polyfield(\n            serialization_schema_selector=shape_schema_serialization_disambiguation,\n            deserialization_schema_selector=shape_schema_deserialization_disambiguation,\n            allow_none=true,\n            many=true\n        )\n\n        @post_load\n        def make_object(self, data):\n            return testpolyfield.contrivedshapeclass(\n                data.get('main'),\n                data.get('others')\n            )",
+  "docs_url": null,
+  "keywords": "serialization,rest,json,api,marshal,marshalling,deserialization,validation,schema",
+  "license": "apache 2.0",
+  "name": "marshmallow-polyfield",
+  "package_url": "https://pypi.org/project/marshmallow-polyfield/",
+  "project_url": "https://pypi.org/project/marshmallow-polyfield/",
+  "project_urls": {
+    "Homepage": "https://github.com/Bachmann1234/marshmallow-polyfield"
+  },
+  "release_url": "https://pypi.org/project/marshmallow-polyfield/5.11/",
+  "requires_dist": [],
+  "requires_python": ">=3.5",
+  "summary": "an unofficial extension to marshmallow to allow for polymorphic fields",
+  "version": "5.11",
+  "releases": [],
+  "developers": [
+    "bachmann.matt@gmail.com",
+    "matt_bachmann"
+  ],
+  "kwds": "marshmallow_polyfield polyfield testpolyfield marshmallow serialization_schema_selector",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_marshmallow_polyfield",
+  "homepage": "https://github.com/bachmann1234/marshmallow-polyfield",
+  "release_count": 25,
+  "dependency_ids": []
+}

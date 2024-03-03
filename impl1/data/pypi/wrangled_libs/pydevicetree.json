@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# pydevicetree\n\nthis is a python 3 library for parsing, querying, and modifying devicetree source v1 files as\ndescribed in the [devicetree specification v0.2](https://github.com/devicetree-org/devicetree-specification/releases/tag/v0.2).\n\n## install\n\npydevicetree supports python >= 3.5 and can be installed with pip from the [python package index](https://pypi.org/project/pydevicetree/).\n\n`pip install pydevicetree`\n\n## tutorial\n\n### the devicetree\n\nlet's say you have a file design.dts with the contents\n```\n/dts-v1/;\n\n/ {\n\t#address-cells = <1>;\n\t#size-cells = <1>;\n\tcompatible = \"my,design\";\n\taliases {\n\t\tserial0 = \"/soc/uart@10000000\";\n\t};\n\tchosen {\n\t\tstdout-path = \"/soc/uart@10000000:115200\";\n\t};\n\tcpus {\n\t\t#address-cells = <1>;\n\t\t#size-cells = <0>;\n\t\tcpu@0 {\n\t\t\tcompatible = \"sifive,rocket0\", \"riscv\";\n\t\t\tdevice_type = \"cpu\";\n\t\t\treg = <0>;\n\t\t\triscv,isa = \"rv32imac\";\n\t\t\tstatus = \"okay\";\n\t\t\ttimebase-frequency = <1000000>;\n\t\t\tsifive,dtim = <&dtim>;\n\t\t\tinterrupt-controller {\n\t\t\t\t#interrupt-cells = <1>;\n\t\t\t\tcompatible = \"riscv,cpu-intc\";\n\t\t\t\tinterrupt-controller;\n\t\t\t};\n\t\t};\n\t};\n\tsoc {\n\t\t#address-cells = <1>;\n\t\t#size-cells = <1>;\n\t\tcompatible = \"my,design-soc\";\n\t\tranges;\n\t\tdtim: dtim@20000000 {\n\t\t\tcompatible = \"sifive,dtim0\";\n\t\t\treg = <0x20000000 0x10000000>;\n\t\t\treg-names = \"mem\";\n\t\t};\n\t\tuart: uart@10000000 {\n\t\t\tcompatible = \"sifive,uart0\";\n\t\t\treg = <0x10000000 0x1000>;\n\t\t\treg-names = \"control\";\n\t\t};\n\t};\n};\n```\n\n### parsing the tree\n\nparsing the tree is as easy as 1, 2...\n\n```\n>>> from pydevicetree import devicetree\n>>> tree = devicetree.parsefile(\"design.dts\")\n>>> tree\n<devicetree my,design>\n```\n\n### querying the tree\n\n#### by `compatible` string\n\n```\n>>> tree.match(\"sifive,rocket0\")\n[<node cpu>]\n```\n\n#### by path\n\n```\n>>> tree.get_by_path(\"/soc/dtim\")\n<node dtim@20000000>\n```\n\ndevicetree aliases are allowed in paths\n\n```\n>>> tree.get_by_path(\"serial0\")\n<node uart@10000000>\n```\n\n#### getting `node` properties\n\nthe value (or first value of a list/array) of a property can be retrieved with `node.get_field()`\n\n```\n>>> tree.match(\"sifive,rocket0\")[0].get_field(\"timebase-frequency\")\n1000000\n```\n\nthe list or array of values assigned to a property can be retrieved with `node.get_fields()`\n\n```\n>>> tree.match(\"sifive,rocket0\")[0].get_fields(\"compatible\")\n<stringlist ['sifive,rocket0', 'riscv']>\n```\n\nthere are helper methods `node.get_reg()` and `node.get_ranges()` for the `reg` and `ranges`\ndevicetree properties.\n\n```\n>>> tree.get_by_path(\"/soc/dtim\").get_reg()\n<regarray [536870912, 268435456]>\n>>> tree.get_by_path(\"/soc/dtim\").get_reg().get_by_name(\"mem\")\n(536870912, 268435456)\n>>> \"0x%x\" % tree.get_by_path(\"/soc/dtim\").get_reg().get_by_name(\"mem\")[0]\n'0x20000000'\n```\n\n#### getting `chosen` properties\n\n`devicetree.chosen()` provides quick access to the properties of the `chosen` node\n\n```\n>>> tree.chosen(\"stdout-path\")\n<stringlist ['/soc/uart@10000000:115200']>\n```\n\n### converting back to devicetree\n\nany tree or subtree can be converted back to devicetree by calling `node.to_dts()` or simply\nby `print`ing it:\n\n```\n>>> print(tree.match(\"sifive,rocket0\")[0])\ncpu@0 {\n        #size-cells = <0>;\n        compatible = \"sifive,rocket0\", \"riscv\";\n        device_type = \"cpu\";\n        reg = <0x0>;\n        riscv,isa = \"rv32imac\";\n        status = \"okay\";\n        timebase-frequency = <1000000>;\n        sifive,dtim = <&dtim>;\n        interrupt-controller {\n                #interrupt-cells = <1>;\n                compatible = \"riscv,cpu-intc\";\n                interrupt-controller;\n        };\n};\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pydevicetree",
+  "package_url": "https://pypi.org/project/pydevicetree/",
+  "project_url": "https://pypi.org/project/pydevicetree/",
+  "project_urls": {
+    "Homepage": "https://github.com/sifive/pydevicetree"
+  },
+  "release_url": "https://pypi.org/project/pydevicetree/0.0.13/",
+  "requires_dist": [
+    "pyparsing"
+  ],
+  "requires_python": ">=3.5",
+  "summary": "a library for parsing devicetree source v1",
+  "version": "0.0.13",
+  "releases": [],
+  "developers": [
+    "nathaniel.graff@sifive.com",
+    "nathaniel_graff"
+  ],
+  "kwds": "pydevicetree devicetree device_type subtree tree",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pydevicetree",
+  "homepage": "https://github.com/sifive/pydevicetree",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_pyparsing"
+  ]
+}

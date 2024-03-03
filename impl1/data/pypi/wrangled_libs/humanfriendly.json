@@ -1,0 +1,69 @@
+{
+  "classifiers": [
+    "development status :: 6 - mature",
+    "environment :: console",
+    "framework :: sphinx :: extension",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: communications",
+    "topic :: scientific/engineering :: human machine interfaces",
+    "topic :: software development",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: user interfaces",
+    "topic :: system :: shells",
+    "topic :: system :: system shells",
+    "topic :: system :: systems administration",
+    "topic :: terminals",
+    "topic :: text processing :: general",
+    "topic :: text processing :: linguistic",
+    "topic :: utilities"
+  ],
+  "description": "humanfriendly: human friendly input/output in python\n====================================================\n\n.. image:: https://github.com/xolox/python-humanfriendly/actions/workflows/test.yml/badge.svg?branch=master\n   :target: https://github.com/xolox/python-humanfriendly/actions\n\n.. image:: https://codecov.io/gh/xolox/python-humanfriendly/branch/master/graph/badge.svg?token=jyaj4t74tu\n   :target: https://codecov.io/gh/xolox/python-humanfriendly\n\nthe functions and classes in the `humanfriendly` package can be used to make\ntext interfaces more user friendly. some example features:\n\n- parsing and formatting numbers, file sizes, pathnames and timespans in\n  simple, human friendly formats.\n\n- easy to use timers for long running operations, with human friendly\n  formatting of the resulting timespans.\n\n- prompting the user to select a choice from a list of options by typing the\n  option's number or a unique substring of the option.\n\n- terminal interaction including text styling (`ansi escape sequences`_), user\n  friendly rendering of usage messages and querying the terminal for its\n  size.\n\nthe `humanfriendly` package is currently tested on python 2.7, 3.5+ and pypy\n(2.7) on linux and macos. while the intention is to support windows as well,\nyou may encounter some rough edges.\n\n.. contents::\n   :local:\n\ngetting started\n---------------\n\nit's very simple to start using the `humanfriendly` package::\n\n   >>> from humanfriendly import format_size, parse_size\n   >>> from humanfriendly.prompts import prompt_for_input\n   >>> user_input = prompt_for_input(\"enter a readable file size: \")\n\n     enter a readable file size: 16g\n\n   >>> num_bytes = parse_size(user_input)\n   >>> print(num_bytes)\n   16000000000\n   >>> print(\"you entered:\", format_size(num_bytes))\n   you entered: 16 gb\n   >>> print(\"you entered:\", format_size(num_bytes, binary=true))\n   you entered: 14.9 gib\n\nto get a demonstration of supported terminal text styles (based on\n`ansi escape sequences`_) you can run the following command::\n\n   $ humanfriendly --demo\n\ncommand line\n------------\n\n.. a dry solution to avoid duplication of the `humanfriendly --help' text:\n..\n.. [[[cog\n.. from humanfriendly.usage import inject_usage\n.. inject_usage('humanfriendly.cli')\n.. ]]]\n\n**usage:** `humanfriendly [options]`\n\nhuman friendly input/output (text formatting) on the command\nline based on the python package with the same name.\n\n**supported options:**\n\n.. csv-table::\n   :header: option, description\n   :widths: 30, 70\n\n\n   \"``-c``, ``--run-command``\",\"execute an external command (given as the positional arguments) and render\n   a spinner and timer while the command is running. the exit status of the\n   command is propagated.\"\n   ``--format-table``,\"read tabular data from standard input (each line is a row and each\n   whitespace separated field is a column), format the data as a table and\n   print the resulting table to standard output. see also the ``--delimiter``\n   option.\"\n   \"``-d``, ``--delimiter=value``\",\"change the delimiter used by ``--format-table`` to ``value`` (a string). by default\n   all whitespace is treated as a delimiter.\"\n   \"``-l``, ``--format-length=length``\",\"convert a length count (given as the integer or float ``length``) into a human\n   readable string and print that string to standard output.\"\n   \"``-n``, ``--format-number=value``\",\"format a number (given as the integer or floating point number ``value``) with\n   thousands separators and two decimal places (if needed) and print the\n   formatted number to standard output.\"\n   \"``-s``, ``--format-size=bytes``\",\"convert a byte count (given as the integer ``bytes``) into a human readable\n   string and print that string to standard output.\"\n   \"``-b``, ``--binary``\",\"change the output of ``-s``, ``--format-size`` to use binary multiples of bytes\n   (base-2) instead of the default decimal multiples of bytes (base-10).\"\n   \"``-t``, ``--format-timespan=seconds``\",\"convert a number of seconds (given as the floating point number ``seconds``)\n   into a human readable timespan and print that string to standard output.\"\n   ``--parse-length=value``,\"parse a human readable length (given as the string ``value``) and print the\n   number of metres to standard output.\"\n   ``--parse-size=value``,\"parse a human readable data size (given as the string ``value``) and print the\n   number of bytes to standard output.\"\n   ``--demo``,\"demonstrate changing the style and color of the terminal font using ansi\n   escape sequences.\"\n   \"``-h``, ``--help``\",show this message and exit.\n\n.. [[[end]]]\n\na note about size units\n-----------------------\n\nwhen i originally published the `humanfriendly` package i went with binary\nmultiples of bytes (powers of two). it was pointed out several times that this\nwas a poor choice (see issue `#4`_ and pull requests `#8`_ and `#9`_) and thus\nthe new default became decimal multiples of bytes (powers of ten):\n\n+------+---------------+---------------+\n| unit | binary value  | decimal value |\n+------+---------------+---------------+\n| kb   |          1024 |          1000 +\n+------+---------------+---------------+\n| mb   |       1048576 |       1000000 |\n+------+---------------+---------------+\n| gb   |    1073741824 |    1000000000 |\n+------+---------------+---------------+\n| tb   | 1099511627776 | 1000000000000 |\n+------+---------------+---------------+\n| etc  |               |               |\n+------+---------------+---------------+\n\nthe option to use binary multiples of bytes remains by passing the keyword\nargument `binary=true` to the `format_size()`_ and `parse_size()`_ functions.\n\nwindows support\n---------------\n\nwindows 10 gained native support for ansi escape sequences which means commands\nlike ``humanfriendly --demo`` should work out of the box (if your system is\nup-to-date enough). if this doesn't work then you can install the colorama_\npackage, it will be used automatically once installed.\n\ncontact\n-------\n\nthe latest version of `humanfriendly` is available on pypi_ and github_. the\ndocumentation is hosted on `read the docs`_ and includes a changelog_. for bug\nreports please create an issue on github_. if you have questions, suggestions,\netc. feel free to send me an e-mail at `peter@peterodding.com`_.\n\nlicense\n-------\n\nthis software is licensed under the `mit license`_.\n\n\u00a9 2021 peter odding.\n\n.. external references:\n.. _#4: https://github.com/xolox/python-humanfriendly/issues/4\n.. _#8: https://github.com/xolox/python-humanfriendly/pull/8\n.. _#9: https://github.com/xolox/python-humanfriendly/pull/9\n.. _ansi escape sequences: https://en.wikipedia.org/wiki/ansi_escape_code\n.. _changelog: https://humanfriendly.readthedocs.io/en/latest/changelog.html\n.. _colorama: https://pypi.org/project/colorama\n.. _format_size(): https://humanfriendly.readthedocs.io/en/latest/#humanfriendly.format_size\n.. _github: https://github.com/xolox/python-humanfriendly\n.. _mit license: https://en.wikipedia.org/wiki/mit_license\n.. _parse_size(): https://humanfriendly.readthedocs.io/en/latest/#humanfriendly.parse_size\n.. _peter@peterodding.com: peter@peterodding.com\n.. _pypi: https://pypi.org/project/humanfriendly\n.. _read the docs: https://humanfriendly.readthedocs.io\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "humanfriendly",
+  "package_url": "https://pypi.org/project/humanfriendly/",
+  "project_url": "https://pypi.org/project/humanfriendly/",
+  "project_urls": {
+    "Homepage": "https://humanfriendly.readthedocs.io"
+  },
+  "release_url": "https://pypi.org/project/humanfriendly/10.0/",
+  "requires_dist": [
+    "monotonic ; python_version == \"2.7\"",
+    "pyreadline ; sys_platform == \"win32\" and python_version<\"3.8\"",
+    "pyreadline3 ; sys_platform == \"win32\" and python_version>=\"3.8\""
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+  "summary": "human friendly output for text interfaces using python",
+  "version": "10.0",
+  "releases": [],
+  "developers": [
+    "peter@peterodding.com",
+    "peter_odding"
+  ],
+  "kwds": "humanfriendly text python human typing",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_humanfriendly",
+  "homepage": "https://humanfriendly.readthedocs.io",
+  "release_count": 118,
+  "dependency_ids": [
+    "pypi_monotonic",
+    "pypi_pyreadline",
+    "pypi_pyreadline3"
+  ]
+}

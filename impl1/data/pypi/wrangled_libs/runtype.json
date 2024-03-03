@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: quality assurance",
+    "topic :: utilities"
+  ],
+  "description": "![alt text](logo.png \"logo\")\n\n\nruntype is a collection of run-time type utilities for python.\n\nit is:\n\n:runner: fast! uses an internal typesystem for maximum performance.\n\n:brain: smart! supports `typing`, forward-references, constraints, auto-casting, and more.\n\n:gear: configurative! write your own type system, and use it with *dataclass* and *dispatch*.\n\n------\n\n### modules\n\n- :star: [**validation**](https://runtype.readthedocs.io/en/latest/validation.html) - provides a smarter alternative to `isinstance` and `issubclass`, with support for the `typing` module, and type constraints.\n\n- :star: [**dataclass**](https://runtype.readthedocs.io/en/latest/dataclass.html) - adds run-time type validation to the built-in dataclass.\n\n    - improves dataclass ergonomics.\n    - supports most mypy constructs, like `typing` and forward-references (`foo: 'bar'`).\n    - supports automatic value casting, pydantic-style. (optional, off by default)\n    - supports types with constraints. (e.g. `string(max_length=10)`)\n    - supports optional sampling for faster validation of big lists and dicts.\n    - twice faster than pydantic-v1 with pure python ([read here](https://runtype.readthedocs.io/en/latest/dataclass.html#compared-to-pydantic))\n\n- :star: [**dispatch**](https://runtype.readthedocs.io/en/latest/dispatch.html) - provides fast multiple-dispatch for functions and methods, via a decorator.\n\n    - dispatch on multiple arguments\n    - full [specificity](https://runtype.readthedocs.io/en/latest/dispatch.html#specificity) resolution\n    - [supports mypy](https://runtype.readthedocs.io/en/latest/dispatch.html#mypy-support), by utilizing the `@overload` decorator\n    - inspired by julia.\n\n- :star: [**type utilities**](https://runtype.readthedocs.io/en/latest/types.html) - provides a set of classes to implement your own type-system.\n\n    - supports generics, constraints, phantom types\n    - used by runtype itself, to emulate the python type-system.\n \n\n## docs\n\nread the docs here: https://runtype.readthedocs.io/\n\n## install\n\n```bash\npip install runtype\n```\n\nno dependencies.\n\nrequires python 3.6 or up.\n\n[![codecov](https://codecov.io/gh/erezsh/runtype/branch/master/graph/badge.svg)](https://codecov.io/gh/erezsh/runtype)\n\n## examples\n\n### validation (isa & subclass)\n\nuse `isa` and `issubclass` as a smarter alternative to the builtin isinstance & issubclass -\n\n```python\nfrom runtype import isa, issubclass\n\nassert isa({'a': 1}, dict[str, int])        # == true\nassert not isa({'a': 'b'}, dict[str, int])  # == false\n\nassert issubclass(dict[str, int], typing.mapping[str, int])     # == true\nassert not issubclass(dict[str, int], typing.mapping[int, str]) # == false\n```\n\n### dataclasses\n\n```python\nfrom runtype import dataclass\n\n@dataclass(check_types='cast')  # cast values to the target type, when applicable\nclass person:\n    name: str\n    birthday: datetime = none   # implicit optional\n    interests: list[str] = []   # the list is copied for each instance\n\n\nprint( person(\"beetlejuice\") )\n#> person(name='beetlejuice', birthday=none, interests=[])\nprint( person(\"albert\", \"1955-04-18t00:00\", ['physics']) )\n#> person(name='albert', birthday=datetime.datetime(1955, 4, 18, 0, 0), interests=['physics'])\nprint( person(\"bad\", interests=['a', 1]) )\n# typeerror: [person] attribute 'interests' expected value of type list[str]. instead got ['a', 1]\n#     failed on item: 1, expected type str\n```\n\n### multiple dispatch\n\nruntype dispatches according to the most specific type match -\n\n```python\nfrom runtype import multidispatch as md\n\n@md\ndef mul(a: list, b: list):\n    return [mul(i, j) for i, j in zip(a, b, strict=true)]\n@md\ndef mul(a: list, b: any):\n    return [ai*b for ai in a]\n@md\ndef mul(a: any, b: list):\n    return [bi*b for bi in b]\n@md\ndef mul(a: any, b: any):\n    return a * b\n\nassert mul(\"a\", 4)         == \"aaaa\"        # any, any\nassert mul([1, 2, 3], 2)   == [2, 4, 6]     # list, any\nassert mul([1, 2], [3, 4]) == [3, 8]        # list, list\n\n```\n\ndispatch can also be used for extending the dataclass builtin `__init__`:\n\n```python\n@dataclass(frozen=false)\nclass point:\n    x: int = 0\n    y: int = 0\n    \n    @md\n    def __init__(self, points: list | tuple):\n        self.x, self.y = points\n\n    @md\n    def __init__(self, points: dict):\n        self.x = points['x']\n        self.y = points['y']\n    \n# test constructors\np0 = point()                         # default constructor\nassert p0 == point(0, 0)             # default constructor\nassert p0 == point([0, 0])           # user constructor\nassert p0 == point((0, 0))           # user constructor\nassert p0 == point({\"x\": 0, \"y\": 0}) # user constructor\n```\n\n\n## license\n\nruntype uses the [mit license](license).\n\n## donate\n\nif you like runtype and want to show your appreciation, you can do so at my [patreon page](https://www.patreon.com/erezsh), or [ko-fi page](https://ko-fi.com/erezsh).\n",
+  "docs_url": null,
+  "keywords": "types,typing,dispatch,multimethods,dataclass,runtime",
+  "license": "mit",
+  "name": "runtype",
+  "package_url": "https://pypi.org/project/runtype/",
+  "project_url": "https://pypi.org/project/runtype/",
+  "project_urls": {
+    "Homepage": "https://github.com/erezsh/runtype",
+    "Repository": "https://github.com/erezsh/runtype"
+  },
+  "release_url": "https://pypi.org/project/runtype/0.4.1/",
+  "requires_dist": [
+    "dataclasses; python_version >= \"3.6\" and python_version < \"3.7\"",
+    "contextvars; python_version >= \"3.6\" and python_version < \"3.7\""
+  ],
+  "requires_python": ">=3.6,<4.0",
+  "summary": "type dispatch and validation for run-time python",
+  "version": "0.4.1",
+  "releases": [],
+  "developers": [
+    "erez_shinan",
+    "erezshin@gmail.com"
+  ],
+  "kwds": "runtype check_types types type dataclasses",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_runtype",
+  "homepage": "https://github.com/erezsh/runtype",
+  "release_count": 33,
+  "dependency_ids": [
+    "pypi_contextvars",
+    "pypi_dataclasses"
+  ]
+}

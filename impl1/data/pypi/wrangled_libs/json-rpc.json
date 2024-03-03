@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "json-rpc\n========\n\n.. image:: https://circleci.com/gh/pavlov99/json-rpc/tree/master.svg?style=svg\n    :target: https://circleci.com/gh/pavlov99/json-rpc/tree/master\n    :alt: build status\n\n.. image:: https://codecov.io/gh/pavlov99/json-rpc/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/pavlov99/json-rpc\n    :alt: coverage status\n\n.. image:: https://readthedocs.org/projects/json-rpc/badge/?version=latest\n    :target: http://json-rpc.readthedocs.io/en/latest/?badge=latest\n\n.. image:: https://img.shields.io/pypi/v/json-rpc.svg\n    :target: https://pypi.org/project/json-rpc/\n    :alt: latest pypi version\n\n.. image:: https://img.shields.io/pypi/pyversions/json-rpc.svg\n    :target: https://pypi.org/project/json-rpc/\n    :alt: supported python versions\n\n.. image:: https://badges.gitter.im/pavlov99/json-rpc.svg\n    :target: https://gitter.im/pavlov99/json-rpc\n    :alt: gitter\n\n\n.. image:: https://opencollective.com/json-rpc/tiers/backer/badge.svg?label=backer&color=brightgreen\n    :target: https://opencollective.com/json-rpc\n    :alt: bakers\n\n.. image:: https://opencollective.com/json-rpc/tiers/backer/badge.svg?label=sponsor&color=brightgreen\n    :target: https://opencollective.com/json-rpc\n    :alt: sponsors\n\n`json-rpc2.0 <http://www.jsonrpc.org/specification>`_ and `json-rpc1.0 <http://json-rpc.org/wiki/specification>`_ transport specification implementation.\nsupports python 2.6+, python 3.3+, pypy. has optional django and flask support. 200+ tests.\n\nfeatures\n--------\n\nthis implementation does not have any transport functionality realization, only protocol.\nany client or server implementation is easy based on current code, but requires transport libraries, such as requests, gevent or zmq, see `examples <https://github.com/pavlov99/json-rpc/tree/master/examples>`_.\n\n- vanilla python, no dependencies.\n- 200+ tests for multiple edge cases.\n- optional backend support for django, flask.\n- json-rpc 1.1 and 2.0 support.\n\ninstall\n-------\n\n.. code-block:: python\n\n    pip install json-rpc\n\ntests\n-----\n\nquickstart\n^^^^^^^^^^\nthis is an essential part of the library as there are a lot of edge cases in json-rpc standard. to manage a variety of supported python versions as well as optional backends json-rpc uses `tox`:\n\n.. code-block:: bash\n\n    tox\n\n.. tip::\n   during local development use your python version with tox runner. for example, if your are using python 3.6 run `tox -e py36`. it is easier to develop functionality for specific version first and then expands it to all of the supported versions.\n\ncontinuous integration\n^^^^^^^^^^^^^^^^^^^^^^\nthis project uses `circleci <https://circleci.com/>`_ for continuous integration. all of the python supported versions are managed via `tox.ini` and `.circleci/config.yml` files. master branch test status is displayed on the badge in the beginning of this document.\n\ntest matrix\n^^^^^^^^^^^\njson-rpc supports multiple python versions: 2.6+, 3.3+, pypy. this introduces difficulties with testing libraries and optional dependencies management. for example, python before version 3.3 does not support `mock` and there is a limited support for `unittest2`. every dependency translates into *if-then* blocks in the source code and adds complexity to it. hence, while cross-python support is a core feature of this library, cross-django or cross-flask support is limited. in general, json-rpc uses latest stable release which supports current python version. for example, python 2.6 is compatible with django 1.6 and not compatible with any future versions.\n\nbelow is a testing matrix:\n\n+--------+-------+-----------+--------+--------+\n| python | mock  | unittest  | django | flask  |\n+========+=======+===========+========+========+\n| 2.6    | 2.0.0 | unittest2 | 1.6    | 0.12.2 |\n+--------+-------+-----------+--------+--------+\n| 2.7    | 2.0.0 |           | 1.11   | 0.12.2 |\n+--------+-------+-----------+--------+--------+\n| 3.3    |       |           | 1.11   | 0.12.2 |\n+--------+-------+-----------+--------+--------+\n| 3.4    |       |           | 1.11   | 0.12.2 |\n+--------+-------+-----------+--------+--------+\n| 3.5    |       |           | 1.11   | 0.12.2 |\n+--------+-------+-----------+--------+--------+\n| 3.6    |       |           | 1.11   | 0.12.2 |\n+--------+-------+-----------+--------+--------+\n| pypy   | 2.0.0 |           | 1.11   | 0.12.2 |\n+--------+-------+-----------+--------+--------+\n| pypy3  |       |           | 1.11   | 0.12.2 |\n+--------+-------+-----------+--------+--------+\n\nquickstart\n----------\nserver (uses `werkzeug <http://werkzeug.pocoo.org/>`_)\n\n.. code-block:: python\n\n    from werkzeug.wrappers import request, response\n    from werkzeug.serving import run_simple\n\n    from jsonrpc import jsonrpcresponsemanager, dispatcher\n\n\n    @dispatcher.add_method\n    def foobar(**kwargs):\n        return kwargs[\"foo\"] + kwargs[\"bar\"]\n\n\n    @request.application\n    def application(request):\n        # dispatcher is dictionary {<method_name>: callable}\n        dispatcher[\"echo\"] = lambda s: s\n        dispatcher[\"add\"] = lambda a, b: a + b\n\n        response = jsonrpcresponsemanager.handle(\n            request.data, dispatcher)\n        return response(response.json, mimetype='application/json')\n\n\n    if __name__ == '__main__':\n        run_simple('localhost', 4000, application)\n\nclient (uses `requests <http://www.python-requests.org/en/latest/>`_)\n\n.. code-block:: python\n\n    import requests\n    import json\n\n\n    def main():\n        url = \"http://localhost:4000/jsonrpc\"\n\n        # example echo method\n        payload = {\n            \"method\": \"echo\",\n            \"params\": [\"echome!\"],\n            \"jsonrpc\": \"2.0\",\n            \"id\": 0,\n        }\n        response = requests.post(url, json=payload).json()\n\n        assert response[\"result\"] == \"echome!\"\n        assert response[\"jsonrpc\"]\n        assert response[\"id\"] == 0\n\n    if __name__ == \"__main__\":\n        main()\n\ncompetitors\n-----------\nthere are `several libraries <http://en.wikipedia.org/wiki/json-rpc#implementations>`_ implementing json-rpc protocol. list below represents python libraries, none of the supports python3. tinyrpc looks better than others.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "json-rpc",
+  "package_url": "https://pypi.org/project/json-rpc/",
+  "project_url": "https://pypi.org/project/json-rpc/",
+  "project_urls": {
+    "Homepage": "https://github.com/pavlov99/json-rpc"
+  },
+  "release_url": "https://pypi.org/project/json-rpc/1.15.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "json-rpc transport implementation",
+  "version": "1.15.0",
+  "releases": [],
+  "developers": [
+    "k@p99.io",
+    "kirill_pavlov"
+  ],
+  "kwds": "jsonrpcresponsemanager jsonrpc json badges badge",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_json_rpc",
+  "homepage": "https://github.com/pavlov99/json-rpc",
+  "release_count": 49,
+  "dependency_ids": []
+}

@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "funcy \n=====\n\na collection of fancy functional tools focused on practicality.\n\ninspired by clojure, underscore and my own abstractions. keep reading to get an overview\nor `read the docs <http://funcy.readthedocs.org/>`_.\nor jump directly to `cheatsheet <http://funcy.readthedocs.io/en/stable/cheatsheet.html>`_.\n\nworks with python 3.4+ and pypy3.\n\n\ninstallation\n-------------\n\n::\n\n    pip install funcy\n\n\noverview\n--------------\n\nimport stuff from funcy to make things happen:\n\n.. code:: python\n\n    from funcy import whatever, you, need\n\n\nmerge collections of same type\n(works for dicts, sets, lists, tuples, iterators and even strings):\n\n.. code:: python\n\n    merge(coll1, coll2, coll3, ...)\n    join(colls)\n    merge_with(sum, dict1, dict2, ...)\n\n\nwalk through collection, creating its transform (like map but preserves type):\n\n.. code:: python\n\n    walk(str.upper, {'a', 'b'})            # {'a', 'b'}\n    walk(reversed, {'a': 1, 'b': 2})       # {1: 'a', 2: 'b'}\n    walk_keys(double, {'a': 1, 'b': 2})    # {'aa': 1, 'bb': 2}\n    walk_values(inc, {'a': 1, 'b': 2})     # {'a': 2, 'b': 3}\n\n\nselect a part of collection:\n\n.. code:: python\n\n    select(even, {1,2,3,10,20})                  # {2,10,20}\n    select(r'^a', ('a','b','ab','ba'))           # ('a','ab')\n    select_keys(callable, {str: '', none: none}) # {str: ''}\n    compact({2, none, 1, 0})                     # {1,2}\n\n\nmanipulate sequences:\n\n.. code:: python\n\n    take(4, iterate(double, 1)) # [1, 2, 4, 8]\n    first(drop(3, count(10)))   # 13\n\n    lremove(even, [1, 2, 3])    # [1, 3]\n    lconcat([1, 2], [5, 6])     # [1, 2, 5, 6]\n    lcat(map(range, range(4)))  # [0, 0, 1, 0, 1, 2]\n    lmapcat(range, range(4))    # same\n    flatten(nested_structure)   # flat iter\n    distinct('abacbdd')         # iter('abcd')\n\n    lsplit(odd, range(5))       # ([1, 3], [0, 2, 4])\n    lsplit_at(2, range(5))      # ([0, 1], [2, 3, 4])\n    group_by(mod3, range(5))    # {0: [0, 3], 1: [1, 4], 2: [2]}\n\n    lpartition(2, range(5))     # [[0, 1], [2, 3]]\n    chunks(2, range(5))         # iter: [0, 1], [2, 3], [4]\n    pairwise(range(5))          # iter: [0, 1], [1, 2], ...\n\n\nand functions:\n\n.. code:: python\n\n    partial(add, 1)             # inc\n    curry(add)(1)(2)            # 3\n    compose(inc, double)(10)    # 21\n    complement(even)            # odd\n    all_fn(isa(int), even)      # is_even_int\n\n    one_third = rpartial(operator.div, 3.0)\n    has_suffix = rcurry(str.endswith, 2)\n\n\ncreate decorators easily:\n\n.. code:: python\n\n    @decorator\n    def log(call):\n        print call._func.__name__, call._args\n        return call()\n\n\nabstract control flow:\n\n.. code:: python\n\n    walk_values(silent(int), {'a': '1', 'b': 'no'})\n    # => {'a': 1, 'b': none}\n\n    @once\n    def initialize():\n        \"...\"\n\n    with suppress(oserror):\n        os.remove('some.file')\n\n    @ignore(errorrateexceeded)\n    @limit_error_rate(fails=5, timeout=60)\n    @retry(tries=2, errors=(httperror, servicedown))\n    def some_unreliable_action(...):\n        \"...\"\n\n    class myuser(abstractbaseuser):\n        @cached_property\n        def public_phones(self):\n            return self.phones.filter(public=true)\n\n\nease debugging:\n\n.. code:: python\n\n    squares = {tap(x, 'x'): tap(x * x, 'x^2') for x in [3, 4]}\n    # x: 3\n    # x^2: 9\n    # ...\n\n    @print_exits\n    def some_func(...):\n        \"...\"\n\n    @log_calls(log.info, errors=false)\n    @log_errors(log.exception)\n    def some_suspicious_function(...):\n        \"...\"\n\n    with print_durations('creating models'):\n        model.objects.create(...)\n        # ...\n    # 10.2 ms in creating models\n\n\nand `much more <http://funcy.readthedocs.org/>`_.\n\n\ndive in\n-------\n\nfuncy is an embodiment of ideas i explain in several essays:\n\n- `why every language needs its underscore <https://suor.github.io/blog/2014/06/22/why-every-language-needs-its-underscore/>`_\n- `functional python made easy <https://suor.github.io/blog/2013/10/13/functional-python-made-easy/>`_\n- `abstracting control flow <https://suor.github.io/blog/2013/10/08/abstracting-control-flow/>`_\n- `painless decorators <https://suor.github.io/blog/2013/11/03/painless-decorators/>`_\n\n\nrunning tests\n--------------\n\nto run the tests using your default python:\n\n::\n\n    pip install -r test_requirements.txt\n    py.test\n\nto fully run ``tox`` you need all the supported pythons to be installed. these are\n3.4+ and pypy3. you can run it for particular environment even in absense\nof all of the above::\n\n    tox -e py310\n    tox -e pypy3\n    tox -e lint\n\n\n.. |build status| image:: https://github.com/suor/funcy/actions/workflows/test.yml/badge.svg\n   :target: https://github.com/suor/funcy/actions/workflows/test.yml?query=branch%3amaster\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "funcy",
+  "package_url": "https://pypi.org/project/funcy/",
+  "project_url": "https://pypi.org/project/funcy/",
+  "project_urls": {
+    "Homepage": "http://github.com/Suor/funcy"
+  },
+  "release_url": "https://pypi.org/project/funcy/2.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "a fancy and practical functional tools",
+  "version": "2.0",
+  "releases": [],
+  "developers": [
+    "alexander_schepanovski",
+    "suor.web@gmail.com"
+  ],
+  "kwds": "clojure dicts funcy some_func dict1",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_funcy",
+  "homepage": "http://github.com/suor/funcy",
+  "release_count": 51,
+  "dependency_ids": []
+}

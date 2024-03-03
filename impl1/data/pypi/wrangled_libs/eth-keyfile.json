@@ -1,0 +1,71 @@
+{
+  "classifiers": [
+    "development status :: 2 - pre-alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# eth-keyfile\n\n[![join the conversation on discord](https://img.shields.io/discord/809793915578089484?color=blue&label=chat&logo=discord&logocolor=white)](https://discord.gg/ghryrvpb84) [![build status](https://circleci.com/gh/ethereum/eth-keyfile.svg?style=shield)](https://circleci.com/gh/ethereum/eth-keyfile)\n[![pypi version](https://badge.fury.io/py/eth-keyfile.svg)](https://badge.fury.io/py/eth-keyfile)\n[![python versions](https://img.shields.io/pypi/pyversions/eth-keyfile.svg)](https://pypi.python.org/pypi/eth-keyfile)\n\na library for handling the encrypted keyfiles used to store ethereum private keys\n\n> this library and repository was previously located at https://github.com/pipermerriam/ethereum-keyfile.  it was transferred to the ethereum foundation github in november 2017 and renamed to `eth-keyfile`.  the pypi package was also renamed from `ethereum-keyfile` to `eth-keyfile`.\n\nread more in the documentation below. [view the change log](https://github.com/ethereum/eth-keyfile/blob/master/changelog.rst).\n\n## quickstart\n\n```sh\npython -m pip install eth-keyfile\n```\n\n## documentation\n\n### `eth_keyfile.load_keyfile(path_or_file_obj) --> keyfile_json`\n\ntakes either a filesystem path represented as a string or a file object and\nreturns the parsed keyfile json as a python dictionary.\n\n```python\n>>> from eth_keyfile import load_keyfile\n>>> load_keyfile('path/to-my-keystore/keystore.json')\n{\n    \"crypto\" : {\n        \"cipher\" : \"aes-128-ctr\",\n        \"cipherparams\" : {\n            \"iv\" : \"6087dab2f9fdbbfaddc31a909735c1e6\"\n        },\n        \"ciphertext\" : \"5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46\",\n        \"kdf\" : \"pbkdf2\",\n        \"kdfparams\" : {\n            \"c\" : 262144,\n            \"dklen\" : 32,\n            \"prf\" : \"hmac-sha256\",\n            \"salt\" : \"ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd\"\n        },\n        \"mac\" : \"517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2\"\n    },\n    \"id\" : \"3198bc9c-6672-5ab3-d995-4942343ae5b6\",\n    \"version\" : 3\n}\n```\n\n### `eth_keyfile.create_keyfile_json(private_key, password, kdf=\"pbkdf2\", work_factor=none, salt_size=16) --> keyfile_json`\n\ntakes the following parameters:\n\n- `private_key`: a bytestring of length 32\n- `password`: a bytestring which will be the password that can be used to decrypt the resulting keyfile.\n- `kdf`: the key derivation function.  allowed values are `pbkdf2` and `scrypt`.  by default, `pbkdf2` will be used.\n- `work_factor`: the work factor which will be used for the given key derivation function.  by default `1000000` will be used for `pbkdf2` and `262144` for `scrypt`.\n- `salt_size`: salt size in bytes.\n\nreturns the keyfile json as a python dictionary.\n\n```python\n>>> private_key = b'\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01'\n>>> create_keyfile_json(private_key, b'foo')\n{\n    \"address\" : \"1a642f0e3c3af545e7acbd38b07251b3990914f1\",\n    \"crypto\" : {\n        \"cipher\" : \"aes-128-ctr\",\n        \"cipherparams\" : {\n            \"iv\" : \"6087dab2f9fdbbfaddc31a909735c1e6\"\n        },\n        \"ciphertext\" : \"5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46\",\n        \"kdf\" : \"pbkdf2\",\n        \"kdfparams\" : {\n            \"c\" : 262144,\n            \"dklen\" : 32,\n            \"prf\" : \"hmac-sha256\",\n            \"salt\" : \"ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd\"\n        },\n        \"mac\" : \"517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2\"\n    },\n    \"id\" : \"3198bc9c-6672-5ab3-d995-4942343ae5b6\",\n    \"version\" : 3\n}\n```\n\n### `eth_keyfile.decode_keyfile_json(keyfile_json, password) --> private_key`\n\ntakes the keyfile json as a python dictionary and the password for the keyfile,\nreturning the decoded private key.\n\n```python\n>>> keyfile_json = {\n...     \"crypto\" : {\n...         \"cipher\" : \"aes-128-ctr\",\n...         \"cipherparams\" : {\n...             \"iv\" : \"6087dab2f9fdbbfaddc31a909735c1e6\"\n...         },\n...         \"ciphertext\" : \"5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46\",\n...         \"kdf\" : \"pbkdf2\",\n...         \"kdfparams\" : {\n...             \"c\" : 262144,\n...             \"dklen\" : 32,\n...             \"prf\" : \"hmac-sha256\",\n...             \"salt\" : \"ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd\"\n...         },\n...         \"mac\" : \"517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2\"\n...     },\n...     \"id\" : \"3198bc9c-6672-5ab3-d995-4942343ae5b6\",\n...     \"version\" : 3\n... }\n>>> decode_keyfile_json(keyfile_json, b'foo')\nb'\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01'\n```\n\n### `eth_keyfile.extract_key_from_keyfile(path_or_file_obj, password) --> private_key`\n\ntakes a filesystem path represented by a string or a file object and the\npassword for the keyfile.  returns the private key as a bytestring.\n\n```python\n>>> extract_key_from_keyfile('path/to-my-keystore/keyfile.json', b'foo')\nb'\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01\\x01'\n```\n\n## developer setup\n\nif you would like to hack on eth-keyfile, please check out the [snake charmers\ntactical manual](https://github.com/ethereum/snake-charmers-tactical-manual)\nfor information on how we do:\n\n- testing\n- pull requests\n- documentation\n\nwe use [pre-commit](https://pre-commit.com/) to maintain consistent code style. once\ninstalled, it will run automatically with every commit. you can also run it manually\nwith `make lint`. if you need to make a commit that skips the `pre-commit` checks, you\ncan do so with `git commit --no-verify`.\n\n### development environment setup\n\nyou can set up your dev environment with:\n\n```sh\ngit clone git@github.com:ethereum/eth-keyfile.git\ncd eth-keyfile\nvirtualenv -p python3 venv\n. venv/bin/activate\npython -m pip install -e \".[dev]\"\npre-commit install\n```\n\n### release setup\n\nto release a new version:\n\n```sh\nmake release bump=$$version_part_to_bump$$\n```\n\n#### how to bumpversion\n\nthe version format for this repo is `{major}.{minor}.{patch}` for stable, and\n`{major}.{minor}.{patch}-{stage}.{devnum}` for unstable (`stage` can be alpha or beta).\n\nto issue the next version in line, specify which part to bump,\nlike `make release bump=minor` or `make release bump=devnum`. this is typically done from the\nmain branch, except when releasing a beta (in which case the beta is released from main,\nand the previous stable branch is released from said branch).\n\nif you are in a beta version, `make release bump=stage` will switch to a stable.\n\nto issue an unstable version when the current version is stable, specify the\nnew version explicitly, like `make release bump=\"--new-version 4.0.0-alpha.1 devnum\"`\n",
+  "docs_url": null,
+  "keywords": "ethereum",
+  "license": "mit",
+  "name": "eth-keyfile",
+  "package_url": "https://pypi.org/project/eth-keyfile/",
+  "project_url": "https://pypi.org/project/eth-keyfile/",
+  "project_urls": {
+    "Homepage": "https://github.com/ethereum/eth-keyfile"
+  },
+  "release_url": "https://pypi.org/project/eth-keyfile/0.7.0/",
+  "requires_dist": [
+    "eth-utils >=2",
+    "eth-keys >=0.4.0",
+    "pycryptodome <4,>=3.6.6",
+    "build >=0.9.0 ; extra == 'dev'",
+    "bumpversion >=0.5.3 ; extra == 'dev'",
+    "ipython ; extra == 'dev'",
+    "pre-commit >=3.4.0 ; extra == 'dev'",
+    "tox >=4.0.0 ; extra == 'dev'",
+    "twine ; extra == 'dev'",
+    "wheel ; extra == 'dev'",
+    "towncrier <22,>=21 ; extra == 'dev'",
+    "pytest >=7.0.0 ; extra == 'dev'",
+    "pytest-xdist >=2.4.0 ; extra == 'dev'",
+    "towncrier <22,>=21 ; extra == 'docs'",
+    "pytest >=7.0.0 ; extra == 'test'",
+    "pytest-xdist >=2.4.0 ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8, <4",
+  "summary": "eth-keyfile: a library for handling the encrypted keyfiles used to store ethereum private keys",
+  "version": "0.7.0",
+  "releases": [],
+  "developers": [
+    "snakecharmers@ethereum.org",
+    "the_ethereum_foundation"
+  ],
+  "kwds": "eth_keyfile keyfile keyfiles load_keyfile keyfile_json",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_eth_keyfile",
+  "homepage": "https://github.com/ethereum/eth-keyfile",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_build",
+    "pypi_bumpversion",
+    "pypi_eth_keys",
+    "pypi_eth_utils",
+    "pypi_ipython",
+    "pypi_pre_commit",
+    "pypi_pycryptodome",
+    "pypi_pytest",
+    "pypi_pytest_xdist",
+    "pypi_towncrier",
+    "pypi_tox",
+    "pypi_twine",
+    "pypi_wheel"
+  ]
+}

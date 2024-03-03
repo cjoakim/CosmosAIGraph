@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "environment :: web environment",
+    "framework :: django",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "ssm parameter store\n=============================================================\n\n[![pypi version](https://img.shields.io/pypi/v/ssm-parameter-store.svg)](https://pypi.python.org/pypi/ssm-parameter-store)\n[![build status](https://img.shields.io/travis/christippett/ssm-parameter-store.svg)](https://travis-ci.org/christippett/ssm-parameter-store)\n[![coverage](https://img.shields.io/coveralls/github/christippett/ssm-parameter-store.svg)](https://coveralls.io/github/christippett/ssm-parameter-store?branch=master)\n[![python versions](https://img.shields.io/pypi/pyversions/ssm-parameter-store.svg)](https://pypi.python.org/pypi/ssm-parameter-store)\n[![github license](https://img.shields.io/github/license/christippett/ssm-parameter-store.svg)](https://github.com/christippett/ssm-parameter-store)\n\ndescription\n===========\n\nthis is a simple python wrapper for getting values from aws systems manager\nparameter store.\n\nthe module supports getting a single parameter, multiple parameters or all parameters matching a particular path.\n\nall parameters are returned as a python `dict`.\n\ninstallation\n============\n\ninstall with `pip`:\n\n``` bash\npip install ssm-parameter-store\n```\n\nusage\n=====\n\nimport the module and create a new instance of `ec2parameterstore`.\n\n```python\nfrom ssm_parameter_store import ec2parameterstore\n\nstore = ec2parameterstore()\n```\n\naws credentials\n---------------\n\n`ssm-parameter-store` uses `boto3` under the hood and therefore inherits\nthe same mechanism for looking up aws credentials. see [configuring\ncredentials](https://boto3.readthedocs.io/en/latest/guide/configuration.html#configuring-credentials)\nin the boto 3 documentation for more information.\n\n`ec2parameterstore` accepts all `boto3` client parameters as keyword arguments.\n\nfor example:\n\n``` python\nfrom ssm_parameter_store import ec2parameterstore\n\nstore = ec2parameterstore(\n    aws_access_key_id=access_key,\n    aws_secret_access_key=secret_key,\n    aws_session_token=session_token,  # optional\n    region_name='us-west-2'\n)\n```\n\nexamples\n========\n\ngiven the following parameters:\n\n``` bash\n# set default aws region\naws_default_region=us-west-2\n\n# add parameters\naws ssm put-parameter --name \"param1\" --value \"value1\" --type securestring\naws ssm put-parameter --name \"param2\" --value \"value2\" --type securestring\n\n# add parameters organised by hierarchy\naws ssm put-parameter --name \"/dev/app/secret\" --value \"dev_secret\" --type securestring\naws ssm put-parameter --name \"/dev/db/postgres_username\" --value \"dev_username\" --type securestring\naws ssm put-parameter --name \"/dev/db/postgres_password\" --value \"dev_password\" --type securestring\naws ssm put-parameter --name \"/prod/app/secret\" --value \"prod_secret\" --type securestring\naws ssm put-parameter --name \"/prod/db/postgres_username\" --value \"prod_username\" --type securestring\naws ssm put-parameter --name \"/prod/db/postgres_password\" --value \"prod_password\" --type securestring\n```\n\n\nget a single parameter\n----------------------\n\n``` python\nparameter = store.get_parameter('param1', decrypt=true)\n\nassert parameter == {\n   'param1': 'value1'\n}\n```\n\nget multiple parameters\n-----------------------\n\n``` python\nparameters = store.get_parameters(['param1', 'param2'])\n\nassert parameters == {\n   'param1': 'value1',\n   'param2': 'value2',\n}\n```\n\nget parameters by path\n----------------------\n\n``` python\nparameters = store.get_parameters_by_path('/dev/', recursive=true)\n\nassert parameters == {\n    'secret': 'dev_secret',\n    'postgres_username': 'dev_username',\n    'postgres_password': 'dev_password',\n}\n```\n\nby default `get_parameters_by_path` strips the path from each parameter name. to return a parameter's full name, set `strip_path` to `false`.\n\n``` python\nparameters = store.get_parameters_by_path('/dev/', strip_path=false, recursive=true)\n\nassert parameters == {\n    '/dev/app/secret': 'dev_secret',\n    '/dev/db/postgres_username': 'dev_username',\n    '/dev/db/postgres_password': 'dev_password'\n}\n```\n\nget parameters with original hierarchy\n--------------------------------------\nyou can also get parameters by path, but in a nested structure that models the path hierarchy.\n\n``` python\nparameters = store.get_parameters_with_hierarchy('/dev/')\n\nassert parameters == {\n    'app': {\n        'secret': 'dev_secret',\n    },\n    'db': {\n        'postgres_username': 'dev_username',\n        'postgres_password': 'dev_password',\n    },\n}\n```\n\nby default `get_parameters_with_hierarchy` strips the leading path component. to return the selected parameters\nwith the full hierarchy, set `strip_path` to `false`.\n\n``` python\nparameters = store.get_parameters_with_hierarchy('/dev/', strip_path=false)\n\nassert parameters == {\n    'dev': {\n        'app': {\n            'secret': 'dev_secret',\n        },\n        'db': {\n            'postgres_username': 'dev_username',\n            'postgres_password': 'dev_password',\n        },\n    },\n}\n```\n\n\npopulating environment variables\n================================\n\nthe module includes a static method on `ec2parameterstore` to help populate environment variables. this can be helpful when integrating with a library like [`django-environ`](https://github.com/joke2k/django-environ).\n\nexample\n-------\ngiven the following parameters:\n\n```bash\naws ssm put-parameter --name \"/prod/django/secret_key\" --value \"-$y_^@69bm69+z!fawbdf=h_10+zjzfwr8_c=$$&j@-%p$%ct^\" --type securestring\naws ssm put-parameter --name \"/prod/django/database_url\" --value \"psql://user:pass@db-prod.xyz123.us-west-2.rds.amazonaws.com:5432/db\" --type securestring\naws ssm put-parameter --name \"/prod/django/redis_url\" --value \"redis://redis-prod.edc1ba.0001.usw2.cache.amazonaws.com:6379\" --type securestring\n```\n\n```python\nimport environ\nfrom ssm_parameter_store import ec2parameterstore\n\nenv = environ.env(\n    debug=(bool, false)\n)\n\n# get parameters and populate os.environ (region not required if aws_default_region environment variable set)\nparameter_store = ec2parameterstore(region_name='us-west-2')\ndjango_parameters = parameter_store.get_parameters_by_path('/prod/django/', strip_path=true)\nec2parameterstore.set_env(django_parameters)\n\n# false if not in os.environ\ndebug = env('debug')\n\n# raises django's improperlyconfigured exception if secret_key not in os.environ\nsecret_key = env('secret_key')\n\ndatabases = {\n    # read os.environ['database_url'] and raises improperlyconfigured exception if not found\n    'default': env.db(),\n}\n\ncaches = {\n    'default': env.cache('redis_url'),\n}\n```\n\nrelated projects\n================\n\n- **[param-store](https://github.com/labd/python-param-store)** \u2013 \npython module to store secrets in secret stores\n- **[ssm-cache](https://github.com/alexcasalboni/ssm-cache-python)** \u2013\naws system manager parameter store caching client for python\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "ssm-parameter-store",
+  "package_url": "https://pypi.org/project/ssm-parameter-store/",
+  "project_url": "https://pypi.org/project/ssm-parameter-store/",
+  "project_urls": {
+    "Homepage": "http://github.com/christippett/ssm-parameter-store"
+  },
+  "release_url": "https://pypi.org/project/ssm-parameter-store/19.11.0/",
+  "requires_dist": [
+    "boto3"
+  ],
+  "requires_python": "",
+  "summary": "simple python wrapper for getting values from aws systems manager parameter store",
+  "version": "19.11.0",
+  "releases": [],
+  "developers": [
+    "chris@spoon.nz",
+    "chris_tippett"
+  ],
+  "kwds": "ssm_parameter_store parameter_store ssm pypi get_parameters_with_hierarchy",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_ssm_parameter_store",
+  "homepage": "http://github.com/christippett/ssm-parameter-store",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_boto3"
+  ]
+}

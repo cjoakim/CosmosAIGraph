@@ -1,0 +1,40 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "\n# ttach\nimage test time augmentation with pytorch!\n\nsimilar to what data augmentation is doing to the training set, the purpose of test time augmentation is to perform random modifications to the test images. thus, instead of showing the regular, \u201cclean\u201d images, only once to the trained model, we will show it the augmented images several times. we will then average the predictions of each corresponding image and take that as our final guess [[1](https://towardsdatascience.com/test-time-augmentation-tta-and-how-to-perform-it-with-keras-4ac19b67fb4d)].  \n```\n           input\n             |           # input batch of images \n        / / /|\\ \\ \\      # apply augmentations (flips, rotation, scale, etc.)\n       | | | | | | |     # pass augmented batches through model\n       | | | | | | |     # reverse transformations for each batch of masks/labels\n        \\ \\ \\ / / /      # merge predictions (mean, max, gmean, etc.)\n             |           # output batch of masks/labels\n           output\n```\n## table of contents\n1. [quick start](#quick-start)\n2. [transforms](#transforms)\n3. [aliases](#aliases)\n4. [merge modes](#merge-modes)\n5. [installation](#installation)\n\n## quick start\n\n#####  segmentation model wrapping:\n```python\nimport ttach as tta\ntta_model = tta.segmentationttawrapper(model, tta.aliases.d4_transform(), merge_mode='mean')\n```\n#####  classification model wrapping:\n```python\ntta_model = tta.classificationttawrapper(model, tta.aliases.five_crop_transform())\n```\n\n#####  keypoints model wrapping:\n```python\ntta_model = tta.keypointsttawrapper(model, tta.aliases.flip_transform(), scaled=true)\n```\n**note**: the model must return keypoints in the format `torch([x1, y1, ..., xn, yn])`\n\n## advanced examples\n#####  custom transform:\n```python\n# defined 2 * 2 * 3 * 3 = 36 augmentations !\ntransforms = tta.compose(\n    [\n        tta.horizontalflip(),\n        tta.rotate90(angles=[0, 180]),\n        tta.scale(scales=[1, 2, 4]),\n        tta.multiply(factors=[0.9, 1, 1.1]),        \n    ]\n)\n\ntta_model = tta.segmentationttawrapper(model, transforms)\n```\n##### custom model (multi-input / multi-output)\n```python\n# example how to process one batch on images with tta\n# here `image`/`mask` are 4d tensors (b, c, h, w), `label` is 2d tensor (b, n)\n\nfor transformer in transforms: # custom transforms or e.g. tta.aliases.d4_transform() \n\n    # augment image\n    augmented_image = transformer.augment_image(image)\n\n    # pass to model\n    model_output = model(augmented_image, another_input_data)\n\n    # reverse augmentation for mask and label\n    deaug_mask = transformer.deaugment_mask(model_output['mask'])\n    deaug_label = transformer.deaugment_label(model_output['label'])\n\n    # save results\n    labels.append(deaug_mask)\n    masks.append(deaug_label)\n\n# reduce results as you want, e.g mean/max/min\nlabel = mean(labels)\nmask = mean(masks)\n```\n\n## transforms\n\n| transform      | parameters                | values                            |\n|----------------|:-------------------------:|:---------------------------------:|\n| horizontalflip | -                         | -                                 |\n| verticalflip   | -                         | -                                 |\n| rotate90       | angles                    | list\\[0, 90, 180, 270]            |\n| scale          | scales<br>interpolation   | list\\[float]<br>\"nearest\"/\"linear\"|\n| resize         | sizes<br>original_size<br>interpolation   | list\\[tuple\\[int, int]]<br>tuple\\[int,int]<br>\"nearest\"/\"linear\"|\n| add            | values                    | list\\[float]                      |\n| multiply       | factors                   | list\\[float]                      |\n| fivecrops      | crop_height<br>crop_width | int<br>int                        |\n\n## aliases\n\n  - flip_transform (horizontal + vertical flips)\n  - hflip_transform (horizontal flip)\n  - d4_transform (flips + rotation 0, 90, 180, 270)\n  - multiscale_transform (scale transform, take scales as input parameter)\n  - five_crop_transform (corner crops + center crop)\n  - ten_crop_transform (five crops + five crops on horizontal flip)\n\n## merge modes\n - mean\n - gmean (geometric mean)\n - sum\n - max\n - min\n - tsharpen ([temperature sharpen](https://www.kaggle.com/c/severstal-steel-defect-detection/discussion/107716#latest-624046) with t=0.5)\n\n## installation\npypi:\n```bash\n$ pip install ttach\n```\nsource:\n```bash\n$ pip install git+https://github.com/qubvel/ttach\n```\n\n## run tests\n\n```bash\ndocker build -f dockerfile.dev -t ttach:dev . && docker run --rm ttach:dev pytest -p no:cacheprovider\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "ttach",
+  "package_url": "https://pypi.org/project/ttach/",
+  "project_url": "https://pypi.org/project/ttach/",
+  "project_urls": {
+    "Homepage": "https://github.com/qubvel/ttach"
+  },
+  "release_url": "https://pypi.org/project/ttach/0.0.3/",
+  "requires_dist": [
+    "pytest ; extra == 'test'"
+  ],
+  "requires_python": ">=3.0.0",
+  "summary": "images test time augmentation with pytorch.",
+  "version": "0.0.3",
+  "releases": [],
+  "developers": [
+    "pavel_yakubovskiy",
+    "qubvel@gmail.com"
+  ],
+  "kwds": "augment_image keras augmentation augmented_image augmentations",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_ttach",
+  "homepage": "https://github.com/qubvel/ttach",
+  "release_count": 3,
+  "dependency_ids": [
+    "pypi_pytest"
+  ]
+}

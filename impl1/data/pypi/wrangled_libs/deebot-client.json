@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu general public license v3 (gplv3)",
+    "programming language :: python :: 3.11",
+    "topic :: home automation",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# client library for deebot devices (vacuums)\n\n[![pypi - downloads](https://img.shields.io/pypi/dw/deebot-client?style=for-the-badge)](https://pypi.org/project/deebot-client)\n<a href=\"https://www.buymeacoffee.com/edenhaus\" target=\"_blank\"><img src=\"https://cdn.buymeacoffee.com/buttons/default-black.png\" width=\"150px\" height=\"35px\" alt=\"buy me a coffee\" style=\"height: 35px !important;width: 150px !important;\" ></a>\n\n## installation\n\nif you have a recent version of python 3, you should be able to\ndo `pip install deebot-client` to get the most recently released version of\nthis.\n\n## usage\n\nto get started, you'll need to have already set up an ecovacs account\nusing your smartphone.\n\nyou are welcome to try using this as a python library for other efforts.\na simple usage might go something like this:\n\n```python\nimport aiohttp\nimport asyncio\nimport logging\nimport time\n\nfrom deebot_client.api_client import apiclient\nfrom deebot_client.authentication import authenticator\nfrom deebot_client.commands import *\nfrom deebot_client.commands.clean import cleanaction\nfrom deebot_client.events import batteryevent\nfrom deebot_client.models import configuration\nfrom deebot_client.mqtt_client import mqttclient, mqttconfiguration\nfrom deebot_client.util import md5\nfrom deebot_client.device import device\n\ndevice_id = md5(str(time.time()))\naccount_id = \"your email or phonenumber (cn)\"\npassword_hash = md5(\"yourpassword\")\ncontinent = \"eu\"\ncountry = \"de\"\n\n\nasync def main():\n  async with aiohttp.clientsession() as session:\n    logging.basicconfig(level=logging.debug)\n    config = configuration(session,\n                           device_id=device_id, country=country, continent=continent,\n                           )\n\n    authenticator = authenticator(config, account_id, password_hash)\n    api_client = apiclient(authenticator)\n\n    devices_ = await api_client.get_devices()\n\n    bot = device(devices_[0], authenticator)\n\n    mqtt_config = mqttconfiguration(config=config)\n    mqtt = mqttclient(mqtt_config, authenticator)\n    await bot.initialize(mqtt)\n\n    async def on_battery(event: batteryevent):\n      # do stuff on battery event\n      if event.value == 100:\n        # battery full\n        pass\n\n    # subscribe for events (more events available)\n    bot.events.subscribe(batteryevent, on_battery)\n\n    # execute commands\n    await bot.execute_command(clean(cleanaction.start))\n    await asyncio.sleep(900)  # wait for...\n    await bot.execute_command(charge())\n\n\nif __name__ == '__main__':\n  loop = asyncio.get_event_loop()\n  loop.create_task(main())\n  loop.run_forever()\n```\n\na more advanced example can be found [here](https://github.com/and3rsl/deebot-for-home-assistant).\n\n## thanks\n\nmy heartfelt thanks to:\n\n- [deebotozmo](https://github.com/and3rsl/deebotozmo), after all, this is a debotozmo fork :)\n- [sucks](https://github.com/wpietri/sucks), deebotozmo was forked from it :)\n- [xmpppeek](https://www.beneaththewaves.net/software/xmpppeek.html), a great library for examining xmpp traffic flows (\n  yes, your vacuum speaks jabbber!),\n- [mitmproxy](https://mitmproxy.org/), a fantastic tool for analyzing https,\n- [click](http://click.pocoo.org/), a wonderfully complete and thoughtful library for making python command-line\n  interfaces,\n- [requests](http://docs.python-requests.org/en/master/), a polished python library for http requests,\n- [decompilers online](http://www.javadecompilers.com/apk), which was very helpful in figuring out what the android app\n  was up to,\n- albert louw, who was kind enough to post code\n  from [his own experiments](https://community.smartthings.com/t/ecovacs-deebot-n79/93410/33)\n  with his device, and\n- all the users who have given useful feedback and contributed code!\n",
+  "docs_url": null,
+  "keywords": "home,automation,homeassistant,vacuum,robot,deebot,ecovacs",
+  "license": "gpl-3.0",
+  "name": "deebot-client",
+  "package_url": "https://pypi.org/project/deebot-client/",
+  "project_url": "https://pypi.org/project/deebot-client/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/DeebotUniverse/client.py/issues",
+    "Homepage": "https://deebot.readthedocs.io/",
+    "Source Code": "https://github.com/DeebotUniverse/client.py"
+  },
+  "release_url": "https://pypi.org/project/deebot-client/4.0.0/",
+  "requires_dist": [
+    "aiohttp <3.10,>=3.8.5",
+    "aiomqtt <2.0,>=1.0.0",
+    "cachetools <6.0,>=5.0.0",
+    "defusedxml",
+    "numpy <2.0,>=1.23.2",
+    "Pillow <11.0,>=10.0.1"
+  ],
+  "requires_python": ">=3.11.0",
+  "summary": "deebot client library in python 3",
+  "version": "4.0.0",
+  "releases": [],
+  "developers": [
+    "robert@resch.dev"
+  ],
+  "kwds": "deebot_client deebot deebotozmo pip python",
+  "license_kwds": "gpl-3.0",
+  "libtype": "pypi",
+  "id": "pypi_deebot_client",
+  "homepage": "",
+  "release_count": 37,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_aiomqtt",
+    "pypi_cachetools",
+    "pypi_defusedxml",
+    "pypi_numpy",
+    "pypi_pillow"
+  ]
+}

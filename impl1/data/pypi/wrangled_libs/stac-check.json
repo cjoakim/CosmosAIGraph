@@ -1,0 +1,48 @@
+{
+  "classifiers": [],
+  "description": "# stac-check\n## a linting and validation tool for stac assets\n\nthe intent of this project is to provide a validation tool that also follows the official [stac best practices document](https://github.com/radiantearth/stac-spec/blob/master/best-practices.md)\n\n---\n### documentation\n[stac-check.readthedocs.io](https://stac-check.readthedocs.io/en/latest/)\n\n---\n### install\n`$ pip install stac-check`\n\nor for local development\n\n`$ pip install -e '.[dev]'`\n\n---\n### cli usage\n```\nusage: stac-check [options] file\n\noptions:\n  --version                show the version and exit.\n  -l, --links              validate links for format and response.\n  -a, --assets             validate assets for format and response.\n  -m, --max-depth integer  maximum depth to traverse when recursing. omit this\n                           argument to get full recursion. ignored if\n                           `recursive == false`.\n  -r, --recursive          recursively validate all related stac objects.\n  --help                   show this message and exit.               show this message and exit.\n```\n---\n### docker\n\n```\n$ make build\n$ make shell\n```\n---\n### lint json\n\n```\nfrom stac_check.lint import linter\n\nlinter = linter('<json_path>')\n\nfor k, v in linter.create_best_practices_dict().items():\n    print(k, \":\", v)\n```\n---\n### cli examples\n\n``` stac-check https://raw.githubusercontent.com/stac-utils/pystac/main/tests/data-files/examples/0.9.0/collection-spec/examples/landsat-collection.json --recursive ```\n```\n ____  ____  __    ___       ___  _  _  ____  ___  __ _\n/ ___)(_  _)/ _\\  / __)___  / __)/ )( \\(  __)/ __)(  / )\n\\___ \\  )( /    \\( (__(___)( (__ ) __ ( ) _)( (__  )  (\n(____/ (__)\\_/\\_/ \\___)     \\___)\\_)(_/(____)\\___)(__\\_)\n\nstac-check: stac spec validaton and linting tool\n\nplease upgrade from version 0.9.0 to version 1.0.0!\n\nvalidator: stac-validator 3.1.0\n\n\nrecursive: validate all assets in a collection or catalog\nmax-depth = none\n-------------------------\nasset 1 validated: https://raw.githubusercontent.com/stac-utils/pystac/main/tests/data-files/examples/0.9.0/collection-spec/examples/landsat-collection.json\n\nvalid collection: true\n\nschemas validated:\n    https://cdn.staclint.com/v0.9.0/collection.json\n\nstac best practices:\n    object should be called 'collection.json' not 'landsat-collection.json'\n\n    a stac collection should contain a summaries field\n    it is recommended to store information like eo:bands in summaries\n\n    links in catalogs and collections should always have a 'title' field\n\nthis object has 4 links\n\n-------------------------\nasset 2 validated: https://landsat-stac.s3.amazonaws.com/landsat-8-l1/paths/catalog.json\n\nvalid: false\nschemas validated:\n    https://cdn.staclint.com/v0.9.0/collection.json\nerror type: jsondecodeerror\nerror message: expecting value: line 1 column 1 (char 0)\n-------------------------\n```\n\n``` stac-check sample_files/0.9.0/landsat8-sample.json```\n\n<pre><b>stac-check: stac spec validaton and linting tool</b>\n\nplease upgrade from version 0.9.0 to version 1.0.0!\n\nvalidator: stac-validator 2.3.0\n\nvalid item: true\n\nschemas validated:\n    https://cdn.staclint.com/v0.9.0/extension/eo.json\n    https://cdn.staclint.com/v0.9.0/extension/view.json\n    https://cdn.staclint.com/v0.9.0/item.json\n\nstac best practices:\n    item name 'lc81530252014153lgn00' should only contain searchable identifiers\n    identifiers should consist of only lowercase characters, numbers, '_', and '-'\n    https://github.com/radiantearth/stac-spec/blob/master/best-practices.md#searchable-identifiers\n\n    item file names should match their ids: 'landsat8-sample' not equal to 'lc81530252014153lgn00\n\n    a link to 'self' in links is strongly recommended\n\n\nthis object has 4 links\n</pre>\n\n``` stac-check sample_files/1.0.0/core-item.json --assets```\n<pre>\n<b>stac-check: stac spec validaton and linting tool</b>\n\nthanks for using stac version 1.0.0!\n\nvalidator: stac-validator 2.3.0\n\nvalid item: true\n\nschemas validated:\n    https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json\n\nstac best practices:\n    item name '20201211_223832_cs2' should only contain searchable identifiers\n    identifiers should consist of only lowercase characters, numbers, '_', and '-'\n    https://github.com/radiantearth/stac-spec/blob/master/best-practices.md#searchable-identifiers\n\n    item file names should match their ids: 'core-item' not equal to '20201211_223832_cs2\n\n    please avoid setting the datetime field to null, many clients search on this field\n\n    a link to 'self' in links is strongly recommended\n\n\nno asset format errors!\n\nasset request errors:\n    http://cool-sat.com/catalog/20201211_223832_cs2/20201211_223832_cs2.eph\n\nthis object has 4 links\n</pre>\n\n\n\n``` stac-check sample_files/1.0.0/core-item-bad-links.json --links --assets```\n<pre>\n<b>stac-check: stac spec validaton and linting tool</b>\n\nthanks for using stac version 1.0.0!\n\nvalidator: stac-validator 2.3.0\n\nvalid item: true\n\nschemas validated:\n    https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json\n\nstac best practices:\n    item name '20201211_223832_cs2' should only contain searchable identifiers\n    identifiers should consist of only lowercase characters, numbers, '_', and '-'\n    https://github.com/radiantearth/stac-spec/blob/master/best-practices.md#searchable-identifiers\n\n    item file names should match their ids: 'core-item-bad-links' not equal to '20201211_223832_cs2\n\n    please avoid setting the datetime field to null, many clients search on this field\n\n    a link to 'self' in links is strongly recommended\n\n\nasset format errors:\n    https:/storage.googleapis.com/open-cogs/stac-examples/20201211_223832_cs2.jpg\n\nasset request errors:\n    https:/storage.googleapis.com/open-cogs/stac-examples/20201211_223832_cs2.jpg\n    http://cool-sat.com/catalog/20201211_223832_cs2/20201211_223832_cs2.eph\n\nlink format errors:\n    http:/remotdata.io/catalog/20201211_223832_cs2/index.html\n\nlink request errors:\n    http://catalog/collection.json\n    http:/remotdata.io/catalog/20201211_223832_cs2/index.html\n\nthis object has 4 links\n</pre>\n\n``` stac-check sample_files/0.9.0/bad-item.json```\n<pre>\n<b>stac-check: stac spec validaton and linting tool</b>\n\nplease upgrade from version 0.9.0 to version 1.0.0!\n\nvalidator: stac-validator 2.3.0\n\nvalid : false\n\nschemas validated:\n    https://cdn.staclint.com/v0.9.0/item.json\n\nstac best practices:\n    a link to 'self' in links is strongly recommended\n\nvalidation error type:\n    validationerror\nvalidation error message:\n    'id' is a required property of the root of the stac object\n\nthis object has 5 links\n</pre>\n---\n### create local docs in the /docs folder\n`$ pdoc --html --output-dir pdoc stac_check --force`\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "stac-check",
+  "package_url": "https://pypi.org/project/stac-check/",
+  "project_url": "https://pypi.org/project/stac-check/",
+  "project_urls": {
+    "Homepage": "https://github.com/stac-utils/stac-check"
+  },
+  "release_url": "https://pypi.org/project/stac-check/1.3.3/",
+  "requires_dist": [
+    "click>=8.0.0",
+    "requests>=2.19.1",
+    "jsonschema>=3.1.2",
+    "stac-validator>=3.1.0",
+    "PyYAML",
+    "python-dotenv",
+    "pytest; extra == \"dev\"",
+    "types-setuptools; extra == \"dev\""
+  ],
+  "requires_python": ">=3.8",
+  "summary": "linting and validation tool for stac assets",
+  "version": "1.3.3",
+  "releases": [],
+  "developers": [
+    "jonathan.d.healy@gmail.com",
+    "jonathan_healy"
+  ],
+  "kwds": "stac_check stac stacspec validate pip",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_stac_check",
+  "homepage": "https://github.com/stac-utils/stac-check",
+  "release_count": 17,
+  "dependency_ids": [
+    "pypi_click",
+    "pypi_jsonschema",
+    "pypi_pytest",
+    "pypi_python_dotenv",
+    "pypi_pyyaml",
+    "pypi_requests",
+    "pypi_stac_validator",
+    "pypi_types_setuptools"
+  ]
+}

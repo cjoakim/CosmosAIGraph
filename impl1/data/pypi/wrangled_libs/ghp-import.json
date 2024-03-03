@@ -1,0 +1,51 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3"
+  ],
+  "description": "github pages import\n===================\n\n[![ci status](https://github.com/davisp/ghp-import/workflows/ci/badge.svg)](https://github.com/davisp/ghp-import/actions?query=workflow%3aci)\n[![circleci](https://circleci.com/gh/c-w/ghp-import/tree/master.svg?style=svg)](https://circleci.com/gh/c-w/ghp-import/tree/master)\n[![travisci](https://travis-ci.org/c-w/ghp-import.svg?branch=master)](https://travis-ci.org/c-w/ghp-import)\n\n[![license](https://img.shields.io/badge/license-apache%202.0-green.svg)](https://opensource.org/licenses/apache-2.0)\n[![version](https://img.shields.io/pypi/v/ghp-import.svg)](https://pypi.org/project/ghp-import/)\n\nas part of [gunicorn][gunicorn], [benoit chesneau][benoit] and [paul davis][davisp]\nwere looking at how to host documentation. there's the obvious method of\nusing [github's post-receive hook][github-post] to trigger doc builds and rsync\nto a webserver, but we ended up wanting to try out github's hosting to make the\nwhole interface a bit more robust.\n\n[github pages][gh-pages] is a pretty awesome service that github provides for\nhosting project documentation. the only thing is that it requires a\n`gh-pages` branch that is the site's document root. this means that keeping\ndocumentation sources in the branch with code is a bit difficult. and it really\nturns into a head scratcher for things like [sphinx][sphinx] that want to\naccess documentation sources and code sources at the same time.\n\nthen we stumbled across an interesting looking package called\n[github-tools][github-tools] that looked almost like what we wanted. it was a tad\ncomplicated and more involved than we wanted but it gave us an idea. why not\njust write a script that can copy a directory to the `gh-pages` branch of the\nrepository. this saves us from even having to think about the branch and\neverything becomes magical.\n\nthis is what `ghp-import` was written for.\n\n[gunicorn]: http://www.gunicorn.com/ \"gunicorn\"\n[benoit]: http://github.com/benoitc \"beno\u00eet chesneau\"\n[davisp]: http://github.com/davisp \"paul j. davis\"\n[github-post]: https://help.github.com/articles/post-receive-hooks \"github post-receive hook\"\n[gh-pages]: http://pages.github.com/ \"github pages\"\n[sphinx]: http://sphinx.pocoo.org/ \"sphinx documentation\"\n[github-tools]: http://dinoboff.github.com/github-tools/ \"github-tools\"\n\n\nbig fat warning\n---------------\n\nthis will **destroy** your `gh-pages` branch. if you love it, you'll want to\ntake backups before playing with this. this script assumes that `gh-pages` is\n100% derivative. you should never edit files in your `gh-pages` branch by hand\nif you're using this script because you will lose your work.\n\nwhen used with a prefix, only files below the set prefix will be destroyed, limiting the\nabove warning to just that directory and everything below it.\n\nusage\n-----\n\n```\nusage: ghp-import [options] directory\n\noptions:\n  -n, --no-jekyll       include a .nojekyll file in the branch.\n  -c cname, --cname=cname\n                        write a cname file with the given cname.\n  -m mesg, --message=mesg\n                        the commit message to use on the target branch.\n  -p, --push            push the branch to origin/{branch} after committing.\n  -x prefix, --prefix=prefix\n                        the prefix to add to each file that gets pushed to the\n                        remote. only files below this prefix will be cleared\n                        out. [none]\n  -f, --force           force the push to the repository.\n  -o, --no-history      force new commit without parent history.\n  -r remote, --remote=remote\n                        the name of the remote to push to. [origin]\n  -b branch, --branch=branch\n                        name of the branch to write to. [gh-pages]\n  -s, --shell           use the shell when invoking git. [false]\n  -l, --follow-links    follow symlinks when adding files. [false]\n  -h, --help            show this help message and exit\n```\n\nits pretty simple. inside your repository just run `ghp-import $docs_dir`\nwhere `$docs_dir` is the path to the **built** documentation. this will write a\ncommit to your `gh-pages` branch with the current documents in it.\n\nif you specify `-p` it will also attempt to push the `gh-pages` branch to\ngithub. by default it'll just run `git push origin gh-pages`. you can specify\na different remote using the `-r` flag.\n\nthe `-o` option will discard any previous history and ensure that only a\nsingle commit is always pushed to the `gh-pages` branch. this is useful to\navoid bloating the repository size and is **highly recommended**.\n\nyou can specify a different branch with `-b`. this is useful for user and\norganization page, which are served from the `master` branch.\n\nsome windows users report needing to pass git commands through the shell which can be accomplished by passing `-s`.\n\nthe `-l` option will cause the import to follow symlinks for users that have odd configurations that include symlinking outside of their documentation directory.\n\npython usage\n------------\n\nyou can also call ghp_import directly from your python code as a library. the\nlibrary has one public function `ghp_import.ghp_import`, which accepts the\nfollowing arguments:\n\n* `srcdir`: the path to the **built** documentation (required).\n* `remote`: the name of the remote to push to. default: `origin`.\n* `branch`: name of the branch to write to. default: `gh-pages`.\n* `mesg`: the commit message to use on the target branch. default: `update documentation`.\n* `push`: push the branch to {remote}/{branch} after committing. default: `false`.\n* `prefix`: the prefix to add to each file that gets pushed to the remote. default: `none`.\n* `force`: force the push to the repository. default: `false`.\n* `no_history`: force new commit without parent history. default: `false`.\n* `use_shell`: default: use the shell when invoking git. `false`.\n* `followlinks`: follow symlinks when adding files. default: `false`.\n* `cname`: write a cname file with the given cname. default: `none`.\n* `nojekyll`: include a .nojekyll file in the branch. default: `false`.\n\nwith python's current working directory (cwd) inside your repository, do the\nfollowing:\n\n```python\nfrom ghp_import import ghp_import\nghp_import('docs', push=true, cname='example.com')\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache software license",
+  "name": "ghp-import",
+  "package_url": "https://pypi.org/project/ghp-import/",
+  "project_url": "https://pypi.org/project/ghp-import/",
+  "project_urls": {
+    "Homepage": "https://github.com/c-w/ghp-import"
+  },
+  "release_url": "https://pypi.org/project/ghp-import/2.1.0/",
+  "requires_dist": [
+    "python-dateutil (>=2.8.1)",
+    "twine ; extra == 'dev'",
+    "markdown ; extra == 'dev'",
+    "flake8 ; extra == 'dev'",
+    "wheel ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "copy your docs directly to the gh-pages branch.",
+  "version": "2.1.0",
+  "releases": [],
+  "developers": [
+    "paul.joseph.davis@gmail.com",
+    "paul_joseph_davis"
+  ],
+  "kwds": "ghp_import svg badge ghp workflows",
+  "license_kwds": "apache software license",
+  "libtype": "pypi",
+  "id": "pypi_ghp_import",
+  "homepage": "https://github.com/c-w/ghp-import",
+  "release_count": 33,
+  "dependency_ids": [
+    "pypi_flake8",
+    "pypi_markdown",
+    "pypi_python_dateutil",
+    "pypi_twine",
+    "pypi_wheel"
+  ]
+}

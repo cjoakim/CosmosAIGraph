@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: database",
+    "topic :: database :: front-ends"
+  ],
+  "description": "databricks-dbapi\n================\n\n|pypi| |pyversions|\n\n.. |pypi| image:: https://img.shields.io/pypi/v/databricks-dbapi.svg\n    :target: https://pypi.python.org/pypi/databricks-dbapi\n\n.. |pyversions| image:: https://img.shields.io/pypi/pyversions/databricks-dbapi.svg\n    :target: https://pypi.python.org/pypi/databricks-dbapi\n\na thin wrapper around `pyhive <https://github.com/dropbox/pyhive>`__ and `pyodbc <https://github.com/mkleehammer/pyodbc>`__ for creating a `dbapi <https://www.python.org/dev/peps/pep-0249/>`__ connection to databricks workspace and sql analytics clusters. sql analytics clusters require the `simba odbc driver <https://databricks.com/spark/odbc-driver-download>`__.\n\nalso provides sqlalchemy dialects using ``pyhive`` and ``pyodbc`` for databricks clusters. databricks sql analytics clusters only support the ``pyodbc``-driven dialect.\n\ninstallation\n------------\n\ninstall using pip. you *must* specify at least one of the extras {``hive`` or ``odbc``}. for ``odbc`` the `simba driver <https://databricks.com/spark/odbc-driver-download>`__ is required:\n\n.. code-block:: bash\n\n    pip install databricks-dbapi[hive,odbc]\n\n\nfor sqlalchemy support install with:\n\n.. code-block:: bash\n\n    pip install databricks-dbapi[hive,odbc,sqlalchemy]\n\nusage\n-----\n\npyhive\n~~~~~~\n\nthe ``connect()`` function returns a ``pyhive`` hive connection object, which internally wraps a ``thrift`` connection.\n\nconnecting with ``http_path``, ``host``, and a ``token``:\n\n.. code-block:: python\n\n    import os\n\n    from databricks_dbapi import hive\n\n\n    token = os.environ[\"databricks_token\"]\n    host = os.environ[\"databricks_host\"]\n    http_path = os.environ[\"databricks_http_path\"]\n\n\n    connection = hive.connect(\n        host=host,\n        http_path=http_path,\n        token=token,\n    )\n    cursor = connection.cursor()\n\n    cursor.execute(\"select * from some_table limit 100\")\n\n    print(cursor.fetchone())\n    print(cursor.fetchall())\n\n\nthe ``pyhive`` connection also provides async functionality:\n\n.. code-block:: python\n\n    import os\n\n    from databricks_dbapi import hive\n    from tcliservice.ttypes import toperationstate\n\n\n    token = os.environ[\"databricks_token\"]\n    host = os.environ[\"databricks_host\"]\n    cluster = os.environ[\"databricks_cluster\"]\n\n\n    connection = hive.connect(\n        host=host,\n        cluster=cluster,\n        token=token,\n    )\n    cursor = connection.cursor()\n\n    cursor.execute(\"select * from some_table limit 100\", async_=true)\n\n    status = cursor.poll().operationstate\n    while status in (toperationstate.initialized_state, toperationstate.running_state):\n        logs = cursor.fetch_logs()\n        for message in logs:\n            print(message)\n\n        # if needed, an asynchronous query can be cancelled at any time with:\n        # cursor.cancel()\n\n        status = cursor.poll().operationstate\n\n    print(cursor.fetchall())\n\n\nodbc\n~~~~\n\nthe odbc dbapi requires the simba odbc driver.\n\nconnecting with ``http_path``, ``host``, and a ``token``:\n\n.. code-block:: python\n\n    import os\n\n    from databricks_dbapi import odbc\n\n\n    token = os.environ[\"databricks_token\"]\n    host = os.environ[\"databricks_host\"]\n    http_path = os.environ[\"databricks_http_path\"]\n\n\n    connection = odbc.connect(\n        host=host,\n        http_path=http_path,\n        token=token,\n        driver_path=\"/path/to/simba/driver\",\n    )\n    cursor = connection.cursor()\n\n    cursor.execute(\"select * from some_table limit 100\")\n\n    print(cursor.fetchone())\n    print(cursor.fetchall())\n\n\nsqlalchemy dialects\n-------------------\n\ndatabricks+pyhive\n~~~~~~~~~~~~~~~~~\n\ninstalling registers the ``databricks+pyhive`` dialect/driver with sqlalchemy. fill in the required information when passing the engine url.\n\n.. code-block:: python\n\n    from sqlalchemy import *\n    from sqlalchemy.engine import create_engine\n    from sqlalchemy.schema import *\n\n\n    engine = create_engine(\n        \"databricks+pyhive://token:<databricks_token>@<host>:<port>/<database>\",\n        connect_args={\"http_path\": \"<cluster_http_path>\"}\n    )\n\n    logs = table(\"my_table\", metadata(bind=engine), autoload=true)\n    print(select([func.count(\"*\")], from_obj=logs).scalar())\n\n\ndatabricks+pyodbc\n~~~~~~~~~~~~~~~~~\n\ninstalling registers the ``databricks+pyodbc`` dialect/driver with sqlalchemy. fill in the required information when passing the engine url.\n\n.. code-block:: python\n\n    from sqlalchemy import *\n    from sqlalchemy.engine import create_engine\n    from sqlalchemy.schema import *\n\n\n    engine = create_engine(\n        \"databricks+pyodbc://token:<databricks_token>@<host>:<port>/<database>\",\n        connect_args={\"http_path\": \"<cluster_http_path>\", \"driver_path\": \"/path/to/simba/driver\"}\n    )\n\n    logs = table(\"my_table\", metadata(bind=engine), autoload=true)\n    print(select([func.count(\"*\")], from_obj=logs).scalar())\n\n\nrefer to the following documentation for more details on hostname, cluster name, and http path:\n\n* `databricks <https://docs.databricks.com/user-guide/bi/jdbc-odbc-bi.html>`__\n* `azure databricks <https://docs.azuredatabricks.net/user-guide/bi/jdbc-odbc-bi.html>`__\n\n\nrelated\n-------\n\n* `pyhive <https://github.com/dropbox/pyhive>`__\n* `thrift <https://github.com/apache/thrift/tree/master/lib/py>`__\n* `pyodbc <https://github.com/mkleehammer/pyodbc>`__\n",
+  "docs_url": null,
+  "keywords": "databricks,hive,dbapi,sqlalchemy,dialect",
+  "license": "mit",
+  "name": "databricks-dbapi",
+  "package_url": "https://pypi.org/project/databricks-dbapi/",
+  "project_url": "https://pypi.org/project/databricks-dbapi/",
+  "project_urls": {
+    "Documentation": "https://github.com/crflynn/databricks-dbapi",
+    "Homepage": "https://github.com/crflynn/databricks-dbapi",
+    "Repository": "https://github.com/crflynn/databricks-dbapi"
+  },
+  "release_url": "https://pypi.org/project/databricks-dbapi/0.6.0/",
+  "requires_dist": [
+    "pyhive (>=0.6.1,<0.7.0); extra == \"hive\"",
+    "thrift (>=0.15.0,<0.16.0); extra == \"hive\"",
+    "sqlalchemy (>=1.3,<2.0); extra == \"sqlalchemy\"",
+    "pyodbc (>=4.0.30,<5.0.0); extra == \"odbc\""
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+  "summary": "a dbapi 2.0 interface and sqlalchemy dialect for databricks interactive clusters.",
+  "version": "0.6.0",
+  "releases": [],
+  "developers": [
+    "christopher_flynn",
+    "crf204@gmail.com"
+  ],
+  "kwds": "databricks_dbapi databricks databricks_cluster databricks_host databricks_token",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_databricks_dbapi",
+  "homepage": "https://github.com/crflynn/databricks-dbapi",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_pyhive",
+    "pypi_pyodbc",
+    "pypi_sqlalchemy",
+    "pypi_thrift"
+  ]
+}

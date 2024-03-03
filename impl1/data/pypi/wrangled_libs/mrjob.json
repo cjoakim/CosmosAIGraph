@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: system :: distributed computing"
+  ],
+  "description": "mrjob: the python mapreduce library\n===================================\n\n.. image:: https://github.com/yelp/mrjob/raw/master/docs/logos/logo_medium.png\n\nmrjob is a python 2.7/3.4+ package that helps you write and run hadoop\nstreaming jobs.\n\n`stable version (v0.7.4) documentation <http://mrjob.readthedocs.org/en/stable/>`_\n\n`development version documentation <http://mrjob.readthedocs.org/en/latest/>`_\n\n.. image:: https://travis-ci.org/yelp/mrjob.png\n   :target: https://travis-ci.org/yelp/mrjob\n\nmrjob fully supports amazon's elastic mapreduce (emr) service, which allows you\nto buy time on a hadoop cluster on an hourly basis. mrjob has basic support for google cloud dataproc (dataproc)\nwhich allows you to buy time on a hadoop cluster on a minute-by-minute basis.  it also works with your own\nhadoop cluster.\n\nsome important features:\n\n* run jobs on emr, google cloud dataproc, your own hadoop cluster, or locally (for testing).\n* write multi-step jobs (one map-reduce step feeds into the next)\n* easily launch spark jobs on emr or your own hadoop cluster\n* duplicate your production environment inside hadoop\n\n  * upload your source tree and put it in your job's ``$pythonpath``\n  * run make and other setup scripts\n  * set environment variables (e.g. ``$tz``)\n  * easily install python packages from tarballs (emr only)\n  * setup handled transparently by ``mrjob.conf`` config file\n* automatically interpret error logs\n* ssh tunnel to hadoop job tracker (emr only)\n* minimal setup\n\n  * to run on emr, set ``$aws_access_key_id`` and ``$aws_secret_access_key``\n  * to run on dataproc, set ``$google_application_credentials``\n  * no setup needed to use mrjob on your own hadoop cluster\n\ninstallation\n------------\n\n``pip install mrjob``\n\nas of v0.7.0, amazon web services and google cloud services are optional\ndepedencies. to use these, install with the ``aws`` and ``google`` targets,\nrespectively. for example:\n\n``pip install mrjob[aws]``\n\na simple map reduce job\n-----------------------\n\ncode for this example and more live in ``mrjob/examples``.\n\n.. code-block:: python\n\n   \"\"\"the classic mapreduce job: count the frequency of words.\n   \"\"\"\n   from mrjob.job import mrjob\n   import re\n\n   word_re = re.compile(r\"[\\w']+\")\n\n\n   class mrwordfreqcount(mrjob):\n\n       def mapper(self, _, line):\n           for word in word_re.findall(line):\n               yield (word.lower(), 1)\n\n       def combiner(self, word, counts):\n           yield (word, sum(counts))\n\n       def reducer(self, word, counts):\n           yield (word, sum(counts))\n\n\n   if __name__ == '__main__':\n        mrwordfreqcount.run()\n\ntry it out!\n-----------\n\n::\n\n    # locally\n    python mrjob/examples/mr_word_freq_count.py readme.rst > counts\n    # on emr\n    python mrjob/examples/mr_word_freq_count.py readme.rst -r emr > counts\n    # on dataproc\n    python mrjob/examples/mr_word_freq_count.py readme.rst -r dataproc > counts\n    # on your hadoop cluster\n    python mrjob/examples/mr_word_freq_count.py readme.rst -r hadoop > counts\n\n\nsetting up emr on amazon\n------------------------\n\n* create an `amazon web services account <http://aws.amazon.com/>`_\n* get your access and secret keys (click \"security credentials\" on\n  `your account page <http://aws.amazon.com/account/>`_)\n* set the environment variables ``$aws_access_key_id`` and\n  ``$aws_secret_access_key`` accordingly\n\nsetting up dataproc on google\n-----------------------------\n\n* `create a google cloud platform account <http://cloud.google.com/>`_, see top-right\n* `learn about google cloud platform \"projects\" <https://cloud.google.com/docs/overview/#projects>`_\n* `select or create a cloud platform console project <https://console.cloud.google.com/project>`_\n* `enable billing for your project <https://console.cloud.google.com/billing>`_\n* go to the `api manager <https://console.cloud.google.com/apis>`_ and search for / enable the following apis...\n\n  * google cloud storage\n  * google cloud storage json api\n  * google cloud dataproc api\n\n* under credentials, **create credentials** and select **service account key**.  then, select **new service account**, enter a name and select **key type** json.\n\n* install the `google cloud sdk <https://cloud.google.com/sdk/>`_\n\nadvanced configuration\n----------------------\n\nto run in other aws regions, upload your source tree, run ``make``, and use\nother advanced mrjob features, you'll need to set up ``mrjob.conf``. mrjob looks\nfor its conf file in:\n\n* the contents of ``$mrjob_conf``\n* ``~/.mrjob.conf``\n* ``/etc/mrjob.conf``\n\nsee `the mrjob.conf documentation\n<https://mrjob.readthedocs.io/en/latest/guides/configs-basics.html>`_ for more\ninformation.\n\n\nproject links\n-------------\n\n* `source code <http://github.com/yelp/mrjob>`__\n* `documentation <https://mrjob.readthedocs.io/en/latest/>`_\n* `discussion group <http://groups.google.com/group/mrjob>`_\n\nreference\n---------\n\n* `hadoop streaming <http://hadoop.apache.org/docs/stable1/streaming.html>`_\n* `elastic mapreduce <http://aws.amazon.com/documentation/elasticmapreduce/>`_\n* `google cloud dataproc <https://cloud.google.com/dataproc/overview>`_\n\nmore information\n----------------\n\n* `pycon 2011 mrjob overview <http://blip.tv/pycon-us-videos-2009-2010-2011/pycon-2011-mrjob-distributed-computing-for-everyone-4898987/>`_\n* `introduction to recommendations and mapreduce with mrjob <http://aimotion.blogspot.com/2012/08/introduction-to-recommendations-with.html>`_\n  (`source code <https://github.com/marcelcaraciolo/recsys-mapreduce-mrjob>`__)\n* `social graph analysis using elastic mapreduce and pypy <http://postneo.com/2011/05/04/social-graph-analysis-using-elastic-mapreduce-and-pypy>`_\n\nthanks to `greg killion <mailto:greg@blind-works.net>`_\n(`romeo echo_delta <http://www.romeoechodelta.net/>`_) for the logo.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache",
+  "name": "mrjob",
+  "package_url": "https://pypi.org/project/mrjob/",
+  "project_url": "https://pypi.org/project/mrjob/",
+  "project_urls": {
+    "Homepage": "http://github.com/Yelp/mrjob"
+  },
+  "release_url": "https://pypi.org/project/mrjob/0.7.4/",
+  "requires_dist": [
+    "PyYAML (>=3.10)",
+    "boto3 (>=1.10.0) ; extra == 'aws'",
+    "botocore (>=1.13.26) ; extra == 'aws'",
+    "google-cloud-dataproc (<=1.1.0,>=0.3.0) ; extra == 'google'",
+    "google-cloud-logging (>=1.9.0) ; extra == 'google'",
+    "google-cloud-storage (>=1.13.1) ; extra == 'google'",
+    "python-rapidjson ; extra == 'rapidjson'",
+    "simplejson ; extra == 'simplejson'",
+    "ujson ; extra == 'ujson'"
+  ],
+  "requires_python": "",
+  "summary": "python mapreduce framework",
+  "version": "0.7.4",
+  "releases": [],
+  "developers": [
+    "david_marin",
+    "dm@davidmarin.org"
+  ],
+  "kwds": "hadoop mapreduce mrjob hourly cluster",
+  "license_kwds": "apache",
+  "libtype": "pypi",
+  "id": "pypi_mrjob",
+  "homepage": "http://github.com/yelp/mrjob",
+  "release_count": 62,
+  "dependency_ids": [
+    "pypi_boto3",
+    "pypi_botocore",
+    "pypi_google_cloud_dataproc",
+    "pypi_google_cloud_logging",
+    "pypi_google_cloud_storage",
+    "pypi_python_rapidjson",
+    "pypi_pyyaml",
+    "pypi_simplejson",
+    "pypi_ujson"
+  ]
+}

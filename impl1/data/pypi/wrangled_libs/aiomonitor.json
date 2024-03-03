@@ -1,0 +1,73 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "framework :: asyncio",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: posix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "aiomonitor\n==========\n\n.. image:: https://github.com/aio-libs/aiomonitor/workflows/ci/badge.svg\n   :target: https://github.com/aio-libs/aiomonitor/actions?query=workflow%3aci\n   :alt: github actions status for the main branch\n\n.. image:: https://codecov.io/gh/aio-libs/aiomonitor/branch/main/graph/badge.svg\n   :target: https://codecov.io/gh/aio-libs/aiomonitor\n   :alt: codecov.io status for the main branch\n\n.. image:: https://badge.fury.io/py/aiomonitor.svg\n   :target: https://pypi.org/project/aiomonitor\n   :alt: latest pypi package version\n\n.. image:: https://img.shields.io/pypi/dm/aiomonitor\n   :target: https://pypistats.org/packages/aiomonitor\n   :alt: downloads count\n\n.. image:: https://readthedocs.org/projects/aiomonitor-ng/badge/?version=latest\n   :target: https://aiomonitor.aio-libs.org/en/latest/?badge=latest\n   :alt: documentation status\n\n**aiomonitor** is a module that adds monitor and cli capabilities\nfor asyncio_ applications. idea and code were borrowed from curio_ project.\ntask monitor that runs concurrently to the asyncio_ loop (or fast drop-in\nreplacement uvloop_) in a separate thread as result monitor will work even if\nthe event loop is blocked for some reason.\n\nthis library provides a python console using aioconsole_ module. it is possible\nto execute asynchronous commands inside your running application. extensible\nwith you own commands, in the style of the standard library's cmd_ module\n\n.. image:: https://raw.githubusercontent.com/aio-libs/aiomonitor/main/docs/screenshot-ps-where-example.png\n   :alt: an example to run the aiomonitor shell\n\ninstallation\n------------\ninstallation process is simple, just::\n\n    $ pip install aiomonitor\n\n\nexample\n-------\nmonitor has context manager interface:\n\n.. code:: python\n\n    import aiomonitor\n\n    async def main():\n        loop = asyncio.get_running_loop()\n        run_forever = loop.create_future()\n        with aiomonitor.start_monitor(loop):\n            await run_forever\n\n    try:\n        asyncio.run(main())\n    except keyboardinterrupt:\n        pass\n\nnow from separate terminal it is possible to connect to the application::\n\n    $ telnet localhost 20101\n\nor the included python client::\n\n    $ python -m aiomonitor.cli\n\n\ntutorial\n--------\n\nlet's create a simple aiohttp_ application, and see how ``aiomonitor`` can\nbe integrated with it.\n\n.. code:: python\n\n    import asyncio\n\n    import aiomonitor\n    from aiohttp import web\n\n    # simple handler that returns response after 100s\n    async def simple(request):\n        print('start sleeping')\n        await asyncio.sleep(100)\n        return web.response(text=\"simple answer\")\n\n    loop = asyncio.get_event_loop()\n    # create application and register route\n    app = web.application()\n    app.router.add_get('/simple', simple)\n\n    # it is possible to pass a dictionary with local variables\n    # to the python console environment\n    host, port = \"localhost\", 8090\n    locals_ = {\"port\": port, \"host\": host}\n    # init monitor just before run_app\n    with aiomonitor.start_monitor(loop=loop, locals=locals_):\n        # run application with built-in aiohttp run_app function\n        web.run_app(app, port=port, host=host, loop=loop)\n\nlet's save this code in file ``simple_srv.py``, so we can run it with the following command::\n\n    $ python simple_srv.py\n    ======== running on http://localhost:8090 ========\n    (press ctrl+c to quit)\n\nand now one can connect to a running application from a separate terminal, with\nthe ``telnet`` command, and ``aiomonitor`` will immediately respond with prompt::\n\n    $ telnet localhost 20101\n    asyncio monitor: 1 tasks running\n    type help for commands\n    monitor >>>\n\nnow you can type commands, for instance, ``help``::\n\n    monitor >>> help\n    usage: help [options] command [args]...\n\n      to see the usage of each command, run them with \"--help\" option.\n\n    commands:\n      cancel                  cancel an indicated task\n      console                 switch to async python repl\n      exit (q,quit)           leave the monitor client session\n      help (?,h)              show the list of commands\n      ps (p)                  show task table\n      ps-terminated (pst,pt)  list recently terminated/cancelled tasks\n      signal                  send a unix signal\n      stacktrace (st,stack)   print a stack trace from the event loop thread\n      where (w)               show stack frames and the task creation chain of a task\n      where-terminated (wt)   show stack frames and the termination/cancellation chain of a task\n\n``aiomonitor`` also supports async python console inside a running event loop\nso you can explore the state of your application::\n\n    monitor >>> console\n    python 3.10.7 (main, sep  9 2022, 12:31:20) [clang 13.1.6 (clang-1316.0.21.2.5)] on darwin\n    type \"help\", \"copyright\", \"credits\" or \"license\" for more information.\n    ---\n    this console is running in an asyncio event loop.\n    it allows you to wait for coroutines using the 'await' syntax.\n    try: await asyncio.sleep(1, result=3)\n    ---\n    >>> await asyncio.sleep(1, result=3)\n    3\n    >>>\n\nto leave the console type ``exit()`` or press ctrl+d::\n\n    >>> exit()\n\n    \u2713 the console session is closed.\n    monitor >>>\n\nextension\n---------\n\nadditional console variables\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nyou may add more variables that can be directly referenced in the ``console`` command.\nrefer `the console-variables example code <https://github.com/aio-libs/aiomonitor/tree/main/examples/console-variables.py>`_\n\ncustom console commands\n~~~~~~~~~~~~~~~~~~~~~~~\n\n``aiomonitor`` is very easy to extend with your own console commands.\nrefer `the extension example code <https://github.com/aio-libs/aiomonitor/tree/main/examples/extension.py>`_\n\nrequirements\n------------\n\n* python_ 3.8+ (3.10.7+ recommended)\n* aioconsole_\n* click_\n* prompt_toolkit_\n* uvloop_ (optional)\n\n\n.. _pep492: https://www.python.org/dev/peps/pep-0492/\n.. _python: https://www.python.org\n.. _aioconsole: https://github.com/vxgmichel/aioconsole\n.. _aiohttp: https://github.com/aio-libs/aiohttp\n.. _asyncio: http://docs.python.org/3/library/asyncio.html\n.. _click: https://click.palletsprojects.com\n.. _curio: https://github.com/dabeaz/curio\n.. _prompt_toolkit: https://python-prompt-toolkit.readthedocs.io\n.. _uvloop: https://github.com/magicstack/uvloop\n.. _cmd: http://docs.python.org/3/library/cmd.html\n\nchanges\n=======\n\n.. towncrier release notes start\n\n0.7.0 (2023-12-21)\n---------------------------------\n\n- overhauled the documentation\n  (`#393 <https://github.com/aio-libs/aiomonitor/issues/393>`_)\n\n- adopted ruff to replace black, flake8 and isort\n  (`#391 <https://github.com/aio-libs/aiomonitor/issues/391>`_)\n\n- added a new demo example to show various features of aiomonitor, especially using the gui (also for pycon apac 2023 talk)\n  (`#385 <https://github.com/aio-libs/aiomonitor/issues/385>`_)\n\n- relaxed our direct dependnecy version range of aiohttp (\"3.8.5 only\" to \"3.8.5 and higher\") to enable installation on python 3.12\n  (`#389 <https://github.com/aio-libs/aiomonitor/issues/389>`_)\n\n- updated the readme example to conform with the latest api and convention\n  (`#383 <https://github.com/aio-libs/aiomonitor/issues/383>`_)\n\n\n0.6.0 (2023-08-27)\n------------------\n\n- add the web-based monitoring user interface to list, inspect, and cancel running/terminated tasks, with refactoring the monitor business logic and presentation layers (`termui` and `webui`)\n  (`#84 <https://github.com/aio-libs/aiomonitor/issues/84>`_)\n\n- replace the default port numbers for the terminal ui, the web ui, and the console access (50101, 50201, 50102 -> 20101, 20102, 20103 respectively)\n  (`#374 <https://github.com/aio-libs/aiomonitor/issues/374>`_)\n\n- adopt towncrier to auto-generate the changelog\n  (`#375 <https://github.com/aio-libs/aiomonitor/issues/375>`_)\n\n\n0.5.0 (2023-07-21)\n------------------\n\n* fix a regression in python 3.10 due to #10 (`#11 <https://github.com/aio-libs/aiomonitor/issues/11>`_)\n\n* support python 3.11 properly by allowing the optional (`name` and `context` kwargs passed to `asyncio.create_task()` in the hooked task factory function `#10 <https://github.com/aio-libs/aiomonitor/issues/10>`_)\n\n* update development dependencies\n\n* selective persistent termination logs (`#9 <https://github.com/aio-libs/aiomonitor/issues/9>`_)\n\n* implement cancellation chain tracker (`#8 <https://github.com/aio-libs/aiomonitor/issues/8>`_)\n\n* trigger auto-completion only when tab is pressed\n\n* support auto-completion of commands and arguments (`#7 <https://github.com/aio-libs/aiomonitor/issues/7>`_)\n\n* add missing explicit dependency to click\n\n* promote `console_locals` as public attr\n\n* reimplement console command (`#6 <https://github.com/aio-libs/aiomonitor/issues/6>`_)\n\n* migrate to click-based command line interface (`#5 <https://github.com/aio-libs/aiomonitor/issues/5>`_)\n\n* adopt (`prompt_toolkit` and support concurrent clients `#4 <https://github.com/aio-libs/aiomonitor/issues/4>`_)\n\n* show the total number of tasks when executing (`ps` `#3 <https://github.com/aio-libs/aiomonitor/issues/3>`_)\n\n* apply black, isort, mypy, flake8 and automate ci workflows using github actions\n\n* fix the task creation location in the 'ps' command output\n\n* remove loop=loop from all asynchronous calls to support newer python versions (`#329 <https://github.com/aio-libs/aiomonitor/issues/329>`_)\n\n* added the task creation stack chain display to the 'where' command by setting a custom task factory (`#1 <https://github.com/aio-libs/aiomonitor/issues/1>`_)\n\nthese are the backported changes from [aiomonitor-ng](https://github.com/achimnol/aiomonitor-ng).\nas the version bumps have gone far away in the fork, all those extra releases are squashed into the v0.5.0 release.\n\n\n0.4.5 (2019-11-03)\n------------------\n\n* fixed endless loop on eof (thanks @apatrushev)\n\n\n0.4.4 (2019-03-23)\n------------------\n\n* simplified python console start end #175\n\n* added python 3.7 compatibility #176\n\n\n0.4.3 (2019-02-02)\n------------------\n\n* reworked console server start/close logic #169\n\n\n0.4.2 (2019-01-13)\n------------------\n\n* fixed issue with type annotations from 0.4.1 release #164\n\n\n0.4.1 (2019-01-10)\n------------------\n\n* fixed python 3.5 support #161 (thanks @bmerry)\n\n\n0.4.0 (2019-01-04)\n------------------\n\n* added support for custom commands #133 (thanks @yggdr)\n\n* fixed optlocals being passed as the default value for \"locals\" #122 (thanks @agronholm)\n\n* added an api inspired by the standard library's cmd module #135 (thanks @yggdr)\n\n* correctly report the port running aioconsole #124 (thanks @bmerry)\n\n\n0.3.1 (2018-07-03)\n------------------\n\n* added the stacktrace command #120 (thanks @agronholm)\n\n\n0.3.0 (2017-09-08)\n------------------\n\n* added _locals_ parameter for passing environment to python repl\n\n\n0.2.1 (2016-01-03)\n------------------\n\n* fixed import in telnet cli in #12 (thanks @hellysmile)\n\n\n0.2.0 (2016-01-01)\n------------------\n\n* added basic documentation\n\n* most of methods of monitor class are not not private api\n\n\n0.1.0 (2016-12-14)\n------------------\n\n* added missed license file\n\n* updated api, added start_monitor() function\n\n\n0.0.3 (2016-12-11)\n------------------\n\n* fixed readme.rst\n\n\n0.0.2 (2016-12-11)\n------------------\n\n* tests more stable now\n\n* added simple tutorial to readme.rst\n\n\n0.0.1 (2016-12-10)\n------------------\n\n* initial release.\n",
+  "docs_url": null,
+  "keywords": "asyncio,aiohttp,monitor,debugging,utility,devtool",
+  "license": "apache-2.0",
+  "name": "aiomonitor",
+  "package_url": "https://pypi.org/project/aiomonitor/",
+  "project_url": "https://pypi.org/project/aiomonitor/",
+  "project_urls": {
+    "Changelog": "https://github.com/aio-libs/aiomonitor/blob/main/CHANGES.rst",
+    "Chat": "https://matrix.to/#/!aio-libs:matrix.org",
+    "Documentation": "https://aiomonitor.readthedocs.io",
+    "Download": "https://pypi.org/project/aiomonitor",
+    "Homepage": "https://github.com/aio-libs/aiomonitor",
+    "Issues": "https://github.com/aio-libs/aiomonitor/issues",
+    "Repository": "https://github.com/aio-libs/aiomonitor"
+  },
+  "release_url": "https://pypi.org/project/aiomonitor/0.7.0/",
+  "requires_dist": [
+    "attrs >=20",
+    "aiohttp >=3.8.5",
+    "click >=8.0",
+    "janus >=1.0",
+    "jinja2 >=3.1.2",
+    "terminaltables",
+    "trafaret >=2.1.1",
+    "typing-extensions >=4.1",
+    "prompt-toolkit >=3.0",
+    "aioconsole >=0.7.0",
+    "backports.strenum >=1.2.4 ; python_version < \"3.11\""
+  ],
+  "requires_python": ">=3.8",
+  "summary": "adds monitor and python repl capabilities for asyncio applications",
+  "version": "0.7.0",
+  "releases": [],
+  "developers": [
+    "joongi_kim",
+    "me@daybreaker.info",
+    "nickolainovik@gmail.com",
+    "nikolay_novik"
+  ],
+  "kwds": "aiomonitor aio aiohttp aiohttp_ _aiohttp",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aiomonitor",
+  "homepage": "",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_aioconsole",
+    "pypi_aiohttp",
+    "pypi_attrs",
+    "pypi_backports.strenum",
+    "pypi_click",
+    "pypi_janus",
+    "pypi_jinja2",
+    "pypi_prompt_toolkit",
+    "pypi_terminaltables",
+    "pypi_trafaret",
+    "pypi_typing_extensions"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: plugins",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: communications",
+    "topic :: internet",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: networking"
+  ],
+  "description": "ipy - class and tools for handling of ipv4 and ipv6 addresses and networks.\n\nwebsite: https://github.com/autocracy/python-ipy/\n\npresentation of the api\n=======================\n\nthe ip class allows a comfortable parsing and handling for most\nnotations in use for ipv4 and ipv6 addresses and networks. it was\ngreatly inspired by ripe's perl module net::ip's interface but\ndoesn't share the implementation. it doesn't share non-cidr netmasks,\nso funky stuff like a netmask of 0xffffff0f can't be done here. ::\n\n    >>> from ipy import ip\n    >>> ip = ip('127.0.0.0/30')\n    >>> for x in ip:\n    ...  print(x)\n    ...\n    127.0.0.0\n    127.0.0.1\n    127.0.0.2\n    127.0.0.3\n    >>> ip2 = ip('0x7f000000/30')\n    >>> ip == ip2\n    1\n    >>> ip.reversenames()\n    ['0.0.0.127.in-addr.arpa.', '1.0.0.127.in-addr.arpa.', '2.0.0.127.in-addr.arpa.', '3.0.0.127.in-addr.arpa.']\n    >>> ip.reversename()\n    '0-3.0.0.127.in-addr.arpa.'\n    >>> ip.iptype()\n    'loopback'\n\n\nsupports most ip address formats\n================================\n\nit can detect about a dozen different ways of expressing ip addresses\nand networks, parse them and distinguish between ipv4 and ipv6 addresses: ::\n\n    >>> ip('10.0.0.0/8').version()\n    4\n    >>> ip('::1').version()\n    6\n\nipv4 addresses\n--------------\n\n::\n\n    >>> print(ip(0x7f000001))\n    127.0.0.1\n    >>> print(ip('0x7f000001'))\n    127.0.0.1\n    >>> print(ip('127.0.0.1'))\n    127.0.0.1\n    >>> print(ip('10'))\n    10.0.0.0\n\nipv6 addresses\n--------------\n\n::\n\n    >>> print(ip('1080:0:0:0:8:800:200c:417a'))\n    1080::8:800:200c:417a\n    >>> print(ip('1080::8:800:200c:417a'))\n    1080::8:800:200c:417a\n    >>> print(ip('::1'))\n    ::1\n    >>> print(ip('::13.1.68.3'))\n    ::d01:4403\n\nnetwork mask and prefixes\n-------------------------\n\n::\n\n    >>> print(ip('127.0.0.0/8'))\n    127.0.0.0/8\n    >>> print(ip('127.0.0.0/255.0.0.0'))\n    127.0.0.0/8\n    >>> print(ip('127.0.0.0-127.255.255.255'))\n    127.0.0.0/8\n\n\nderive network address\n===========================\n\nipy can transform an ip address into a network address by applying the given\nnetmask: ::\n\n    >>> print(ip('127.0.0.1/255.0.0.0', make_net=true))\n    127.0.0.0/8\n\nthis can also be done for existing ip instances: ::\n\n    >>> print(ip('127.0.0.1').make_net('255.0.0.0'))\n    127.0.0.0/8\n\n\nconvert address to string\n=========================\n\nnearly all class methods which return a string have an optional\nparameter 'wantprefixlen' which controls if the prefixlen or netmask\nis printed. per default the prefilen is always shown if the network\ncontains more than one address: ::\n\n    wantprefixlen == 0 / none     don't return anything   1.2.3.0\n    wantprefixlen == 1            /prefix                 1.2.3.0/24\n    wantprefixlen == 2            /netmask                1.2.3.0/255.255.255.0\n    wantprefixlen == 3            -lastip                 1.2.3.0-1.2.3.255\n\nyou can also change the defaults on an per-object basis by fiddling with\nthe class members:\n\n- noprefixforsingleip\n- wantprefixlen\n\nexamples of string conversions: ::\n\n    >>> ip('10.0.0.0/32').strnormal()\n    '10.0.0.0'\n    >>> ip('10.0.0.0/24').strnormal()\n    '10.0.0.0/24'\n    >>> ip('10.0.0.0/24').strnormal(0)\n    '10.0.0.0'\n    >>> ip('10.0.0.0/24').strnormal(1)\n    '10.0.0.0/24'\n    >>> ip('10.0.0.0/24').strnormal(2)\n    '10.0.0.0/255.255.255.0'\n    >>> ip('10.0.0.0/24').strnormal(3)\n    '10.0.0.0-10.0.0.255'\n    >>> ip = ip('10.0.0.0')\n    >>> print(ip)\n    10.0.0.0\n    >>> ip.noprefixforsingleip = none\n    >>> print(ip)\n    10.0.0.0/32\n    >>> ip.wantprefixlen = 3\n    >>> print(ip)\n    10.0.0.0-10.0.0.0\n\nwork with multiple networks\n===========================\n\nsimple addition of neighboring netblocks that can be aggregated will yield\na parent network of both, but more complex range mapping and aggregation\nrequires is available with the ``ipset`` class which will hold any number of\nunique address ranges and will aggregate overlapping ranges. ::\n\n    >>> from ipy import ip, ipset\n    >>> ip('10.0.0.0/22') - ip('10.0.2.0/24')\n    ipset([ip('10.0.0.0/23'), ip('10.0.3.0/24')])\n    >>> ipset([ip('10.0.0.0/23'), ip('10.0.3.0/24'), ip('10.0.2.0/24')])\n    ipset([ip('10.0.0.0/22')])\n    >>> s = ipset([ip('10.0.0.0/22')])\n    >>> s.add(ip('192.168.1.0/29'))\n    >>> s\n    ipset([ip('10.0.0.0/22'), ip('192.168.1.0/29')])\n    >>> s.discard(ip('192.168.1.2'))\n    >>> s\n    ipset([ip('10.0.0.0/22'), ip('192.168.1.0/31'), ip('192.168.1.3'), ip('192.168.1.4/30')])\n\n``ipset`` supports the ``set`` method ``isdisjoint``: ::\n\n    >>> s.isdisjoint(ipset([ip('192.168.0.0/16')]))\n    false\n    >>> s.isdisjoint(ipset([ip('172.16.0.0/12')]))\n    true\n\n``ipset`` supports intersection: ::\n\n    >>> s & ipset([ip('10.0.0.0/8')])\n    ipset([ip('10.0.0.0/22')])\n\ncompatibility and links\n=======================\n\nipy 1.01 works on python version 2.6 - 3.7.\n\nthe ip module should work in python 2.5 as long as the subtraction operation\nis not used. ipset requires features of the collecitons class which appear\nin python 2.6, though they can be backported.\n\neratta\n======\n\nwhen using ipv6 addresses, it is best to compare using  ``ip().len()``\ninstead of ``len(ip)``. addresses with an integer value > 64 bits can break\nthe 2nd method.  see http://stackoverflow.com/questions/15650878 for more\ninfo.\n\nfuzz testing for ``ipset`` will throw spurious errors when the ``ipset`` module\ncombines two smaller prefixes into a larger prefix that matches the random\nprefix tested against.\n\nthis python module is under bsd license: see copying file.\n\nfurther information might be available at:\nhttps://github.com/autocracy/python-ipy",
+  "docs_url": null,
+  "keywords": "ipv4 ipv6 netmask",
+  "license": "bsd license",
+  "name": "ipy",
+  "package_url": "https://pypi.org/project/IPy/",
+  "project_url": "https://pypi.org/project/IPy/",
+  "project_urls": {
+    "Download": "https://github.com/autocracy/python-ipy",
+    "Homepage": "https://github.com/autocracy/python-ipy"
+  },
+  "release_url": "https://pypi.org/project/IPy/1.01/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "class and tools for handling of ipv4 and ipv6 addresses and networks",
+  "version": "1.01",
+  "releases": [],
+  "developers": [
+    "jeff_ferland",
+    "jeff_ipy@storyinmemo.com"
+  ],
+  "kwds": "ipy ipv6 ipv4 ipset ip",
+  "license_kwds": "bsd license",
+  "libtype": "pypi",
+  "id": "pypi_ipy",
+  "homepage": "https://github.com/autocracy/python-ipy",
+  "release_count": 11,
+  "dependency_ids": []
+}

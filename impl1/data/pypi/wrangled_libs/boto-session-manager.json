@@ -1,0 +1,72 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": ".. image:: https://github.com/aws-samples/boto-session-manager-project/workflows/ci/badge.svg\n    :target: https://github.com/aws-samples/boto-session-manager-project/actions?query=workflow:ci\n\n.. image:: https://img.shields.io/pypi/v/boto_session_manager.svg\n    :target: https://pypi.python.org/pypi/boto_session_manager\n\n.. image:: https://img.shields.io/pypi/l/boto_session_manager.svg\n    :target: https://pypi.python.org/pypi/boto_session_manager\n\n.. image:: https://img.shields.io/pypi/pyversions/boto_session_manager.svg\n    :target: https://pypi.python.org/pypi/boto_session_manager\n\n.. image:: https://img.shields.io/pypi/dm/boto_session_manager.svg\n    :target: https://pypi.python.org/pypi/boto_session_manager\n\n.. image:: https://img.shields.io/badge/star_me_on_github!--none.svg?style=social\n    :target: https://github.com/aws-samples/boto-session-manager-project\n\n------\n\n.. image:: https://img.shields.io/badge/link-install-blue.svg\n    :target: `install`_\n\n.. image:: https://img.shields.io/badge/link-github-blue.svg\n    :target: https://github.com/aws-samples/boto-session-manager-project\n\n.. image:: https://img.shields.io/badge/link-submit_issue-blue.svg\n    :target: https://github.com/aws-samples/boto-session-manager-project/issues\n\n.. image:: https://img.shields.io/badge/link-request_feature-blue.svg\n    :target: https://github.com/aws-samples/boto-session-manager-project/issues\n\n.. image:: https://img.shields.io/badge/link-download-blue.svg\n    :target: https://pypi.org/pypi/boto_session_manager#files\n\n\nwelcome to ``boto_session_manager`` documentation\n==============================================================================\n\n\nabout ``boto_session_manager``\n------------------------------------------------------------------------------\n``boto_session_manager`` is a light weight, zero dependency python library that simplify managing your aws boto3 session in your application code. it bring auto complete and type hint to the default ``boto3`` sdk, and provide smooth development experience with the following goodies:\n\n- boto3 client auto complete\n- cached boto3 client\n- assume iam role in application code\n- set temporary credential for aws cli\n\nadditionally, if you use `boto3-stubs <https://pypi.org/project/boto3-stubs/>`_ and you did ``pip install \"boto3-stubs[all]\"``, then ``boto_session_manager`` comes with the auto complete and type hint for all boto3 methods out-of-the-box, without any extra configuration (such as `explicit type annotations <https://pypi.org/project/boto3-stubs/#explicit-type-annotations>`_)\n\n\nfeature\n------------------------------------------------------------------------------\n**boto client auto complete**\n\nprovide an enum class to access the aws service name to create boto client.\n\n.. code-block:: python\n\n    from boto_session_manager import botosesmanager, awsserviceenum\n\n    bsm = botosesmanager()\n    s3_client = bsm.s3_client\n\n.. image:: https://github.com/machu-gwu/boto_session_manager-project/assets/6800411/c9f7f9bd-7b1d-4a3a-bacc-6296fd0c241a\n\none click to jump to the documentation:\n\n.. image:: https://github.com/machu-gwu/boto_session_manager-project/assets/6800411/3d44c189-5900-4598-b493-47de97131793\n\nclient method auto complete:\n\n.. image:: https://github.com/machu-gwu/boto_session_manager-project/assets/6800411/c88ee956-b1ab-4d6c-aa3c-9df737ccd476\n\narguments type hint:\n\n.. image:: https://github.com/machu-gwu/boto_session_manager-project/assets/6800411/1978a8ed-ba21-4354-bde1-83e7652b4177\n\nnote: you have to do ``pip install \"boto3-stubs[all]\"`` to enable \"client method auto complete\" and \"arguments type hint\" features.\n\n**cached client**\n\nonce an boto session is defined, each aws service client should be created only once in most of the case. ``boto_session_manager.botosesmanager.get_client(service_name)`` allow you to fetch the client object from cache if possible.\n\n.. code-block:: python\n\n    from boto_session_manager import botosesmanager, awsserviceenum\n\n    bsm = botosesmanager()\n    s3_client1 = bsm.get_client(awsserviceenum.s3)\n    s3_client2 = bsm.get_client(awsserviceenum.s3)\n    assert id(s3_client1) = id(s3_client2)\n    \nor you can just do:\n\n.. code-block:: python\n\n    bsm.s3_client.list_buckets() # it cache the client when needed\n\n**assume role**\n\ncreate another boto session manager based on an assumed iam role. allow you to check if it is expired and maybe renew later.\n\n.. code-block:: python\n\n    bsm_assumed = bsm.assume_role(\"arn:aws:iam::111122223333:role/your-assume-role-name\")\n    sts_client = bsm_assumed.get_client(awsserviceenum.sts)\n    print(sts_client.get_caller_identity())\n\n    print(bsm_assumed.is_expired())\n\nfrom ``1.5.1``, it adds support for auto-refreshable assumed role (beta). note that it is using ``assumerolecredentialfetcher`` and ``deferredrefreshablecredentials`` from botocore, which is not public api officially supported by botocore. this api may be unstable.\n\n.. code-block:: python\n\n    bsm_assumed = bsm.assume_role(\n        \"arn:aws:iam::111122223333:role/your-assume-role-name\",\n        duration_seconds=900,\n        auto_refresh=true,\n    )\n\n    # even though the duration seconds is only 15 minutes,\n    # but it can keep running for 1 hour.\n    tick = 60\n    sleep = 60\n    for i in range(tick):\n        time.sleep(sleep)\n        print(\"elapsed {} seconds\".format((i + 1) * sleep))\n        print(\"account id = {}\".format(bsm_new.sts_client.get_caller_identity()[\"account\"]))\n\n**aws cli context manager**\n\nyou explicitly defined a boto session manager that is not the same as the default one used by your aws cli. the ``boto_session_manager.botosesmanager.awscli()`` context manager can temporarily set your default aws cli credential as the same as the one you defined, and automatically revert it back.\n\n.. code-block:: python\n\n    # explicitly define a boto session manager\n    bsm = botosesmanager(\n        profile_name=\"my_aws_profile\",\n    )\n\n    with bsm.awscli():\n        # now the default aws cli credential is the same as the ``bsm`` you defined\n\nhere's a more detailed example:\n\n.. code-block:: python\n\n    import os\n    from boto_session_manager import botosesmanager\n\n    def print_default_aws_cli_credential():\n        print(\"aws_access_key_id =\", os.environ.get(\"aws_access_key_id\"))\n        print(\"aws_secret_access_key =\", os.environ.get(\"aws_secret_access_key\"))\n        print(\"aws_session_token =\", os.environ.get(\"aws_session_token\"))\n        print(\"aws_region =\", os.environ.get(\"aws_region\"))\n\n    print(\"--- before ---\")\n    print_default_aws_cli_credential()\n\n    bsm = botosesmanager(profile_name=\"aws_data_lab_open_source_us_east_1\")\n    with bsm.awscli():\n        print(\"--- within awscli() context manager ---\")\n        print_default_aws_cli_credential()\n\n    print(\"--- after ---\")\n    print_default_aws_cli_credential()\n\n    # --- before ---\n    # aws_access_key_id = none\n    # aws_secret_access_key = none\n    # aws_session_token = none\n    # aws_region = none\n    # --- within awscli() context manager ---\n    # aws_access_key_id = abcdefg...\n    # aws_secret_access_key = abcdefg...\n    # aws_session_token = abcdefg...\n    # aws_region = us-east-1\n    # --- after ---\n    # aws_access_key_id = none\n    # aws_secret_access_key = none\n    # aws_session_token = none\n    # aws_region = none\n\n\n.. _install:\n\ninstall\n------------------------------------------------------------------------------\n\n``boto_session_manager`` is released on pypi, so all you need is:\n\n.. code-block:: console\n\n    $ pip install boto_session_manager\n\nto upgrade to latest version:\n\n.. code-block:: console\n\n    $ pip install --upgrade boto_session_manager\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license, version 2.0",
+  "name": "boto-session-manager",
+  "package_url": "https://pypi.org/project/boto-session-manager/",
+  "project_url": "https://pypi.org/project/boto-session-manager/",
+  "project_urls": {
+    "Download": "https://pypi.python.org/pypi/boto_session_manager/1.7.1#downloads",
+    "Homepage": "https://github.com/aws-samples/boto_session_manager-project"
+  },
+  "release_url": "https://pypi.org/project/boto-session-manager/1.7.1/",
+  "requires_dist": [
+    "boto3",
+    "sphinx ==4.3.0 ; extra == 'docs'",
+    "sphinx-inline-tabs ==2021.8.17b10 ; extra == 'docs'",
+    "sphinx-jinja ==1.1.1 ; extra == 'docs'",
+    "sphinx-copybutton ==0.4.0 ; extra == 'docs'",
+    "rstobj ==0.0.7 ; extra == 'docs'",
+    "docfly ==1.0.2 ; extra == 'docs'",
+    "furo ==2021.8.31 ; extra == 'docs'",
+    "boto3 ; extra == 'tests'",
+    "awscli ; extra == 'tests'",
+    "pytest ; extra == 'tests'",
+    "pytest-cov ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "provides an alternative, or maybe a more user friendly way to use the native boto3 api.",
+  "version": "1.7.1",
+  "releases": [],
+  "developers": [
+    "husanhe@gmail.com",
+    "sanhe_hu"
+  ],
+  "kwds": "boto_session_manager aws_session_token boto3 botosesmanager boto",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_boto_session_manager",
+  "homepage": "https://github.com/aws-samples/boto_session_manager-project",
+  "release_count": 18,
+  "dependency_ids": [
+    "pypi_awscli",
+    "pypi_boto3",
+    "pypi_docfly",
+    "pypi_furo",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_rstobj",
+    "pypi_sphinx",
+    "pypi_sphinx_copybutton",
+    "pypi_sphinx_inline_tabs",
+    "pypi_sphinx_jinja"
+  ]
+}

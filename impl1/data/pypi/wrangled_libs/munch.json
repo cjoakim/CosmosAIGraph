@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: utilities"
+  ],
+  "description": "[![latest version](https://img.shields.io/pypi/v/munch.svg)](https://pypi.python.org/pypi/munch/)\n[![supported python versions](https://img.shields.io/pypi/pyversions/munch.svg)](https://pypi.python.org/pypi/munch/)\n[![downloads](https://img.shields.io/pypi/dm/munch.svg)](https://pypi.python.org/pypi/munch/)\n\nmunch\n==========\n\ninstallation\n-------------\n\n```\npip install munch\n```\n\nusage\n-----\n\nmunch is a fork of david schoonover's **bunch** package, providing similar functionality. 99% of the work was done by him, and the fork was made mainly for lack of responsiveness for fixes and maintenance on the original code.\n\nmunch is a dictionary that supports attribute-style access, a la javascript:\n\n```python\n\n>>> from munch import munch\n>>> b = munch()\n>>> b.hello = 'world'\n>>> b.hello\n'world'\n>>> b['hello'] += \"!\"\n>>> b.hello\n'world!'\n>>> b.foo = munch(lol=true)\n>>> b.foo.lol\ntrue\n>>> b.foo is b['foo']\ntrue\n\n```\n\n\ndictionary methods\n------------------\n\na munch is a subclass of ``dict``; it supports all the methods a ``dict`` does:\n\n```python\n\n>>> list(b.keys())\n['hello', 'foo']\n\n```\n\nincluding ``update()``:\n\n```python\n\n>>> b.update({ 'ponies': 'are pretty!' }, hello=42)\n>>> print(repr(b))\nmunch({'hello': 42, 'foo': munch({'lol': true}), 'ponies': 'are pretty!'})\n\n```\n\nas well as iteration:\n\n```python\n\n>>> [ (k,b[k]) for k in b ]\n[('hello', 42), ('foo', munch({'lol': true})), ('ponies', 'are pretty!')]\n\n```\n\nand \"splats\":\n\n```python\n\n>>> \"the {knights} who say {ni}!\".format(**munch(knights='lolcats', ni='can haz'))\n'the lolcats who say can haz!'\n\n```\n\n\nserialization\n-------------\n\nmunches happily and transparently serialize to json and yaml.\n\n```python\n\n>>> b = munch(foo=munch(lol=true), hello=42, ponies='are pretty!')\n>>> import json\n>>> json.dumps(b)\n'{\"foo\": {\"lol\": true}, \"hello\": 42, \"ponies\": \"are pretty!\"}'\n\n```\n\nif json support is present (``json`` or ``simplejson``), ``munch`` will have a ``tojson()`` method which returns the object as a json string.\n\nif you have [pyyaml](http://pyyaml.org/wiki/pyyaml) installed, munch attempts to register itself with the various yaml representers so that munches can be transparently dumped and loaded.\n\n```python\n\n>>> b = munch(foo=munch(lol=true), hello=42, ponies='are pretty!')\n>>> import yaml\n>>> yaml.dump(b)\n'!munch.munch\\nfoo: !munch.munch\\n  lol: true\\nhello: 42\\nponies: are pretty!\\n'\n>>> yaml.safe_dump(b)\n'foo:\\n  lol: true\\nhello: 42\\nponies: are pretty!\\n'\n\n```\n\nin addition, munch instances will have a ``toyaml()`` method that returns the yaml string using ``yaml.safe_dump()``. this method also replaces ``__str__`` if present, as i find it far more readable. you can revert back to python's default use of ``__repr__`` with a simple assignment: ``munch.__str__ = munch.__repr__``. the munch class will also have a static method ``munch.fromyaml()``, which loads a munch out of a yaml string.\n\nfinally, munch converts easily and recursively to (``unmunchify()``, ``munch.todict()``) and from (``munchify()``, ``munch.fromdict()``) a normal ``dict``, making it easy to cleanly serialize them in other formats.\n\n\ndefault values\n--------------\n\n``defaultmunch`` instances return a specific default value when an attribute is missing from the collection. like ``collections.defaultdict``, the first argument is the value to use for missing keys:\n\n```python\n\n>>> from munch import defaultmunch\n>>> undefined = object()\n>>> b = defaultmunch(undefined, {'hello': 'world!'})\n>>> b.hello\n'world!'\n>>> b.foo is undefined\ntrue\n\n```\n\n``defaultmunch.fromdict()`` also takes the ``default`` argument:\n\n```python\n\n>>> undefined = object()\n>>> b = defaultmunch.fromdict({'recursively': {'nested': 'value'}}, undefined)\n>>> b.recursively.nested == 'value'\ntrue\n>>> b.recursively.foo is undefined\ntrue\n\n```\n\nor you can use ``defaultfactorymunch`` to specify a factory for generating missing attributes. the first argument is the factory:\n\n```python\n\n>>> from munch import defaultfactorymunch\n>>> b = defaultfactorymunch(list, {'hello': 'world!'})\n>>> b.hello\n'world!'\n>>> b.foo\n[]\n>>> b.bar.append('hello')\n>>> b.bar\n['hello']\n\n```\n\n\nmiscellaneous\n-------------\n\n* it is safe to ``import *`` from this module. you'll get: ``munch``, ``defaultmunch``, ``defaultfactorymunch``, ``munchify`` and ``unmunchify``.\n* ample tests. just run ``pip install tox && tox`` from the project root.\n\nfeedback\n--------\n\nopen a ticket / fork the project on [github](http://github.com/infinidat/munch).\n\n",
+  "docs_url": null,
+  "keywords": "munch,dict,mapping,container,collection",
+  "license": "mit",
+  "name": "munch",
+  "package_url": "https://pypi.org/project/munch/",
+  "project_url": "https://pypi.org/project/munch/",
+  "project_urls": {
+    "Homepage": "https://github.com/Infinidat/munch"
+  },
+  "release_url": "https://pypi.org/project/munch/4.0.0/",
+  "requires_dist": [
+    "importlib-metadata (>=1.7.0) ; (python_version<'3.8')",
+    "astroid (>=2.0) ; extra == 'testing'",
+    "pylint (~=2.3.1) ; extra == 'testing'",
+    "pytest ; extra == 'testing'",
+    "coverage ; extra == 'testing'",
+    "PyYAML (>=5.1.0) ; extra == 'yaml'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "a dot-accessible dictionary (a la javascript objects)",
+  "version": "4.0.0",
+  "releases": [],
+  "developers": [
+    "rotem_yaari",
+    "vmalloc@gmail.com"
+  ],
+  "kwds": "pip pyversions python fromdict container",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_munch",
+  "homepage": "https://github.com/infinidat/munch",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_astroid",
+    "pypi_coverage",
+    "pypi_importlib_metadata",
+    "pypi_pylint",
+    "pypi_pytest",
+    "pypi_pyyaml"
+  ]
+}

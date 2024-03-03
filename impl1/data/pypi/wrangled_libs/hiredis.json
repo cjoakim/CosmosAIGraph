@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: macos",
+    "operating system :: posix",
+    "programming language :: c",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development"
+  ],
+  "description": "# hiredis-py\n\n[![build status](https://github.com/redis/hiredis-py/actions/workflows/integration.yaml/badge.svg)](https://github.com/redis/hiredis-py/actions/workflows/integration.yaml)\n[![license](https://img.shields.io/badge/license-bsd_3--clause-blue.svg)](https://opensource.org/licenses/bsd-3-clause)\n\npython extension that wraps protocol parsing code in [hiredis][hiredis].\nit primarily speeds up parsing of multi bulk replies.\n\n[hiredis]: http://github.com/redis/hiredis\n\n## how do i redis?\n\n[learn for free at redis university](https://university.redis.com/)\n\n[build faster with the redis launchpad](https://launchpad.redis.com/)\n\n[try the redis cloud](https://redis.com/try-free/)\n\n[dive in developer tutorials](https://developer.redis.com/)\n\n[join the redis community](https://redis.com/community/)\n\n[work at redis](https://redis.com/company/careers/jobs/)\n\n## install\n\nhiredis-py is available on [pypi](https://pypi.org/project/hiredis/), and can be installed via:\n\n```bash\npip install hiredis\n```\n## building and testing\n\nbuilding this repository requires a recursive checkout of submodules, and building hiredis. the following example shows how to clone, compile, and run tests. please note - you will need the gcc installed.\n\n```bash\ngit clone --recursse-submodules https://github.com/redis/hiredis-py\npython setup.py build_ext --inplace\npython -m pytest\n```\n\n### requirements\n\nhiredis-py requires **python 3.7+**.\n\nmake sure python development headers are available when installing hiredis-py.\non ubuntu/debian systems, install them with `apt-get install python3-dev`.\n\n## usage\n\nthe `hiredis` module contains the `reader` class. this class is responsible for\nparsing replies from the stream of data that is read from a redis connection.\nit does not contain functionality to handle i/o.\n\n### reply parser\n\nthe `reader` class has two methods that are used when parsing replies from a\nstream of data. `reader.feed` takes a string argument that is appended to the\ninternal buffer. `reader.gets` reads this buffer and returns a reply when the\nbuffer contains a full reply. if a single call to `feed` contains multiple\nreplies, `gets` should be called multiple times to extract all replies.\n\nexample:\n\n```python\n>>> reader = hiredis.reader()\n>>> reader.feed(\"$5\\r\\nhello\\r\\n\")\n>>> reader.gets()\nb'hello'\n```\n\nwhen the buffer does not contain a full reply, `gets` returns `false`.\nthis means extra data is needed and `feed` should be called again before calling\n`gets` again. alternatively you could provide custom sentinel object via parameter,\nwhich is useful for resp3 protocol where native boolean types are supported:\n\nexample:\n\n```python\n>>> reader.feed(\"*2\\r\\n$5\\r\\nhello\\r\\n\")\n>>> reader.gets()\nfalse\n>>> reader.feed(\"$5\\r\\nworld\\r\\n\")\n>>> reader.gets()\n[b'hello', b'world']\n>>> reader = hiredis.reader(notenoughdata=ellipsis)\n>>> reader.gets()\nellipsis\n```\n\n#### unicode\n\n`hiredis.reader` is able to decode bulk data to any encoding python supports.\nto do so, specify the encoding you want to use for decoding replies when\ninitializing it:\n\n```python\n>>> reader = hiredis.reader(encoding=\"utf-8\", errors=\"strict\")\n>>> reader.feed(b\"$3\\r\\n\\xe2\\x98\\x83\\r\\n\")\n>>> reader.gets()\n'\u2603'\n```\n\ndecoding of bulk data will be attempted using the specified encoding and\nerror handler. if the error handler is `'strict'` (the default), a\n`unicodedecodeerror` is raised when data cannot be dedcoded. this is identical\nto python's default behavior. other valid values to `errors` include\n`'replace'`, `'ignore'`, and `'backslashreplace'`. more information on the\nbehavior of these error handlers can be found\n[here](https://docs.python.org/3/howto/unicode.html#the-string-type).\n\n\nwhen the specified encoding cannot be found, a `lookuperror` will be raised\nwhen calling `gets` for the first reply with bulk data.\n\n#### error handling\n\nwhen a protocol error occurs (because of multiple threads using the same\nsocket, or some other condition that causes a corrupt stream), the error\n`hiredis.protocolerror` is raised. because the buffer is read in a lazy\nfashion, it will only be raised when `gets` is called and the first reply in\nthe buffer contains an error. there is no way to recover from a faulty protocol\nstate, so when this happens, the i/o code feeding data to `reader` should\nprobably reconnect.\n\nredis can reply with error replies (`-err ...`). for these replies, the custom\nerror class `hiredis.replyerror` is returned, **but not raised**.\n\nwhen other error types should be used (so existing code doesn't have to change\nits `except` clauses), `reader` can be initialized with the `protocolerror` and\n`replyerror` keywords. these keywords should contain a *class* that is a\nsubclass of `exception`. when not provided, `reader` will use the default\nerror types.\n\n## benchmarks\n\nthe repository contains a benchmarking script in the `benchmark` directory,\nwhich uses [gevent](http://gevent.org/) to have non-blocking i/o and redis-py\nto handle connections. these benchmarks are done with a patched version of\nredis-py that uses hiredis-py when it is available.\n\nall benchmarks are done with 10 concurrent connections.\n\n* set key value + get key\n  * redis-py: 11.76 kops\n  * redis-py *with* hiredis-py: 13.40 kops\n  * improvement: **1.1x**\n\nlist entries in the following tests are 5 bytes.\n\n* lrange list 0 **9**:\n  * redis-py: 4.78 kops\n  * redis-py *with* hiredis-py: 12.94 kops\n  * improvement: **2.7x**\n* lrange list 0 **99**:\n  * redis-py: 0.73 kops\n  * redis-py *with* hiredis-py: 11.90 kops\n  * improvement: **16.3x**\n* lrange list 0 **999**:\n  * redis-py: 0.07 kops\n  * redis-py *with* hiredis-py: 5.83 kops\n  * improvement: **83.2x**\n\nthroughput improvement for simple set/get is minimal, but the larger multi bulk replies\nget, the larger the performance improvement is.\n\n## license\n\nthis code is released under the bsd license, after the license of hiredis.\n",
+  "docs_url": null,
+  "keywords": "redis",
+  "license": "bsd",
+  "name": "hiredis",
+  "package_url": "https://pypi.org/project/hiredis/",
+  "project_url": "https://pypi.org/project/hiredis/",
+  "project_urls": {
+    "Changes": "https://github.com/redis/hiredis-py/releases",
+    "Homepage": "https://github.com/redis/hiredis-py",
+    "Issue tracker": "https://github.com/redis/hiredis-py/issues"
+  },
+  "release_url": "https://pypi.org/project/hiredis/2.3.2/",
+  "requires_dist": [],
+  "requires_python": ">=3.7",
+  "summary": "python wrapper for hiredis",
+  "version": "2.3.2",
+  "releases": [],
+  "developers": [
+    "jan",
+    "janerik@fnordig.de",
+    "pcnoordhuis@gmail.com"
+  ],
+  "kwds": "redis hiredis workflows pip pytest",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_hiredis",
+  "homepage": "https://github.com/redis/hiredis-py",
+  "release_count": 24,
+  "dependency_ids": []
+}

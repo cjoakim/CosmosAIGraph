@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: monitoring",
+    "typing :: typed"
+  ],
+  "description": "aioprometheus\n=============\n\n|ci status| |pypi| |python| |cov| |docs| |license|\n\n`aioprometheus` is a prometheus python client library for asyncio-based\napplications. it provides metrics collection and serving capabilities for\nuse with prometheus and compatible monitoring systems. it supports exporting\nmetrics into text and pushing metrics to a gateway.\n\nthe asgi middleware in `aioprometheus` can be used in fastapi/starlette and\nquart applications. `aioprometheus` can also be used in other kinds of asyncio\napplications too.\n\nthe project documentation can be found on\n`readthedocs <http://aioprometheus.readthedocs.org/>`_.\n\n\ninstall\n-------\n\n.. code-block:: console\n\n    $ pip install aioprometheus\n\nthe asgi middleware does not have any external dependencies but the starlette\nand quart convenience functions that handle metrics requests do.\n\nif you plan on using the asgi middleware in a starlette / fastapi application\nthen you can install the extra dependencies alongside `aioprometheus` by adding\nextras to the install.\n\n.. code-block:: console\n\n    $ pip install aioprometheus[starlette]\n\nif you plan on using the asgi middleware in a quart application then you can\ninstall the extra dependencies alongside `aioprometheus` by adding extras\nto the install.\n\n.. code-block:: console\n\n    $ pip install aioprometheus[quart]\n\na prometheus push gateway client and a http service are included, but their\ndependencies are not installed by default. you can install them alongside\n`aioprometheus` by adding extras to the install.\n\n.. code-block:: console\n\n    $ pip install aioprometheus[aiohttp]\n\nmultiple optional dependencies can be listed at once, such as:\n\n.. code-block:: console\n\n    $ pip install aioprometheus[aiohttp,starlette,quart]\n\n\nusage\n-----\n\nthere are two basic steps involved in using aioprometheus; the first is to\ninstrument your software by creating metrics to monitor events and the second\nis to expose the metrics to a collector.\n\ncreating a new metric is easy. first, import the appropriate metric from\naioprometheus. in the example below it's a counter metric. next, instantiate\nthe metric with a name and a help string. finally, update the metric when an\nevent occurs. in this case the counter is incremented.\n\n.. code-block:: python\n\n    from aioprometheus import counter\n\n    events_counter = counter(\n        \"events_counter\",\n        \"total number of events.\",\n    )\n\n    events_counter.inc({\"kind\": \"event a\"})\n\nby default, metrics get registered into the default collector registry which\nis available at ``aioprometheus.registry``.\n\na number of convenience decorator functions are included in aioprometheus that\ncan assist with automatically updating metrics. the ``examples`` directory\ncontains various decorators examples.\n\nonce your software is instrumented with various metrics you'll want to\nexpose them to prometheus or a compatible metrics collector. there are\nmultiple strategies available for this and the right choice depends on the\nkind of thing being instrumented.\n\nif you are instrumenting a starlette, fastapi or quart application then the\neasiest option for adding prometheus metrics is to use the asgi middleware\nprovided by `aioprometheus`.\n\nthe asgi middleware provides a default set of metrics that include counters\nfor total requests received, total responses sent, exceptions raised and\nresponse status codes for route handlers.\n\nthe example below shows how to use the aioprometheus asgi middleware in a\nfastapi application. fastapi is built upon starlette so using the middleware\nin starlette would be the same.\n\n.. code-block:: python\n\n    from fastapi import fastapi, request, response\n\n    from aioprometheus import counter, metricsmiddleware\n    from aioprometheus.asgi.starlette import metrics\n\n    app = fastapi()\n\n    # any custom application metrics are automatically included in the exposed\n    # metrics. it is a good idea to attach the metrics to 'app.state' so they\n    # can easily be accessed in the route handler - as metrics are often\n    # created in a different module than where they are used.\n    app.state.users_events_counter = counter(\"events\", \"number of events.\")\n\n    app.add_middleware(metricsmiddleware)\n    app.add_route(\"/metrics\", metrics)\n\n\n    @app.get(\"/\")\n    async def root(request: request):\n        return response(\"fastapi middleware example\")\n\n\n    @app.get(\"/users/{user_id}\")\n    async def get_user(\n        request: request,\n        user_id: str,\n    ):\n        request.app.state.users_events_counter.inc({\"path\": request.scope[\"path\"]})\n        return response(f\"{user_id}\")\n\n\n    if __name__ == \"__main__\":\n        import uvicorn\n\n        uvicorn.run(app)\n\n\nother examples in the ``examples/frameworks`` directory show how aioprometheus\ncan be used within various web application frameworks.\n\nthe next example shows how to use the service http endpoint to provide a\ndedicated metrics endpoint for other applications such as long running\ndistributed system processes.\n\nthe service object requires optional extras to be installed so make sure you\ninstall aioprometheus with the 'aiohttp' extras.\n\n.. code-block:: console\n\n    $ pip install aioprometheus[aiohttp]\n\n.. code-block:: python\n\n    \"\"\"\n    this example demonstrates how the ``aioprometheus.service`` can be used to\n    expose metrics on a http endpoint.\n\n    .. code-block:: console\n\n        (env) $ python simple-service-example.py\n        serving prometheus metrics on: http://127.0.0.1:8000/metrics\n\n    you can open the url in a browser or use the ``curl`` command line tool to\n    fetch metrics manually to verify they can be retrieved by prometheus server.\n\n    \"\"\"\n\n    import asyncio\n    import socket\n\n    from aioprometheus import counter\n    from aioprometheus.service import service\n\n\n    async def main():\n\n        service = service()\n        events_counter = counter(\n            \"events\", \"number of events.\", const_labels={\"host\": socket.gethostname()}\n        )\n\n        await service.start(addr=\"127.0.0.1\", port=8000)\n        print(f\"serving prometheus metrics on: {service.metrics_url}\")\n\n        # now start another coroutine to periodically update a metric to\n        # simulate the application making some progress.\n        async def updater(c: counter):\n            while true:\n                c.inc({\"kind\": \"timer_expiry\"})\n                await asyncio.sleep(1.0)\n\n        await updater(events_counter)\n\n        # finally stop server\n        await service.stop()\n\n\n    if __name__ == \"__main__\":\n\n        try:\n            asyncio.run(main())\n        except keyboardinterrupt:\n            pass\n\na counter metric is used to track the number of while loop iterations executed\nby the 'updater' coroutine. the service is started and then a coroutine is\nstarted to periodically update the metric to simulate progress.\n\nthe service can be configured to bind to a user defined network interface and\nport.\n\nwhen the service receives a request for metrics it forms a response by\nrendering the contents of its registry into the appropriate format. by default\nthe service uses the default collector registry, which is\n``aioprometheus.registry``. the service can be configured to use a different\nregistry by passing one in as an argument to the service constructor.\n\n\nlicense\n-------\n\n`aioprometheus` is released under the mit license.\n\n`aioprometheus` originates from the (now deprecated)\n`prometheus python <https://github.com/slok/prometheus-python>`_ package which\nwas released under the mit license. `aioprometheus` continues to use the mit\nlicense and contains a copy of the original mit license from the\n`prometheus-python` project as instructed by the original license.\n\n\n.. |ci status| image:: https://github.com/claws/aioprometheus/workflows/ci%20pipeline/badge.svg?branch=master\n    :target: https://github.com/claws/aioprometheus/actions?query=branch%3amaster\n\n.. |pypi| image:: https://img.shields.io/pypi/v/aioprometheus.svg\n    :target: https://pypi.python.org/pypi/aioprometheus\n\n.. |python| image:: https://img.shields.io/pypi/pyversions/aioprometheus.svg\n    :target: https://pypi.python.org/pypi/aioprometheus/\n\n.. |cov| image:: https://codecov.io/github/claws/aioprometheus/branch/master/graph/badge.svg?token=oppbg8hbgc\n    :target: https://codecov.io/github/claws/aioprometheus\n\n.. |docs| image:: https://readthedocs.org/projects/aioprometheus/badge/?version=latest\n    :target: https://aioprometheus.readthedocs.io/en/latest\n\n.. |license| image:: https://img.shields.io/badge/license-mit-blue.svg\n    :target: https://github.com/claws/aioprometheus/license/license\n",
+  "docs_url": null,
+  "keywords": "prometheus,monitoring,metrics",
+  "license": "mit",
+  "name": "aioprometheus",
+  "package_url": "https://pypi.org/project/aioprometheus/",
+  "project_url": "https://pypi.org/project/aioprometheus/",
+  "project_urls": {
+    "Homepage": "https://github.com/claws/aioprometheus"
+  },
+  "release_url": "https://pypi.org/project/aioprometheus/23.3.0/",
+  "requires_dist": [
+    "orjson",
+    "quantile-python (>=1.1)",
+    "aiohttp (>=3.3.2) ; extra == 'aiohttp'",
+    "quart (>=0.15.1) ; extra == 'quart'",
+    "starlette (>=0.14.2) ; extra == 'starlette'"
+  ],
+  "requires_python": ">=3.8.0",
+  "summary": "a prometheus python client library for asyncio-based applications",
+  "version": "23.3.0",
+  "releases": [],
+  "developers": [
+    "chris_laws",
+    "clawsicus@gmail.com"
+  ],
+  "kwds": "aioprometheus prometheus metricsmiddleware asyncio metrics",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_aioprometheus",
+  "homepage": "https://github.com/claws/aioprometheus",
+  "release_count": 26,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_orjson",
+    "pypi_quantile_python",
+    "pypi_quart",
+    "pypi_starlette"
+  ]
+}

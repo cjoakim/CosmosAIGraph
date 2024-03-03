@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "\n<h1 style=\"text-align:center\">\n\npysnirf2\n\n`pip install snirf`\n\n</h1>\n\n\n![testing](https://github.com/bunpc/pysnirf2/actions/workflows/test.yml/badge.svg)\n![lazydocs](https://github.com/bunpc/pysnirf2/actions/workflows/lazydocs.yml/badge.svg)\n[![pypi version](https://badge.fury.io/py/snirf.svg)](https://badge.fury.io/py/snirf)\n[![doi](https://zenodo.org/badge/426339949.svg)](https://zenodo.org/badge/latestdoi/426339949)\n\ndynamically generated python library for reading, writing, and validating [shared near infrared spectroscopy format (snirf) files](https://github.com/fnirs/snirf).\n\ndeveloped and maintained by the [boston university neurophotonics center](https://www.bu.edu/neurophotonics/).\n\n## documentation\n\n[documentation](https://github.com/bunpc/pysnirf2/tree/main/docs) is generated from source using [lazydocs](https://github.com/ml-tooling/lazydocs)\n\n## installation\n`pip install snirf`\n\npysnirf2 requires python > 3.6.\n\n# features\n\nthe library generated via metaprogramming, but the resulting classes explicitly implement each and every specified snirf field so as to provide an extensible object-oriented foundation for snirf applications.\n\n## open a snirf file\n`snirf(<path>, <mode>)` opens a snirf file at `<path>` _or creates a new one if it doesn't exist._ use mode 'w' to create a new file, 'r' to read a file, and 'r+' to edit an existing file.\n```python\nfrom snirf import snirf\nsnirf = snirf(r'some\\path\\subj1_run01.snirf', 'r+')\n```\n## create a snirf file object\n`snirf()` with no arguments creates a temporary file which can be written later using `save()`.\n```python\nsnirf = snirf()\n```\n\n## closing a snirf file\na `snirf` instance wraps a file on disk. it should be closed when you're done reading from it or saving.\n```python\nsnirf.close()\n```\nuse a `with` statement to ensure that the file is closed when you're done with it:\n```python\nwith snirf(r'some\\path\\subj1_run01.snirf', 'r+') as snirf:\n     # read/write\n     snirf.save()\n```\n\n## copy a snirf file object\nany `snirf` object can be copied to a new instance in memory, after which the original can be closed.\n```python\nsnirf2 = snirf.copy()\nsnirf.close()\n# snirf2 is free for manipulation\n```\n\n## view or retrieve a file's contents\n```python\n>>> snirf\n\nsnirf at /\nfilename: \nc:\\users\\you\\some\\path\\subj1_run01.snirf\nformatversion: v1.0\nnirs: <iterable of 2 <class 'pysnirf2.nirselement'>>\n```\n```python\n>>> snirf.nirs[0].probe\n\nprobe at /nirs1/probe\ncorrelationtimedelaywidths: [0.]\ncorrelationtimedelays: [0.]\ndetectorlabels: ['d1' 'd2']\ndetectorpos2d: [[30.  0.]\n [ 0. 30.]]\ndetectorpos3d: [[30.  0.  0.]\n [ 0. 30.  0.]]\nfilename: \nc:\\users\\you\\some\\path\\subj1_run01.snirf\nfrequencies: [1.]\nlandmarklabels: none\nlandmarkpos2d: none\nlandmarkpos3d: none\nlocation: /nirs/probe\nmomentorders: none\nsourcelabels: ['s1']\nsourcepos2d: [[0. 0.]]\nsourcepos3d: [[0.]\n [0.]\n [0.]]\ntimedelaywidths: [0.]\ntimedelays: [0.]\nuselocalindex: none\nwavelengths: [690. 830.]\nwavelengthsemission: none\n```\n## edit a snirf file\nassign a new value to a field\n```python\n>>> snirf.nirs[0].metadatatags.subjectid = 'subj1'\n>>> snirf.nirs[0].metadatatags.subjectid\n\n'subj1'\n```\n```python\n>>> snirf.nirs[0].probe.detectorpos3d[0, :] = [90, 90, 90]\n>>> snirf.nirs[0].probe.detectorpos3d\n\narray([[90.,  90.,  90.],\n      [  0.,  30.,   0.]])\n```\n> note: assignment via slicing is not possible in `dynamic_loading` mode. \n## indexed groups\nindexed groups are defined by the snirf file format as groups of the same type which are indexed via their name + a 1-based index, i.e.  `data1`, `data2`, ... or `stim1`, `stim2`, `stim3`, ...\n\npysnirf2 provides an iterable interface for these groups using pythonic 0-based indexing, i.e. `data[0]`, `data[1]`, ... or `stim[0]`, `stim[1]]`, `stim[2]`, ...\n\n```python\n>>> snirf.nirs[0].stim\n\n\n<iterable of 0 <class 'pysnirf2.stimelement'>>\n\n>>> len(nirs[0].stim)\n\n0\n```\nto add an indexed group, use the `appendgroup()` method of any `indexedgroup` class. indexed groups are created automatically. `nirs` is an indexed group.\n```python\n>>> snirf.nirs[0].stim.appendgroup()\n>>> len(nirs[0].stim)\n\n1\n\n>>> snirf.nirs[0].stim[0]\n\nstimelement at /nirs/stim2\ndata: none\ndatalabels: none\nfilename: \nc:\\users\\you\\some\\path\\subj1_run01.snirf\nname: none\n```\nto remove an indexed group\n```python\ndel snirf.nirs[0].stim[0]\n```\n## save a snirf file\noverwrite the open file\n```python\nsnirf.save()\n```\nsave as in a new location\n```python\nsnirf.save(r'some\\new\\path\\subj1_run01_edited.snirf')\n```\nthe `save()` function can be called for any group or indexed group:\n```python\nsnirf.nirs[0].metadatatags.save('subj1_run01_edited_metadata_only.snirf')\n```\n## dynamic loading mode\nfor larger files, it may be useful to load data dynamically: data will only be loaded on access, and only changed datasets will be written on `save()`. when creating a new `snirf` instance, set `dynamic_loading` to `true` (default `false`).\n```python\nsnirf = snirf(r'some\\path\\subj1_run01.snirf', 'r+', dynamic_loading=true)\n```\n> note: in dynamic loading mode, array data cannot be modified with indices like in the example above:\n> ```python\n> >>> snirf = snirf(testpath, 'r+', dynamic_loading=true)\n> >>> snirf.nirs[0].probe.detectorpos3d\n> \n> array([[30.,  0.,  0.],\n>       [ 0., 30.,  0.]])\n> \n> >>> snirf.nirs[0].probe.detectorpos3d[0, :] = [90, 90, 90]\n> >>> snirf.nirs[0].probe.detectorpos3d\n> \n> array([[30.,  0.,  0.],\n>        [ 0., 30.,  0.]])\n> ```\n> to modify an array in `dynamic_loading` mode, assign it, modify it, and assign it back to the snirf object.\n> ```python\n> >>> detectorpos3d = snirf.nirs[0].probe.detectorpos3d\n> >>> detectorpos3d[0, :] = [90, 90, 90]\n> >>> snirf.nirs[0].probe.detectorpos3d = detectorpos3d\n> \n> array([[90.,  90.,  90.],\n>        [ 0.,   30.,  0.]])\n\n# validating a snirf file\npysnirf2 features functions for validating snirf files against the specification and generating detailed error reports.\n## validate a snirf object you have created\n```python\nresult = snirf.validate()\n```\n## validate a snirf file on disk\nto validate a snirf file on disk\n```python\nfrom snirf import validatesnirf\nresult = validatesnirf(r'some\\path\\subj1_run01.snirf')\nassert result, 'invalid snirf file!\\n' + result.display()  # crash and display issues if the file is invalid.\n```\n## validation results\nthe validation functions return a [`validationresult`](https://github.com/bunpc/pysnirf2/blob/main/docs/pysnirf2.md#class-validationresult) instance which contains details about the snirf file.\nto view the validation result:\n```python\n>>> result.display(severity=3)  # display all fatal errors\n\n<pysnirf2.pysnirf2.validationresult object at 0x000001c0ccf05a00>\n/nirs1/data1/measurementlist103/datatype                 fatal   required_dataset_missing\n/nirs1/data1/measurementlist103/datatypeindex            fatal   required_dataset_missing\n/nirs1/data1                                             fatal   invalid_measurementlist \n\nfound 668 ok      (hidden)\nfound 635 info    (hidden)\nfound 204 warning (hidden)\nfound 3 fatal  \n\nfile is invalid\n```\nto look at a particular result:\n```python\n>>> result.errors[2]\n\n<pysnirf2.pysnirf2.validationissue object at 0x000001c0cb502f70>\nlocation: /nirs1/data1\nseverity: 3   fatal  \nname:     8   invalid_measurementlist\nmessage:  the number of measurementlist elements does not match the second dimension of datatimeseries\n```\nthe full list of validation results `result.issues` can be explored programatically.\n# code generation\n\nthe interface and validator are generated via metacode that downloads and parses [the latest snirf specification](https://raw.githubusercontent.com/fnirs/snirf/master/snirf_specification.md). \n\nsee [\\gen](https://github.com/bunpc/pysnirf2/tree/main/gen) for details.\n\n\n\n\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "gplv3",
+  "name": "snirf",
+  "package_url": "https://pypi.org/project/snirf/",
+  "project_url": "https://pypi.org/project/snirf/",
+  "project_urls": {
+    "Homepage": "https://github.com/BUNPC/pysnirf2"
+  },
+  "release_url": "https://pypi.org/project/snirf/0.7.4/",
+  "requires_dist": [
+    "h5py (>=3.1.0)",
+    "numpy",
+    "setuptools",
+    "pip",
+    "termcolor",
+    "colorama"
+  ],
+  "requires_python": ">=3.6.0",
+  "summary": "interface and validator for snirf files",
+  "version": "0.7.4",
+  "releases": [],
+  "developers": [
+    "sstucker@bu.edu"
+  ],
+  "kwds": "pysnirf2 snirf_specification validatesnirf snirf snirf2",
+  "license_kwds": "gplv3",
+  "libtype": "pypi",
+  "id": "pypi_snirf",
+  "homepage": "https://github.com/bunpc/pysnirf2",
+  "release_count": 2,
+  "dependency_ids": [
+    "pypi_colorama",
+    "pypi_h5py",
+    "pypi_numpy",
+    "pypi_pip",
+    "pypi_setuptools",
+    "pypi_termcolor"
+  ]
+}

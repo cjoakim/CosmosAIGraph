@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: bsd license",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: software development"
+  ],
+  "description": "pgeocode\n========\n\n|pypi| |condaforge| |rdfd| |ghactions|\n\n.. |pypi| image:: https://img.shields.io/pypi/v/pgeocode.svg\n   :target: https://pypi.org/project/pgeocode/\n\n.. |condaforge| image:: https://img.shields.io/conda/vn/conda-forge/pgeocode.svg\n   :target: https://anaconda.org/conda-forge/pgeocode\n\n.. |rdfd| image:: https://readthedocs.org/projects/pgeocode/badge/?version=latest\n    :target: http://pgeocode.readthedocs.io/\n\n.. |ghactions| image:: https://github.com/symerio/pgeocode/workflows/test/badge.svg\n   :target: https://github.com/symerio/pgeocode/actions?query=branch%3amaster+\n\n\npostal code geocoding and distance calculations\n\npgeocode is a python library for high performance off-line querying of gps coordinates, region name and municipality name\nfrom postal codes. distances between postal codes as well as general\ndistance queries are also supported.\nthe used `geonames <http://download.geonames.org/export/zip/>`_ database includes postal codes for 83 countries.\n\ncurrently, only queries within the same country are supported.\n\nfor additional documentation see `pgeocode.readthedocs.io <https://pgeocode.readthedocs.io>`_.\n\n\ninstallation\n------------\n\npgeocode requires python 3.8+ as well as ``numpy`` and ``pandas`` packages. it can be installed with,\n\n.. code::\n\n    pip install pgeocode\n\nor\n\n.. code::\n\n    conda install -c conda-forge pgeocode\n\nquickstart\n----------\n\n**postal code queries**\n\n.. code:: python\n\n    >>> import pgeocode\n\n    >>> nomi = pgeocode.nominatim('fr')\n    >>> nomi.query_postal_code(\"75013\")\n    postal_code               75013\n    country_code                 fr\n    place_name             paris 13\n    state_name        \u00eele-de-france\n    state_code                   11\n    county_name               paris\n    county_code                  75\n    community_name            paris\n    community_code              751\n    latitude                48.8322\n    longitude                2.3561\n    accuracy                      5\n\n    >>> nomi.query_postal_code([\"75013\", \"69006\"])\n          postal_code place_name            state_name  latitude  longitude\n    0       75013   paris 13         \u00eele-de-france   48.8322     2.3561\n    1       69006    lyon 06  auvergne-rh\u00f4ne-alpes   45.7679     4.8506\n\n**place name queries**\n\n.. code:: python\n\n    >>> import pgeocode\n\n    >>> nomi = pgeocode.nominatim('fr')\n    >>> nomi.query_location(\"antibes\", top_k=3)\n        country_code  postal_code place_name                  state_name  state_code  ... community_name community_code latitude longitude  accuracy\n    49553           fr        06160    antibes  provence-alpes-c\u00f4te d'azur        93.0  ...         grasse            061  43.5858    7.1083         5\n    49787           fr        06600    antibes  provence-alpes-c\u00f4te d'azur        93.0  ...         grasse            061  43.5858    7.1083         5\n    49788           fr  06601 cedex    antibes  provence-alpes-c\u00f4te d'azur        93.0  ...         grasse            061  43.5858    7.1083         5\n\n    >>> nomi.query_location(\"straassborg\", top_k=3, fuzzy_threshold=80)\n        country_code  postal_code  place_name state_name  state_code  ... community_name community_code latitude longitude  accuracy\n    25461           fr        67000  strasbourg  grand est        44.0  ...     strasbourg            678  48.5839    7.7455         5\n    25462           fr  67001 cedex  strasbourg  grand est        44.0  ...     strasbourg            678  48.5839    7.7455         5\n    25463           fr  67002 cedex  strasbourg  grand est        44.0  ...     strasbourg            678  48.5839    7.7455         5\n\n**distance calculations**\n\n.. code:: python\n\n    >>> dist = pgeocode.geodistance('fr')\n    >>> dist.query_postal_code(\"75013\", \"69006\")\n    389.156\n    >>> dist.query_postal_code([\"75013\", \"75014\", \"75015\"], [\"69006\", \"69005\", \"69004\"])\n    array([ 389.15648697,  390.12577967,  390.49857655])\n\n\ngeocoding format\n----------------\n\nthe result of a geo-localistion query is a ``pandas.dataframe`` with the following columns,\n\n* ``country_code``: iso country code, 2 characters\n* ``postal_code`` : postal code\n* ``place_name``  : place name (e.g. town, city etc)\n* ``state_name`` : 1. order subdivision (state)\n* ``state_code`` : 1. order subdivision (state)\n* ``county_name`` : 2. order subdivision (county/province)\n* ``county_code`` : 2. order subdivision (county/province)\n* ``community_name`` : 3. order subdivision (community)\n* ``community_code`` : 3. order subdivision (community)\n* ``latitude``    : estimated latitude (wgs84)\n* ``longitude``   : estimated longitude (wgs84)\n* ``accuracy``    : accuracy of lat/lng from 1=estimated to 6=centroid\n\n\nconfiguration and defaults\n--------------------------\n\n**storage directory**\n\ndefaults to ``~/.cache/pgeocode``, it is the directory where data is downloaded\nfor later consumption. it can be changed using the environment variable\n``pgeocode_data_dir``, i.e. ``export pgeocode_data_dir=/tmp/pgeocode_data``.\n\n**data sources**\n\ndata sources are provided as a list in the ``pgeocode.download_url`` variable.\nthe default value is,\n\n.. code:: python\n\n    download_url = [\n        \"https://download.geonames.org/export/zip/{country}.zip\",\n        \"https://symerio.github.io/postal-codes-data/data/geonames/{country}.txt\",\n    ]\n\ndata sources are tried from first to last until one works. here the second link is a mirror\nof the first.\n\nit is also possible to extend this variable with third party data sources, as\nlong as they follow the same format. see for instance\n`postal-codes-data <https://github.com/symerio/postal-codes-data/tree/master/data/geonames>`_\nrepository for examples of data files.\n\n\nlicense\n-------\n\nthe pgeocode package is distributed under the 3-clause bsd license.\n\n\nsupported countries\n-------------------\n\nthe list of countries available in the geonames database, with the corresponding country codes, are given below,\n\nandorra (ad), argentina (ar), american samoa (as), austria (at), australia (au), \u00e5land islands (ax), azerbaijan (az), bangladesh (bd), belgium (be), bulgaria (bg), bermuda (bm), brazil (br), belarus (by), canada (ca), switzerland (ch), chile (cl), colombia (co), costa rica (cr), cyprus (cy), czechia (cz), germany (de), denmark (dk), dominican republic (do), algeria (dz), estonia (ee), spain (es), finland (fi), federated states of micronesia (fm), faroe islands (fo), france (fr), united kingdom of great britain and northern ireland (gb), french guiana (gf), guernsey (gg), greenland (gl), guadeloupe (gp), guatemala (gt), guam (gu), croatia (hr), haiti (ht), hungary (hu), ireland (ie), isle of man (im), india (in), iceland (is), italy (it), jersey (je), japan (jp), republic of korea (kr), liechtenstein (li), sri lanka (lk), lithuania (lt), luxembourg (lu), latvia (lv), monaco (mc), republic of moldova (md), marshall islands (mh), the former yugoslav republic of macedonia (mk), northern mariana islands (mp), martinique (mq), malta (mt), malawi (mw), mexico (mx), malaysia (my), new caledonia (nc), netherlands (nl), norway (no), new zealand (nz), peru (pe), philippines (ph), pakistan (pk), poland (pl), saint pierre and miquelon (pm), puerto rico (pr), portugal (pt), palau (pw), r\u00e9union (re), romania (ro), serbia (rs), russian federation (ru), sweden (se), singapore (sg), slovenia (si), svalbard and jan mayen islands (sj), slovakia (sk), san marino (sm), thailand (th), turkey (tr), ukraine (ua), united states of america (us), uruguay (uy), holy see (va), united states virgin islands (vi), wallis and futuna islands (wf), mayotte (yt), south africa (za)\n\nsee `geonames database <http://download.geonames.org/export/zip/>`_ for more information.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "pgeocode",
+  "package_url": "https://pypi.org/project/pgeocode/",
+  "project_url": "https://pypi.org/project/pgeocode/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/pgeocode/0.4.1/",
+  "requires_dist": [
+    "requests",
+    "numpy",
+    "pandas",
+    "thefuzz ; extra == 'fuzzy'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "approximate geocoding",
+  "version": "0.4.1",
+  "releases": [],
+  "developers": [
+    "roman.yurchak@symerio.com",
+    "roman_yurchak"
+  ],
+  "kwds": "pgeocode pgeocode_data_dir pgeocode_data condaforge svg",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_pgeocode",
+  "homepage": "",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_requests",
+    "pypi_thefuzz"
+  ]
+}

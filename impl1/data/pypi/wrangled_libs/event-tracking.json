@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 2 - pre-alpha",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu affero general public license v3 or later (agplv3+)",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.8",
+    "topic :: internet :: www/http",
+    "topic :: internet :: www/http :: dynamic content"
+  ],
+  "description": "part of `edx code`__.\n\n__ http://code.edx.org/\n\nevent tracking library |build-status|\n=====================================\n\nthe ``event-tracking`` library tracks context-aware semi-structured system events.\nit captures and stores events with nested data structures in order to truly\ntake advantage of schemaless data storage systems.\n\nkey features:\n\n* multiple backends - define custom backends that can be used to persist\n  your event data.\n* nested contexts - allows data to be injected into events even without\n  having to pass around all of said data to every location where the events\n  are emitted.\n* django integration - provides a django app that allows context aware events\n  to easily be captured by multi-threaded web applications.\n* mongodb integration - support writing events out to a mongo collection.\n\nexample::\n\n    from eventtracking import tracker\n\n    tracker = tracker.get_tracker()\n    tracker.enter_context('outer', {'user_id': 10938})\n    tracker.emit('navigation.request', {'url': 'http://www.edx.org/some/path/1'})\n\n    with tracker.context({'user_id': 11111, 'session_id': '2987lkjdyoioey'}):\n        tracker.emit('navigation.request', {'url': 'http://www.edx.org/some/path/2'})\n\n    tracker.emit(\n        'address.create',\n        {\n            'name': 'foo',\n            'address': {\n                'postal_code': '90210',\n                'country': 'united states'\n            }\n        }\n    )\n\nrunning the above example produces the following events::\n\n    {\n        \"name\": \"navigation.request\",\n        \"timestamp\": ...,\n        \"context\": {\n            \"user_id\": 10938\n        },\n        \"data\": {\n            \"url\": \"http://www.edx.org/some/path/1\"\n        }\n    },\n    {\n        \"name\": \"navigation.request\",\n        \"timestamp\": ...,\n        \"context\": {\n            \"user_id\": 11111,\n            \"session_id\": \"2987lkjdyoioey\"\n        },\n        \"data\": {\n            \"url\": \"http://www.edx.org/some/path/2\"\n        }\n    },\n    {\n        \"name\": \"address.create\",\n        \"timestamp\": ...,\n        \"context\": {\n            \"user_id\": 10938\n        },\n        \"data\": {\n            \"name\": \"foo\",\n            \"address\": {\n                \"postal_code\": \"90210\",\n                \"country\": \"united states\"\n            }\n        }\n    }\n\n\nconfiguration\n-------------\n\nconfiguration for ``event-tracking`` takes the form of a tree of backends. when a ``tracker`` is instantiated, it creates a root ``routingbackend`` object using the top-level backends and processors that are passed to it. (or in the case of the ``djangotracker``, the backends and processors are constructed according to the appropriate django settings.)\n\nin this ``routingbackend``, each event is first passed through the chain of processors in series, and then distributed to each backend in turn. theoretically, these backends might be the mongo, segment, or logger backends, but in practice these are wrapped by another layer of ``routingbackend``. this allows each one to have its own set of processors that are not shared with other backends, allowing independent filtering or event emit cancellation.\n\n\nasynchronous routing\n--------------------\n\nconsidering the volume of the events being generated, we would want to avoid\nprocessing events in the main thread that could cause delays in response\ndepending upon the operations and event processors.\n\n``event-tracking`` provides a solution for this i.e. ``asyncroutingbackend``.\nit extends ``routingbackend`` but performs its operations asynchronously.\n\nit can:\n\n* process event through the configured processors.\n* if the event is processed successfully, pass it to the configured backends.\n\nhandling the operations asynchronously would avoid overburdening the main thread\nand pass the intensive processing tasks to celery workers.\n\n**limitations**: although backends for ``routingbackend`` can be configured\nat any level of ``event_tracking_backends`` configuration tree,\n``asyncroutingbackend`` only supports backends defined at the root level of\n``event_tracking_backends`` setting.  it is also only possible to use it\nsuccessfully from the default tracker.\n\nan example configuration for ``asyncroutingbackend`` is provided below::\n\n    event_tracking_backends = {\n        'caliper': {\n            'engine':  'eventtracking.backends.async_routing.asyncroutingbackend',\n            'options': {\n                'backend_name': 'caliper',\n                'processors': [\n                    {\n                        'engine': 'eventtracking.processors.regex_filter.regexfilter',\n                        'options':{\n                            'filter_type': 'allowlist',\n                            'regular_expressions': [\n                                'edx.course.enrollment.activated',\n                                'edx.course.enrollment.deactivated',\n                            ]\n                        }\n                    }\n                ],\n                'backends': {\n                    'caliper': {\n                        'engine': 'dummy.backend.engine',\n                        'options': {\n                            ...\n                        }\n                    }\n                },\n            },\n        },\n        'tracking_logs': {\n            ...\n        }\n        ...\n    }\n\n\nroadmap\n-------\n\nin the very near future the following features are planned:\n\n* dynamic event documentation and event metadata - allow event emitters to\n  document the event types, and persist this documentation along with the\n  events so that it can be referenced during analysis to provide context\n  about what the event is and when it is emitted.\n\n\ndocumentation\n-------------\n\n`latest documentation <http://event-tracking.readthedocs.org/en/latest/>`_ (hosted on read the docs)\n\n\nlicense\n-------\n\nthe code in this repository is licensed under version 3 of the agpl unless\notherwise noted.\n\nplease see ``license.txt`` for details.\n\n\nhow to contribute\n-----------------\n\ncontributions are very welcome.\n\nplease read `how to contribute <https://github.com/openedx/edx-platform/wiki/how-to-contribute>`_ for details.\n\nreporting security issues\n-------------------------\n\nplease do not report security issues in public. please email security@edx.org\n\nmailing list and irc channel\n----------------------------\n\nyou can discuss this code on the `edx-code google group`__ or in the\n``edx-code`` irc channel on freenode.\n\n__ https://groups.google.com/forum/#!forum/edx-code\n\n.. |build-status| image:: https://github.com/openedx/event-tracking/workflows/python%20ci/badge.svg?branch=master\n   :target: https://github.com/openedx/event-tracking/actions?query=workflow%3a%22python+ci%22\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "agplv3 license",
+  "name": "event-tracking",
+  "package_url": "https://pypi.org/project/event-tracking/",
+  "project_url": "https://pypi.org/project/event-tracking/",
+  "project_urls": {
+    "Homepage": "https://github.com/openedx/event-tracking"
+  },
+  "release_url": "https://pypi.org/project/event-tracking/2.2.0/",
+  "requires_dist": [
+    "pytz",
+    "celery",
+    "edx-django-utils",
+    "pymongo (<4.0.0,>=2.7.2)",
+    "django",
+    "six"
+  ],
+  "requires_python": "",
+  "summary": "a simple event tracking system.",
+  "version": "2.2.0",
+  "releases": [],
+  "developers": [
+    "edx",
+    "oscm@edx.org"
+  ],
+  "kwds": "event_tracking_backends djangotracker django mongodb events",
+  "license_kwds": "agplv3 license",
+  "libtype": "pypi",
+  "id": "pypi_event_tracking",
+  "homepage": "https://github.com/openedx/event-tracking",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_celery",
+    "pypi_django",
+    "pypi_edx_django_utils",
+    "pypi_pymongo",
+    "pypi_pytz",
+    "pypi_six"
+  ]
+}

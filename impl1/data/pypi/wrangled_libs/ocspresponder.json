@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "framework :: bottle",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "operating system :: posix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.5",
+    "topic :: security",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "ocsp responder\n==============\n\n.. image:: https://img.shields.io/travis/threema-ch/ocspresponder/master.svg?maxage=2592000\n    :target: https://travis-ci.org/threema-ch/ocspresponder\n    :alt: build status\n\n.. image:: https://img.shields.io/pypi/v/nine.svg?maxage=2592000\n    :target: https://pypi.python.org/pypi/ocspresponder\n    :alt: pypi version\n\n.. image:: https://img.shields.io/pypi/dm/ocspresponder.svg?maxage=2592000\n    :target: https://pypi.python.org/pypi/ocspresponder\n    :alt: pypi downloads\n\n.. image:: https://img.shields.io/pypi/l/ocspresponder.svg?maxage=2592000\n    :target: https://pypi.python.org/pypi/ocspresponder\n    :alt: license\n\n.. image:: https://img.shields.io/pypi/pyversions/ocspresponder.svg?maxage=2592000\n    :target: https://pypi.python.org/pypi/ocspresponder\n    :alt: python versions\n\n.. image:: https://img.shields.io/pypi/status/ocspresponder.svg?maxage=2592000\n    :target: https://pypi.python.org/pypi/ocspresponder\n    :alt: stability status\n\nrfc 6960 compliant ocsp responder framework written in python 3.5+.\n\nit is based on the ocspbuilder_ and asn1crypto_ libraries. the http\nserver is implemented using bottle_.\n\ncurrent status: alpha. don't use for production yet.\n\n\nfeatures\n--------\n\n**goals**\n\n- simple: don't overwhelm the user with a gazillion options.\n- flexible: configurable using python code.\n\n**supported extensions**\n\n- nonce (rfc 6960 section 4.4.1)\n\n**not (yet) implemented**\n\n- multiple certificates per request / response\n\n\nusage\n-----\n\nright now, ``ocspresponder`` assumes the usage of a custom keypair just for\nsigning ocsp responses.\n\nto be able to instantiate the ``ocspresponder`` server, you need to provide\nthis keypair as well as the certificate of the issueing ca.\n\n.. code-block:: python\n\n   issuer_cert = 'path/to/issuer_cert.pem'\n   ocsp_cert = 'path/to/responder_cert.pem'\n   ocsp_key = 'path/to/responder_key.pem'\n\nfurthermore you need to provide two custom functions:\n\n- a function that \u2013 given a certificate serial \u2013 will return the appropriate\n  ``certificatestatus`` and - depending on the status - a revocation\n  datetime.\n- a function that \u2013 given a certificate serial \u2013 will return the corresponding\n  certificate as a string.\n\nyou're expected to implement these functions yourself. in the future, drop-in\nlibraries for typical use cases could be provided.\n\nexample implementations:\n\n.. code-block:: python\n\n   from ocspresponder import ocspresponder, certificatestatus\n   \n   def validate(serial: int) -> (certificatestatus, optional[datetime]):\n       if certificate_is_valid(serial):\n           return (certificatestatus.good, none)\n       elif certificate_is_expired(serial):\n           expired_at = get_expiration_date(serial)\n           return (certificatestatus.revoked, expired_at)\n       elif certificate_is_revoked(serial):\n           revoked_at = get_revocation_date(serial)\n           return (certificatestatus.revoked, revoked_at)\n       else:\n           return (certificatestatus.unknown, none)\n   \n   def get_cert(serial: int) -> str:\n       \"\"\"\n       assume the certificates are stored in the ``certs`` directory with the\n       serial as base filename.\n       \"\"\"\n       with open('certs/%s.cert.pem' % serial, 'r') as f:\n           return f.read().strip()\n\nif an exception occurs in either of the two functions, an ocsp response with\nthe ``response_status`` set to ``internal_error`` will be returned.\n\nnow you can instantiate the ``ocspresponder`` and launch the development server:\n\n.. code-block:: python\n\n   print('initializing ocsp responder')\n   app = ocspresponder(\n       issuer_cert, ocsp_cert, ocsp_key,\n       validate_func=validate,\n       cert_retrieve_func=get_cert,\n   )\n   print('starting ocsp responder')\n   app.serve(port=8080, debug=true)\n\n\ntype hints\n----------\n\nthis library uses the optional type hints as defined in pep484_. the ``typing``\nmodule is only provided in python 3.5+, but older versions of python could run\nthe code as well if the ``typing`` module is installed from pypi.\n\n\ntesting\n-------\n\nto run the test, install ``requirements-dev.txt`` using pip and run pytest::\n\n    py.test -v\n\n\nrelease process\n---------------\n\nupdate version number in ``setup.py`` and ``changelog.md``::\n\n    vim -p setup.py changelog.md\n\ndo a commit and signed tag of the release::\n\n    export version={version}\n    git add setup.py changelog.md\n    git commit -m \"release v${version}\"\n    git tag -u c75d77c8 -m \"release v${version}\" v${version}\n\nbuild source and binary distributions::\n\n    python3 setup.py sdist\n    python3 setup.py bdist_wheel\n\nsign files::\n\n    gpg --detach-sign -u c75d77c8 -a dist/ocspresponder-${version}.tar.gz\n    gpg --detach-sign -u c75d77c8 -a dist/ocspresponder-${version}-py3-none-any.whl\n\nregister package on pypi::\n\n    twine3 register -r pypi-threema dist/ocspresponder-${version}.tar.gz\n\nupload package::\n\n    twine3 upload -r pypi-threema dist/ocspresponder-${version}*\n    git push\n    git push --tags\n\n\nlicense\n-------\n\n::\n\n    copyright 2016 threema gmbh\n\n    licensed under the apache license, version 2.0 (the \"license\");\n    you may not use this file except in compliance with the license.\n    you may obtain a copy of the license at\n\n       http://www.apache.org/licenses/license-2.0\n\n    unless required by applicable law or agreed to in writing, software\n    distributed under the license is distributed on an \"as is\" basis,\n    without warranties or conditions of any kind, either express or implied.\n    see the license for the specific language governing permissions and\n    limitations under the license.\n\n\n.. _ocspbuilder: https://github.com/wbond/ocspbuilder\n.. _asn1crypto: https://github.com/wbond/asn1crypto\n.. _bottle: http://bottlepy.org/docs/dev/index.html\n.. _pep484: https://www.python.org/dev/peps/pep-0484/",
+  "docs_url": null,
+  "keywords": "ocsp responder server ssl tls pki",
+  "license": "apache software license",
+  "name": "ocspresponder",
+  "package_url": "https://pypi.org/project/ocspresponder/",
+  "project_url": "https://pypi.org/project/ocspresponder/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "https://github.com/threema-ch/ocspresponder/"
+  },
+  "release_url": "https://pypi.org/project/ocspresponder/0.5.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "rfc 6960 compliant ocsp responder framework written in python 3.5+.",
+  "version": "0.5.0",
+  "releases": [],
+  "developers": [
+    "github@threema.ch",
+    "threema_gmbh"
+  ],
+  "kwds": "ocsp_cert _ocspbuilder ocspbuilder_ ocspbuilder ocsp",
+  "license_kwds": "apache software license",
+  "libtype": "pypi",
+  "id": "pypi_ocspresponder",
+  "homepage": "https://github.com/threema-ch/ocspresponder/",
+  "release_count": 1,
+  "dependency_ids": []
+}

@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon ecr construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\nthis package contains constructs for working with amazon elastic container registry.\n\n## repositories\n\ndefine a repository by creating a new instance of `repository`. a repository\nholds multiple verions of a single container image.\n\n```python\nrepository = ecr.repository(self, \"repository\")\n```\n\n## image scanning\n\namazon ecr image scanning helps in identifying software vulnerabilities in your container images. you can manually scan container images stored in amazon ecr, or you can configure your repositories to scan images when you push them to a repository. to create a new repository to scan on push, simply enable `imagescanonpush` in the properties\n\n```python\nrepository = ecr.repository(self, \"repo\",\n    image_scan_on_push=true\n)\n```\n\nto create an `onimagescancompleted` event rule and trigger the event target\n\n```python\n# repository: ecr.repository\n# target: sometarget\n\n\nrepository.on_image_scan_completed(\"imagescancomplete\").add_target(target)\n```\n\n### authorization token\n\nbesides the amazon ecr apis, ecr also allows the docker cli or a language-specific docker library to push and pull\nimages from an ecr repository. however, the docker cli does not support native iam authentication methods and\nadditional steps must be taken so that amazon ecr can authenticate and authorize docker push and pull requests.\nmore information can be found at at [registry authentication](https://docs.aws.amazon.com/amazonecr/latest/userguide/registries.html#registry_auth).\n\na docker authorization token can be obtained using the `getauthorizationtoken` ecr api. the following code snippets\ngrants an iam user access to call this api.\n\n```python\nuser = iam.user(self, \"user\")\necr.authorizationtoken.grant_read(user)\n```\n\nif you access images in the [public ecr gallery](https://gallery.ecr.aws/) as well, it is recommended you authenticate to the registry to benefit from\nhigher rate and bandwidth limits.\n\n> see `pricing` in https://aws.amazon.com/blogs/aws/amazon-ecr-public-a-new-public-container-registry/ and [service quotas](https://docs.aws.amazon.com/amazonecr/latest/public/public-service-quotas.html).\n\nthe following code snippet grants an iam user access to retrieve an authorization token for the public gallery.\n\n```python\nuser = iam.user(self, \"user\")\necr.publicgalleryauthorizationtoken.grant_read(user)\n```\n\nthis user can then proceed to login to the registry using one of the [authentication methods](https://docs.aws.amazon.com/amazonecr/latest/public/public-registries.html#public-registry-auth).\n\n### image tag immutability\n\nyou can set tag immutability on images in our repository using the `imagetagmutability` construct prop.\n\n```python\necr.repository(self, \"repo\", image_tag_mutability=ecr.tagmutability.immutable)\n```\n\n### encryption\n\nby default, amazon ecr uses server-side encryption with amazon s3-managed encryption keys which encrypts your data at rest using an aes-256 encryption algorithm. for more control over the encryption for your amazon ecr repositories, you can use server-side encryption with kms keys stored in aws key management service (aws kms). read more about this feature in the [ecr developer guide](https://docs.aws.amazon.com/amazonecr/latest/userguide/encryption-at-rest.html).\n\nwhen you use aws kms to encrypt your data, you can either use the default aws managed key, which is managed by amazon ecr, by specifying `repositoryencryption.kms` in the `encryption` property. or specify your own customer managed kms key, by specifying the `encryptionkey` property.\n\nwhen `encryptionkey` is set, the `encryption` property must be `kms` or empty.\n\nin the case `encryption` is set to `kms` but no `encryptionkey` is set, an aws managed kms key is used.\n\n```python\necr.repository(self, \"repo\",\n    encryption=ecr.repositoryencryption.kms\n)\n```\n\notherwise, a customer-managed kms key is used if `encryptionkey` was set and `encryption` was optionally set to `kms`.\n\n```python\nimport aws_cdk.aws_kms as kms\n\n\necr.repository(self, \"repo\",\n    encryption_key=kms.key(self, \"key\")\n)\n```\n\n## automatically clean up repositories\n\nyou can set life cycle rules to automatically clean up old images from your\nrepository. the first life cycle rule that matches an image will be applied\nagainst that image. for example, the following deletes images older than\n30 days, while keeping all images tagged with prod (note that the order\nis important here):\n\n```python\n# repository: ecr.repository\n\nrepository.add_lifecycle_rule(tag_prefix_list=[\"prod\"], max_image_count=9999)\nrepository.add_lifecycle_rule(max_image_age=duration.days(30))\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-ecr",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-ecr/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-ecr/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-ecr/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-events (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::ecr",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk aws_kms ecr amazonecr aws",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_ecr",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_events",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "proxy-protocol\n==============\n\nproxy protocol library with [asyncio][2] server implementation.\n\n[![build](https://github.com/icgood/proxy-protocol/actions/workflows/python-check.yml/badge.svg)](https://github.com/icgood/proxy-protocol/actions/workflows/python-check.yml)\n[![pypi](https://img.shields.io/pypi/v/proxy-protocol.svg)](https://pypi.python.org/pypi/proxy-protocol)\n[![pypi](https://img.shields.io/pypi/pyversions/proxy-protocol.svg)](https://pypi.python.org/pypi/proxy-protocol)\n![platforms](https://img.shields.io/badge/platform-linux%20%7c%20macos%20%7c%20windows-blueviolet)\n[![pypi](https://img.shields.io/pypi/l/proxy-protocol.svg)](https://pypi.python.org/pypi/proxy-protocol)\n\n#### [specification](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt)\n#### [api reference](http://icgood.github.io/proxy-protocol/)\n#### [docker image](https://github.com/icgood/proxy-protocol/pkgs/container/proxy-protocol)\n\n### table of contents\n\n* [install and usage](#install-and-usage)\n* [server usage](#server-usage)\n  * [echo server](#echo-server)\n  * [proxy server](#proxy-server)\n* [development and testing](#development-and-testing)\n  * [type hinting](#type-hinting)\n\n## install and usage\n\n```bash\n$ pip install proxy-protocol\n```\n\nintegration with an [`asyncio.start_server`][3] based server is intended to be\nextremely simple. here is an example, which will detect proxy protocol v1 or\nv2.\n\n```python\nfrom proxyprotocol import proxyprotocol\nfrom proxyprotocol.detect import proxyprotocoldetect\nfrom proxyprotocol.reader import proxyprotocolreader\nfrom proxyprotocol.sock import socketinfo\n\nasync def run(host: str, port: int) -> none:\n    pp_detect = proxyprotocoldetect()\n    callback = proxyprotocolreader(pp_detect).get_callback(on_connection)\n    server = await asyncio.start_server(callback, host, port)\n    async with server:\n        await server.serve_forever()\n\nasync def on_connection(reader: streamreader, writer: streamwriter,\n                        info: socketinfo) -> none:\n    print(info.family, info.peername)\n    # ... continue using connection\n```\n\nto simplify proxy protocol use based on configuration, the version can also be\nread from a string.\n\n```python\nfrom proxyprotocol.version import proxyprotocolversion\n\npp_noop = proxyprotocolversion.get(none)\npp_detect = proxyprotocolversion.get('detect')\npp_v1 = proxyprotocolversion.get('v1')\npp_v2 = proxyprotocolversion.get('v2')\n```\n\nthe `pp_noop` object in this example is a special case implementation that does\nnot read a proxy protocol header from the stream at all. it may be used to\ndisable proxy protocol use without complicating your server code.\n\nyou can also check out the [`proxyprotocol-echo`][4] reference implementation.\nif you configure your proxy to send proxy protocol to `localhost:10007`, you\ncan see it in action:\n\n```bash\n$ proxyprotocol-echo --help\n$ proxyprotocol-echo detect\n$ proxyprotocol-echo noop\n```\n\n## server usage\n\ntwo basic server implementations are included for reference. using the two\ntogether can demonstrate the process end-to-end: use `proxyprotocol-server`\nto proxy connections with a proxy protocol header to `proxyprotocol-echo`,\nwhich then displays the original connection information.\n\nthe `hostname:port` arguments used by both types of servers are parsed by the\n[`address`][8] class, which allows for customization of ssl/tls and proxy\nprotocol versions.\n\n### echo server\n\nthe `proxyprotocol-echo` server expects inbound connections to provide a proxy\nprotocol header indicating the original source of the connection. after the\nheader, all received data will be echoed back to the client.\n\n```bash\nproxyprotocol-echo --help\nproxyprotocol-echo  # run the server\n```\n\n### proxy server\n\nthe `proxyprotocol-server` server proxies inbound connections to another\nhost/port endoint, prefixing the outbound connection with a proxy protocol\nheader to indicate the original connection information.\n\n```bash\nproxyprotocol-server --help\nproxyprotocol-server --service localhost:10000 localhost:10007\n```\n\n## development and testing\n\nyou will need to do some additional setup to develop and test plugins. install\n[hatch][1] to use the cli examples below.\n\nrun all tests and linters:\n\n```console\n$ hatch run check\n```\n\nbecause this project supports several versions of python, you can use the\nfollowing to run the checks on all versions:\n\n```console\n$ hatch run all:check\n```\n\n### type hinting\n\nthis project makes heavy use of python's [type hinting][6] system, with the\nintention of a clean run of [mypy][7] in strict mode:\n\n```console\nmypy proxyprotocol test\n```\n\nno code contribution will be accepted unless it makes every effort to use type\nhinting to the extent possible and common in the rest of the codebase.\n\n[1]: https://hatch.pypa.io/latest/install/\n[2]: https://docs.python.org/3/library/asyncio.html\n[3]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.start_server\n[4]: https://github.com/icgood/proxy-protocol/blob/main/proxyprotocol/server/echo.py\n[6]: https://www.python.org/dev/peps/pep-0484/\n[7]: http://mypy-lang.org/\n[8]: https://icgood.github.io/proxy-protocol/proxyprotocol.server.html#proxyprotocol.server.address\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "## the mit license (mit)\n        \n        copyright (c) 2021 ian good\n        \n        permission is hereby granted, free of charge, to any person obtaining a copy\n        of this software and associated documentation files (the \"software\"), to deal\n        in the software without restriction, including without limitation the rights\n        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n        copies of the software, and to permit persons to whom the software is\n        furnished to do so, subject to the following conditions:\n        \n        the above copyright notice and this permission notice shall be included in all\n        copies or substantial portions of the software.\n        \n        the software is provided \"as is\", without warranty of any kind, express or\n        implied, including but not limited to the warranties of merchantability,\n        fitness for a particular purpose and noninfringement. in no event shall the\n        authors or copyright holders be liable for any claim, damages or other\n        liability, whether in an action of contract, tort or otherwise, arising from,\n        out of or in connection with the software or the use or other dealings in the\n        software.",
+  "name": "proxy-protocol",
+  "package_url": "https://pypi.org/project/proxy-protocol/",
+  "project_url": "https://pypi.org/project/proxy-protocol/",
+  "project_urls": {
+    "API Documentation": "https://icgood.github.io/proxy-protocol/",
+    "Docker Image": "https://github.com/icgood/proxy-protocol/pkgs/container/proxy-protocol",
+    "Homepage": "https://github.com/icgood/proxy-protocol/"
+  },
+  "release_url": "https://pypi.org/project/proxy-protocol/0.11.1/",
+  "requires_dist": [
+    "typing-extensions",
+    "crc32c~=2.2; extra == 'crc32c'"
+  ],
+  "requires_python": "~=3.8",
+  "summary": "proxy protocol library with asyncio server implementation",
+  "version": "0.11.1",
+  "releases": [],
+  "developers": [
+    "ian@icgood.net"
+  ],
+  "kwds": "proxy proxyprotocol proxies haproxy proxyprotocoldetect",
+  "license_kwds": "copyright mit license liable liability",
+  "libtype": "pypi",
+  "id": "pypi_proxy_protocol",
+  "homepage": "",
+  "release_count": 31,
+  "dependency_ids": [
+    "pypi_crc32c",
+    "pypi_typing_extensions"
+  ]
+}

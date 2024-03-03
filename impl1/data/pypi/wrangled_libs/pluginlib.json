@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: plugins",
+    "intended audience :: developers",
+    "license :: osi approved :: mozilla public license 2.0 (mpl 2.0)",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": ".. start-badges\n\n| |docs| |gh_actions| |codecov|\n| |pypi| |supported-versions| |supported-implementations|\n| |fedora| |epel|\n\n.. |docs| image:: https://img.shields.io/readthedocs/pluginlib.svg?style=plastic&logo=read-the-docs\n    :target: https://pluginlib.readthedocs.org\n    :alt: documentation status\n\n.. |gh_actions| image:: https://img.shields.io/github/actions/workflow/status/rockhopper-technologies/pluginlib/tests.yml?event=push&logo=github-actions&style=plastic\n    :target: https://github.com/rockhopper-technologies/pluginlib/actions/workflows/tests.yml\n    :alt: github actions status\n\n.. |travis| image:: https://img.shields.io/travis/com/rockhopper-technologies/pluginlib.svg?style=plastic&logo=travis\n    :target: https://travis-ci.com/rockhopper-technologies/pluginlib\n    :alt: travis-ci build status\n\n.. |codecov| image:: https://img.shields.io/codecov/c/github/rockhopper-technologies/pluginlib.svg?style=plastic&logo=codecov\n    :target: https://codecov.io/gh/rockhopper-technologies/pluginlib\n    :alt: coverage status\n\n.. |pypi| image:: https://img.shields.io/pypi/v/pluginlib.svg?style=plastic&logo=pypi\n    :alt: pypi package latest release\n    :target: https://pypi.python.org/pypi/pluginlib\n.. |supported-versions| image:: https://img.shields.io/pypi/pyversions/pluginlib.svg?style=plastic&logo=pypi\n    :alt: supported versions\n    :target: https://pypi.python.org/pypi/pluginlib\n.. |supported-implementations| image:: https://img.shields.io/pypi/implementation/pluginlib.svg?style=plastic&logo=pypi\n    :alt: supported implementations\n    :target: https://pypi.python.org/pypi/pluginlib\n\n.. |fedora| image:: https://img.shields.io/badge/dynamic/json.svg?uri=https://pdc.fedoraproject.org/rest_api/v1/component-branches/?global_component=python-pluginlib;fields=name;active=true;type=rpm&query=$.results[?(@.name.startswith(%22f%22))].name&label=fedora&colorb=lightgray&style=plastic&logo=fedora\n    :alt: fedora version support\n    :target: https://bodhi.fedoraproject.org/updates/?packages=python-pluginlib\n\n.. |epel| image:: https://img.shields.io/badge/dynamic/json.svg?uri=https://pdc.fedoraproject.org/rest_api/v1/component-branches/?global_component=python-pluginlib;fields=name;active=true;type=rpm&query=$.results[?(@.name.startswith(%22e%22))].name&label=epel&colorb=lightgray&style=plastic&logo=epel\n    :alt: epel version support\n    :target: https://bodhi.fedoraproject.org/updates/?packages=python-pluginlib\n\n\n\n.. end-badges\n\noverview\n========\n\npluginlib makes creating plugins for your project simple.\n\nfeatures\n--------\n\n- plugins are validated when they are imported\n\n- plugins can be loaded through different mechanisms (modules, filesystem paths, `entry points`_)\n\n- multiple versions_ of the same plugin are supported (the newest one is used by default)\n\n- plugins can be `blacklisted`_ by type, name, or version\n\n- multiple `plugin groups`_ are supported so one program can use multiple sets of plugins that won't conflict\n\n- plugins support `conditional loading`_ (examples: os, version, installed software, etc)\n\n- once loaded, plugins can be accessed_ through dictionary or dot notation\n\ninstallation\n============\n\npip\n---\n\n.. code-block:: console\n\n    $ pip install pluginlib\n\nfedora and el (rhel/centos/rocky/alma)\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n(epel_ repositories must be configured_ for el8)\n\n.. code-block:: console\n\n    $ dnf install python3-pluginlib\n\nel7 (rhel/centos)\n^^^^^^^^^^^^^^^^^\n\n(epel_ repositories must be configured_)\n\n.. code-block:: console\n\n    $ yum install python2-pluginlib\n    $ yum install python36-pluginlib\n\nusage\n=====\n\nstep 1: define plugin parent classes\n------------------------------------\n\nall plugins are subclasses of parent classes. to create a parent class, use the\n`@parent`_ decorator.\n\nthe `@parent`_ decorator can take a plugin type for accessing child plugins\nof the parent. if a plugin type isn't given, the class name will be used.\n\nthe `@parent`_ decorator can also take a ``group`` keyword which\nrestricts plugins to a specific plugin group. ``group`` should be specified if plugins for\ndifferent projects could be accessed in an single program, such as with libraries and frameworks.\nfor more information, see the `plugin groups`_ section.\n\nmethods required in child plugins should be labeled as abstract methods.\nplugins without these methods or with parameters\nthat don't match, will not be loaded.\nfor more information, see the `abstract methods`_ section.\n\n.. code-block:: python\n\n    \"\"\"\n    sample.py\n    \"\"\"\n    import pluginlib\n\n    @pluginlib.parent('parser')\n    class parser(object):\n\n        @pluginlib.abstractmethod\n        def parse(self, string):\n            pass\n\nstep 2: define plugin classes\n-----------------------------\n\nto create a plugin, subclass a parent class and include any required methods.\n\nplugins can be customized through optional class attributes:\n\n    `_alias_`_\n        changes the name of the plugin which defaults to the class name.\n\n    `_version_`_\n        sets the version of the plugin. defaults to the module ``__version__`` or ``none``\n        if multiple plugins with the same type and name are loaded, the plugin with\n        the highest version is used. for more information, see the versions_ section.\n\n    `_skipload_`_\n        specifies the plugin should not be loaded. this is useful when a plugin is a parent class\n        for additional plugins or when a plugin should only be loaded under certain conditions.\n        for more information see the `conditional loading`_ section.\n\n\n.. code-block:: python\n\n    \"\"\"\n    sample_plugins.py\n    \"\"\"\n    import json\n    import sample\n\n    class json(sample.parser):\n\n        _alias_ = 'json'\n\n        def parse(self, string):\n            return json.loads(string)\n\nstep 3: load plugins\n--------------------\n\nplugins are loaded when the module they are in is imported. pluginloader_\nwill load modules from specified locations and provides access to them.\n\npluginloader_ can load plugins from several locations.\n    - a program's standard library\n    - `entry points`_\n    - a list of modules\n    - a list of filesystem paths\n\nplugins can also be filtered through blacklists and type filters.\nsee the blacklists_ and `type filters`_ sections for more information.\n\nplugins are accessible through the pluginloader.plugins_ property,\na nested dictionary accessible through dot notation. for other ways to access plugins,\nsee the `accessing plugins`_ section.\n\n.. code-block:: python\n\n    import pluginlib\n    import sample\n\n    loader = pluginlib.pluginloader(modules=['sample_plugins'])\n    plugins = loader.plugins\n    parser = plugins.parser.json()\n    print(parser.parse('{\"json\": \"test\"}'))\n\n.. _entry points: https://packaging.python.org/specifications/entry-points/\n\n.. _pluginloader: http://pluginlib.readthedocs.io/en/stable/api.html#pluginlib.pluginloader\n.. _pluginloader.plugins: http://pluginlib.readthedocs.io/en/stable/api.html#pluginlib.pluginloader.plugins\n.. _@parent: http://pluginlib.readthedocs.io/en/stable/api.html#pluginlib.parent\n.. _\\_alias\\_: http://pluginlib.readthedocs.io/en/stable/api.html#pluginlib.plugin._alias_\n.. _\\_version\\_: http://pluginlib.readthedocs.io/en/stable/api.html#pluginlib.plugin._version_\n.. _\\_skipload\\_: http://pluginlib.readthedocs.io/en/stable/api.html#pluginlib.plugin._skipload_\n\n.. _versions: http://pluginlib.readthedocs.io/en/stable/concepts.html#versions\n.. _blacklists: http://pluginlib.readthedocs.io/en/stable/concepts.html#blacklists\n.. _blacklisted: http://pluginlib.readthedocs.io/en/stable/concepts.html#blacklists\n.. _type filters: http://pluginlib.readthedocs.io/en/stable/concepts.html#type-filters\n.. _accessing plugins: http://pluginlib.readthedocs.io/en/stable/concepts.html#accessing-plugins\n.. _accessed: http://pluginlib.readthedocs.io/en/stable/concepts.html#accessing-plugins\n.. _abstract methods: http://pluginlib.readthedocs.io/en/stable/concepts.html#abstract-methods\n.. _conditional loading: http://pluginlib.readthedocs.io/en/stable/concepts.html#conditional-loading\n.. _plugin groups: http://pluginlib.readthedocs.io/en/stable/concepts.html#plugin-groups\n\n.. _epel: https://fedoraproject.org/wiki/epel\n.. _configured: https://docs.fedoraproject.org/en-us/epel/#how_can_i_use_these_extra_packages\n",
+  "docs_url": null,
+  "keywords": "plugin,plugins,pluginlib",
+  "license": "mplv2.0",
+  "name": "pluginlib",
+  "package_url": "https://pypi.org/project/pluginlib/",
+  "project_url": "https://pypi.org/project/pluginlib/",
+  "project_urls": {
+    "Homepage": "https://github.com/Rockhopper-Technologies/pluginlib"
+  },
+  "release_url": "https://pypi.org/project/pluginlib/0.9.1/",
+  "requires_dist": [
+    "setuptools"
+  ],
+  "requires_python": "",
+  "summary": "a framework for creating and importing plugins",
+  "version": "0.9.1",
+  "releases": [],
+  "developers": [
+    "avram_lubkin",
+    "avylove@rockhopper.net"
+  ],
+  "kwds": "pluginlib gh_actions _plugin plugins_ badges",
+  "license_kwds": "mplv2.0",
+  "libtype": "pypi",
+  "id": "pypi_pluginlib",
+  "homepage": "https://github.com/rockhopper-technologies/pluginlib",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_setuptools"
+  ]
+}

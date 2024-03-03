@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: software development :: build tools"
+  ],
+  "description": "plyara\n======\n\n.. image:: https://travis-ci.com/plyara/plyara.svg?branch=master\n   :target: https://travis-ci.com/plyara/plyara\n   :alt: build status\n.. image:: https://readthedocs.org/projects/plyara/badge/?version=latest\n   :target: http://plyara.readthedocs.io/en/latest/?badge=latest\n   :alt: documentation status\n.. image:: https://api.codacy.com/project/badge/grade/7bd0be1749804f0a8dd3d57f69888f68\n   :target: https://www.codacy.com/app/plyara/plyara\n   :alt: code health\n.. image:: https://api.codacy.com/project/badge/coverage/1c234b3d1ff349fa9dea7b4048dbc115\n   :target: https://app.codacy.com/app/plyara/plyara\n   :alt: test coverage\n.. image:: http://img.shields.io/pypi/v/plyara.svg\n   :target: https://pypi.python.org/pypi/plyara\n   :alt: pypi version\n\nparse yara_ rules into a dictionary representation.\n\nplyara is a script and library that lexes and parses a file consisting of one more yara rules\ninto a python dictionary representation. the goal of this tool is to make it easier to perform\nbulk operations or transformations of large sets of yara rules, such as extracting indicators,\nupdating attributes, and analyzing a corpus. other applications include linters and dependency\ncheckers.\n\nplyara leverages the python module ply_ for lexing yara rules.\n\nthis is a community-maintained fork of the `original plyara`_ by 8u1a_. the \"plyara\" trademark\nis used with permission.\n\ninstallation\n------------\n\nplyara requires python 3.6+.\n\ninstall with pip::\n\n    pip3 install plyara\n\nusage\n-----\n\nuse the plyara python library in your own applications:\n\n.. code-block:: python\n\n    >>> import plyara\n    >>> parser = plyara.plyara()\n    >>> mylist = parser.parse_string('rule myrule { strings: $a=\"1\" \\n condition: false }')\n    >>>\n    >>> import pprint\n    >>> pprint.pprint(mylist)\n    [{'condition_terms': ['false'],\n      'raw_condition': 'condition: false ',\n      'raw_strings': 'strings: $a=\"1\" \\n ',\n      'rule_name': 'myrule',\n      'start_line': 1,\n      'stop_line': 2,\n      'strings': [{'name': '$a', 'type': 'text', 'value': '1'}]}]\n    >>>\n\nor, use the included ``plyara`` script from the command line::\n\n    $ plyara -h\n    usage: plyara [-h] [--log] file\n\n    parse yara rules into a dictionary representation.\n\n    positional arguments:\n      file        file containing yara rules to parse.\n\n    optional arguments:\n      -h, --help  show this help message and exit\n      --log       enable debug logging to the console.\n\nthe command-line tool will print valid json output when parsing rules::\n\n    $ cat example.yar\n    rule silent_banker : banker\n    {\n        meta:\n            description = \"this is just an example\"\n            thread_level = 3\n            in_the_wild = true\n        strings:\n            $a = {6a 40 68 00 30 00 00 6a 14 8d 91}\n            $b = {8d 4d b0 2b c1 83 c0 27 99 6a 4e 59 f7 f9}\n            $c = \"uvodfrysihlnwpejxqzakcbgmt\"\n        condition:\n            $a or $b or $c\n    }\n\n    $ plyara example.yar\n    [\n        {\n            \"condition_terms\": [\n                \"$a\",\n                \"or\",\n                \"$b\",\n                \"or\",\n                \"$c\"\n            ],\n            \"metadata\": [\n                {\n                    \"description\": \"this is just an example\"\n                },\n                {\n                    \"thread_level\": 3\n                },\n                {\n                    \"in_the_wild\": true\n                }\n            ],\n            \"raw_condition\": \"condition:\\n        $a or $b or $c\\n\",\n            \"raw_meta\": \"meta:\\n        description = \\\"this is just an example\\\"\\n        thread_level = 3\\n        in_the_wild = true\\n    \",\n            \"raw_strings\": \"strings:\\n        $a = {6a 40 68 00 30 00 00 6a 14 8d 91}\\n        $b = {8d 4d b0 2b c1 83 c0 27 99 6a 4e 59 f7 f9}\\n        $c = \\\"uvodfrysihlnwpejxqzakcbgmt\\\"\\n    \",\n            \"rule_name\": \"silent_banker\",\n            \"start_line\": 1,\n            \"stop_line\": 13,\n            \"strings\": [\n                {\n                    \"name\": \"$a\",\n                    \"type\": \"byte\",\n                    \"value\": \"{6a 40 68 00 30 00 00 6a 14 8d 91}\"\n                },\n                {\n                    \"name\": \"$b\",\n                    \"type\": \"byte\",\n                    \"value\": \"{8d 4d b0 2b c1 83 c0 27 99 6a 4e 59 f7 f9}\"\n                },\n                {\n                    \"name\": \"$c\",\n                    \"type\": \"text\",\n                    \"value\": \"uvodfrysihlnwpejxqzakcbgmt\"\n                }\n            ],\n            \"tags\": [\n                \"banker\"\n            ]\n        }\n    ]\n\nreusing the parser\n------------------\n\nif you want to reuse a single instance of the parser object for efficiency when\nparsing large quantities of rule or rulesets, the new clear() method must be\nused.\n\n.. code-block:: python\n\n    rules = list()\n    parser = plyara.plyara()\n\n    for file in files:\n        with open(file, 'r') as fh:\n            yararules = parser.parse_string(fh.read())\n            rules += yararules\n        parser.clear()\n\nmigration\n---------\n\nif you used an older version of plyara, and want to migrate to this version,\nthere will be some changes required. most importantly, the parser object\ninstantiation has changed. it was:\n\n.. code-block:: python\n\n    # old style - don't do this!\n    import plyara.interp as interp\n    rules_list = interp.parsestring(open('myfile.yar').read())\n\nbut is now:\n\n.. code-block:: python\n\n    # new style - do this instead!\n    import plyara\n    parser = plyara.plyara()\n    rules_list = parser.parse_string(open('myfile.yar').read())\n\nthe existing parsed keys have stayed the same, and new ones have been added.\n\nwhen reusing a ``parser`` for multiple rules and/or files, be aware that\nimports are now shared across all rules - if one rule has an import, that\nimport will be added to all rules in your parser object.\n\ncontributing\n------------\n\n* if you find a bug, or would like to see a new feature, pull requests and\n  issues_ are always welcome.\n* by submitting changes, you agree to release those changes under the terms\n  of the license_.\n* writing passing unit tests for your changes, while not required, is highly\n  encouraged and appreciated.\n* please run all code contributions through each of the linters that we use\n  for this project: pycodestyle, pydocstyle, and pyflakes.  see the\n  .travis.yml file for exact use.  for more information on these linters,\n  please refer to the python code quality authority:\n  http://meta.pycqa.org/en/latest/\n\ndiscussion\n------------\n\n* you may join our irc channel on irc.freenode.net #plyara\n\n.. _ply: http://www.dabeaz.com/ply/\n.. _yara: http://plusvic.github.io/yara/\n.. _plyara.readthedocs.io: https://plyara.readthedocs.io/en/latest/\n.. _original plyara: https://github.com/8u1a/plyara\n.. _8u1a: https://github.com/8u1a\n.. _issues: https://github.com/plyara/plyara/issues\n.. _license: https://github.com/plyara/plyara/blob/master/license\n\n\n",
+  "docs_url": null,
+  "keywords": "malware analysis yara",
+  "license": "apache license 2.0",
+  "name": "plyara",
+  "package_url": "https://pypi.org/project/plyara/",
+  "project_url": "https://pypi.org/project/plyara/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/plyara/plyara/issues",
+    "Homepage": "https://github.com/plyara/plyara",
+    "Source": "https://github.com/plyara/plyara"
+  },
+  "release_url": "https://pypi.org/project/plyara/2.1.1/",
+  "requires_dist": [
+    "ply (>=3.11)"
+  ],
+  "requires_python": "",
+  "summary": "parse yara rules.",
+  "version": "2.1.1",
+  "releases": [],
+  "developers": [
+    "plyara_maintainers"
+  ],
+  "kwds": "plyara _plyara malware badge code",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_plyara",
+  "homepage": "https://github.com/plyara/plyara",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_ply"
+  ]
+}

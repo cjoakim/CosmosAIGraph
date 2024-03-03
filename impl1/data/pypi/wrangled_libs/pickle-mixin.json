@@ -1,0 +1,34 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent"
+  ],
+  "description": "pickle-mixin\n============\n\n|pypi-license| |pypi-version|\n\nmakes un-pickle-able objects pick-able.\n\ninstall\n-------\n\nyou can install it via pip\n\n::\n\n    pip install pickle-mixin\n\nrunning the tests\n-----------------\n\nafter installation, you can test it\n\n::\n\n    python -c \"import pickle_mixin; pickle_mixin.test()\"\n\nas long as you have `pytest <http://docs.pytest.org/en/latest/>`__.\n\nusage\n-----\n\npickle by initialisation\n~~~~~~~~~~~~~~~~~~~~~~~~\n\nsuppose that you have a class whose objects are un-pickle-able or that\nwould demand a large amount of disk space or memory to be pickle-able.\n``picklebyinit`` class lets you pickle object attributes via object\ninitialization. consider the following classes:\n\n.. code:: python\n\n    class foo(picklebyinit):\n        def __init__(self, obj):\n            super(foo, self).__init__()\n            self.obj = obj\n\n    class bar(object):\n        def __init__(self, filename):\n            self.filename = filename\n\n        def __getstate__(self):\n            raise picklingerror\n\n        def init_dict(self):\n            return dict(filename=self.filename)\n\ntrying to pickle as follows\n\n.. code:: python\n\n    f = foo(bar('file.txt'))\n    pickle.dumps(f)\n\nwould raise a ``picklingerror``. the following on the other hand would\nwork:\n\n.. code:: python\n\n    f = foo(bar('file.txt'))\n    f.set_signature_only_attr('obj')\n    pickle.dumps(f)\n\nthe un-pickling process of ``f.obj`` attribute happens via object\ninitialisation, passing the returned dictionary from ``init_dict`` as\nkeyword arguments to ``bar.__init__``.\n\nmixing classes with and without slots\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\npickling does not save attributes defined via ``__slots__`` in the\nfollowing case:\n\n.. code:: python\n\n    class foo(object):\n        __slots__ = ['a']\n\n        def __init__(self):\n            self.a = 4\n\n\n    class bar(foo):\n        def __init__(self):\n            pass\n\n``slotpicklemixin`` fixes it:\n\n.. code:: python\n\n    class foomixin(object):\n        __slots__ = ['a']\n\n        def __init__(self):\n            self.a = 4\n\n\n    class barmixin(foomixin, slotpicklemixin):\n        def __init__(self):\n            foomixin.__init__(self)\n            slotpicklemixin.__init__(self)\n\n    f = barmixin()\n    o = pickle.dumps(f)\n    f = pickle.loads(o)\n    assert hasattr(f, 'a')\n\nauthors\n-------\n\n-  **danilo horta** - https://github.com/horta\n\nlicense\n-------\n\nthis project is licensed under the mit license - see the\n`license <license>`__ file for details\n\n.. |pypi-license| image:: https://img.shields.io/pypi/l/pickle-mixin.svg?style=flat-square\n   :target: https://pypi.python.org/pypi/pickle-mixin/\n.. |pypi-version| image:: https://img.shields.io/pypi/v/pickle-mixin.svg?style=flat-square\n   :target: https://pypi.python.org/pypi/pickle-mixin/",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "pickle-mixin",
+  "package_url": "https://pypi.org/project/pickle-mixin/",
+  "project_url": "https://pypi.org/project/pickle-mixin/",
+  "project_urls": {
+    "Homepage": "https://github.com/limix/pickle-mixin"
+  },
+  "release_url": "https://pypi.org/project/pickle-mixin/1.0.2/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "makes un-pickle-able objects pick-able.",
+  "version": "1.0.2",
+  "releases": [],
+  "developers": [
+    "danilo_horta",
+    "horta@ebi.ac.uk"
+  ],
+  "kwds": "pytest pickle_mixin pickle pickling init_dict",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pickle_mixin",
+  "homepage": "https://github.com/limix/pickle-mixin",
+  "release_count": 3,
+  "dependency_ids": []
+}

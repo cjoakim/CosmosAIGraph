@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# nbmake\n[![codecov](https://codecov.io/gh/treebeardtech/nbmake/branch/main/graph/badge.svg?token=9gudm35fuo)](https://codecov.io/gh/treebeardtech/nbmake)\n[![pypi versions](https://img.shields.io/pypi/pyversions/nbmake?logo=python&logocolor=white)](https://pypi.org/project/nbmake)\n[![pypi versions](https://img.shields.io/pypi/v/nbmake?logo=python&logocolor=white)](https://pypi.org/project/nbmake)\n[![pypi downloads](https://img.shields.io/pypi/dm/nbmake)](https://pypi.org/project/nbmake)\n\n**what?** pytest plugin for testing and releasing notebook documentation\n\n**why?** to raise the quality of scientific material through better automation\n\n**who is this for?** research/machine learning software engineers who maintain packages/teaching materials with documentation written in notebooks.\n\n---\n**\ud83d\udee0\ufe0f help shape nbmake and best practices in the industry. please fill in our [survey](https://survey.typeform.com/to/uccvbsmo?utm_source=readme).**\n\n---\n\n## functionality\n\n1. executes notebooks using pytest and nbclient, allowing parallel notebook testing\n2. optionally writes back to the repo, allowing faster building of [nbsphinx](https://github.com/spatialaudio/nbsphinx) or [jupyter book](https://github.com/executablebooks/jupyter-book) docs\n\n## quick start\n\nif you have a notebook that runs interactively using an ipython kernel,\nyou can try testing it automatically as follows:\n\n```sh\npip install pytest nbmake\npytest --nbmake **/*ipynb\n```\n\n## configure cell timeouts\n\nyou can configure the cell timeout with the following pytest flag:\n\n```sh\npytest --nbmake --nbmake-timeout=3000 # allows each cell 3000 seconds to finish\n```\n\n## allow errors for a whole notebook\n\nthis configuration must be placed in the notebook's **top-level metadata** (not cell-level metadata).\n\nyour notebook should look like this:\n\n```json\n{\n  \"cells\": [ ... ],\n  \"metadata\": {\n    \"kernelspec\": { ... },\n    \"execution\": {\n      \"allow_errors\": true,\n      \"timeout\": 300\n    }\n  }\n}\n```\n\n## allow a cell to throw an exception\n\na cell with the following metadata can throw an exception without failing the test:\n\n```json\n  \"metadata\": {\n    \"tags\": [\n      \"raises-exception\"\n    ]\n  }\n```\n\n## ignore a code cell\n\na cell with the following metadata will not be executed by nbmake\n\n```json\n{\n  \"language\": \"python\",\n  \"custom\": {\n    \"metadata\": {\n      \"tags\": [\n        \"skip-execution\"\n      ]\n    }\n  }\n}\n```\n\n## override notebook kernels when testing\n\nregardless of the kernel configured in the notebook json, you can force nbmake to use a specific kernel when testing:\n\n```\npytest --nbmake --nbmake-kernel=mycustomkernel\n```\n\n## add missing jupyter kernel to your ci environment\n\nif you are not using the flag above and are using a kernel name other than the default \u2018python3\u2019, you will see an error message when executing your notebooks in a fresh ci environment: `error - no such kernel: 'mycustomkernel'`\n\nuse ipykernel to install the custom kernel:\n\n```sh\npython -m ipykernel install --user --name mycustomkernel\n```\n\nif you are using another language such as c++ in your notebooks, you may have a different process for installing your kernel.\n\n## parallelisation\n\nfor repos containing a large number of notebooks that run slowly, you can run each notebook\nin parallel using `pytest-xdist`.\n\n```sh\npip install pytest-xdist\n\npytest --nbmake -n=auto\n```\n\nit is also possible to parallelise at a ci-level using strategies, see [example](https://github.com/labforcomputationalvision/plenoptic/blob/master/.github/workflows/treebeard.yml)\n\n### build jupyter books faster\n\nusing xdist and the `--overwrite` flag let you build a large jupyter book repo faster:\n\n```sh\npytest --nbmake --overwrite -n=auto examples\njb build examples\n```\n\n## find missing imports in a directory of failing notebooks (new \u2728)\n\nit's not always feasible to get notebooks running from top to bottom from the start.\n\nyou can however, use nbmake to check that there are no `modulenotfounderror`s:\n\n```sh\npytest \\\n  --nbmake \\\n  --nbmake-find-import-errors \\ # ignore all errors except modulenotfounderror\n  --nbmake-timeout=20 # skip past cells longer than 20s\n```\n\n## mock out variables to simplify testing\n\nif your notebook runs a training process that takes a long time to run, you can use nbmake's\nmocking feature to overwrite variables after a cell runs:\n\n```json\n{\n  \"cells\": [\n    ...,\n    {\n      \"cell_type\": \"code\",\n      \"execution_count\": null,\n      \"metadata\": {\n        \"nbmake\": {\n          \"mock\": {\n            // these keys will override global variables after this cell runs\n            \"epochs\": 2,\n            \"config\": \"/test/config.json\",\n            \"args\": {\n              \"env\": \"test\"\n            }\n          }\n        }\n      },\n      \"outputs\": [],\n      \"source\": [\n        \"epochs = 10\\n\",\n        \"...\"\n      ]\n    },\n    ...\n  ],\n  ...\n}\n```\n\n## run test logic after a cell executes\n\nyou can fetch ci secrets and run assertions after any cell by putting scripts in the cell metadata under `nbmake.post_cell_execute`:\n\n```json\n{\n \"cells\": [\n  {\n   \"cell_type\": \"code\",\n   \"execution_count\": null,\n   \"metadata\": {\n    \"nbmake\": {\n     \"post_cell_execute\": [\n       \"y = 3\",\n       \"z = x+y\"\n     ]\n    }\n   },\n   \"outputs\": [],\n   \"source\": [\n    \"x = 1\\n\",\n    \"y = 2\\n\",\n    \"z = 0\\n\",\n    \"# this cell has a post_cell_execute that assigns y and z\"\n   ]\n  },\n```\n\n## advice on usage\n\nnbmake is best used in a scenario where you use the ipynb files only for development. consumption of notebooks is primarily done via a docs site, built through jupyter book, nbsphinx, or some other means. if using one of these tools, you are able to write assertion code in cells which will be [hidden from readers](https://jupyterbook.org/interactive/hiding.html).\n\n### pre-commit\n\ntreating notebooks like source files lets you keep your repo minimal. some tools, such as plotly may drop several megabytes of javascript in your output cells, as a result, stripping out notebooks on pre-commit is advisable:\n\n```\n# .pre-commit-config.yaml\nrepos:\n  - repo: https://github.com/kynan/nbstripout\n    rev: master\n    hooks:\n      - id: nbstripout\n```\n\nsee https://pre-commit.com/ for more...\n\n## disable nbmake\n\nimplicitly:\n```\npytest\n```\n\nexplicitly:\n```\npytest -p no:nbmake\n```\n\n## see also:\n\n* a more in-depth [intro to nbmake](https://semaphoreci.com/blog/test-jupyter-notebooks-with-pytest-and-nbmake) running on semaphore ci\n* [nbmake action](https://github.com/treebeardtech/treebeard)\n* [pytest](https://pytest.org/)\n* [jupyter book](https://github.com/executablebooks/jupyter-book)\n* [jupyter cache](https://github.com/executablebooks/jupyter-cache)\n* [myst-nb](https://github.com/executablebooks/myst-nb)\n\n---\n\n## \u2139\ufe0f get help with machine learning infrastructure\n\nbeyond testing notebooks, the maintainers of nbmake help software and finance companies scale their machine learning products.\n\n[find out more](https://www.treebeard.io/).\n\n---\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "nbmake",
+  "package_url": "https://pypi.org/project/nbmake/",
+  "project_url": "https://pypi.org/project/nbmake/",
+  "project_urls": {
+    "Homepage": "https://github.com/treebeardtech/nbmake"
+  },
+  "release_url": "https://pypi.org/project/nbmake/1.4.6/",
+  "requires_dist": [
+    "Pygments (>=2.7.3,<3.0.0)",
+    "importlib-metadata (>=6.8.0,<7.0.0) ; python_version < \"3.8\"",
+    "ipykernel (>=5.4.0)",
+    "nbclient (>=0.6.6,<0.7.0)",
+    "nbformat (>=5.0.8,<6.0.0)",
+    "pytest (>=6.1.0)"
+  ],
+  "requires_python": ">=3.7.0,<4.0.0",
+  "summary": "pytest plugin for testing notebooks",
+  "version": "1.4.6",
+  "releases": [],
+  "developers": [
+    "alex",
+    "alex@treebeard.io"
+  ],
+  "kwds": "nbmake pyversions pypi pytest python3",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_nbmake",
+  "homepage": "https://github.com/treebeardtech/nbmake",
+  "release_count": 30,
+  "dependency_ids": [
+    "pypi_importlib_metadata",
+    "pypi_ipykernel",
+    "pypi_nbclient",
+    "pypi_nbformat",
+    "pypi_pygments",
+    "pypi_pytest"
+  ]
+}

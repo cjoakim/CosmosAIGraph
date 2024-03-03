@@ -1,0 +1,73 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: end users/desktop",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: security"
+  ],
+  "description": "<a href=\"https://gitguardian.com/\"><img src=\"https://cdn.jsdelivr.net/gh/gitguardian/ggshield/doc/logo.svg\"></a>\n\n---\n\n# [ggshield](https://github.com/gitguardian/ggshield): protect your code with gitguardian\n\n[![pypi](https://img.shields.io/pypi/v/ggshield?color=%231b2d55&style=for-the-badge)](https://pypi.org/project/ggshield/)\n[![docker image version (latest semver)](https://img.shields.io/docker/v/gitguardian/ggshield?color=1b2d55&sort=semver&style=for-the-badge&label=docker)](https://hub.docker.com/r/gitguardian/ggshield)\n[![license](https://img.shields.io/github/license/gitguardian/ggshield?color=%231b2d55&style=for-the-badge)](license)\n[![github stars](https://img.shields.io/github/stars/gitguardian/ggshield?color=%231b2d55&style=for-the-badge)](https://github.com/gitguardian/ggshield/stargazers)\n[![github workflow status](https://img.shields.io/github/actions/workflow/status/gitguardian/ggshield/main.yml?branch=main&style=for-the-badge)](https://github.com/gitguardian/ggshield/actions)\n[![codecov](https://img.shields.io/codecov/c/github/gitguardian/ggshield?style=for-the-badge)](https://codecov.io/gh/gitguardian/ggshield/)\n\n`ggshield` is a cli application that runs in your local environment or in a ci environment to help you detect more than 350+ types of secrets, as well as other potential security vulnerabilities or policy breaks affecting your codebase.\n\n`ggshield` uses our [public api](https://api.gitguardian.com/doc) through [py-gitguardian](https://github.com/gitguardian/py-gitguardian) to scan and detect potential vulnerabilities in files and other text content.\n\nonly metadata such as call time, request size and scan mode is stored from scans using `ggshield`, therefore secrets and policy breaks incidents will not be displayed on your dashboard and **your files and secrets won't be stored**.\n\n# table of contents\n\n<!-- start doctoc generated toc please keep comment here to allow auto update -->\n<!-- don't edit this section, instead re-run doctoc to update -->\n\n- [installation](#installation)\n  - [macos - using homebrew](#macos---using-homebrew)\n  - [linux packages](#linux-packages)\n  - [other operating systems - using pipx or pip](#other-operating-systems---using-pipx-or-pip)\n    - [installing](#installing)\n    - [updating](#updating)\n- [initial setup](#initial-setup)\n- [getting started](#getting-started)\n  - [secrets](#secrets)\n  - [infra as code security (iac)](#infra-as-code-security-iac)\n- [integrations](#integrations)\n- [learn more](#learn-more)\n- [output](#output)\n- [related open source projects](#related-open-source-projects)\n- [license](#license)\n\n<!-- end doctoc generated toc please keep comment here to allow auto update -->\n\n# installation\n\n## macos - using homebrew\n\nyou can install `ggshield` using homebrew by running the following command:\n\n```shell\n$ brew install gitguardian/tap/ggshield\n```\n\n## linux packages\n\ndeb and rpm packages are available on [cloudsmith](https://cloudsmith.io/~gitguardian/repos/ggshield/packages/).\n\nsetup instructions:\n\n- [deb packages](https://cloudsmith.io/~gitguardian/repos/ggshield/setup/#formats-deb)\n- [rpm packages](https://cloudsmith.io/~gitguardian/repos/ggshield/setup/#formats-rpm)\n\n## other operating systems - using pipx or pip\n\n### installing\n\nthe recommended way to install `ggshield` is to use [pipx](https://pypa.github.io/pipx/), which will install it an isolated environment:\n\n```shell\n$ pipx install ggshield\n```\n\nalternatively, you can install with pip as a user package. this will not work if your python installation is declared as externally managed (for example when using the system python on operating systems like debian 12):\n\n```shell\n$ pip install --user -u ggshield\n```\n\n`ggshield` supports **python 3.8 and newer**.\n\nthe package should run on macos, linux and windows.\n\n### updating\n\nto update `ggshield` when installed with pipx:\n\n```shell\n$ pipx upgrade ggshield\n```\n\nif you installed `ggshield` with pip, you can add the option `-u/--upgrade` to the pip install command to update:\n\n```shell\n$ pip install --user -u ggshield\n```\n\n# initial setup\n\nto use `ggshield` you need to authenticate against gitguardian servers. to do so, use the `ggshield auth login` command. this command automates the provisioning of a personal access token and its configuration on the local workstation.\n\nyou can learn more about it from [`ggshield auth login` documentation](https://docs.gitguardian.com/internal-repositories-monitoring/ggshield/reference/auth/login).\n\nalternatively, you can create your personal access token manually and you can store it in the `gitguardian_api_key` environment variable to complete the setup.\n\n# getting started\n\n## secrets\n\nyou can now use `ggshield` to search for secrets:\n\n- in files: `ggshield secret scan path -r .`\n- in repositories: `ggshield secret scan repo .`\n- in docker images: `ggshield secret scan docker ubuntu:22.04`\n- in pypi packages: `ggshield secret scan pypi flask`\n- and more, have a look at `ggshield secret scan --help` output for details.\n\n## infra as code security (iac)\n\nyou can also search for vulnerabilities in your iac files using the following command:\n\n```\nggshield iac scan all .\n```\n\nhowever, if you are only interested in _new_ potential iac vulnerabilities, you can run:\n\n```\nggshield iac scan diff --ref=head~1 .\n```\n\nhave a look at `ggshield iac scan --help` for more details.\n\n# integrations\n\nyou can integrate `ggshield` in your [ci/cd workflow](https://docs.gitguardian.com/ggshield-docs/integrations/overview#cicd-integrations-secrets-detection-in-your-cicd-workflow).\n\nto catch errors earlier, use `ggshield` as a [pre-commit, pre-push or pre-receive git hook](https://docs.gitguardian.com/ggshield-docs/integrations/overview#git-hooks-prevent-secrets-from-reaching-your-vcs).\n\n# learn more\n\nfor more information, have a look at [the documentation](https://docs.gitguardian.com/ggshield-docs/getting-started)\n\n# output\n\nif no secrets or policy breaks have been found, the exit code will be 0:\n\n```bash\n$ ggshield secret scan pre-commit\n```\n\nif a secret or other issue is found in your staged code or in your ci, you will have an alert giving you the type of policy break, the filename where the policy break has been found and a patch giving you the position of the policy break in the file:\n\n```shell\n$ ggshield secret scan pre-commit\n\n\ud83d\udee1\ufe0f  \u2694\ufe0f  \ud83d\udee1\ufe0f  2 policy breaks have been found in file production.rb\n\n11 | config.paperclip_defaults = {\n12 |     :s3_credentials => {\n13 |     :bucket => \"xxx\",\n14 |     :access_key_id => \"xxxxxxxxxxxxxxxxxxxx\",\n                            |_____aws keys_____|\n\n15 |     :secret_access_key => \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n                                |_______________aws keys_______________|\n\n16 |     }\n17 | }\n```\n\nlines that are too long are truncated to match the size of the terminal, unless the verbose mode is used (`-v` or `--verbose`).\n\n# related open source projects\n\n- [trufflehog](https://github.com/dxa4481/trufflehog)\n- [gitleaks](https://github.com/zricethezav/gitleaks)\n- [gitrob](https://github.com/michenriksen/gitrob)\n- [git-hound](https://github.com/tillson/git-hound)\n- [aws git-secrets](https://github.com/awslabs/git-secrets)\n- [detect-secrets](https://github.com/yelp/detect-secrets)\n\n# license\n\n`ggshield` is mit licensed.\n",
+  "docs_url": null,
+  "keywords": "cli,devsecops,secrets-detection,security-tools,gitguardian",
+  "license": "mit",
+  "name": "ggshield",
+  "package_url": "https://pypi.org/project/ggshield/",
+  "project_url": "https://pypi.org/project/ggshield/",
+  "project_urls": {
+    "Homepage": "https://github.com/GitGuardian/ggshield"
+  },
+  "release_url": "https://pypi.org/project/ggshield/1.22.0/",
+  "requires_dist": [
+    "appdirs <1.5.0,>=1.4.4",
+    "charset-normalizer <3.2.0,>=3.1.0",
+    "click <8.2,>=8.1",
+    "cryptography <42.0.0,>=41.0.3",
+    "marshmallow <3.19.0,>=3.18.0",
+    "marshmallow-dataclass <8.6.0,>=8.5.8",
+    "oauthlib <3.3.0,>=3.2.1",
+    "pygitguardian <1.12.0,>=1.11.0",
+    "pyjwt <2.7.0,>=2.6.0",
+    "python-dotenv <0.22.0,>=0.21.0",
+    "pyyaml <6.1,>=6.0.1",
+    "requests <2.32.0,>=2.31.0",
+    "rich <12.6.0,>=12.5.1"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "detect secrets from all sources using gitguardian's brains",
+  "version": "1.22.0",
+  "releases": [],
+  "developers": [
+    "gitguardian",
+    "support@gitguardian.com"
+  ],
+  "kwds": "gitguardian gitguardian_api_key ggshield gitleaks gitrob",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_ggshield",
+  "homepage": "https://github.com/gitguardian/ggshield",
+  "release_count": 59,
+  "dependency_ids": [
+    "pypi_appdirs",
+    "pypi_charset_normalizer",
+    "pypi_click",
+    "pypi_cryptography",
+    "pypi_marshmallow",
+    "pypi_marshmallow_dataclass",
+    "pypi_oauthlib",
+    "pypi_pygitguardian",
+    "pypi_pyjwt",
+    "pypi_python_dotenv",
+    "pypi_pyyaml",
+    "pypi_requests",
+    "pypi_rich"
+  ]
+}

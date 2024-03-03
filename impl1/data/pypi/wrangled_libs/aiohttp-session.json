@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "framework :: asyncio",
+    "framework :: aiohttp",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http"
+  ],
+  "description": "aiohttp_session\n===============\n.. image:: https://github.com/aio-libs/aiohttp-session/actions/workflows/ci.yaml/badge.svg?branch=master\n    :target: https://github.com/aio-libs/aiohttp-session/actions/workflows/ci.yaml\n.. image:: https://codecov.io/github/aio-libs/aiohttp-session/coverage.svg?branch=master\n    :target: https://codecov.io/github/aio-libs/aiohttp-session\n.. image:: https://readthedocs.org/projects/aiohttp-session/badge/?version=latest\n    :target: https://aiohttp-session.readthedocs.io/\n.. image:: https://img.shields.io/pypi/v/aiohttp-session.svg\n    :target: https://pypi.python.org/pypi/aiohttp-session\n\nthe library provides sessions for `aiohttp.web`__.\n\n.. _aiohttp_web: https://aiohttp.readthedocs.io/en/latest/web.html\n\n__ aiohttp_web_\n\nusage\n-----\n\nthe library allows us to store user-specific data into a session object.\n\nthe session object has a dict-like interface (operations like\n``session[key] = value``, ``value = session[key]`` etc. are present).\n\n\nbefore processing the session in a web-handler, you have to register the\n*session middleware* in ``aiohttp.web.application``.\n\na trivial usage example:\n\n.. code:: python\n\n    import time\n    from cryptography import fernet\n    from aiohttp import web\n    from aiohttp_session import setup, get_session\n    from aiohttp_session.cookie_storage import encryptedcookiestorage\n\n\n    async def handler(request):\n        session = await get_session(request)\n        last_visit = session['last_visit'] if 'last_visit' in session else none\n        session['last_visit'] = time.time()\n        text = 'last visited: {}'.format(last_visit)\n        return web.response(text=text)\n\n\n    def make_app():\n        app = web.application()\n        fernet_key = fernet.fernet.generate_key()\n        f = fernet.fernet(fernet_key)\n        setup(app, encryptedcookiestorage(f))\n        app.router.add_get('/', handler)\n        return app\n\n\n    web.run_app(make_app())\n\n\nall storages use an http cookie named ``aiohttp_session`` for storing\ndata. this can be modified by passing the keyword argument ``cookie_name`` to\nthe storage class of your choice.\n\navailable session storages are:\n\n* ``aiohttp_session.simplecookiestorage()`` -- keeps session data as a\n  plain json string in the cookie body. use the storage only for testing\n  purposes, it's very non-secure.\n\n* ``aiohttp_session.cookie_storage.encryptedcookiestorage(secret_key)``\n  -- stores the session data into a cookie as ``simplecookiestorage`` but\n  encodes it via aes cipher. ``secrect_key`` is a ``bytes`` key for aes\n  encryption/decryption, the length should be 32 bytes.\n\n  requires ``cryptography`` library::\n\n      $ pip install aiohttp_session[secure]\n\n* ``aiohttp_session.redis_storage.redisstorage(redis_pool)`` -- stores\n  json encoded data in *redis*, keeping only the redis key (a random uuid) in\n  the cookie. ``redis_pool`` is a ``redis`` object, created by\n  ``await aioredis.from_url(...)`` call.\n\n      $ pip install aiohttp_session[aioredis]\n\n\ndeveloping\n----------\n\ninstall for local development::\n\n    $ make setup\n\nrun linters::\n\n    $ make lint\n\nrun tests::\n\n    $ make test\n\n\nthird party extensions\n----------------------\n\n* `aiohttp_session_mongo\n  <https://github.com/alexpantyukhin/aiohttp-session-mongo>`_\n\n* `aiohttp_session_dynamodb\n  <https://github.com/alexpantyukhin/aiohttp-session-dynamodb>`_\n\n\nlicense\n-------\n\n``aiohttp_session`` is offered under the apache 2 license.\n\n.. towncrier release notes start\n\n2.12.0 (2022-10-28)\n===================\n\n* migrated from `aioredis` to `redis` (if using redis without installing\n  `aiohttp-session[aioredis]` then it will be necessary to manually install `redis`).\n\n2.11.0 (2021-01-31)\n===================\n\n* support initialising `encryptedcookiestorage` with `fernet` object directly.\n* fix an issue where the session would get reset before the cookie expiry.\n\n2.10.0 (2021-12-30)\n===================\n\n* typing support\n* add samesite cookie option\n* support aioredis 2\n\n2.9.0 (2019-11-04)\n==================\n\n* fix memcached expiring time (#398)\n\n2.8.0 (2019-09-17)\n==================\n\n* make this compatible with python 3.7+. import from collections.abc, instead\n  of from collections. (#373)\n\n\n2.7.0 (2018-10-13)\n==================\n\n* reset a session if the session age > max_age (#331)\n\n* reset a session on ttl expiration for encryptedcookiestorage (#326)\n\n2.6.0 (2018-09-12)\n==================\n\n* create a new session if `naclcookiestorage` cannot decode a\n  corrupted cookie (#317)\n\n2.5.0 (2018-05-12)\n==================\n\n* add an api for requesting new session explicitly (#281)\n\n2.4.0 (2018-05-04)\n==================\n\n* fix a bug for session fixation (#272)\n\n2.3.0 (2018-02-13)\n==================\n\n- support custom encoder and decoder by all storages (#252)\n- bump to aiohttp 3.0\n\n2.2.0 (2018-01-31)\n==================\n\n- fixed the formatting of an error handling bad middleware return types. (#249)\n\n2.1.0 (2017-11-24)\n==================\n\n- add `session.set_new_identity()` method for changing identity for a\n  new session (#236)\n\n2.0.1 (2017-11-22)\n==================\n\n- replace assertions in aioredis installation checks by `runtimeerror` (#235)\n\n2.0.0 (2017-11-21)\n==================\n\n- update to aioredis 1.0+. the aiohttp-session 2.0 is not compatible\n  with aioredis 0.x (#234)\n\n1.2.1 (2017-11-20)\n==================\n\n- pin aioredis<1.0 (#231)\n\n1.2.0 (2017-11-06)\n==================\n\n- add memcachedstorage (#224)\n\n1.1.0 (2017-11-03)\n==================\n\n- upgrade middleware to new style from aiohttp 2.3+\n\n\n1.0.1 (2017-09-13)\n==================\n\n- add key_factory attribute for redis_storage (#205)\n\n1.0.0 (2017-07-27)\n==================\n\n- catch decoder exception in redisstorage on data load (#175)\n\n- specify domain and path on cookie deletion (#171)\n\n0.8.0 (2016-12-04)\n==================\n\n- use `time.time()` instead of `time.monotonic()` for absolute times (#81)\n\n0.7.0 (2016-09-24)\n==================\n\n- fix tests to be compatible with aiohttp upstream api for client cookies\n\n0.6.0 (2016-09-08)\n==================\n\n- add expires field automatically to support older browsers (#43)\n\n- respect session.max_age in redis storage #45\n\n- always pass default max_age from storage into session (#45)\n\n0.5.0 (2016-02-21)\n==================\n\n- handle cryptography.fernet.invalidtoken exception by providing an\n  empty session (#29)\n\n0.4.0 (2016-01-06)\n==================\n\n- add optional nacl encrypted storage (#20)\n\n- relax encryptedcookiestorage to accept base64 encoded string,\n  e.g. generated by fernet.generate_key.\n\n- add setup() function\n\n- save the session even on exception in the middleware chain\n\n0.3.0 (2015-11-20)\n==================\n\n- reflect aiohttp changes: minimum required python version is 3.4.1\n\n- use explicit 'aiohttp_session' package\n\n0.2.0 (2015-09-07)\n==================\n\n- add session.created property (#14)\n\n- replaced pycrypto with crypthography library (#16)\n\n0.1.2 (2015-08-07)\n==================\n\n- add manifest file (#15)\n\n0.1.1 (2015-04-20)\n==================\n\n- fix #7: stop cookie name growing each time session is saved\n\n\n0.1.0 (2015-04-13)\n==================\n\n- first public release\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2",
+  "name": "aiohttp-session",
+  "package_url": "https://pypi.org/project/aiohttp-session/",
+  "project_url": "https://pypi.org/project/aiohttp-session/",
+  "project_urls": {
+    "Homepage": "https://github.com/aio-libs/aiohttp_session/"
+  },
+  "release_url": "https://pypi.org/project/aiohttp-session/2.12.0/",
+  "requires_dist": [
+    "aiohttp (>=3.8)",
+    "typing-extensions (>=3.7.4) ; python_version < \"3.8\"",
+    "aiomcache (>=0.5.2) ; extra == 'aiomcache'",
+    "redis (>=4.3.1) ; extra == 'aioredis'",
+    "cryptography ; extra == 'pycrypto'",
+    "pynacl ; extra == 'pynacl'",
+    "cryptography ; extra == 'secure'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "sessions for aiohttp.web",
+  "version": "2.12.0",
+  "releases": [],
+  "developers": [
+    "andrew.svetlov@gmail.com",
+    "andrew_svetlov"
+  ],
+  "kwds": "aiohttp_session aiohttp_session_mongo aiohttp aiohttp_web_ aiohttp_session_dynamodb",
+  "license_kwds": "apache 2",
+  "libtype": "pypi",
+  "id": "pypi_aiohttp_session",
+  "homepage": "https://github.com/aio-libs/aiohttp_session/",
+  "release_count": 31,
+  "dependency_ids": [
+    "pypi_aiohttp",
+    "pypi_aiomcache",
+    "pypi_cryptography",
+    "pypi_pynacl",
+    "pypi_redis",
+    "pypi_typing_extensions"
+  ]
+}

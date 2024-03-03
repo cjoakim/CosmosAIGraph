@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "framework :: django :: 4.1",
+    "framework :: django :: 4.2",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: multimedia :: graphics"
+  ],
+  "description": "|jazzband-badge| |pypi| |python-badge| |django-badge| |docs| |gh-actions| |codecov|\n\nthumbnails for django.\n\nfeatures at a glance\n====================\n\n- support for django 3.2, 4.0 and 4.1 following the `django supported versions policy`_\n- python 3 support\n- storage support\n- pluggable engine support for `pillow`_, `imagemagick`_, `pil`_, `wand`_, `pgmagick`_, and `vipsthumbnail`_\n- pluggable key value store support (cached db, redis, and dynamodb by aws)\n- pluggable backend support\n- admin integration with possibility to delete\n- dummy generation (placeholders)\n- flexible, simple syntax, generates no html\n- imagefield for model that deletes thumbnails (only compatible with django 1.2.5 or less)\n- css style cropping options\n- back smart cropping, and remove borders from the images when cropping\n- margin calculation for vertical positioning\n- alternative resolutions versions of a thumbnail\n\nread more in `the documentation (latest version) <https://sorl-thumbnail.readthedocs.io/>`_\n\ndevelopers\n==========\n\n|jazzband|\n\nthis is a `jazzband <https://jazzband.co>`_ project. by contributing you agree to\nabide by the `contributor code of conduct <https://jazzband.co/about/conduct>`_\nand follow the `guidelines <https://jazzband.co/about/guidelines>`_.\n\nfeel free to create a new pull request if you want to propose a new feature.\nif you need development support or want to discuss with other developers\njoin us in the channel #sorl-thumbnail at freenode.net or gitter.\n\nfor releases updates and more in deep development discussion use our mailing list\nin google groups.\n\n- irc channel: irc://irc.freenode.net/#sorl-thumbnail\n\n- mailing list: sorl-thumbnail@googlegroups.com https://groups.google.com/d/forum/sorl-thumbnail\n\ntests\n-----\nthe tests should run with tox and pytest. running `tox` will run all tests for all environments.\nhowever, it is possible to run a certain environment with `tox -e <env>`, a list of all environments\ncan be found with `tox -l`. these tests require the dependencies of the different engines defined in\nthe documentation. it is possible to install these dependencies into a vagrant image with the\nvagrantfile in the repo.\n\nuser support\n============\n\nif you need help using sorl-thumbnail browse https://stackoverflow.com/questions/tagged/sorl-thumbnail\nand posts your questions with the `sorl-thumbnail` tag.\n\n\nhow to use\n==========\n\nget the code\n------------\n\ngetting the code for the latest stable release use 'pip'. ::\n\n   $ pip install sorl-thumbnail\n\ninstall in your project\n-----------------------\n\nthen register 'sorl.thumbnail', in the 'installed_apps' section of\nyour project's settings. ::\n\n    installed_apps = [\n        'django.contrib.auth',\n        'django.contrib.admin',\n        'django.contrib.sites',\n        'django.contrib.comments',\n        'django.contrib.sessions',\n        'django.contrib.messages',\n        'django.contrib.contenttypes',\n\n        'sorl.thumbnail',\n    ]\n\n\ntemplates usage\n---------------\n\nall of the examples assume that you first load the thumbnail template tag in\nyour template.::\n\n    {% load thumbnail %}\n\n\na simple usage. ::\n\n    {% thumbnail item.image \"100x100\" crop=\"center\" as im %}\n        <img src=\"{{ im.url }}\" width=\"{{ im.width }}\" height=\"{{ im.height }}\">\n    {% endthumbnail %}\n\nsee more examples in the section `template examples`_ in the documentation\n\nmodel usage\n-----------\n\nusing the imagefield that automatically deletes references to itself in the key\nvalue store and its thumbnail references and the thumbnail files when deleted.\nplease note that this is only compatible with django 1.2.5 or less.::\n\n    from django.db import models\n    from sorl.thumbnail import imagefield\n\n    class item(models.model):\n        image = imagefield(upload_to='whatever')\n\nsee more examples in the section `model examples`_ in the documentation\n\nlow level api\n-------------\n\nyou can use the 'get_thumbnail'::\n\n    from sorl.thumbnail import get_thumbnail\n    from sorl.thumbnail import delete\n\n    im = get_thumbnail(my_file, '100x100', crop='center', quality=99)\n    delete(my_file)\n\nsee more examples in the section `low level api examples`_ in the documentation\n\nusing in combination with other thumbnailers\n--------------------------------------------\n\nalternatively, you load the templatetags by {% load sorl_thumbnail %}\ninstead of traditional {% load thumbnail %}. it's especially useful in\nprojects that do make use of multiple thumbnailer libraries that use the\nsame name (``thumbnail``) for the templatetag module::\n\n    {% load sorl_thumbnail %}\n    {% thumbnail item.image \"100x100\" crop=\"center\" as im %}\n        <img src=\"{{ im.url }}\" width=\"{{ im.width }}\" height=\"{{ im.height }}\">\n    {% endthumbnail %}\n\nfrequently asked questions\n==========================\n\nis so slow in amazon s3!\n------------------------\n\npossible related to the implementation of your amazon s3 backend, see the `issue #351`_\ndue the storage backend reviews if there is an existing thumbnail when tries to\ngenerate the thumbnail that makes an extensive use of the s3 api\n\na fast workaround if you are not willing to tweak your storage backend is to set::\n\n   thumbnail_force_overwrite = true\n\nso it will avoid to overly query the s3 api.\n\n\n.. |gh-actions| image:: https://github.com/jazzband/sorl-thumbnail/workflows/test/badge.svg\n    :target: https://github.com/jazzband/sorl-thumbnail/actions\n.. |docs| image:: https://readthedocs.org/projects/pip/badge/?version=latest\n    :alt: documentation for latest version\n    :target: https://sorl-thumbnail.readthedocs.io/en/latest/\n.. |pypi| image:: https://img.shields.io/pypi/v/sorl-thumbnail.svg\n    :target: https://pypi.python.org/pypi/sorl-thumbnail\n    :alt: sorl-thumbnail on pypi\n.. |python-badge| image:: https://img.shields.io/pypi/pyversions/sorl-thumbnail.svg\n    :target: https://pypi.python.org/pypi/sorl-thumbnail\n    :alt: supported python versions\n.. |django-badge| image:: https://img.shields.io/pypi/djversions/sorl-thumbnail.svg\n    :target: https://pypi.python.org/pypi/sorl-thumbnail\n    :alt: supported python versions\n.. |codecov| image:: https://codecov.io/gh/jazzband/sorl-thumbnail/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/jazzband/sorl-thumbnail\n   :alt: coverage\n.. |jazzband-badge| image:: https://jazzband.co/static/img/badge.svg\n   :target: https://jazzband.co/\n   :alt: jazzband\n.. |jazzband| image:: https://jazzband.co/static/img/jazzband.svg\n   :target: https://jazzband.co/\n   :alt: jazzband\n\n.. _`pillow`: https://pillow.readthedocs.io/\n.. _`imagemagick`: https://imagemagick.org/\n.. _`pil`: https://python-pillow.org/\n.. _`wand`: https://docs.wand-py.org/\n.. _`pgmagick`: https://pgmagick.readthedocs.io/\n.. _`vipsthumbnail`: https://www.libvips.org/api/current/using-vipsthumbnail.html\n\n.. _`template examples`: https://sorl-thumbnail.readthedocs.io/en/latest/examples.html#template-examples\n.. _`model examples`: https://sorl-thumbnail.readthedocs.io/en/latest/examples.html#model-examples\n.. _`low level api examples`: https://sorl-thumbnail.readthedocs.io/en/latest/examples.html#low-level-api-examples\n.. _`issue #351`: https://github.com/jazzband/sorl-thumbnail/issues/351\n.. _`django supported versions policy`: https://www.djangoproject.com/download/#supported-versions\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "sorl-thumbnail",
+  "package_url": "https://pypi.org/project/sorl-thumbnail/",
+  "project_url": "https://pypi.org/project/sorl-thumbnail/",
+  "project_urls": {
+    "Homepage": "https://github.com/jazzband/sorl-thumbnail"
+  },
+  "release_url": "https://pypi.org/project/sorl-thumbnail/12.10.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "thumbnails for django",
+  "version": "12.10.0",
+  "releases": [],
+  "developers": [
+    "jazzband",
+    "mikko@aino.se",
+    "mikko_hellsing",
+    "roadies@jazzband.co"
+  ],
+  "kwds": "django djangoproject dynamodb djversions imagefield",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_sorl_thumbnail",
+  "homepage": "https://github.com/jazzband/sorl-thumbnail",
+  "release_count": 33,
+  "dependency_ids": []
+}

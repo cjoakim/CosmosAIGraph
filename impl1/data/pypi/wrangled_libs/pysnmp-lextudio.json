@@ -1,0 +1,60 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "intended audience :: system administrators",
+    "intended audience :: telecommunications industry",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: communications",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "\nsnmp library for python\n-----------------------\n\n[![pypi](https://img.shields.io/pypi/v/pysnmp-lextudio.svg)](https://pypi.python.org/pypi/pysnmp-lextudio)\n[![pypi downloads](https://img.shields.io/pypi/dd/pysnmp-lextudio)](https://pypi.python.org/pypi/pysnmp-lextudio/)\n[![python versions](https://img.shields.io/pypi/pyversions/pysnmp-lextudio.svg)](https://pypi.python.org/pypi/pysnmp-lextudio/)\n[![github license](https://img.shields.io/badge/license-bsd-blue.svg)](https://raw.githubusercontent.com/lextudio/pysnmp/master/license.rst)\n\nthis is a pure-python, open source and free implementation of v1/v2c/v3\nsnmp engine distributed under 2-clause [bsd license](https://www.pysnmp.com/pysnmp/license.html).\n\nthe pysnmp project was initially sponsored by a [psf](http://www.python.org/psf/) grant.\nthank you!\n\nthis version is a fork of ilya etingof's project [etingof/pysnmp](https://github.com/etingof/pysnmp). ilya sadly passed away on 10-aug-2022. announcement [here](https://lists.openstack.org/pipermail/openstack-discuss/2022-august/030062.html).  his work is still of great use to the python community and he will be missed.\n\nfeatures\n--------\n\n* complete snmpv1/v2c and snmpv3 support\n* smi framework for resolving mib information and implementing smi\n  managed objects\n* complete snmp entity implementation\n* usm extended security options support (3des, 192/256-bit aes encryption)\n* extensible network transports framework (udp/ipv4, udp/ipv6)\n* asynchronous socket-based io api support\n* [asyncio](https://docs.python.org/3/library/asyncio.html) integration\n* [pysmi](https://www.pysnmp.com/pysmi/) integration for dynamic mib compilation\n* built-in instrumentation exposing protocol engine operations\n* python eggs and py2exe friendly\n* 100% python, works with python 3.7+\n* mt-safe (if snmpengine is thread-local)\n\nfeatures, specific to snmpv3 model include:\n\n* usm authentication (md5/sha-1/sha-2) and privacy (des/aes) protocols (rfc3414, rfc7860)\n* view-based access control to use with any snmp model (rfc3415)\n* built-in snmp proxy pdu converter for building multi-lingual\n  snmp entities (rfc2576)\n* remote snmp engine configuration\n* optional snmp engine discovery\n* shipped with standard snmp applications (rc3413)\n\n\ndownload & install\n------------------\n\nthe pysnmp software is freely available for download from [pypi](https://pypi.python.org/pypi/pysnmp-lextudio)\nand [github](https://github.com/lextudio/pysnmp.git).\n\njust run:\n\n```bash\n$ pip install pysnmp-lextudio\n```\n\nto download and install pysnmp along with its dependencies:\n\n<!-- need to find an alternate location for the links to pysnmp.com -->\n* [pyasn1](https://pyasn1.readthedocs.io)\n* [pysmi](https://www.pysnmp.com/pysmi/) (required for mib services only)\n* optional [pysnmpcrypto](https://github.com/etingof/pysnmpcrypto) package\n  whenever strong snmpv3 encryption is desired\n\nbesides the library, command-line [snmp utilities](https://github.com/lextudio/snmpclitools)\nwritten in pure-python could be installed via:\n\n```bash\n$ pip install snmpclitools-lextudio\n```\n\nand used in the very similar manner as conventional net-snmp tools:\n\n```bash\n$ snmpget.py -v3 -l authpriv -u usr-md5-des -a authkey1 -x privkey1 demo.pysnmp.com sysdescr.0\nsnmpv2-mib::sysdescr.0 = string: linux zeus 4.8.6.5-smp #2 smp sun nov 13 14:58:11 cdt 2016 i686\n```\n\nexamples\n--------\n\npysnmp is designed in a layered fashion. top-level and easiest to use api is known as\n*hlapi*. here's a quick example on how to snmp get:\n\n```python\nimport asyncio\nfrom pysnmp.hlapi.asyncio.slim import slim\nfrom pysnmp.smi.rfc1902 import objectidentity, objecttype\n\nasync def run():\n    slim = slim(1)\n    errorindication, errorstatus, errorindex, varbinds = await slim.get(\n        'public',\n        'demo.pysnmp.com',\n        161,\n        objecttype(objectidentity(\"snmpv2-mib\", \"sysdescr\", 0)),\n    )\n\n    if errorindication:\n        print(errorindication)\n    elif errorstatus:\n        print(\n            \"{} at {}\".format(\n                errorstatus.prettyprint(),\n                errorindex and varbinds[int(errorindex) - 1][0] or \"?\",\n            )\n        )\n    else:\n        for varbind in varbinds:\n            print(\" = \".join([x.prettyprint() for x in varbind]))\n\n    slim.close()\n\n\nasyncio.run(run())\n```\n\nthis is how to send snmp trap:\n\n```python\nimport asyncio\nfrom pysnmp.hlapi.asyncio import *\n\nasync def run():\n    snmpengine = snmpengine()\n    errorindication, errorstatus, errorindex, varbinds = await sendnotification(\n        snmpengine,\n        communitydata('public', mpmodel=0),\n        udptransporttarget(('demo.pysnmp.com', 162)),\n        contextdata(),\n        \"trap\",\n        notificationtype(objectidentity(\"1.3.6.1.6.3.1.1.5.2\")).addvarbinds(\n            (\"1.3.6.1.6.3.1.1.4.3.0\", \"1.3.6.1.4.1.20408.4.1.1.2\"),\n            (\"1.3.6.1.2.1.1.1.0\", octetstring(\"my system\")),\n        ),\n    )\n\n    if errorindication:\n        print(errorindication)\n\n    snmpengine.transportdispatcher.closedispatcher()\n\nasyncio.run(run())\n```\n\n> we maintain publicly available snmp agent and trap sink at\n> [demo.pysnmp.com](https://www.pysnmp.com/snmpsim/public-snmp-agent-simulator.html). you are\n> welcome to use it while experimenting with whatever snmp software you deal with.\n\n```bash\n$ python3 examples/hlapi/asyncio/manager/cmdgen/usm-sha-aes128.py\nsnmpv2-mib::sysdescr.0 = sunos zeus.pysnmp.com 4.1.3_u1 1 sun4m\n$\n$ python3 examples//hlapi/asyncore/sync/agent/ntforg/v3-inform.py\nsnmpv2-mib::sysuptime.0 = 0\nsnmpv2-mib::snmptrapoid.0 = snmpv2-mib::warmstart\nsnmpv2-mib::sysname.0 = system name\n```\n\nother than that, pysnmp is capable to automatically fetch and use required mibs from http, ftp sites\nor local directories. you could configure any mib source available to you (including\n[this one](https://github.com/lextudio/mibs.snmplabs.com/tree/master/asn1)) for that purpose.\n\nfor more example scripts please refer to [examples section](https://www.pysnmp.com/pysnmp/examples/index.html#high-level-snmp)\nat pysnmp web site.\n\ndocumentation\n-------------\n\nlibrary documentation and examples can be found at the [pysnmp project site](https://www.pysnmp.com/pysnmp/).\n\nif something does not work as expected, please\n[open an issue](https://github.com/lextudio/pysnmp/issues) at github or\npost your question [on stack overflow](http://stackoverflow.com/questions/ask) or try browsing pysnmp\n[mailing list archives](https://sourceforge.net/p/pysnmp/mailman/pysnmp-users/).\n\nbug reports and prs are appreciated! ;-)\n\ncopyright (c) 2005-2019, [ilya etingof](https://lists.openstack.org/pipermail/openstack-discuss/2022-august/030062.html).\ncopyright (c) 2022-2023, [lextudio inc](mailto:support@lextudio.com).\nall rights reserved.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-2-clause",
+  "name": "pysnmp-lextudio",
+  "package_url": "https://pypi.org/project/pysnmp-lextudio/",
+  "project_url": "https://pypi.org/project/pysnmp-lextudio/",
+  "project_urls": {
+    "Homepage": "https://github.com/lextudio/pysnmp",
+    "Repository": "https://github.com/lextudio/pysnmp"
+  },
+  "release_url": "https://pypi.org/project/pysnmp-lextudio/5.0.32/",
+  "requires_dist": [
+    "pyasn1 (>=0.4.8,!=0.5.0)",
+    "pysnmpcrypto (>=0.0.4,<0.0.5)",
+    "pysmi-lextudio (>=1.0.4,<2.0.0)",
+    "pyasyncore (>=1.0.0,<2.0.0) ; python_version >= \"3.12\""
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "",
+  "version": "5.0.32",
+  "releases": [],
+  "developers": [
+    "etingof@gmail.com",
+    "ilya_etingof"
+  ],
+  "kwds": "pysnmp pysnmpcrypto snmplabs pysmi pyversions",
+  "license_kwds": "bsd-2-clause",
+  "libtype": "pypi",
+  "id": "pypi_pysnmp_lextudio",
+  "homepage": "https://github.com/lextudio/pysnmp",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_pyasn1",
+    "pypi_pyasyncore",
+    "pypi_pysmi_lextudio",
+    "pypi_pysnmpcrypto"
+  ]
+}

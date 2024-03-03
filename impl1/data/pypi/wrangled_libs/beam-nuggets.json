@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3"
+  ],
+  "description": "[![pypi](https://img.shields.io/pypi/v/beam-nuggets.svg)](https://pypi.org/project/beam-nuggets/) [![pypi - downloads](https://img.shields.io/pypi/dm/beam-nuggets.svg)](https://pypi.org/project/beam-nuggets/)\n\n# about\na collection of random transforms for the [apache beam](https://beam.apache.org/) python sdk . many are \nsimple transforms. the most useful ones are those for \nreading/writing from/to relational databases.\n# installation\n* using pip\n```bash\npip install beam-nuggets\n```\n* from source\n```bash\ngit clone git@github.com:mohaseeb/beam-nuggets.git\ncd beam-nuggets\npip install .\n```\n# supported transforms\n### io\n* [relational_db.readfromdb](http://mohaseeb.com/beam-nuggets/beam_nuggets.io.relational_db.html#beam_nuggets.io.relational_db.readfromdb) \nfor reading from relational database tables. \n* [relational_db.write](http://mohaseeb.com/beam-nuggets/beam_nuggets.io.relational_db.html#beam_nuggets.io.relational_db.write) \nfor writing to relational database tables.\n<br>above transforms uses [sqlalchemy](https://www.sqlalchemy.org/) to communicate with the database, \nand hence they can read from and write to all relational databases supported\n by sqlalchemy. \nthe transforms [are tested](https://github.com/mohaseeb/beam-nuggets/tree/master/beam_nuggets/io/test) against postgresql, mysql and sqlite.\n* [kafkaio.kafkaproduce](http://mohaseeb.com/beam-nuggets/beam_nuggets.io.kafkaio.html#beam_nuggets.io.kafkaio.kafkaproduce) for writing to kafka topics.\n* [kafkaio.kafkaconsume](http://mohaseeb.com/beam-nuggets/beam_nuggets.io.kafkaio.html#beam_nuggets.io.kafkaio.kafkaconsume) for consuming from kafka topics.\n* [csvio.read](http://mohaseeb.com/beam-nuggets/beam_nuggets.io.csvio.html#beam_nuggets.io.csvio.read)\nfor reading csv files.\n<!--read from sql database-->\n<!--read from postgres postgresql-->\n<!--read from mysql-->\n<!--read from oracle-->\n<!--write to sql database-->\n<!--write to postgres postgresql-->\n<!--write to mysql-->\n<!--write to oracle-->\n<!--read from kafka topic-->\n<!--write to kafka topic-->\n### others\n* [selectfromnesteddict](http://mohaseeb.com/beam-nuggets/beam_nuggets.transforms.nested_dict.html#beam_nuggets.transforms.nested_dict.selectfromnesteddict)\nselects a subset from records formed of nested dictionaries.\n* [parsejson](beam_nuggets.transforms.json_.html#beam_nuggets.transforms.json_.parsejson)\n* [assignuniqueid](beam_nuggets.transforms.json_.html#beam_nuggets.transforms.json_.parsejson)\n# documentation\nsee [here](http://mohaseeb.com/beam-nuggets/).\n# usage\nwrite data to an sqlite table using beam-nugget's \n[relational_db.write](http://mohaseeb.com/beam-nuggets/beam_nuggets.io.relational_db.html#beam_nuggets.io.relational_db.write) transform.\n```python\n# write_sqlite.py contents\nimport apache_beam as beam\nfrom apache_beam.options.pipeline_options import pipelineoptions\nfrom beam_nuggets.io import relational_db\n\nrecords = [\n    {'name': 'jan', 'num': 1},\n    {'name': 'feb', 'num': 2}\n]\n\nsource_config = relational_db.sourceconfiguration(\n    drivername='sqlite',\n    database='/tmp/months_db.sqlite',\n    create_if_missing=true  # create the database if not there \n)\n\ntable_config = relational_db.tableconfiguration(\n    name='months',\n    create_if_missing=true,  # automatically create the table if not there\n    primary_key_columns=['num']  # and use 'num' column as primary key\n)\n    \nwith beam.pipeline(options=pipelineoptions()) as p:  # will use local runner\n    months = p | \"reading month records\" >> beam.create(records)\n    months | 'writing to db' >> relational_db.write(\n        source_config=source_config,\n        table_config=table_config\n    )\n```\nexecute the pipeline\n```bash\npython write_sqlite.py \n```\nexamine the contents\n```bash\nsqlite3 /tmp/months_db.sqlite 'select * from months'\n# output:\n# 1.0|jan\n# 2.0|feb\n```\nto write the same data to a postgresql table instead, just create a suitable \n[relational_db.sourceconfiguration](http://mohaseeb.com/beam-nuggets/beam_nuggets.io.relational_db_api.html#beam_nuggets.io.relational_db_api.sourceconfiguration) as follows.\n```python\nsource_config = relational_db.sourceconfiguration(\n    drivername='postgresql+pg8000',\n    host='localhost',\n    port=5432,\n    username='postgres',\n    password='password',\n    database='calendar',\n    create_if_missing=true  # create the database if not there \n)\n```\nclick [here](https://github.com/mohaseeb/beam-nuggets/tree/master/examples/dataflow/)\nfor more examples, including writing to postgresql in google cloud platform \nusing the dataflowrunner. \n<br><br>\nan example showing how you can use beam-nugget's [relational_db.readfromdb](http://mohaseeb.com/beam-nuggets/beam_nuggets.io.relational_db.html#beam_nuggets.io.relational_db.readfromdb) \ntransform to read from a postgresql database table. \n```python\nfrom __future__ import print_function\nimport apache_beam as beam\nfrom apache_beam.options.pipeline_options import pipelineoptions\nfrom beam_nuggets.io import relational_db\n\nwith beam.pipeline(options=pipelineoptions()) as p:\n    source_config = relational_db.sourceconfiguration(\n        drivername='postgresql+pg8000',\n        host='localhost',\n        port=5432,\n        username='postgres',\n        password='password',\n        database='calendar',\n    )\n    records = p | \"reading records from db\" >> relational_db.readfromdb(\n        source_config=source_config,\n        table_name='months',\n        query='select num, name from months'  # optional. when omitted, all table records are returned. \n    )\n    records | 'writing to stdout' >> beam.map(print)\n```\nsee [here](https://github.com/mohaseeb/beam-nuggets/tree/master/examples) for more examples.\n# development\n* install\n```bash\ngit clone git@github.com:mohaseeb/beam-nuggets.git\ncd beam-nuggets\nexport beam_nuggets_root=`pwd`\npip install -e .[dev]\n```\n* make changes on dedicated dev branches\n* run tests\n```bash\ncd $beam_nuggets_root\npython -m unittest discover -v\n```\n* generate docs\n```bash\ncd $beam_nuggets_root\ndocs/generate_docs.sh\n```\n* create a pr against master.\n* after merging the accepted pr and updating the local master, upload a new \nbuild to pypi.\n```bash\ncd $beam_nuggets_root\nscripts/build_test_deploy.sh\n```\n# backlog \n* versioned docs?\n* summarize the investigation of using source/sink vs pardo(and groupby) for io\n* more nuggets: writetocsv\n* investigate readiness of sdf pardo, and possibility to use for relational_db.readfromdb\n* integration tests\n* db transforms failures handling on io transforms\n* more nuggets: elasticsearch, mongo \n* writetorelationaldb, logging\n\n# contributions by\n[mohaseeb](https://github.com/mohaseeb), [astrocox](https://github.com/astrocox), [2514millerj](https://github.com/2514millerj), [alfredo](https://github.com/alfredo), [shivangkumar](https://github.com/shivangkumar)\n\n# licence\nmit\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "beam-nuggets",
+  "package_url": "https://pypi.org/project/beam-nuggets/",
+  "project_url": "https://pypi.org/project/beam-nuggets/",
+  "project_urls": {
+    "Homepage": "https://github.com/mohaseeb/beam-nuggets"
+  },
+  "release_url": "https://pypi.org/project/beam-nuggets/0.18.1/",
+  "requires_dist": [
+    "apache-beam (<3.0.0,>=2.8.0)",
+    "SQLAlchemy (<2.0.0,>=1.4.0)",
+    "sqlalchemy-utils (<1.0.0,>=0.37.0)",
+    "pg8000 (<2.0.0,>=1.16.6)",
+    "PyMySQL (<2.0.0,>=0.9.3)",
+    "kafka-python (>=2.0.1)",
+    "nose (<2.0.0,>=1.3.7) ; extra == 'dev'",
+    "testing.postgresql (<2.0.0,>=1.3.0) ; extra == 'dev'",
+    "testing.mysqld (<2.0.0,>=1.4.0) ; extra == 'dev'",
+    "numpy (<2.0.0,>=1.15.4) ; extra == 'dev'",
+    "pandas ; extra == 'dev'",
+    "Sphinx (<2.0.0,>=1.8.3) ; extra == 'dev'",
+    "sphinx-rtd-theme (<2.0.0,>=0.4.2) ; extra == 'dev'"
+  ],
+  "requires_python": "",
+  "summary": "collection of transforms for the apache beam python sdk.",
+  "version": "0.18.1",
+  "releases": [],
+  "developers": [
+    "m@mohaseeb.com",
+    "mohamed_haseeb"
+  ],
+  "kwds": "transforms beam_nuggets beam apache_beam beam_nuggets_root",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_beam_nuggets",
+  "homepage": "https://github.com/mohaseeb/beam-nuggets",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_apache_beam",
+    "pypi_kafka_python",
+    "pypi_nose",
+    "pypi_numpy",
+    "pypi_pandas",
+    "pypi_pg8000",
+    "pypi_pymysql",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_sqlalchemy",
+    "pypi_sqlalchemy_utils",
+    "pypi_testing.mysqld",
+    "pypi_testing.postgresql"
+  ]
+}

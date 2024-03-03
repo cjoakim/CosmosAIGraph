@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.6",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# frictionless ckan mapper\n\na library for mapping ckan metadata <=> frictionless metadata.\n\nthe library has zero dependencies (not even on data package libs). you can use it directly or use it for inspiration. detailed outline of the algorithm is in the docs or you can read the code.\n\n[![travis](https://img.shields.io/travis/frictionlessdata/frictionless-ckan-mapper/master.svg)](https://travis-ci.org/frictionlessdata/frictionless-ckan-mapper)\n[![coveralls](http://img.shields.io/coveralls/frictionlessdata/frictionless-ckan-mapper/master.svg)](https://coveralls.io/r/frictionlessdata/frictionless-ckan-mapper?branch=master)\n[![pypi](https://img.shields.io/pypi/v/frictionless-ckan-mapper.svg)](https://pypi.python.org/pypi/frictionless-ckan-mapper)\n[![semver](https://img.shields.io/badge/versions-semver-brightgreen.svg)](http://semver.org/)\n[![chat on discord](https://img.shields.io/discord/695635777199145130)](https://discord.gg/2ugfm2k)\n\n<!-- toc -->\n\n- [frictionless ckan mapper](#frictionless-ckan-mapper)\n  - [installation](#installation)\n  - [getting started](#getting-started)\n    - [ckan => frictionless](#ckan--frictionless)\n    - [frictionless => ckan](#frictionless--ckan)\n  - [reference](#reference)\n    - [`ckan_to_frictionless`](#ckan_to_frictionless)\n      - [`resource(ckandict)`](#resourceckandict)\n      - [`dataset(ckandict)`](#datasetckandict)\n    - [`frictionless_to_ckan`](#frictionless_to_ckan)\n      - [`resource(fddict)`](#resourcefddict)\n      - [`package(fddict)`](#packagefddict)\n  - [design](#design)\n    - [ckan reference](#ckan-reference)\n    - [algorithm: ckan => frictionless](#algorithm-ckan--frictionless)\n    - [algorithm: frictionless => ckan](#algorithm-frictionless--ckan)\n  - [developers](#developers)\n    - [install the source](#install-the-source)\n    - [run the tests](#run-the-tests)\n    - [building and publishing the package](#building-and-publishing-the-package)\n      - [build the distribution package locally for testing purposes](#build-the-distribution-package-locally-for-testing-purposes)\n      - [test the package at test.pypi.org](#test-the-package-at-testpypiorg)\n      - [tag a new git release and publish to the official pypi](#tag-a-new-git-release-and-publish-to-the-official-pypi)\n    <!-- tocstop -->\n\n## installation\n\n- python: install python. the library is compatible with both python 2.7+ and python 3.3+.\n\n```bash\npip install frictionless-ckan-mapper\n```\n\n**note:** the package is installed as `frictionless-ckan-mapper` and then imported as `frictionless_ckan_mapper`.\n\n## getting started\n\n### ckan => frictionless\n\n```python\n#\u00a0get a ckan metadata item\nckan_dataset = {\n  \"name\": \"my-dataset\",\n  \"title\": \"my awesome dataset\",\n  \"url\": \"http://www.example.com/data.csv\"\n}\n\n# or load from an api e.g.\n#\u00a0ckan_dataset = json.load(urllib.urlopen(\n#     https://demo.ckan.org/api/3/package_show?id=my_dataset\n# ))\n\nfrom frictionless_ckan_mapper import ckan_to_frictionless as converter\n\n#\u00a0convert to frictionless\nfrictionless_package = converter.dataset(ckan_dict)\n\nprint(frictionless_package)\n```\n\n### frictionless => ckan\n\n```python\nfrictionless = {\n  'name': \"f11s-dataset\",\n  'path': \"https://datahub.io/data.csv\"\n}\n\nfrom frictionless_ckan_mapper import frictionless_to_ckan as f2c\n\nckanout = f2c.dataset(frictionless)\n\nprint(ckanout)\n```\n\n## reference\n\nthis package contains two modules:\n\n- `frictionless_to_ckan`\n- `ckan_to_frictionless`\n\nyou can import them directly like so:\n\n```python\nfrom frictionless_ckan_mapper import ckan_to_frictionless\nfrom frictionless_ckan_mapper import frictionless_to_ckan\n```\n\n### `ckan_to_frictionless`\n\n#### `resource(ckandict)`\n\n```python\nfrom frictionless_ckan_mapper import ckan_to_frictionless as converter\n\n# ... some code with a ckan dictionary ...\n\noutput_frictionless_dict = converter.resource(ckan_dictionary)\n```\n\n#### `dataset(ckandict)`\n\n```python\nfrom frictionless_ckan_mapper import ckan_to_frictionless as converter\n\n# ... some code with a ckan dictionary ...\n\noutput_frictionless_dict = converter.dataset(ckan_dictionary)\n```\n\n### `frictionless_to_ckan`\n\n#### `resource(fddict)`\n\n```python\nfrom frictionless_ckan_mapper import frictionless_to_ckan as converter\n\n# ... some code with a frictionless dictionary ...\n\noutput_ckan_dict = converter.resource(frictionless_dictionary)\n```\n\n#### `package(fddict)`\n\n```python\nfrom frictionless_ckan_mapper import frictionless_to_ckan as converter\n\n# ... some code with a frictionless dictionary ...\n\noutput_ckan_dict = converter.package(frictionless_dictionary)\n```\n\n## design\n\n```text\nfrictionless   <=>        ckan\n--------------------------------------\ndata package   <=>   package (dataset)\ndata resource  <=>   resource\ntable schema   <=>   data dictionary?? (datastore resources can have schemas)\n```\n\n### ckan reference\n\n**summary:**\n\n- class diagram below of key objects (without attributes)\n- objects with their attributes in this spreadsheet: https://docs.google.com/spreadsheets/d/1xdqgtfni5jfs8ambcbfsp7m11h9mohs0edtuztqgvsg/edit#gid=1925460244\n\n```mermaid\nclassdiagram\n\nclass package\nclass resource\nclass datadictionary\n\npackage *-- resource\nresource o-- datadictionary\n```\n\n![mermaid-diagram-20200703112520](https://user-images.githubusercontent.com/32682903/86486065-f9c08100-bd1f-11ea-8a1a-8f3befca0e6e.png)\n\nsource for ckan metadata structure:\n\n- dataset (package): https://docs.ckan.org/en/2.8/api/index.html#ckan.logic.action.create.package_create\n  - `package.as_dict` method: https://github.com/ckan/ckan/blob/2.8/ckan/model/package.py#l195-l223\n  - `package_show` ...\n\n* resource: https://docs.ckan.org/en/2.8/api/index.html#ckan.logic.action.create.resource_create\n\n### algorithm: ckan => frictionless\n\nsee the code in [`frictionless_ckan_mapper/ckan_to_frictionless.py`](./frictionless_ckan_mapper/ckan_to_frictionless.py)\n\n### algorithm: frictionless => ckan\n\nsee the code in [`frictionless_ckan_mapper/frictionless_to_ckan.py`](./frictionless_ckan_mapper/frictionless_to_ckan.py)\n\n## developers\n\n### install the source\n\n- clone the repo:\n\n  ```bash\n  git clone https://github.com/frictionlessdata/frictionless-ckan-mapper.git\n  ```\n\n- and install it with pip:\n\n  ```bash\n  pip install -e .\n  ```\n\n### run the tests\n\nuse the excellent `pytest` suite as follows:\n\n```bash\npytest tests\n```\n\nto test under both python 2 and python 3 environments, we use `tox`. you can run the following command:\n\n```bash\nmake test\n```\n\n**note:** make sure that the necessary python versions are in your environment `path` (python 2.7 and python 3.6).\n\n### building and publishing the package\n\nto see a list of available commands from the `makefile`, execute:\n\n```bash\nmake list\n```\n\n#### build the distribution package locally for testing purposes\n\nif a previous build exists, make sure to also remove it before building again:\n\n```bash\nmake distclean\n```\n\nthen:\n\n```bash\nmake dist\n```\n\nalternatively, this command will accomplish the same to build packages for both python 2 and python 3:\n\n```bash\npython setup.py sdist bdist_wheel --universal\n```\n\n#### test the package at test.pypi.org\n\n```bash\npython -m twine upload --repository testpypi dist/*\n```\n\nthe package will be publicly available at https://test.pypi.org/project/frictionless-ckan-mapper/ and you will be able to `pip install` it as usual.\n\n#### tag a new git release and publish to the official pypi\n\nmake sure to update the version of the package in the file `frictionless_ckan_mapper/version`. then:\n\n```bash\nmake release\n```\n\nyou can quickly review the version to release with `make version`, which will print the current version stored in `version`.\n\n",
+  "docs_url": null,
+  "keywords": "data,ckan,frictionless,conversion,package,dataset,resource",
+  "license": "mit",
+  "name": "frictionless-ckan-mapper",
+  "package_url": "https://pypi.org/project/frictionless-ckan-mapper/",
+  "project_url": "https://pypi.org/project/frictionless-ckan-mapper/",
+  "project_urls": {
+    "Homepage": "https://github.com/frictionlessdata/frictionless-ckan-mapper"
+  },
+  "release_url": "https://pypi.org/project/frictionless-ckan-mapper/1.0.9/",
+  "requires_dist": [
+    "six (<2.0,>=1.9)",
+    "unidecode",
+    "pylama ; extra == 'develop'",
+    "tox ; extra == 'develop'"
+  ],
+  "requires_python": "",
+  "summary": "a library for mapping ckan metadata <=> frictionless metadata.",
+  "version": "1.0.9",
+  "releases": [],
+  "developers": [
+    "open_knowledge_international"
+  ],
+  "kwds": "frictionless_ckan_mapper ckan_to_frictionless frictionless_to_ckan frictionlessdata ckan_dataset",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_frictionless_ckan_mapper",
+  "homepage": "https://github.com/frictionlessdata/frictionless-ckan-mapper",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_pylama",
+    "pypi_six",
+    "pypi_tox",
+    "pypi_unidecode"
+  ]
+}

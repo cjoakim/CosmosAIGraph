@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet :: www/http"
+  ],
+  "description": "asgiref\n=======\n\n.. image:: https://api.travis-ci.org/django/asgiref.svg\n    :target: https://travis-ci.org/django/asgiref\n\n.. image:: https://img.shields.io/pypi/v/asgiref.svg\n    :target: https://pypi.python.org/pypi/asgiref\n\nasgi is a standard for python asynchronous web apps and servers to communicate\nwith each other, and positioned as an asynchronous successor to wsgi. you can\nread more at https://asgi.readthedocs.io/en/latest/\n\nthis package includes asgi base libraries, such as:\n\n* sync-to-async and async-to-sync function wrappers, ``asgiref.sync``\n* server base classes, ``asgiref.server``\n* a wsgi-to-asgi adapter, in ``asgiref.wsgi``\n\n\nfunction wrappers\n-----------------\n\nthese allow you to wrap or decorate async or sync functions to call them from\nthe other style (so you can call async functions from a synchronous thread,\nor vice-versa).\n\nin particular:\n\n* asynctosync lets a synchronous subthread stop and wait while the async\n  function is called on the main thread's event loop, and then control is\n  returned to the thread when the async function is finished.\n\n* synctoasync lets async code call a synchronous function, which is run in\n  a threadpool and control returned to the async coroutine when the synchronous\n  function completes.\n\nthe idea is to make it easier to call synchronous apis from async code and\nasynchronous apis from synchronous code so it's easier to transition code from\none style to the other. in the case of channels, we wrap the (synchronous)\ndjango view system with synctoasync to allow it to run inside the (asynchronous)\nasgi server.\n\nnote that exactly what threads things run in is very specific, and aimed to\nkeep maximum compatibility with old synchronous code. see\n\"synchronous code & threads\" below for a full explanation. by default,\n``sync_to_async`` will run all synchronous code in the program in the same\nthread for safety reasons; you can disable this for more performance with\n``@sync_to_async(thread_sensitive=false)``, but make sure that your code does\nnot rely on anything bound to threads (like database connections) when you do.\n\n\nthreadlocal replacement\n-----------------------\n\nthis is a drop-in replacement for ``threading.local`` that works with both\nthreads and asyncio tasks. even better, it will proxy values through from a\ntask-local context to a thread-local context when you use ``sync_to_async``\nto run things in a threadpool, and vice-versa for ``async_to_sync``.\n\nif you instead want true thread- and task-safety, you can set\n``thread_critical`` on the local object to ensure this instead.\n\n\nserver base classes\n-------------------\n\nincludes a ``statelessserver`` class which provides all the hard work of\nwriting a stateless server (as in, does not handle direct incoming sockets\nbut instead consumes external streams or sockets to work out what is happening).\n\nan example of such a server would be a chatbot server that connects out to\na central chat server and provides a \"connection scope\" per user chatting to\nit. there's only one actual connection, but the server has to separate things\ninto several scopes for easier writing of the code.\n\nyou can see an example of this being used in `frequensgi <https://github.com/andrewgodwin/frequensgi>`_.\n\n\nwsgi-to-asgi adapter\n--------------------\n\nallows you to wrap a wsgi application so it appears as a valid asgi application.\n\nsimply wrap it around your wsgi application like so::\n\n    asgi_application = wsgitoasgi(wsgi_application)\n\nthe wsgi application will be run in a synchronous threadpool, and the wrapped\nasgi application will be one that accepts ``http`` class messages.\n\nplease note that not all extended features of wsgi may be supported (such as\nfile handles for incoming post bodies).\n\n\ndependencies\n------------\n\n``asgiref`` requires python 3.7 or higher.\n\n\ncontributing\n------------\n\nplease refer to the\n`main channels contributing docs <https://github.com/django/channels/blob/master/contributing.rst>`_.\n\n\ntesting\n'''''''\n\nto run tests, make sure you have installed the ``tests`` extra with the package::\n\n    cd asgiref/\n    pip install -e .[tests]\n    pytest\n\n\nbuilding the documentation\n''''''''''''''''''''''''''\n\nthe documentation uses `sphinx <http://www.sphinx-doc.org>`_::\n\n    cd asgiref/docs/\n    pip install sphinx\n\nto build the docs, you can use the default tools::\n\n    sphinx-build -b html . _build/html  # or `make html`, if you've got make set up\n    cd _build/html\n    python -m http.server\n\n...or you can use ``sphinx-autobuild`` to run a server and rebuild/reload\nyour documentation changes automatically::\n\n    pip install sphinx-autobuild\n    sphinx-autobuild . _build/html\n\n\nreleasing\n'''''''''\n\nto release, first add details to changelog.txt and update the version number in ``asgiref/__init__.py``.\n\nthen, build and push the packages::\n\n    python -m build\n    twine upload dist/*\n    rm -r build/ dist/\n\n\nimplementation details\n----------------------\n\nsynchronous code & threads\n''''''''''''''''''''''''''\n\nthe ``asgiref.sync`` module provides two wrappers that let you go between\nasynchronous and synchronous code at will, while taking care of the rough edges\nfor you.\n\nunfortunately, the rough edges are numerous, and the code has to work especially\nhard to keep things in the same thread as much as possible. notably, the\nrestrictions we are working with are:\n\n* all synchronous code called through ``synctoasync`` and marked with\n  ``thread_sensitive`` should run in the same thread as each other (and if the\n  outer layer of the program is synchronous, the main thread)\n\n* if a thread already has a running async loop, ``asynctosync`` can't run things\n  on that loop if it's blocked on synchronous code that is above you in the\n  call stack.\n\nthe first compromise you get to might be that ``thread_sensitive`` code should\njust run in the same thread and not spawn in a sub-thread, fulfilling the first\nrestriction, but that immediately runs you into the second restriction.\n\nthe only real solution is to essentially have a variant of threadpoolexecutor\nthat executes any ``thread_sensitive`` code on the outermost synchronous\nthread - either the main thread, or a single spawned subthread.\n\nthis means you now have two basic states:\n\n* if the outermost layer of your program is synchronous, then all async code\n  run through ``asynctosync`` will run in a per-call event loop in arbitrary\n  sub-threads, while all ``thread_sensitive`` code will run in the main thread.\n\n* if the outermost layer of your program is asynchronous, then all async code\n  runs on the main thread's event loop, and all ``thread_sensitive`` synchronous\n  code will run in a single shared sub-thread.\n\ncrucially, this means that in both cases there is a thread which is a shared\nresource that all ``thread_sensitive`` code must run on, and there is a chance\nthat this thread is currently blocked on its own ``asynctosync`` call. thus,\n``asynctosync`` needs to act as an executor for thread code while it's blocking.\n\nthe ``currentthreadexecutor`` class provides this functionality; rather than\nsimply waiting on a future, you can call its ``run_until_future`` method and\nit will run submitted code until that future is done. this means that code\ninside the call can then run code on your thread.\n\n\nmaintenance and security\n------------------------\n\nto report security issues, please contact security@djangoproject.com. for gpg\nsignatures and more security process information, see\nhttps://docs.djangoproject.com/en/dev/internals/security/.\n\nto report bugs or request new features, please open a new github issue.\n\nthis repository is part of the channels project. for the shepherd and maintenance team, please see the\n`main channels readme <https://github.com/django/channels/blob/master/readme.rst>`_.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd-3-clause",
+  "name": "asgiref",
+  "package_url": "https://pypi.org/project/asgiref/",
+  "project_url": "https://pypi.org/project/asgiref/",
+  "project_urls": {
+    "Changelog": "https://github.com/django/asgiref/blob/master/CHANGELOG.txt",
+    "Documentation": "https://asgi.readthedocs.io/",
+    "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions",
+    "Homepage": "https://github.com/django/asgiref/"
+  },
+  "release_url": "https://pypi.org/project/asgiref/3.7.2/",
+  "requires_dist": [
+    "typing-extensions (>=4) ; python_version < \"3.11\"",
+    "pytest ; extra == 'tests'",
+    "pytest-asyncio ; extra == 'tests'",
+    "mypy (>=0.800) ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "asgi specs, helper code, and adapters",
+  "version": "3.7.2",
+  "releases": [],
+  "developers": [
+    "django_software_foundation",
+    "foundation@djangoproject.com"
+  ],
+  "kwds": "wsgi_application asgi_application wsgi asgi django",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_asgiref",
+  "homepage": "https://github.com/django/asgiref/",
+  "release_count": 62,
+  "dependency_ids": [
+    "pypi_mypy",
+    "pypi_pytest",
+    "pypi_pytest_asyncio",
+    "pypi_typing_extensions"
+  ]
+}

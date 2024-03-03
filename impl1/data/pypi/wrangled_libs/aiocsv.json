@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: asyncio",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3 :: only"
+  ],
+  "description": "# aiocsv\n\nasynchronous csv reading and writing.  \n\n\n## installation\n\npython 3.6+ is required.  \n`pip3 install aiocsv`\n\n\n## usage\n\nasyncreader & asyncdictreader accept any object that has a `read(size: int)` coroutine,\nwhich should return a string.\n\nasyncwriter & asyncdictwriter accept any object that has a `write(b: str)` coroutine.\n\nreading is implemented using a custom csv parser, which should behave exactly like the cpython parser.\n\nwriting is implemented using the synchronous csv.writer and csv.dictwriter objects - \nthe serializers write data to a stringio, and that buffer is then rewritten to the underlaying\nasynchronous file.\n\n\n## example\n\nexample usage with [aiofiles](https://pypi.org/project/aiofiles/).\n\n```python\nimport asyncio\nimport csv\n\nimport aiofiles\nfrom aiocsv import asyncreader, asyncdictreader, asyncwriter, asyncdictwriter\n\nasync def main():\n    # simple reading\n    async with aiofiles.open(\"some_file.csv\", mode=\"r\", encoding=\"utf-8\", newline=\"\") as afp:\n        async for row in asyncreader(afp):\n            print(row)  # row is a list\n\n    # dict reading, tab-separated\n    async with aiofiles.open(\"some_other_file.tsv\", mode=\"r\", encoding=\"utf-8\", newline=\"\") as afp:\n        async for row in asyncdictreader(afp, delimiter=\"\\t\"):\n            print(row)  # row is a dict\n\n    # simple writing, \"unix\"-dialect\n    async with aiofiles.open(\"new_file.csv\", mode=\"w\", encoding=\"utf-8\", newline=\"\") as afp:\n        writer = asyncwriter(afp, dialect=\"unix\")\n        await writer.writerow([\"name\", \"age\"])\n        await writer.writerows([\n            [\"john\", 26], [\"sasha\", 42], [\"hana\", 37]\n        ])\n\n    # dict writing, all quoted, \"null\" for missing fields\n    async with aiofiles.open(\"new_file2.csv\", mode=\"w\", encoding=\"utf-8\", newline=\"\") as afp:\n        writer = asyncdictwriter(afp, [\"name\", \"age\"], restval=\"null\", quoting=csv.quote_all)\n        await writer.writeheader()\n        await writer.writerow({\"name\": \"john\", \"age\": 26})\n        await writer.writerows([\n            {\"name\": \"sasha\", \"age\": 42},\n            {\"name\": \"hana\"}\n        ])\n\nasyncio.run(main())\n```\n\n\n## reference\n\n\n### aiocsv.asyncreader\n`asyncreader(asyncfile: aiocsv.protocols.withasyncread, **csvreaderparams)`\n\nan object that iterates over lines in given asynchronous file.  \nadditional keyword arguments are understood as dialect parameters.\n\niterating over this object returns parsed csv rows (`list[str]`).\n\n*methods*:\n- `__aiter__(self) -> self`\n- `async __anext__(self) -> list[str]`\n\n*properties*:\n- `dialect`: the csv.dialect used when parsing\n\n*read-only properties*:\n- `line_num`: not implemented in aiocsv - issues a warning and always returns -1.\n\n\n### aiocsv.asyncdictreader\n```\nasyncdictreader(asyncfile: aiocsv.protocols.withasyncread,\n                fieldnames: optional[sequence[str]] = none, restkey: optional[str] = none, restval: optional[str] = none, **csvreaderparams)\n```\n\nan object that iterates over lines in given asynchronous file.  \nall arguments work exactly the same like in csv.dictreader.\n\niterating over this object returns parsed csv rows (`dict[str, str]`).\n\n*methods*:\n- `__aiter__(self) -> self`\n- `async __anext__(self) -> dict[str, str]`\n\n*properties*:\n- `fieldnames`: field names used when converting rows to dictionaries  \n    **\u26a0\ufe0f** unlike csv.dictreader, if not provided in the constructor, at least one row has to be retrieved before getting the fieldnames.\n    ```py\n    reader = csv.dictreader(some_file)\n    reader.fieldnames  # [\"cells\", \"from\", \"the\", \"header\"]\n\n    areader = aiofiles.asyncdictreader(same_file_but_async)\n    areader.fieldnames   # \u26a0\ufe0f none\n    await areader.__anext__()\n    areader.fieldnames  # [\"cells\", \"from\", \"the\", \"header\"]\n    ```\n- `restkey`: if a row has more cells then the header, all remaining cells are stored under\n  this key in the returned dictionary. defaults to `none`.\n- `restval`: if a row has less cells then the header, then missing keys will use this\n  value. defaults to `none`.\n- `reader`: underlaying `aiofiles.asyncreader` instance\n\n*read-only properties*:\n- `dialect`: link to `self.reader.dialect` - the current csv.dialect\n- `line_num`: not implemented in aiocsv - issues a warning and always returns -1\n\n\n### aiocsv.asyncwriter\n`asyncwriter(asyncfile: aiocsv.protocols.withasyncwrite, **csvwriterparams)`\n\nan object that writes csv rows to the given asynchronous file.  \nin this object \"row\" is a sequence of values.\n\nadditional keyword arguments are passed to the underlying csv.writer instance.\n\n*methods*:\n- `async writerow(self, row: iterable[any]) -> none`  \n    writes one row to the specified file.\n\n- `async writerows(self, rows: iterable[iterable[any]]) -> none`  \n    writes multiple rows to the specified file.\n    \n    all rows are temporarly stored in ram before actually being written to the file,  \n    so don't provide a generator of loads of rows.\n\n*readonly properties*:\n- `dialect`: link to underlying's csv.reader's `dialect` attribute\n\n\n### aiocsv.asyncdictwriter\n`asyncdictwriter(asyncfile: aiocsv.protocols.withasyncwrite, fieldnames: sequence[str], **csvdictwriterparams)`\n\nan object that writes csv rows to the given asynchronous file.  \nin this object \"row\" is a mapping from fieldnames to values.\n\nadditional keyword arguments are passed to the underlying csv.dictwriter instance.\n\n*methods*:\n- `async writeheader(self) -> none`  \n    writes header row to the specified file.\n\n- `async writerow(self, row: mapping[str, any]) -> none`  \n    writes one row to the specified file.\n\n- `async writerows(self, rows: iterable[mapping[str, any]]) -> none`  \n    writes multiple rows to the specified file.\n    \n    all rows are temporarly stored in ram before actually being written to the file,\n    so don't provide a generator of loads of rows.\n\n*readonly properties*:\n- `dialect`: link to underlying's csv.reader's `dialect` attribute\n\n\n### aiocsv.protocols.withasyncread\na `typing.protocol` describing an asynchronous file, which can be read.\n\n\n### aiocsv.protocols.withasyncwrite\na `typing.protocol` describing an asynchronous file, which can be written to.\n",
+  "docs_url": null,
+  "keywords": "async asynchronous aiofiles csv tsv",
+  "license": "mit",
+  "name": "aiocsv",
+  "package_url": "https://pypi.org/project/aiocsv/",
+  "project_url": "https://pypi.org/project/aiocsv/",
+  "project_urls": {
+    "Homepage": "https://github.com/MKuranowski/aiocsv"
+  },
+  "release_url": "https://pypi.org/project/aiocsv/1.2.5/",
+  "requires_dist": [
+    "typing-extensions; python_version <= \"3.7\""
+  ],
+  "requires_python": ">=3.6, <4",
+  "summary": "asynchronous csv reading/writing",
+  "version": "1.2.5",
+  "releases": [],
+  "developers": [
+    "mkuranowski@gmail.com"
+  ],
+  "kwds": "asyncwriter asyncdictwriter csvwriterparams cpython asyncfile",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_aiocsv",
+  "homepage": "https://github.com/mkuranowski/aiocsv",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_typing_extensions"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: software development :: code generators",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": ".. image:: https://cfl.dropboxstatic.com/static/images/sdk/stone_banner.png\n    :target: https://github.com/dropbox/stone\n\n.. image:: https://img.shields.io/pypi/pyversions/stone.svg\n    :target: https://pypi.python.org/pypi/stone\n\n.. image:: https://img.shields.io/pypi/v/stone.svg\n    :target: https://pypi.python.org/pypi/stone\n\n.. image:: https://codecov.io/gh/dropbox/stone/branch/main/graph/badge.svg\n    :target: https://codecov.io/gh/dropbox/stone\n\nthe official api spec language for dropbox.\n\n`documentation`_ can be found on github\n\ninstallation\n============\n\ninstall stone using ``pip``::\n\n    $ pip install --user stone\n\nthis will install a script ``stone`` to your path that can be run from the\ncommand line::\n\n    $ stone -h\n\nalternative\n-----------\n\nif you choose not to install ``stone`` using the method above, you will need\nto ensure that you have the python packages ``ply`` and ``six``, which can be\ninstalled through ``pip``::\n\n    $ pip install \"ply>=3.4\" \"six>=1.3.0\" \"typing>=3.5.2\"\n\nif the ``stone`` package is in your pythonpath, you can replace ``stone``\nwith ``python -m stone.cli`` as follows::\n\n    $ python -m stone.cli -h\n\nif you have the ``stone`` package on your machine, but did not install it or\nadd its location to your pythonpath, you can use the following::\n\n    $ pythonpath=path/to/stone python -m stone.cli -h\n\nafter installation, follow one of our `examples`_ or read the `documentation`_.\n\n\noverview\n========\n\ndefine an api once in stone. use backends, i.e. code generators, to translate\nyour specification into objects and functions in the programming languages of\nyour choice.\n\n* introduction\n    * motivation_\n    * installation_\n* `language reference <https://github.com/dropbox/stone/blob/main/docs/lang_ref.rst>`_\n* `builtin backends <https://github.com/dropbox/stone/blob/main/docs/builtin_backends.rst>`_\n* `managing specs <https://github.com/dropbox/stone/blob/main/docs/managing_specs.rst>`_\n* `evolving a spec <https://github.com/dropbox/stone/blob/main/docs/evolve_spec.rst>`_\n* `backend reference <https://github.com/dropbox/stone/blob/main/docs/backend_ref.rst>`_\n* `json serializer <https://github.com/dropbox/stone/blob/main/docs/json_serializer.rst>`_\n* `network protocol <https://github.com/dropbox/stone/blob/main/docs/network_protocol.rst>`_\n\n*warning: the documentation is undergoing a rewrite.*\n\n.. image:: docs/overview.png\n\nstone is made up of several components:\n\nlanguage\n--------\n\na language for writing api specifications, \"specs\" for short.\n\ncommand-line interface\n----------------------\n\nthe cli (``stone``) generates code based on the provided specs, backend,\nand additional arguments.\n\nbackends\n--------\n\nthere are builtin backends that come with stone: javascript, python, obj-c,\nswift, and typescript.\n\nthere are other backends we've written that aren't part of the stone package\nbecause they aren't sufficiently general, and can't realistically be re-used\nfor non-dropbox apis: go and java.\n\nstone includes a python interface for defining new backends based on its\nintermediate representation of specs. this gives you the freedom to generate\nto any target.\n\njson serialization\n------------------\n\nstone defines a json-compatible serialization scheme.\n\nmotivation\n==========\n\nstone was birthed at dropbox at a time when it was becoming clear that api\ndevelopment needed to be scaled beyond a single team. the company was\nundergoing a large expansion in the number of product groups, and it wasn't\nscalable for the api team, which traditionally dealt with core file operations,\nto learn the intricacies of each product and build corresponding apis.\n\nstone's chief goal is to decentralize api development and ownership at dropbox.\nto be successful, it needed to do several things:\n\n**decouple apis from sdks**: dropbox has first-party clients for our mobile\napps, desktop client, and website. each of these is implemented in a different\nlanguage. moreover, we wanted to continue providing sdks to third-parties, over\nhalf of whom use our sdks. it's untenable to ask product groups that build apis\nto also implement these endpoints in a half-dozen different language-specific\nsdks. without decoupling, as was the case in our v1 api, the sdks will\ninevitably fall behind. our solution is to have our sdks automatically\ngenerated.\n\n**improve visibility into our apis**: these days, apis aren't just in the\ndomain of engineering. product managers, product specialists, partnerships,\nsales, and services groups all need to have clear and accurate specifications\nof our apis. after all, apis define dropbox's data models and functionality.\nbefore stone, api design documents obseleted by changes during implementation\nwere the source of truth.\n\n**consistency and predictability**: consistency ranging from documentation\ntense to api patterns are important for making an api predictable and therefore\neasier to use. we needed an easy way to make and enforce patterns.\n\n**json**: to make consumption easier for third parties, we wanted our data\ntypes to map to json. for cases where serialization efficiency\n(space and time) are important, you can try using msgpack (alpha support\navailable in the python generator). it's possible also to define your own\nserialization scheme, but at that point, you may consider using something like\n`protobuf <https://github.com/google/protobuf>`_.\n\nstone is in active use for the `dropbox v2 api\n<http://www.dropbox.com/developers>`_.\n\nassumptions\n-----------\n\nstone makes no assumptions about the protocol layer being used to make api\nrequests and return responses; its first use case is the dropbox v2 api which\noperates over http. stone does not come with nor enforce any particular rpc\nframework.\n\nstone makes some assumptions about the data types supported in target\nprogramming languages. it's assumed that there is a capacity for representing\ndictionaries (unordered string keys -> value), lists, numeric types, and\nstrings.\n\nstone assumes that a route (or api endpoint) can have its argument and\nresult types defined without relation to each other. in other words, the\ntype of response does not change based on the input to the endpoint. an\nexception to this rule is afforded for error responses.\n\nexamples\n========\n\nwe provide `examples`_ to help get you started with a lot of the basic functionality of stone.\n\ngetting help\n============\n\nif you find a bug, please see `contributing.md`_ for information on how to report it.\n\nif you need help that is not specific to stone, please reach out to `dropbox support`_.\n\nlicense\n=======\n\nstone is distributed under the mit license, please see `license`_ for more information.\n\n.. _logo: {logo_link}\n.. _repo: https://github.com/dropbox/stone\n.. _`documentation`: https://github.com/dropbox/stone/tree/main/docs\n.. _`examples`: https://github.com/dropbox/stone/tree/main/example/backend\n.. _license: https://github.com/dropbox/stone/blob/main/license\n.. _contributing.md: https://github.com/dropbox/stone/blob/main/contributing.md\n.. _`dropbox support`: https://www.dropbox.com/developers/contact\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "stone",
+  "package_url": "https://pypi.org/project/stone/",
+  "project_url": "https://pypi.org/project/stone/",
+  "project_urls": {
+    "Homepage": "https://github.com/dropbox/stone"
+  },
+  "release_url": "https://pypi.org/project/stone/3.3.1/",
+  "requires_dist": [
+    "ply (>=3.4)",
+    "six (>=1.12.0)"
+  ],
+  "requires_python": "",
+  "summary": "stone is an interface description language (idl) for apis.",
+  "version": "3.3.1",
+  "releases": [],
+  "developers": [
+    "api-platform@dropbox.com",
+    "dropbox",
+    "kelkabany@dropbox.com",
+    "ken_elkabany"
+  ],
+  "kwds": "dropboxstatic stone_banner stone dropbox png",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_stone",
+  "homepage": "https://github.com/dropbox/stone",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_ply",
+    "pypi_six"
+  ]
+}

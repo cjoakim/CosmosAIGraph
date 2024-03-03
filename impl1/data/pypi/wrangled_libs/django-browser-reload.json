@@ -1,0 +1,56 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "framework :: django :: 4.1",
+    "framework :: django :: 4.2",
+    "framework :: django :: 5.0",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "typing :: typed"
+  ],
+  "description": "=====================\ndjango-browser-reload\n=====================\n\n.. image:: https://img.shields.io/github/actions/workflow/status/adamchainz/django-browser-reload/main.yml?branch=main&style=for-the-badge\n   :target: https://github.com/adamchainz/django-browser-reload/actions?workflow=ci\n\n.. image:: https://img.shields.io/badge/coverage-100%25-success?style=for-the-badge\n  :target: https://github.com/adamchainz/django-browser-reload/actions?workflow=ci\n\n.. image:: https://img.shields.io/pypi/v/django-browser-reload.svg?style=for-the-badge\n   :target: https://pypi.org/project/django-browser-reload/\n\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge\n   :target: https://github.com/psf/black\n\n.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logocolor=white&style=for-the-badge\n   :target: https://github.com/pre-commit/pre-commit\n   :alt: pre-commit\n\nautomatically reload your browser in development.\n\n----\n\n**work smarter and faster** with my book `boost your django dx <https://adamchainz.gumroad.com/l/byddx>`__ which covers django-browser-reload and many other tools.\ni wrote django-browser-reload whilst working on the book!\n\n----\n\nrequirements\n------------\n\npython 3.8 to 3.12 supported.\n\ndjango 3.2 to 5.0 supported.\n\nwsgi supported on all django versions. asgi supported on django 4.2+.\n\nyour browser needs to support:\n\n* |eventsource|__ - universally available.\n\n  .. |eventsource| replace:: ``eventsource``\n  __ https://developer.mozilla.org/en-us/docs/web/api/eventsource#browser_compatibility\n\n* |sharedworker|__ - available on chrome, edge, firefox, and opera for a long time.\n  available on safari since version 16 (2022-09-12).\n\n  .. |sharedworker| replace:: ``sharedworker``\n  __ https://developer.mozilla.org/en-us/docs/web/api/sharedworker#browser_compatibility\n\ninstallation\n------------\n\n1. install with **pip**:\n\n   .. code-block:: sh\n\n       python -m pip install django-browser-reload\n\n2. ensure you have ``\"django.contrib.staticfiles\"`` in your ``installed_apps``.\n\n3. add django-browser-reload to your ``installed_apps``:\n\n   .. code-block:: python\n\n       installed_apps = [\n           ...,\n           \"django_browser_reload\",\n           ...,\n       ]\n\n4. include the app urls in your root urlconf:\n\n   .. code-block:: python\n\n       from django.urls import include, path\n\n       urlpatterns = [\n           ...,\n           path(\"__reload__/\", include(\"django_browser_reload.urls\")),\n       ]\n\n   you can use another prefix if required.\n\n5. add the middleware:\n\n   .. code-block:: python\n\n      middleware = [\n          # ...\n          \"django_browser_reload.middleware.browserreloadmiddleware\",\n          # ...\n      ]\n\n   the middleware should be listed after any others that encode the response, such as django\u2019s ``gzipmiddleware``.\n\n   the middleware automatically inserts the required script tag on html responses before ``</body>`` when ``debug`` is ``true``.\n   it does so to every html response, meaning it will be included on django\u2019s debug pages, admin pages, etc.\n   if you want more control, you can instead insert the script tag in your templates\u2014see below.\n\nall done! \ud83d\udcef\n\nfor faster and more efficient reloading, also set up `django\u2019s built-in watchman support <https://adamj.eu/tech/2021/01/20/efficient-reloading-in-djangos-runserver-with-watchman/>`__.\n\nwhat it does\n------------\n\nwhen ``debug`` is ``true``, the template tag includes a small script.\nthis script connects back to the development server and will automatically reload when static assets or templates are modified, or after ``runserver`` restarts.\nthe reload only happens in the most recently opened tab.\n\nexample project\n---------------\n\nsee the `example project <https://github.com/adamchainz/django-browser-reload/tree/main/example>`__ in the ``example/`` directory of the github repository.\nstart it up and modify its files to see the reloading in action.\n\ntemplate tag\n------------\n\nif the middleware doesn\u2019t work for you, you can also use a template tag to insert the script on relevant pages.\nthe template tag has both django templates and jinja versions, and only outputs the script tag when ``debug`` is ``true``.\n\nfor **django templates**, load the tag and use it in your base template.\nthe tag can go anywhere, but it\u2019s best just before ``</body>``:\n\n.. code-block:: html\n\n   {% load django_browser_reload %}\n\n   ...\n\n       {% django_browser_reload_script %}\n     </body>\n   </html>\n\nto add django-browser-reload to django\u2019s admin, do so in a template called ``admin/base_site.html``:\n\n.. code-block:: html\n\n    {% extends \"admin/base_site.html\" %}\n\n    {% load django_browser_reload %}\n\n    {% block extrahead %}\n        {{ block.super }}\n        {% django_browser_reload_script %}\n    {% endblock %}\n\nthis follows django\u2019s documentation on `extending an overridden template <https://docs.djangoproject.com/en/4.0/howto/overriding-templates/#extending-an-overridden-template>`__.\n\nfor **jinja templates**, you need to perform two steps.\nfirst, load the tag function into the globals of your `custom environment <https://docs.djangoproject.com/en/stable/topics/templates/#django.template.backends.jinja2.jinja2>`__:\n\n.. code-block:: python\n\n    # myproject/jinja2.py\n    from jinja2 import environment\n    from django_browser_reload.jinja import django_browser_reload_script\n\n\n    def environment(**options):\n        env = environment(**options)\n        env.globals.update(\n            {\n                # ...\n                \"django_browser_reload_script\": django_browser_reload_script,\n            }\n        )\n        return env\n\nsecond, render the tag in your base template.\nit can go anywhere, but it\u2019s best just before ``</body>``:\n\n.. code-block:: html\n\n    ...\n        {{ django_browser_reload_script() }}\n      </body>\n    </html>\n\nta-da!\n\nhow it works\n------------\n\nhere\u2019s a diagram:\n\n.. code-block:: text\n\n                                         browser\n\n                                 tab 1    tab 2     tab n\n                               listener  listener  listener\n                                    \\       |       /\n      django                         \\      |      /\n                                      \\     |     /\n    events view --------------------> shared worker\n\nthe template tag includes a listener script on each page.\nthis listener script starts or connects to a |sharedworker2|__, running a worker script.\nthe worker script then connects to the events view in django, using an |eventsource2|__ to receive server-sent events.\n\n.. |sharedworker2| replace:: ``sharedworker``\n__ https://developer.mozilla.org/en-us/docs/web/api/sharedworker\n\n.. |eventsource2| replace:: ``eventsource``\n__ https://developer.mozilla.org/en-us/docs/web/api/eventsource\n\nthis event source uses |streaminghttpresponse|__ to send events to the worker.\nthe view continues streaming events indefinitely, until disconnected.\n(this requires a thread and will not work if you use ``runserver``\\\u2019s |--nothreading option|__.)\n\n.. |--nothreading option| replace:: ``--nothreading`` option\n__ https://docs.djangoproject.com/en/stable/ref/django-admin/#cmdoption-runserver-nothreading\n\non a relevant event, the worker will reload the most recently connected tab.\n(it avoids reloading *all* tabs since that could be expensive.)\n\n.. |streaminghttpresponse| replace:: ``streaminghttpresponse``\n__ https://docs.djangoproject.com/en/stable/ref/request-response/#django.http.streaminghttpresponse\n\nto reload when a template changes, django-browser-reload piggybacks on django\u2019s autoreloading infrastructure.\nan internal django signal indicates when a template file has changed.\nthe events view receives this signal and sends an event to the worker, which triggers a reload.\nthere is no smart filtering - if *any* template file changes, the view is reloaded.\n\nto reload when the server restarts, django-browser-reload uses a version id.\nthis id is randomly generated when the view module is imported, so it will be different every time the server starts.\nwhen the server restarts, the worker\u2019s ``eventsource`` reconnects with minimal delay.\non connection, the events view sends the version id, which the worker sees as different, so it triggers a reload.\n\nthe events view also sends the version id every second to keep the connection alive.\n",
+  "docs_url": null,
+  "keywords": "django",
+  "license": "mit",
+  "name": "django-browser-reload",
+  "package_url": "https://pypi.org/project/django-browser-reload/",
+  "project_url": "https://pypi.org/project/django-browser-reload/",
+  "project_urls": {
+    "Changelog": "https://github.com/adamchainz/django-browser-reload/blob/main/CHANGELOG.rst",
+    "Funding": "https://adamj.eu/books/",
+    "Repository": "https://github.com/adamchainz/django-browser-reload"
+  },
+  "release_url": "https://pypi.org/project/django-browser-reload/1.12.1/",
+  "requires_dist": [
+    "asgiref >=3.6",
+    "Django >=3.2"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "automatically reload your browser in development.",
+  "version": "1.12.1",
+  "releases": [],
+  "developers": [
+    "me@adamj.eu"
+  ],
+  "kwds": "django_browser_reload django_browser_reload_script django __reload__ reload",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_django_browser_reload",
+  "homepage": "",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_asgiref",
+    "pypi_django"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "topic :: scientific/engineering",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: scientific/engineering :: mathematics",
+    "topic :: software development",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "\n# [![open in colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1a0psd-1twhmmejeeoyzm1a-hcw3yf1xr?usp=sharing) [![website](https://img.shields.io/badge/www-website-green)](https://agarwl.github.io/rliable) [![blog](https://img.shields.io/badge/b-blog-blue)](https://ai.googleblog.com/2021/11/rliable-towards-reliable-evaluation.html)\n\n`rliable` is an open-source python library for reliable evaluation, even with a *handful\nof runs*, on reinforcement learning and machine learnings benchmarks. \n| **desideratum** | **current evaluation approach** |  **our recommendation**    |\n| --------------------------------- | ----------- | --------- |\n| uncertainty in aggregate performance | **point estimates**: <ul> <li> ignore statistical uncertainty </li> <li> hinder *results reproducibility* </li></ul> | interval estimates using **stratified bootstrap confidence intervals** (cis) |\n|performance variability across tasks and runs| **tables with task mean scores**: <ul><li> overwhelming beyond a few tasks </li> <li> standard deviations frequently omitted </li> <li> incomplete picture for multimodal and heavy-tailed distributions </li> </ul> | **score distributions** (*performance profiles*): <ul> <li> show tail distribution of scores on combined runs across tasks </li> <li> allow qualitative comparisons </li> <li> easily read any score percentile </li> </ul>|\n|aggregate metrics for summarizing benchmark performance | **mean**:  <ul><li> often dominated by performance on outlier tasks </li></ul> &nbsp; **median**: <ul> <li> statistically inefficient (requires a large number of runs to claim improvements) </li>  <li> poor indicator of overall performance: 0 scores on nearly half the tasks doesn't change it </li> </ul>| **interquartile mean (iqm)** across all runs: <ul> <li> performance on middle 50% of combined runs </li> <li> robust to outlier scores but more statistically efficient than median </li> </ul> to show other aspects of performance gains, report *probability of improvement* and *optimality gap* |\n\n`rliable` provides support for:\n\n * stratified bootstrap confidence intervals (cis)\n * performance profiles (with plotting functions)\n * aggregate metrics\n   * interquartile mean (iqm) across all runs\n   * optimality gap\n   * probability of improvement\n\n<div align=\"left\">\n  <img src=\"https://raw.githubusercontent.com/google-research/rliable/master/images/aggregate_metric.png\">\n</div>\n\n## interactive colab\nwe provide a colab at [bit.ly/statistical_precipice_colab](https://colab.research.google.com/drive/1a0psd-1twhmmejeeoyzm1a-hcw3yf1xr?usp=sharing),\nwhich shows how to use the library with examples of published algorithms on\nwidely used benchmarks including atari 100k, ale, dm control and procgen.\n\n\n### paper\nfor more details, refer to the accompanying **neurips 2021** paper (**outstanding paper** award):\n[deep reinforcement learning at the edge of the statistical precipice](https://arxiv.org/pdf/2108.13264.pdf).\n\n\n### installation\n\nto install `rliable`, run:\n```python\npip install -u rliable\n```\n\nto install latest version of `rliable` as a package, run:\n\n```python\npip install git+https://github.com/google-research/rliable\n```\n\nto import `rliable`, we suggest:\n\n```python\nfrom rliable import library as rly\nfrom rliable import metrics\nfrom rliable import plot_utils\n```\n\n### aggregate metrics with 95% stratified bootstrap cis\n\n\n##### iqm, optimality gap, median, mean\n```python\nalgorithms = ['dqn (nature)', 'dqn (adam)', 'c51', 'rem', 'rainbow',\n              'iqn', 'm-iqn', 'dreamerv2']\n# load ale scores as a dictionary mapping algorithms to their human normalized\n# score matrices, each of which is of size `(num_runs x num_games)`.\natari_200m_normalized_score_dict = ...\naggregate_func = lambda x: np.array([\n  metrics.aggregate_median(x),\n  metrics.aggregate_iqm(x),\n  metrics.aggregate_mean(x),\n  metrics.aggregate_optimality_gap(x)])\naggregate_scores, aggregate_score_cis = rly.get_interval_estimates(\n  atari_200m_normalized_score_dict, aggregate_func, reps=50000)\nfig, axes = plot_utils.plot_interval_estimates(\n  aggregate_scores, aggregate_score_cis,\n  metric_names=['median', 'iqm', 'mean', 'optimality gap'],\n  algorithms=algorithms, xlabel='human normalized score')\n```\n\n<div align=\"left\">\n  <img src=\"https://raw.githubusercontent.com/google-research/rliable/master/images/ale_interval_estimates.png\">\n</div>\n\n##### probability of improvement\n```python\n# load procgen scores as a dictionary containing pairs of normalized score\n# matrices for pairs of algorithms we want to compare\nprocgen_algorithm_pairs = {.. , 'x,y': (score_x, score_y), ..}\naverage_probabilities, average_prob_cis = rly.get_interval_estimates(\n  procgen_algorithm_pairs, metrics.probability_of_improvement, reps=2000)\nplot_utils.plot_probability_of_improvement(average_probabilities, average_prob_cis)\n```\n<div align=\"center\">\n  <img src=\"https://raw.githubusercontent.com/google-research/rliable/master/images/procgen_probability_of_improvement.png\">\n</div>\n\n#### sample efficiency curve\n```python\nalgorithms = ['dqn (nature)', 'dqn (adam)', 'c51', 'rem', 'rainbow',\n              'iqn', 'm-iqn', 'dreamerv2']\n# load ale scores as a dictionary mapping algorithms to their human normalized\n# score matrices across all 200 million frames, each of which is of size\n# `(num_runs x num_games x 200)` where scores are recorded every million frame.\nale_all_frames_scores_dict = ...\nframes = np.array([1, 10, 25, 50, 75, 100, 125, 150, 175, 200]) - 1\nale_frames_scores_dict = {algorithm: score[:, :, frames] for algorithm, score\n                          in ale_all_frames_scores_dict.items()}\niqm = lambda scores: np.array([metrics.aggregate_iqm(scores[..., frame])\n                               for frame in range(scores.shape[-1])])\niqm_scores, iqm_cis = rly.get_interval_estimates(\n  ale_frames_scores_dict, iqm, reps=50000)\nplot_utils.plot_sample_efficiency_curve(\n    frames+1, iqm_scores, iqm_cis, algorithms=algorithms,\n    xlabel=r'number of frames (in millions)',\n    ylabel='iqm human normalized score')\n```\n<div align=\"center\">\n  <img src=\"https://raw.githubusercontent.com/google-research/rliable/master/images/ale_legend.png\">\n  <img src=\"https://raw.githubusercontent.com/google-research/rliable/master/images/atari_sample_efficiency_iqm.png\">\n</div>\n\n### performance profiles\n\n```python\n# load ale scores as a dictionary mapping algorithms to their human normalized\n# score matrices, each of which is of size `(num_runs x num_games)`.\natari_200m_normalized_score_dict = ...\n# human normalized score thresholds\natari_200m_thresholds = np.linspace(0.0, 8.0, 81)\nscore_distributions, score_distributions_cis = rly.create_performance_profile(\n    atari_200m_normalized_score_dict, atari_200m_thresholds)\n# plot score distributions\nfig, ax = plt.subplots(ncols=1, figsize=(7, 5))\nplot_utils.plot_performance_profiles(\n  score_distributions, atari_200m_thresholds,\n  performance_profile_cis=score_distributions_cis,\n  colors=dict(zip(algorithms, sns.color_palette('colorblind'))),\n  xlabel=r'human normalized score $(\\tau)$',\n  ax=ax)\n```\n<div align=\"center\">\n  <img src=\"https://raw.githubusercontent.com/google-research/rliable/master/images/ale_legend.png\">\n  <img src=\"https://raw.githubusercontent.com/google-research/rliable/master/images/ale_score_distributions_new.png\">\n</div>\n\nthe above profile can also be plotted with non-linear scaling as follows:\n\n```python\nplot_utils.plot_performance_profiles(\n  perf_prof_atari_200m, atari_200m_tau,\n  performance_profile_cis=perf_prof_atari_200m_cis,\n  use_non_linear_scaling=true,\n  xticks = [0.0, 0.5, 1.0, 2.0, 4.0, 8.0]\n  colors=dict(zip(algorithms, sns.color_palette('colorblind'))),\n  xlabel=r'human normalized score $(\\tau)$',\n  ax=ax)\n```\n\n\n### dependencies\nthe code was tested under `python>=3.7` and uses these packages:\n\n- arch == 5.3.0\n- scipy >= 1.7.0\n- numpy >= 0.9.0\n- absl-py >= 1.16.4\n- seaborn >= 0.11.2\n\nciting\n------\nif you find this open source release useful, please reference in your paper:\n\n    @article{agarwal2021deep,\n      title={deep reinforcement learning at the edge of the statistical precipice},\n      author={agarwal, rishabh and schwarzer, max and castro, pablo samuel\n              and courville, aaron and bellemare, marc g},\n      journal={advances in neural information processing systems},\n      year={2021}\n    }\n\ndisclaimer: this is not an official google product.\n",
+  "docs_url": null,
+  "keywords": "benchmarking,evaluation,reproducibility,research,reinforcement,machine,learning,research",
+  "license": "apache 2.0",
+  "name": "rliable",
+  "package_url": "https://pypi.org/project/rliable/",
+  "project_url": "https://pypi.org/project/rliable/",
+  "project_urls": {
+    "Bug Reports": "https://github.com/google-research/rliable/issues",
+    "Documentation": "https://github.com/google-research/rliable",
+    "Homepage": "https://github.com/google-research/rliable",
+    "Source": "https://github.com/google-research/rliable"
+  },
+  "release_url": "https://pypi.org/project/rliable/1.0.8/",
+  "requires_dist": [
+    "arch (==5.3.0)",
+    "scipy (>=1.7.0)",
+    "absl-py (>=0.9.0)",
+    "numpy (>=1.16.4)",
+    "seaborn (>=0.11.2)"
+  ],
+  "requires_python": "",
+  "summary": "rliable: reliable evaluation on reinforcement learning and machine learning benchmarks.",
+  "version": "1.0.8",
+  "releases": [],
+  "developers": [
+    "rishabh_agarwal"
+  ],
+  "kwds": "benchmarking benchmarks benchmark evaluation rliable",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_rliable",
+  "homepage": "https://github.com/google-research/rliable",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_absl_py",
+    "pypi_arch",
+    "pypi_numpy",
+    "pypi_scipy",
+    "pypi_seaborn"
+  ]
+}

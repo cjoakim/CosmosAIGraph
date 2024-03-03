@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.2",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: testing"
+  ],
+  "description": "pytest-catchlog\n===============\n\n.. image:: https://badges.gitter.im/join%20chat.svg\n   :alt: join the chat at https://gitter.im/eisensheng/pytest-catchlog\n   :target: https://gitter.im/eisensheng/pytest-catchlog?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge\n\npy.test plugin to catch log messages.  this is a fork of `pytest-capturelog`_.\n\n.. _`pytest-capturelog`: https://pypi.python.org/pypi/pytest-capturelog/\n\n\ninstallation\n------------\n\nthe `pytest-catchlog`_ package may be installed with pip or easy_install::\n\n    pip install pytest-catchlog\n    easy_install pytest-catchlog\n\n.. _`pytest-catchlog`: http://pypi.python.org/pypi/pytest-catchlog/\n\n\nusage\n-----\n\nif the plugin is installed log messages are captured by default and for\neach failed test will be shown in the same manner as captured stdout and\nstderr.\n\nrunning without options::\n\n    py.test test_pytest_catchlog.py\n\nshows failed tests like so::\n\n    ----------------------- captured stdlog call ----------------------\n    test_pytest_catchlog.py    26 info     text going to logger\n    ----------------------- captured stdout call ----------------------\n    text going to stdout\n    ----------------------- captured stderr call ----------------------\n    text going to stderr\n    ==================== 2 failed in 0.02 seconds =====================\n\nby default each captured log message shows the module, line number,\nlog level and message.  showing the exact module and line number is\nuseful for testing and debugging.  if desired the log format and date\nformat can be specified to anything that the logging module supports.\n\nrunning pytest specifying formatting options::\n\n    py.test --log-format=\"%(asctime)s %(levelname)s %(message)s\" \\\n            --log-date-format=\"%y-%m-%d %h:%m:%s\" test_pytest_catchlog.py\n\nshows failed tests like so::\n\n    ----------------------- captured stdlog call ----------------------\n    2010-04-10 14:48:44 info text going to logger\n    ----------------------- captured stdout call ----------------------\n    text going to stdout\n    ----------------------- captured stderr call ----------------------\n    text going to stderr\n    ==================== 2 failed in 0.02 seconds =====================\n\nthese options can also be customized through a configuration file::\n\n    [pytest]\n    log_format = %(asctime)s %(levelname)s %(message)s\n    log_date_format = %y-%m-%d %h:%m:%s\n\nalthough the same effect could be achieved through the ``addopts`` setting,\nusing dedicated options should be preferred since the latter doesn't\nforce other developers to have ``pytest-catchlog`` installed (while at\nthe same time, ``addopts`` approach would fail with 'unrecognized arguments'\nerror). command line arguments take precedence.\n\nfurther it is possible to disable reporting logs on failed tests\ncompletely with::\n\n    py.test --no-print-logs test_pytest_catchlog.py\n\nshows failed tests in the normal manner as no logs were captured::\n\n    ----------------------- captured stdout call ----------------------\n    text going to stdout\n    ----------------------- captured stderr call ----------------------\n    text going to stderr\n    ==================== 2 failed in 0.02 seconds =====================\n\ninside tests it is possible to change the log level for the captured\nlog messages.  this is supported by the ``caplog`` funcarg::\n\n    def test_foo(caplog):\n        caplog.set_level(logging.info)\n        pass\n\nby default the level is set on the handler used to catch the log\nmessages, however as a convenience it is also possible to set the log\nlevel of any logger::\n\n    def test_foo(caplog):\n        caplog.set_level(logging.critical, logger='root.baz')\n        pass\n\nit is also possible to use a context manager to temporarily change the\nlog level::\n\n    def test_bar(caplog):\n        with caplog.at_level(logging.info):\n            pass\n\nagain, by default the level of the handler is affected but the level\nof any logger can be changed instead with::\n\n    def test_bar(caplog):\n        with caplog.at_level(logging.critical, logger='root.baz'):\n            pass\n\nlastly all the logs sent to the logger during the test run are made\navailable on the funcarg in the form of both the logrecord instances\nand the final log text.  this is useful for when you want to assert on\nthe contents of a message::\n\n    def test_baz(caplog):\n        func_under_test()\n        for record in caplog.records:\n            assert record.levelname != 'critical'\n        assert 'wally' not in caplog.text\n\nfor all the available attributes of the log records see the\n``logging.logrecord`` class.\n\nyou can also resort to ``record_tuples`` if all you want to do is to ensure,\nthat certain messages have been logged under a given logger name with a\ngiven severity and message::\n\n    def test_foo(caplog):\n        logging.getlogger().info('boo %s', 'arg')\n\n        assert caplog.record_tuples == [\n            ('root', logging.info, 'boo arg'),\n        ]\n\n\nchangelog\n=========\n\nlist of notable changes between pytest-catchlog releases.\n\n.. %unreleased_section%\n\n`1.2.2`_\n-------------\n\nreleased on 2016-01-24 utc.\n\n- [bugfix] `#30`_ `#31`_ - fix ``unicode`` vs ``str`` compatibility issues between python2 and python3.\n  (thanks goes to `@sirex`_ for reporting the issue and providing a fix!)\n\n.. _#30: https://github.com/eisensheng/pytest-catchlog/issues/30\n.. _#31: https://github.com/eisensheng/pytest-catchlog/issues/31\n.. _@sirex: https://github.com/sirex\n\n\n`1.2.1`_\n-------------\n\nreleased on 2015-12-07.\n\n- [bugfix] #18 - allow ``caplog.records()`` to be modified.  thanks to eldar abusalimov for the pr and marco nenciarini for reporting the issue.\n- [bugfix] #15 #17 - restore python 2.6 compatibility. (thanks to marco nenciarini!)\n\n.. attention::\n    deprecation warning: the following objects (i.e. functions, properties)\n    are slated for removal in the next major release.\n\n    - ``caplog.at_level`` and ``caplog.set_level`` should be used instead of\n      ``caplog.atlevel`` and ``caplog.setlevel``.\n\n      the methods ``caplog.atlevel`` and ``caplog.setlevel`` are still\n      available but deprecated and not supported since they don't follow\n      the pep8 convention for method names.\n\n    - ``caplog.text``, ``caplog.records`` and\n      ``caplog.record_tuples`` were turned into properties.\n      they still can be used as regular methods for backward compatibility,\n      but that syntax is considered deprecated and scheduled for removal in\n      the next major release.\n\n\nversion 1.2\n-----------\n\nreleased on 2015-11-08.\n\n- [feature] #6 - configure logging message and date format through ini file.\n- [feature] #7 - also catch logs from setup and teardown stages.\n- [feature] #7 - replace deprecated ``__multicall__`` use to support future py.test releases.\n- [feature] #11 - reintroduce ``setlevel`` and ``atlevel`` to retain backward compatibility with pytest-capturelog.  also the members ``text``, ``records`` and ``record_tuples`` of the ``caplog`` fixture can be used as properties now.\n\nspecial thanks for this release goes to eldar abusalimov.  he provided all of the changed features.\n\n\nversion 1.1\n-----------\n\nreleased on 2015-06-07.\n\n- #2 - explicitly state python3 support and add configuration for running\n  tests with tox on multiple python versions. (thanks to jeremy bowman!)\n- add an option to silence logs completely on the terminal.\n\n\nversion 1.0\n-----------\n\nreleased on 2014-12-08.\n\n- add ``record_tuples`` for comparing recorded log entries against expected\n  log entries with their logger name, severity and formatted message.",
+  "docs_url": null,
+  "keywords": "py.test pytest logging",
+  "license": "mit license",
+  "name": "pytest-catchlog",
+  "package_url": "https://pypi.org/project/pytest-catchlog/",
+  "project_url": "https://pypi.org/project/pytest-catchlog/",
+  "project_urls": {
+    "Homepage": "https://github.com/eisensheng/pytest-catchlog"
+  },
+  "release_url": "https://pypi.org/project/pytest-catchlog/1.2.2/",
+  "requires_dist": [
+    "py (>=1.1.1)",
+    "pytest (>=2.6)"
+  ],
+  "requires_python": "",
+  "summary": "py.test plugin to catch log messages. this is a fork of pytest-capturelog.",
+  "version": "1.2.2",
+  "releases": [],
+  "developers": [
+    "arthur_skowronek",
+    "eisensheng@mailbox.org"
+  ],
+  "kwds": "test_pytest_catchlog pytest capturelog catchlog logging",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_pytest_catchlog",
+  "homepage": "https://github.com/eisensheng/pytest-catchlog",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_py",
+    "pypi_pytest"
+  ]
+}

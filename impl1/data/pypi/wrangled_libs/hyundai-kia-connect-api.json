@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 2 - pre-alpha",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "introduction\n============\n\n\nthis is a kia uvo, hyundai bluelink, genesis connect(canada only) written in python.  it is primary consumed by home assistant.  if you are looking for a home assistant kia / hyundai implementation please look here: https://github.com/fuatakgun/kia_uvo.  much of this base code came from reading bluelinky and contributions to the kia_uvo home assistant project.\n\n\nusage\n=====\n\nthis package is designed to simplify the complexity of using multiple regions.  it attempts to standardize the usage regardless of what brand or region the car is in.  that isn't always possible though, in particular some features differ from one to the next.\n\npython 3.9 or newer is required to use this package. vehicle manager is the key class that is called to manage the vehicle lists.  one vehicle manager should be used per login. key data points required to instantiate vehicle manager are::\n\n    region: int\n    brand: int,\n    username: str\n    password: str\n    pin: str (required for ca, and potentially usa, otherwise pass a blank string)\n\nkey values for the int exist in the constant(https://github.com/fuatakgun/hyundai_kia_connect_api/blob/master/hyundai_kia_connect_api/const.py) file as::\n\n    regions = {1: region_europe, 2: region_canada, 3: region_usa, 4: region_china, 5: region_australia}\n    brands = {1: brand_kia, 2: brand_hyundai, 3: brand_genesis}\n\nonce this is done you can now make the following calls against the vehicle manager::\n\n #checks the token is still valid and updates it if not.  should be called before anything else if the code has been running for any length of time.\n check_and_refresh_token(self)\n\n #ideal refresh command. checks if the car has been updated since the time in seconds provided.  if so does a cached update. if not force calls the car.\n check_and_force_update_vehicles(self, force_refresh_interval) # interval in seconds - consider api rate limits https://github.com/hacksore/bluelinky/wiki/api-rate-limits\n\n #used to return a specific vehicle object:\n get_vehicle(self, vehicle_id)\n\n #updates all cars with what is cached in the cloud:\n update_all_vehicles_with_cached_state(self)\n\n #updates a specific car with cached state:\n update_vehicle_with_cached_state(self, vehicle_id)\n\n #force refreshes all cars:\n force_refresh_all_vehicles_states(self)\n\n #force refreshes a single car:\n force_refresh_vehicles_states(self, vehicle_id)\n\n\nan example call would be::\n\n    from hyundai_kia_connect_api import *\n    vm = vehiclemanager(region=2, brand=1, username=\"username@gmail.com\", password=\"password\", pin=\"1234\")\n    vm.check_and_refresh_token()\n    vm.update_all_vehicles_with_cached_state()\n    print(vm.vehicles)\n\nif geolocation is required you can also allow this by running::\n\n    vm = vehiclemanager(region=2, brand=1, username=\"username@gmail.com\", password=\"password\", pin=\"1234\", geocode_api_enable=true, geocode_api_use_email=true)\n\nthis will populate the address of the vehicle in the vehicle instance.\n\nthe bluelink app is reset to english for users who have set another language in the bluelink app in europe when using hyundai_kia_connect_api.\nto avoid this, you can pass the optional parameter language (default is \"en\") to the constructor of vehiclemanager, e.g. for dutch::\n\n    vm = vehiclemanager(region=2, brand=1, username=\"username@gmail.com\", password=\"password\", pin=\"1234\", language=\"nl\")\n\nnote: this is only implemented for europe currently.\n\nfor a list of language codes, see here: https://www.science.co.il/language/codes.php. currently in europe the bluelink app shows the following languages::\n\n- \"en\" english\n- \"de\" german\n- \"fr\" french\n- \"it\" italian\n- \"es\" spanish\n- \"sv\" swedish\n- \"nl\" dutch\n- \"no\" norwegian\n- \"cs\" czech\n- \"sk\" slovak\n- \"hu\" hungarian\n- \"da\" danish\n- \"pl\" polish\n- \"fi\" finnish\n- \"pt\" portuguese\n\nin europe also trip info can be retrieved. for a month you can ask the days with trips. and you can ask for a specific day for all the trips of that specific day.::\n- first call vm.update_month_trip_info(vehicle.id, yyymm) before getting vehicle.month_trip_info for that month\n- first call vm.update_day_trip_info(vehicle.id, day.yyyymmdd) before getting vehicle.day_trip_info for that day\n\nexample of getting trip info of the current month and day (vm is vehiclemanager instance)::\n\n    now = datetime.now()\n    yyymm = now.strftime(\"%y%m\")\n    yyyymmdd = now.strftime(\"%y%m%d\")\n    vm.update_month_trip_info(vehicle.id, yyymm)\n    if vehicle.month_trip_info is not none:\n        for day in vehicle.month_trip_info.day_list:  # ordered on day\n            if yyyymmdd == day.yyyymmdd:  # in example only interested in current day\n                vm.update_day_trip_info(vehicle.id, day.yyyymmdd)\n                if vehicle.day_trip_info is not none:\n                    for trip in reversed(vehicle.day_trip_info.trip_list):  # show oldest first\n                        print(f\"{day.yyyymmdd},{trip.hhmmss},{trip.drive_time},{trip.idle_time},{trip.distance},{trip.avg_speed},{trip.max_speed}\")\n",
+  "docs_url": null,
+  "keywords": "hyundai_kia_connect_api",
+  "license": "mit license",
+  "name": "hyundai-kia-connect-api",
+  "package_url": "https://pypi.org/project/hyundai-kia-connect-api/",
+  "project_url": "https://pypi.org/project/hyundai-kia-connect-api/",
+  "project_urls": {
+    "Homepage": "https://github.com/fuatakgun/hyundai_kia_connect_api"
+  },
+  "release_url": "https://pypi.org/project/hyundai-kia-connect-api/3.11.1/",
+  "requires_dist": [
+    "beautifulsoup4 >=4.10.0",
+    "curlify >=2.2.1",
+    "python-dateutil",
+    "pytz >=2021.3"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "python boilerplate contains all the boilerplate you need to create a python package.",
+  "version": "3.11.1",
+  "releases": [],
+  "developers": [
+    "fuat_akgun",
+    "fuatakgun@gmail.com"
+  ],
+  "kwds": "hyundai_kia_connect_api kia_uvo vehiclemanager kia brand_kia",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_hyundai_kia_connect_api",
+  "homepage": "https://github.com/fuatakgun/hyundai_kia_connect_api",
+  "release_count": 282,
+  "dependency_ids": [
+    "pypi_beautifulsoup4",
+    "pypi_curlify",
+    "pypi_python_dateutil",
+    "pypi_pytz"
+  ]
+}

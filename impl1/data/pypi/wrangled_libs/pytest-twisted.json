@@ -1,0 +1,61 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: testing"
+  ],
+  "description": ".. -*- mode: rst; coding: utf-8 -*-\n\n==============================================================================\npytest-twisted - test twisted code with pytest\n==============================================================================\n\n|pypi| |pythons| |travis| |appveyor| |actions| |black|\n\n:authors: ralf schmitt, kyle altendorf, victor titor\n:version: 1.14.0\n:date:    2022-10-16\n:download: https://pypi.python.org/pypi/pytest-twisted#downloads\n:code: https://github.com/pytest-dev/pytest-twisted\n\n\npytest-twisted is a plugin for pytest, which allows to test code,\nwhich uses the twisted framework. test functions can return deferred\nobjects and pytest will wait for their completion with this plugin.\n\n\nnotice: python 3.8 with asyncio support\n=======================================\n\nin python 3.8, asyncio changed the default loop implementation to use\ntheir proactor.  the proactor does not implement some methods used by\ntwisted's asyncio support.  the result is a ``notimplementederror``\nexception such as below.\n\n.. code-block:: pytb\n\n    <snip>\n      file \"c:\\projects\\pytest-twisted\\.tox\\py38-asyncioreactor\\lib\\site-packages\\twisted\\internet\\asyncioreactor.py\", line 320, in install\n        reactor = asyncioselectorreactor(eventloop)\n      file \"c:\\projects\\pytest-twisted\\.tox\\py38-asyncioreactor\\lib\\site-packages\\twisted\\internet\\asyncioreactor.py\", line 69, in __init__\n        super().__init__()\n      file \"c:\\projects\\pytest-twisted\\.tox\\py38-asyncioreactor\\lib\\site-packages\\twisted\\internet\\base.py\", line 571, in __init__\n        self.installwaker()\n      file \"c:\\projects\\pytest-twisted\\.tox\\py38-asyncioreactor\\lib\\site-packages\\twisted\\internet\\posixbase.py\", line 286, in installwaker\n        self.addreader(self.waker)\n      file \"c:\\projects\\pytest-twisted\\.tox\\py38-asyncioreactor\\lib\\site-packages\\twisted\\internet\\asyncioreactor.py\", line 151, in addreader\n        self._asyncioeventloop.add_reader(fd, callwithlogger, reader,\n      file \"c:\\python38-x64\\lib\\asyncio\\events.py\", line 501, in add_reader\n        raise notimplementederror\n    notimplementederror\n\nthe previous default, the selector loop, still works but you have to\nexplicitly set it and do so early. the following ``conftest.py`` is provided\nfor reference.\n\n.. code-block:: python3\n\n    import sys\n\n    import pytest\n    import pytest_twisted\n\n\n    @pytest.hookimpl(tryfirst=true)\n    def pytest_configure(config):\n        # https://twistedmatrix.com/trac/ticket/9766\n        # https://github.com/pytest-dev/pytest-twisted/issues/80\n\n        if (\n            config.getoption(\"reactor\", \"default\") == \"asyncio\"\n            and sys.platform == 'win32'\n            and sys.version_info >= (3, 8)\n        ):\n            import asyncio\n\n            selector_policy = asyncio.windowsselectoreventlooppolicy()\n            asyncio.set_event_loop_policy(selector_policy)\n\n\npython 2 support plans\n======================\n\nat some point it may become impractical to retain python 2 support.\ngiven the small size and very low amount of development it seems\nlikely that this will not be a near term issue.  while i personally\nhave no need for python 2 support i try to err on the side of being\nhelpful so support will not be explicitly removed just to not have to\nthink about it.  if major issues are reported and neither myself nor\nthe community have time to resolve them then options will be\nconsidered.\n\n\ninstallation\n============\ninstall the plugin as below.\n\n.. code-block:: sh\n\n    pip install pytest-twisted\n\n\nusing the plugin\n================\n\nthe plugin is available after installation and can be disabled using\n``-p no:twisted``.\n\nby default ``twisted.internet.default`` is used to install the reactor.\nthis creates the same reactor that ``import twisted.internet.reactor``\nwould.  alternative reactors can be specified using the ``--reactor``\noption.  this presently supports ``qt5reactor`` for use with ``pyqt5``\nand ``pytest-qt`` as well as ``asyncio``. this `guide`_ describes how to add\nsupport for a new reactor.\n\nthe reactor is automatically created prior to the first test but can\nbe explicitly installed earlier by calling\n``pytest_twisted.init_default_reactor()`` or the corresponding function\nfor the desired alternate reactor.\n\n\ninlinecallbacks\n===============\nusing ``twisted.internet.defer.inlinecallbacks`` as a decorator for test\nfunctions, which use fixtures, does not work. please use\n``pytest_twisted.inlinecallbacks`` instead.\n\n.. code-block:: python\n\n  @pytest_twisted.inlinecallbacks\n  def test_some_stuff(tmpdir):\n      res = yield threads.defertothread(os.listdir, tmpdir.strpath)\n      assert res == []\n\n\nensuredeferred\n==============\nusing ``twisted.internet.defer.ensuredeferred`` as a decorator for test\nfunctions, which use fixtures, does not work. please use\n``pytest_twisted.ensuredeferred`` instead.\n\n.. code-block:: python\n\n  @pytest_twisted.ensuredeferred\n  async def test_some_stuff(tmpdir):\n      res = await threads.defertothread(os.listdir, tmpdir.strpath)\n      assert res == []\n\n\nwaiting for deferreds in fixtures\n=================================\n``pytest_twisted.blockon`` allows fixtures to wait for deferreds.\n\n.. code-block:: python\n\n  @pytest.fixture\n  def val():\n      d = defer.deferred()\n      reactor.calllater(1.0, d.callback, 10)\n      return pytest_twisted.blockon(d)\n\n\nasync/await fixtures\n====================\n``async``/``await`` fixtures can be used along with ``yield`` for normal\npytest fixture semantics of setup, value, and teardown.  at present only\nfunction and module scope are supported.\n\n.. code-block:: python\n\n  # no yield (coroutine function)\n  #   -> use pytest_twisted.async_fixture()\n  @pytest_twisted.async_fixture()\n  async def foo():\n      d = defer.deferred()\n      reactor.calllater(0.01, d.callback, 42)\n      value = await d\n      return value\n\n  # with yield (asynchronous generator)\n  #   -> use pytest_twisted.async_yield_fixture()\n  @pytest_twisted.async_yield_fixture()\n  async def foo_with_teardown():\n      d1, d2 = defer.deferred(), defer.deferred()\n      reactor.calllater(0.01, d1.callback, 42)\n      reactor.calllater(0.02, d2.callback, 37)\n      value = await d1\n      yield value\n      await d2\n\n\nhypothesis\n==========\npytest-twisted can be used with hypothesis.\n\n.. code-block:: python\n\n   @hypothesis.given(x=hypothesis.strategies.integers())\n   @pytest_twisted.ensuredeferred\n   async def test_async(x):\n       assert isinstance(x, int)\n\n\nthe twisted greenlet\n====================\nsome libraries (e.g. corotwine) need to know the greenlet, which is\nrunning the twisted reactor. it's available from the\n``twisted_greenlet`` fixture. the following code can be used to make\ncorotwine work with pytest-twisted.\n\n.. code-block:: python\n\n  @pytest.fixture(scope=\"session\", autouse=true)\n  def set_main(request, twisted_greenlet):\n      from corotwine import protocol\n      protocol.main = twisted_greenlet\n\n\nthat's (almost) all.\n\n\ndeprecations\n============\n\n----\nv1.9\n----\n\n``pytest.blockon``\n    use ``pytest_twisted.blockon``\n``pytest.inlinecallbacks``\n    use ``pytest_twisted.inlinecallbacks``\n\n\n.. |pypi| image:: https://img.shields.io/pypi/v/pytest-twisted.svg\n   :alt: pypi version\n   :target: https://pypi.python.org/pypi/pytest-twisted\n\n.. |pythons| image:: https://img.shields.io/pypi/pyversions/pytest-twisted.svg\n   :alt: supported python versions\n   :target: https://pypi.python.org/pypi/pytest-twisted\n\n.. |travis| image:: https://travis-ci.org/pytest-dev/pytest-twisted.svg?branch=master\n   :alt: travis build status\n   :target: https://travis-ci.org/pytest-dev/pytest-twisted\n\n.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/eb1vp9hysp463c66/branch/master?svg=true\n   :alt: appveyor build status\n   :target: https://ci.appveyor.com/project/pytestbot/pytest-twisted\n\n.. |actions| image:: https://img.shields.io/github/workflow/status/pytest-dev/pytest-twisted/ci/master?logo=github-actions\n   :alt: github actions build status\n   :target: https://github.com/pytest-dev/pytest-twisted/actions?query=branch%3amaster\n\n.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg\n   :alt: black code style\n   :target: https://github.com/ambv/black\n\n.. _guide: contributing.rst\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "pytest-twisted",
+  "package_url": "https://pypi.org/project/pytest-twisted/",
+  "project_url": "https://pypi.org/project/pytest-twisted/",
+  "project_urls": {
+    "Homepage": "https://github.com/pytest-dev/pytest-twisted"
+  },
+  "release_url": "https://pypi.org/project/pytest-twisted/1.14.0/",
+  "requires_dist": [
+    "greenlet",
+    "pytest (>=2.3)",
+    "decorator",
+    "pre-commit ; extra == 'dev'",
+    "black ; extra == 'dev'",
+    "qt5reactor[pyqt5] (>=0.6.2) ; extra == 'pyqt5'",
+    "qt5reactor[pyside2] (>=0.6.3) ; extra == 'pyside2'"
+  ],
+  "requires_python": ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*",
+  "summary": "a twisted plugin for pytest.",
+  "version": "1.14.0",
+  "releases": [],
+  "developers": [
+    "ralf_schmitt",
+    "sda@fstab.net"
+  ],
+  "kwds": "pytest_twisted pytest twistedmatrix twisted_greenlet pytestbot",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pytest_twisted",
+  "homepage": "https://github.com/pytest-dev/pytest-twisted",
+  "release_count": 20,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_decorator",
+    "pypi_greenlet",
+    "pypi_pre_commit",
+    "pypi_pytest",
+    "pypi_qt5reactor"
+  ]
+}

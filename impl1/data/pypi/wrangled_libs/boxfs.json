@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 2 - pre-alpha",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: database",
+    "topic :: office/business",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: filesystems",
+    "topic :: utilities"
+  ],
+  "description": "# boxfs\n\nimplementation of the [`fsspec`](https://filesystem-spec.readthedocs.io/en/latest/index.html)\nprotocol for [box](https://www.box.com/overview) content management, enabling you to\ninterface with files stored on box using a file-system-like navigation.\n\n## installation\n\nyou can install `boxfs` from [pypi](https://pypi.org/project/boxfs/). use the following\ncommand:\n\n```bash\npip install boxfs\n```\n\nto use install the optional `upath` dependency, use the following command\n\n```bash\npip install boxfs[upath]\n```\n\n## example\n\n```python\nimport fsspec\nfrom boxsdk import jwtauth\n\noauth = jwtauth.from_settings_file(\"path/to/jwt_configuration.json\")\nroot_id = \"<id-of-file-system-root>\"\n\n### for simple file access, you can use `fsspec.open`\nwith fsspec.open(\"box://documents/test_file.txt\", \"wb\", oauth=oauth, root_id=root_id) as f:\n    f.write(\"this file was produced using boxfs\")\n\n### for more control, you can use `fsspec.filesystem`\nfs = fsspec.filesystem('box', oauth=oauth, root_id=root_id)\n# list directory contents\nfs.ls(\"documents\")\n# make new directory\nfs.mkdir(\"documents/test folder\")\n# remove a directory\nfs.rmdir(\"documents/test folder\")\n\n# open and write file\nwith fs.open(\"documents/test_file.txt\", \"wb\") as f:\n    f.write(\"this file was updated using boxfs\")\n\n# print file contents\nfs.cat(\"documents/test_file.txt\")\n# delete file\nfs.rm(\"documents/test_file.txt\")\n\n# if you installed with the `upath` extra, you can also use the universal-pathlib upath\n# class.\nfrom upath import upath\npath = upath(\"documents\", fs=fs) / \"test_file.txt\"\npath.read_text()\n```\n\n## storage options\n\nthe following storage options are accepted by `fsspec` when creating a `boxfilesystem`\nobject:\n\n- oauth: box app oauth2 configuration dictionary, e.g. loaded from\n    `jwtauth.from_settings_file`, by default none\n- client: an already instantiated boxsdk `client` object\n- client_type: type of `client` class to use when connecting to box\n\nif `client` is provided, it is used for handling api calls. otherwise, the file\nsystem to instantiate a new client connection, of type `client_type`, using the\nprovided `oauth` configuration.\n\n- root_id: box id (as `str`) of folder where file system root is placed, by default\n    none\n- root_path: path (as `str`) to box root folder, must be relative to user's root\n    (e.g. \"all files\"). the client must have access to the application user's root\n    folder (i.e., it cannot be downscoped to a subfolder)\n\nif only `root_id` is provided, the `root_path` is determined from api calls. if\nonly `root_path` is provided, the `root_id` is determined from api calls. if\nneither is provided, the application user's root folder is used.\n\n- path_map: mapping of paths to object id strings, used to populate initial lookup\n    cache for quick directory navigation\n- scopes: list of permissions to which the api token should be restricted. if none\n    (default), no restrictions are applied. if scopes are provided, the client\n    connection is (1) downscoped to use only the provided scopes, and\n    (2) restricted to the directory/subdirectories of the root folder.\n\n## creating a box app\n\nbefore you can use `boxfs`, you will need a box application through which you can route\nyour api calls. to do so, you can follow the steps for\n[\"setup with jwt\"](https://developer.box.com/guides/authentication/jwt/jwt-setup/)\nin the box developer documentation. the jwt configuration `.json` file that\nyou generate will have to be stored locally and loaded using\n`jwtauth.from_settings_file`. you also have to add your application's\nservice account as a collaborator on the root folder of your choosing, or\nyou will only have access to the box application's files.\n",
+  "docs_url": null,
+  "keywords": "file-storage,fsspec,file-system,box",
+  "license": "mit",
+  "name": "boxfs",
+  "package_url": "https://pypi.org/project/boxfs/",
+  "project_url": "https://pypi.org/project/boxfs/",
+  "project_urls": {
+    "Homepage": "https://github.com/IBM/boxfs",
+    "Repository": "https://github.com/IBM/boxfs"
+  },
+  "release_url": "https://pypi.org/project/boxfs/0.2.1/",
+  "requires_dist": [
+    "boxsdk[jwt] (>=3.7,<4.0)",
+    "fsspec (>=2023.4)",
+    "universal-pathlib (>=0.0.23,<0.0.24) ; extra == \"upath\""
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "implementation of fsspec for box file storage",
+  "version": "0.2.1",
+  "releases": [],
+  "developers": [
+    "boxfs.tehunter@gmail.com",
+    "thomas_hunter"
+  ],
+  "kwds": "boxfilesystem boxfs jwt_configuration jwtauth files",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_boxfs",
+  "homepage": "https://github.com/ibm/boxfs",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_boxsdk",
+    "pypi_fsspec",
+    "pypi_universal_pathlib"
+  ]
+}

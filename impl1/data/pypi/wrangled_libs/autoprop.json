@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3.6"
+  ],
+  "description": "*******************************************************\n``autoprop`` --- infer properties from accessor methods\n*******************************************************\n.. image:: https://img.shields.io/pypi/v/autoprop.svg\n   :alt: last release\n   :target: https://pypi.python.org/pypi/autoprop\n\n.. image:: https://img.shields.io/pypi/pyversions/autoprop.svg\n   :alt: python version\n   :target: https://pypi.python.org/pypi/autoprop\n\n.. image:: \n   https://img.shields.io/github/workflow/status/kalekundert/autoprop/test%20and%20release/master\n   :alt: test status\n   :target: https://github.com/kalekundert/autoprop/actions\n\n.. image:: https://img.shields.io/coveralls/kalekundert/autoprop.svg\n   :alt: test coverage\n   :target: https://coveralls.io/github/kalekundert/autoprop?branch=master\n\n.. image:: https://img.shields.io/github/last-commit/kalekundert/autoprop?logo=github\n   :alt: github last commit\n   :target: https://github.com/kalekundert/autoprop\n\n``autoprop`` is a library for automatically filling in classes with properties \n(e.g. ``obj.x``) corresponding to each accessor method (e.g. ``obj.get_x()``, \n``obj.set_x()``).  the biggest reasons to use ``autoprop`` are:\n\n- less boilerplate than defining properties manually.\n\n- sophisticated support for cached properties.\n\ninstallation\n============\ninstall ``autoprop`` using ``pip``::\n\n    $ pip install autoprop\n\nusage\n=====\nto use ``autoprop``, import the ``autoprop`` module and use it directly as a \nclass decorator::\n\n    >>> import autoprop\n    >>>\n    >>> @autoprop\n    ... class vector2d(object):\n    ...    \n    ...     def __init__(self, x, y):\n    ...         self._x = x\n    ...         self._y = y\n    ...\n    ...     def get_x(self):\n    ...         return self._x\n    ...\n    ...     def set_x(self, x):\n    ...         self._x = x\n    ...\n    ...     def get_y(self):\n    ...         return self._y\n    ...\n    ...     def set_y(self, y):\n    ...         self._y = y\n    ...\n    >>> v = vector2d(1, 2)\n    >>> v.x, v.y\n    (1, 2)\n\nthe decorator searches your class for methods beginning with ``get_``, \n``set_``, or ``del_`` and uses them to create properties.  the names of the \nproperties are taken from whatever comes after the underscore.  for example, \nthe method ``get_x`` would be used to make a property called ``x``.  any \ncombination of getter, setter, and deleter methods is allowed for each \nproperty.\n\ncaching\n=======\nif you have properties that are expensive to calculate, it's easy to cache \nthem::\n\n    >>> @autoprop.cache\n    ... class simulation(object):\n    ...\n    ...     def get_data(self):\n    ...         print(\"expensive calculation...\")\n    ...         return 42\n    ...\n    >>> s = simulation()\n    >>> s.data\n    expensive calculation...\n    42\n    >>> s.data\n    42\n\nit's also easy to cache some properties but not others::\n\n    >>> @autoprop\n    ... class simulation(object):\n    ...\n    ...     def get_cheap(self):\n    ...         print(\"cheap calculation...\")\n    ...         return 16\n    ...\n    ...     @autoprop.cache\n    ...     def get_expensive(self):\n    ...         print(\"expensive calculation...\")\n    ...         return 42\n    ...\n    >>> s = simulation()\n    >>> s.cheap\n    cheap calculation...\n    16\n    >>> s.cheap\n    cheap calculation...\n    16\n    >>> s.expensive\n    expensive calculation...\n    42\n    >>> s.expensive\n    42\n\nthe ``@autoprop.cache()`` decorator accepts a ``policy`` keyword argument that \ndetermines how the cache will be managed.  the following policies are \nsupported:\n\n- ``overwrite``: this is the default policy.  values are cached by overwriting \n  the property itself, such that future lookups will directly access the cached \n  value with no overhead.  this is exactly equivalent to using \n  `functools.cached_property`.  unlike normal properties, there is no way to \n  customize what happens when setting or deleting these properties.  setting \n  the property will update its value, and deleting it will cause its value to \n  be recalculated on the next access.\n\n- ``manual``: cached values are never recalculated automatically, but can be \n  recalculated and/or changed manually.  there are two ways to do this:\n  \n  1. specify ``provide_mutators=true`` to ``@autoprop.cache()``.  this will \n     instruct autoprop to provide default setter and deleter implementations \n     for the property, which will allow the cached value to be changed or \n     dropped, respectively.  \n    \n  2. call ``autoprop.set_cached_attr()`` and/or ``autoprop.del_cached_attr()``.  \n     these functions allow you to implement your own setter and deleter \n     functions, which is often the entire purpose of using this policy.\n  \n  this policy has \u224810x more overhead than the ``overwrite`` policy, but allows \n  you to control what happens when the attribute is set or deleted (like a \n  regular property).  \n\n- ``automatic``: cached values are automatically recalculated if certain other \n  attributes of the object change.  in order to use this policy, you must \n  specify ``watch=<list of attributes>`` to ``@autoprop.cache()``.  the *watch* \n  argument must be iterable, and each item must either be the name of an \n  attribute (e.g. a string) or a callable that will accept the object in \n  question and return any value.  the cached value will be recalculated \n  whenever any of the \"watched\" values change.  the cache can also be \n  recalculated manually, in any of the ways described for the ``manual`` \n  policy.\n\n  this policy has \u224825x more overhead than the ``overwrite`` policy, but allows \n  cached values to stay up to date when the attributes they depend on change.\n  \n- ``immutable``: properties are never recalculated, and are furthermore not \n  allowed to have setter or deleter methods (an error will be raised if any \n  such methods are found).  as the name implies, this is for properties and \n  classes that are intended to be immutable.  \n  \n  note that ``@autoprop.immutable`` is an alias for \n  ``@autoprop.cache(policy='immutable')``.\n\n- ``dynamic``: properties are recalculated every time they are accessed.  this \n  is exactly equivalent what ``autoprop`` does when caching is disabled, which \n  is exactly equivalent to using ``@property``.  use this policy when you want \n  to specify ``@autoprop.cache`` at the class-level, but also need to prevent a \n  few properties from being cached.\n  \n  note that ``@autoprop.dynamic`` is an alias for \n  ``@autoprop.cache(policy='dynamic')``.\n\ndetails\n=======\nbesides having the right prefix, there are two other criteria that methods must \nmeet in order to be made into properties.  the first is that they must take the \nright number of arguments.  getters and deleters must not require any arguments \n(other than self).  setters must accept exactly one argument (other than self), \nwhich is the value to set.  default, variable, and keyword arguments are all \nignored; all that matters is that the function can be called with the expected \nnumber of arguments.\n\nany methods that have the right name but the wrong arguments are silently \nignored.  this can be nice for getters that require, for example, an index.  \neven though such a getter can't be made into a property, ``autoprop`` allows it \nto follow the same naming conventions as any getters that can be::\n\n    >>> @autoprop\n    ... class vector2d(vector2d):\n    ...     \n    ...     def get_coord(self, i):\n    ...         if i == 0: return self.x\n    ...         if i == 1: return self.y\n    ...\n    ...     def set_coord(self, i, new_coord):\n    ...         if i == 0: self.x = new_coord\n    ...         if i == 1: self.y = new_coord\n    ...\n    >>> v = vector2d(1, 2)\n    >>> v.get_x()\n    1\n    >>> v.get_coord(0)\n    1\n\nin this way, users of your class can always expect to find accessors named \n``get_*`` and ``set_*``, and properties corresponding to those accessors for \nbasic attributes that don't need any extra information.\n\nthe second criterion is that the property must have a name which is not already \nin use.  this guarantees that nothing you explicitly add to your class will be \noverwritten, and it gives you the ability to manually customize how certain \nproperties are defined if you'd so like.  this criterion does not apply to \nsuperclasses, so it is possible for properties to shadow attributes defined in \nparent classes.\n\nif you want to explicitly ignore a method which would otherwise be discovered \nby ``autoprop``, use the ``@autoprop.ignore`` decorator.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "autoprop",
+  "package_url": "https://pypi.org/project/autoprop/",
+  "project_url": "https://pypi.org/project/autoprop/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/kalekundert/autoprop/issues",
+    "Continuous Integration": "https://github.com/kalekundert/autoprop/actions",
+    "Documentation": "https://autoprop.readthedocs.io/en/latest/",
+    "Test Coverage": "https://coveralls.io/github/kalekundert/autoprop",
+    "Version Control": "https://github.com/kalekundert/autoprop"
+  },
+  "release_url": "https://pypi.org/project/autoprop/4.1.0/",
+  "requires_dist": [
+    "signature_dispatch~=1.0",
+    "backports.cached-property;python_version<\"3.8\"",
+    "sphinx ; extra == \"doc\"",
+    "sphinx_rtd_theme ; extra == \"doc\"",
+    "autoclasstoc ; extra == \"doc\"",
+    "pytest ; extra == \"test\"",
+    "pytest-cov ; extra == \"test\"",
+    "coveralls ; extra == \"test\""
+  ],
+  "requires_python": "~=3.6",
+  "summary": "infer properties from accessor methods.",
+  "version": "4.1.0",
+  "releases": [],
+  "developers": [
+    "kale@thekunderts.net"
+  ],
+  "kwds": "autoprop accessor accessors pyversions shields",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_autoprop",
+  "homepage": "",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_autoclasstoc",
+    "pypi_backports.cached_property",
+    "pypi_coveralls",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_signature_dispatch",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme"
+  ]
+}

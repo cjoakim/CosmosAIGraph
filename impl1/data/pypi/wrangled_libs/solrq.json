@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: internet :: www/http :: indexing/search"
+  ],
+  "description": "[![build status](https://travis-ci.org/swistakm/solrq.svg?branch=master)](https://travis-ci.org/swistakm/solrq)\n[![coverage status](https://coveralls.io/repos/swistakm/solrq/badge.svg)](https://coveralls.io/r/swistakm/solrq)\n[![documentation status](https://readthedocs.org/projects/solrq/badge/?version=latest)](https://readthedocs.org/projects/solrq/?badge=latest)\n\n# solrq\n`solrq` is a python solr query utility. it helps making query strings for solr\nand also helps with escaping reserved characters. `solrq` is has no external\ndependencies and is compatibile with `python3.7`, `python3,8`, `python3.9`, `python3.10`, `python3.11`, `pypy` and `pypy3`.\nit might be compatibile with other python releases/implentations but this has\nnot been tested yet or is no longer tested (e.g `python3.2` or `python2.7`).\n\n    pip install solrq\n    \nand you're ready to go!\n\n\n# usage\n\neverything in `solrq` is about `q()` object. drop into python repl and just\nfeed it with bunch of field and search terms to see how it works:\n\n```python\n>>> from solrq import q\n>>> # note: all terms in single q object are implicitely joined with 'and'\n>>> query = q(type=\"animal\", species=\"dog\")\n>>> query\n<q: type:animal and species:dog>\n\n>>> # ohh, forgot about cats?\n>>> query | q(type=\"animal\", species=\"cat\")\n<q: (type:animal and species:dog) or (type:animal and species:cat)>\n\n>>># more a cat lover? let's give them a boost boost\n>>> q(type=\"animal\") & (q(species=\"cat\")^2 | q(species=\"dog\"))\n<q: type:animal and ((species:cat^2) or species:dog)>\n```\n\nbut what to do with this `q`? simply pass it to your solr library of choice, \nlike [pysolr](https://github.com/toastdriven/pysolr) or \n[mysolr](https://github.com/redtuna/mysolr). most of python solr libraries\nexpect simple string as a query parameter and do not bother with escaping\nof reserved characters so you must take care of that by yourself. this is why\n`solrq` integrates so easily. here is an example how you can use it with \n[pysolr](https://github.com/toastdriven/pysolr):\n\n```python\nfrom solrq import q\nimport pysolr\n\nsolr = solr(\"<your solr url>\")\n\n# simply using q object\nsolr.search(q(text=\"easy as f***\"))\n\n# or explicitely making it string\nsolr.search(str(q(text=\"easy as f***\")))\n```\n    \n## quick reference\n\nfull reference can be found in [api reference documentation page](http://solrq.readthedocs.org/en/latest/api-reference.html) \nbut here is a short reference.\n\n### boosting queries\n\nuse python `^` operator:\n\n```python\n>>> q(text='cat') ^ 2\n<q: text:cat^2>\n```\n\n### and queries\n\nuse python `&` operator:\n\n```python\n>>> q(text='cat') & q(text='dog')\n<q: text:cat and text:dog>\n```\n\n### or queries\n\nuse python `|` operator:\n\n```python\n>>> q(text='cat') | q(text='dog')\n<q: text:cat or text:dog>\n```\n\n### not queries\n\nuse python `~` operator:\n\n```python\n>>> ~ q(text='cat')\n<q: !text:cat>\n```\n    \n### ranges\n\nuse `solrq.range` wrapper:\n\n```python\n>>> from solrq import range\n>>> q(age=range(18, 25))\n<q: age:[18 to 25]>\n```\n\n### proximity searches\n\nuse `solrq.proximity` wrapper:\n\n```python\n>>> from solrq import proximity\n>>> q(age=proximity(\"cat dogs\", 5))\n<q: age:\"cat\\ dogs\"~5>\n```\n\n### safe strings\n\nall raw string values are treated as unsafe by default and will be escaped to \nensure that final query string will not be broken by some rougue search value.\nthis of course can be disabled if you know what you're doing using\n`value` wrapper:\n\n```python\n>>> from solrq import q, value\n>>> q(type='foo bar[]')\n<q: type:foo\\ bar\\[\\]>\n>>> q(type=value('foo bar[]', safe=true))\n<q: type:foo bar[]>\n```\n\n### timedeltas, datetimes\n\nsimply as:\n\n```python\n>>> from datetime import datetime, timedelta\n>>> q(date=datetime(1970, 1, 1))\n<q: date:\"1970-01-01t00:00:00z\">\n>>> # note that timedeltas has any sense mostly with ranges\n>>> q(delta=timedelta(days=1))\n<q: delta:now+1days+0seconds+0milliseconds>\n```\n\n### field wildcard\n\nif you need to use wildcards in field names just use dict and unpack it inside\nof `q()` instead of using keyword arguments:\n\n```python\n    >>> q(**{\"*_t\": \"text_to_search\"})\n    <q: *_t:text_to_search>\n```\n\n# contributing\n\nany contribution is welcome. issues, suggestions, pull requests - whatever. \nthere are no strict contribution guidelines beyond pep-8 and sanity. \ncode style is checked with flakes8 and any pr that has failed build\nwill not be merged.\n\none thing: if you submit a pr please do not rebase it later unless you\nare asked for that explicitely. reviewing pull requests that suddenly had \ntheir history rewritten just drives me crazy.\n\n# testing\n\ntests are run using tox. simply install it and run:\n\n    pip install tox\n    tox\n    \nand that's all.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "solrq",
+  "package_url": "https://pypi.org/project/solrq/",
+  "project_url": "https://pypi.org/project/solrq/",
+  "project_urls": {
+    "Homepage": "https://github.com/swistakm/solrq"
+  },
+  "release_url": "https://pypi.org/project/solrq/1.1.2/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python solr query utility",
+  "version": "1.1.2",
+  "releases": [],
+  "developers": [
+    "swistakm@gmail.com"
+  ],
+  "kwds": "solrq solr badge text_to_search mysolr",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_solrq",
+  "homepage": "https://github.com/swistakm/solrq",
+  "release_count": 8,
+  "dependency_ids": []
+}

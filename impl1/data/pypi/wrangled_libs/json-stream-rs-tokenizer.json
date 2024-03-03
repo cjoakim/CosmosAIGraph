@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "programming language :: rust"
+  ],
+  "description": "> **note:** `json-stream-rs-tokenizer` is now automatically used by\n> `json-stream`, so unless you find a bug, you can ignore this package's\n> existence!\n\n# json-stream-rs-tokenizer\n\n[![ci build badge](https://github.com/smheidrich/py-json-stream-rs-tokenizer/actions/workflows/build.yml/badge.svg)](https://github.com/smheidrich/py-json-stream-rs-tokenizer/actions/workflows/build.yml)\n[![ci test badge](https://github.com/smheidrich/py-json-stream-rs-tokenizer/actions/workflows/test.yml/badge.svg)](https://github.com/smheidrich/py-json-stream-rs-tokenizer/actions/workflows/test.yml)\n[![pypi package and version badge](https://img.shields.io/pypi/v/json-stream-rs-tokenizer)](https://pypi.org/project/json-stream-rs-tokenizer/)\n[![supported python versions badge](https://img.shields.io/pypi/pyversions/json-stream-rs-tokenizer)](https://pypi.org/project/json-stream-rs-tokenizer/)\n\na faster tokenizer for the [json-stream](https://github.com/daggaz/json-stream)\npython library.\n\nit's actually just `json-stream`'s own tokenizer (itself adapted from the\n[naya](https://github.com/danielyule/naya) project) ported to rust almost\nverbatim and made available as a python module using\n[pyo3](https://github.com/pyo3/pyo3).\n\non my machine, it **speeds up parsing by a factor of 4\u201310**, depending on the\nnature of the data.\n\n## installation\n\n### implicit\n\nstarting at its 2.0 release, **`json-stream` depends on and uses\n`json-stream-rs-tokenizer` by default**, so you don't need to install it\nexplicitly anymore.\n\n### explicit\n\nif you use an older `json-stream` version (which you have no reason to do) or\nneed to install `json-stream-rs-tokenizer` explicitly for another reason, you\ncan do:\n\n```bash\npip install json-stream-rs-tokenizer\n```\n\nthe library will be installed as a prebuilt wheel if one is available for your\nplatform. otherwise, pip will try to build it from the source distribution,\nwhich requires a rust toolchain to be installed and available to succeed.\n\nnote that if the build from source fails, the package installation will be\nconsidered successfully completed anyway, but `rusttokenizer` (see below) won't\nbe available for import. this is so that packages (specifically, `json-stream`)\ncan depend on the library but fall back to their own implementation if neither\na prebuilt wheel is available nor the build succeeds.\n\nyou can increase the installation command's verbosity with `-v` (repeated for\neven more information, e.g. `-vv`) to see error messages when the build from\nsource fails.\n\n**note** that if the rust library is compiled in debug mode, it will run\n*slower* than the pure-python tokenizer. the setuptools configuration should\nmake sure this doesn't happen even when installing in development mode, but\nwhen in doubt, run installation commands with `-v` to see the rust compilation\ncommands and verify that they used `--release`.\n\n## usage\n\n### implicit\n\nas described above, `json-stream-rs-tokenizer` is now used by `json-stream` by\ndefault, so you don't have to do anything special to use it. `json-stream` will\nfall back to its pure-python tokenizer when `json-stream-rs-tokenizer` was not\nsuccessfully installed, however.\n\n### explicit\n\nfor older versions of `json-stream`, or if you want to *ensure* the rust\ntokenizer is used no matter what, simply pass this package's `rusttokenizer` as\nthe `tokenizer` argument to `json-stream`'s `load` or `visit`:\n\n```python\nfrom io import stringio\nfrom json_stream import load\nfrom json_stream_rs_tokenizer import rusttokenizer\n\njson_buf = stringio('{ \"a\": [1,2,3,4], \"b\": [5,6,7] }')\n\n# uses the rust tokenizer to load json:\nd = load(json_buf, tokenizer=rusttokenizer)\n\nfor k, l in d.items():\n  print(f\"{k}: {' '.join(str(n) for n in l)}\")\n```\n\nnote that the import of `rusttokenizer` will fail if the rust extension is not\navailable (i.e., when no prebuilt wheels were available and the installation\nfrom the source distribution failed).\n\n## limitations\n\n- for pypy, the speedup is only 1.0-1.5x (much lower than that for cpython).\n  this has yet to be\n  [investigated](https://github.com/smheidrich/py-json-stream-rs-tokenizer/issues/33).\n- in builds that don't support pyo3's\n  [`num-bigint` extension](https://pyo3.rs/main/doc/pyo3/num_bigint/)\n  (currently only pypy builds and manual ones against python's limited c api\n  (`py_limited_api`)), conversion of large integers is performed in python\n  rather than in rust, at a very small runtime cost.\n\n## benchmarks\n\nthe package comes with a script for rudimentary benchmarks on randomly\ngenerated json data. to run it, you'll need to install the optional `benchmark`\ndependencies:\n\n```bash\npip install 'json-stream-rs-tokenizer[benchmark]'\n```\n\nyou can then run the benchmark as follows:\n\n```bash\npython -m json_stream_rs_tokenizer.benchmark\n```\n\nrun it with `--help` to see more information.\n\n## tests\n\nto run the tests, you'll need to install the optional `test` dependencies:\n\n```bash\npip install 'json-stream-rs-tokenizer[test]'\n```\n\nas the test dependencies depend on the benchmark dependencies but the feature\nenabling such\n[\"recursive optional dependencies\"](https://hynek.me/articles/python-recursive-optional-dependencies/)\nwas only introduced in pip 21.3, you'll need a version of pip at least as\nrecent as that. for older versions, just install the test dependencies\nmanually.\n\n## license\n\nmit license. refer to the\n[license](https://github.com/smheidrich/py-json-stream-rs-tokenizer/blob/main/license)\nfile for details.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "json-stream-rs-tokenizer",
+  "package_url": "https://pypi.org/project/json-stream-rs-tokenizer/",
+  "project_url": "https://pypi.org/project/json-stream-rs-tokenizer/",
+  "project_urls": {
+    "Repository": "https://github.com/smheidrich/py-json-stream-rs-tokenizer"
+  },
+  "release_url": "https://pypi.org/project/json-stream-rs-tokenizer/0.4.25/",
+  "requires_dist": [
+    "json-stream-to-standard-types <0.2,>=0.1 ; extra == 'benchmark'",
+    "tqdm <5,>=4.64 ; extra == 'benchmark'",
+    "contexttimer <0.4,>=0.3 ; extra == 'benchmark'",
+    "si-prefix <2,>=1.2 ; extra == 'benchmark'",
+    "typer <0.7,>=0.6 ; extra == 'benchmark'",
+    "pytest <8,>7.1 ; extra == 'test'",
+    "json-stream-rs-tokenizer[benchmark] ; extra == 'test'",
+    "json-stream ==2.3.2 ; extra == 'test'"
+  ],
+  "requires_python": ">=3.7,<4",
+  "summary": "a faster tokenizer for the json-stream python library",
+  "version": "0.4.25",
+  "releases": [],
+  "developers": [],
+  "kwds": "json_stream_rs_tokenizer json_stream pyversions tokenizer py_limited_api",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_json_stream_rs_tokenizer",
+  "homepage": "",
+  "release_count": 39,
+  "dependency_ids": [
+    "pypi_contexttimer",
+    "pypi_json_stream",
+    "pypi_json_stream_rs_tokenizer",
+    "pypi_json_stream_to_standard_types",
+    "pypi_pytest",
+    "pypi_si_prefix",
+    "pypi_tqdm",
+    "pypi_typer"
+  ]
+}

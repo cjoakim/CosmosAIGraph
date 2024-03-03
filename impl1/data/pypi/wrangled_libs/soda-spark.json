@@ -1,0 +1,46 @@
+{
+  "classifiers": [],
+  "description": "<p align=\"center\"><h1>soda spark</h1><br/><b>data testing, monitoring, and profiling for spark dataframes.</b></p>\n\n<p align=\"center\">\n  <a href=\"https://github.com/sodadata/soda-spark/blob/main/license\"><img src=\"https://img.shields.io/badge/license-apache%202-blue.svg\" alt=\"license: apache 2.0\"></a>\n  <a href=\"https://join.slack.com/t/soda-community/shared_invite/zt-m77gajo1-nxjf7jtbbrht2zwailb9pg\"><img alt=\"slack\" src=\"https://img.shields.io/badge/chat-slack-green.svg\"></a>\n  <a href=\"https://pypi.org/project/soda-spark/\"><img alt=\"pypi soda park\" src=\"https://img.shields.io/badge/pypi-soda%20spark-green.svg\"></a>\n  <a href=\"https://github.com/sodadata/soda-spark/actions/workflows/build.yml\"><img alt=\"build soda-spark\" src=\"https://github.com/sodadata/soda-spark/actions/workflows/workflow.yml/badge.svg\"></a>\n</p>\n\n\nsoda spark is an extension of\n[soda sql](https://docs.soda.io/soda-sql/5_min_tutorial.html) that allows you to run soda\nsql functionality programmatically on a\n[spark data frame](https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.dataframe.html).\n\nsoda sql is an open-source command-line tool. it utilizes user-defined input to prepare sql queries that run tests on tables in a data warehouse to find invalid, missing, or unexpected data. when tests fail, they surface \"bad\" data that you can fix to ensure that downstream analysts are using \"good\" data to make decisions.\n\n\n## requirements\n\nsoda spark has the same requirements as\n[`soda-sql-spark`](https://docs.soda.io/soda-sql/installation.html).\n\n## install\n\nfrom your shell, execute the following command.\n\n``` sh\n$ pip install soda-spark\n```\n\n## use\n\nfrom your python prompt, execute the following commands.\n\n``` python\n>>> from pyspark.sql import dataframe, sparksession\n>>> from sodaspark import scan\n>>>\n>>> spark_session = sparksession.builder.getorcreate()\n>>>\n>>> id = \"a76824f0-50c0-11eb-8be8-88e9fe6293fd\"\n>>> df = spark_session.createdataframe([\n...\t   {\"id\": id, \"name\": \"paula landry\", \"size\": 3006},\n...\t   {\"id\": id, \"name\": \"kevin crawford\", \"size\": 7243}\n... ])\n>>>\n>>> scan_definition = (\"\"\"\n... table_name: demodata\n... metrics:\n... - row_count\n... - max\n... - min_length\n... tests:\n... - row_count > 0\n... columns:\n...   id:\n...     valid_format: uuid\n...     tests:\n...     - invalid_percentage == 0\n... sql_metrics:\n... - sql: |\n...     select sum(size) as total_size_us\n...     from demodata\n...     where country = 'us'\n...   tests:\n...   - total_size_us > 5000\n... \"\"\")\n>>> scan_result = scan.execute(scan_definition, df)\n>>>\n>>> scan_result.measurements  # doctest: +ellipsis\n[measurement(metric='schema', ...), measurement(metric='row_count', ...), ...]\n>>> scan_result.test_results  # doctest: +ellipsis\n[testresult(test=test(..., expression='row_count > 0', ...), passed=true, skipped=false, ...)]\n>>>\n```\n\nor, use a [scan yaml](https://docs.soda.io/soda-sql/scan-yaml.html) file\n\n``` python\n>>> scan_yml = \"static/demodata.yml\"\n>>> scan_result = scan.execute(scan_yml, df)\n>>>\n>>> scan_result.measurements  # doctest: +ellipsis\n[measurement(metric='schema', ...), measurement(metric='row_count', ...), ...]\n>>>\n```\n\nsee the\n[scan result object](https://github.com/sodadata/soda-sql/blob/main/core/sodasql/scan/scan_result.py)\nfor all attributes and methods.\n\nor, return spark data frames:\n\n``` python\n>>> measurements, test_results, errors = scan.execute(scan_yml, df, as_frames=true)\n>>>\n>>> measurements  # doctest: +ellipsis\ndataframe[metric: string, column_name: string, value: string, ...]\n>>> test_results  # doctest: +ellipsis\ndataframe[test: struct<...>, passed: boolean, skipped: boolean, values: map<string,string>, ...]\n>>>\n```\n\nsee the `_to_data_frame` functions in the [`scan.py`](./src/sodaspark/scan.py)\nto see how the conversion is done.\n\n### send results to soda cloud\n\nsend the scan result to soda cloud.\n\n``` python\n>>> import os\n>>> from sodasql.soda_server_client.soda_server_client import sodaserverclient\n>>>\n>>> soda_server_client = sodaserverclient(\n...     host=\"cloud.soda.io\",\n...     api_key_id=os.getenv(\"api_public\"),\n...     api_key_secret=os.getenv(\"api_private\"),\n... )\n>>> scan_result = scan.execute(scan_yml, df, soda_server_client=soda_server_client)\n>>>\n```\n\n## understand\n\nunder the hood `soda-spark` does the following.\n\n1. setup the scan\n   * use the spark dialect\n   * use [spark session](https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.sparksession.html)\n     as [warehouse](https://docs.soda.io/soda-sql/warehouse.html) connection\n2. create (or replace)\n   [global temporary view](https://spark.apache.org/docs/latest/api/python/reference/api/pyspark.sql.dataframe.createorreplaceglobaltempview.html)\n   for the spark data frame\n3. execute the scan on the temporary view\n\n\n",
+  "docs_url": null,
+  "keywords": "data quality,spark,soda",
+  "license": "apache 2.0",
+  "name": "soda-spark",
+  "package_url": "https://pypi.org/project/soda-spark/",
+  "project_url": "https://pypi.org/project/soda-spark/",
+  "project_urls": {
+    "Homepage": "https://github.com/sodadata/soda-spark",
+    "Source": "https://github.com/sodadata/soda-spark",
+    "Tracker": "https://github.com/sodadata/soda-spark/issues"
+  },
+  "release_url": "https://pypi.org/project/soda-spark/0.3.3/",
+  "requires_dist": [
+    "soda-sql-spark (~=2.1.9)",
+    "pyspark (~=3.0)",
+    "pre-commit (>=2.14.1) ; extra == 'testing'",
+    "pytest (>=6.2.5) ; extra == 'testing'",
+    "pytest-spark (>=0.6.0) ; extra == 'testing'",
+    "pytest-cov (>=2.12.1) ; extra == 'testing'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "soda sql api for pyspark data frame",
+  "version": "0.3.3",
+  "releases": [],
+  "developers": [
+    "cor_zuurmond",
+    "corzuurmond@godatadriven.com"
+  ],
+  "kwds": "spark pyspark sodadata spark_session profiling",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_soda_spark",
+  "homepage": "https://github.com/sodadata/soda-spark",
+  "release_count": 11,
+  "dependency_ids": [
+    "pypi_pre_commit",
+    "pypi_pyspark",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_spark",
+    "pypi_soda_sql_spark"
+  ]
+}

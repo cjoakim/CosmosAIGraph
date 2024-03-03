@@ -1,0 +1,36 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "[![build status](https://github.com/asottile/detect-test-pollution/actions/workflows/main.yml/badge.svg)](https://github.com/asottile/detect-test-pollution/actions/workflows/main.yml)\n[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/asottile/detect-test-pollution/main.svg)](https://results.pre-commit.ci/latest/github/asottile/detect-test-pollution/main)\n\ndetect-test-pollution\n=====================\n\na tool to detect test pollution\n\n## installation\n\n```bash\npip install detect-test-pollution\n```\n\n## what is test pollution?\n\n[![video about test pollution](https://camo.githubusercontent.com/e72348a4fa8369247e9e2f1441de4424065fc42d6d53aad6ef703e264b820c3d/68747470733a2f2f696d672e796f75747562652e636f6d2f76692f4652746569616e61504d6f2f6d7164656661756c742e6a7067)](https://youtu.be/frteianapmo)\n\ntest pollution is where a test fails due to the side-effects of some other test\nin the test suite.\n\nit usually appears as a \"test flake\" something where the test fails\nmysteriously but passes when run by itself.\n\na simple example of this is the following python code:\n\n```python\nk = 1\n\ndef test_k():\n    assert k == 1\n\ndef test_k2():\n    global k\n\n    k = 2\n    assert k == 2\n```\n\nnow this example is a little bit silly, you probably wouldn't write code this\npoorly but helps us demonstrate the problem here.\n\nwhen run normally -- these tests pass:\n\n```console\n$ pytest -q t.py\n..                                                                       [100%]\n2 passed in 0.00s\n```\n\nbut, if the tests were run in some other order (due to something like\n[pytest-randomly] or [pytest-xdist]) then the pollution would be apparent:\n\n```console\n$ pytest -q t.py::test_k2 t.py::test_k\n.f                                                                       [100%]\n=================================== failures ===================================\n____________________________________ test_k ____________________________________\n\n    def test_k():\n>       assert k == 1\ne       assert 2 == 1\n\nt.py:4: assertionerror\n=========================== short test summary info ============================\nfailed t.py::test_k - assert 2 == 1\n1 failed, 1 passed in 0.03s\n```\n\noften this flake happens in a codebase with hundreds or thousands of tests\nand it's difficult to track down which test is causing the global side-effects.\n\nthat's where this tool comes in handy!  it helps you find the pair of tests\nwhich error when run in order.\n\n[pytest-randomly]: https://github.com/pytest-dev/pytest-randomly\n[pytest-xdist]: https://github.com/pytest-dev/pytest-xdist\n\n## usage\n\n[![video about using detect-test-pollution](https://user-images.githubusercontent.com/857609/162450980-1e45db95-b6dc-4783-9bcb-7a3dc02bb1e0.jpg)](https://www.youtube.com/watch?v=w5o4ztusyj0)\n\nonce you have identified a failing test, you'll be able to feed it into\n`detect-test-pollution` to find the causal test.\n\nthe basic mode is to run:\n\n```bash\ndetect-test-pollution \\\n    --failing-test test.py::test_id_here \\\n    --tests ./tests\n```\n\nwhere `test.py::test_id_here` is the identifier of the failing test and\n`./tests` is the directory where your testsuite lives.\n\nif you've already narrowed down the list of testids further than that, you\ncan specify a `--testids-file` instead of `--tests` to speed up discovery:\n\n```bash\ndetect-test-pollution \\\n    --failing-test test.py::test_id_here \\\n    --testids-file ./testids\n```\n\nyou can usually get a list of testids via `pytest --collect-only -q` (though\nyou'll need to strip some unrelated lines at the end, such as timing and\nwarning info).\n\nthen `detect-test-pollution` will bisect the list of tests to find the failing\none.  here's an example bisection from a [bug in pytest]\n\n```console\n$ detect-test-pollution --tests ./testing --failing-test testing/io/test_terminalwriter.py::test_should_do_markup_force_color\ndiscovering all tests...\n-> discovered 3140 tests!\nensuring test passes by itself...\n-> ok!\nensuring test fails with test group...\n-> ok!\nrunning step 1:\n- 3139 tests remaining (about 12 steps)\nrunning step 2:\n- 1570 tests remaining (about 11 steps)\nrunning step 3:\n- 785 tests remaining (about 10 steps)\nrunning step 4:\n- 393 tests remaining (about 9 steps)\nrunning step 5:\n- 197 tests remaining (about 8 steps)\nrunning step 6:\n- 99 tests remaining (about 7 steps)\nrunning step 7:\n- 50 tests remaining (about 6 steps)\nrunning step 8:\n- 25 tests remaining (about 5 steps)\nrunning step 9:\n- 12 tests remaining (about 4 steps)\nrunning step 10:\n- 6 tests remaining (about 3 steps)\nrunning step 11:\n- 3 tests remaining (about 2 steps)\ndouble checking we found it...\n-> the polluting test is: testing/test_terminal.py::testterminal::test_report_teststatus_explicit_markup\n```\n\n[bug in pytest]: https://github.com/pytest-dev/pytest/issues/9708\n\n## fuzzing\n\n`detect-test-pollution` can also be used to \"fuzz\" out failing tests.\n\nit does this by shuffling the test ids and running the testsuite until it\nfails.\n\nhere's an example execution on a silly testsuite:\n\n```console\n$ detect-test-pollution --fuzz --tests t.py\ndiscovering all tests...\n-> discovered 1002 tests!\nrun 1...\n-> ok!\nrun 2...\n-> found failing test!\ntry `detect-test-pollution --failing-test t.py::test_k --tests t.py`!\n```\n\nafterwards you can use the normal mode of `detect-test-pollution` to find the\nfailing pair.\n\n## supported test runners\n\nat the moment only `pytest` is supported -- though in theory the tool could\nbe adapted to support other python test runners, or even other languages.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "detect-test-pollution",
+  "package_url": "https://pypi.org/project/detect-test-pollution/",
+  "project_url": "https://pypi.org/project/detect-test-pollution/",
+  "project_urls": {
+    "Homepage": "https://github.com/asottile/detect-test-pollution"
+  },
+  "release_url": "https://pypi.org/project/detect-test-pollution/1.2.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "a tool to detect test pollution",
+  "version": "1.2.0",
+  "releases": [],
+  "developers": [
+    "anthony_sottile",
+    "asottile@umich.edu"
+  ],
+  "kwds": "pollution polluting test_report_teststatus_explicit_markup tests detect",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_detect_test_pollution",
+  "homepage": "https://github.com/asottile/detect-test-pollution",
+  "release_count": 4,
+  "dependency_ids": []
+}

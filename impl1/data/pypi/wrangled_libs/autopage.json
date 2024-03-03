@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "license :: osi approved :: apache software license",
+    "operating system :: posix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: terminals",
+    "topic :: utilities"
+  ],
+  "description": "# autopage\n\n[autopage](https://github.com/zaneb/autopage) is a python library to\nautomatically display terminal output from a program in a pager (like `less`)\nwhenever you need it, and never when you don't. and it only takes one line of\ncode.\n\nyou know how some cli programs like `git` (and a handful of others, including\n`man` and `systemctl`) automatically pipe their output to `less`? except not if\nthere's less than one screen's worth of data. and if you redirect the output to\na file or a pipe, it does the right thing instead. colours are preserved. don't\nyou wish all programs worked like that? now at least all of your python\nprograms can.\n\n## license\n\n\u00a9 2020-2022 by zane bitter\n\nopen source licensed under the terms of the apache software license, version\n2.0.\n\n## installation\n\n[autopage is available from pypi](https://pypi.org/project/autopage/). the\neasiest way to install (preferably in a `virtualenv` virtual environment) is\nwith `pip`:\n\n    $ pip install autopage\n\n### on fedora and centos/rhel\n\nautopage is [packaged for\nfedora](https://packages.fedoraproject.org/pkgs/python-autopage/python3-autopage/)\n35 and later. to install:\n\n    # dnf install python3-autopage\n\ncopr repositories are available for older versions of fedora and epel. before\nattempting to install on those versions, first enable the copr repository:\n\n    # dnf copr enable zaneb/autopage\n\n### on ubuntu and debian\n\nautopage is [packaged for\nubuntu](https://packages.ubuntu.com/search?keywords=python3-autopage&searchon=names)\njammy and later, and [for debian](https://packages.debian.org/python3-autopage)\nbookworm. to install:\n\n    # apt-get install python3-autopage\n\na ppa is available for older versions of ubuntu. before attempting to install\non those versions, first enable the ppa:\n\n    # add-apt-repository ppa:zaneb/autopage\n    # apt-get update\n\n### on gentoo\n\nautopage is [packaged for\ngentoo](https://packages.gentoo.org/packages/dev-python/autopage). to install:\n\n    # emerge dev-python/autopage\n\n## basic use\n\nthe `autopager` class provides a context manager that furnishes the output\nstream to write to. here is a basic example that reads from stdin and outputs\nto a pager connected to stdout:\n\n```python\nimport sys\nimport autopage\n\nwith autopage.autopager() as out:\n    for l in sys.stdin:\n        out.write(l)\n```\n\nif you are explicitly passing a stream to write to (rather than directly\nreferencing a global variable such as `sys.stdout` then you may be able to add\nautomatic paging support with only a single line of code.\n\n## paging help output\n\nif your program uses the `argparse` module from the standard library, you can\nensure that the help output is automatically paged when possible by changing\nthe import statement to:\n\n```python\nfrom autopage import argparse\n```\n\nif you don't control the module that imports `argparse`, you can instead call\n`autopage.argparse.monkey_patch()` to patch the module directly. this function\ncan also be used as a context manager.\n\n## environment\n\nthe default pager command (`autopage.command.defaultpager()`) allows the end\nuser to override the pager command by setting the `pager` environment variable.\nto disable this behaviour, pass\n`pager_command=autopage.command.platformpager()` to use the default pager for\nthe current platform, or pass a specific pager from `autopage.command`. the\ndefault pager command is `less` on most platforms. on aix the default pager\ncommand is `more`, and on windows `more.com`.\n\nthe end user can also override the settings for `less` by setting the `less`\nenvironment variable. if not specified, the settings are determined by the\n`allow_color` and `line_buffering` options. by default ansi control characters\nfor setting colours are respected and the pager will not run if there is less\nthan a full screen of text to display.\n\n## line buffering\n\nnormally output streams are buffered so that data is written to the output file\nonly when the buffer becomes full. this is efficient and generally works fine\nas long as the data is being produced as fast as it can be consumed. however,\nwhen the data is streaming at a slower rate than it could be displayed (e.g.\nlog output from something like `tail -f`) this results in a large delay between\ndata being produced and consumed. if you have ever tried to grep a streaming\nlog and pipe the output to a pager then you are familiar with how\nunsatisfactory this is.\n\nthe solution is to flush the output buffer after each line is written, which is\nknown as [line\nbuffering](https://www.pixelbeat.org/programming/stdio_buffering/). the\n`autopager` class supports a `line_buffering` argument to enable or disable\nline buffering. the default is to use the line buffering mode already\nconfigured for the output stream (which is usually to disable line buffering).\n\nwhen reading from an input stream (which may be a file, pipe, or the console)\nand optionally processing the data before outputting it again, the convenience\nfunction `line_buffer_from_input()` returns the optimal line buffering setting\nfor a given input stream (`sys.stdin` by default).\n\n```python\nimport sys\nimport autopage\n\nwith autopage.autopager(line_buffering=autopage.line_buffer_from_input()) as o:\n    for l in sys.stdin:\n        o.write(l)\n```\n\n## terminal reset\n\nby default, when the pager exits it will leave the latest displayed output on\nscreen in the terminal. this can be changed by passing `true` for the\n`reset_on_exit` argument to the `autopager` class. if this option is set, the\nterminal will be cleared when the pager exits, returning to its position prior\nto starting the pager (as is the case by default when running `less` manually\nfrom the command line).\n\n## exit code\n\nprograms may wish to return a different exit code if they are interrupted by\nthe user (either with ctrl-c or by closing the pager) than if they ran to\ncompletion. the exceptions generated when the pager is closed prematurely are\nsuppressed, so the `autopager` class offers the `exit_code()` method to provide\na suitable exit code for the program. this also takes into account other\nexceptions that bubble up through the context manager.\n\n## complete example\n\n```python\nimport sys\nimport autopage\n\ndef process(input_stream, output_stream):\n    pager = autopage.autopager(\n        output_stream,\n        line_buffering=autopage.line_buffer_from_input(input_stream),\n        allow_color=true,\n        reset_on_exit=true,\n        errors=autopage.errorstrategy.replace,\n    )\n\n    try:\n        with pager as out:\n            for l in input_stream:\n                out.write(l)\n    except exception as exc:\n        sys.stderr.write(f'{str(exc)}\\n')\n    except keyboardinterrupt:\n        pass\n    return pager.exit_code()\n\nsys.exit(process(sys.stdin, sys.stdout))\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "autopage",
+  "package_url": "https://pypi.org/project/autopage/",
+  "project_url": "https://pypi.org/project/autopage/",
+  "project_urls": {
+    "Homepage": "https://github.com/zaneb/autopage"
+  },
+  "release_url": "https://pypi.org/project/autopage/0.5.2/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "a library to provide automatic paging for console output",
+  "version": "0.5.2",
+  "releases": [],
+  "developers": [
+    "zane_bitter",
+    "zbitter@redhat.com"
+  ],
+  "kwds": "autopager autopage pager_command python outputting",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_autopage",
+  "homepage": "https://github.com/zaneb/autopage",
+  "release_count": 10,
+  "dependency_ids": []
+}

@@ -1,0 +1,69 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "intended audience :: education",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "topic :: scientific/engineering :: artificial intelligence",
+    "topic :: software development"
+  ],
+  "description": "# pytorch learning rate finder\n\n![](https://github.com/davidtvs/pytorch-lr-finder/workflows/ci-build/badge.svg?branch=master)\n[![codecov](https://codecov.io/gh/davidtvs/pytorch-lr-finder/branch/master/graph/badge.svg)](https://codecov.io/gh/davidtvs/pytorch-lr-finder)\n[![](https://img.shields.io/pypi/v/torch-lr-finder)](https://pypi.org/project/torch-lr-finder/)\n\na pytorch implementation of the learning rate range test detailed in [cyclical learning rates for training neural networks](https://arxiv.org/abs/1506.01186) by leslie n. smith and the tweaked version used by [fastai](https://github.com/fastai/fastai).\n\nthe learning rate range test is a test that provides valuable information about the optimal learning rate. during a pre-training run, the learning rate is increased linearly or exponentially between two boundaries. the low initial learning rate allows the network to start converging and as the learning rate is increased it will eventually be too large and the network will diverge.\n\ntypically, a good static learning rate can be found half-way on the descending loss curve. in the plot below that would be `lr = 0.002`.\n\nfor cyclical learning rates (also detailed in leslie smith's paper) where the learning rate is cycled between two boundaries `(start_lr, end_lr)`, the author advises the point at which the loss starts descending and the point at which the loss stops descending or becomes ragged for `start_lr` and `end_lr` respectively.  in the plot below, `start_lr = 0.0002` and `end_lr=0.2`.\n\n![learning rate range test](images/lr_finder_cifar10.png)\n\n## installation\n\npython 3.5 and above:\n\n```bash\npip install torch-lr-finder\n```\n\ninstall with the support of mixed precision training (see also [this section](#mixed-precision-training)):\n\n```bash\npip install torch-lr-finder -v --global-option=\"apex\"\n```\n\n## implementation details and usage\n\n### tweaked version from fastai\n\nincreases the learning rate in an exponential manner and computes the training loss for each learning rate. `lr_finder.plot()` plots the training loss versus logarithmic learning rate.\n\n```python\nfrom torch_lr_finder import lrfinder\n\nmodel = ...\ncriterion = nn.crossentropyloss()\noptimizer = optim.adam(model.parameters(), lr=1e-7, weight_decay=1e-2)\nlr_finder = lrfinder(model, optimizer, criterion, device=\"cuda\")\nlr_finder.range_test(trainloader, end_lr=100, num_iter=100)\nlr_finder.plot() # to inspect the loss-learning rate graph\nlr_finder.reset() # to reset the model and optimizer to their initial state\n```\n\n### leslie smith's approach\n\nincreases the learning rate linearly and computes the evaluation loss for each learning rate. `lr_finder.plot()` plots the evaluation loss versus learning rate.\nthis approach typically produces more precise curves because the evaluation loss is more susceptible to divergence but it takes significantly longer to perform the test, especially if the evaluation dataset is large.\n\n```python\nfrom torch_lr_finder import lrfinder\n\nmodel = ...\ncriterion = nn.crossentropyloss()\noptimizer = optim.adam(model.parameters(), lr=0.1, weight_decay=1e-2)\nlr_finder = lrfinder(model, optimizer, criterion, device=\"cuda\")\nlr_finder.range_test(trainloader, val_loader=val_loader, end_lr=1, num_iter=100, step_mode=\"linear\")\nlr_finder.plot(log_lr=false)\nlr_finder.reset()\n```\n\n### notes\n\n- examples for cifar10 and mnist can be found in the examples folder.\n- the optimizer passed to `lrfinder` should not have an `lrscheduler` attached to it.\n- `lrfinder.range_test()` will change the model weights and the optimizer parameters. both can be restored to their initial state with `lrfinder.reset()`.\n- the learning rate and loss history can be accessed through `lr_finder.history`. this will return a dictionary with `lr` and `loss` keys.\n- when using `step_mode=\"linear\"` the learning rate range should be within the same order of magnitude.\n- `lrfinder.range_test()` expects a pair of `input, label` to be returned from the `dataloader` objects passed to it. the `input` must be ready to be passed to the model and the `label` must be ready to be passed to the `criterion` without any further data processing/handling/conversion. if you find yourself needing a workaround you can make use of the classes `traindataloaderiter` and `valdataloaderiter` to perform any data processing/handling/conversion inbetween the `dataloader` and the training/evaluation loop. you can find an example of how to use these classes in [examples/lrfinder_cifar10_dataloader_iter](examples/lrfinder_cifar10_dataloader_iter.ipynb).\n\n## additional support for training\n\n### gradient accumulation\n\nyou can set the `accumulation_steps` parameter in `lrfinder.range_test()` with a proper value to perform gradient accumulation:\n\n```python\nfrom torch.utils.data import dataloader\nfrom torch_lr_finder import lrfinder\n\ndesired_batch_size, real_batch_size = 32, 4\naccumulation_steps = desired_batch_size // real_batch_size\n\ndataset = ...\n\n# beware of the `batch_size` used by `dataloader`\ntrainloader = dataloader(dataset, batch_size=real_batch_size, shuffle=true)\n\nmodel = ...\ncriterion = ...\noptimizer = ...\n\n# (optional) with this setting, `amp.scale_loss()` will be adopted automatically.\n# model, optimizer = amp.initialize(model, optimizer, opt_level='o1')\n\nlr_finder = lrfinder(model, optimizer, criterion, device=\"cuda\")\nlr_finder.range_test(trainloader, end_lr=10, num_iter=100, step_mode=\"exp\", accumulation_steps=accumulation_steps)\nlr_finder.plot()\nlr_finder.reset()\n```\n\n### mixed precision training\n\ncurrently, we use [`apex`](https://github.com/nvidia/apex) as the dependency for mixed precision training.\nto enable mixed precision training, you just need to call `amp.initialize()` before running `lrfinder`. e.g.\n\n```python\nfrom torch_lr_finder import lrfinder\nfrom apex import amp\n\n# add this line before running `lrfinder`\nmodel, optimizer = amp.initialize(model, optimizer, opt_level='o1')\n\nlr_finder = lrfinder(model, optimizer, criterion, device='cuda')\nlr_finder.range_test(trainloader, end_lr=10, num_iter=100, step_mode='exp')\nlr_finder.plot()\nlr_finder.reset()\n```\n\nnote that the benefit of mixed precision training requires a nvidia gpu with tensor cores (see also: [nvidia/apex #297](https://github.com/nvidia/apex/issues/297))\n\nbesides, you can try to set `torch.backends.cudnn.benchmark = true` to improve the training speed. (but it won't work for some cases, you should use it at your own risk)\n\n## contributing and pull requests\n\nall contributions are welcome but first, have a look at [contributing.md](contributing.md).\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "torch-lr-finder",
+  "package_url": "https://pypi.org/project/torch-lr-finder/",
+  "project_url": "https://pypi.org/project/torch-lr-finder/",
+  "project_urls": {
+    "Homepage": "https://github.com/davidtvs/pytorch-lr-finder"
+  },
+  "release_url": "https://pypi.org/project/torch-lr-finder/0.2.1/",
+  "requires_dist": [
+    "matplotlib",
+    "numpy",
+    "torch (>=0.4.1)",
+    "tqdm",
+    "packaging",
+    "pytest ; extra == 'dev'",
+    "pytest-cov ; extra == 'dev'",
+    "pytest-mock ; extra == 'dev'",
+    "flake8 ; extra == 'dev'",
+    "black ; extra == 'dev'",
+    "pep8-naming ; extra == 'dev'",
+    "torchvision ; extra == 'dev'",
+    "ipywidgets ; extra == 'dev'",
+    "pytest ; extra == 'tests'",
+    "pytest-cov ; extra == 'tests'",
+    "pytest-mock ; extra == 'tests'"
+  ],
+  "requires_python": ">=3.5.9",
+  "summary": "pytorch implementation of the learning rate range test",
+  "version": "0.2.1",
+  "releases": [],
+  "developers": [
+    "david_silva",
+    "davidtvs10@gmail.com"
+  ],
+  "kwds": "pytorch torch_lr_finder lr_finder lr_finder_cifar10 benchmark",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_torch_lr_finder",
+  "homepage": "https://github.com/davidtvs/pytorch-lr-finder",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_flake8",
+    "pypi_ipywidgets",
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_packaging",
+    "pypi_pep8_naming",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_mock",
+    "pypi_torch",
+    "pypi_torchvision",
+    "pypi_tqdm"
+  ]
+}

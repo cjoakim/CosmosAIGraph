@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8"
+  ],
+  "description": "============\nhtml to text\n============\n\n\n.. image:: https://img.shields.io/pypi/v/html-text.svg\n   :target: https://pypi.python.org/pypi/html-text\n   :alt: pypi version\n\n.. image:: https://img.shields.io/travis/teamhg-memex/html-text.svg\n   :target: https://travis-ci.org/teamhg-memex/html-text\n   :alt: build status\n\n.. image:: http://codecov.io/github/teamhg-memex/soft404/coverage.svg?branch=master\n   :target: http://codecov.io/github/teamhg-memex/html-text?branch=master\n   :alt: code coverage\n\nextract text from html\n\n* free software: mit license\n\nhow is html_text different from ``.xpath('//text()')`` from lxml\nor ``.get_text()`` from beautiful soup?\n\n* text extracted with ``html_text`` does not contain inline styles,\n  javascript, comments and other text that is not normally visible to users;\n* ``html_text`` normalizes whitespace, but in a way smarter than\n  ``.xpath('normalize-space())``, adding spaces around inline elements\n  (which are often used as block elements in html markup), and trying to\n  avoid adding extra spaces for punctuation;\n* ``html-text`` can add newlines (e.g. after headers or paragraphs), so\n  that the output text looks more like how it is rendered in browsers.\n\ninstall\n-------\n\ninstall with pip::\n\n    pip install html-text\n\nthe package depends on lxml, so you might need to install additional\npackages: http://lxml.de/installation.html\n\n\nusage\n-----\n\nextract text from html::\n\n    >>> import html_text\n    >>> html_text.extract_text('<h1>hello</h1> world!')\n    'hello\\n\\nworld!'\n\n    >>> html_text.extract_text('<h1>hello</h1> world!', guess_layout=false)\n    'hello world!'\n\npassed html is first cleaned from invisible non-text content such\nas styles, and then text is extracted.\n\nyou can also pass an already parsed ``lxml.html.htmlelement``:\n\n    >>> import html_text\n    >>> tree = html_text.parse_html('<h1>hello</h1> world!')\n    >>> html_text.extract_text(tree)\n    'hello\\n\\nworld!'\n\nif you want, you can handle cleaning manually; use lower-level\n``html_text.etree_to_text`` in this case:\n\n    >>> import html_text\n    >>> tree = html_text.parse_html('<h1>hello<style>.foo{}</style>!</h1>')\n    >>> cleaned_tree = html_text.cleaner.clean_html(tree)\n    >>> html_text.etree_to_text(cleaned_tree)\n    'hello!'\n\nparsel.selector objects are also supported; you can define\na parsel.selector to extract text only from specific elements:\n\n    >>> import html_text\n    >>> sel = html_text.cleaned_selector('<h1>hello</h1> world!')\n    >>> subsel = sel.xpath('//h1')\n    >>> html_text.selector_to_text(subsel)\n    'hello'\n\nnb parsel.selector objects are not cleaned automatically, you need to call\n``html_text.cleaned_selector`` first.\n\nmain functions and objects:\n\n* ``html_text.extract_text`` accepts html and returns extracted text.\n* ``html_text.etree_to_text`` accepts parsed lxml element and returns\n  extracted text; it is a lower-level function, cleaning is not handled\n  here.\n* ``html_text.cleaner`` is an ``lxml.html.clean.cleaner`` instance which\n  can be used with ``html_text.etree_to_text``; its options are tuned for\n  speed and text extraction quality.\n* ``html_text.cleaned_selector`` accepts html as text or as\n  ``lxml.html.htmlelement``, and returns cleaned ``parsel.selector``.\n* ``html_text.selector_to_text`` accepts ``parsel.selector`` and returns\n  extracted text.\n\nif ``guess_layout`` is true (default), a newline is added before and after\n``newline_tags``, and two newlines are added before and after\n``double_newline_tags``. this heuristic makes the extracted text\nmore similar to how it is rendered in the browser. default newline and double\nnewline tags can be found in `html_text.newline_tags`\nand `html_text.double_newline_tags`.\n\nit is possible to customize how newlines are added, using ``newline_tags`` and\n``double_newline_tags`` arguments (which are `html_text.newline_tags` and\n`html_text.double_newline_tags` by default). for example, don't add a newline\nafter ``<div>`` tags:\n\n    >>> newline_tags = html_text.newline_tags - {'div'}\n    >>> html_text.extract_text('<div>hello</div> world!',\n    ...                        newline_tags=newline_tags)\n    'hello world!'\n\napart from just getting text from the page (e.g. for display or search),\none intended usage of this library is for machine learning (feature extraction).\nif you want to use the text of the html page as a feature (e.g. for classification),\nthis library gives you plain text that you can later feed into a standard text\nclassification pipeline.\nif you feel that you need html structure as well, check out\n`webstruct <http://webstruct.readthedocs.io/en/latest/>`_ library.\n\n----\n\n.. image:: https://hyperiongray.s3.amazonaws.com/define-hg.svg\n\t:target: https://www.hyperiongray.com/?pk_campaign=github&pk_kwd=html-text\n\t:alt: define hyperiongray\n\n\n=======\nhistory\n=======\n\n0.5.2 (2020-07-22)\n------------------\n\n* handle lxml cleaner exceptions (a workaround for\n  https://bugs.launchpad.net/lxml/+bug/1838497 );\n* python 3.8 support;\n* testing improvements.\n\n0.5.1 (2019-05-27)\n------------------\n\nfixed whitespace handling when ``guess_punct_space`` is false: html-text was\nproducing unnecessary spaces after newlines.\n\n0.5.0 (2018-11-19)\n------------------\n\nparsel dependency is removed in this release,\nthough parsel is still supported.\n\n* ``parsel`` package is no longer required to install and use html-text;\n* ``html_text.etree_to_text`` function allows to extract text from\n  lxml elements;\n* ``html_text.cleaner`` is an ``lxml.html.clean.cleaner`` instance with\n  options tuned for text extraction speed and quality;\n* test and documentation improvements;\n* python 3.7 support.\n\n0.4.1 (2018-09-25)\n------------------\n\nfixed a regression in 0.4.0 release: text was empty when\n``html_text.extract_text`` is called with a node with text, but\nwithout children.\n\n0.4.0 (2018-09-25)\n------------------\n\nthis is a backwards-incompatible release: by default html_text functions\nnow add newlines after elements, if appropriate, to make the extracted text\nto look more like how it is rendered in a browser.\n\nto turn it off, pass ``guess_layout=false`` option to html_text functions.\n\n* ``guess_layout`` option to to make extracted text look more like how\n  it is rendered in browser.\n* add tests of layout extraction for real webpages.\n\n\n0.3.0 (2017-10-12)\n------------------\n\n* expose functions that operate on selectors,\n  use ``.//text()`` to extract text from selector.\n\n\n0.2.1 (2017-05-29)\n------------------\n\n* packaging fix (include changes.rst)\n\n\n0.2.0 (2017-05-29)\n------------------\n\n* fix unwanted joins of words with inline tags: spaces are added for inline\n  tags too, but a heuristic is used to preserve punctuation without extra spaces.\n* accept parsed html trees.\n\n\n0.1.1 (2017-01-16)\n------------------\n\n* travis-ci and codecov.io integrations added\n\n\n0.1.0 (2016-09-27)\n------------------\n\n* first release on pypi.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit license",
+  "name": "html-text",
+  "package_url": "https://pypi.org/project/html-text/",
+  "project_url": "https://pypi.org/project/html-text/",
+  "project_urls": {
+    "Homepage": "https://github.com/TeamHG-Memex/html-text"
+  },
+  "release_url": "https://pypi.org/project/html-text/0.5.2/",
+  "requires_dist": [
+    "lxml"
+  ],
+  "requires_python": "",
+  "summary": "extract text from html",
+  "version": "0.5.2",
+  "releases": [],
+  "developers": [
+    "konstantin_lopukhin",
+    "kostia.lopuhin@gmail.com"
+  ],
+  "kwds": "html_text parse_html extract_text xpath clean_html",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_html_text",
+  "homepage": "https://github.com/teamhg-memex/html-text",
+  "release_count": 10,
+  "dependency_ids": [
+    "pypi_lxml"
+  ]
+}

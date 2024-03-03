@@ -1,0 +1,46 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering :: gis",
+    "topic :: scientific/engineering :: mathematics"
+  ],
+  "description": "# haversine\n\ncalculate the distance (in various units) between two points on earth using their latitude and longitude.\n\n## installation\n\n```sh\npip install haversine\n```\n\n## usage\n\n### calculate the distance between lyon and paris\n\n```python\nfrom haversine import haversine, unit\n\nlyon = (45.7597, 4.8422) # (lat, lon)\nparis = (48.8567, 2.3508)\n\nhaversine(lyon, paris)\n>> 392.2172595594006  # in kilometers\n\nhaversine(lyon, paris, unit=unit.miles)\n>> 243.71250609539814  # in miles\n\n# you can also use the string abbreviation for units:\nhaversine(lyon, paris, unit='mi')\n>> 243.71250609539814  # in miles\n\nhaversine(lyon, paris, unit=unit.nautical_miles)\n>> 211.78037755311516  # in nautical miles\n```\n\nthe lat/lon values need to be provided in degrees of the ranges [-90,90] (lat) and [-180,180] (lon).\nif values are outside their ranges, an error will be raised. this can be avoided by automatic normalization via the `normalize` parameter.\n\nthe `haversine.unit` enum contains all supported units:\n\n```python\nimport haversine\n\nprint(tuple(haversine.unit))\n```\n\noutputs\n\n```text\n(<unit.kilometers: 'km'>, <unit.meters: 'm'>, <unit.miles: 'mi'>,\n <unit.nautical_miles: 'nmi'>, <unit.feet: 'ft'>, <unit.inches: 'in'>,\n <unit.radians: 'rad'>, <unit.degrees: 'deg'>)\n```\n\n#### note for radians and degrees\n\nthe radian and degrees returns the [great circle distance](https://en.wikipedia.org/wiki/great-circle_distance) between two points on a sphere.\n\nnotes:\n\n- on a unit-sphere the angular distance in radians equals the distance between the two points on the sphere (definition of radians)\n- when using \"degree\", this angle is just converted from radians to degrees\n\n### inverse haversine formula\n\ncalculates a point from a given vector (distance and direction) and start point.\ncurrently explicitly supports both cardinal (north, east, south, west) and intercardinal (northeast, southeast, southwest, northwest) directions.\nbut also allows for explicit angles expressed in radians.\n\n## example: finding arbitary point from paris\n\n```python\nfrom haversine import inverse_haversine, direction\nfrom math import pi\nparis = (48.8567, 2.3508) # (lat, lon)\n# finding 32 km west of paris\ninverse_haversine(paris, 32, direction.west)\n# returns tuple (48.85587279023947, 1.9134085092836945)\n# finding 32 km southwest of paris\ninverse_haversine(paris, 32, pi * 1.25)\n# returns tuple (48.65279552300661, 2.0427666779658806)\n# finding 50 miles north of paris\ninverse_haversine(paris, 50, direction.north, unit=unit.miles)\n# returns tuple (49.58035791599536, 2.3508)\n# finding 10 nautical miles south of paris\ninverse_haversine(paris, 10, direction.south, unit=unit.nautical_miles)\n# returns tuple (48.690145868497645, 2.3508)\n```\n\n### performance optimisation for distances between all points in two vectors\n\nyou will need to install [numpy](https://pypi.org/project/numpy/) in order to gain performance with vectors.\nfor optimal performance, you can turn off coordinate checking by adding `check=false` and install the optional packages [numba](https://pypi.org/project/numba/) and [icc_rt](https://pypi.org/project/icc_rt/).\n\nyou can then do this:\n\n```python\nfrom haversine import haversine_vector, unit\n\nlyon = (45.7597, 4.8422) # (lat, lon)\nparis = (48.8567, 2.3508)\nnew_york = (40.7033962, -74.2351462)\n\nhaversine_vector([lyon, lyon], [paris, new_york], unit.kilometers)\n\n>> array([ 392.21725956, 6163.43638211])\n```\n\nit is generally slower to use `haversine_vector` to get distance between two points, but can be really fast to compare distances between two vectors.\n\n### combine matrix\n\nyou can generate a matrix of all combinations between coordinates in different vectors by setting `comb` parameter as true.\n\n```python\nfrom haversine import haversine_vector, unit\n\nlyon = (45.7597, 4.8422) # (lat, lon)\nlondon = (51.509865, -0.118092)\nparis = (48.8567, 2.3508)\nnew_york = (40.7033962, -74.2351462)\n\nhaversine_vector([lyon, london], [paris, new_york], unit.kilometers, comb=true)\n\n>> array([[ 392.21725956,  343.37455271],\n \t  [6163.43638211, 5586.48447423]])\n```\n\nthe output array from the example above returns the following table:\n\n|        |       paris       |       new york       |\n| ------ | :---------------: | :------------------: |\n| lyon   |  lyon <\\-> paris  |  lyon <\\-> new york  |\n| london | london <\\-> paris | london <\\-> new york |\n\nby definition, if you have a vector _a_ with _n_ elements, and a vector _b_ with _m_ elements. the result matrix _m_ would be $n x m$ and a element m\\[i,j\\] from the matrix would be the distance between the ith coordinate from vector _a_ and jth coordinate with vector _b_.\n\n## contributing\n\nclone the project.\n\ninstall [pipenv](https://github.com/pypa/pipenv).\n\nrun `pipenv install --dev`\n\nlaunch test with `pipenv run pytest`\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "haversine",
+  "package_url": "https://pypi.org/project/haversine/",
+  "project_url": "https://pypi.org/project/haversine/",
+  "project_urls": {
+    "Homepage": "https://github.com/mapado/haversine"
+  },
+  "release_url": "https://pypi.org/project/haversine/2.8.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.5",
+  "summary": "calculate the distance between 2 points on earth.",
+  "version": "2.8.0",
+  "releases": [],
+  "developers": [
+    "balthazar_rouberol",
+    "julien.deniau@mapado.com",
+    "julien_deniau"
+  ],
+  "kwds": "nautical_miles longitude distances distance haversine_vector",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_haversine",
+  "homepage": "https://github.com/mapado/haversine",
+  "release_count": 26,
+  "dependency_ids": []
+}

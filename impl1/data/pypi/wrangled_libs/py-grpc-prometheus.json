@@ -1,0 +1,38 @@
+{
+  "classifiers": [],
+  "description": "# py-grpc-prometheus\n\ninstrument library to provide prometheus metrics similar to:\n\n- https://github.com/grpc-ecosystem/java-grpc-prometheus\n- https://github.com/grpc-ecosystem/go-grpc-prometheus\n\n\n## status\ncurrently, the library has the parity metrics with the java and go library.\n\n### server side:\n- grpc_server_started_total\n- grpc_server_handled_total\n- grpc_server_msg_received_total\n- grpc_server_msg_sent_total\n- grpc_server_handling_seconds\n\n### client side:\n- grpc_client_started_total\n- grpc_client_handled_total\n- grpc_client_msg_received_total\n- grpc_client_msg_sent_total\n- grpc_client_handling_seconds\n- grpc_client_msg_recv_handling_seconds\n- grpc_client_msg_send_handling_seconds\n\n## how to use\n\n```\npip install py-grpc-prometheus\n```\n\n## client side:\nclient metrics monitoring is done by intercepting the gprc channel.\n\n```python\nimport grpc\nfrom py_grpc_prometheus.prometheus_client_interceptor import promclientinterceptor\n\nchannel = grpc.intercept_channel(grpc.insecure_channel('server:6565'),\n                                         promclientinterceptor())\n# start an end point to expose metrics.\nstart_http_server(metrics_port)\n```\n\n## server side:\nserver metrics are exposed by adding the interceptor when the grpc server is started. take a look at\n`tests/integration/hello_world/hello_world_client.py` for the complete example.\n\n```python\nimport grpc\nfrom concurrent import futures\nfrom py_grpc_prometheus.prometheus_server_interceptor import promserverinterceptor\nfrom prometheus_client import start_http_server\n```\n\nstart the grpc server with the interceptor, take a look at\n`tests/integration/hello_world/hello_world_server.py` for the complete example.\n\n```python\nserver = grpc.server(futures.threadpoolexecutor(max_workers=10),\n                         interceptors=(promserverinterceptor(),))\n# start an end point to expose metrics.\nstart_http_server(metrics_port)\n```\n\n## histograms\n\n[prometheus histograms](https://prometheus.io/docs/concepts/metric_types/#histogram) are a great way\nto measure latency distributions of your rpcs. however, since it is bad practice to have metrics\nof [high cardinality](https://prometheus.io/docs/practices/instrumentation/#do-not-overuse-labels)\nthe latency monitoring metrics are disabled by default. to enable them please call the following\nin your interceptor initialization code:\n\n```jsoniq\nserver = grpc.server(futures.threadpoolexecutor(max_workers=10),\n                     interceptors=(promserverinterceptor(enable_handling_time_histogram=true),))\n```\n\nafter the call completes, its handling time will be recorded in a [prometheus histogram](https://prometheus.io/docs/concepts/metric_types/#histogram)\nvariable `grpc_server_handling_seconds`. the histogram variable contains three sub-metrics:\n\n * `grpc_server_handling_seconds_count` - the count of all completed rpcs by status and method\n * `grpc_server_handling_seconds_sum` - cumulative time of rpcs by status and method, useful for\n   calculating average handling times\n * `grpc_server_handling_seconds_bucket` - contains the counts of rpcs by status and method in respective\n   handling-time buckets. these buckets can be used by prometheus to estimate slas (see [here](https://prometheus.io/docs/practices/histograms/))\n\n## server side:\n- enable_handling_time_histogram: enables 'grpc_server_handling_seconds'\n\n## client side:\n- enable_client_handling_time_histogram: enables 'grpc_client_handling_seconds'\n- enable_client_stream_receive_time_histogram: enables 'grpc_client_msg_recv_handling_seconds'\n- enable_client_stream_send_time_histogram: enables 'grpc_client_msg_send_handling_seconds'\n\n## legacy metrics:\n\nmetric names have been updated to be in line with those from https://github.com/grpc-ecosystem/go-grpc-prometheus.\n\nthe legacy metrics are:\n\n### server side:\n- grpc_server_started_total\n- grpc_server_handled_total\n- grpc_server_handled_latency_seconds\n- grpc_server_msg_received_total\n- grpc_server_msg_sent_total\n\n### client side:\n- grpc_client_started_total\n- grpc_client_completed\n- grpc_client_completed_latency_seconds\n- grpc_client_msg_sent_total\n- grpc_client_msg_received_total\n\nin order to be able to use these legacy metrics for backwards compatibility, the `legacy` flag can be set to `true` when initialising the server/client interceptors\n\nfor example, to enable the server side legacy metrics:\n```jsoniq\nserver = grpc.server(futures.threadpoolexecutor(max_workers=10),\n                     interceptors=(promserverinterceptor(legacy=true),))\n```\n\n## how to run and test\n```sh\nmake initialize-development\nmake test\n```\n\n## todo:\n- unit test with https://github.com/census-instrumentation/opencensus-python/blob/master/tests/unit/trace/ext/grpc/test_server_interceptor.py\n\n## reference\n- https://grpc.io/grpc/python/grpc.html\n- https://github.com/census-instrumentation/opencensus-python/blob/master/opencensus/trace/ext/grpc/utils.py\n- https://github.com/opentracing-contrib/python-grpc/blob/b4bdc7ce81fa75ede00f7c6bcf5dab8fae47332a/grpc_opentracing/grpcext/grpc_interceptor/server_interceptor.py\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "py-grpc-prometheus",
+  "package_url": "https://pypi.org/project/py-grpc-prometheus/",
+  "project_url": "https://pypi.org/project/py-grpc-prometheus/",
+  "project_urls": {
+    "Homepage": "https://github.com/lchenn/py-grpc-prometheus"
+  },
+  "release_url": "https://pypi.org/project/py-grpc-prometheus/0.7.0/",
+  "requires_dist": [
+    "setuptools (>=39.0.1)",
+    "grpcio (>=1.10.0)",
+    "prometheus-client (>=0.3.0)"
+  ],
+  "requires_python": "",
+  "summary": "python grpc prometheus interceptors",
+  "version": "0.7.0",
+  "releases": [],
+  "developers": [
+    "lin_chen",
+    "linchen04@gmail.com"
+  ],
+  "kwds": "py_grpc_prometheus prometheus_client grpc_server_handling_seconds_count grpc_server_handling_seconds_sum grpc_client_msg_recv_handling_seconds",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_py_grpc_prometheus",
+  "homepage": "https://github.com/lchenn/py-grpc-prometheus",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_grpcio",
+    "pypi_prometheus_client",
+    "pypi_setuptools"
+  ]
+}

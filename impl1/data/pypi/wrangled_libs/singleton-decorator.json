@@ -1,0 +1,30 @@
+{
+  "classifiers": [],
+  "description": "singleton-decorator\n===================\n\na testable singleton decorator allows easily create a singleton objects\njust adding a decorator to class definition but also allows easily write\nunit tests for those classes.\n\na problem\n=========\n\nif you use a simple singleton pattern based on a decorator function that\nwraps a class with inner wrapper function like this:\n\n.. code-block::\n\n    def singleton(cls):\n        instances = {}\n        def wrapper(*args, **kwargs):\n            if cls not in instances:\n              instances[cls] = cls(*args, **kwargs)\n            return instances[cls]\n        return wrapper\n\nit works fine with your classes, but it makes impossible a direct access\nto the class object without decorator. so you cannot call methods using\na class name in unit tests:\n\n.. code-block::\n\n    @singleton\n    class yourclass:\n        def method(self):\n            ...\n    yourclass.method(...)\n\nthis code would not work because ``youclass`` actually contains a wrapper function\nbut not your class object. also this approach causes another problem if your\ntests require separate instances of the objects, so a singleton pattern could\nbreak an isolation of different tests.\n\nsolution\n========\n\nthe **singleton-decorator** offers a simple solution to avoid both of these\nproblems. it uses a separate wrapper object for each decorated class and holds\na class within ``__wrapped__`` attribute so you can access the decorated class\ndirectly in your unit tests.\n\ninstallation\n============\n\nto install the **singleton-decorator** just type in the command line:\n\n.. code-block::\n\n    $ pip install singleton-decorator\n\nusage\n=====\n\nat first import the singleton decorator:\n\n.. code-block::\n\n    from singleton_decorator import singleton\n\nthen decorate you classes with this decorator:\n\n.. code-block::\n\n    @singleton\n    class yourclass:\n        ...\n\nthat's all. now you could create or get existing instance of your class by\ncalling it as a simple class object:\n\n.. code-block::\n\n    obj = yourclass()  # creates a new instance\n    obj2 = yourclass()  # returns the same instance\n    obj3 = yourclass()  # returns the same instance\n    ...\n\nyou also could pass args and kwargs into constructor of your class:\n\n.. code-block::\n\n    obj = yourclass(1, \"foo\", bar=\"baz\")\n\n.. note::\n\n    since the singleton pattern allows to create only one instance from\n    the class, an ``__init__`` method would be called once with args and\n    kwargs passed at the first call. arguments of all future calls would\n    be completely ignored and would not impact the existing instance at all.\n\nunit testing\n============\n\nin your unit tests to run the methods of decorated classes in isolation\nwithout instantiation the object (to avoid running a constructor code),\nuse the ``__wrapped__`` attribute of the wrapper object:\n\n.. code-block::\n\n    # your_module.py\n    @singleton\n    class yourclass:\n        def your_method(self):\n            ...\n\n.. code-block::\n\n    # tests.py\n    class testyourclass(testcase):\n        def test_your_method(self):\n            obj = mock.magicmock()\n            yourclass.__wrapped__.your_method(obj)\n            ...\n\nthis test runs a code of the ``your_method`` only using a mock object\nas the ``self`` argument, so the test would be run in complete isolation\nand would not depend on another pieces of your code including a constructor\nmethod.\n",
+  "docs_url": null,
+  "keywords": "singleton decorator unittest",
+  "license": "gplv3",
+  "name": "singleton-decorator",
+  "package_url": "https://pypi.org/project/singleton-decorator/",
+  "project_url": "https://pypi.org/project/singleton-decorator/",
+  "project_urls": {
+    "Homepage": "https://github.com/Kemaweyan/singleton_decorator"
+  },
+  "release_url": "https://pypi.org/project/singleton-decorator/1.0.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "a testable singleton decorator",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "kemaweyan@gmail.com",
+    "taras_gaidukov"
+  ],
+  "kwds": "singleton_decorator singleton decorator test_your_method instances",
+  "license_kwds": "gplv3",
+  "libtype": "pypi",
+  "id": "pypi_singleton_decorator",
+  "homepage": "https://github.com/kemaweyan/singleton_decorator",
+  "release_count": 1,
+  "dependency_ids": []
+}

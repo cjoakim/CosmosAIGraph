@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: win32 (ms windows)",
+    "intended audience :: developers",
+    "intended audience :: system administrators",
+    "license :: osi approved :: apache software license",
+    "natural language :: english",
+    "operating system :: microsoft :: windows",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: system :: systems administration"
+  ],
+  "description": "pymi - windows management infrastructure api for python\n=======================================================\n\nthis project provides a python native module wrapper over the windows\nmanagement infrastructure (mi) api [#miapi]_.\n\nworks with python 2.7 and 3.x on any windows version which supports the mi api,\nboth x86 and x64.\n\nit includes also a drop-in replacement for the python wmi [#pywmi]_ module,\nproving much faster execution times and no dependency on pywin32.\n\ninstallation\n------------\n\npip is the preferred way to install pymi. pre-compiled binary wheels are\navailable on pypi [#pymipypi]_:\n\n.. code-block:: powershell\n\n    pip install pymi\n\nusage\n-----\n\nthis project can be used either with a lower level interface that reflects the\nunderlying mi api structure or with the higher level (and slightly slower)\nwmi module replacement.\n\nmi module basic usage\n^^^^^^^^^^^^^^^^^^^^^\n\nhere's a simple example which enumerates all processes and kills any instance of\n\"killerrabbitofcaerbannog.exe\".\n\n.. code-block:: python\n\n    import mi\n\n    with mi.application() as a:\n        with a.create_session(protocol=mi.protocol_wmidcom) as s:\n            proc_name = u'notepad.exe'\n            with s.exec_query(\n                    u\"root\\\\cimv2\", u\"select * from win32_process\") as q:\n                i = q.get_next_instance()\n                while i is not none:\n                    if i[u'name'].lower() == u\"killerrabbitofcaerbannog.exe\":\n                        cls = i.get_class()\n                        # prepare parameters\n                        params = a.create_method_params(cls, u\"terminate\")\n                        # exit code\n                        params['reason'] = 10\n                        # invoke method\n                        with s.invoke_method(i, u\"terminate\", params) as op:\n                            op.get_next_instance()\n                    i = q.get_next_instance()\n\nwmi module basic usage\n^^^^^^^^^^^^^^^^^^^^^^\n\nand here's the same example written using the *wmi* module replacement,\nwhich provides a simpler and higher level interface over the *mi* api:\n\n.. code-block:: python\n\n    import wmi\n\n    conn = wmi.wmi()\n    for p in conn.win32_process():\n        if p.name == u\"killerrabbitofcaerbannog.exe\":\n            p.terminate(reason=10)\n\n\nbuild\n-----\n\nuse the following to build python 3 wheels. those will be copied to the build\ndir.\n\n.. code-block:: powershell\n\n    python setup.py bdist_wheel\n\nthe best way to build pymi for python 2.7 or 3.4 and below is to use the\nvisual studio solution (described below). this will statically link the\nvc140 runtime, which is required by pymi.\n\ncustom vs env vars\n^^^^^^^^^^^^^^^^^^\n\ndistutils will automatically locate your visual studio and windows sdk\ninstallation. if you'd like to call vcvarsall.bat yourself and use a specific\nversion, use the following:\n\n.. code-block:: powershell\n\n    function setvcvars($vcvarsdir, $platform=\"amd64\")\n    {\n        pushd $vcvarsdir\n        try\n        {\n            cmd /c \"vcvarsall.bat $platform & set\" |\n            foreach {\n              if ($_ -match \"=\") {\n                $v = $_.split(\"=\"); set-item -force -path \"env:\\$($v[0])\"  -value \"$($v[1])\"\n              }\n            }\n        }\n        finally\n        {\n            popd\n        }\n    }\n\n    # replace this folder with the one in which the vcvarsall.bat script is\n    # located (the exact location depends on the visual studio version).\n    # setvcvars \"c:\\program files (x86)\\microsoft visual studio\\2017\\community\\vc\\auxiliary\\build\"\n    setvcvars \"c:\\program files (x86)\\microsoft visual studio 14.0\\vc\"\n\n    $env:distutils_use_sdk=1\n    $env:mssdk=1\n\n    python setup.py bdist_wheel\n\nmake sure to use the visual studio toolset that matches the python version\nthat you're targetting: https://wiki.python.org/moin/windowscompilers.\n\nby default, we're statically linking the vc runtime. to enable dynamic\nlinking, set ``$env:pymi_vcruntime_dynamic_linking=\"y\"``.\n\ndebug builds\n^^^^^^^^^^^^\n\nthe easiest way to do a debug build is to set the following in setup.cfg:\n\n.. code-block::\n\n    [build]\n    debug = 1\n\nthis will be honored regardless of the build type (e.g. stdist, wheel, etc).\n\nto enable distutils debug logging, you may set the following:\n\n.. code-block:: powershell\n\n    $env:distutils_debug = 1\n\nbefore doing a debug build, you may wish to clean the build dir.\n\nusing the visual studio solution\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nopen the provided *pymi.sln* solution in visual studio 2015 [#vs2015]_, choose\nyour target python version / platform and build. wheel packages are\nautomatically generated in the *dist* folder for release builds.\n\nnote: the target python version must be present. the python path can be\ncustomized by setting the corresponding pythondir* user macro,\ne.g. *pythondir_34_x64*. the *wheel* and *gitpython* packages are required during the build process:\n\n.. code-block:: powershell\n\n    pip install wheel\n    pip install gitpython\n\nas an alternative, you can use the msbuild cli tool:\n\n.. code-block:: powershell\n\n    $env:msbuildemitsolution=\"true\"\n    msbuild.exe .\\pymi.sln /p:configuration=\"release (python 3.7)\"\n\n\nreferences\n----------\n\n.. [#miapi] mi api https://msdn.microsoft.com/en-us/library/hh404805(v=vs.85).aspx\n.. [#pywmi] python wmi module https://pypi.python.org/pypi/wmi\n.. [#pymipypi] pymi on pypi https://pypi.python.org/pypi/pymi\n.. [#vs2015] visual studio 2015 download https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx\n\n\n\n",
+  "docs_url": null,
+  "keywords": "wmi mi windows",
+  "license": "",
+  "name": "pymi",
+  "package_url": "https://pypi.org/project/PyMI/",
+  "project_url": "https://pypi.org/project/PyMI/",
+  "project_urls": {
+    "Homepage": "https://github.com/cloudbase/PyMI"
+  },
+  "release_url": "https://pypi.org/project/PyMI/1.0.6/",
+  "requires_dist": [
+    "pbr (!=2.1.0,>=2.0.0)",
+    "six (>=1.10.0)"
+  ],
+  "requires_python": "",
+  "summary": "windows management infrastructure api for python.",
+  "version": "1.0.6",
+  "releases": [],
+  "developers": [
+    "alessandro_pilotti",
+    "info@cloudbasesolutions.com"
+  ],
+  "kwds": "pywin32 pywmi pymi_vcruntime_dynamic_linking pymi pymipypi",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_pymi",
+  "homepage": "https://github.com/cloudbase/pymi",
+  "release_count": 24,
+  "dependency_ids": [
+    "pypi_pbr",
+    "pypi_six"
+  ]
+}

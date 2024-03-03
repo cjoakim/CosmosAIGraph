@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "topic :: database"
+  ],
+  "description": "sqlalchemy-json\n###############\n\nsqlalchemy-json provides mutation-tracked json types to sqlalchemy_:\n\n* ``mutablejson`` is a straightforward implementation for keeping track of top-level changes to json objects;\n* ``nestedmutablejson`` is an extension of this which tracks changes even when these happen in nested objects or arrays (python ``dicts`` and ``lists``).\n\n\nexamples\n========\n\nbasic change tracking\n---------------------\n\nthis is essentially the sqlalchemy `mutable json recipe`_. we define a simple author model which list the author's name and a property ``handles`` for various social media handles used:\n\n.. code-block:: python\n\n    class author(base):\n        name = column(text)\n        handles = column(mutablejson)\n\nor, using the declarative mapping style:\n\n.. code-block:: python\n\n    class category(base):\n        __tablename__ = \"categories\"\n\n        id = mapped_column(integer, primary_key=true)\n        created_at: mapped[datetime] = mapped_column(datetime, default=datetime.now)\n        updated_at: mapped[datetime] = mapped_column(\n            datetime, default=datetime.now, onupdate=datetime.now\n        )\n        keywords: mapped[list[str]] = mapped_column(mutablejson)\n\nthe example below loads one of the existing authors and retrieves the mapping of social media handles. the error in the twitter handle is then corrected and committed. the change is detected by sqlalchemy and the appropriate ``update`` statement is generated.\n\n.. code-block:: python\n\n    >>> author = session.query(author).first()\n    >>> author.handles\n    {'twitter': '@johndoe', 'facebook': 'johndoe'}\n    >>> author.handles['twitter'] = '@jdoe'\n    >>> session.commit()\n    >>> author.handles\n    {'twitter': '@jdoe', 'facebook': 'johndoe'}\n\n\nnested change tracking\n----------------------\n\nthe example below defines a simple model for articles. one of the properties on this model is a mutable json structure called ``references`` which includes a count of links that the article contains, grouped by domain:\n\n.. code-block:: python\n\n    class article(base):\n        author = column(foreignkey('author.name'))\n        content = column(text)\n        references = column(nestedmutablejson)\n\nwith this in place, an existing article is loaded and its current references inspected. following that, the count for one of these is increased by ten, and the session is committed:\n\n.. code-block:: python\n\n    >>> article = session.query(article).first()\n    >>> article.references\n    {'github.com': {'edelooff/sqlalchemy-json': 4, 'zzzeek/sqlalchemy': 7}}\n    >>> article.references['github.com']['edelooff/sqlalchemy-json'] += 10\n    >>> session.commit()\n    >>> article.references\n    {'github.com': {'edelooff/sqlalchemy-json': 14, 'zzzeek/sqlalchemy': 7}}\n\nhad the articles model used ``mutablejson`` like in the previous example this code would have failed. this is because the top level dictionary is never altered directly. the *nested* mutable ensures the change happening at the lower level *bubbles up* to the outermost container.\n\n\nnon-native json / other serialization types\n===========================================\n\nby default, sqlalchemy-json uses the json column type provided by sqlalchemy (specifically ``sqlalchemy.types.json``.)\nif you wish to use another type (e.g. postgresql's ``jsonb``), your database does not natively support json (e.g. versions of sqlite before 3.37.2/), or you wish to serialize to a format other than json, you'll need to provide a different backing type.\n\nthis is done by using the utility function ``mutable_json_type``. this type creator function accepts two parameters:\n\n* ``dbtype`` controls the database type used. this can be an existing type provided by sqlalchemy or sqlalchemy-utils_, or an `augmented type`_ to provide serialization to any other format;\n* ``nested`` controls whether the created type is made mutable based on ``mutabledict`` or ``nestedmutable`` (defaults to ``false`` for ``mutabledict``).\n\n.. code-block:: python\n\n    import json\n\n    from sqlalchemy import json, string, typedecorator\n    from sqlalchemy.dialects.postgresql import jsonb\n    from sqlalchemy_json import mutable_json_type\n\n    class jsonstring(typedecorator):\n        \"\"\"enables json storage by encoding and decoding on the fly.\"\"\"\n\n        impl = string\n\n        def process_bind_param(self, value, dialect):\n            return json.dumps(value)\n\n        def process_result_value(self, value, dialect):\n            return json.loads(value)\n\n\n    postgres_jsonb_mutable = mutable_json_type(dbtype=jsonb)\n    string_backed_nested_mutable = mutable_json_type(dbtype=jsonstring, nested=true)\n\n\ndependencies\n============\n\n* ``sqlalchemy``\n\ndevelopment\n===========\n\nhere's how to setup your development environment:\n\n.. code-block:: shell\n\n    python -m venv .venv\n    . .venv/bin/activate\n    pip install -e \".[dev]\"\n    # run tests\n    pytest\n\n\nchangelog\n=========\n\n0.7.0\n-----\n\n* adds support for top-level list for ``mutablejson``, rather than having that support only be available in the *nested* variant (https://github.com/edelooff/sqlalchemy-json/pull/51)\n* adds ``pytest`` as development dependency\n\n0.6.0\n-----\n\n* fixes pickling support (https://github.com/edelooff/sqlalchemy-json/issues/36)\n* drops python 2.x support (previously claimed, but already broken for some time)\n* removes test runners for cpython 3.6 since github actions support has been dropped\n\n0.5.0\n-----\n* fixes a lingering python 3 compatibility issue (``cmp`` parameter for ``trackedlist.sort``)\n* adds pickling and unpickling support (https://github.com/edelooff/sqlalchemy-json/pull/28)\n* adds tracking for dictionary in-place updates (https://github.com/edelooff/sqlalchemy-json/pull/33)\n\n0.4.0\n-----\n\n* adds a type creation function to allow for custom or alternate serialization types. this allows for a way around the regression in sqlite compatibility introduced by v0.3.0.\n\n0.3.0\n-----\n\n* switches json base type to ``sqlalchemy.types.json`` from deprecated json type provided by sqlalchemy-utils.\n\n0.2.2\n-----\n\n* fixes a bug where assigning ``none`` to the column resulted in an error (https://github.com/edelooff/sqlalchemy-json/issues/10)\n\n\n0.2.1\n-----\n\n* fixes a typo in the readme found after uploading 0.2.0 to pypi.\n\n\n0.2.0 (unreleased)\n------------------\n\n* now uses ``jsontype`` provided by sqlalchemy-utils_ to handle backend storage;\n* **backwards incompatible**: changed class name ``jsonobject`` to ``mutablejson`` and ``nestedjsonobject`` to ``nestedmutablejson``\n* outermost container for ``nestedmutablejson`` can now be an ``array`` (python ``list``)\n\n\n0.1.0 (unreleased)\n------------------\n\ninitial version. this initially carried a 1.0.0 version number but has never been released on pypi.\n\n\n.. _augmented type: https://docs.sqlalchemy.org/en/13/core/custom_types.html#augmenting-existing-types\n.. _mutable json recipe: http://docs.sqlalchemy.org/en/latest/core/custom_types.html#marshal-json-strings\n.. _sqlalchemy: https://www.sqlalchemy.org/\n.. _sqlalchemy-utils: https://sqlalchemy-utils.readthedocs.io/\n",
+  "docs_url": null,
+  "keywords": "sqlalchemy json mutable",
+  "license": "bsd",
+  "name": "sqlalchemy-json",
+  "package_url": "https://pypi.org/project/sqlalchemy-json/",
+  "project_url": "https://pypi.org/project/sqlalchemy-json/",
+  "project_urls": {
+    "Homepage": "https://github.com/edelooff/sqlalchemy-json"
+  },
+  "release_url": "https://pypi.org/project/sqlalchemy-json/0.7.0/",
+  "requires_dist": [
+    "sqlalchemy >=0.7",
+    "pytest ; extra == 'dev'"
+  ],
+  "requires_python": ">= 3.6",
+  "summary": "json type with nested change tracking for sqlalchemy",
+  "version": "0.7.0",
+  "releases": [],
+  "developers": [
+    "elmer.delooff@gmail.com",
+    "elmer_de_looff"
+  ],
+  "kwds": "sqlalchemy_json sqlalchemy _sqlalchemy sqlalchemy_ mutable_json_type",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_sqlalchemy_json",
+  "homepage": "https://github.com/edelooff/sqlalchemy-json",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_pytest",
+    "pypi_sqlalchemy"
+  ]
+}

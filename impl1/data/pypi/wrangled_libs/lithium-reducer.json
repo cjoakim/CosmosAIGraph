@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: mozilla public license 2.0 (mpl 2.0)",
+    "programming language :: python :: 3",
+    "topic :: security",
+    "topic :: software development :: testing"
+  ],
+  "description": "[![task status](https://community-tc.services.mozilla.com/api/github/v1/repository/mozillasecurity/lithium/master/badge.svg)](https://community-tc.services.mozilla.com/api/github/v1/repository/mozillasecurity/lithium/master/latest)\n[![codecov](https://codecov.io/gh/mozillasecurity/lithium/branch/master/graph/badge.svg)](https://codecov.io/gh/mozillasecurity/lithium)\n[![matrix](https://img.shields.io/badge/dynamic/json?color=green&label=chat&query=%24.chunk[%3f(%40.canonical_alias%3d%3d%22%23fuzzing%3amozilla.org%22)].num_joined_members&suffix=%20users&url=https%3a%2f%2fmozilla.modular.im%2f_matrix%2fclient%2fr0%2fpublicrooms&style=flat&logo=matrix)](https://riot.im/app/#/room/#fuzzing:mozilla.org)\n[![pypi](https://img.shields.io/pypi/v/lithium-reducer)](https://pypi.org/project/lithium-reducer)\n\n## using lithium\n\nlithium is an automated testcase reduction tool developed by [jesse ruderman](http://www.squarefree.com/).\n\nmost of what you need to know to use lithium is in one of these pages:\n\n- [how to use lithium to reduce firefox bugs](src/lithium/docs/using-for-firefox.md).  lithium has been used it to make reduced testcases for hundreds of firefox crashes and assertions.\n- [how to create your own \"interestingness tests\"](src/lithium/docs/creating-tests.md).  lithium is flexible enough to reduce files for complicated properties such as \"parsed differently by opera and firefox\".  just supply a small program that determines when a given file has the property.\n\n\n### lithium's algorithm\n\nby default, lithium uses a clever algorithm that's efficient at reducing most large testcases.  for a testcase with 2048 lines, it will try removing each chunk of size 1024, permanently removing it if it is still 'interesting'.  it then does the same for each chunk of size 512, then 256, all the way down to chunks of size 1.  it then does as many additional rounds at chunk size 1 as necessary until it completes a round without removing anything, at which point the file is 1-minimal (removing any single line from the file makes it 'uninteresting').\n\nif *n* is the size of the testcase and *m* is the size of the 1-minimal testcase found by lithium, then lithium usually performs o(m &sdot; lg(n)) tests with a total test size of o(m &sdot; n).  see the [analysis of lithium's algorithm](src/lithium/docs/algorithm.md) for more information and proofs.\n\nto keep *m* small, make sure lithium's smallest removals won't introduce fatal syntax errors into the file it is trying to reduce.  for example, don't use --char when trying to reduce a long sequence of javascript statements, and don't feed xhtml to lithium.  (convert it to html first and let firefox's tag-soup parser sort out the invalidity, or use serializedomasscript.)\n\n\n### command line syntax\n\n    pip install lithium-reducer\n    python -m lithium [options] interestingness-test.py [arguments for interestingness test]\n\n\n### command line options\n\n<dl>\n\n<dt>--testcase=filename</dt>\n<dd>tells lithium which file to reduce.  by default, it will assume the last argument to the interestingness test is the file to reduce.</dd>\n\n<dt>--char (-c)<dt>\n<dd>by default, lithium treats lines as atomic units.  this is great if each line is a javascript statement, but sometimes you want to go further.  use this option to tell lithium to treat the file as a sequence of characters instead of a sequence of lines.</dd>\n\n<dt>--strategy=[check-only,minimize,minimize-balanced,replace-properties-by-globals,replace-arguments-by-globals,minimize-around]</dt>\n<dd>\"minimize\" is the default, the algorithm described above. \"check-only\" tries to run lithium to determine interestingness, without reduction. for the other strategies, check out <a href=\"https://github.com/mozillasecurity/lithium/pull/2\">this github pr</a>.</dd>\n\n<dt>--repeat=[always, last, never].</dt>\n<dd>by default, lithium only repeats at the same chunk size if it just finished the last round (e.g. chunk size 1).  you can use --repeat=always to tell it to repeat any chunk size if something was removed during the round, which can be useful for non-deterministic testcases or non-monotonic situations.  you can use --repeat=never to tell it to exit immediately after a single round at the last chunk size, which can save a little time at the risk of leaving a little bit extra in the file.</dd>\n\n<dt>--max=n. default: about half of the file.</dt>\n<dt>--min=n. default: 1.</dt>\n<dd>what chunk sizes to test.  must be powers of two.  --max is useful if you're restarting lithium after it has already gone through a few rounds.  --min is useful if you're reducing html and want to do the final by hand.</dd>\n\n<dt>--chunk-size=n</dt>\n<dd>shortcut for \"repeat=never, min=n, max=n\".  --chunk-size=1 is a quick way to determine whether a file is 1-minimal, for example after making a change that you think might make some lines unnecessary.</dd>\n\n</dl>\n\n\n### hints\n\nif you find a non-deterministic bug, don't despair.  lithium will do fine as long as you make the bug happen at least 70% of the time.  you can repeat the test either within the application, by adding a loop or reload in the testcase (outside of the ddbegin/ddend markers!), or outside of the application, by adding a loop to the \"interestingness test\" script.\n\n\n### requirements\n\nlithium is written in [python](https://www.python.org/) and requires python 3.5+.\n\n### credits\n\n- [lithium's testcase reduction algorithm](src/lithium/docs/algorithm.md) is a modified version of the \"ddmin\" algorithm in andreas zeller's paper, [simplifying and isolating failure-inducing input](https://www.st.cs.uni-saarland.de/papers/tse2002/).\n- the idea of using an external \"interestingness test\" program came from [delta](http://delta.tigris.org/), a similar tool that's [used in clever ways by the gcc project](https://gcc.gnu.org/wiki/a_guide_to_testcase_reduction).\n- [timed_run](src/lithium/interestingness/timed_run.py), used by many of the \"interestingness test\" scripts that come with lithium, is based on [timed_run.py](https://web.archive.org/web/20071107032840/http://bclary.com/log/2007/03/07/timed_run), which was written by [chris cooper](http://coop.deadsquid.com/) and [bob clary](https://bclary.com/).\n- the code was significantly cleaned up and modernized by jesse schwartzentruber and gary kwong in mid-2017.\n",
+  "docs_url": null,
+  "keywords": "fuzz,fuzzing,reduce,reducer,reduction,security,test,testing",
+  "license": "mpl 2.0",
+  "name": "lithium-reducer",
+  "package_url": "https://pypi.org/project/lithium-reducer/",
+  "project_url": "https://pypi.org/project/lithium-reducer/",
+  "project_urls": {
+    "Homepage": "https://github.com/MozillaSecurity/lithium"
+  },
+  "release_url": "https://pypi.org/project/lithium-reducer/1.0.0/",
+  "requires_dist": [
+    "pre-commit ; extra == 'dev'",
+    "tox ; extra == 'dev'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "lithium is an automated testcase reduction tool",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "fuzzing@mozilla.com",
+    "jesse_ruderman",
+    "mozilla_fuzzing_team"
+  ],
+  "kwds": "mozilla mozillasecurity 3amozilla fuzzing badge",
+  "license_kwds": "mpl 2.0",
+  "libtype": "pypi",
+  "id": "pypi_lithium_reducer",
+  "homepage": "https://github.com/mozillasecurity/lithium",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_pre_commit",
+    "pypi_tox"
+  ]
+}

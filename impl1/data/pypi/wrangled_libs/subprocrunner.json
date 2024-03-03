@@ -1,0 +1,65 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: mit license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": ".. contents:: **subprocrunner**\n   :backlinks: top\n   :depth: 2\n\n\nsummary\n=============\na python wrapper library for ``subprocess`` module.\n\n.. image:: https://badge.fury.io/py/subprocrunner.svg\n    :target: https://badge.fury.io/py/subprocrunner\n    :alt: pypi package version\n\n.. image:: https://img.shields.io/pypi/pyversions/subprocrunner.svg\n    :target: https://pypi.org/project/subprocrunner\n    :alt: supported python versions\n\n.. image:: https://img.shields.io/pypi/implementation/subprocrunner.svg\n    :target: https://pypi.org/project/subprocrunner\n    :alt: supported python implementations\n\n.. image:: https://github.com/thombashi/subprocrunner/actions/workflows/lint_and_test.yml/badge.svg\n    :target: https://github.com/thombashi/subprocrunner/actions/workflows/lint_and_test.yml\n    :alt: ci status of linux/macos/windows\n\n.. image:: https://coveralls.io/repos/github/thombashi/subprocrunner/badge.svg?branch=master\n    :target: https://coveralls.io/github/thombashi/subprocrunner?branch=master\n    :alt: test coverage\n\n\nusage\n========\nexecute a command\n----------------------------\n:sample code:\n    .. code:: python\n\n        from subprocrunner import subprocessrunner\n\n        runner = subprocessrunner([\"echo\", \"test\"])\n        print(runner)\n        print(f\"return code: {runner.run()}\")\n        print(f\"stdout: {runner.stdout}\")\n        \n        runner = subprocessrunner([\"ls\", \"__not_exist_dir__\"])\n        print(runner)\n        print(f\"return code: {runner.run()}\")\n        print(f\"stderr: {runner.stderr}\")\n        \n:output:\n    .. code::\n\n        subprocessrunner(command='echo test', returncode='not yet executed')\n        return code: 0\n        stdout: test\n        \n        subprocessrunner(command='ls __not_exist_dir__', returncode='not yet executed')\n        return code: 2\n        stderr: ls: cannot access '__not_exist_dir__': no such file or directory\n\nexecute a command with retry\n--------------------------------------------------------\n\n:sample code:\n    .. code:: python\n\n        from subprocrunner import retry, subprocessrunner\n\n        subprocessrunner(command).run(retry=retry(total=3, backoff_factor=0.2, jitter=0.2))\n\nraise an exception when a command execution failed\n--------------------------------------------------------\n:sample code:\n    .. code:: python\n\n        import sys\n        from subprocrunner import subprocessrunner\n        from subprocrunner.error import calledprocesserror\n\n        runner = subprocessrunner(\"ls not-exist-dir\")\n\n        # raise an exception at run\n        try:\n            runner.run(check=true)\n        except calledprocesserror as e:\n            print(f\"run(check=true): {e}\\n{e.stderr}\", file=sys.stderr)\n\n\n        # raise an exception after run\n        runner.run()\n        try:\n            runner.raise_for_returncode()\n        except calledprocesserror as e:\n            print(f\"raise_for_returncode(): {e}\\n{e.stderr}\", file=sys.stderr)\n\n:output:\n    .. code::\n\n        run(check=true): command 'ls not-exist-dir' returned non-zero exit status 2.\n        ls: cannot access 'not-exist-dir': no such file or directory\n\n        raise_for_returncode(): command 'ls not-exist-dir' returned non-zero exit status 2.\n        ls: cannot access 'not-exist-dir': no such file or directory\n\ndry run\n----------------------------\ncommands are not actually run when passing ``dry_run=true`` to ``subprocessrunner`` class constructor.\n\n:sample code:\n    .. code:: python\n\n        from subprocrunner import subprocessrunner\n\n        runner = subprocessrunner(\"echo test\", dry_run=true)\n        print(runner)\n        print(f\"return code: {runner.run()}\")\n        print(f\"stdout: {runner.stdout}\")\n        \n:output:\n    .. code::\n\n        subprocessrunner(command='echo test', returncode='not yet executed', dryrun=true)\n        return code: 0\n        stdout: \n\nget execution command history\n--------------------------------------------------------\n:sample code:\n    .. code:: python\n\n        from subprocrunner import subprocessrunner\n\n        subprocessrunner.clear_history()\n        subprocessrunner.is_save_history = true\n        \n        subprocessrunner([\"echo\", \"hoge\"]).run()\n        subprocessrunner([\"echo\", \"foo\"]).run()\n        \n        print(\"\\n\".join(subprocessrunner.get_history()))\n\n:output:\n    .. code::\n\n        echo hoge\n        echo foo\n\nget a command information\n----------------------------\n.. code-block:: pycon\n\n    >>> from subprocrunner import which\n    >>> which = which(\"ls\")\n    >>> which.is_exist()\n    true\n    >>> which.abspath()\n    '/usr/bin/ls'\n    >>> which\n    command=ls, is_exist=true, abspath=/usr/bin/ls\n\n\ninstallation\n============\n\ninstall from pypi\n------------------------------\n::\n\n    pip install subprocrunner\n\ninstall from ppa (for ubuntu)\n------------------------------\n::\n\n    sudo add-apt-repository ppa:thombashi/ppa\n    sudo apt update\n    sudo apt install python3-subprocrunner\n\n\ndependencies\n============\n- python 3.6+\n- `python package dependencies (automatically installed) <https://github.com/thombashi/subprocrunner/network/dependencies>`__\n\noptional dependencies\n----------------------------------\n- `loguru <https://github.com/delgan/loguru>`__\n    - used for logging if the package installed\n\n\n",
+  "docs_url": null,
+  "keywords": "library,subprocess",
+  "license": "mit license",
+  "name": "subprocrunner",
+  "package_url": "https://pypi.org/project/subprocrunner/",
+  "project_url": "https://pypi.org/project/subprocrunner/",
+  "project_urls": {
+    "Homepage": "https://github.com/thombashi/subprocrunner",
+    "Source": "https://github.com/thombashi/subprocrunner",
+    "Tracker": "https://github.com/thombashi/subprocrunner/issues"
+  },
+  "release_url": "https://pypi.org/project/subprocrunner/2.0.0/",
+  "requires_dist": [
+    "mbstrdecoder (<2,>=1.0.0)",
+    "loguru (<1,>=0.4.1) ; extra == 'logging'",
+    "pytest ; extra == 'test'",
+    "pytest-mock ; extra == 'test'",
+    "typepy ; extra == 'test'",
+    "loguru (<1,>=0.4.1) ; extra == 'test'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "a python wrapper library for subprocess module.",
+  "version": "2.0.0",
+  "releases": [],
+  "developers": [
+    "tsuyoshi.hombashi@gmail.com",
+    "tsuyoshi_hombashi"
+  ],
+  "kwds": "subprocessrunner subprocess subprocrunner pyversions calledprocesserror",
+  "license_kwds": "mit license",
+  "libtype": "pypi",
+  "id": "pypi_subprocrunner",
+  "homepage": "https://github.com/thombashi/subprocrunner",
+  "release_count": 63,
+  "dependency_ids": [
+    "pypi_loguru",
+    "pypi_mbstrdecoder",
+    "pypi_pytest",
+    "pypi_pytest_mock",
+    "pypi_typepy"
+  ]
+}

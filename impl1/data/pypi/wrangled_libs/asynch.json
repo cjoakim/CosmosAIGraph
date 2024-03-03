@@ -1,0 +1,57 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# asynch\n\n![pypi](https://img.shields.io/pypi/v/asynch.svg?style=flat)\n![license](https://img.shields.io/github/license/long2ice/asynch)\n![workflows](https://github.com/long2ice/asynch/workflows/pypi/badge.svg)\n![workflows](https://github.com/long2ice/asynch/workflows/ci/badge.svg)\n\n## introduction\n\n`asynch` is an asyncio clickhouse python driver with native (tcp) interface support, which reuse most of [clickhouse-driver](https://github.com/mymarilyn/clickhouse-driver) and comply with [pep249](https://www.python.org/dev/peps/pep-0249/).\n\n## install\n\n```shell\n> pip install asynch\n```\n\nor if you want to install [`clickhouse-cityhash`](https://pypi.org/project/clickhouse-cityhash/) to enable\ntransport compression\n\n```shell\n> pip install asynch[compression]\n```\n\n## usage\n\nconnect to clickhouse\n\n```python\nfrom asynch import connect\n\nasync def connect_database():\n    conn = await connect(\n        host = \"127.0.0.1\",\n        port = 9000,\n        database = \"default\",\n        user = \"default\",\n        password = \"\",\n    )\n```\n\ncreate table by sql\n\n```python\nasync def create_table():\n    async with conn.cursor(cursor=dictcursor) as cursor:\n        await cursor.execute('create database if not exists test')\n        await cursor.execute(\"\"\"\n        create table if not exists test.asynch\n            (\n                `id`       int32,\n                `decimal`  decimal(10, 2),\n                `date`     date,\n                `datetime` datetime,\n                `float`    float32,\n                `uuid`     uuid,\n                `string`   string,\n                `ipv4`     ipv4,\n                `ipv6`     ipv6\n\n            )\n            engine = mergetree\n                order by id\"\"\"\n        )\n```\n\nuse `fetchone`\n\n```python\nasync def fetchone():\n    async with conn.cursor() as cursor:\n        await cursor.execute(\"select 1\")\n        ret = await cursor.fetchone()\n        assert ret == (1,)\n```\n\nuse `fetchmany`\n\n```python\nasync def fetchall():\n    async with conn.cursor() as cursor:\n        await cursor.execute(\"select 1\")\n        ret = await cursor.fetchall()\n        assert ret == [(1,)]\n```\n\nuse `dictcursor` to get result with dict\n\n```python\nasync def dict_cursor():\n    async with conn.cursor(cursor=dictcursor) as cursor:\n        await cursor.execute(\"select 1\")\n        ret = await cursor.fetchall()\n        assert ret == [{\"1\": 1}]\n```\n\ninsert data with dict\n\n```python\nfrom asynch.cursors import dictcursor\n\nasync def insert_dict():\n    async with conn.cursor(cursor=dictcursor) as cursor:\n        ret = await cursor.execute(\n            \"\"\"insert into test.asynch(id,decimal,date,datetime,float,uuid,string,ipv4,ipv6) values\"\"\",\n            [\n                {\n                    \"id\": 1,\n                    \"decimal\": 1,\n                    \"date\": \"2020-08-08\",\n                    \"datetime\": \"2020-08-08 00:00:00\",\n                    \"float\": 1,\n                    \"uuid\": \"59e182c4-545d-4f30-8b32-cefea2d0d5ba\",\n                    \"string\": \"1\",\n                    \"ipv4\": \"0.0.0.0\",\n                    \"ipv6\": \"::\",\n                }\n            ],\n        )\n        assert ret == 1\n```\n\ninsert data with tuple\n\n```python\nasync def insert_tuple():\n    async with conn.cursor(cursor=dictcursor) as cursor:\n        ret = await cursor.execute(\n            \"\"\"insert into test.asynch(id,decimal,date,datetime,float,uuid,string,ipv4,ipv6) values\"\"\",\n            [\n                (\n                    1,\n                    1,\n                    \"2020-08-08\",\n                    \"2020-08-08 00:00:00\",\n                    1,\n                    \"59e182c4-545d-4f30-8b32-cefea2d0d5ba\",\n                    \"1\",\n                    \"0.0.0.0\",\n                    \"::\",\n                )\n            ],\n        )\n        assert ret == 1\n```\n\nuse connection pool\n\n```python\nasync def use_pool():\n    pool = await asynch.create_pool()\n    async with pool.acquire() as conn:\n        async with conn.cursor() as cursor:\n            await cursor.execute(\"select 1\")\n            ret = await cursor.fetchone()\n            assert ret == (1,)\n    pool.close()\n    await pool.wait_closed()\n```\n\n## thanksto\n\n- [clickhouse-driver](https://github.com/mymarilyn/clickhouse-driver), clickhouse python driver with native interface support.\n\n## license\n\nthis project is licensed under the [apache-2.0](https://github.com/long2ice/asynch/blob/master/license) license.\n\n",
+  "docs_url": null,
+  "keywords": "clickhouse,asyncio,driver",
+  "license": "apache-2.0",
+  "name": "asynch",
+  "package_url": "https://pypi.org/project/asynch/",
+  "project_url": "https://pypi.org/project/asynch/",
+  "project_urls": {
+    "Documentation": "https://github.com/long2ice/asynch",
+    "Homepage": "https://github.com/long2ice/asynch",
+    "Repository": "https://github.com/long2ice/asynch.git"
+  },
+  "release_url": "https://pypi.org/project/asynch/0.2.3/",
+  "requires_dist": [
+    "ciso8601",
+    "clickhouse-cityhash ; extra == \"compression\"",
+    "leb128",
+    "lz4",
+    "pytz",
+    "tzlocal",
+    "zstd"
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "a asyncio driver for clickhouse with native tcp protocol",
+  "version": "0.2.3",
+  "releases": [],
+  "developers": [
+    "long2ice",
+    "long2ice@gmail.com"
+  ],
+  "kwds": "asyncio async asynch pip python",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_asynch",
+  "homepage": "https://github.com/long2ice/asynch",
+  "release_count": 14,
+  "dependency_ids": [
+    "pypi_ciso8601",
+    "pypi_clickhouse_cityhash",
+    "pypi_leb128",
+    "pypi_lz4",
+    "pypi_pytz",
+    "pypi_tzlocal",
+    "pypi_zstd"
+  ]
+}

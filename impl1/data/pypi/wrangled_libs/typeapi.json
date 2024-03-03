@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# typeapi\n\n[![python](https://github.com/niklasrosenstein/python-typeapi/actions/workflows/python.yml/badge.svg)](https://github.com/niklasrosenstein/python-typeapi/actions/workflows/python.yml)\n\n  [pep484]: https://peps.python.org/pep-0484/\n  [pep585]: https://peps.python.org/pep-0585/\n  [pep604]: https://peps.python.org/pep-0604/\n\n__compatibility__: python 3.6.3+\n\nthe `typeapi` package provides an object-oriented interface for introspecting [pep484][] type hints at runtime,\nincluding forward references that make use of the more recent [pep585][] and [pep604][] type hint features in\npython versions that don't natively support them.\n\nthe main api of this module is comprised of:\n\n* `typeapi.typehint()` &ndash; a class to parse low-level type hints and present them in a consistent, object-oriented api.\n* `typeapi.get_annotations()` &ndash; retrieve an object's `__annotations__` with support for evaluating future type hints ([pep585][], [pep604][]).\n\nthe following kinds of type hints are currently supported:\n\n| concrete type | description | added in |\n| ------------- | ----------- | -------- |\n| `classtypehint` | for any normal or generic type as well as `typing.any`. provides access to the underlying type, the type arguments and parameters, if any. | 1.0.0 |\n| `uniontypehint` | represents `union` type hint and gives access to the union members. | 1.0.0 |\n| `literaltypehint` | represents a `literal` type hint and gives access to the literal values. | 1.0.0 |\n| `annotatedtypehint` | represents an `annotated` type hint and gives access to the annotated type as well as the metadata. | 1.0.0 |\n| `typevartypehint` | represents a `typevar` type hint and gives an interface to access the variable's metadata (such as constarints, variance, ...). | 1.0.0 |\n| `forwardreftypehint` | represents a forward reference. can be evaluated in python 3.6+ even if it contains [pep585][] and [pep604][] expressions. <sup>1)</sup> | 1.0.0, future support in 1.3.0 |\n| `tupletypehint` | reperesents a `tuple` type hint, allowing you to differentiate between repeated and explicitly sized tuples. | 1.2.0 |\n\n<sup>1)</sup> new-style type union evaluation will continue to return a `typing.union`, even if the same syntax\nevaluated natively by python 3.10+ results in a `types.uniontype`.\n\n## examples\n\ninspect a `list[int]` type hint:\n\n```py\n# cat <<eof | python -\nfrom typeapi import classtypehint, typehint\nfrom typing import list\n\nhint = typehint(list[int])\nassert isinstance(hint, classtypehint)\nassert hint.type is list\n\nitem_hint = hint[0]\nassert isinstance(item_hint, classtypehint)\nassert item_hint.type is int\n```\n\nretrieve the metadata from an `annotated[...]` type hint:\n\n```py\n# cat <<eof | python -\nfrom typeapi import annotatedtypehint, classtypehint, typehint\nfrom typing_extensions import annotated\n\nhint = typehint(annotated[int, 42])\nassert isinstance(hint, annotatedtypehint)\nassert hint.type is int\nassert hint.metadata == (42,)\n\nsub_hint = hint[0]\nassert isinstance(sub_hint, classtypehint)\nassert sub_hint.type is int\n```\n\nparameterize one type hint with the parameterization of a generic alias:\n\n```py\n# cat <<eof | python -\nfrom dataclasses import dataclass\nfrom typeapi import classtypehint, typehint\nfrom typing import generic, typevar\nfrom typing_extensions import annotated\n\nt = typevar(\"t\")\n\n@dataclass\nclass mygeneric(generic[t]):\n  value: t\n\nhint = typehint(mygeneric[int])\nassert isinstance(hint, classtypehint)\nassert hint.get_parameter_map() == {t: int}\n\nmember_hint = typehint(t).parameterize(hint.get_parameter_map())\nassert isinstance(member_hint, classtypehint)\nassert member_hint.type is int\n```\n\nevaluate forward references with `get_annotations()`:\n\n```py\n# cat <<eof | python -\nfrom typeapi import get_annotations\nfrom typing import optional\nfrom sys import version_info\n\nclass mytype:\n  a: \"str | none\"\n\nannotations = get_annotations(mytype)\n\nif version_info[:2] < (3, 10):\n  assert annotations == {\"a\": optional[str]}\nelse:\n  assert annotations == {\"a\": str | none}\n```\n\nevaluating forward references with the `typehint` api:\n\n```py\n# cat <<eof | python -\nfrom typeapi import classtypehint, forwardreftypehint, typehint\n\nmyvector = \"list[mytype]\"\n\nclass mytype:\n  pass\n\nhint = typehint(myvector).evaluate(globals())\nprint(hint)  # typehint(typing.list[__main__.mytype])\nassert isinstance(hint, classtypehint)\nassert hint.type is list\n\nitem_hint = hint[0]\nassert isinstance(item_hint, classtypehint)\nassert item_hint.type is mytype\n```\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "typeapi",
+  "package_url": "https://pypi.org/project/typeapi/",
+  "project_url": "https://pypi.org/project/typeapi/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/NiklasRosenstein/python-typeapi/issues",
+    "Documentation": "https://niklasrosenstein.github.io/python-typeapi/",
+    "Homepage": "https://github.com/NiklasRosenstein/python-typeapi"
+  },
+  "release_url": "https://pypi.org/project/typeapi/2.1.1/",
+  "requires_dist": [
+    "typing-extensions (>=3.0.0)"
+  ],
+  "requires_python": ">=3.6.3,<4.0.0",
+  "summary": "",
+  "version": "2.1.1",
+  "releases": [],
+  "developers": [
+    "niklas_rosenstein",
+    "rosensteinniklas@gmail.com"
+  ],
+  "kwds": "typeapi typing_extensions annotatedtypehint typevartypehint typevar",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_typeapi",
+  "homepage": "",
+  "release_count": 38,
+  "dependency_ids": [
+    "pypi_typing_extensions"
+  ]
+}

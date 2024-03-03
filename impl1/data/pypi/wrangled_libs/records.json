@@ -1,0 +1,60 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: isc license (iscl)",
+    "natural language :: english",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: implementation :: cpython"
+  ],
+  "description": "records: sql for humans\u2122\n========================\n\n\n.. image:: https://img.shields.io/pypi/v/records.svg\n    :target: https://pypi.python.org/pypi/records\n\n.. image:: https://travis-ci.org/kennethreitz/records.svg?branch=master\n    :target: https://travis-ci.org/kennethreitz/records\n\n.. image:: https://img.shields.io/badge/saythanks.io-\u263c-1eaedb.svg\n    :target: https://saythanks.io/to/kennethreitz\n\n\n\n**records is a very simple, but powerful, library for making raw sql queries\nto most relational databases.**\n\n.. image:: https://farm1.staticflickr.com/569/33085227621_7e8da49b90_k_d.jpg\n\njust write sql. no bells, no whistles. this common task can be\nsurprisingly difficult with the standard tools available.\nthis library strives to make this workflow as simple as possible,\nwhile providing an elegant interface to work with your query results.\n\n*database support includes redshift, postgres, mysql, sqlite, oracle, and ms-sql (drivers not included).*\n\n----------\n\nif you're interested in financially supporting kenneth reitz open source, consider `visiting this link <https://cash.me/$kennethreitz>`_. your support helps tremendously with sustainability of motivation, as open source is no longer part of my day job.\n\n\u2624 the basics\n------------\nwe know how to write sql, so let's send some to our database:\n\n.. code:: python\n\n    import records\n\n    db = records.database('postgres://...')\n    rows = db.query('select * from active_users')    # or db.query_file('sqls/active-users.sql')\n\n\ngrab one row at a time:\n\n.. code:: python\n\n    >>> rows[0]\n    <record {\"username\": \"model-t\", \"active\": true, \"name\": \"henry ford\", \"user_email\": \"model-t@gmail.com\", \"timezone\": \"2016-02-06 22:28:23.894202\"}>\n\nor iterate over them:\n\n.. code:: python\n\n    for r in rows:\n        print(r.name, r.user_email)\n\nvalues can be accessed many ways: ``row.user_email``, ``row['user_email']``, or ``row[3]``.\n\nfields with non-alphanumeric characters (like spaces) are also fully supported.\n\nor store a copy of your record collection for later reference:\n\n.. code:: python\n\n    >>> rows.all()\n    [<record {\"username\": ...}>, <record {\"username\": ...}>, <record {\"username\": ...}>, ...]\n\nif you're only expecting one result:\n\n.. code:: python\n\n    >>> rows.first()\n    <record {\"username\": ...}>\n\nother options include ``rows.as_dict()`` and ``rows.as_dict(ordered=true)``.\n\n\u2624 features\n----------\n\n- iterated rows are cached for future reference.\n- ``$database_url`` environment variable support.\n- convenience ``database.get_table_names`` method.\n- command-line `records` tool for exporting queries.\n- safe parameterization: ``database.query('life=:everything', everything=42)``.\n- queries can be passed as strings or filenames, parameters supported.\n- transactions: ``t = database.transaction(); t.commit()``.\n- bulk actions: ``database.bulk_query()`` & ``databse.bulk_query_file()``.\n\nrecords is proudly powered by `sqlalchemy <http://www.sqlalchemy.org>`_\nand `tablib <http://docs.python-tablib.org/en/latest/>`_.\n\n\u2624 data export functionality\n---------------------------\n\nrecords also features full tablib integration, and allows you to export\nyour results to csv, xls, json, html tables, yaml, or pandas dataframes with a single line of code.\nexcellent for sharing data with friends, or generating reports.\n\n.. code:: pycon\n\n    >>> print(rows.dataset)\n    username|active|name      |user_email       |timezone\n    --------|------|----------|-----------------|--------------------------\n    model-t |true  |henry ford|model-t@gmail.com|2016-02-06 22:28:23.894202\n    ...\n\n**comma separated values (csv)**\n\n.. code:: pycon\n\n    >>> print(rows.export('csv'))\n    username,active,name,user_email,timezone\n    model-t,true,henry ford,model-t@gmail.com,2016-02-06 22:28:23.894202\n    ...\n\n**yaml ain't markup language (yaml)**\n\n.. code:: python\n\n    >>> print(rows.export('yaml'))\n    - {active: true, name: henry ford, timezone: '2016-02-06 22:28:23.894202', user_email: model-t@gmail.com, username: model-t}\n    ...\n\n**javascript object notation (json)**\n\n.. code:: python\n\n    >>> print(rows.export('json'))\n    [{\"username\": \"model-t\", \"active\": true, \"name\": \"henry ford\", \"user_email\": \"model-t@gmail.com\", \"timezone\": \"2016-02-06 22:28:23.894202\"}, ...]\n\n**microsoft excel (xls, xlsx)**\n\n.. code:: python\n\n    with open('report.xls', 'wb') as f:\n        f.write(rows.export('xls'))\n\n\n**pandas dataframe**\n\n.. code:: python\n\n    >>> rows.export('df')\n        username  active       name        user_email                   timezone\n    0    model-t    true henry ford model-t@gmail.com 2016-02-06 22:28:23.894202\n\nyou get the point. all other features of tablib are also available,\nso you can sort results, add/remove columns/rows, remove duplicates,\ntranspose the table, add separators, slice data by column, and more.\n\nsee the `tablib documentation <http://docs.python-tablib.org/en/latest/>`_\nfor more details.\n\n\u2624 installation\n--------------\n\nof course, the recommended installation method is `pipenv <http://pipenv.org>`_::\n\n    $ pipenv install records[pandas]\n    \u2728\ud83c\udf70\u2728\n\n\u2624 command-line tool\n-------------------\n\nas an added bonus, a ``records`` command-line tool is automatically\nincluded. here's a screenshot of the usage information:\n\n.. image:: http://f.cl.ly/items/0s14231r3p0g3w3a0x2n/screen%20shot%202016-02-13%20at%202.43.21%20am.png\n   :alt: screenshot of records command-line interface.\n\n\u2624 thank you\n-----------\n\nthanks for checking this library out! i hope you find it useful.\n\nof course, there's always room for improvement. feel free to `open an issue <https://github.com/kennethreitz/records/issues>`_ so we can make records better, stronger, faster.\n\n\n\n\nv0.5.1 (09-01-2017)\n===================\n\n- depend on ``tablib[pandas]``.\n- support for bulk quies: ``database.bulk_query()`` & ``database.bulk_query_file()``.\n\nv0.5.0 (11-15-2016)\n===================\n\n- support for transactions: ``t = database.transaction(); t.commit()``\n\n\nv0.4.3 (02-16-2016)\n===================\n\n- the cake is a lie.\n\nv0.4.2 (02-15-2016)\n===================\n\n- packaging fix.\n\nv0.4.1 (02-15-2016)\n===================\n\n- bugfix for python 3.\n\nv0.4.0 (02-13-2016)\n===================\n\n- refactored to be fully powered by sqlalchemy!\n- support for all major databases (thanks, sqlalchemy!).\n- support for non-alphanumeric column names.\n- new ``record`` class, for representing/accessing result rows.\n- ``resultset`` renamed ``recordcollection``.\n- removed interactive mode from the cli.\n\n\nv0.3.0 (02-11-2016)\n===================\n\n- new ``record`` command-line tool available!\n- various improvements.\n\nv0.2.0 (02-10-2016)\n===================\n\n- results are now represented as `record`, a namedtuples class with dict-like qualities.\n- new `resultset.export` method, for exporting to various formats.\n- slicing a `resultset` now works, and results in a new `resultset`.\n- lots of bugfixes and improvements!\n\nv0.1.0 (02-07-2016)\n===================\n\n- initial release.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "isc",
+  "name": "records",
+  "package_url": "https://pypi.org/project/records/",
+  "project_url": "https://pypi.org/project/records/",
+  "project_urls": {
+    "Homepage": "https://github.com/kennethreitz/records"
+  },
+  "release_url": "https://pypi.org/project/records/0.5.3/",
+  "requires_dist": [
+    "openpyxl (<2.5.0)",
+    "tablib (>=0.11.4)",
+    "docopt",
+    "SQLAlchemy (<1.1) ; python_version < \"3.0\"",
+    "SQLAlchemy ; python_version >= \"3.0\"",
+    "tablib[pandas] ; extra == 'pandas'",
+    "psycopg2 ; extra == 'pg'",
+    "sqlalchemy-redshift ; extra == 'redshift'",
+    "psycopg2 ; extra == 'redshift'"
+  ],
+  "requires_python": "",
+  "summary": "sql for humans",
+  "version": "0.5.3",
+  "releases": [],
+  "developers": [
+    "kenneth_reitz",
+    "me@kennethreitz.org"
+  ],
+  "kwds": "sqls databases database db sqlalchemy",
+  "license_kwds": "isc",
+  "libtype": "pypi",
+  "id": "pypi_records",
+  "homepage": "https://github.com/kennethreitz/records",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_docopt",
+    "pypi_openpyxl",
+    "pypi_psycopg2",
+    "pypi_sqlalchemy",
+    "pypi_sqlalchemy_redshift",
+    "pypi_tablib"
+  ]
+}

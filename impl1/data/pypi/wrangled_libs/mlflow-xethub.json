@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "operating system :: macos",
+    "operating system :: posix :: linux",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy"
+  ],
+  "description": "# mlflow-xethub\nthis plugin integrates xethub with mlflow so that you can use existing mlflow code to track experiments but store artifacts to xethub.\n\n## install plugin\ninstall from pypi for the plugin's published version\n`pip install mlflow[xethub]`\n\nor clone this repo and install locally for the latest code \n```bash\ngit clone https://github.com/xetdata/mlflow-xethub.git\ncd mlflow-xethub\npip install .\n```\n\n## authenticate with xethub  \nif you haven't already, [create an xethub account](https://xethub.com/assets/docs/getting-started/installation#create-a-xethub-account).\n\nthe plugin uses [pyxet](https://github.com/xetdata/pyxet) to access xethub, so you need to authenticate with xethub in one of the following two ways.\n### option 1: [log in with xet cli](https://xethub.com/assets/docs/getting-started/installation#configure-authentication)\n```\nxet login --email <email address associated with account> --user <user name> --password <personal access token>\n```\n\n### option 2: [export xet credentials as environment variables](https://pyxet.readthedocs.io/en/latest/#environment-variable)\n\n```bash\nexport xet_user_email = <email>  \nexport xet_user_name = <username>\nexport xet_user_token = <personal_access_token>\n```\n### \n\n## create a xethub repo to store your artifacts\ngo to https://xethub.com/ and [create a new repo](https://xethub.com/assets/docs/workflows/clone-and-iterate#create-a-xet-repository) to store your mlflow artifacts.\n\nor [log in with xet cli](log-in-with-xet-cli) and `xet repo make  xet://<username>/<repo> --private / --public`\n\n## run your mlflow as is \n### run mlflow server specifying xethub repo to store artifact\nno need to modify your mlflow code. the plugin will automatically detect mlflow runs and artifacts and store them in your xethub repo once you start the mlflow server with:\n\n```bash\nmlflow server --backend-store-uri ./mlruns --artifacts-destination xet://<username>/<repo>/<branch> --default-artifact-root xet://<username>/<repo>/<branch>\n```\n\nwhich uses the `mlruns` directory on your machine as file store backend and xethub as [artifact store](https://mlflow.org/docs/latest/tracking.html#artifact-stores) backend.\n\n### run mlflow experiment\n*experiments are logged in the directory where mlflow server is started, and the plugin and mlflow need to be running in the same python environment. \nso make sure to run your mlflow code and server in the same directory as well as having the plugin and mlflow installed under the same environment.*\n\nusing [mlflow's quickstart](https://docs.databricks.com/en/_extras/notebooks/source/mlflow/mlflow-quick-start-python.html) as an example,\n```python\nimport mlflow \nimport os\nimport numpy as np\nfrom mlflow import log_artifacts\nfrom sklearn.model_selection import train_test_split \nfrom sklearn.datasets import load_diabetes\nfrom sklearn.ensemble import randomforestregressor \n\nwith mlflow.start_run():\n    mlflow.autolog() \n    db = load_diabetes() \n\n    x_train, x_test, y_train, y_test = train_test_split(db.data, db.target) \n\n    # create and train models. \n    rf = randomforestregressor(n_estimators=100, max_depth=6, max_features=3) \n    rf.fit(x_train, y_train) \n\n    # use the model to make predictions on the test dataset. \n    predictions = rf.predict(x_test)\n\n    if not os.path.exists(\"outputs\"):\n        os.makedirs(\"outputs\")\n\n    with open(\"outputs/pred.txt\", \"w\") as f:\n        f.write(np.array2string(predictions))\n\n    log_artifacts(\"outputs\")\n```\n\n### store artifacts on xethub and visualize in mlflow ui\nthe artifacts will be automatically stored on xethub under the specified repo and branch. \n<img width=\"1720\" alt=\"artifact_on_xethub\" src=\"https://github.com/xetdata/xet-mlflow/assets/22567795/fa5d4806-64b7-4d81-afde-1363175574d7\">\n\nand the mlflow server will show the artifacts with ui on the default `http://127.0.0.1:5000` or your own host.\n<img width=\"1728\" alt=\"artifact_on_mlflow_ui\" src=\"https://github.com/xetdata/xet-mlflow/assets/22567795/1a43b60d-d92d-4d9d-bd7e-9a69bc2026eb\">\n",
+  "docs_url": null,
+  "keywords": "ai,collaboration,data-science,developer-tools,git,mlflow,machine-learning,reproducibility",
+  "license": "bsd-3-clause",
+  "name": "mlflow-xethub",
+  "package_url": "https://pypi.org/project/mlflow-xethub/",
+  "project_url": "https://pypi.org/project/mlflow-xethub/",
+  "project_urls": {
+    "Homepage": "https://github.com/xetdata/Xet-MLflow"
+  },
+  "release_url": "https://pypi.org/project/mlflow-xethub/0.0.0/",
+  "requires_dist": [
+    "mlflow >=1.27.0",
+    "pyxet >=0.1.0"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "mlflow[xethub] is a mlflow plugin integrating xethub with mlflow so that you can use existing mlflow code to track experiments but store artifacts to xethub.",
+  "version": "0.0.0",
+  "releases": [],
+  "developers": [
+    "contact@xethub.com",
+    "kelton@xethub.com",
+    "kelton_zhang",
+    "xethub"
+  ],
+  "kwds": "artifact_on_mlflow_ui mlflow artifact_on_xethub xethub pip",
+  "license_kwds": "bsd-3-clause",
+  "libtype": "pypi",
+  "id": "pypi_mlflow_xethub",
+  "homepage": "https://github.com/xetdata/xet-mlflow",
+  "release_count": 1,
+  "dependency_ids": [
+    "pypi_mlflow",
+    "pypi_pyxet"
+  ]
+}

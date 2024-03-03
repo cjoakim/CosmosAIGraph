@@ -1,0 +1,67 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development"
+  ],
+  "description": "============\nthriftpy2\n============\n\n.. image:: https://travis-ci.com/thriftpy/thriftpy2.svg?branch=develop\n    :target: https://travis-ci.com/thriftpy/thriftpy2\n\n.. image:: https://img.shields.io/codecov/c/github/thriftpy/thriftpy2.svg\n    :target: https://codecov.io/gh/thriftpy/thriftpy2\n\n.. image:: https://img.shields.io/pypi/dm/thriftpy2.svg\n    :target: https://pypi.org/project/thriftpy2/\n\n.. image:: https://img.shields.io/pypi/v/thriftpy2.svg\n    :target: https://pypi.org/project/thriftpy2/\n\n.. image:: https://img.shields.io/pypi/pyversions/thriftpy2.svg\n    :target: https://pypi.org/project/thriftpy2/\n\n.. image:: https://img.shields.io/pypi/implementation/thriftpy2.svg\n    :target: https://pypi.org/project/thriftpy2/\n\n\nthriftpy: https://github.com/eleme/thriftpy has been deprecated, thriftpy2 aims to provide long term support.\n\n\nmigrate from thriftpy?\n======================\n\nall you need is:\n\n.. code:: python\n\n    import thriftpy2 as thriftpy\n\n\nthat's it! thriftpy2 is fully compatible with thriftpy.\n\n\ninstallation\n============\n\ninstall with pip.\n\n.. code:: bash\n\n    $ pip install thriftpy2\n\nyou may also install cython first to build cython extension locally.\n\n.. code:: bash\n\n    $ pip install cython thriftpy2\n\n\ncode demo\n=========\n\nthriftpy make it super easy to write server/client code with thrift. let's\ncheckout this simple pingpong service demo.\n\nwe need a 'pingpong.thrift' file:\n\n::\n\n    service pingpong {\n        string ping(),\n    }\n\nthen we can make a server:\n\n.. code:: python\n\n    import thriftpy2\n    pingpong_thrift = thriftpy2.load(\"pingpong.thrift\", module_name=\"pingpong_thrift\")\n\n    from thriftpy2.rpc import make_server\n\n    class dispatcher(object):\n        def ping(self):\n            return \"pong\"\n\n    server = make_server(pingpong_thrift.pingpong, dispatcher(), '127.0.0.1', 6000)\n    server.serve()\n\nand a client:\n\n.. code:: python\n\n    import thriftpy2\n    pingpong_thrift = thriftpy2.load(\"pingpong.thrift\", module_name=\"pingpong_thrift\")\n\n    from thriftpy2.rpc import make_client\n\n    client = make_client(pingpong_thrift.pingpong, '127.0.0.1', 6000)\n    print(client.ping())\n\nand it also supports asyncio on python 3.5 or later:\n\n.. code:: python\n\n    import thriftpy2\n    import asyncio\n    from thriftpy2.rpc import make_aio_client\n\n\n    echo_thrift = thriftpy2.load(\"echo.thrift\", module_name=\"echo_thrift\")\n\n\n    async def request():\n        client = await make_aio_client(\n            echo_thrift.echoservice, '127.0.0.1', 6000)\n        print(await client.echo('hello, world'))\n        client.close()\n\n.. code:: python\n\n    import asyncio\n    import thriftpy2\n\n    from thriftpy2.rpc import make_aio_server\n\n    echo_thrift = thriftpy2.load(\"echo.thrift\", module_name=\"echo_thrift\")\n\n\n    class dispatcher(object):\n        async def echo(self, param):\n            print(param)\n            await asyncio.sleep(0.1)\n            return param\n\n\n    def main():\n        server = make_aio_server(\n            echo_thrift.echoservice, dispatcher(), '127.0.0.1', 6000)\n        server.serve()\n\n\n    if __name__ == '__main__':\n        main()\n\nsee, it's that easy!\n\nyou can refer to 'examples' and 'tests' directory in source code for more\nusage examples.\n\n\nfeatures\n========\n\ncurrently thriftpy have these features (also advantages over the upstream\npython lib):\n\n- supports python 2.7, python 3.4+, pypy and pypy3.\n\n- pure python implementation. no longer need to compile & install the 'thrift'\n  package. all you need is thriftpy2 and thrift file.\n\n- compatible with apache thrift. you can use thriftpy together with the\n  official implementation servers and clients, such as a upstream server with\n  a thriftpy2 client or the opposite.\n\n  currently implemented protocols and transports:\n\n  * binary protocol (python and cython)\n\n  * compact protocol (python and cython)\n\n  * json protocol\n\n  * apache json protocol compatible with apache thrift distribution's json protocol.\n    simply do ``from thriftpy2.protocol import tapachejsonprotocolfactory`` and pass\n    this to the ``proto_factory`` argument where appropriate.\n\n  * buffered transport (python & cython)\n\n  * framed transport\n\n  * tornado server and client (with tornado 4.0)\n\n  * http server and client\n\n  * asyncio support (python 3.5 or later)\n\n- can directly load thrift file as module, the sdk code will be generated on\n  the fly.\n\n  for example, ``pingpong_thrift = thriftpy2.load(\"pingpong.thrift\", module_name=\"pingpong_thrift\")``\n  will load 'pingpong.thrift' as 'pingpong_thrift' module.\n\n  or, when import hook enabled by ``thriftpy2.install_import_hook()``, you can\n  directly use ``import pingpong_thrift`` to import the 'pingpong.thrift' file\n  as module, you may also use ``from pingpong_thrift import pingservice`` to\n  import specific object from the thrift module.\n\n- easy rpc server/client setup.\n\n\n\ncontribute\n==========\n\n1. fork the repo and make changes.\n\n2. write a test which shows a bug was fixed or the feature works as expected.\n\n3. make sure ``travis-ci`` or ``tox`` tests succeed.\n\n4. send pull request.\n\n\ncontributors\n============\n\nhttps://github.com/thriftpy/thriftpy2/graphs/contributors\n\n\nsponsors:\n============\n\n.. image:: ./docs/jetbrains.svg\n    :target: https://www.jetbrains.com/?from=thriftpy\n\n\nchangelog\n=========\n\nhttps://github.com/thriftpy/thriftpy2/blob/master/changes.rst\n",
+  "docs_url": null,
+  "keywords": "thrift python thriftpy thriftpy2",
+  "license": "mit",
+  "name": "thriftpy2",
+  "package_url": "https://pypi.org/project/thriftpy2/",
+  "project_url": "https://pypi.org/project/thriftpy2/",
+  "project_urls": {
+    "Homepage": "https://thriftpy2.readthedocs.io/",
+    "Source": "https://github.com/Thriftpy/thriftpy2"
+  },
+  "release_url": "https://pypi.org/project/thriftpy2/0.4.17/",
+  "requires_dist": [
+    "ply <4.0,>=3.4",
+    "six ~=1.15",
+    "flake8 >=2.5 ; extra == 'dev'",
+    "pytest >=2.8 ; extra == 'dev'",
+    "sphinx-rtd-theme >=0.1.9 ; extra == 'dev'",
+    "sphinx >=1.3 ; extra == 'dev'",
+    "pytest >=6.1.1 ; extra == 'dev'",
+    "tornado <6.0,>=4.0 ; extra == 'dev'",
+    "tornado <6.0,>=4.0 ; extra == 'tornado'"
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+  "summary": "pure python implementation of apache thrift.",
+  "version": "0.4.17",
+  "releases": [],
+  "developers": [
+    "gotzehsing@gmail.com",
+    "thriftpy_organization"
+  ],
+  "kwds": "thriftpy2 thriftpy thrift pingpong_thrift echo_thrift",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_thriftpy2",
+  "homepage": "https://thriftpy2.readthedocs.io/",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_flake8",
+    "pypi_ply",
+    "pypi_pytest",
+    "pypi_six",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_tornado"
+  ]
+}

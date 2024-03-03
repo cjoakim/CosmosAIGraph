@@ -1,0 +1,43 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.5",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "topic :: software development :: testing"
+  ],
+  "description": "minimock\r\n========\r\n\r\n..  contents::\r\n    :depth: 1\r\n\r\n-----------------------\r\nlicense & collaboration\r\n-----------------------\r\n\r\nminimock is by `ian bicking <http://ianbicking.org>`_ with\r\nsubstantial contributions by mike beachy, and is maintained by\r\nlow kian seong. it is licensed under an `mit-style license\r\n<https://github.com/lowks/minimock/blob/master/license.txt>`_.\r\n\r\nit has a `github repository <https://github.com/lowks/minimock/>`_\r\nwhich you can clone with ``git clone https://github.com/lowks/minimock.git``.\r\nthere is also a `google group <https://groups.google.com/group/minimock-dev>`_\r\nfor the development mailing list which can be emailed at\r\n`minimock-dev@googlegroups.com <mailto:minimock-dev@googlegroups.com>`_.\r\n\r\n------------\r\nintroduction\r\n------------\r\n\r\nminimock is a simple library for doing mock objects with doctest.\r\nwhen using doctest, mock objects can be very simple.\r\n\r\nhere's an example of something we might test, a simple email sender::\r\n\r\n    >>> import smtplib\r\n    >>> def send_email(from_addr, to_addr, subject, body):\r\n    ...     conn = smtplib.smtp('localhost')\r\n    ...     msg = 'to: %s\\nfrom: %s\\nsubject: %s\\n\\n%s' % (\r\n    ...         to_addr, from_addr, subject, body)\r\n    ...     conn.sendmail(from_addr, [to_addr], msg)\r\n    ...     conn.quit()\r\n\r\nnow we want to make a mock ``smtplib.smtp`` object.  we'll have to\r\ninject our mock into the ``smtplib`` module::\r\n\r\n    >>> from minimock import mock\r\n    >>> smtplib.smtp = mock('smtplib.smtp')\r\n    >>> smtplib.smtp.mock_returns = mock('smtp_connection')\r\n\r\nnow we do the test::\r\n\r\n    >>> send_email('ianb@colorstudy.com', 'joe@example.com',\r\n    ...            'hi there!', 'how is it going?')\r\n    called smtplib.smtp('localhost')\r\n    called smtp_connection.sendmail(\r\n        'ianb@colorstudy.com',\r\n        ['joe@example.com'],\r\n        'to: joe@example.com\\nfrom: ianb@colorstudy.com\\nsubject: hi there!\\n\\nhow is it going?')\r\n    called smtp_connection.quit()\r\n\r\nvoila!  we've tested implicitly that no unexpected methods were called\r\non the object.  we've also tested the arguments that the mock object\r\ngot.  we've provided fake return calls (for the ``smtplib.smtp()``\r\nconstructor).  these are all the core parts of a mock library.  the\r\nimplementation is simple because most of the work is done by doctest.\r\n\r\n-----------------\r\ncontrolling mocks\r\n-----------------\r\n\r\nmock objects have several attributes, all of which you can set when\r\ninstantiating the object.  to avoid name collision, all the attributes\r\nstart with ``mock_``, while the constructor arguments don't.\r\n\r\n``name``:\r\n    the name of the object, used when printing out messages.  in the\r\n    example above it was ``'smtplib.smtp'``.\r\n\r\n``returns``:\r\n    when this object is called, it will return this value.  by default\r\n    it is none.\r\n\r\n``returns_iter``:\r\n    alternately, you can give an iterable of return results, like\r\n    ``returns_iter=[1, 2, 3]``; on each subsequent call it will return\r\n    the next value.\r\n\r\n``returns_func``:\r\n    if given, this will be called to get the return value.  in\r\n    essence, this function will be the *real* implementation of the\r\n    method.\r\n\r\n``raises``:\r\n    an exception (instance or class) that will be raised when this\r\n    object is called.\r\n\r\n``tracker``:\r\n    an object which is notified every time the mock object is called or\r\n    an attribute is set on it (assuming ``show_attrs`` is ``true``);\r\n    defaults to a ``printer`` to stdout. ``tracetracker`` can instead be\r\n    useful for non-doctest tests. pass ``none`` to disable this behavior.\r\n\r\n``show_attrs``:\r\n    if this is true, every time a new attribute is set on the mock\r\n    object the tracker will be notified. otherwise attribute sets are\r\n    silent, and only calls trigger notification.\r\n\r\nso to create an object that always raises valueerror, do::\r\n\r\n    >>> dummy_module = mock('mylibrary')\r\n    >>> dummy_module.invalid_func.mock_raises = valueerror\r\n\r\n--------------\r\ncreating mocks\r\n--------------\r\n\r\nevery attribute of a mock object will itself be another mock object,\r\nunless you specifically set it to something else.  for instance, you\r\ncan do::\r\n\r\n    >>> from minimock import mock\r\n    >>> dummy_module = mock('mylibrary')\r\n    >>> dummy_module.constant = 1\r\n\r\nthen the ``constant`` value will persist.  but you can also traverse\r\nto whatever object you want, and you will get another mock object.\r\n\r\nanother technique for creating a mock object is the ``mock(...)``\r\nfunction.  this works like::\r\n\r\n    >>> from minimock import mock\r\n    >>> import os.path\r\n    >>> mock('os.path.isfile', returns=true)\r\n\r\nthis looks up the ``os.path.isfile`` object, and changes it to a mock\r\nobject.  any keyword arguments you give (like ``returns=true`` in this\r\nexample) will be used to create the mock object; you can also give a\r\n``mock_obj`` keyword argument to pass in a mock object you've already\r\ncreated.\r\n\r\nthis function looks in the calling function to figure out what to\r\nreplace (``os.path.isfile`` in the example).  you must import the\r\nproper modules first.  alternately you can pass in a dictionary like\r\n``[locals(), globals()]`` for it to use for lookup.\r\n\r\nto restore all the objects mocked with ``mock()``, use\r\n``minimock.restore()`` (with no arguments; all the mocks are kept\r\ntrack of).",
+  "docs_url": null,
+  "keywords": "mock testing unittest",
+  "license": "mit",
+  "name": "minimock",
+  "package_url": "https://pypi.org/project/MiniMock/",
+  "project_url": "https://pypi.org/project/MiniMock/",
+  "project_urls": {
+    "Download": "https://pypi.python.org/packages/source/M/MiniMock/MiniMock-1.2.8.tar.gz#md5=76593aaba949b5e010fec95283556449",
+    "Homepage": "http://pypi.python.org/pypi/MiniMock"
+  },
+  "release_url": "https://pypi.org/project/MiniMock/1.2.8/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "the simplest possible mock library",
+  "version": "1.2.8",
+  "releases": [],
+  "developers": [
+    "ian_bicking",
+    "ianb@colorstudy.com",
+    "kianseong@gmail.com",
+    "low_kian_seong"
+  ],
+  "kwds": "minimock mocks mock unittest mock_",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_minimock",
+  "homepage": "http://pypi.python.org/pypi/minimock",
+  "release_count": 13,
+  "dependency_ids": []
+}

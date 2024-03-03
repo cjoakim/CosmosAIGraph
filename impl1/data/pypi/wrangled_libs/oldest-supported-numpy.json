@@ -1,0 +1,56 @@
+{
+  "classifiers": [],
+  "description": ".. image:: https://img.shields.io/pypi/v/oldest-supported-numpy\n   :target: https://pypi.org/project/oldest-supported-numpy/\n   :alt: pypi\n\nabout\n-----\n\nthis is a meta-package which can be used in ``pyproject.toml`` files\nto automatically provide as a build-time dependency the oldest version\nof numpy that supports the given python version and platform. in case\nof platforms for which numpy has prebuilt wheels, the provided version\nalso has a prebuilt numpy wheel.\n\nthe reason to use the oldest available numpy version as a build-time\ndependency is because of abi compatibility. binaries compiled with old\nnumpy versions are binary compatible with newer numpy versions, but\nnot vice versa. this meta-package exists to make dealing with this\nmore convenient, without having to duplicate the same list manually in\nall packages requiring it.\n\nin other words:\n\n.. code:: toml\n\n    [build-system]\n    requires = [\n        \"wheel\",\n        \"setuptools\",\n        \"numpy==1.13.3; python_version=='3.5'\",\n        \"numpy==1.13.3; python_version=='3.6'\",\n        \"numpy==1.14.5; python_version=='3.7'\",\n        # more numpy requirements...\n    ]\n\ncan be replaced by:\n\n.. code:: toml\n\n    [build-system]\n    requires = [\"wheel\", \"setuptools\", \"oldest-supported-numpy\"]\n\nand as new python versions are released, the ``pyproject.toml`` file does not\nneed to be updated.\n\nq&a\n---\n\nwhy define the numpy pinnings using ``install_requires`` in this repository?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthe numpy version pinnings are defined inside the ``setup.cfg`` file as\n``install_requires`` dependencies, rather than as build-time dependencies\ninside ``pyproject.toml``. this is deliberate, since numpy is not actually\nrequired to build wheels of **oldest-supported-numpy**. what we need here\nis to make sure that when **oldest-supported-numpy** is installed into\nthe build environment of a package using it, numpy gets installed too\nas a **runtime** dependency inside the build environment.\n\nanother way to think about this is that since we only publish (universal)\nwheels of **oldest-supported-numpy**, the wheel contains no ``pyproject.toml``,\n``setup.cfg``, or ``setup.py`` code - it only contains metadata including\ndependencies which get installed by pip when **oldest-supported-numpy** is\ninstalled.\n\ncan i use this if my package requires a recent version of numpy?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nin many cases, even though your package may require a version of\nnumpy that is more recent than the pinned versions here, this\nis often a runtime requirement, i.e. for running (rather than\nbuilding) your package. in many cases, unless you use recent\nfeatures of the numpy c api, you will still be able to build your\npackage with an older version of numpy and therefore you will still\nbe able to use **oldest-supported-numpy**. you can still impose a\nmore recent numpy requirement in ``install_requires``\n\nwhat if a bug in numpy that affects me is fixed only in a newer release?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nif **oldest-supported-numpy** pins a ``numpy`` version that is broken for\neveryone using a certain os/platform/interpreter combination, we can update the\n``==`` pin to a newer release. in general, building against a newer *bugfix*\nrelease (i.e., a higher ``y`` value for a ``1.x.y`` version number) is safe to\ndo. newer minor versions will likely not be abi-compatible, so are much more\ndifficult to change. if a bug only affects some uses cases (e.g., versions ``<\n1.20.3`` don't work on windows when using ``f2py``), the pin cannot be updated\nbecause it will affect backwards compatibility of **oldest-supported-numpy**.\nin that case, it is recommended that you add the needed constraint directly\nin your own ``pyproject.toml`` file. for example:\n\n.. code:: toml\n\n    [build-system]\n    requires = [\n        \"wheel\",\n        \"numpy==1.19.0; python_version<='3.8' and platform_system=='windows' and platform_python_implementation != 'pypy'\",\n        \"oldest-supported-numpy; python_version>'3.8' or platform_system!='windows' or platform_python_implementation == 'pypy'\",\n        # more requirements (if needed) ...\n    ]\n\nnote that when you do this, it is important to ensure the conditions are such\nthat there is exactly one pin possible for a given platform configuration.\notherwise your build will fail or ``pip`` may refuse to install your package\n*only* on that configuration (so you likely won't see it in ci).\nthe **oldest-supported-numpy** repository contains tests, so for safety you\nmay want to implement your constraints in its ``setup.cfg`` and run the\ntests with ``pytest`` to validate those constraints.\n\nwhy isn't ``oldest-supported-numpy`` available for conda, homebrew, debian, etc.?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthe ``pyproject.toml`` format is specific to pypi. other packaging systems have\ntheir own metadata formats and ways of specifying dependencies. typically they\ndon't need anything like **oldest-supported-numpy** because either (a) they ship\nonly a single numpy version for a given release (typically the case for linux\ndistros and homebrew), or (b) they have a more explicit way of managing abi\ncompatibility (see for example conda-forge's ``pin_compatible`` feature:\nhttps://conda-forge.org/docs/maintainer/knowledge_base.html#linking-numpy).\n\nwhat about having a catchier name for this package?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nthe current name is not very catchy as package names go, but it\nis very descriptive. this package is only meant to be used in\n``pyproject.toml`` files for defining build-time dependencies,\nso it's more important to have a descriptive than a catchy name!\n\nwhat if i think that one of the pinnings is wrong or out of date?\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nplease feel free to `open an issue <https://github.com/scipy/oldest-supported-numpy/issues/new>`_\nor a pull request if you think something is wrong or could be improved!\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "oldest-supported-numpy",
+  "package_url": "https://pypi.org/project/oldest-supported-numpy/",
+  "project_url": "https://pypi.org/project/oldest-supported-numpy/",
+  "project_urls": {
+    "Homepage": "https://github.com/scipy/oldest-supported-numpy"
+  },
+  "release_url": "https://pypi.org/project/oldest-supported-numpy/2023.12.21/",
+  "requires_dist": [
+    "numpy ==1.22.2 ; platform_machine == \"loongarch64\" and python_version >= \"3.8\" and python_version < \"3.11\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.21.6 ; python_version == \"3.10\" and platform_machine != \"loongarch64\"",
+    "numpy ==1.23.2 ; python_version == \"3.11\"",
+    "numpy ==1.26.2 ; python_version == \"3.12\"",
+    "numpy ==1.19.0 ; python_version == \"3.6\" and platform_machine != \"loongarch64\" and platform_python_implementation == \"PyPy\"",
+    "numpy ==1.20.0 ; python_version == \"3.7\" and platform_machine != \"loongarch64\" and platform_python_implementation == \"PyPy\"",
+    "numpy ==1.19.3 ; python_version == \"3.7\" and platform_machine == \"aarch64\" and platform_system != \"AIX\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.21.0 ; python_version == \"3.7\" and platform_machine == \"arm64\" and platform_system == \"Darwin\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.14.5 ; python_version == \"3.7\" and platform_machine == \"arm64\" and platform_system == \"Windows\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.14.5 ; python_version == \"3.7\" and platform_machine not in \"arm64|aarch64|loongarch64\" and platform_system != \"AIX\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.16.0 ; python_version == \"3.7\" and platform_system == \"AIX\" and platform_machine != \"loongarch64\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.22.2 ; python_version == \"3.8\" and platform_machine != \"loongarch64\" and platform_python_implementation == \"PyPy\"",
+    "numpy ==1.19.3 ; python_version == \"3.8\" and platform_machine == \"aarch64\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.21.0 ; python_version == \"3.8\" and platform_machine == \"arm64\" and platform_system == \"Darwin\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.17.3 ; python_version == \"3.8\" and platform_machine == \"arm64\" and platform_system == \"Windows\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.17.5 ; python_version == \"3.8\" and platform_machine == \"s390x\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.17.3 ; python_version == \"3.8\" and platform_machine not in \"arm64|aarch64|s390x|loongarch64\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.21.0 ; python_version == \"3.9\" and platform_machine == \"arm64\" and platform_system == \"Darwin\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.19.3 ; python_version == \"3.9\" and platform_machine == \"arm64\" and platform_system == \"Windows\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.25.0 ; python_version == \"3.9\" and platform_python_implementation == \"PyPy\"",
+    "numpy ==1.23.3 ; python_version == \"3.9\" and platform_system == \"OS400\" and platform_machine != \"loongarch64\" and platform_python_implementation != \"PyPy\"",
+    "numpy ==1.19.3 ; python_version == \"3.9\" and platform_system not in \"OS400\" and platform_machine not in \"arm64|loongarch64\" and platform_python_implementation != \"PyPy\"",
+    "numpy ; python_version >= \"3.13\""
+  ],
+  "requires_python": ">=3.7",
+  "summary": "meta-package that provides the oldest numpy that supports a given python version and platform. if wheels for the platform became available on pypi only for a more recent numpy version, then that numpy version is specified.",
+  "version": "2023.12.21",
+  "releases": [],
+  "developers": [
+    "thomas.robitaille@gmail.com",
+    "thomas_robitaille"
+  ],
+  "kwds": "platform_python_implementation python_version numpy pypy binaries",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_oldest_supported_numpy",
+  "homepage": "https://github.com/scipy/oldest-supported-numpy",
+  "release_count": 28,
+  "dependency_ids": [
+    "pypi_numpy"
+  ]
+}

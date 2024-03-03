@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "[![pypi - python version](https://img.shields.io/pypi/pyversions/netmiko.svg)](https://img.shields.io/pypi/pyversions/netmiko)\n[![pypi](https://img.shields.io/pypi/v/netmiko.svg)](https://pypi.python.org/pypi/netmiko)\n[![downloads](https://static.pepy.tech/badge/netmiko)](https://static.pepy.tech/badge/netmiko)\n[![github contributors](https://img.shields.io/github/contributors/ktbyers/netmiko.svg)](https://github.com/ktbyers/netmiko/graphs/contributors/)\n[![code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)\n\n<img src=\"https://ktbyers.github.io/netmiko/images/netmiko_logo_gh.png\" width=\"320\">\n\nnetmiko\n=======\n\nmulti-vendor library to simplify cli connections to network devices\n\n<br />\n\n## contributing to netmiko\n\n[contributing.md](https://github.com/ktbyers/netmiko/blob/develop/contributing.md)\n\n<br />\n\n## why netmiko?\nnetwork automation to screen-scraping devices is primarily concerned with gathering output from show commands and with making configuration changes.\n\nnetmiko aims to accomplish both of these operations and to do it across a very broad set of platforms. it seeks to do this while abstracting away low-level state control (i.e. eliminate low-level regex pattern matching to the extent practical).\n\n<br />\n\n## getting started\n- [getting started](#getting-started-1)\n\n<br />\n\n## examples\n*you really should look here.*\n\n- [netmiko examples](https://github.com/ktbyers/netmiko/blob/develop/examples.md)\n\n<br />\n\n\n## supported platforms\n\n[platforms](platforms.md)\n\n<br />\n\n\n## installation\n\nto install netmiko, simply us pip:\n\n```\n$ pip install netmiko\n```\n\n<br />\n\n## api-documentation\n\n[api-documentation](https://ktbyers.github.io/netmiko/docs/netmiko/index.html)\n\n<br />\n\n## common issues/faq\n\nanswers to some [common questions](common_issues.md)\n\n<br />\n\n### tutorials\n\n- [netmiko overview](https://pynet.twb-tech.com/blog/automation/netmiko.html)\n- [secure copy](https://pynet.twb-tech.com/blog/automation/netmiko-scp.html)\n- [netmiko through ssh proxy](https://pynet.twb-tech.com/blog/automation/netmiko-proxy.html)\n- [netmiko and textfsm](https://pynet.twb-tech.com/blog/automation/netmiko-textfsm.html)\n- [netmiko and what constitutes done](https://pynet.twb-tech.com/blog/automation/netmiko-what-is-done.html)\n\n<br />\n\n### getting started:\n\n#### create a dictionary representing the device.\n\nsupported device_types can be found in [ssh_dispatcher.py](https://github.com/ktbyers/netmiko/blob/master/netmiko/ssh_dispatcher.py), see class_mapper keys.\n```py\nfrom netmiko import connecthandler\n\ncisco_881 = {\n    'device_type': 'cisco_ios',\n    'host':   '10.10.10.10',\n    'username': 'test',\n    'password': 'password',\n    'port' : 8022,          # optional, defaults to 22\n    'secret': 'secret',     # optional, defaults to ''\n}\n\n```\n\n#### establish an ssh connection to the device by passing in the device dictionary.\n\n```py\nnet_connect = connecthandler(**cisco_881)\n```\n\n#### execute show commands.\n\n```py\noutput = net_connect.send_command('show ip int brief')\nprint(output)\n```\n```\ninterface                  ip-address      ok? method status                protocol\nfastethernet0              unassigned      yes unset  down                  down\nfastethernet1              unassigned      yes unset  down                  down\nfastethernet2              unassigned      yes unset  down                  down\nfastethernet3              unassigned      yes unset  down                  down\nfastethernet4              10.10.10.10     yes manual up                    up\nvlan1                      unassigned      yes unset  down                  down\n```\n\n#### execute configuration change commands (will automatically enter into config mode)\n\n```py\nconfig_commands = [ 'logging buffered 20000',\n                    'logging buffered 20010',\n                    'no logging console' ]\noutput = net_connect.send_config_set(config_commands)\nprint(output)\n```\n```\npynet-rtr1#config term\nenter configuration commands, one per line.  end with cntl/z.\npynet-rtr1(config)#logging buffered 20000\npynet-rtr1(config)#logging buffered 20010\npynet-rtr1(config)#no logging console\npynet-rtr1(config)#end\npynet-rtr1#\n```\n\n<br />\n\n## api-documentation\n\n<a href=\"https://ktbyers.github.io/netmiko/docs/netmiko/index.html\" title=\"docs\">api documentation</a>\n\nbelow are some of the particularly handy classes/functions for easy reference:\n- [base connection object](https://ktbyers.github.io/netmiko/docs/netmiko/base_connection.html)\n- [ssh autodetect](https://ktbyers.github.io/netmiko/docs/netmiko/index.html#netmiko.sshdetect)\n- [ssh dispatcher](https://ktbyers.github.io/netmiko/docs/netmiko/index.html#netmiko.ssh_dispatcher)\n- [redispatch](https://ktbyers.github.io/netmiko/docs/netmiko/index.html#netmiko.redispatch)\n\n<br />\n\n## contributing\n\ncontributors are welcome.\n\nyou can contribute to netmiko in a variety of ways: answering questions on slack (see below in questions/discussions), responding to issues, adding to the common issues, reporting/fixing bugs, or even adding your own device type.\n\nbefore contributing a new vendor/platform device type, remember that any code added needs to be supported in some fashion. to add a vendor/platform you can follow the outline [here](vendor.md). once you've worked on your first pass of your driver and have it functional, you'll need to include test data in order for it to be merged into develop, you can see the general flow of how to do that [here](testing.md).\n\nfor all code contributions, please ensure that you have ran `black` against the code or your code will fail the travis ci build.\n\n<br />\n\n## questions/discussion\n\nif you find an issue with netmiko, then you can open an issue on this projects issue page here: [https://github.com/ktbyers/netmiko/issues](https://github.com/ktbyers/netmiko/issues). please make sure you've read through the common issues and examples prior to opening an issue. please only open issues for bugs, feature requests, or other topics related to development of netmiko. if you simply have a question, join us on slack...\n\nif you have questions or would like to discuss netmiko, a #netmiko channel exists in [this slack](https://pynet.slack.com) workspace. to join, use [this invitation](https://join.slack.com/t/pynet/shared_invite/zt-km2k3upf-akwhy4yex3si1r5irmmc7q). once you have entered the workspace, then you can join the #netmiko channel.\n\n\n---\nkirk byers  \npython for network engineers  \nhttps://pynet.twb-tech.com  \n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "netmiko",
+  "package_url": "https://pypi.org/project/netmiko/",
+  "project_url": "https://pypi.org/project/netmiko/",
+  "project_urls": {
+    "Homepage": "https://github.com/ktbyers/netmiko",
+    "Repository": "https://github.com/ktbyers/netmiko"
+  },
+  "release_url": "https://pypi.org/project/netmiko/4.3.0/",
+  "requires_dist": [
+    "ntc-templates (>=2.0.0)",
+    "paramiko (>=2.9.5)",
+    "pyserial (>=3.3)",
+    "pyyaml (>=5.3)",
+    "scp (>=0.13.6)",
+    "textfsm (>=1.1.3)"
+  ],
+  "requires_python": ">=3.8,<4.0",
+  "summary": "multi-vendor library to simplify legacy cli connections to network devices",
+  "version": "4.3.0",
+  "releases": [],
+  "developers": [
+    "kirk_byers",
+    "ktbyers@twb-tech.com"
+  ],
+  "kwds": "netmiko_logo_gh netmiko pyversions pypi badge",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_netmiko",
+  "homepage": "https://github.com/ktbyers/netmiko",
+  "release_count": 43,
+  "dependency_ids": [
+    "pypi_ntc_templates",
+    "pypi_paramiko",
+    "pypi_pyserial",
+    "pypi_pyyaml",
+    "pypi_scp",
+    "pypi_textfsm"
+  ]
+}

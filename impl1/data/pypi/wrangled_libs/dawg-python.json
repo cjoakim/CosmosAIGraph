@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved :: mit license",
+    "programming language :: cython",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.2",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: scientific/engineering :: information analysis",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: text processing :: linguistic"
+  ],
+  "description": "dawg-python\n===========\n\n.. image:: https://travis-ci.org/kmike/dawg-python.png?branch=master\n    :target: https://travis-ci.org/kmike/dawg-python\n.. image:: https://coveralls.io/repos/kmike/dawg-python/badge.png?branch=master\n    :target: https://coveralls.io/r/kmike/dawg-python\n\n\nthis pure-python package provides read-only access for files\ncreated by `dawgdic`_ c++ library and `dawg`_ python package.\n\n.. _dawgdic: https://code.google.com/p/dawgdic/\n.. _dawg: https://github.com/kmike/dawg\n\nthis package is not capable of creating dawgs. it works with dawgs built by\n`dawgdic`_ c++ library or `dawg`_ python extension module. the main purpose\nof dawg-python is to provide an access to dawgs without requiring compiled\nextensions. it is also quite fast under pypy (see benchmarks).\n\ninstallation\n============\n\npip install dawg-python\n\nusage\n=====\n\nthe aim of dawg-python is to be api- and binary-compatible\nwith `dawg`_ when it is possible.\n\nfirst, you have to create a dawg using dawg_ module::\n\n    import dawg\n    d = dawg.dawg(data)\n    d.save('words.dawg')\n\nand then this dawg can be loaded without requiring c extensions::\n\n    import dawg_python\n    d = dawg_python.dawg().load('words.dawg')\n\nplease consult `dawg`_ docs for detailed usage. some features\n(like constructor parameters or ``save`` method) are intentionally\nunsupported.\n\nbenchmarks\n==========\n\nbenchmark results (100k unicode words, integer values (lenghts of the words),\npypy 1.9, macbook air i5 1.8 ghz)::\n\n    dict __getitem__ (hits):        11.090m ops/sec\n    dawg __getitem__ (hits):        not supported\n    bytesdawg __getitem__ (hits):   0.493m ops/sec\n    recorddawg __getitem__ (hits):  0.376m ops/sec\n\n    dict get() (hits):              10.127m ops/sec\n    dawg get() (hits):              not supported\n    bytesdawg get() (hits):         0.481m ops/sec\n    recorddawg get() (hits):        0.402m ops/sec\n    dict get() (misses):            14.885m ops/sec\n    dawg get() (misses):            not supported\n    bytesdawg get() (misses):       1.259m ops/sec\n    recorddawg get() (misses):      1.337m ops/sec\n\n    dict __contains__ (hits):           11.100m ops/sec\n    dawg __contains__ (hits):           1.317m ops/sec\n    bytesdawg __contains__ (hits):      1.107m ops/sec\n    recorddawg __contains__ (hits):     1.095m ops/sec\n\n    dict __contains__ (misses):         10.567m ops/sec\n    dawg __contains__ (misses):         1.902m ops/sec\n    bytesdawg __contains__ (misses):    1.873m ops/sec\n    recorddawg __contains__ (misses):   1.862m ops/sec\n\n    dict items():           44.401 ops/sec\n    dawg items():           not supported\n    bytesdawg items():      3.226 ops/sec\n    recorddawg items():     2.987 ops/sec\n    dict keys():            426.250 ops/sec\n    dawg keys():            not supported\n    bytesdawg keys():       6.050 ops/sec\n    recorddawg keys():      6.363 ops/sec\n\n    dawg.prefixes (hits):    0.756m ops/sec\n    dawg.prefixes (mixed):   1.965m ops/sec\n    dawg.prefixes (misses):  1.773m ops/sec\n\n    recorddawg.keys(prefix=\"xxx\"), avg_len(res)==415:       1.429k ops/sec\n    recorddawg.keys(prefix=\"xxxxx\"), avg_len(res)==17:      36.994k ops/sec\n    recorddawg.keys(prefix=\"xxxxxxxx\"), avg_len(res)==3:    121.897k ops/sec\n    recorddawg.keys(prefix=\"xxxxx..xx\"), avg_len(res)==1.4: 265.015k ops/sec\n    recorddawg.keys(prefix=\"xxx\"), non_existing:            2450.898k ops/sec\n\nunder cpython expect it to be about 50x slower.\nmemory consumption of dawg-python should be the same as of `dawg`_.\n\n.. _marisa-trie: https://github.com/kmike/marisa-trie\n\ncurrent limitations\n===================\n\n* this package is not capable of creating dawgs;\n* all the limitations of `dawg`_ apply.\n\ncontributions are welcome!\n\n\ncontributing\n============\n\ndevelopment happens at github: https://github.com/kmike/dawg-python\nissue tracker: https://github.com/kmike/dawg-python/issues\n\nfeel free to submit ideas, bugs or pull requests.\n\nrunning tests and benchmarks\n----------------------------\n\nmake sure `tox`_ is installed and run\n\n::\n\n    $ tox\n\nfrom the source checkout. tests should pass under python 2.6, 2.7, 3.2, 3.3,\n3.4 and pypy >= 1.9.\n\nin order to run benchmarks, type\n\n::\n\n    $ tox -c bench.ini -e pypy\n\nthis runs benchmarks under pypy (they are about 50x slower under cpython).\n\n.. _tox: http://tox.testrun.org\n\nauthors & contributors\n----------------------\n\n* mikhail korobov <kmike84@gmail.com>\n\nthe algorithms are from `dawgdic`_ c++ library by susumu yata & contributors.\n\nlicense\n=======\n\nthis package is licensed under mit license.\n\n\n\nchanges\n=======\n\n0.7.2 (2015-04-18)\n------------------\n\n- minor speedup;\n- bitbucket mirror is no longer maintained.\n\n0.7.1 (2014-06-05)\n------------------\n\n- switch to setuptools;\n- upload wheel tp pypi;\n- check python 3.4 compatibility.\n\n0.7 (2013-10-13)\n----------------\n\nintdawg and intcompletiondawg are implemented.\n\n0.6 (2013-03-23)\n----------------\n\nuse less shared state internally. this should fix thread-safety bugs and\nmake iterkeys/iteritems reenterant.\n\n0.5.1 (2013-03-01)\n------------------\n\ninternal tweaks: memory usage is reduced; something is a bit faster,\nsomething is a bit slower.\n\n0.5 (2012-10-08)\n----------------\n\nstorage scheme is updated to match dawg==0.5. this enables\nthe alphabetical ordering of ``bytesdawg`` and ``recorddawg`` items.\n\nin order to read ``bytesdawg`` or ``recorddawg`` created with\nversions of dawg < 0.5 use ``payload_separator`` constructor argument::\n\n    >>> bytesdawg(payload_separator=b'\\xff').load('old.dawg')\n\n\n0.3.1 (2012-10-01)\n------------------\n\nbug with empty dawgs is fixed.\n\n0.3 (2012-09-26)\n----------------\n\n- ``iterkeys`` and ``iteritems`` methods.\n\n0.2 (2012-09-24)\n----------------\n\n``prefixes`` support.\n\n0.1 (2012-09-20)\n----------------\n\ninitial release.",
+  "docs_url": null,
+  "keywords": "",
+  "license": "unknown",
+  "name": "dawg-python",
+  "package_url": "https://pypi.org/project/DAWG-Python/",
+  "project_url": "https://pypi.org/project/DAWG-Python/",
+  "project_urls": {
+    "Download": "UNKNOWN",
+    "Homepage": "https://github.com/kmike/DAWG-Python/"
+  },
+  "release_url": "https://pypi.org/project/DAWG-Python/0.7.2/",
+  "requires_dist": [],
+  "requires_python": null,
+  "summary": "pure-python reader for dawgs (dafsas) created by dawgdic c++ library or dawg python extension.",
+  "version": "0.7.2",
+  "releases": [],
+  "developers": [
+    "kmike84@gmail.com",
+    "mikhail_korobov"
+  ],
+  "kwds": "dawg_python dawgdic dawgs bytesdawg dawg_",
+  "license_kwds": "unknown",
+  "libtype": "pypi",
+  "id": "pypi_dawg_python",
+  "homepage": "https://github.com/kmike/dawg-python/",
+  "release_count": 10,
+  "dependency_ids": []
+}

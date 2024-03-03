@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "environment :: other environment",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: macos :: macos x",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 3",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "# [lexid][repo_ref]\n\n`lexid` is a micro library to increment lexically ordered numerical ids.\n\nthroughout the sequence of ids, this expression will always be true, whether you are dealing with integers or strings:\n\n    older_id < newer_id\n\nthe left most character/digit is only used to maintain lexical order, so that the position in the sequence is maintained in the remaining digits.\n\nsuch ids can be useful as build or version numbers, which are often displayed by tooling which does not understand their correct ordering.\n\nproject/repo:\n\n[![mit license][license_img]][license_ref]\n[![supported python versions][pyversions_img]][pyversions_ref]\n[![calver 2021.1006][version_img]][version_ref]\n[![pypi version][pypi_img]][pypi_ref]\n[![pypi downloads][downloads_img]][downloads_ref]\n\ncode quality/ci:\n\n[![github ci status][github_build_img]][github_build_ref]\n[![gitlab ci status][gitlab_build_img]][gitlab_build_ref]\n[![type checked with mypy][mypy_img]][mypy_ref]\n[![code coverage][codecov_img]][codecov_ref]\n[![code style: sjfmt][style_img]][style_ref]\n\n\n|               name               |    role           |      since       | until |\n|----------------------------------|-------------------|------------------|-------|\n| manuel barkhau (mbarkhau@gmail.com) | author/maintainer | 2020-09 | -     |\n\n\n## usage\n\n```\n$ pip install lexid\n$ lexid_incr 1001\n1002\n$ lexid_incr 1999\n22000\n$ lexid_incr 1\n22\n$ lexid_incr 1 -n 100\n22\n..\n28\n29\n330\n331\n...\n398\n399\n4400\n4401\n...\n```\n\nin python.\n\n```\n>>> import lexid\n>>> lexid.incr(\"1\")\n'22'\n>>> lexid.incr(\"0001\")\n'0002'\n>>> lexid.incr(\"0999\")\n'11000'\n```\n\nto avoid possible zero truncation issues (e.g. with \"0001\" -> \"1\") and to reduce rollovers, start at a higher number:\n\n```\n>>> lexid.incr(\"1001\")\n'1002'\n>>> lexid.incr(\"1002\")\n'1003'\n>>> lexid.incr(\"1999\")\n'22000'\n```\n\n\n## lexical ids\n\nthe key thing to look at is how padding may eventually be exhausted.\nin order to preserve lexical ordering, build numbers are incremented\nin a special way. examples will perhaps illustrate more clearly.\n\n```python\n\"0001\"\n\"0002\"\n\"0003\"\n...\n\"0999\"\n\"11000\"\n\"11001\"\n...\n\"19998\"\n\"19999\"\n\"220000\"\n\"220001\"\n```\n\nwhat is happening here is that the left-most digit is incremented\nearly/preemptively. whenever the left-most digit would change, the padding\nof the id is expanded through a multiplication by 11.\n\n```python\n>>> prev_id  = \"0999\"\n>>> num_digits = len(prev_id)\n>>> num_digits\n4\n>>> prev_int = int(prev_id, 10)\n>>> prev_int\n999\n>>> maybe_next_int = prev_int + 1\n>>> maybe_next_int\n1000\n>>> maybe_next_id = f\"{maybe_next_int:0{num_digits}}\"\n>>> maybe_next_id\n\"1000\"\n>>> is_padding_ok = prev_id[0] == maybe_next_id[0]\n>>> is_padding_ok\nfalse\n>>> if is_padding_ok:\n...     # normal case\n...     next_id = maybe_next_id\n... else:\n...     # extra padding needed\n...     next_int = maybe_next_int * 11\n...     next_id  = str(next_int)\n>>> next_id\n\"11000\"\n```\n\nthis behaviour ensures that the following semantic is always preserved:\n`new_version > old_version`. this will be true, regardless of padding\nexpansion. to illustrate the issue this solves, consider what would happen\nif we did not expand the padding and instead just incremented numerically.\n\n```python\n\"0001\"\n\"0002\"\n\"0003\"\n...\n\"0999\"\n\"1000\"\n...\n\"9999\"\n\"10000\"\n```\n\nhere we eventually run into a build number where the lexical ordering is\nnot preserved, since `\"10000\" > \"9999\" == false` (because the string `\"1\"`\nis lexically smaller than `\"9\"`). with large enough padding this may be a\nnon issue, but it's better to not have to think about it.\n\njust as an example of why lexical ordering is a nice property to have,\nthere are lots of software which read git tags, but which have no logic to\nparse version strings. this software can nonetheless order the version tags\ncorrectly using commonly used lexical ordering. at the most basic\nlevel it can allow you to use the unix `sort` command, for example to parse\nvcs tags.\n\n\n```shell\n$ printf \"v0.9.0\\nv0.10.0\\nv0.11.0\\n\" | sort\nv0.10.0\nv0.11.0\nv0.9.0\n\n$ printf \"v0.9.0\\nv0.10.0\\nv0.11.0\\n\" | sort -n\nv0.10.0\nv0.11.0\nv0.9.0\n\n$ lexid_incr 0997 -n 5 | sort\n0998\n0999\n11000\n11001\n11002\n```\n\nthis sorting even works correctly in javascript!\n\n```\n> var versions = [\"11002\", \"11001\", \"11000\", \"0999\", \"0998\"];\n> versions.sort();\n[\"0998\", \"0999\", \"11000\", \"11001\", \"11002\"]\n```\n\n[repo_ref]: https://github.com/mbarkhau/lexid\n\n[github_build_img]: https://github.com/mbarkhau/lexid/workflows/ci/badge.svg\n[github_build_ref]: https://github.com/mbarkhau/lexid/actions?query=workflow%3aci\n\n[gitlab_build_img]: https://gitlab.com/mbarkhau/lexid/badges/master/pipeline.svg\n[gitlab_build_ref]: https://gitlab.com/mbarkhau/lexid/pipelines\n\n[codecov_img]: https://gitlab.com/mbarkhau/lexid/badges/master/coverage.svg\n[codecov_ref]: https://mbarkhau.gitlab.io/lexid/cov\n\n[license_img]: https://img.shields.io/badge/license-mit-blue.svg\n[license_ref]: https://github.com/mbarkhau/lexid/blob/master/license\n\n[mypy_img]: https://img.shields.io/badge/mypy-checked-green.svg\n[mypy_ref]: https://mbarkhau.gitlab.io/lexid/mypycov\n\n[style_img]: https://img.shields.io/badge/code%20style-%20sjfmt-f71.svg\n[style_ref]: https://gitlab.com/mbarkhau/straitjacket/\n\n[pypi_img]: https://img.shields.io/badge/pypi-wheels-green.svg\n[pypi_ref]: https://pypi.org/project/lexid/#files\n\n[downloads_img]: https://pepy.tech/badge/lexid/month\n[downloads_ref]: https://pepy.tech/project/lexid\n\n[version_img]: https://img.shields.io/static/v1.svg?label=calver&message=2021.1006&color=blue\n[version_ref]: https://pypi.org/project/pycalver/\n\n[pyversions_img]: https://img.shields.io/pypi/pyversions/lexid.svg\n[pyversions_ref]: https://pypi.python.org/pypi/lexid\n\n\n\n# changelog for https://github.com/mbarkhau/lexid\n\n## 2021.1006\n\n - minor packaging updates\n\n\n## 2020.1005\n\n - initial release (extracted from pycalver)\n\n\n",
+  "docs_url": null,
+  "keywords": "lexical build number",
+  "license": "mit",
+  "name": "lexid",
+  "package_url": "https://pypi.org/project/lexid/",
+  "project_url": "https://pypi.org/project/lexid/",
+  "project_urls": {
+    "Homepage": "https://github.com/mbarkhau/lexid"
+  },
+  "release_url": "https://pypi.org/project/lexid/2021.1006/",
+  "requires_dist": [
+    "typing ; python_version < \"3.5\""
+  ],
+  "requires_python": ">=2.7",
+  "summary": "variable width build numbers with lexical ordering.",
+  "version": "2021.1006",
+  "releases": [],
+  "developers": [
+    "manuel_barkhau",
+    "mbarkhau@gmail.com"
+  ],
+  "kwds": "lexid_incr old_version version_ref increment newer_id",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_lexid",
+  "homepage": "https://github.com/mbarkhau/lexid",
+  "release_count": 5,
+  "dependency_ids": [
+    "pypi_typing"
+  ]
+}

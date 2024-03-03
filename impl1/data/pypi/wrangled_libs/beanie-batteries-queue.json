@@ -1,0 +1,64 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: os independent",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: database",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: object brokering",
+    "topic :: system :: distributed computing",
+    "typing :: typed"
+  ],
+  "description": "# task queue\n\ntask queue is an advanced queue system for beanie (mongodb), designed to efficiently manage and process tasks. it features task priorities, states, dependencies, and automatic expiration. different task queues can be processed together using the worker class. multiple workers can be run in separate processes using the runner class.\n\n## installation\n\n```shell\npip install beanie[queue]\n```\n\n## example\n\n```python\nfrom beanie_batteries_queue import task, runner\n\nclass exampletask(task):\n    data: str\n\n    async def run(self):\n        self.data = self.data.upper()\n        await self.save()\n        \nrunner = runner(task_classes=[exampletask])\nrunner.start()\n```\n\n## task\n\n### declare a task class\n\n```python\nfrom beanie_batteries_queue import task\n\n\nclass simpletask(task):\n    s: str\n```\n\n### process a task\n\n```python\nfrom beanie_batteries_queue import state\n\n# producer\ntask = simpletask(s=\"test\")\nawait task.push()\n\n# consumer\nasync for task in simpletask.queue():\n    assert task.s == \"test\"\n    # do some work\n    await task.finish()\n    break\n\n# check that the task is finished\ntask = await simpletask.find_one({\"s\": \"test\"})\nassert task.state == state.finished\n```\n\nasync generator `simpletask.queue()` will return all unfinished tasks in the order they were created or based on the\npriority if it was specified. it is an infinite loop, so you can use `break` to stop it.\n\nyou can also use `simpletask.pop()` to get the next task from the queue.\n\n```python\nfrom beanie_batteries_queue import state\n\n# producer\ntask = simpletask(s=\"test\")\nawait task.push()\n\n# consumer\ntask = await simpletask.pop()\nassert task.s == \"test\"\n# do some work\nawait task.finish()\n```\n\n### task priority\n\nthere are three priority levels: `low`, `medium`, and `high`. the default priority is `medium`.\ntasks are popped from the queue in the following order: `high`, `medium`, `low`.\n\n```python\nfrom beanie_batteries_queue import priority\n\ntask1 = simpletask(s=\"test1\", priority=priority.low)\nawait task1.push()\ntask2 = simpletask(s=\"test2\", priority=priority.high)\nawait task2.push()\n\nasync for task in simpletask.queue():\n    assert task.s == \"test2\"\n    await task.finish()\n    break\n```\n\n### task state\n\nthere are four states: `created`, `running`, `finished`, and `failed`. the default state is `pending`.\nwhen a task is pushed, it is in the `created` state. when it gets popped from the queue, it is in the `running`\nstate. `finished` and `failed` states should be set manually.\n\nfinished:\n\n```python\nfrom beanie_batteries_queue import state\n\ntask = simpletask(s=\"test\")\nawait task.push()\n\nasync for task in simpletask.queue():\n    assert task.state == state.running\n    await task.finish()\n    break\n\ntask = await simpletask.find_one({\"s\": \"test\"})\nassert task.state == state.finished\n```\n\nfailed:\n\n```python\nfrom beanie_batteries_queue import state\n\ntask = simpletask(s=\"test\")\nawait task.push()\n\nasync for task in simpletask.queue():\n    assert task.state == state.running\n    await task.fail()\n    break\n\ntask = await simpletask.find_one({\"s\": \"test\"})\nassert task.state == state.failed\n```\n\n### task dependencies\n\nyou can specify that a task depends on another task. in this case, the task will be popped from the queue only when all\nits dependencies have finished.\n\n```python\nfrom beanie_batteries_queue import task, dependencytype\nfrom beanie_batteries_queue import link\nfrom pydantic import field\n\n\nclass simpletask(task):\n    s: str\n\n\nclass taskwithdirectdependency(task):\n    s: str\n    direct_dependency: link[simpletask] = field(\n        dependency_type=dependencytype.direct\n    )\n```\n\n```python\nfrom beanie_batteries_queue import state\n\ntask1 = simpletask(s=\"test1\")\nawait task1.push()\n\ntask2 = taskwithdirectdependency(s=\"test2\", direct_dependency=task1)\nawait task2.push()\n\ntask_from_queue = await taskwithdirectdependency.pop()\nassert task_from_queue is none\n# task2 is not popped from the queue because task1 is not finished yet\n\nawait task1.finish()\n\ntask_from_queue = await taskwithdirectdependency.pop()\nassert task_from_queue is not none\n# task2 is popped from the queue because task1 is finished\n```\n\n### task dependencies with multiple links\n\nyou can specify that a task depends on multiple tasks. in this case, the task will be popped from the queue when all or\nany its dependencies are finished. it is controlled by the `dependency_type` parameter.\n\nall\n\n```python\nclass taskwithmultipledependencies(task):\n    s: str\n    list_of_dependencies: link[simpletask] = field(\n        dependency_type=dependencytype.all_of\n    )\n```\n\nany\n\n```python\nclass taskwithmultipledependencies(task):\n    s: str\n    list_of_dependencies: link[simpletask] = field(\n        dependency_type=dependencytype.any_of\n    )\n```\n\ntasks can have multiple links with different dependency types.\n\n```python\nclass taskwithmultipledependencies(task):\n    s: str\n    list_of_dependencies_all: link[simpletask] = field(\n        dependency_type=dependencytype.all_of\n    )\n    list_of_dependencies_any: link[simpletask] = field(\n        dependency_type=dependencytype.any_of\n    )\n    direct_dependency: link[simpletask] = field(\n        dependency_type=dependencytype.direct\n    )\n```\n\n### expire time\n\nyou can specify the time after which the task will be removed from the queue, even if it is not finished or has failed.\nthis is controlled by the `expireafterseconds` index, which is set to 24 hours by default.\n\n```python\nfrom pymongo import ascending\nfrom beanie_batteries_queue import task\n\n\nclass taskwithexpiretime(task):\n    s: str\n\n    class settings:\n        indexes = [\n            # other indexes,\n\n            # expire after 5 minutes\n            [(\"created_at\", ascending), (\"expireafterseconds\", 300)],\n        ]\n```\n\nfinished or failed tasks are not immediately removed from the queue. they are removed after the expiration time. you can\nmanually delete them using the `delete()` method.\n\n## queue\n\nqueues are designed to manage tasks. it will handle all the logic of creating, updating, and deleting tasks. task logic\nshould be defined in the `run` method of the task\n\n```python\nfrom beanie_batteries_queue import task\n\n\nclass processtask(task):\n    data: str\n\n    async def run(self):\n        # implement the logic for processing the task\n        print(f\"processing task with data: {self.data}\")\n        self.data = self.data.upper()\n        await self.save()\n```\n\nnow we can start the queue and it will process all the tasks. be aware - it will run infinite loop. if you want to have\nanother logic after starting the queue, you should run it with `asyncio.create_task()`.\n\n```python\nqueue = processtask.queue()\nawait queue.start()\n```\n\n### stop the queue\n\nyou can stop the queue by calling the `stop()` method.\n\n```python\nawait queue.stop()\n```\n\n### queue settings\n\nyou can specify how frequently the queue will check for new tasks. the default value is 1 second.\n\n```python\nqueue = processtask.queue(sleep_time=60)  # 60 seconds\nawait queue.start()\n```\n## worker\n\nqueue can handle only one task model. to process multiple task models, you should use worker. it will run multiple queues\n\n```python\nfrom beanie_batteries_queue import task, worker\n\nclass processtask(task):\n    data: str\n\n    async def run(self):\n        self.data = self.data.upper()\n        await self.save()\n\nclass anothertask(task):\n    data: str\n\n    async def run(self):\n        self.data = self.data.upper()\n        await self.save()\n    \n\nworker = worker(task_classes=[processtask, anothertask])\nawait worker.start()\n```\n\nbe aware - it will run infinite loop. if you want to have another logic after starting the worker, you should run it with `asyncio.create_task()`.\n\n### stop the worker\n\nyou can stop the worker by calling the `stop()` method.\n\n```python\nawait worker.stop()\n```\n\n### worker settings\n\nyou can specify how frequently the worker will check for new tasks. the default value is 1 second.\n\n```python\nworker = worker(task_classes=[processtask, anothertask], sleep_time=60)  # 60 seconds\nawait worker.start()\n```\n\n## runner\n\nrunner is a class that allows you to run multiple workers in separate processes. it is useful when your tasks are cpu intensive and you want to use all the cores of your cpu.\n\n```python\nfrom beanie_batteries_queue import task, runner\n\nclass processtask(task):\n    data: str\n\n    async def run(self):\n        self.data = self.data.upper()\n        await self.save()\n\nclass anothertask(task):\n    data: str\n\n    async def run(self):\n        self.data = self.data.upper()\n        await self.save()\n\nrunner = runner(task_classes=[processtask, anothertask])\nrunner.start()\n```\n\n### stop the runner\n\nyou can stop the runner by calling the `stop()` method.\n\n```python\nrunner.stop()\n```\n\n### runner settings\n\nyou can specify how many workers will be run. the default value is 1.\n\n```python\nrunner = runner(task_classes=[processtask, anothertask], workers_count=4)\nrunner.start()\n```\n\nyou can specify how frequently the worker will check for new tasks. the default value is 1 second.\n\n```python\nrunner = runner(task_classes=[processtask, anothertask], sleep_time=60)  # 60 seconds\nrunner.start()\n```\n\nyou can specify if the start method should run while the workers are alive or if it should return immediately. the default value is true.\n\n```python\nrunner = runner(task_classes=[processtask, anothertask], run_indefinitely=false)\nrunner.start()\n```\n",
+  "docs_url": null,
+  "keywords": "mongodb,odm,orm,pydantic,mongo,async,python,beanie,queue,beanie-batteries-queue",
+  "license": "",
+  "name": "beanie_batteries_queue",
+  "package_url": "https://pypi.org/project/beanie_batteries_queue/",
+  "project_url": "https://pypi.org/project/beanie_batteries_queue/",
+  "project_urls": {
+    "homepage": "https://github.com/roman-right/beanie_batteries_queue",
+    "repository": "https://github.com/roman-right/beanie_batteries_queue"
+  },
+  "release_url": "https://pypi.org/project/beanie_batteries_queue/0.4.0/",
+  "requires_dist": [
+    "beanie>=1.23.4",
+    "pre-commit>=2.3.0 ; extra == \"test\"",
+    "pytest>=6.0.0 ; extra == \"test\"",
+    "pytest-asyncio>=0.21.0 ; extra == \"test\"",
+    "pytest-cov>=2.8.1 ; extra == \"test\"",
+    "dnspython>=2.1.0 ; extra == \"test\"",
+    "flake8>=3 ; extra == \"test\"",
+    "pyright>=0 ; extra == \"test\"",
+    "pydantic-settings>=2.0 ; extra == \"test\""
+  ],
+  "requires_python": ">=3.7,<4.0",
+  "summary": "advanced queue system for mongodb with beanie odm",
+  "version": "0.4.0",
+  "releases": [],
+  "developers": [
+    "roman-right@protonmail.com"
+  ],
+  "kwds": "beanie_batteries_queue task_from_queue queue queues processtask",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_beanie_batteries_queue",
+  "homepage": "",
+  "release_count": 4,
+  "dependency_ids": [
+    "pypi_beanie",
+    "pypi_dnspython",
+    "pypi_flake8",
+    "pypi_pre_commit",
+    "pypi_pydantic_settings",
+    "pypi_pyright",
+    "pypi_pytest",
+    "pypi_pytest_asyncio",
+    "pypi_pytest_cov"
+  ]
+}

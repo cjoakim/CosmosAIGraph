@@ -1,0 +1,63 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# aws auto scaling construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\n**application autoscaling** is used to configure autoscaling for all\nservices other than scaling ec2 instances. for example, you will use this to\nscale ecs tasks, dynamodb capacity, spot fleet sizes, comprehend document classification endpoints, lambda function provisioned concurrency and more.\n\nas a cdk user, you will probably not have to interact with this library\ndirectly; instead, it will be used by other construct libraries to\noffer autoscaling features for their own constructs.\n\nthis document will describe the general autoscaling features and concepts;\nyour particular service may offer only a subset of these.\n\n## autoscaling basics\n\nresources can offer one or more **attributes** to autoscale, typically\nrepresenting some capacity dimension of the underlying service. for example,\na dynamodb table offers autoscaling of the read and write capacity of the\ntable proper and its global secondary indexes, an ecs service offers\nautoscaling of its task count, an rds aurora cluster offers scaling of its\nreplica count, and so on.\n\nwhen you enable autoscaling for an attribute, you specify a minimum and a\nmaximum value for the capacity. autoscaling policies that respond to metrics\nwill never go higher or lower than the indicated capacity (but scheduled\nscaling actions might, see below).\n\nthere are three ways to scale your capacity:\n\n* **in response to a metric** (also known as step scaling); for example, you\n  might want to scale out if the cpu usage across your cluster starts to rise,\n  and scale in when it drops again.\n* **by trying to keep a certain metric around a given value** (also known as\n  target tracking scaling); you might want to automatically scale out an in to\n  keep your cpu usage around 50%.\n* **on a schedule**; you might want to organize your scaling around traffic\n  flows you expect, by scaling out in the morning and scaling in in the\n  evening.\n\nthe general pattern of autoscaling will look like this:\n\n```python\n# resource: somescalableresource\n\n\ncapacity = resource.auto_scale_capacity(\n    min_capacity=5,\n    max_capacity=100\n)\n```\n\n## step scaling\n\nthis type of scaling scales in and out in deterministic steps that you\nconfigure, in response to metric values. for example, your scaling strategy\nto scale in response to cpu usage might look like this:\n\n```plaintext\n scaling        -1          (no change)          +1       +3\n            \u2502        \u2502                       \u2502        \u2502        \u2502\n            \u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n            \u2502        \u2502                       \u2502        \u2502        \u2502\ncpu usage   0%      10%                     50%       70%     100%\n```\n\n(note that this is not necessarily a recommended scaling strategy, but it's\na possible one. you will have to determine what thresholds are right for you).\n\nyou would configure it like this:\n\n```python\n# capacity: scalableattribute\n# cpu_utilization: cloudwatch.metric\n\n\ncapacity.scale_on_metric(\"scaletocpu\",\n    metric=cpu_utilization,\n    scaling_steps=[appscaling.scalinginterval(upper=10, change=-1), appscaling.scalinginterval(lower=50, change=+1), appscaling.scalinginterval(lower=70, change=+3)\n    ],\n\n    # change this to adjustmenttype.percentchangeincapacity to interpret the\n    # 'change' numbers before as percentages instead of capacity counts.\n    adjustment_type=appscaling.adjustmenttype.change_in_capacity\n)\n```\n\nthe autoscaling construct library will create the required cloudwatch alarms and\nautoscaling policies for you.\n\n### scaling based on multiple datapoints\n\nthe step scaling configuration above will initiate a scaling event when a single\ndatapoint of the scaling metric is breaching a scaling step breakpoint. in cases\nwhere you might want to initiate scaling actions on a larger number of datapoints\n(ie in order to smooth out randomness in the metric data), you can use the\noptional `evaluationperiods` and `datapointstoalarm` properties:\n\n```python\n# capacity: scalableattribute\n# cpu_utilization: cloudwatch.metric\n\n\ncapacity.scale_on_metric(\"scaletocpuwithmultipledatapoints\",\n    metric=cpu_utilization,\n    scaling_steps=[appscaling.scalinginterval(upper=10, change=-1), appscaling.scalinginterval(lower=50, change=+1), appscaling.scalinginterval(lower=70, change=+3)\n    ],\n\n    # if the cpuutilization metric has a period of 1 minute, then data points\n    # in the last 10 minutes will be evaluated\n    evaluation_periods=10,\n\n    # only trigger a scaling action when 6 datapoints out of the last 10 are\n    # breaching. if this is left unspecified, then all datapoints in the\n    # evaluation period must be breaching to trigger a scaling action\n    datapoints_to_alarm=6\n)\n```\n\n## target tracking scaling\n\nthis type of scaling scales in and out in order to keep a metric (typically\nrepresenting utilization) around a value you prefer. this type of scaling is\ntypically heavily service-dependent in what metric you can use, and so\ndifferent services will have different methods here to set up target tracking\nscaling.\n\nthe following example configures the read capacity of a dynamodb table\nto be around 60% utilization:\n\n```python\nimport aws_cdk.aws_dynamodb as dynamodb\n\n# table: dynamodb.table\n\n\nread_capacity = table.auto_scale_read_capacity(\n    min_capacity=10,\n    max_capacity=1000\n)\nread_capacity.scale_on_utilization(\n    target_utilization_percent=60\n)\n```\n\n## scheduled scaling\n\nthis type of scaling is used to change capacities based on time. it works\nby changing the `mincapacity` and `maxcapacity` of the attribute, and so\ncan be used for two purposes:\n\n* scale in and out on a schedule by setting the `mincapacity` high or\n  the `maxcapacity` low.\n* still allow the regular scaling actions to do their job, but restrict\n  the range they can scale over (by setting both `mincapacity` and\n  `maxcapacity` but changing their range over time).\n\nthe following schedule expressions can be used:\n\n* `at(yyyy-mm-ddthh:mm:ss)` -- scale at a particular moment in time\n* `rate(value unit)` -- scale every minute/hour/day\n* `cron(mm hh dd mm dow)` -- scale on arbitrary schedules\n\nof these, the cron expression is the most useful but also the most\ncomplicated. a schedule is expressed as a cron expression. the `schedule` class has a `cron` method to help build cron expressions.\n\nthe following example scales the fleet out in the morning, and lets natural\nscaling take over at night:\n\n```python\n# resource: somescalableresource\n\n\ncapacity = resource.auto_scale_capacity(\n    min_capacity=1,\n    max_capacity=50\n)\n\ncapacity.scale_on_schedule(\"prescaleinthemorning\",\n    schedule=appscaling.schedule.cron(hour=\"8\", minute=\"0\"),\n    min_capacity=20\n)\n\ncapacity.scale_on_schedule(\"allowdownscalingatnight\",\n    schedule=appscaling.schedule.cron(hour=\"20\", minute=\"0\"),\n    min_capacity=1\n)\n```\n\n## examples\n\n### lambda provisioned concurrency auto scaling\n\n```python\nimport aws_cdk.aws_lambda as lambda_\n\n# code: lambda.code\n\n\nhandler = lambda_.function(self, \"myfunction\",\n    runtime=lambda_.runtime.python_3_7,\n    handler=\"index.handler\",\n    code=code,\n\n    reserved_concurrent_executions=2\n)\n\nfn_ver = handler.current_version\n\ntarget = appscaling.scalabletarget(self, \"scalabletarget\",\n    service_namespace=appscaling.servicenamespace.lambda,\n    max_capacity=100,\n    min_capacity=10,\n    resource_id=f\"function:{handler.functionname}:{fnver.version}\",\n    scalable_dimension=\"lambda:function:provisionedconcurrency\"\n)\n\ntarget.scale_to_track_metric(\"pcetracking\",\n    target_value=0.9,\n    predefined_metric=appscaling.predefinedmetric.lambda_provisioned_concurrency_utilization\n)\n```\n\n### elasticache redis shards scaling with target value\n\n```python\nshards_scalable_target = appscaling.scalabletarget(self, \"elasticacheredisshardsscalabletarget\",\n    service_namespace=appscaling.servicenamespace.elasticache,\n    scalable_dimension=\"elasticache:replication-group:nodegroups\",\n    min_capacity=2,\n    max_capacity=10,\n    resource_id=\"replication-group/main-cluster\"\n)\n\nshards_scalable_target.scale_to_track_metric(\"elasticacheredisshardscpuutilization\",\n    target_value=20,\n    predefined_metric=appscaling.predefinedmetric.elasticache_primary_engine_cpu_utilization\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-applicationautoscaling",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-applicationautoscaling/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-applicationautoscaling/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-applicationautoscaling/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-autoscaling-common (==1.204.0)",
+    "aws-cdk.aws-cloudwatch (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::applicationautoscaling",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk auto_scale_capacity aws_dynamodb aws_lambda autoscaling",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_applicationautoscaling",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_autoscaling_common",
+    "pypi_aws_cdk.aws_cloudwatch",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

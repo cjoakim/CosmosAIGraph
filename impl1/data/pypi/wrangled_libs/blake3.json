@@ -1,0 +1,30 @@
+{
+  "classifiers": [],
+  "description": "# blake3-py [![actions status](https://github.com/oconnor663/blake3-py/workflows/tests/badge.svg)](https://github.com/oconnor663/blake3-py/actions) [![pypi version](https://badge.fury.io/py/blake3.svg)](https://pypi.python.org/pypi/blake3)\n\npython bindings for the [official rust implementation of\nblake3](https://github.com/blake3-team/blake3), based on\n[pyo3](https://github.com/pyo3/pyo3). these bindings expose all the features of\nblake3, including extendable output, keying, and multithreading. the basic api\nmatches that of python's standard\n[`hashlib`](https://docs.python.org/3/library/hashlib.html) module.\n\n## examples\n\n```python\nfrom blake3 import blake3\n\n# hash some input all at once. the input can be bytes, a bytearray, or a memoryview.\nhash1 = blake3(b\"foobarbaz\").digest()\n\n# hash the same input incrementally.\nhasher = blake3()\nhasher.update(b\"foo\")\nhasher.update(b\"bar\")\nhasher.update(b\"baz\")\nhash2 = hasher.digest()\nassert hash1 == hash2\n\n# hexadecimal output.\nprint(\"the hash of 'hello world' is\", blake3(b\"hello world\").hexdigest())\n\n# use the keyed hashing mode, which takes a 32-byte key.\nimport secrets\nrandom_key = secrets.token_bytes(32)\nmessage = b\"a message to authenticate\"\nmac = blake3(message, key=random_key).digest()\n\n# use the key derivation mode, which takes a context string. context strings\n# should be hardcoded, globally unique, and application-specific.\ncontext = \"blake3-py 2020-03-04 11:13:10 example context\"\nkey_material = b\"usually at least 32 random bytes, not a password\"\nderived_key = blake3(key_material, derive_key_context=context).digest()\n\n# extendable output. the default digest size is 32 bytes.\nextended = blake3(b\"foo\").digest(length=100)\nassert extended[:32] == blake3(b\"foo\").digest()\nassert extended[75:100] == blake3(b\"foo\").digest(length=25, seek=75)\n\n# hash a large input using multiple threads. note that this can be slower for\n# inputs shorter than ~1 mb, and it's a good idea to benchmark it for your use\n# case on your platform.\nlarge_input = bytearray(1_000_000)\nhash_single = blake3(large_input).digest()\nhash_two = blake3(large_input, max_threads=2).digest()\nhash_many = blake3(large_input, max_threads=blake3.auto).digest()\nassert hash_single == hash_two == hash_many\n\n# copy a hasher that has already accepted some input.\nhasher1 = blake3(b\"foo\")\nhasher2 = hasher1.copy()\nhasher1.update(b\"bar\")\nhasher2.update(b\"baz\")\nassert hasher1.digest() == blake3(b\"foobar\").digest()\nassert hasher2.digest() == blake3(b\"foobaz\").digest()\n```\n\n## installation\n\n```\npip install blake3\n```\n\nas usual with pip, you might need to use `sudo` or the `--user` flag\nwith the command above, depending on how you installed python on your\nsystem.\n\nthere are binary wheels [available on\npypi](https://pypi.org/project/blake3/#files) for most environments. but\nif you're building the source distribution, or if a binary wheel isn't\navailable for your environment, you'll need to [install the rust\ntoolchain](https://rustup.rs).\n\n## c bindings\n\nexperimental bindings for the official blake3 c implementation are available in\nthe [`c_impl`](c_impl) directory. these will probably not be published on pypi,\nand most applications should prefer the rust-based bindings. but if you can't\ndepend on the rust toolchain, and you're on some platform that this project\ndoesn't provide binary wheels for, the c-based bindings might be an\nalternative.\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "cc0-1.0 or apache-2.0",
+  "name": "blake3",
+  "package_url": "https://pypi.org/project/blake3/",
+  "project_url": "https://pypi.org/project/blake3/",
+  "project_urls": {
+    "Homepage": "https://github.com/oconnor663/blake3-py",
+    "Source Code": "https://github.com/oconnor663/blake3-py"
+  },
+  "release_url": "https://pypi.org/project/blake3/0.3.4/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "python bindings for the rust blake3 crate",
+  "version": "0.3.4",
+  "releases": [],
+  "developers": [
+    "oconnor663@gmail.com"
+  ],
+  "kwds": "blake3 hashlib pyo3 rustup pip",
+  "license_kwds": "cc0-1.0 or apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_blake3",
+  "homepage": "https://github.com/oconnor663/blake3-py",
+  "release_count": 16,
+  "dependency_ids": []
+}

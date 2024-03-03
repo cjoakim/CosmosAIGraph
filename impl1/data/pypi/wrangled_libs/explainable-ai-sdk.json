@@ -1,0 +1,42 @@
+{
+  "classifiers": [],
+  "description": "# explainable ai sdk\n\nthis is a python sdk for\n[google cloud explainable ai](https://cloud.google.com/explainable-ai), an\nexplanation service that provides insight into machine learning models deployed\non [ai platform](https://cloud.google.com/ai-platform). the explainable ai sdk\nhelps to visualize explanation results, and to define _explanation metadata_ for\nthe explanation service.\n\nexplanation metadata tells the explanation service which of your model's inputs\nand outputs to use for your explanation request. the sdk has metadata builders\nthat help you to build and save an explanation metadata file before you deploy\nyour model to ai platform.\n\nthe explainable ai sdk also helps you to visualize feature attribution results\non models deployed to ai platform.\n\n## installation\n\nthe explainable ai sdk supports models built with:\n\n- python 3.7 and later\n- tensorflow 1.15 or tensorflow 2.x.\n\nthe explainable ai sdk is preinstalled on\n[google cloud ai platform notebooks](https://cloud.google.com/ai-platform-notebooks)\nimages.\n\nfor other platforms:\n\n1. make sure that you have\n   [installed cloud sdk](https://cloud.google.com/sdk/docs/quickstarts). in\n   order to communicate with cloud ai platform, the explainable ai sdk requires\n   a shell environment with cloud sdk installed.\n\n1. install the explainable ai sdk:\n\n    ```shell\n    pip install explainable-ai-sdk\n    ```\n\n## metadata builders\n\nafter you build your model, you use a metadata builder to create your\nexplanation metadata. this produces a json file that is used for model\ndeployment on ai platform.\n\nthere are different metadata builders for tensorflow 1.x and 2.x in\ntheir respective folders.\n\n### tensorflow 2.x\n\nfor tensorflow 2.x, there is one metadata builder that takes a\n**savedmodel**, and uploads both your model and metadata file to cloud storage.\n\nfor example:\n\n```python\nfrom explainable_ai_sdk.metadata.tf.v2 import savedmodelmetadatabuilder\nbuilder = savedmodelmetadatabuilder(\n    model_path)\nbuilder.save_model_with_metadata('gs://my_bucket/model')  # save the model and the metadata.\n```\n\n### tensorflow 1.x\n\nfor tensorflow 1.x, the explainable ai sdk supports models built with keras,\nestimator and the low-level tensorflow api. there is a different metadata\nbuilder for each of these three tensorflow apis. an example usage for a keras\nmodel would be as follows:\n\n```python\nfrom explainable_ai_sdk.metadata.tf.v1 import kerasgraphmetadatabuilder\nmy_model = keras.models.sequential()\nmy_model.add(keras.layers.dense(32, activation='relu', input_dim=10))\nmy_model.add(keras.layers.dense(32, activation='relu'))\nmy_model.add(keras.layers.dense(1, activation='sigmoid'))\nbuilder = kerasgraphmetadatabuilder(my_model)\nbuilder.save_model_with_metadata('gs://my_bucket/model')  # save the model and the metadata.\n```\n\nfor examples using the estimator and tensorflow core builders, refer to the\n[v1 readme file](https://github.com/googlecloudplatform/explainable_ai_sdk/blob/master/explainable_ai_sdk/metadata/tf/v1/readme.md).\n\n### making predict and explain calls\n\nthe explainable ai sdk includes a model interface to help you communicate with\nthe deployed model more easily. with this interface, you can call `predict()`\nand `explain()` functions to get predictions and explanations for the provided\ndata points, respectively.\n\nhere is an example snippet for using the model interface:\n\n```python\nproject_id = \"example_project\"\nmodel_name = \"example_model\"\nversion_name = \"v1\"\n\nm = explainable_ai_sdk.load_model_from_ai_platform(project_id, model_name, version_name)\ninstances = []\n\n# ... steps for preparing instances\n\npredictions = m.predict(instances)\nexplanations = m.explain(instances)\n```\n\n### explanation, attribution, and visualization\n\nthe `explain()` function returns a list of `explanation` objects --\none `explanation` per input instance. this object makes it easier to interact\nwith returned attributions. you can use the `explanation` object to get\nfeature importance and raw attributions, and to visualize attributions.\n\n**note**: currently, the `feature_importance()` and `as_tensors()` functions\nonly work on tabular models, due to the limited payload size. we are working on\nmaking both functions available for image models.**\n\n#### get feature importance\n\nthe `feature_importance()` function returns the imporance of each feature\nbased on feature attributions. note that if a feature has more than one\ndimension, the importance is calculated based on the aggregation.\n\n```python\nexplanations[0].feature_importance()\n```\n\n#### get raw attributions\n\nto get feature attributions over each dimension, use the `as_tensors()`\nfunction to return the raw attributions as tensors.\n\n```python\nexplanations[0].as_tensors()\n```\n\n#### visualize attributions\n\nthe `explanation` class allows you to visualize feature attributions directly.\nfor both image and tabular models, you can call `visualize_attributions()`\nto see feature attributions.\n\n```python\nexplantions[0].visualize_attributions()\n```\n\nhere is an example visualization:\n\n![an attribution visualization for a tabular model](http://services.google.com/fh/files/misc/explainable_ai_sdk_tabular_attributions_visualzation.png)\n\n\n## caveats\n\n* this library works with (and depends) on either major version of tensorflow.\n* do not import the `metadata/tf/v1` and `metadata/tf/v2` folders in the\n  same python runtime. if you do, there may be unintended side effects of mixing\n  tensorflow 1.x and 2.x behavior.\n\n## explainable ai documentation\n\nfor more information about explainable ai, refer to the\n[explainable ai documentation](https://cloud.google.com/ai-platform/prediction/docs/ai-explanations/overview).\n\n## license\n\nall files in this repository are under the\n[apache license, version 2.0](https://github.com/googlecloudplatform/explainable_ai_sdk/blob/master/license)\nunless noted otherwise.\n\n**note:** we are not accepting contributions at this time.\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "explainable-ai-sdk",
+  "package_url": "https://pypi.org/project/explainable-ai-sdk/",
+  "project_url": "https://pypi.org/project/explainable-ai-sdk/",
+  "project_urls": null,
+  "release_url": "https://pypi.org/project/explainable-ai-sdk/1.3.3/",
+  "requires_dist": [
+    "google.auth (>=1.14.1)",
+    "ipython",
+    "matplotlib (>=3.2.2)",
+    "numpy (>=1.7)",
+    "requests (>=2.5)",
+    "tensorflow (>=1.15.0)"
+  ],
+  "requires_python": "",
+  "summary": "helper library for caip explanations.",
+  "version": "1.3.3",
+  "releases": [],
+  "developers": [
+    "google_llc",
+    "xai-dev@googlegroups.com"
+  ],
+  "kwds": "explainable_ai_sdk load_model_from_ai_platform explainable_ai_sdk_tabular_attributions_visualzation ai api",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_explainable_ai_sdk",
+  "homepage": "",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_google.auth",
+    "pypi_ipython",
+    "pypi_matplotlib",
+    "pypi_numpy",
+    "pypi_requests",
+    "pypi_tensorflow"
+  ]
+}

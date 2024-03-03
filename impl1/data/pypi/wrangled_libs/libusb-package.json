@@ -1,0 +1,53 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: system :: hardware :: universal serial bus (usb)",
+    "typing :: typed"
+  ],
+  "description": "# container package for libusb\n\nthis python package functions as an installation vehicle for libusb shared libraries, to\nsimplify installation of tools that require libusb. the main use case is so that users\ndon't have to install libusb manually for projects that use pyusb. however, any python\nproject that uses a libusb wrapper can also benefit.\n\nsee [libusb.info](https://libusb.info) for more information about libusb.\n\nnote: currently the included libusb is built _without_ udev support on linux.\n\nnote: the libusb upstream git repository is included as a submodule, so you need to clone with submodules\nenabled. you can either clone with `--recurse-submodules` or run `git submodule update --init` after cloning.\n\n\n## installation\n\nall releases include wheels for linux, macos, and windows for multiple architectures. in addition, a source\ndistribution is released.\n\nif a matching wheel is not available, the source distribution will be installed and libusb will be compiled.\nthis means the libusb build requirements must be installed:\n\n- linux and macos: autoconf, automake, libtool, and m4. as mentioned above, libusb is built without udev support,\n    so libudev-dev is not required on linux.\n- windows: visual studio 2019 (community is ok).\n\nif the libusb build fails when installing from a source distribution, the `libusb-package` install _will still\nsucceed_. in this case, an \"empty\" `libusb-package` is installed that doesn't contain a libusb shared library.\n`get_library_path()` returns none and `find_library()` falls back to returning a system installation of libusb,\nif available.\n\nyou can also install from a clone of the git repository by running `pip install .` from the repository root directory.\neditable installs are supported. please note that running `setup.py` directly is no longer supported for pep 517\ncompliant packages. when building from the repo, because libusb 1.0.24 does not support out of tree builds, the build is\ndone in-place in the `src/libusb` directory. `make clean` is run before compiling to ensure a clean build.\n\n\n## apis\n\nthere are four public functions exported by `libusb_package`.\n\n- `find(*args, **kwargs)`: wrapper around pyusb's `usb.core.find()` that sets the `backend`\n    parameter to a libusb1 backend created from the libusb library included in `libusb_package`.\n    all other parameters are passed unmodified\n\n- `get_libusb1_backend()`: returns a `pyusb` backend object for the libusb version contained\n    in `libusb_package`.\n\n- `find_library(candidate)`: lower level function that returns either the full path to a\n    library contained in `libusb_package` with a name starting with `candidate`, or none if\n    no matching library is found. this function is suitable for use with the `find_library`\n    callback parameter for pyusb's `get_backend()` functions.\n\n    if `get_library_path()` returns none, indicating there is no included library, this function\n    will fall back to `ctypes.util.find_library()`.\n\n- `get_library_path()`: returns an absolute path object for the included library. if there is not\n    an included library, none is returned.\n\nboth `get_libusb1_backend()` and `get_library_path()` cache their return values.\n\n\n## versioning\n\nthe version of libusb-package is composed of the libusb version plus an additional field for\nthe version of the python code. for instance, 1.0.24.0. the python code version will be reset\nto 0 when the libusb version is incremented for new libusb release.\n\n\n## examples\n\nusage example for `find()`:\n\n```py\nimport libusb_package\n\nfor dev in libusb_package.find(find_all=true):\n    print(dev)\n```\n\n\nusage example for `find_library()`:\n\n```py\nimport libusb_package\nimport usb.core\nimport usb.backend.libusb1\n\nlibusb1_backend = usb.backend.libusb1.get_backend(find_library=libusb_package.find_library)\n# -> calls usb.libloader.load_locate_library(\n#                ('usb-1.0', 'libusb-1.0', 'usb'),\n#                'cygusb-1.0.dll', 'libusb 1',\n#                win_cls=win_cls,\n#                find_library=find_library, check_symbols=('libusb_init',))\n#\n# -> calls find_library(candidate) with candidate in ('usb-1.0', 'libusb-1.0', 'usb')\n#   returns lib name or path (as appropriate for os) if matching lib is found\n\n# it would also be possible to pass the output of libusb_package.get_libsusb1_backend()\n# to the backend parameter here. in fact, that function is simply a shorthand for the line\n# above.\nprint(list(usb.core.find(find_all=true, backend=libusb1_backend)))\n```\n\n\n### source distribution\n\nbefore building a source distribution, be sure to clean all untracked files from the libusb\nsubmodule using `git -c src/libusb clean -dfx`.\n\n\n### license\n\nthe python code for `libusb-package` is licensed with apache 2.0.\\\nthe libusb library and its source code are licensed with gplv2.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2.0",
+  "name": "libusb-package",
+  "package_url": "https://pypi.org/project/libusb-package/",
+  "project_url": "https://pypi.org/project/libusb-package/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/pyocd/libusb-package/issues",
+    "Changelog": "https://github.com/pyocd/libusb-package/releases",
+    "Discussions": "https://github.com/pyocd/libusb-package/discussions",
+    "Homepage": "https://github.com/pyocd/libusb-package"
+  },
+  "release_url": "https://pypi.org/project/libusb-package/1.0.26.2/",
+  "requires_dist": [
+    "importlib-resources"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "package containing libusb so it can be installed via python package managers",
+  "version": "1.0.26.2",
+  "releases": [],
+  "developers": [
+    "chris_reed",
+    "flit@me.com"
+  ],
+  "kwds": "libusb_package libusb_init libusb1_backend libusb get_libusb1_backend",
+  "license_kwds": "apache 2.0",
+  "libtype": "pypi",
+  "id": "pypi_libusb_package",
+  "homepage": "https://github.com/pyocd/libusb-package",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_importlib_resources"
+  ]
+}

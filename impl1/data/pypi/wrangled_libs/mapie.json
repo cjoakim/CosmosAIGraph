@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "intended audience :: science/research",
+    "license :: osi approved",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "topic :: software development"
+  ],
+  "description": ".. -*- mode: rst -*-\n\n|githubactions|_ |codecov|_ |readthedocs|_ |license|_ |pythonversion|_ |pypi|_ |conda|_ |release|_ |commits|_ |doi|_\n\n.. |githubactions| image:: https://github.com/scikit-learn-contrib/mapie/actions/workflows/test.yml/badge.svg\n.. _githubactions: https://github.com/scikit-learn-contrib/mapie/actions\n\n.. |codecov| image:: https://codecov.io/gh/scikit-learn-contrib/mapie/branch/master/graph/badge.svg?token=f2s6kyh4v1\n.. _codecov: https://codecov.io/gh/scikit-learn-contrib/mapie\n\n.. |readthedocs| image:: https://readthedocs.org/projects/mapie/badge\n.. _readthedocs: https://mapie.readthedocs.io/en/latest\n\n.. |license| image:: https://img.shields.io/github/license/simai-ml/mapie\n.. _license: https://github.com/scikit-learn-contrib/mapie/blob/master/license\n\n.. |pythonversion| image:: https://img.shields.io/pypi/pyversions/mapie\n.. _pythonversion: https://pypi.org/project/mapie/\n\n.. |pypi| image:: https://img.shields.io/pypi/v/mapie\n.. _pypi: https://pypi.org/project/mapie/\n\n.. |conda| image:: https://img.shields.io/conda/vn/conda-forge/mapie\n.. _conda: https://anaconda.org/conda-forge/mapie\n\n.. |release| image:: https://img.shields.io/github/v/release/scikit-learn-contrib/mapie\n.. _release: https://github.com/scikit-learn-contrib/mapie/releases\n\n.. |commits| image:: https://img.shields.io/github/commits-since/scikit-learn-contrib/mapie/latest/master\n.. _commits: https://github.com/scikit-learn-contrib/mapie/commits/master\n\n.. |doi| image:: https://img.shields.io/badge/10.48550/arxiv.2207.12274-b31b1b.svg\n.. _doi: https://arxiv.org/abs/2207.12274\n\n.. image:: https://github.com/simai-ml/mapie/raw/master/doc/images/mapie_logo_nobg_cut.png\n    :width: 400\n    :align: center\n\n\n\nmapie - model agnostic prediction interval estimator\n====================================================\n\n**mapie** is an open-source python library for quantifying uncertainties and controlling the risks of machine learning models.\nit is a scikit-learn-contrib project that allows you to:\n\n- easily **compute conformal prediction intervals** (or prediction sets) with controlled (or guaranteed) marginal coverage rate\n  for regression [3,4,8], classification (binary and multi-class) [5-7] and time series [9].\n- easily **control risks** of more complex tasks such as multi-label classification,\n  semantic segmentation in computer vision (probabilistic guarantees on recall, precision, ...) [10-12].\n- easily **wrap any model (scikit-learn, tensorflow, pytorch, ...) with, if needed, a scikit-learn-compatible wrapper**\n  for the purposes just mentioned.\n\nhere's a quick instantiation of mapie models for regression and classification problems related to uncertainty quantification\n(more details in the quickstart section):\n\n.. code:: python\n\n    # uncertainty quantification for regression problem\n    from mapie.regression import mapieregressor\n    mapie_regressor = mapieregressor(estimator=regressor, method='plus', cv=5)\n\n.. code:: python\n\n    # uncertainty quantification for classification problem\n    from mapie.classification import mapieclassifier\n    mapie_classifier = mapieclassifier(estimator=classifier, method='score', cv=5)\n\nimplemented methods in **mapie** respect three fundamental pillars:\n\n- they are **model and use case agnostic**, \n- they possess **theoretical guarantees** under minimal assumptions on the data and the model,\n- they are based on **peer-reviewed algorithms** and respect programming standards.\n\n**mapie** relies notably on the field of *conformal prediction* and *distribution-free inference*.\n\n\n\ud83d\udd17 requirements\n===============\n\n- **mapie** runs on python 3.7+.\n- **mapie** stands on the shoulders of giants. its only internal dependencies are `scikit-learn <https://scikit-learn.org/stable/>`_ and `numpy=>1.21 <https://numpy.org/>`_.\n\n\n\ud83d\udee0 installation\n===============\n\n**mapie** can be installed in different ways:\n\n.. code:: sh\n\n    $ pip install mapie  # installation via `pip`\n    $ conda install -c conda-forge mapie  # or via `conda`\n    $ pip install git+https://github.com/scikit-learn-contrib/mapie  # or directly from the github repository\n\n\n\u26a1 quickstart\n=============\n\nhere we propose two basic uncertainty quantification problems for regression and classification tasks with scikit-learn.\n\nas **mapie** is compatible with the standard scikit-learn api, you can see that with just these few lines of code:\n\n- how easy it is **to wrap your favorite scikit-learn-compatible model** around your model.\n- how easy it is **to follow the standard sequential** ``fit`` and ``predict`` process like any scikit-learn estimator.\n\n.. code:: python\n\n    # uncertainty quantification for regression problem\n    import numpy as np\n    from sklearn.linear_model import linearregression\n    from sklearn.datasets import make_regression\n    from sklearn.model_selection import train_test_split\n\n    from mapie.regression import mapieregressor\n\n\n    x, y = make_regression(n_samples=500, n_features=1)\n    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.5)\n\n    regressor = linearregression()\n\n    mapie_regressor = mapieregressor(estimator=regressor, method='plus', cv=5)\n\n    mapie_regressor = mapie_regressor.fit(x_train, y_train)\n    y_pred, y_pis = mapie_regressor.predict(x_test, alpha=[0.05, 0.32])\n\n.. code:: python\n\n    # uncertainty quantification for classification problem\n    import numpy as np\n    from sklearn.linear_model import logisticregression\n    from sklearn.datasets import make_blobs\n    from sklearn.model_selection import train_test_split\n\n    from mapie.classification import mapieclassifier\n\n\n    x, y = make_blobs(n_samples=500, n_features=2, centers=3)\n    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.5)\n\n    classifier = logisticregression()\n\n    mapie_classifier = mapieclassifier(estimator=classifier, method='score', cv=5)\n\n    mapie_classifier = mapie_classifier.fit(x_train, y_train)\n    y_pred, y_pis = mapie_classifier.predict(x_test, alpha=[0.05, 0.32])\n\n\n\ud83d\udcd8 documentation\n================\n\nthe full documentation can be found `on this link <https://mapie.readthedocs.io/en/latest/>`_.\n\n\n\ud83d\udcdd contributing\n===============\n\nyou are welcome to propose and contribute new ideas.\nwe encourage you to `open an issue <https://github.com/simai-ml/mapie/issues>`_ so that we can align on the work to be done.\nit is generally a good idea to have a quick discussion before opening a pull request that is potentially out-of-scope.\nfor more information on the contribution process, please go `here <contributing.rst>`_.\n\n\n\ud83e\udd1d  affiliations\n================\n\nmapie has been developed through a collaboration between quantmetry, michelin, ens paris-saclay,\nand with the financial support from r\u00e9gion ile de france and confiance.ai.\n\n|quantmetry|_ |michelin|_ |ens|_ |confiance.ai|_  |iledefrance|_ \n\n.. |quantmetry| image:: https://www.quantmetry.com/wp-content/uploads/2020/08/08-logo-quant-texte-noir.svg\n    :width: 150\n.. _quantmetry: https://www.quantmetry.com/\n\n.. |michelin| image:: https://www.michelin.com/wp-content/themes/michelin/public/img/michelin-logo-en.svg\n    :width: 100\n.. _michelin: https://www.michelin.com/en/\n\n.. |ens| image:: https://file.diplomeo-static.com/file/00/00/01/34/13434.svg\n    :width: 100\n.. _ens: https://ens-paris-saclay.fr/en\n\n.. |confiance.ai| image:: https://pbs.twimg.com/profile_images/1443838558549258264/evwlv1vq_400x400.jpg\n    :width: 100\n.. _confiance.ai: https://www.confiance.ai/\n\n.. |iledefrance| image:: https://www.iledefrance.fr/themes/custom/portail_idf/logo.svg\n    :width: 100\n.. _iledefrance: https://www.iledefrance.fr/\n\n\n\ud83d\udd0d  references\n==============\n\n[1] vovk, vladimir, alexander gammerman, and glenn shafer. algorithmic learning in a random world. springer nature, 2022.\n\n[2] angelopoulos, anastasios n., and stephen bates. \"conformal prediction: a gentle introduction.\" foundations and trends\u00ae in machine learning 16.4 (2023): 494-591.\n\n[3] rina foygel barber, emmanuel j. cand\u00e8s, aaditya ramdas, and ryan j. tibshirani. \"predictive inference with the jackknife+.\" ann. statist., 49(1):486\u2013507, (2021).\n\n[4] kim, byol, chen xu, and rina barber. \"predictive inference is free with the jackknife+-after-bootstrap.\" advances in neural information processing systems 33 (2020): 4138-4149.\n\n[5] sadinle, mauricio, jing lei, and larry wasserman. \"least ambiguous set-valued classifiers with bounded error levels.\" journal of the american statistical association 114.525 (2019): 223-234.\n\n[6] romano, yaniv, matteo sesia, and emmanuel candes. \"classification with valid and adaptive coverage.\" advances in neural information processing systems 33 (2020): 3581-3591.\n\n[7] angelopoulos, anastasios, et al. \"uncertainty sets for image classifiers using conformal prediction.\" international conference on learning representations (2021).\n\n[8] romano, yaniv, evan patterson, and emmanuel candes. \"conformalized quantile regression.\" advances in neural information processing systems 32 (2019).\n\n[9] xu, chen, and yao xie. \"conformal prediction interval for dynamic time-series.\" international conference on machine learning. pmlr, (2021).\n\n[10] bates, stephen, et al. \"distribution-free, risk-controlling prediction sets.\" journal of the acm (jacm) 68.6 (2021): 1-34.\n\n[11] angelopoulos, anastasios n., stephen, bates, adam, fisch, lihua, lei, and tal, schuster. \"conformal risk control.\" (2022).\n\n[12] angelopoulos, anastasios n., stephen, bates, emmanuel j. cand\u00e8s, et al. \"learn then test: calibrating predictive algorithms to achieve risk control.\" (2022).\n\n\n\ud83d\udcdd license\n==========\n\nmapie is free and open-source software licensed under the `3-clause bsd license <https://github.com/simai-ml/mapie/blob/master/license>`_.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "new bsd",
+  "name": "mapie",
+  "package_url": "https://pypi.org/project/MAPIE/",
+  "project_url": "https://pypi.org/project/MAPIE/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/scikit-learn-contrib/MAPIE/issues",
+    "Documentation": "https://mapie.readthedocs.io/en/latest/",
+    "Download": "https://pypi.org/project/MAPIE/#files",
+    "Homepage": "https://github.com/scikit-learn-contrib/MAPIE",
+    "Source Code": "https://github.com/scikit-learn-contrib/MAPIE"
+  },
+  "release_url": "https://pypi.org/project/MAPIE/0.7.0/",
+  "requires_dist": [
+    "scikit-learn",
+    "scipy",
+    "numpy >=1.21",
+    "packaging"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "a scikit-learn-compatible module for estimating prediction intervals.",
+  "version": "0.7.0",
+  "releases": [],
+  "developers": [
+    "llacombe@quantmetry.com",
+    "tcordier@quantmetry.com",
+    "vblot@quantmetry.com"
+  ],
+  "kwds": "mapie_classifier mapie mapie_logo_nobg_cut _commits git",
+  "license_kwds": "new bsd",
+  "libtype": "pypi",
+  "id": "pypi_mapie",
+  "homepage": "https://github.com/scikit-learn-contrib/mapie",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_numpy",
+    "pypi_packaging",
+    "pypi_scikit_learn",
+    "pypi_scipy"
+  ]
+}

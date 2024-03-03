@@ -1,0 +1,68 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: application frameworks"
+  ],
+  "description": ".. image:: https://raw.githubusercontent.com/dfee/forge/master/docs/_static/forge-horizontal.png\n   :alt: forge logo\n\n==================================================\n``forge`` *(python) signatures for fun and profit*\n==================================================\n\n\n.. image:: https://img.shields.io/badge/pypi-v2018.6.0-blue.svg\n    :target: https://pypi.org/project/python-forge/\n    :alt: pypi project\n.. image:: https://img.shields.io/badge/license-mit-blue.svg\n    :target: https://pypi.org/project/python-forge/\n    :alt: mit license\n.. image:: https://img.shields.io/badge/python-3.5%2c%203.6%2c%203.7-blue.svg\n    :target: https://pypi.org/project/python-forge/\n    :alt: python 3.5+\n.. image:: https://travis-ci.org/dfee/forge.png?branch=master\n    :target: https://travis-ci.org/dfee/forge\n    :alt: master travis ci status\n.. image:: https://coveralls.io/repos/github/dfee/forge/badge.svg?branch=master\n    :target: https://coveralls.io/github/dfee/forge?branch=master\n    :alt: master coveralls status\n.. image:: https://readthedocs.org/projects/python-forge/badge/\n    :target: http://python-forge.readthedocs.io/en/latest/\n    :alt: documentation status\n\n.. overview-start\n\n``forge`` is an elegant python package for revising function signatures at runtime.\nthis libraries aim is to help you write better, more literate code with less boilerplate.\n\n.. overview-end\n\n\n.. installation-start\n\ninstallation\n============\n\n``forge`` is a python-only package `hosted on pypi <https://pypi.org/project/python-forge>`_ for **python 3.5+**.\n\nthe recommended installation method is `pip-installing <https://pip.pypa.io/en/stable/>`_ into a `virtualenv <https://docs.python.org/3/library/venv.html>`_:\n\n.. code-block:: console\n\n    $ pip install python-forge\n\n.. installation-end\n\n\n\nexample\n=======\n\n.. example-start\n\nconsider a library like `requests <https://github.com/requests/requests>`_ that provides a useful api for performing http requests.\nevery http method has it's own function which is a thin wrapper around ``requests.session.request``.\nthe code is a little more than 150 lines, with about 90% of that being boilerplate.\nusing ``forge`` we can get that back down to about 10% it's current size, while *increasing* the literacy of the code.\n\n.. code-block:: python\n\n    import forge\n    import requests\n\n    request = forge.copy(requests.session.request, exclude='self')(requests.request)\n\n    def with_method(method):\n        revised = forge.modify(\n            'method', default=method, bound=true,\n            kind=forge.fparameter.positional_only,\n        )(request)\n        revised.__name__ = method.lower()\n        return revised\n\n    post = with_method('post')\n    get = with_method('get')\n    put = with_method('put')\n    delete = with_method('delete')\n    options = with_method('options')\n    head = with_method('head')\n    patch = with_method('patch')\n\nso what happened?\nthe first thing we did was create an alternate ``request`` function to replace ``requests.request`` that provides the exact same functionality but makes its parameters explicit:\n\n.. code-block:: python\n\n    # requests.get() looks like this:\n    assert forge.repr_callable(requests.get) == 'get(url, params=none, **kwargs)'\n\n    # our get() calls the same code, but looks like this:\n    assert forge.repr_callable(get) == (\n        'get(url, params=none, data=none, headers=none, cookies=none, '\n            'files=none, auth=none, timeout=none, allow_redirects=true, '\n            'proxies=none, hooks=none, stream=none, verify=none, cert=none, '\n            'json=none'\n        ')'\n    )\n\nnext, we built a factory function ``with_method`` that creates new functions which make http requests with the proper http verb.\nbecause the ``method`` parameter is bound, it won't show up it is removed from the resulting functions signature.\nof course, the signature of these generated functions remains explicit, let's try it out:\n\n.. code-block:: python\n\n    response = get('http://google.com')\n    assert 'feeling lucky' in response.text\n\nyou can review the alternate code (the actual implementation) by visiting the code for `requests.api <https://github.com/requests/requests/blob/991e8b76b7a9d21f698b24fa0058d3d5968721bc/requests/api.py>`_.\n\n.. example-end\n\n\n.. project-information-start\n\nproject information\n===================\n\n``forge`` is released under the `mit <https://choosealicense.com/licenses/mit/>`_ license,\nits documentation lives at `read the docs <http://python-forge.rtfd.io/>`_,\nthe code on `github <https://github.com/dfee/forge>`_,\nand the latest release on `pypi <https://pypi.org/project/python-forge/>`_.\nit\u2019s rigorously tested on python 3.6+ and pypy 3.5+.\n\n``forge`` is authored by `devin fee <https://github.com/dfee>`_.\nother contributors are listed under https://github.com/dfee/forge/graphs/contributors.\n\n.. project-information-end\n\n\n.. _requests_api_get: https://github.com/requests/requests/blob/991e8b76b7a9d21f698b24fa0058d3d5968721bc/requests/api.py#l61\n\n\n",
+  "docs_url": null,
+  "keywords": "signatures,parameters,arguments",
+  "license": "mit",
+  "name": "python-forge",
+  "package_url": "https://pypi.org/project/python-forge/",
+  "project_url": "https://pypi.org/project/python-forge/",
+  "project_urls": {
+    "Homepage": "http://github.com/dfee/forge"
+  },
+  "release_url": "https://pypi.org/project/python-forge/18.6.0/",
+  "requires_dist": [
+    "coverage; extra == 'dev'",
+    "mypy; extra == 'dev'",
+    "pylint; extra == 'dev'",
+    "pytest; extra == 'dev'",
+    "sphinx; extra == 'dev'",
+    "sphinx-autodoc-typehints; extra == 'dev'",
+    "sphinx-paramlinks; extra == 'dev'",
+    "sphinx (>=1.7.4); extra == 'docs'",
+    "docutils; extra == 'docs'",
+    "requests; extra == 'docs'",
+    "sphinx-paramlinks; extra == 'docs'",
+    "coverage; extra == 'testing'",
+    "mypy; extra == 'testing'",
+    "pylint; extra == 'testing'",
+    "pytest; extra == 'testing'"
+  ],
+  "requires_python": "",
+  "summary": "forge (python signatures)",
+  "version": "18.6.0",
+  "releases": [],
+  "developers": [
+    "devin@devinfee.com",
+    "devin_fee"
+  ],
+  "kwds": "signature signatures py forge pypy",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_python_forge",
+  "homepage": "http://github.com/dfee/forge",
+  "release_count": 2,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_docutils",
+    "pypi_mypy",
+    "pypi_pylint",
+    "pypi_pytest",
+    "pypi_requests",
+    "pypi_sphinx",
+    "pypi_sphinx_autodoc_typehints",
+    "pypi_sphinx_paramlinks"
+  ]
+}

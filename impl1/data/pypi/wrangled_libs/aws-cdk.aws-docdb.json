@@ -1,0 +1,69 @@
+{
+  "classifiers": [
+    "development status :: 7 - inactive",
+    "framework :: aws cdk",
+    "framework :: aws cdk :: 1",
+    "intended audience :: developers",
+    "license :: osi approved",
+    "operating system :: os independent",
+    "programming language :: javascript",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "typing :: typed"
+  ],
+  "description": "# amazon documentdb construct library\n\n<!--begin stability banner-->---\n\n\n![end-of-support](https://img.shields.io/badge/end--of--support-critical.svg?style=for-the-badge)\n\n> aws cdk v1 has reached end-of-support on 2023-06-01.\n> this package is no longer being updated, and users should migrate to aws cdk v2.\n>\n> for more information on how to migrate, see the [*migrating to aws cdk v2* guide](https://docs.aws.amazon.com/cdk/v2/guide/migrating-v2.html).\n\n---\n<!--end stability banner-->\n\n## starting a clustered database\n\nto set up a clustered documentdb database, define a `databasecluster`. you must\nalways launch a database in a vpc. use the `vpcsubnets` attribute to control whether\nyour instances will be launched privately or publicly:\n\n```python\n# vpc: ec2.vpc\n\ncluster = docdb.databasecluster(self, \"database\",\n    master_user=docdb.login(\n        username=\"myuser\",  # note: 'admin' is reserved by documentdb\n        exclude_characters=\"\\\"@/:\",  # optional, defaults to the set \"\\\"@/\" and is also used for eventually created rotations\n        secret_name=\"/myapp/mydocdb/masteruser\"\n    ),\n    instance_type=ec2.instancetype.of(ec2.instanceclass.r5, ec2.instancesize.large),\n    vpc_subnets=ec2.subnetselection(\n        subnet_type=ec2.subnettype.public\n    ),\n    vpc=vpc\n)\n```\n\nby default, the master password will be generated and stored in aws secrets manager with auto-generated description.\n\nyour cluster will be empty by default.\n\n## connecting\n\nto control who can access the cluster, use the `.connections` attribute. documentdb databases have a default port, so\nyou don't need to specify the port:\n\n```python\n# cluster: docdb.databasecluster\n\ncluster.connections.allow_default_port_from_any_ipv4(\"open to the world\")\n```\n\nthe endpoints to access your database cluster will be available as the `.clusterendpoint` and `.clusterreadendpoint`\nattributes:\n\n```python\n# cluster: docdb.databasecluster\n\nwrite_address = cluster.cluster_endpoint.socket_address\n```\n\nif you have existing security groups you would like to add to the cluster, use the `addsecuritygroups` method. security\ngroups added in this way will not be managed by the `connections` object of the cluster.\n\n```python\n# vpc: ec2.vpc\n# cluster: docdb.databasecluster\n\n\nsecurity_group = ec2.securitygroup(self, \"securitygroup\",\n    vpc=vpc\n)\ncluster.add_security_groups(security_group)\n```\n\n## deletion protection\n\ndeletion protection can be enabled on an amazon documentdb cluster to prevent accidental deletion of the cluster:\n\n```python\n# vpc: ec2.vpc\n\ncluster = docdb.databasecluster(self, \"database\",\n    master_user=docdb.login(\n        username=\"myuser\"\n    ),\n    instance_type=ec2.instancetype.of(ec2.instanceclass.r5, ec2.instancesize.large),\n    vpc_subnets=ec2.subnetselection(\n        subnet_type=ec2.subnettype.public\n    ),\n    vpc=vpc,\n    deletion_protection=true\n)\n```\n\n## rotating credentials\n\nwhen the master password is generated and stored in aws secrets manager, it can be rotated automatically:\n\n```python\n# cluster: docdb.databasecluster\n\ncluster.add_rotation_single_user()\n```\n\n```python\ncluster = docdb.databasecluster(stack, \"database\",\n    master_user=docdb.login(\n        username=\"docdb\"\n    ),\n    instance_type=ec2.instancetype.of(ec2.instanceclass.r5, ec2.instancesize.large),\n    vpc=vpc,\n    removal_policy=cdk.removalpolicy.destroy\n)\n\ncluster.add_rotation_single_user()\n```\n\nthe multi user rotation scheme is also available:\n\n```python\nimport aws_cdk.aws_secretsmanager as secretsmanager\n\n# my_imported_secret: secretsmanager.secret\n# cluster: docdb.databasecluster\n\n\ncluster.add_rotation_multi_user(\"myuser\",\n    secret=my_imported_secret\n)\n```\n\nit's also possible to create user credentials together with the cluster and add rotation:\n\n```python\n# cluster: docdb.databasecluster\n\nmy_user_secret = docdb.databasesecret(self, \"myusersecret\",\n    username=\"myuser\",\n    master_secret=cluster.secret\n)\nmy_user_secret_attached = my_user_secret.attach(cluster) # adds db connections information in the secret\n\ncluster.add_rotation_multi_user(\"myuser\",  # add rotation using the multi user scheme\n    secret=my_user_secret_attached)\n```\n\n**note**: this user must be created manually in the database using the master credentials.\nthe rotation will start as soon as this user exists.\n\nsee also [@aws-cdk/aws-secretsmanager](https://github.com/aws/aws-cdk/blob/master/packages/%40aws-cdk/aws-secretsmanager/readme.md) for credentials rotation of existing clusters.\n\n## audit and profiler logs\n\nsending audit or profiler needs to be configured in two places:\n\n1. check / create the needed options in your parametergroup for [audit](https://docs.aws.amazon.com/documentdb/latest/developerguide/event-auditing.html#event-auditing-enabling-auditing) and\n   [profiler](https://docs.aws.amazon.com/documentdb/latest/developerguide/profiling.html#profiling.enable-profiling) logs.\n2. enable the corresponding option(s) when creating the `databasecluster`:\n\n```python\nimport aws_cdk.aws_iam as iam\nimport aws_cdk.aws_logs as logs\n\n# my_logs_publishing_role: iam.role\n# vpc: ec2.vpc\n\n\ncluster = docdb.databasecluster(self, \"database\",\n    master_user=docdb.login(\n        username=\"myuser\"\n    ),\n    instance_type=ec2.instancetype.of(ec2.instanceclass.r5, ec2.instancesize.large),\n    vpc_subnets=ec2.subnetselection(\n        subnet_type=ec2.subnettype.public\n    ),\n    vpc=vpc,\n    export_profiler_logs_to_cloud_watch=true,  # enable sending profiler logs\n    export_audit_logs_to_cloud_watch=true,  # enable sending audit logs\n    cloud_watch_logs_retention=logs.retentiondays.three_months,  # optional - default is to never expire logs\n    cloud_watch_logs_retention_role=my_logs_publishing_role\n)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0",
+  "name": "aws-cdk.aws-docdb",
+  "package_url": "https://pypi.org/project/aws-cdk.aws-docdb/",
+  "project_url": "https://pypi.org/project/aws-cdk.aws-docdb/",
+  "project_urls": {
+    "Homepage": "https://github.com/aws/aws-cdk",
+    "Source": "https://github.com/aws/aws-cdk.git"
+  },
+  "release_url": "https://pypi.org/project/aws-cdk.aws-docdb/1.204.0/",
+  "requires_dist": [
+    "aws-cdk.aws-ec2 (==1.204.0)",
+    "aws-cdk.aws-efs (==1.204.0)",
+    "aws-cdk.aws-iam (==1.204.0)",
+    "aws-cdk.aws-kms (==1.204.0)",
+    "aws-cdk.aws-logs (==1.204.0)",
+    "aws-cdk.aws-secretsmanager (==1.204.0)",
+    "aws-cdk.core (==1.204.0)",
+    "constructs (<4.0.0,>=3.3.69)",
+    "jsii (<2.0.0,>=1.84.0)",
+    "publication (>=0.0.3)",
+    "typeguard (~=2.13.3)"
+  ],
+  "requires_python": "~=3.7",
+  "summary": "the cdk construct library for aws::docdb",
+  "version": "1.204.0",
+  "releases": [],
+  "developers": [
+    "amazon_web_services"
+  ],
+  "kwds": "aws_cdk aws_iam aws aws_secretsmanager documentdb",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_aws_cdk.aws_docdb",
+  "homepage": "https://github.com/aws/aws-cdk",
+  "release_count": 258,
+  "dependency_ids": [
+    "pypi_aws_cdk.aws_ec2",
+    "pypi_aws_cdk.aws_efs",
+    "pypi_aws_cdk.aws_iam",
+    "pypi_aws_cdk.aws_kms",
+    "pypi_aws_cdk.aws_logs",
+    "pypi_aws_cdk.aws_secretsmanager",
+    "pypi_aws_cdk.core",
+    "pypi_constructs",
+    "pypi_jsii",
+    "pypi_publication",
+    "pypi_typeguard"
+  ]
+}

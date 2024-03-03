@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: web environment",
+    "framework :: django",
+    "framework :: django :: 2.2",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "intended audience :: developers",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "django-loginas\n==============\n\nabout\n-----\n\n\"login as user\" for the django admin.\n\n[![pypi version](https://img.shields.io/pypi/v/django-loginas.svg)](https://pypi.python.org/pypi/django-loginas)\n\n`loginas` supports python 3 only, as of version 0.4. if you're on 2, use\n[0.3.6](https://pypi.org/project/django-loginas/0.3.6/).\n\n\ninstalling django-loginas\n-------------------------\n\n* add `loginas` to your python path, or install using pip: `pip install django-loginas`\n\n* add the `loginas` app to your `installed_apps`:\n\n```python\n# settings.py\ninstalled_apps = [... 'loginas', ...]\n```\n\n* add the `loginas` url to your `urls.py`:\n\n```python\n# urls.py\nurlpatterns = [\n    # from django 3.2 on, make sure to add loginas urls before the admin site urls, i.e.:\n    path('admin/', include('loginas.urls')),\n    path('admin/', admin.site.urls),\n]\n```\n\n* if you're using a custom user model, you'll need to add the template to it so the button shows up:\n\n```python\n# admin.py\nclass youruseradmin(modeladmin):\n    change_form_template = 'loginas/change_form.html'\n```\n\nat this point, you should be good to go. just visit the django admin, navigate to a user and you should see the \"log\nin as user\" button at the top right of the screen.\n\nconfiguring\n-----------\n\nat this point, the only users who will be able to log in as other users are those with the `is_superuser` permission.\nif you use custom user models, and haven't specified that permission, or if you want to change which users are\nauthorized to log in as others, you can define the `can_login_as` setting, like so:\n\n```python\n# settings.py\n\n# this will only allow admins to log in as other users:\ncan_login_as = lambda request, target_user: request.user.is_superuser\n\n# this will only allow admins to log in as other users, as long as\n# those users are not admins themselves:\ncan_login_as = lambda request, target_user: request.user.is_superuser and not target_user.is_superuser\n\n# you can also define a string path to a module:\ncan_login_as = \"utils.helpers.custom_loginas\"\n```\n\nby default, clicking \"login as user\" will send the user to `settings.login_redirect_url`.\nyou can override this behavior like so:\n\n```python\n# settings.py\n\nloginas_redirect_url = '/loginas-redirect-url'\n```\n\nin order to automatically restore the original user upon log out, replace the default log out\nwith a special log out that restores the original login session from a signed session.\n\n```python\n# settings.py\n\nfrom django.core.urlresolvers import reverse_lazy\nlogout_url = reverse_lazy('loginas-logout')\n```\n\nadditionally, you can specify the redirect url for logout (the default is `settings.login_redirect_url`).\n\n```python\n# settings.py\n\nfrom django.core.urlresolvers import reverse_lazy\nloginas_logout_redirect_url = reverse_lazy('admin:index')\n```\n\nby default, clicking \"login as user\" will not update `user.last_login`.\nyou can override this behavior like so:\n\n```python\n# settings.py\n\nloginas_update_last_login = true\n```\n\nby default, the login switch message will generate [django admin `logentry`](https://docs.djangoproject.com/en/3.2/ref/contrib/admin/#logentry-objects) messages using the `user` model's\n`username_field` like `f\"user {impersonator_user.getattr(username_field)} logged in as {impersonated_user.getattr(username_field)}.\"` you can override this behavior by passing in a different\nfield name:\n\n```python\n# settings.py\n\nloginas_username_field = 'email'\n```\n\nother implementation suggestions\n--------------------------------\n\n### existing logout view?\n\nif you already have a logout view, you can modify to login the original user again after having had a \"login as\" session. here's an example:\n\n```python\nclass logoutview(logoutview):\n    template_name = 'myapp/logged_out.html'\n\n    @method_decorator(never_cache)\n    def dispatch(self, request, *args, **kwargs):\n        from loginas.utils import restore_original_login\n        restore_original_login(request)\n        return redirect('myapp:login')\n```\n\n### template awareness\n\nyou can add the context processor `loginas.context_processors.impersonated_session_status`\nin your settings.py file if you'd like to be able to access a variable `is_impersonated_session`\nin all your template contexts:\n\n```python\n# settings.py\n\ntemplates = [\n    {\n        ...\n        'options': {\n            'context_processors': [\n                'django.template.context_processors.debug',\n                'django.template.context_processors.request',\n                'django.contrib.auth.context_processors.auth',\n                ...\n                'loginas.context_processors.impersonated_session_status',\n            ],\n        },\n    },\n]\n```\n\nnote that django-loginas won't let you log in as other superusers, to prevent\nprivilege escalation from staff users to superusers. if you want to log in as\na superuser, first demote them to a non-superuser, and then log in.\n\nlicense\n-------\n\nthis software is distributed under the bsd license.\n\n\n",
+  "docs_url": null,
+  "keywords": "django",
+  "license": "bsd",
+  "name": "django-loginas",
+  "package_url": "https://pypi.org/project/django-loginas/",
+  "project_url": "https://pypi.org/project/django-loginas/",
+  "project_urls": {
+    "Homepage": "https://github.com/stochastic-technologies/django-loginas/"
+  },
+  "release_url": "https://pypi.org/project/django-loginas/0.3.11/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "an app to add a \"log in as user\" button in the django user admin page.",
+  "version": "0.3.11",
+  "releases": [],
+  "developers": [
+    "info@stochastictechnologies.com",
+    "stochastic_technologies"
+  ],
+  "kwds": "loginas_username_field loginas_update_last_login custom_loginas django loginas_redirect_url",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_django_loginas",
+  "homepage": "https://github.com/stochastic-technologies/django-loginas/",
+  "release_count": 25,
+  "dependency_ids": []
+}

@@ -1,0 +1,38 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "topic :: software development"
+  ],
+  "description": "\nserpent is a simple serialization library based on ast.literal_eval.\n\nbecause it only serializes literals and recreates the objects using ast.literal_eval(),\nthe serialized data is safe to transport to other machines (over the network for instance)\nand de-serialize it there.\n\n*there is also a java and a .net (c#) implementation available. this allows for easy data transfer between the various ecosystems.\nyou can get the full source distribution, a java .jar file, and a .net assembly dll.*\nthe java library can be obtained from maven central (groupid ``net.razorvine`` artifactid ``serpent``),\nand the .net assembly can be obtained from nuget.org (package ``razorvine.serpent``).\n\n\n**api**\n\n- ``ser_bytes = serpent.dumps(obj, indent=false, module_in_classname=false):``      # serialize obj tree to bytes\n- ``obj = serpent.loads(ser_bytes)``     # deserialize bytes back into object tree\n- you can use ``ast.literal_eval`` yourself to deserialize, but ``serpent.deserialize``\n  works around a few corner cases. see source for details.\n\nserpent is more sophisticated than a simple repr() + literal_eval():\n\n- it serializes directly to bytes (utf-8 encoded), instead of a string, so it can immediately be saved to a file or sent over a socket\n- it encodes byte-types as base-64 instead of inefficient escaping notation that repr would use (this does mean you have\n  to base-64 decode these strings manually on the receiving side to get your bytes back.\n  you can use the serpent.tobytes utility function for this.)\n- it contains a few custom serializers for several additional python types such as uuid, datetime, array and decimal\n- it tries to serialize unrecognised types as a dict (you can control this with __getstate__ on your own types)\n- it can create a pretty-printed (indented) output for readability purposes\n- it outputs the keys of sets and dicts in alphabetical order (when pretty-printing)\n- it works around a few quirks of ast.literal_eval() on the various python implementations\n\nserpent allows comments in the serialized data (because it is just python source code).\nserpent can't serialize object graphs (when an object refers to itself); it will then crash with a valueerror pointing out the problem.\n\nworks with python 3 recent versions.\n\n**faq**\n\n- why not use xml? answer: because xml.\n- why not use json? answer: because json is quite limited in the number of datatypes it supports, and you can't use comments in a json file.\n- why not use pickle? answer: because pickle has security problems.\n- why not use ``repr()``/``ast.literal_eval()``? see above; serpent is a superset of this and provides more convenience.\n  serpent provides automatic serialization mappings for types other than the builtin primitive types.\n  ``repr()`` can't serialize these to literals that ``ast.literal_eval()`` understands.\n- why not a binary format? answer: because binary isn't readable by humans.\n- but i don't care about readability. answer: doesn't matter, ``ast.literal_eval()`` wants a literal string, so that is what we produce.\n- but i want better performance. answer: ok, maybe you shouldn't use serpent in this case. find an efficient binary protocol (protobuf?)\n- why only python, java and c#/.net, but no bindings for insert-favorite-language-here? answer: i don't speak that language.\n  maybe you could port serpent yourself?\n- where is the source?  it's on github: https://github.com/irmen/serpent\n- can i use it everywhere?  sure, as long as you keep the copyright and disclaimer somewhere. see the license file.\n\n**demo**\n\n.. code:: python\n\n # -*- coding: utf-8 -*-\n import ast\n import uuid\n import datetime\n import pprint\n import serpent\n\n\n class democlass:\n     def __init__(self):\n         self.i=42\n         self.b=false\n\n data = {\n     \"names\": [\"harry\", \"sally\", \"peter\"],\n     \"big\": 2**200,\n     \"colorset\": { \"red\", \"green\" },\n     \"id\": uuid.uuid4(),\n     \"timestamp\": datetime.datetime.now(),\n     \"class\": democlass(),\n     \"unicode\": \"\u20ac\"\n }\n\n # serialize it\n ser = serpent.dumps(data, indent=true)\n open(\"data.serpent\", \"wb\").write(ser)\n\n print(\"serialized form:\")\n print(ser.decode(\"utf-8\"))\n\n # read it back\n data = serpent.load(open(\"data.serpent\", \"rb\"))\n print(\"data:\")\n pprint.pprint(data)\n\n # you can also use ast.literal_eval if you like\n ser_string = open(\"data.serpent\", \"r\", encoding=\"utf-8\").read()\n data2 = ast.literal_eval(ser_string)\n\n assert data2==data\n\n\nwhen you run this it prints:\n\n.. code:: python\n\n serialized form:\n # serpent utf-8 python3.2\n {\n   'big': 1606938044258990275541962092341162602522202993782792835301376,\n   'class': {\n     '__class__': 'democlass',\n     'b': false,\n     'i': 42\n   },\n   'colorset': {\n     'green',\n     'red'\n   },\n   'id': 'e461378a-201d-4844-8119-7c1570d9d186',\n   'names': [\n     'harry',\n     'sally',\n     'peter'\n   ],\n   'timestamp': '2013-04-02t00:23:00.924000',\n   'unicode': '\u20ac'\n }\n data:\n {'big': 1606938044258990275541962092341162602522202993782792835301376,\n  'class': {'__class__': 'democlass', 'b': false, 'i': 42},\n  'colorset': {'green', 'red'},\n  'id': 'e461378a-201d-4844-8119-7c1570d9d186',\n  'names': ['harry', 'sally', 'peter'],\n  'timestamp': '2013-04-02t00:23:00.924000',\n  'unicode': '\u20ac'}\n    \n\n",
+  "docs_url": null,
+  "keywords": "serialization",
+  "license": "mit",
+  "name": "serpent",
+  "package_url": "https://pypi.org/project/serpent/",
+  "project_url": "https://pypi.org/project/serpent/",
+  "project_urls": {
+    "Homepage": "https://github.com/irmen/Serpent"
+  },
+  "release_url": "https://pypi.org/project/serpent/1.41/",
+  "requires_dist": [],
+  "requires_python": ">=3.2",
+  "summary": "serialization based on ast.literal_eval",
+  "version": "1.41",
+  "releases": [],
+  "developers": [
+    "irmen@razorvine.net",
+    "irmen_de_jong"
+  ],
+  "kwds": "serpent serialize serialization serializers serializes",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_serpent",
+  "homepage": "https://github.com/irmen/serpent",
+  "release_count": 35,
+  "dependency_ids": []
+}

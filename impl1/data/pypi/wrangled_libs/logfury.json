@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 6 - mature",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: logging"
+  ],
+  "description": ".. image:: https://img.shields.io/pypi/wheel/logfury.svg\n    :target: https://pypi.python.org/pypi/logfury/\n.. image:: https://img.shields.io/pypi/l/logfury.svg\n    :target: https://pypi.python.org/pypi/logfury/\n.. image:: https://img.shields.io/pypi/v/logfury.svg\n    :target: https://pypi.python.org/pypi/logfury/\n.. image:: https://img.shields.io/pypi/dm/logfury.svg\n    :target: https://pypi.python.org/pypi/logfury/\n.. image:: https://github.com/reef-technologies/logfury/workflows/ci/badge.svg?branch=master\n    :target: https://github.com/reef-technologies/logfury/actions/workflows/ci.yml\n\n========\nlogfury\n========\n\nlogfury is a tool for python library maintainers. it allows for responsible, low-boilerplate logging of method calls.\n\n*****************************\nwhats with the weird import\n*****************************\n\n.. sourcecode:: python\n\n    from logfury.v1 import defaulttracemeta\n\nif you were to use logfury in your library, any change to the api could potentially break your program. nobody wants that.\n\nthanks to this import trick i can keep the api very stable. at the same time i can change the functionality of the library and change default behavior of next middle version, without changing the name of the package. this way you decide when to adopt potentially incompatible api changes, by incrementing the api version on import. this concept is called \"apiver\".\n\n\n*****************\ninstallation\n*****************\n\n^^^^^^^^^^^^^^^^^^^^\ncurrent stable\n^^^^^^^^^^^^^^^^^^^^\n\n::\n\n    pip install logfury\n\n^^^^^^^^^^^^^^^^^^^^\ndevelopment version\n^^^^^^^^^^^^^^^^^^^^\n\n::\n\n    git clone git@github.com:reef-technologies/logfury.git\n    pip install -e .\n\n\n*****************\nbasic usage\n*****************\n\n^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndefaulttracemeta metaclass\n^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n.. sourcecode:: pycon\n\n    >>> import logging\n    >>> import six\n    >>>\n    >>> from logfury.v1 import defaulttracemeta, limit_trace_arguments, disable_trace\n    >>>\n    >>>\n    >>> logging.basicconfig()\n    >>> logger = logging.getlogger(__name__)\n    >>> logger.setlevel(logging.debug)\n    >>>\n    >>>\n    >>> @six.add_metaclass(defaulttracemeta)\n    >>> class foo:\n    ...     def baz(self, a, b, c=none):\n    ...         return true\n    ...     def get_blah(self):\n    ...         return 5\n    ...     def _hello(self):\n    ...         pass\n    ...     @disable_trace\n    ...     def world(self):\n    ...         pass\n    ...     def __repr__(self):\n    ...         return '<{} object>'.format(self.__class__.__name__,)\n    ...\n    >>> class bar(foo):\n    ...     def baz(self, a, b, c=none):\n    ...         b += 1\n    ...         return super(bar, self).baz(a, b, c)\n    ...     def world(self):\n    ...         pass\n    ...     @limit_trace_arguments(skip=['password'])\n    ...     def secret(self, password, other):\n    ...         pass\n    ...     @limit_trace_arguments(only=['other'])\n    ...     def secret2(self, password, other):\n    ...         pass\n    ...\n    >>> a = foo()\n    >>> a.baz(1, 2, 3)\n    debug:__main__:calling foo.baz(self=<foo object>, a=1, b=2, c=3)\n    >>> a.baz(4, b=8)\n    debug:__main__:calling foo.baz(self=<foo object>, a=4, b=8)\n    >>> a.get_blah()  # nothing happens, since v1.defaulttracemeta does not trace \"get_.*\"\n    >>> a._hello()  # nothing happens, since v1.defaulttracemeta does not trace \"_.*\"\n    >>> a.world()  # nothing happens, since v1.defaulttracemeta does not trace \"_.*\"\n    >>> b = bar()\n    >>> b.baz(4, b=8)  # tracing is inherited\n    debug:__main__:calling bar.baz(self=<bar object>, a=4, b=8)\n    debug:__main__:calling foo.baz(self=<bar object>, a=4, b=9, c=none)\n    >>> b.world()  # nothing happens, since foo.world() tracing was disabled and bar inherited it\n    >>> b.secret('correct horse battery staple', 'hello world!')\n    debug:__main__:calling bar.secret(self=<bar object>, other='hello world!') (hidden args: password)\n    >>> b.secret2('correct horse battery staple', 'hello world!')\n    debug:__main__:calling bar.secret2(other='hello world!') (hidden args: self, password)\n\n\n^^^^^^^^^^^^^^^^^^^^\ntrace_call decorator\n^^^^^^^^^^^^^^^^^^^^\n\n.. sourcecode:: pycon\n\n    >>> import logging\n    >>> from logfury import *\n    >>> logging.basicconfig()\n    >>> logger = logging.getlogger(__name__)\n    >>>\n    >>> @trace_call(logger)\n    ... def foo(a, b, c=none):\n    ...     return true\n    ...\n    >>> foo(1, 2, 3)\n    true\n    >>> logger.setlevel(logging.debug)\n    >>> foo(1, 2, 3)\n    debug:__main__:calling foo(a=1, b=2, c=3)\n    true\n    >>> foo(1, b=2)\n    debug:__main__:calling foo(a=1, b=2)\n    true\n    >>>\n\n\n",
+  "docs_url": null,
+  "keywords": "logging,tracing",
+  "license": "bsd",
+  "name": "logfury",
+  "package_url": "https://pypi.org/project/logfury/",
+  "project_url": "https://pypi.org/project/logfury/",
+  "project_urls": {
+    "Download": "https://github.com/reef-technologies/logfury/releases",
+    "Homepage": "https://github.com/reef-technologies/logfury"
+  },
+  "release_url": "https://pypi.org/project/logfury/1.0.1/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "('toolkit for responsible, low-boilerplate logging of library method calls',)",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "p.polewicz@gmail.com",
+    "pawel_polewicz"
+  ],
+  "kwds": "logfury logger logging tracing svg",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_logfury",
+  "homepage": "https://github.com/reef-technologies/logfury",
+  "release_count": 3,
+  "dependency_ids": []
+}

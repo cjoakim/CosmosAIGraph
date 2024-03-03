@@ -1,0 +1,44 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "xxtea |github-actions-badge| |pypi-badge| |supported-pythons-badge| |license-badge|\n==============================================================================================\n\n.. |github-actions-badge| image:: https://github.com/ifduyue/xxtea/actions/workflows/test.yml/badge.svg\n    :target: https://github.com/ifduyue/xxtea/actions/workflows/test.yml\n    :alt: github actions status\n\n.. |pypi-badge| image:: https://img.shields.io/pypi/v/xxtea.svg\n   :target: https://pypi.python.org/pypi/xxtea\n   :alt: latest version\n\n.. |supported-pythons-badge| image:: https://img.shields.io/pypi/pyversions/xxtea.svg\n    :target: https://pypi.python.org/pypi/xxtea\n    :alt: supported python versions\n\n.. |license-badge| image:: https://img.shields.io/pypi/l/xxtea.svg\n    :target: https://pypi.python.org/pypi/xxtea\n    :alt: license\n\n.. _xxtea: http://en.wikipedia.org/wiki/xxtea\n.. _longs2bytes: https://github.com/ifduyue/xxtea/blob/master/xxtea.c#l130\n.. _bytes2longs: https://github.com/ifduyue/xxtea/blob/master/xxtea.c#l102\n.. _pkcs#7: http://en.wikipedia.org/wiki/padding_%28cryptography%29#pkcs7\n\nxxtea_ implemented as a python extension module, licensed under 2-clause bsd.\n\nthe xxtea_ algorithm takes a 128-bit key and operates on an array of 32-bit\nintegers (at least 2 integers), but it doesn't define the conversions between\nbytes and array. due to this reason, many xxtea implementations out there are\nnot compatible with each other.\n\nin this implementation,  the conversions between bytes and array are\ntaken care of by longs2bytes_ and bytes2longs_. `pkcs#7`_ padding is also used\nto make sure that the input bytes are padded to multiple of 4-byte (the size\nof a 32-bit integer) and at least 8-byte long (the size of two 32-bit integer,\nwhich is required by the xxtea_ algorithm). as a result of these measures,\nyou can encrypt not only texts, but also any binary bytes of any length.\n\n\ninstallation\n-------------\n\n::\n\n    $ pip install xxtea -u\n\n\nusage\n-----------\n\nthis module provides four functions: ``encrypt()``, ``decrypt()``,\n``encrypt_hex()``, and ``decrypt_hex()``.\n\n.. code-block:: python\n\n    >>> import os\n    >>> import xxtea\n    >>> import binascii\n    >>>\n    >>> key = os.urandom(16)  # key must be a 16-byte string.\n    >>> s = b\"xxtea is good\"\n    >>>\n    >>> enc = xxtea.encrypt(s, key)\n    >>> dec = xxtea.decrypt(enc, key)\n    >>> s == dec\n    true\n    >>>\n    >>> hexenc = xxtea.encrypt_hex(s, key)\n    >>> hexenc\n    b'7ad85672d770fb5cf636c49d57e732ae'\n    >>> s == xxtea.decrypt_hex(hexenc, key)\n    true\n    >>>\n    >>> binascii.hexlify(enc) == hexenc\n    true\n\n\n``encrypt_hex()`` and ``decrypt_hex()`` operate on ciphertext in a hexadecimal\nrepresentation. they are exactly equivalent to:\n\n.. code-block:: python\n\n    >>> hexenc = binascii.hexlify(xxtea.encrypt(s, key))\n    >>> s == xxtea.decrypt(binascii.unhexlify(hexenc), key)\n    true\n\n\npadding\n---------\n\npadding is enabled by default, in this case you can encode any bytes of any length.\n\n.. code-block:: python\n\n    >>> xxtea.encrypt_hex('', key)\n    b'd63256eb59134f1f'\n    >>> xxtea.decrypt_hex(_, key)\n    b''\n    >>> xxtea.encrypt_hex(' ', key)\n    b'97009bd24074a7a5'\n    >>> xxtea.decrypt_hex(_, key)\n    b' '\n\nyou can disable padding by setting padding parameter to ``false``.\nin this case data will not be padded, so data length must be a multiple of 4 bytes and must not be less than 8 bytes.\notherwise ``valueerror`` will be raised:\n\n.. code-block:: python\n\n    >>> xxtea.encrypt_hex('', key, padding=false)\n    valueerror: data length must be a multiple of 4 bytes and must not be less than 8 bytes\n    >>> xxtea.encrypt_hex('xxtea is good', key, padding=false)\n    valueerror: data length must be a multiple of 4 bytes and must not be less than 8 bytes\n    >>> xxtea.encrypt_hex('12345678', key, padding=false)\n    b'64f4e969ba90d386'\n    >>> xxtea.decrypt_hex(_, key, padding=false)\n    b'12345678'\n\n\nrounds\n----------\n\nby default xxtea manipulates the input data for ``6 + 52 / n`` rounds,\nwhere n denotes how many 32-bit integers the input data can fit in.\nwe can change this by setting ``rounds`` parameter.\n\ndo note that the more rounds it is, the more time will be consumed.\n\n.. code-block:: python\n\n    >>> import xxtea\n    >>> import string\n    >>> data = string.digits\n    >>> key = string.ascii_letters[:16]\n    >>> xxtea.encrypt_hex(data, key)\n    b'5b80b08a5d1923e4cd992dd5'\n    >>> 6 + 52 // ((len(data) + (4 - 1)) // 4)  # 4 means 4 bytes, size of a 32-bit integer\n    23\n    >>> xxtea.encrypt_hex(data, key, rounds=23)\n    b'5b80b08a5d1923e4cd992dd5'\n    >>> xxtea.encrypt_hex(data, key, rounds=1024)\n    b'1577bbf28c43ced93bd50720'\n\n\ncatching exceptions\n---------------------\n\nwhen calling ``decrypt()`` and ``decrypt_hex()``, it is possible that a ``valueerror`` or a ``typeerror``\nis raised:\n\n.. code-block:: python\n\n    >>> from __future__ import print_function\n    >>> import xxtea\n    >>>\n    >>> def try_catch(func, *args, **kwargs):\n    ...     try:\n    ...         func(*args, **kwargs)\n    ...     except exception as e:\n    ...         print(e.__class__.__name__, ':', e)\n    ...\n    ...\n    ...\n    >>> try_catch(xxtea.decrypt, '', key='')\n    valueerror : need a 16-byte key.\n    >>> try_catch(xxtea.decrypt, '', key=' '*16)\n    valueerror : invalid data, data length is not a multiple of 4, or less than 8.\n    >>> try_catch(xxtea.decrypt, ' '*8, key=' '*16)\n    valueerror : invalid data, illegal pkcs#7 padding. could be using a wrong key.\n    >>> try_catch(xxtea.decrypt_hex, ' '*8, key=' '*16)\n    typeerror : non-hexadecimal digit found\n    >>> try_catch(xxtea.decrypt_hex, 'abc', key=' '*16)\n    typeerror : odd-length string\n    >>> try_catch(xxtea.decrypt_hex, 'abcd', key=' '*16)\n    valueerror : invalid data, data length is not a multiple of 4, or less than 8.\n",
+  "docs_url": null,
+  "keywords": "xxtea",
+  "license": "bsd",
+  "name": "xxtea",
+  "package_url": "https://pypi.org/project/xxtea/",
+  "project_url": "https://pypi.org/project/xxtea/",
+  "project_urls": {
+    "Homepage": "https://github.com/ifduyue/xxtea"
+  },
+  "release_url": "https://pypi.org/project/xxtea/3.2.0/",
+  "requires_dist": [],
+  "requires_python": ">=3.6",
+  "summary": "xxtea is a simple block cipher",
+  "version": "3.2.0",
+  "releases": [],
+  "developers": [
+    "ifduyue@gmail.com",
+    "yue_du"
+  ],
+  "kwds": "badge pyversions pypi status github",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_xxtea",
+  "homepage": "https://github.com/ifduyue/xxtea",
+  "release_count": 20,
+  "dependency_ids": []
+}

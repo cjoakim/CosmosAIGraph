@@ -1,0 +1,66 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "intended audience :: science/research",
+    "operating system :: macos",
+    "operating system :: microsoft :: windows",
+    "operating system :: unix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: scientific/engineering",
+    "topic :: software development"
+  ],
+  "description": "# kerasnlp: modular nlp workflows for keras\n[![](https://github.com/keras-team/keras-nlp/workflows/tests/badge.svg?branch=master)](https://github.com/keras-team/keras-nlp/actions?query=workflow%3atests+branch%3amaster)\n![python](https://img.shields.io/badge/python-v3.8.0+-success.svg)\n![tensorflow](https://img.shields.io/badge/tensorflow-v2.5.0+-success.svg)\n[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/keras-team/keras-nlp/issues)\n\nkerasnlp is a natural language processing library that works natively\nwith tensorflow, jax, or pytorch. built on keras 3, these models, layers,\nmetrics, and tokenizers can be trained and serialized in any framework and\nre-used in another without costly migrations.\n\nkerasnlp supports users through their entire development cycle. our workflows \nare built from modular components that have state-of-the-art preset weights and \narchitectures when used out-of-the-box and are easily customizable when more \ncontrol is needed.\n\nthis library is an extension of the core keras api; all high-level modules are \n[`layers`](https://keras.io/api/layers/) or \n[`models`](https://keras.io/api/models/) that receive that same level of polish \nas core keras. if you are familiar with keras, congratulations! you already \nunderstand most of kerasnlp.\n\nsee our [getting started guide](https://keras.io/guides/keras_nlp/getting_started) \nfor example usage of our modular api starting with evaluating pretrained models \nand building up to designing a novel transformer architecture and training a \ntokenizer from scratch.  \n\nwe are a new and growing project and welcome [contributions](contributing.md).\n\n## quick links\n\n### for everyone\n\n- [home page](https://keras.io/keras_nlp)\n- [developer guides](https://keras.io/guides/keras_nlp)\n- [api reference](https://keras.io/api/keras_nlp)\n- [getting started guide](https://keras.io/guides/keras_nlp/getting_started) \n\n### for contributors\n\n- [contributing guide](contributing.md)\n- [roadmap](roadmap.md)\n- [style guide](style_guide.md)\n- [api design guide](api_design_guide.md)\n- [call for contributions](https://github.com/keras-team/keras-nlp/issues?q=is%3aissue+is%3aopen+label%3a%22contributions+welcome%22)\n\n## installation\n\nkerasnlp supports both keras 2 and keras 3. we recommend keras 3 for all new\nusers, as it enables using kerasnlp models and layers with jax, tensorflow and\npytorch.\n\n### keras 2 installation\n\nto install the latest kerasnlp release with keras 2, simply run:\n\n```\npip install --upgrade keras-nlp\n```\n\n### keras 3 installation\n\nthere are currently two ways to install keras 3 with kerasnlp. to install the\nstable versions of kerasnlp and keras 3, you should install keras 3 **after**\ninstalling kerasnlp. this is a temporary step while tensorflow is pinned to\nkeras 2, and will no longer be necessary after tensorflow 2.16.\n\n```\npip install --upgrade keras-nlp\npip install --upgrade keras>=3\n```\n## using kerasnlp with keras core\n\nas of version `0.6.0`, kerasnlp supports multiple backends with keras core out \nof the box. there are two ways to configure kerasnlp to run with multi-backend \nsupport:\n\n1. via the `keras_backend` environment variable. if set, then kerasnlp will be \nusing keras core with the backend specified (e.g., `keras_backend=jax`).\n2. via the `.keras/keras.json` and `.keras/keras_nlp.json` config files (which \nare automatically created the first time you import kerasnlp):\n   - set your backend of choice in `.keras/keras.json`; e.g., `\"backend\": \"jax\"`. \n   - set `\"multi_backend\": true` in `.keras/keras_nlp.json`.\n\nonce that configuration step is done, you can just import kerasnlp and start \nusing it on top of your backend of choice:\n\n```python\nimport keras_nlp\n\ngpt2_lm = keras_nlp.models.gpt2causallm.from_preset(\"gpt2_base_en\")\ngpt2_lm.generate(\"my trip to yosemite was\", max_length=200)\n```\n\nuntil keras core is officially released as keras 3.0, kerasnlp will use \n`tf.keras` as the default backend. to restore this default behavior, simply \n`unset keras_backend` and ensure that  `\"multi_backend\": false` or is unset in \n`.keras/keras_nlp.json`. you will need to restart the python runtime for changes \nto take effect.\n\nto install the latest nightly changes for both kerasnlp and keras, you can use\nour nightly package.\n\n```\npip install --upgrade keras-nlp-nightly\n```\n\n> [!important]\n> keras 3 will not function with tensorflow 2.14 or earlier.\n\nread [getting started with keras](https://keras.io/getting_started/) for more information\non installing keras 3 and compatibility with different frameworks.\n\n## quickstart\n\nfine-tune bert on a small sentiment analysis task using the \n[`keras_nlp.models`](https://keras.io/api/keras_nlp/models/) api:\n\n```python\nimport os\nos.environ[\"keras_backend\"] = \"tensorflow\"  # or \"jax\" or \"torch\"!\n\nimport keras_nlp\nimport tensorflow_datasets as tfds\n\nimdb_train, imdb_test = tfds.load(\n    \"imdb_reviews\",\n    split=[\"train\", \"test\"],\n    as_supervised=true,\n    batch_size=16,\n)\n# load a bert model.\nclassifier = keras_nlp.models.bertclassifier.from_preset(\n    \"bert_base_en_uncased\", \n    num_classes=2,\n)\n# fine-tune on imdb movie reviews.\nclassifier.fit(imdb_train, validation_data=imdb_test)\n# predict two new examples.\nclassifier.predict([\"what an amazing movie!\", \"a total waste of my time.\"])\n```\n\nfor more in depth guides and examples, visit https://keras.io/keras_nlp/.\n\n## configuring your backend\n\nif you have keras 3 installed in your environment (see installation above),\nyou can use kerasnlp with any of jax, tensorflow and pytorch. to do so, set the\n`keras_backend` environment variable. for example:\n\n```shell\nexport keras_backend=jax\n```\n\nor in colab, with:\n\n```python\nimport os\nos.environ[\"keras_backend\"] = \"jax\"\n\nimport keras_nlp\n```\n\n> [!important]\n> make sure to set the `keras_backend` before import any keras libraries, it\n> will be used to set up keras when it is first imported.\n\n## compatibility\n\nwe follow [semantic versioning](https://semver.org/), and plan to\nprovide backwards compatibility guarantees both for code and saved models built\nwith our components. while we continue with pre-release `0.y.z` development, we\nmay break compatibility at any time and apis should not be consider stable.\n\n## disclaimer\n\nkerasnlp provides access to pre-trained models via the `keras_nlp.models` api.\nthese pre-trained models are provided on an \"as is\" basis, without warranties\nor conditions of any kind. the following underlying models are provided by third\nparties, and subject to separate licenses:\nbart, deberta, distilbert, gpt-2, opt, roberta, whisper, and xlm-roberta.\n\n## citing kerasnlp\n\nif kerasnlp helps your research, we appreciate your citations.\nhere is the bibtex entry:\n\n```bibtex\n@misc{kerasnlp2022,\n  title={kerasnlp},\n  author={watson, matthew, and qian, chen, and bischof, jonathan and chollet, \n  fran\\c{c}ois and others},\n  year={2022},\n  howpublished={\\url{https://github.com/keras-team/keras-nlp}},\n}\n```\n\n## acknowledgements\n\nthank you to all of our wonderful contributors!\n\n<a href=\"https://github.com/keras-team/keras-nlp/graphs/contributors\">\n  <img src=\"https://contrib.rocks/image?repo=keras-team/keras-nlp\" />\n</a>\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache license 2.0",
+  "name": "keras-nlp",
+  "package_url": "https://pypi.org/project/keras-nlp/",
+  "project_url": "https://pypi.org/project/keras-nlp/",
+  "project_urls": {
+    "Homepage": "https://github.com/keras-team/keras-nlp"
+  },
+  "release_url": "https://pypi.org/project/keras-nlp/0.6.4/",
+  "requires_dist": [
+    "keras-core",
+    "absl-py",
+    "numpy",
+    "packaging",
+    "regex",
+    "rich",
+    "dm-tree",
+    "tensorflow-text ; platform_system != \"Darwin\"",
+    "rouge-score ; extra == 'extras'",
+    "sentencepiece ; extra == 'extras'"
+  ],
+  "requires_python": ">=3.9",
+  "summary": "industry-strength natural language processing extensions for keras.",
+  "version": "0.6.4",
+  "releases": [],
+  "developers": [
+    "keras-nlp@google.com",
+    "keras_team"
+  ],
+  "kwds": "keras_nlp tensorflow kerasnlp kerasnlp2022 keras",
+  "license_kwds": "apache license 2.0",
+  "libtype": "pypi",
+  "id": "pypi_keras_nlp",
+  "homepage": "https://github.com/keras-team/keras-nlp",
+  "release_count": 36,
+  "dependency_ids": [
+    "pypi_absl_py",
+    "pypi_dm_tree",
+    "pypi_keras_core",
+    "pypi_numpy",
+    "pypi_packaging",
+    "pypi_regex",
+    "pypi_rich",
+    "pypi_rouge_score",
+    "pypi_sentencepiece",
+    "pypi_tensorflow_text"
+  ]
+}

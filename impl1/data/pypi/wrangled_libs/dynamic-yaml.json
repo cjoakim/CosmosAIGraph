@@ -1,0 +1,37 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "programming language :: python",
+    "programming language :: python :: 3"
+  ],
+  "description": "![](https://github.com/childsish/dynamic-yaml/workflows/project%20tests/badge.svg)\n\ndynamic-yaml\n============\n\ndynamic yaml is a couple of classes and functions that add extra functionality to yaml that turns it into a great configuration language for python. if you prefer json, then see [dynamic-json][dynamic-json].\n\nyaml already provides:\n\n* a very readable and clean syntax\n* infinitely nestable key:value pairs\n* sequence types\n* a regulated portable syntax that conforms to strict standards\n\nin addition, the pyyaml parser provides:\n\n* automatic type identification (a result of implementing the yaml standard)\n\nfinally, the classes introduced by dynamic yaml enable:\n\n* dynamic string resolution\n\ndynamic pyyaml requires pyyaml (https://bitbucket.org/xi/pyyaml).\n\nusage\n-----\n\nthe key feature that was introduced is the ability for a string scalar to reference other parts of the configuration tree.\nthis is done using the python string formatting syntax.\nthe characters '{' and '}' enclose a reference to another entry in the configuration structure.\nthe reference takes the form key1.key2 where key1 maps to another mapping object and can be found in the root mapping, and key2 can be found in key1's mapping object.\nmultiple levels of nesting can be used (eg. key1.key2.key3 etc...).\nif you need brace literals, they can be escaped by doubling them up, as described by the python format string [documentation](https://docs.python.org/3/library/string.html#formatstrings). \n\nan example yaml configuration:\n```yaml\nproject_name: hello-world\ndirs:\n    home: /home/user\n    venv: \"{dirs.home}/venvs/{project_name}\"\n    bin: \"{dirs.venv}/bin\"\n    data: \"{dirs.venv}/data\"\n    errors: \"{dirs.data}/errors\"\n    sessions: \"{dirs.data}/sessions\"\n    databases: \"{dirs.data}/databases\"\n    output: \"{dirs.data}/output-{parameters.parameter1}-{parameters.parameter2}\"\nexes:\n    main: \"{dirs.bin}/main\"\n    test: tests\nparameters:\n    parameter1: a\n    parameter2: b\n```\n\nreading in a yaml file:\n\n```python\nimport dynamic_yaml\n\nwith open('/path/to/file.yaml') as fileobj:\n    cfg = dynamic_yaml.load(fileobj)\n    assert cfg.dirs.venv == '/home/user/venvs/hello-world'\n    assert cfg.dirs.output == '/home/user/venvs/hello-world/data/output-a-b'\n```\n\nas the variables are dynamically resolved, it is also possible to combine this with `argparse`:\n\n```python\nimport dynamic_yaml\n\nfrom argparse import argumentparser\n\nwith open('/path/to/file.yaml') as fileobj:\n    cfg = dynamic_yaml.load(fileobj)\n    parser = argumentparser()\n    parser.add_argument('--parameter1')\n    parser.add_argument('--parameter2')\n    parser.parse_args('--parameter1 c --parameter2 d'.split(), namespace=cfg.parameters)\n    assert cfg.dirs.output == '/home/user/venvs/hello-world/data/output-c-d'\n```\n\nwriting yaml will resolve all references:\n\n```python\nimport dynamic_yaml\nimport yaml\n\nwith open('/path/to/file.yaml') as fileobj:\n    cfg = dynamic_yaml.load(fileobj)\n    assert yaml.safe_load(dynamic_yaml.dump(cfg)) == yaml.safe_load('''\nproject_name: hello-world\ndirs:\n    home: /home/user\n    venv: /home/user/venvs/hello-world\n    bin: /home/user/venvs/hello-world/bin\n    data: /home/user/venvs/hello-world/data\n    errors: /home/user/venvs/hello-world/data/errors\n    sessions: /home/user/venvs/hello-world/data/sessions\n    databases: /home/user/venvs/hello-world/data/databases\n    output: /home/user/venvs/hello-world/data/output-a-b}\nexes:\n    main: /home/user/venvs/hello-world/bin/main\n    test: tests\nparameters:\n  - 0.5\n  - 0.1\n''')\n```\n\ninstallation\n------------\n\nto install, simply run:\n\n```bash\npip install dynamic-yaml\n```\n\nrestrictions\n------------\n\ndue to the short amount of time i was willing to spend on working upon this, there are a few restrictions that i could not overcome.\n\n* **wild card strings must be surrounded by quotes.**\nbraces ('{' and '}') in a yaml file usually enclose a mapping object.\nhowever, braces are also used by the python string formatting syntax to enclose a reference.\nas there is no way to change either of these easily, strings that look like a yaml mapping must be explicitly declared using single or double quotes to enclose them.\nfor example:\n  ```yaml\n  quotes_needed: '{variable}'\n  ```\n* **certain keys can only be used via `__getitem__` and not `__getattr__`.**\nbecause `dict` comes with it's own set of attributes that are always resolved first, the values for the following keys must be gotten using the item getter rather than the attribute getter (eg. config['items'] vs. config.items):\n  * append\n  * extend\n  * insert\n  * remove\n  * pop\n  * clear\n  * index\n  * count\n  * sort\n  * reverse\n  * copy \n\n[dynamic-json]: https://github.com/childsish/dynamic-json\n",
+  "docs_url": null,
+  "keywords": "yaml,configuration",
+  "license": "mit license  copyright (c) 2022 liam h. childs  permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"software\"), to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, and to permit persons to whom the software is furnished to do so, subject to the following conditions:  the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.  the software is provided \"as is\", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software. ",
+  "name": "dynamic-yaml",
+  "package_url": "https://pypi.org/project/dynamic-yaml/",
+  "project_url": "https://pypi.org/project/dynamic-yaml/",
+  "project_urls": {
+    "Homepage": "https://github.com/childsish/dynamic-yaml"
+  },
+  "release_url": "https://pypi.org/project/dynamic-yaml/1.3.5/",
+  "requires_dist": [
+    "pyyaml >=5.4"
+  ],
+  "requires_python": ">=3.0",
+  "summary": "enables self referential yaml entries",
+  "version": "1.3.5",
+  "releases": [],
+  "developers": [
+    "liam.h.childs@gmail.com"
+  ],
+  "kwds": "dynamic_yaml yaml pyyaml dict python",
+  "license_kwds": "copyright license liable liability mit",
+  "libtype": "pypi",
+  "id": "pypi_dynamic_yaml",
+  "homepage": "",
+  "release_count": 12,
+  "dependency_ids": [
+    "pypi_pyyaml"
+  ]
+}

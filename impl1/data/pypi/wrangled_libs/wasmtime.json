@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "programming language :: rust",
+    "topic :: software development :: compilers",
+    "topic :: software development :: interpreters"
+  ],
+  "description": "<div align=\"center\">\n  <h1><code>wasmtime-py</code></h1>\n\n  <p>\n    <strong>python embedding of\n    <a href=\"https://github.com/bytecodealliance/wasmtime\">wasmtime</a></strong>\n  </p>\n\n  <strong>a <a href=\"https://bytecodealliance.org/\">bytecode alliance</a> project</strong>\n\n  <p>\n    <a href=\"https://github.com/bytecodealliance/wasmtime-py/actions?query=workflow%3aci\">\n      <img src=\"https://github.com/bytecodealliance/wasmtime-py/workflows/ci/badge.svg\" alt=\"ci status\"/>\n    </a>\n    <a href=\"https://pypi.org/project/wasmtime/\">\n      <img src=\"https://img.shields.io/pypi/v/wasmtime.svg\" alt=\"latest version\"/>\n    </a>\n    <a href=\"https://pypi.org/project/wasmtime/\">\n      <img src=\"https://img.shields.io/pypi/pyversions/wasmtime.svg\" alt=\"latest version\"/>\n    </a>\n    <a href=\"https://bytecodealliance.github.io/wasmtime-py/\">\n      <img src=\"https://img.shields.io/badge/docs-main-green\" alt=\"documentation\"/>\n    </a>\n    <a href=\"https://bytecodealliance.github.io/wasmtime-py/coverage/\">\n      <img src=\"https://img.shields.io/badge/coverage-main-green\" alt=\"code coverage\"/>\n    </a>\n  </p>\n\n</div>\n\n## installation\n\nto install `wasmtime-py`, run this command in your terminal:\n\n```bash\n$ pip install wasmtime\n```\n\nthe package currently supports 64-bit builds of python 3.8+ on x86\\_64 windows,\nmacos, and linux, as well as on arm64 macos and linux.\n\n## versioning\n\n`wasmtime-py` follows the wasmtime versioning scheme, with a new major version being\nreleased every month. as with wasmtime itself, new major versions of `wasmtime-py`\ncan contain changes that break code written against the previous major version.\n\nsince every installed python package needs to agree on a single version of\n`wasmtime-py`, to use the upper bound on the major version in the dependency\nrequirement should be bumped reguarly, ideally as soon as a new `wasmtime-py`\nversion is released. to automate this process it is possible to use\nthe [whitequark/track-pypi-dependency-version][] script. [yowasp/runtime][] is\nan example of a project that automatically publishes releases on pypi once a new\nversion of `wasmtime-py` is released if it passes the testsuite.\n\n[whitequark/track-pypi-dependency-version]: https://github.com/whitequark/track-pypi-dependency-version\n[yowasp/runtime]: https://github.com/yowasp/runtime\n\n## usage\n\nin this example, we compile and instantiate a webassembly module and use it from python:\n\n```python\nfrom wasmtime import store, module, instance, func, functype\n\nstore = store()\nmodule = module(store.engine, \"\"\"\n  (module\n    (func $hello (import \"\" \"hello\"))\n    (func (export \"run\") (call $hello))\n  )\n\"\"\")\n\ndef say_hello():\n    print(\"hello from python!\")\nhello = func(store, functype([], []), say_hello)\n\ninstance = instance(store, module, [hello])\nrun = instance.exports(store)[\"run\"]\nrun(store)\n```\n\nbe sure to check out the [`examples` directory], which has other usage patterns\nas well as the [full api documentation][apidoc] of the `wasmtime-py` package.\n\n[`examples` directory]: https://github.com/bytecodealliance/wasmtime-py/tree/main/examples\n[apidoc]: https://bytecodealliance.github.io/wasmtime-py/\n\nif your webassembly module works this way, then you can also import the webassembly module\ndirectly into python without explicitly compiling and instantiating it yourself:\n\n```python\n# import the custom loader for `*.wasm` files\nimport wasmtime.loader\n\n# assuming `your_wasm_file.wasm` is in the python load path...\nimport your_wasm_file\n\n# now you're compiled and instantiated and ready to go!\nprint(your_wasm_file.run())\n```\n\n## components\n\nthe `wasmtime` package has initial support for running webassembly components in\npython with high-level bindings. webassembly components are defined by the\n[component model] and are a flagship feature under development for wasmtime and\nits bindings. components enable communication between the host and webassembly\nguests with richer types than the numerical primitives supported by core\nwebassembly. for example with a component python can pass a string to wasm and\nback.\n\ncomponents are represented as `*.wasm` binaries in the same manner as core\nwebassembly modules. with a component binary you can generate python bindings\nwith:\n\n```sh\n$ python -m wasmtime.bindgen the-component.wasm --out-dir the-bindings\n```\n\nan example of using this can be done with the [`wasm-tools`] repository. for\nexample with this core wasm module at `demo.wat`:\n\n```wasm\n(module\n  (import \"python\" \"print\" (func $print (param i32 i32)))\n  (memory (export \"memory\") 1)\n\n  (func (export \"run\")\n    i32.const 100   ;; base pointer of string\n    i32.const 13    ;; length of string\n    call $print)\n\n  (data (i32.const 100) \"hello, world!\")\n)\n```\n\nand with this [`*.wit`] interface at `demo.wit`:\n\n```text\npackage my:demo\n\nworld demo {\n  import python: interface {\n    print: func(s: string)\n  }\n\n  export run: func()\n}\n```\n\nand this `demo.py` script\n\n```python\nfrom demo import root, rootimports, imports\nfrom wasmtime import store\n\nclass host(imports.python):\n    def print(self, s: str):\n        print(s)\n\ndef main():\n    store = store()\n    demo = root(store, rootimports(host()))\n    demo.run(store)\n\nif __name__ == '__main__':\n    main()\n```\n\n```sh\n$ wasm-tools component embed demo.wit demo.wat -o demo.wasm\n$ wasm-tools component new demo.wasm -o demo.component.wasm\n$ python -m wasmtime.bindgen demo.component.wasm --out-dir demo\n$ python demo.py\nhello, world!\n```\n\nthe generated package `demo` has all of the requisite exports/imports into the\ncomponent bound. the `demo` package is additionally annotated with types to\nassist with type-checking and self-documentation as much as possible.\n\n[component model]: https://github.com/webassembly/component-model\n[`wasm-tools`]: https://github.com/bytecodealliance/wasm-tools\n[`*.wit`]: https://github.com/webassembly/component-model/blob/main/design/mvp/wit.md\n\n## contributing\n\nsee [`contributing.md`](./contributing.md).\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache-2.0 with llvm-exception",
+  "name": "wasmtime",
+  "package_url": "https://pypi.org/project/wasmtime/",
+  "project_url": "https://pypi.org/project/wasmtime/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/bytecodealliance/wasmtime-py/issues",
+    "Documentation": "https://bytecodealliance.github.io/wasmtime-py/",
+    "Homepage": "https://github.com/bytecodealliance/wasmtime-py",
+    "Source Code": "https://github.com/bytecodealliance/wasmtime-py"
+  },
+  "release_url": "https://pypi.org/project/wasmtime/15.0.0/",
+  "requires_dist": [
+    "coverage ; extra == 'testing'",
+    "pytest ; extra == 'testing'",
+    "pycparser ; extra == 'testing'",
+    "pytest-mypy ; extra == 'testing'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "a webassembly runtime powered by wasmtime",
+  "version": "15.0.0",
+  "releases": [],
+  "developers": [
+    "hello@bytecodealliance.org",
+    "the_wasmtime_project_developers"
+  ],
+  "kwds": "py wasmtime badge code python",
+  "license_kwds": "apache-2.0 with llvm-exception",
+  "libtype": "pypi",
+  "id": "pypi_wasmtime",
+  "homepage": "https://github.com/bytecodealliance/wasmtime-py",
+  "release_count": 56,
+  "dependency_ids": [
+    "pypi_coverage",
+    "pypi_pycparser",
+    "pypi_pytest",
+    "pypi_pytest_mypy"
+  ]
+}

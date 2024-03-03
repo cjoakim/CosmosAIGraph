@@ -1,0 +1,52 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "===========\ntroposphere\n===========\n\n.. image:: https://img.shields.io/pypi/v/troposphere.svg\n    :target: https://pypi.python.org/pypi/troposphere\n    :alt: pypi version\n\n.. image:: https://github.com/cloudtools/troposphere/actions/workflows/tests.yml/badge.svg\n    :target: https://github.com/cloudtools/troposphere/actions?query=branch%3amain\n    :alt: build status\n\n.. image:: https://img.shields.io/pypi/l/troposphere.svg\n    :target: https://opensource.org/licenses/bsd-2-clause\n    :alt: license: new bsd license\n\n.. image:: https://readthedocs.org/projects/troposphere/badge/?version=latest\n    :target: https://troposphere.readthedocs.io/en/latest/?badge=latest\n    :alt: documentation status\n\nabout\n=====\n\ntroposphere - library to create `aws cloudformation`_ descriptions\n\nthe troposphere library allows for easier creation of the `aws cloudformation\njson`_ by writing python code to describe the aws resources. troposphere also\nincludes some basic support for `openstack resources`_ via heat.\n\nto facilitate catching cloudformation or json errors early the library has\nproperty and type checking built into the classes.\n\ninstallation\n============\n\ntroposphere can be installed using the pip distribution system for python by\nissuing:\n\n.. code:: sh\n\n    $ pip install troposphere\n\nto install troposphere with `awacs <https://github.com/cloudtools/awacs>`_\n(recommended soft dependency):\n\n.. code:: sh\n\n    $ pip install troposphere[policy]\n\nalternatively, you can use `setup.py` to install by cloning this repository\nand issuing:\n\n.. code:: sh\n\n    $ python setup.py install  # you may need sudo depending on your python installation\n\nexamples\n========\n\na simple example to create an instance would look like this:\n\n.. code:: python\n\n    >>> from troposphere import ref, template\n    >>> import troposphere.ec2 as ec2\n    >>> t = template()\n    >>> instance = ec2.instance(\"myinstance\")\n    >>> instance.imageid = \"ami-951945d0\"\n    >>> instance.instancetype = \"t1.micro\"\n    >>> t.add_resource(instance)\n    <troposphere.ec2.instance object at 0x101bf3390>\n    >>> print(t.to_json())\n    {\n        \"resources\": {\n            \"myinstance\": {\n                \"properties\": {\n                    \"imageid\": \"ami-951945d0\",\n                    \"instancetype\": \"t1.micro\"\n                },\n                \"type\": \"aws::ec2::instance\"\n            }\n        }\n    }\n    >>> print(t.to_yaml())\n    resources:\n        myinstance:\n            properties:\n                imageid: ami-951945d0\n                instancetype: t1.micro\n            type: aws::ec2::instance\n\nalternatively, parameters can be used instead of properties:\n\n.. code:: python\n\n    >>> instance = ec2.instance(\"myinstance\", imageid=\"ami-951945d0\", instancetype=\"t1.micro\")\n    >>> t.add_resource(instance)\n    <troposphere.ec2.instance object at 0x101bf3550>\n\nand ``add_resource()`` returns the object to make it easy to use with ``ref()``:\n\n.. code:: python\n\n    >>> instance = t.add_resource(ec2.instance(\"myinstance\", imageid=\"ami-951945d0\", instancetype=\"t1.micro\"))\n    >>> ref(instance)\n    <troposphere.ref object at 0x101bf3490>\n\n---------------------------------------------------------------------\nexamples of the error checking (full tracebacks removed for clarity):\n---------------------------------------------------------------------\n\nincorrect property being set on aws resource:\n\n.. code:: python\n\n    >>> import troposphere.ec2 as ec2\n    >>> ec2.instance(\"ec2instance\", image=\"i-xxxx\")\n    traceback (most recent call last):\n    ...\n    attributeerror: aws::ec2::instance object does not support attribute image\n\nincorrect type for aws resource property:\n\n.. code:: python\n\n    >>> ec2.instance(\"ec2instance\", imageid=1)\n    traceback (most recent call last):\n    ...\n    typeerror: imageid is <type 'int'>, expected <type 'basestring'>\n\nmissing required property for the aws resource:\n\n.. code:: python\n\n    >>> from troposphere import template\n    >>> import troposphere.ec2 as ec2\n    >>> t = template()\n    >>> t.add_resource(ec2.subnet(\"ec2subnet\", vpcid=\"vpcid\"))\n    <troposphere.ec2.subnet object at 0x100830ed0>\n    >>> print(t.to_json())\n    traceback (most recent call last):\n    ...\n    valueerror: resource cidrblock required in type aws::ec2::subnet (title: ec2subnet)\n\ncurrently supported resource types\n======================================\n\n- `aws resource types`_\n- `openstack resource types`_\n\nduplicating a single instance sample would look like this\n=========================================================\n\n.. code:: python\n\n    # converted from ec2instancesample.template located at:\n    # http://aws.amazon.com/cloudformation/aws-cloudformation-templates/\n\n    from troposphere import base64, findinmap, getatt\n    from troposphere import parameter, output, ref, template\n    import troposphere.ec2 as ec2\n\n\n    template = template()\n\n    keyname_param = template.add_parameter(parameter(\n        \"keyname\",\n        description=\"name of an existing ec2 keypair to enable ssh \"\n                    \"access to the instance\",\n        type=\"string\",\n    ))\n\n    template.add_mapping('regionmap', {\n        \"us-east-1\":      {\"ami\": \"ami-7f418316\"},\n        \"us-west-1\":      {\"ami\": \"ami-951945d0\"},\n        \"us-west-2\":      {\"ami\": \"ami-16fd7026\"},\n        \"eu-west-1\":      {\"ami\": \"ami-24506250\"},\n        \"sa-east-1\":      {\"ami\": \"ami-3e3be423\"},\n        \"ap-southeast-1\": {\"ami\": \"ami-74dda626\"},\n        \"ap-northeast-1\": {\"ami\": \"ami-dcfa4edd\"}\n    })\n\n    ec2_instance = template.add_resource(ec2.instance(\n        \"ec2instance\",\n        imageid=findinmap(\"regionmap\", ref(\"aws::region\"), \"ami\"),\n        instancetype=\"t1.micro\",\n        keyname=ref(keyname_param),\n        securitygroups=[\"default\"],\n        userdata=base64(\"80\")\n    ))\n\n    template.add_output([\n        output(\n            \"instanceid\",\n            description=\"instanceid of the newly created ec2 instance\",\n            value=ref(ec2_instance),\n        ),\n        output(\n            \"az\",\n            description=\"availability zone of the newly created ec2 instance\",\n            value=getatt(ec2_instance, \"availabilityzone\"),\n        ),\n        output(\n            \"publicip\",\n            description=\"public ip address of the newly created ec2 instance\",\n            value=getatt(ec2_instance, \"publicip\"),\n        ),\n        output(\n            \"privateip\",\n            description=\"private ip address of the newly created ec2 instance\",\n            value=getatt(ec2_instance, \"privateip\"),\n        ),\n        output(\n            \"publicdns\",\n            description=\"public dnsname of the newly created ec2 instance\",\n            value=getatt(ec2_instance, \"publicdnsname\"),\n        ),\n        output(\n            \"privatedns\",\n            description=\"private dnsname of the newly created ec2 instance\",\n            value=getatt(ec2_instance, \"privatednsname\"),\n        ),\n    ])\n\n    print(template.to_json())\n\ncommunity\n=========\n\nwe have a google group, cloudtools-dev_, where you can ask questions and\nengage with the troposphere community. issues and pull requests are always\nwelcome!\n\nlicensing\n=========\n\ntroposphere is licensed under the `bsd 2-clause license`_.\nsee `license`_ for the troposphere full license text.\n\n\n.. _`aws cloudformation`: http://aws.amazon.com/cloudformation\n.. _`aws cloudformation json`: http://docs.aws.amazon.com/awscloudformation/latest/userguide/welcome.html\n.. _`openstack resources`: http://docs.openstack.org/developer/heat/template_guide/openstack.html\n.. _cloudtools-dev: https://groups.google.com/forum/#!forum/cloudtools-dev\n.. _`license`: https://github.com/cloudtools/troposphere/blob/master/license\n.. _`bsd 2-clause license`: http://opensource.org/licenses/bsd-2-clause\n.. _`aws resource types`: https://github.com/cloudtools/troposphere/blob/master/resources_aws.md\n.. _`openstack resource types`: https://github.com/cloudtools/troposphere/blob/master/resources_openstack.md\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "new bsd license",
+  "name": "troposphere",
+  "package_url": "https://pypi.org/project/troposphere/",
+  "project_url": "https://pypi.org/project/troposphere/",
+  "project_urls": {
+    "Changelog": "https://github.com/cloudtools/troposphere/blob/master/CHANGELOG.md",
+    "Homepage": "https://github.com/cloudtools/troposphere",
+    "Source": "https://github.com/cloudtools/troposphere",
+    "Tracker": "https://github.com/cloudtools/troposphere/issues"
+  },
+  "release_url": "https://pypi.org/project/troposphere/4.5.3/",
+  "requires_dist": [
+    "cfn-flip >=1.0.2",
+    "awacs >=2.0.0 ; extra == 'policy'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "aws cloudformation creation library",
+  "version": "4.5.3",
+  "releases": [],
+  "developers": [
+    "mark@peek.org",
+    "mark_peek"
+  ],
+  "kwds": "troposphere _cloudtools to_yaml badge cloudtools",
+  "license_kwds": "new bsd license",
+  "libtype": "pypi",
+  "id": "pypi_troposphere",
+  "homepage": "https://github.com/cloudtools/troposphere",
+  "release_count": 96,
+  "dependency_ids": [
+    "pypi_awacs",
+    "pypi_cfn_flip"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "classifiers": [
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# cloud tpu diagnostics\n\nthis is a comprehensive library to monitor, debug and profile the jobs running on cloud tpu.\nto learn about cloud tpu, refer to the [full documentation](https://cloud.google.com/tpu/docs/intro-to-tpu).\n\n## features\n### 1. debugging\n#### 1.1 collect stack traces\nthis module will dump the python traces when a fault such as segmentation fault, floating-point exception, illegal operation exception occurs in the program. additionally, it will also periodically collect stack traces to help debug when a program running on cloud tpu is stuck or hung somewhere.\n\n## installation\nto install the package, run the following command on tpu vm:\n\n```\npip install cloud-tpu-diagnostics\n```\n\n## usage\nto use this package, first import the module:\n\n```\nfrom cloud_tpu_diagnostics import diagnostic\nfrom cloud_tpu_diagnostics.configuration import debug_configuration\nfrom cloud_tpu_diagnostics.configuration import diagnostic_configuration\nfrom cloud_tpu_diagnostics.configuration import stack_trace_configuration\n```\n\nthen, create configuration object for stack traces. the module will only collect stack traces when `collect_stack_trace` parameter is set to `true`. there are following scenarios supported currently:\n\n##### scenario 1: do not collect stack traces on faults\n\n```\nstack_trace_config = stack_trace_configuration.stacktraceconfig(\n                      collect_stack_trace=false)\n```\nthis configuration will prevent you from collecting stack traces in the event of a fault or process hang.\n\n##### scenario 2: collect stack traces on faults and display on console\n\n```\nstack_trace_config = stack_trace_configuration.stacktraceconfig(\n                      collect_stack_trace=true,\n                      stack_trace_to_cloud=false)\n```\nif there is a fault or process hang, this configuration will show the stack traces on the console (stderr).\n\n##### scenario 3: collect stack traces on faults and upload on cloud\n\n```\nstack_trace_config = stack_trace_configuration.stacktraceconfig(\n                      collect_stack_trace=true,\n                      stack_trace_to_cloud=true)\n```\nthis configuration will temporary collect stack traces inside `/tmp/debugging` directory on tpu host if there is a fault or process hang. additionally, the traces collected in tpu host memory will be uploaded to google cloud logging, which will make it easier to troubleshoot and fix the problems. you can view the traces in [logs explorer](https://cloud.google.com/logging/docs/view/logs-explorer-interface) using the following query:\n\n```\nlogname=\"projects/<project_name>/logs/tpu.googleapis.com%2fruntime_monitor\"\njsonpayload.verb=\"stacktraceanalyzer\"\n```\n\nby default, stack traces will be collected every 10 minutes. in order to change the duration between two stack trace collection events, add the following configuration:\n\n```\nstack_trace_config = stack_trace_configuration.stacktraceconfig(\n                      collect_stack_trace=true,\n                      stack_trace_to_cloud=true,\n                      stack_trace_interval_seconds=300)\n```\nthis configuration will collect the stack traces on cloud after every 5 minutes.\n\nthen, create configuration object for debug.\n\n```\ndebug_config = debug_configuration.debugconfig(\n                stack_trace_config=stack_trace_config)\n```\n\nthen, create configuration object for diagnostic.\n\n```\ndiagnostic_config = diagnostic_configuration.diagnosticconfig(\n                      debug_config=debug_config)\n```\n\nfinally, call the `diagnose()` method using `with` and wrap the statements inside the context manager for which you want to collect the stack traces.\n\n```\nwith diagnostic.diagnose(diagnostic_config):\n    run_job(...)\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "cloud-tpu-diagnostics",
+  "package_url": "https://pypi.org/project/cloud-tpu-diagnostics/",
+  "project_url": "https://pypi.org/project/cloud-tpu-diagnostics/",
+  "project_urls": {
+    "Bug Tracker": "https://github.com/google/cloud-tpu-monitoring-debugging/issues",
+    "Homepage": "https://github.com/google/cloud-tpu-monitoring-debugging"
+  },
+  "release_url": "https://pypi.org/project/cloud-tpu-diagnostics/0.1.5/",
+  "requires_dist": [],
+  "requires_python": ">=3.8",
+  "summary": "monitor, debug and profile the jobs running on cloud tpu.",
+  "version": "0.1.5",
+  "releases": [],
+  "developers": [
+    "cloud-tpu-eng@google.com"
+  ],
+  "kwds": "cloud_tpu_diagnostics stack_trace_to_cloud tpu collect_stack_trace stack_trace_configuration",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_cloud_tpu_diagnostics",
+  "homepage": "",
+  "release_count": 7,
+  "dependency_ids": []
+}

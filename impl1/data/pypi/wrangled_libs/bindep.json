@@ -1,0 +1,68 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "intended audience :: information technology",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: posix :: linux",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "topic :: software development :: quality assurance",
+    "topic :: software development :: testing",
+    "topic :: system :: archiving :: packaging",
+    "topic :: utilities"
+  ],
+  "description": "introduction\n============\n\nbindep is a tool for checking the presence of binary packages needed to\nuse an application / library. it started life as a way to make it easier to set\nup a development environment for openstack projects. while openstack depends\nheavily on `pip` for installation of python dependencies, some dependencies are\nnot python based, and particularly for testing, some dependencies have to be\ninstalled before `pip` can be used - such as `virtualenv` and `pip` itself.\n\nbasics\n------\n\ncreate a file called ``bindep.txt`` and in that list any\nrequirements your application / library has. in your readme or install or\nother documentation you can tell users to run `bindep` to report on missing\ndependencies. users without `bindep` installed can consult the\n``bindep.txt`` file by hand if they choose, or install `bindep`\nfirst and then use it.\n\nif no ``bindep.txt`` file exists, `bindep` will look at the\nold location ``other-requirements.txt``.\n\nthe output from bindep is fairly verbose normally, but passing an option of\n-b/--brief outputs just the missing packages one per line, suitable for feeding\nto your package management tool of choice.\n\nif you need to maintain multiple requirements list files you can pass a\nspecific filename with the -f/--file command line option. if you want to read\nthe list from standard input in a pipeline instead, use a filename of \"-\".\n\nwhen bindep runs, its exit code is ``0`` if no described packages are missing,\nbut ``1`` if there are packages which it believes need to be installed.\n\nprofiles\n--------\n\nprofiles can be used to describe different scenarios. for instance, you might\nhave a profile for using postgresql which requires the postgresql client\nlibrary, a profile for mysql needing that client library, and a profile for\ntesting which requires both libraries as well as the servers. to select a\nprofile just pass it when running `bindep` - e.g.::\n\n    $ bindep test\n\nwhen running bindep a single profile can be chosen by the user, with no\nexplicit selection resulting in the selected profile being ``default``.\n`bindep` will automatically activate additional profiles representing the\nplatform `bindep` is running under, making it easy to handle platform specific\nquirks.\n\nthe available profiles are inferred by inspecting the requirements file\nand collating the used profile names. users can get a report on the \navailable profiles::\n\n    $ bindep --profiles\n\n\nwriting requirements files\n--------------------------\n\nthe requirements file ``bindep.txt`` lists the dependencies for\nprojects. where non-ascii characters are needed, they should be utf8 encoded.\n\nthe file is line orientated - each line is a debian binary package name, an\noptional profile selector and optional version constraints. (note - if you are\nwriting an alternative parser, see the debian policy manual for the parsing\nrules for packagenames). debian package names are used as a single source of\ntruth - `bindep` can be taught the mapping onto specific packaging systems.\nalternatively, profiles may be used to encode platform specific requirements.\n\nprofiles are used to decide which lines in the requirements file should be\nconsidered when checking dependencies. profile selectors are a list of space\nseparated strings contained in ``[]``. a selector prefixed with ``!`` is a negative\nselector. for a line in the requirements file to be active:\n\n* it must not have a negative selector that matches the active profile.\n* it must either have no positive selectors, or a positive selector that\n  matches the active profile.\n\nfor instance, the profile selector ``[!qpid]`` will match every profile except\n``qpid`` and would be suitable for disabling installation of rabbitmq when qpid\nis in use. ``[default]`` would match only if the user has not selected a\nprofile (or selected ``default``). ``[default postgresql test]`` would match\nthose three profiles but not ``mysql``. ``[platform:rhel]`` will match only\nwhen running in a rhel linux environment.\n\nnote that platform selectors are treated as kind of filter: if a line\ncontains a platform selector, then the package only gets installed if\nat least one of the platform selectors matches in addition to the\nmatch on the other selectors. as an example, ``[platform:rpm test]``\nwould only install a package on a rpm platform if the test selector is\nused.\n\nprofiles can also be grouped together using ``()``. in a group, all profiles\nmust match for the group to match. given the example\n``[test (ceph glance !lvm)]``, to select the package you must either specify\n``test`` or (``ceph`` and ``glance`` and not ``lvm``). platform selectors will\nnot work inside of the group.\n\nversion constraints are a comma separated list of constraints where each\nconstraint is  (== | < | <= | >= | > | !=) version, and the constraints are anded\ntogether (the same as pip requirements version constraints,\nexcept that they require a space between the dep and version constraints).\n\ncomments are allowed: everything from the first ``#`` to the end of the line is\nignored.\n\nexamples\n--------\n\na simple example with using a test profile is::\n\n    # a runtime dependency\n    libffi6\n    # a build time dependency\n    libffi-devel [test]\n\nbindep would select the ``libffi6`` package in all cases and if the\n``test`` profile gets choosen with ``bindep test``, then both packages\nwould be selected.\n\nif a repository needs for deployment the libxml2 development\nlibraries for support of debian, gentoo, and rpm based distros, the\n``bindep.txt`` file can contain::\n\n    libxml2-dev [platform:dpkg]\n    libxml2-devel [platform:rpm]\n    libxml2-utils [platform:dpkg]\n    dev-libs/libxml2 [platform:gentoo]\n\nthis would select ``libxml2-dev`` and ``libxml2-utils`` packages on\ndebian based distributions like debian and ubuntu since those entries\nhave the ``platform:dpkg`` profile, ``libxml2-devel`` on rpm based\ndistributions like centos, fedora, opensuse, red hat, or suse linux\nsince those entries have the ``platform:rpm`` profile, and\n``dev-libs/libxml2`` on gentoo since the entry has the\n``platform:gentoo`` profile.\n\nadditionally, you can use ``platform:redhat`` or ``platform:suse`` to only\nmatch redhat-like or suse-like distributions respectively as shown in the\nfollowing example::\n\n    openssh-server [platform:redhat]\n    openssh [platform:suse]\n\nif you need to distinguish between operating systems where python2 or python3\nis the official interpreter, you can use `base-py2` and `base-py3` labels.\nkeep in mind that only one would be exposed for a specific operating system\neven if the system could support installation of multiple python versions::\n\n    python3-lxml [(platform:redhat platform:base-py3)]\n    python-lxml [(platform:redhat platform:base-py2)]\n\nthe example above will install lxml python modules on official python used\nby platform. keep it mind that ``base-py[23]`` support is currently implemented\nonly on debian, ubuntu, redhat flavours and macos.\n\nto select python3 development packages, you can use::\n\n    python3-all-dev [platform:dpkg !platform:ubuntu-precise]\n    python3-devel [platform:fedora]\n    python34-devel [platform:centos]\n\nthis selects ``python3-all-dev`` on all debian based distributions\nwith the exception of ubuntu precise, ``python3-devel`` on fedora and\n``python34-devel`` on centos.\n\nto select the curl package::\n\n    curl [!platform:gentoo]\n    net-misc/curl [platform:gentoo]\n\nthis selects the ``curl`` package on all distributions with the\nexception of gentoo, and selects ``net-misc/curl`` on gentoo only.\n\nto select a package based on a group of profiles::\n\n    ceph-common [ceph]\n    python-rbd [(ceph glance)]\n\nthis selects the ``ceph-common`` package when the profile ``ceph`` is\nspecified. however, it will only select the ``python-rbd`` package when both\n``ceph`` and ``glance`` profiles are active.\n\nto specify package versions::\n\n    python >=3.7,<=3.8\n    grep >=3.3\n\n    # or with a platform profile\n    python [platform:brew] ==3.7.3\n\nfor a more comprehensive example check bindep.txt_ file that is used to\ntest bindep itself on multiple platforms.\n\n.. _bindep.txt: https://opendev.org/opendev/bindep/src/master/bindep/tests/bindep.txt\n\n\n",
+  "docs_url": null,
+  "keywords": "binary dependency distribution distro package commandline",
+  "license": "apache license, version 2.0",
+  "name": "bindep",
+  "package_url": "https://pypi.org/project/bindep/",
+  "project_url": "https://pypi.org/project/bindep/",
+  "project_urls": {
+    "Browse Source": "https://opendev.org/opendev/bindep",
+    "Bug Reporting": "https://storyboard.openstack.org/#!/project/opendev/bindep",
+    "Documentation": "https://docs.opendev.org/opendev/bindep",
+    "Git Clone URL": "https://opendev.org/opendev/bindep",
+    "Homepage": "https://docs.opendev.org/opendev/bindep",
+    "License Texts": "https://opendev.org/opendev/bindep/src/branch/master/LICENSE",
+    "Release Notes": "https://docs.opendev.org/opendev/bindep/latest/releasenotes.html"
+  },
+  "release_url": "https://pypi.org/project/bindep/2.11.0/",
+  "requires_dist": [
+    "Parsley",
+    "pbr (>=2.0.0)",
+    "distro (<1.7.0) ; (python_version < '3.6')",
+    "packaging (<21.0) ; (python_version < '3.6')",
+    "distro (>=1.7.0) ; (python_version >= '3.6')",
+    "packaging ; (python_version >= '3.6')"
+  ],
+  "requires_python": "",
+  "summary": "binary dependency utility",
+  "version": "2.11.0",
+  "releases": [],
+  "developers": [
+    "opendev_contributors",
+    "service-discuss@lists.opendev.org"
+  ],
+  "kwds": "dependencies openstack dependency packages pip",
+  "license_kwds": "apache license, version 2.0",
+  "libtype": "pypi",
+  "id": "pypi_bindep",
+  "homepage": "https://docs.opendev.org/opendev/bindep",
+  "release_count": 22,
+  "dependency_ids": [
+    "pypi_distro",
+    "pypi_packaging",
+    "pypi_parsley",
+    "pypi_pbr"
+  ]
+}

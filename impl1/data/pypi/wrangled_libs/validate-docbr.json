@@ -1,0 +1,33 @@
+{
+  "classifiers": [
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3"
+  ],
+  "description": "# validate-docbr\n<a href=\"https://pypi.org/project/validate-docbr/\">\n  <img src=\"https://img.shields.io/pypi/v/validate-docbr.svg\" alt=\"latest release\" />\n</a>\n\npacote python para valida\u00e7\u00e3o de documentos brasileiros.\n\npara instalar o pacote:\n```bash\npip install validate-docbr\n```\n\na documenta\u00e7\u00e3o pode ser acessada [clicando aqui](https://alvarofpp.github.io/validate-docbr).\n\n## documentos\ndocumentos que est\u00e3o no pacote:\n\n- [cpf](validate_docbr/cpf.py): cadastro de pessoas f\u00edsicas;\n- [cnh](validate_docbr/cnh.py): carteira nacional de habilita\u00e7\u00e3o;\n- [cnpj](validate_docbr/cnpj.py): cadastro nacional da pessoa jur\u00eddica;\n- [cns](validate_docbr/cns.py): cart\u00e3o nacional de sa\u00fade;\n- [pis](validate_docbr/pis.py): pis/nis/pasep/nit;\n- [t\u00edtulo eleitoral](validate_docbr/tituloeleitoral.py): cadastro que permite cidad\u00e3os brasileiros votar;\n- [renavam](validate_docbr/renavam.py): registro nacional de ve\u00edculos automotores.\n\npara entender melhor os documentos e suas respectivas classes, basta acessar a [wiki do projeto](https://github.com/alvarofpp/validate-docbr/wiki).\n\n## m\u00e9todos\ntodos os documentos possuem os mesmos m\u00e9todos e funcionam da mesma forma.\n\n### validate\nvalida o documento passado como argumento. retorna um `bool`, `true` caso seja v\u00e1lido, `false` caso contr\u00e1rio . recebe os par\u00e2metros:\n\n| par\u00e2metro | tipo | valor padr\u00e3o | obrigat\u00f3rio | descri\u00e7\u00e3o |\n| --------- | ---- | ----------- | ------------ | --------- |\n| `doc` | `str`| `''` | x | o documento que se quer validar. |\n\n```python\nfrom validate_docbr import cpf\n\ncpf = cpf()\n\n# validar cpf\ncpf.validate(\"012.345.678-90\")  # true\ncpf.validate(\"012.345.678-91\")  # false\n```\n\n[caso especial de cpf](https://alvarofpp.github.io/validate-docbr/guia-de-uso/#caso-especial-de-cpf).\n\n### validate_list\n\nvalida uma lista de documentos passado como argumento. retorna uma lista de `bool`, `true` caso seja v\u00e1lido, `false` caso contr\u00e1rio. recebe os par\u00e2metros:\n\n| par\u00e2metro | tipo | valor padr\u00e3o | obrigat\u00f3rio | descri\u00e7\u00e3o |\n| --------- | ---- | ----------- | ------------ | --------- |\n| `docs` | `list[str]`| `[]` | x | a lista de documentos para validar. |\n\n```python\nfrom validate_docbr import cpf\n\ncpf = cpf()\n\n# validar cpfs\ncpf.validate_list([\"012.345.678-90\", \"012.345.678-91\"])  # [true, false]\n```\n\n### validate_docs\n**observa\u00e7\u00e3o**: diferente dos outros m\u00e9todos, esse m\u00e9todo \u00e9 do escopo global do pacote, n\u00e3o precisa-se instanciar uma classe para uso.\n\nvalida v\u00e1rios documentos difererentes. retorna uma lista com valores `bool` para cada tupla da lista (na mesma ordem), `true` caso seja v\u00e1lido, `false` caso contr\u00e1rio . recebe os par\u00e2metros:\n\n| par\u00e2metro | tipo | valor padr\u00e3o | obrigat\u00f3rio | descri\u00e7\u00e3o |\n| --------- | ---- | ----------- | ------------ | --------- |\n| `documents` | `list[tuple[basedoc, str]]`| `[]` | x | lista de tuplas, cada tupla possui como primeiro elemento o tipo de documento e o segundo elemento o valor que se deseja validar. |\n\n```python\nimport validate_docbr as docbr\n\n\n# validar diferentes documentos\ndocs = [(docbr.cpf, '90396100457'), (docbr.cnpj, '49910753848365')]\ndocbr.validate_docs(docs)  # [true, false]\n```\n\n### generate\ngera um novo documento, retorna em formato de `str`. recebe os par\u00e2metros:\n\n| par\u00e2metro | tipo | valor padr\u00e3o | obrigat\u00f3rio | descri\u00e7\u00e3o |\n| --------- | ---- | ----------- | ------------ | --------- |\n| `mask` | `bool` | `false` | - | quando possui o valor `true`, o documento retornado estar\u00e1 formatado. |\n\n```python\nfrom validate_docbr import cpf\n\ncpf = cpf()\n\n# gerar novo cpf\nnew_cpf_one = cpf.generate()  # \"01234567890\"\nnew_cpf_two = cpf.generate(true)  # \"012.345.678-90\"\n```\n\n### generate_list\ngera uma lista de documentos, retorna em formato de `list` com elementos do tipo `str`. recebe os par\u00e2metros:\n\n| par\u00e2metro | tipo | valor padr\u00e3o | obrigat\u00f3rio | descri\u00e7\u00e3o |\n| --------- | ---- | ----------- | ------------ | --------- |\n| `n` | `int` | `1` | x | a quantidade desejada de documentos que ser\u00e3o gerados. |\n| `mask` | `bool` | `false` | - | se os documentos gerados dever\u00e3o ter ou n\u00e3o m\u00e1scara. |\n| `repeat` | `bool` | `false` | - | se aceita ou n\u00e3o documentos repetidos. |\n    \n```python\nfrom validate_docbr import cpf\n\ncpf = cpf()\n\n# gerar lista de cpfs\ncpfs_one = cpf.generate_list(2)  # [ \"85215667438\", \"28293145811\" ]\ncpfs_two = cpf.generate_list(2, true)  # [ \"852.156.674-38\", \"282.931.458-11\" ]\n```\n\n### mask\nmascara o documento passado como argumento. retorna um `str` que \u00e9 o documento mascarado . recebe os par\u00e2metros:\n\n| par\u00e2metro | tipo | valor padr\u00e3o | obrigat\u00f3rio | descri\u00e7\u00e3o |\n| --------- | ---- | ----------- | ------------ | --------- |\n| `doc` | `str`| `''` | x | o documento que se quer mascarar. |\n\n```python\nfrom validate_docbr import cpf\n\ncpf = cpf()\n\ncpf_me = \"01234567890\"\n\n# mascara o cpf\ncpf.mask(cpf_me)  # \"012.345.678-90\"\n```\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "validate-docbr",
+  "package_url": "https://pypi.org/project/validate-docbr/",
+  "project_url": "https://pypi.org/project/validate-docbr/",
+  "project_urls": {
+    "Homepage": "https://github.com/alvarofpp/validate-docbr"
+  },
+  "release_url": "https://pypi.org/project/validate-docbr/1.10.0/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "validate brazilian documents.",
+  "version": "1.10.0",
+  "releases": [],
+  "developers": [
+    "alvarofepipa@gmail.com"
+  ],
+  "kwds": "validate_docbr validate_docs valida\u00e7\u00e3o v\u00e1lido documenta\u00e7\u00e3o",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_validate_docbr",
+  "homepage": "https://github.com/alvarofpp/validate-docbr",
+  "release_count": 13,
+  "dependency_ids": []
+}

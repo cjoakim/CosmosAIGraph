@@ -1,0 +1,49 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "first: the function you always missed in python\n===============================================\n\n.. image:: https://travis-ci.org/hynek/first.svg?branch=master\n   :target: https://travis-ci.org/hynek/first\n   :alt: ci status\n\n``first`` is an mit-licensed python package with a simple function that returns the first true value from an iterable, or ``none`` if there is none.\nif you need more power, you can also supply a ``key`` function that is used to judge the truth value of the element or a ``default`` value if ``none`` doesn\u2019t fit your use case.\n\nn.b. i\u2019m using the term \u201ctrue\u201d consistently with python docs for ``any()`` and ``all()`` \u2014 it means that the value evaluates to true like: ``true``, ``1``, ``\"foo\"``, or ``[none]``.\nbut **not**: ``none``, ``false``, ``[]``, or ``0``.\nin javascript, they call this \u201ctruthy\u201d.\n\n\nexamples\n========\n\na simple example to get started:\n\n.. code-block:: pycon\n\n   >>> from first import first\n   >>> first([0, none, false, [], (), 42])\n   42\n\nhowever, it\u2019s especially useful for dealing with regular expressions in ``if/elif/else`` branches:\n\n.. code-block:: python\n\n   import re\n\n   from first import first\n\n\n   re1 = re.compile('b(.*)')\n   re2 = re.compile('a(.*)')\n\n   m = first(regexp.match('abc') for regexp in [re1, re2])\n   if not m:\n      print('no match!')\n   elif m.re is re1:\n      print('re1', m.group(1))\n   elif m.re is re2:\n      print('re2', m.group(1))\n\nthe optional ``key`` function gives you even *more* selection power.\nif you want to return the first even number from a list, just do the following:\n\n.. code-block:: pycon\n\n   >>> from first import first\n   >>> first([1, 1, 3, 4, 5], key=lambda x: x % 2 == 0)\n   4\n\n``default`` on the other hand allows you to specify a value that is returned if none of the elements is true:\n\n.. code-block:: pycon\n\n   >>> from first import first\n   >>> first([0, none, false, [], ()], default=42)\n   42\n\n\nusage\n=====\n\nthe package consists of one module consisting of one function:\n\n.. code-block:: python\n\n   from first import first\n\n   first(iterable, default=none, key=none)\n\nthis function returns the first element of ``iterable`` that is true if ``key`` is ``none``.\nif there is no true element, the value of ``default`` is returned, which is ``none`` by default.\n\nif a callable is supplied in ``key``, the result of ``key(element)`` is used to judge the truth value of the element, but the element itself is returned.\n\n``first`` has no dependencies and should work with any python available.\n\n\nalternatives\n============\n\n``first`` brings nothing to the table that wasn\u2019t possible before.\nhowever the existing solutions aren\u2019t very idiomatic for such a common and simple problem.\n\nthe following constructs are equivalent to ``first(seq)`` and work since python 2.6:\n\n.. code-block:: python\n\n   next(itertools.ifilter(none, seq), none)\n   next(itertools.ifilter(bool, seq), none)\n   next((x for x in seq if x), none)\n\nnone of them is as pretty as i\u2019d like them to be.\nthe ``re`` example from above would look like the following:\n\n.. code-block:: python\n\n   next(itertools.ifilter(none, (regexp.match('abc') for regexp in [re1, re2])), none)\n   next((regexp.match('abc') for regexp in [re1, re2] if regexp.match('abc')), none)\n   next((match for match in itertools.imap(\n       operator.methodcaller('match', 'abc'), [re1, re2]) if match), none)\n\nnote that in the second case you have to call ``regexp.match()`` *twice*.\nthe third example \"fixes\" that problem but also summons cthulhu.\n\nfor comparison, one more time the ``first``-version:\n\n.. code-block:: python\n\n   first(regexp.match('abc') for regexp in [re1, re2])\n\nidiomatic, clear and readable. pythonic. :)\n\n----\n\nas of version 0.6.5 from 2015, the excellent `boltons package <https://boltons.readthedocs.io/>`_ contains a ``first``-like function as part of its `iterutils module <https://boltons.readthedocs.io/en/latest/iterutils.html#boltons.iterutils.first>`_.\n\n\nbackground\n==========\n\nthe idea for ``first`` goes back to a discussion i had with `\u0142ukasz langa`_ about how the ``re`` example above is painful in python.\nwe figured such a function is missing python, however it\u2019s rather unlikely we\u2019d get it in and even if, it wouldn\u2019t get in before 3.4 anyway, which is years away as of yours truly is writing this.\n\nso i decided to release it as a package for now.  if it proves popular enough, it may even make it into python\u2019s stdlib in the end.\n\n\n.. _`\u0142ukasz langa`: https://github.com/ambv\n\n\n.. :changelog:\n\nhistory\n-------\n\n2.0.2 (2019-03-07)\n++++++++++++++++++\n\n- package tests as part of the dist.\n- update docs.\n- drop unsupported python versions from ci.\n  n.b. the code hasn't changed and ``first`` continues to work as before.\n\n\n2.0.1 (2013-08-04)\n++++++++++++++++++\n\n- make installable on systems that don\u2019t support utf-8 by default.\n- *backward incompatible*: drop support for python older than 2.6, the previous fix gets too convoluted otherwise.\n  please don\u2019t use python < 2.6 anyway.\n  i beg you.\n  n.b. that this is a *pure packaging/qa matter*: the module still works perfectly with ancient python versions.\n\n\n2.0.0 (2012-10-13)\n++++++++++++++++++\n\n- `pred` proved to be rather useless.  changed to `key` which is just a selector.  this is a *backward incompatible* change and the reason for going 2.0.\n- add `default` argument which is returned instead of `none` if no true element is found.\n\n1.0.2 (2012-10-09)\n++++++++++++++++++\n\n- fix packaging. i get this never right the first time. :-/\n\n1.0.1 (2012-10-09)\n++++++++++++++++++\n\n- documentation fixes only.\n\n1.0.0 (2012-10-09)\n++++++++++++++++++\n\n- initial release.\n\n\ncredits\n=======\n\n\u201cfirst\u201d is written and maintained by hynek schlawack and various contributors:\n\n- artem bezsmertnyi\n- \u0142ukasz langa\n- nick coghlan\n- vincent driessen\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "mit",
+  "name": "first",
+  "package_url": "https://pypi.org/project/first/",
+  "project_url": "https://pypi.org/project/first/",
+  "project_urls": {
+    "Homepage": "http://github.com/hynek/first/"
+  },
+  "release_url": "https://pypi.org/project/first/2.0.2/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "return the first true value of an iterable.",
+  "version": "2.0.2",
+  "releases": [],
+  "developers": [
+    "hs@ox.cx",
+    "hynek_schlawack"
+  ],
+  "kwds": "pythonic python iterable itertools travis",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_first",
+  "homepage": "http://github.com/hynek/first/",
+  "release_count": 6,
+  "dependency_ids": []
+}

@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "license :: osi approved :: bsd license"
+  ],
+  "description": "useful python utils\n==============================================================================\n\n.. image:: https://github.com/wolph/python-utils/actions/workflows/main.yml/badge.svg?branch=master\n  :target: https://github.com/wolph/python-utils/actions/workflows/main.yml\n\n.. image:: https://coveralls.io/repos/wolph/python-utils/badge.svg?branch=master\n  :target: https://coveralls.io/r/wolph/python-utils?branch=master\n\npython utils is a collection of small python functions and\nclasses which make common patterns shorter and easier. it is by no means a\ncomplete collection but it has served me quite a bit in the past and i will\nkeep extending it.\n\none of the libraries using python utils is django utils.\n\ndocumentation is available at: https://python-utils.readthedocs.org/en/latest/\n\nlinks\n-----\n\n - the source: https://github.com/wolph/python-utils\n - project page: https://pypi.python.org/pypi/python-utils\n - reporting bugs: https://github.com/wolph/python-utils/issues\n - documentation: https://python-utils.readthedocs.io/en/latest/\n - my blog: https://wol.ph/\n\nsecurity contact information\n------------------------------------------------------------------------------\n\nto report a security vulnerability, please use the\n`tidelift security contact <https://tidelift.com/security>`_.\ntidelift will coordinate the fix and disclosure.\n\nrequirements for installing:\n------------------------------------------------------------------------------\n\nfor the python 3+ release (i.e. v3.0.0 or higher) there are no requirements.\nfor the python 2 compatible version (v2.x.x) the `six` package is needed.\n\ninstallation:\n------------------------------------------------------------------------------\n\nthe package can be installed through `pip` (this is the recommended method):\n\n.. code-block:: bash\n\n    pip install python-utils\n    \nor if `pip` is not available, `easy_install` should work as well:\n\n.. code-block:: bash\n\n    easy_install python-utils\n    \nor download the latest release from pypi (https://pypi.python.org/pypi/python-utils) or github.\n\nnote that the releases on pypi are signed with my gpg key (https://pgp.mit.edu/pks/lookup?op=vindex&search=0xe81444e9ce1f695d) and can be checked using gpg:\n\n.. code-block:: bash\n\n     gpg --verify python-utils-<version>.tar.gz.asc python-utils-<version>.tar.gz\n\nquickstart\n------------------------------------------------------------------------------\n\nthis module makes it easy to execute common tasks in python scripts such as\nconverting text to numbers and making sure a string is in unicode or bytes\nformat.\n\nexamples\n------------------------------------------------------------------------------\n\nautomatically converting a generator to a list, dict or other collections\nusing a decorator:\n\n.. code-block:: pycon\n\n    >>> @decorators.listify()\n    ... def generate_list():\n    ...     yield 1\n    ...     yield 2\n    ...     yield 3\n    ...\n    >>> generate_list()\n    [1, 2, 3]\n\n    >>> @listify(collection=dict)\n    ... def dict_generator():\n    ...     yield 'a', 1\n    ...     yield 'b', 2\n\n    >>> dict_generator()\n    {'a': 1, 'b': 2}\n\nretrying until timeout\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nto easily retry a block of code with a configurable timeout, you can use the\n`time.timeout_generator`:\n\n.. code-block:: pycon\n\n    >>> for i in time.timeout_generator(10):\n    ...     try:\n    ...         # run your code here\n    ...     except exception as e:\n    ...         # handle the exception\n\nformatting of timestamps, dates and times\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\neasy formatting of timestamps and calculating the time since:\n\n.. code-block:: pycon\n\n    >>> time.format_time('1')\n    '0:00:01'\n    >>> time.format_time(1.234)\n    '0:00:01'\n    >>> time.format_time(1)\n    '0:00:01'\n    >>> time.format_time(datetime.datetime(2000, 1, 2, 3, 4, 5, 6))\n    '2000-01-02 03:04:05'\n    >>> time.format_time(datetime.date(2000, 1, 2))\n    '2000-01-02'\n    >>> time.format_time(datetime.timedelta(seconds=3661))\n    '1:01:01'\n    >>> time.format_time(none)\n    '--:--:--'\n\n    >>> formatters.timesince(now)\n    'just now'\n    >>> formatters.timesince(now - datetime.timedelta(seconds=1))\n    '1 second ago'\n    >>> formatters.timesince(now - datetime.timedelta(seconds=2))\n    '2 seconds ago'\n    >>> formatters.timesince(now - datetime.timedelta(seconds=60))\n    '1 minute ago'\n\nconverting your test from camel-case to underscores:\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code-block:: pycon\n\n    >>> camel_to_underscore('spameggsandbacon')\n    'spam_eggs_and_bacon'\n\nattribute setting decorator. very useful for the django admin\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\na convenient decorator to set function attributes using a decorator:\n\n.. code-block:: pycon\n\n    you can use:\n    >>> @decorators.set_attributes(short_description='name')\n    ... def upper_case_name(self, obj):\n    ...     return (\"%s %s\" % (obj.first_name, obj.last_name)).upper()\n\n    instead of:\n    >>> def upper_case_name(obj):\n    ...     return (\"%s %s\" % (obj.first_name, obj.last_name)).upper()\n\n    >>> upper_case_name.short_description = 'name'\n\nthis can be very useful for the django admin as it allows you to have all\nmetadata in one place.\n\nscaling numbers between ranges\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code-block:: pycon\n\n    >>> converters.remap(500, old_min=0, old_max=1000, new_min=0, new_max=100)\n    50\n\n    # or with decimals:\n    >>> remap(decimal.decimal('250.0'), 0.0, 1000.0, 0.0, 100.0)\n    decimal('25.0')\n\nget the screen/window/terminal size in characters:\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code-block:: pycon\n\n    >>> terminal.get_terminal_size()\n    (80, 24)\n\nthat method supports ipython and jupyter as well as regular shells, using\n`blessings` and other modules depending on what is available.\n\nextracting numbers from nearly every string:\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n.. code-block:: pycon\n\n    >>> converters.to_int('spam15eggs')\n    15\n    >>> converters.to_int('spam')\n    0\n    >>> number = converters.to_int('spam', default=1)\n    1\n\ndoing a global import of all the modules in a package programmatically:\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nto do a global import programmatically you can use the `import_global`\nfunction. this effectively emulates a `from ... import *`\n\n.. code-block:: python\n\n    from python_utils.import_ import import_global\n\n    # the following is  the equivalent of `from some_module import *`\n    import_global('some_module')\n\nautomatically named logger for classes:\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nor add a correclty named logger to your classes which can be easily accessed:\n\n.. code-block:: python\n\n    class myclass(logged):\n        def __init__(self):\n            logged.__init__(self)\n\n    my_class = myclass()\n\n    # accessing the logging method:\n    my_class.error('error')\n\n    # with formatting:\n    my_class.error('the logger supports %(formatting)s',\n                   formatting='named parameters')\n\n    # or to access the actual log function (overwriting the log formatting can\n    # be done n the log method)\n    import logging\n    my_class.log(logging.error, 'log')\n\nalternatively loguru is also supported. it is largely a drop-in replacement for the logging module which is a bit more convenient to configure:\n\nfirst install the extra loguru package:\n\n.. code-block:: bash\n\n    pip install 'python-utils[loguru]'\n\n.. code-block:: python\n\n    class myclass(logurud):\n        ...\n\nnow you can use the `logurud` class to make functions such as `self.info()`\navailable. the benefit of this approach is that you can add extra context or\noptions to you specific loguru instance (i.e. `self.logger`):\n\nconvenient type aliases and some commonly used types:\n\n.. code-block:: python\n\n    # for type hinting scopes such as locals/globals/vars\n    scope = dict[str, any]\n    optionalscope = o[scope]\n\n    # note that number is only useful for extra clarity since float\n    # will work for both int and float in practice.\n    number = u[int, float]\n    decimalnumber = u[number, decimal.decimal]\n\n    # to accept an exception or list of exceptions\n    exceptiontype = type[exception]\n    exceptionstype = u[tuple[exceptiontype, ...], exceptiontype]\n\n    # matching string/bytes types:\n    stringtypes = u[str, bytes]\n",
+  "docs_url": "https://pythonhosted.org/python-utils/",
+  "keywords": "",
+  "license": "bsd",
+  "name": "python-utils",
+  "package_url": "https://pypi.org/project/python-utils/",
+  "project_url": "https://pypi.org/project/python-utils/",
+  "project_urls": {
+    "Homepage": "https://github.com/WoLpH/python-utils"
+  },
+  "release_url": "https://pypi.org/project/python-utils/3.8.1/",
+  "requires_dist": [
+    "typing-extensions >3.10.0.2",
+    "mock ; extra == 'docs'",
+    "sphinx ; extra == 'docs'",
+    "python-utils ; extra == 'docs'",
+    "loguru ; extra == 'loguru'",
+    "flake8 ; extra == 'tests'",
+    "pytest ; extra == 'tests'",
+    "pytest-cov ; extra == 'tests'",
+    "pytest-mypy ; extra == 'tests'",
+    "pytest-asyncio ; extra == 'tests'",
+    "sphinx ; extra == 'tests'",
+    "types-setuptools ; extra == 'tests'",
+    "loguru ; extra == 'tests'"
+  ],
+  "requires_python": ">3.8.0",
+  "summary": "python utils is a module with some convenient utilities not included with the standard python install",
+  "version": "3.8.1",
+  "releases": [],
+  "developers": [
+    "rick_van_hattem",
+    "wolph@wol.ph"
+  ],
+  "kwds": "patterns python_utils python workflows dict_generator",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_python_utils",
+  "homepage": "https://github.com/wolph/python-utils",
+  "release_count": 53,
+  "dependency_ids": [
+    "pypi_flake8",
+    "pypi_loguru",
+    "pypi_mock",
+    "pypi_pytest",
+    "pypi_pytest_asyncio",
+    "pypi_pytest_cov",
+    "pypi_pytest_mypy",
+    "pypi_python_utils",
+    "pypi_sphinx",
+    "pypi_types_setuptools",
+    "pypi_typing_extensions"
+  ]
+}

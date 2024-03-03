@@ -1,0 +1,42 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: gnu library or lesser general public license (lgpl)",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2.6",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "topic :: internet"
+  ],
+  "description": "pure python scp module\n======================\n\nthe scp.py module uses a paramiko transport to send and receive files via the\nscp1 protocol. this is the protocol as referenced from the openssh scp program,\nand has only been tested with this implementation.\n\n\nexample\n-------\n\n..  code-block:: python\n\n    from paramiko import sshclient\n    from scp import scpclient\n\n    ssh = sshclient()\n    ssh.load_system_host_keys()\n    ssh.connect('example.com')\n\n    # scpclient takes a paramiko transport as an argument\n    scp = scpclient(ssh.get_transport())\n\n    scp.put('test.txt', 'test2.txt')\n    scp.get('test2.txt')\n\n    # uploading the 'test' directory with its content in the\n    # '/home/user/dump' remote directory\n    scp.put('test', recursive=true, remote_path='/home/user/dump')\n\n    scp.close()\n\n\n..  code-block::\n\n    $ md5sum test.txt test2.txt\n    fc264c65fb17b7db5237cf7ce1780769 test.txt\n    fc264c65fb17b7db5237cf7ce1780769 test2.txt\n\nusing 'with' keyword\n--------------------\n\n..  code-block:: python\n\n    from paramiko import sshclient\n    from scp import scpclient\n\n    with sshclient() as ssh:\n        ssh.load_system_host_keys()\n        ssh.connect('example.com')\n\n        with scpclient(ssh.get_transport()) as scp:\n            scp.put('test.txt', 'test2.txt')\n            scp.get('test2.txt')\n\n\n..  code-block::\n\n    $ md5sum test.txt test2.txt\n    fc264c65fb17b7db5237cf7ce1780769 test.txt\n    fc264c65fb17b7db5237cf7ce1780769 test2.txt\n\n\nuploading file-like objects\n---------------------------\n\nthe ``putfo`` method can be used to upload file-like objects:\n\n..  code-block:: python\n\n    import io\n    from paramiko import sshclient\n    from scp import scpclient\n\n    ssh = sshclient()\n    ssh.load_system_host_keys()\n    ssh.connect('example.com')\n\n    # scpclient takes a paramiko transport as an argument\n    scp = scpclient(ssh.get_transport())\n\n    # generate in-memory file-like object\n    fl = io.bytesio()\n    fl.write(b'test')\n    fl.seek(0)\n    # upload it directly from memory\n    scp.putfo(fl, '/tmp/test.txt')\n    # close connection\n    scp.close()\n    # close file handler\n    fl.close()\n\n\ntracking progress of your file uploads/downloads\n------------------------------------------------\n\na ``progress`` function can be given as a callback to the scpclient to handle\nhow the current scp operation handles the progress of the transfers. in the\nexample below we print the percentage complete of the file transfer.\n\n..  code-block:: python\n\n    from paramiko import sshclient\n    from scp import scpclient\n    import sys\n\n    ssh = sshclient()\n    ssh.load_system_host_keys()\n    ssh.connect('example.com')\n\n    # define progress callback that prints the current percentage completed for the file\n    def progress(filename, size, sent):\n        sys.stdout.write(\"%s's progress: %.2f%%   \\r\" % (filename, float(sent)/float(size)*100) )\n\n    # scpclient takes a paramiko transport and progress callback as its arguments.\n    scp = scpclient(ssh.get_transport(), progress=progress)\n\n    # you can also use progress4, which adds a 4th parameter to track ip and port\n    # useful with multiple threads to track source\n    def progress4(filename, size, sent, peername):\n        sys.stdout.write(\"(%s:%s) %s's progress: %.2f%%   \\r\" % (peername[0], peername[1], filename, float(sent)/float(size)*100) )\n    scp = scpclient(ssh.get_transport(), progress4=progress4)\n\n    scp.put('test.txt', '~/test.txt')\n    # should now be printing the current progress of your put function.\n\n    scp.close()\n\n\n",
+  "docs_url": null,
+  "keywords": "paramiko,ssh,scp,transfer",
+  "license": "lgpl-2.1-or-later",
+  "name": "scp",
+  "package_url": "https://pypi.org/project/scp/",
+  "project_url": "https://pypi.org/project/scp/",
+  "project_urls": {
+    "Homepage": "https://github.com/jbardin/scp.py"
+  },
+  "release_url": "https://pypi.org/project/scp/0.14.5/",
+  "requires_dist": [],
+  "requires_python": "",
+  "summary": "scp module for paramiko",
+  "version": "0.14.5",
+  "releases": [],
+  "developers": [
+    "j.bardin@gmail.com",
+    "james_bardin",
+    "remi@rampin.org",
+    "remi_rampin"
+  ],
+  "kwds": "scp scp1 scpclient paramiko remote_path",
+  "license_kwds": "lgpl-2.1-or-later",
+  "libtype": "pypi",
+  "id": "pypi_scp",
+  "homepage": "https://github.com/jbardin/scp.py",
+  "release_count": 28,
+  "dependency_ids": []
+}

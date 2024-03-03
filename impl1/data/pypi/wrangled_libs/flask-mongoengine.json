@@ -1,0 +1,58 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "environment :: web environment",
+    "framework :: flask",
+    "intended audience :: developers",
+    "license :: osi approved :: bsd license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: internet :: www/http :: dynamic content",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "flask-mongoengine\n=================\n\na flask extension that provides integration with `mongoengine <http://mongoengine.org/>`_.\nfor more information on mongoengine please check out the `mongoengine documentation <http://docs.mongoengine.org/>`_.\n\nit handles connection management for your app.\nyou can also use `wtforms <http://wtforms.simplecodes.com/>`_ as model forms for your models.\n\npre-requisite\n=============\n\nmake sure you have `wheel` installed::\n\n    pip install wheel\n\ninstalling flask-mongoengine\n============================\n\ninstall with **pip**::\n\n    pip install flask-mongoengine\n\nconfiguration\n=============\n\nbasic setup is easy, just fetch the extension::\n\n    from flask import flask\n    from flask_mongoengine import mongoengine\n\n    app = flask(__name__)\n    app.config.from_pyfile('the-config.cfg')\n    db = mongoengine(app)\n\nor, if you are setting up your database before your app is initialized, as is the case with application factories::\n\n    from flask import flask\n    from flask_mongoengine import mongoengine\n    db = mongoengine()\n    ...\n    app = flask(__name__)\n    app.config.from_pyfile('the-config.cfg')\n    db.init_app(app)\n\n\nby default, flask-mongoengine assumes that the `mongod` instance is running\non **localhost** on port **27017**, and you wish to connect to the database named **test**.\n\nif mongodb is running elsewhere, you should provide the `host` and `port` settings\nin  the `'mongodb_settings'` dictionary wih `app.config`.::\n\n    app.config['mongodb_settings'] = {\n        'db': 'project1',\n        'host': '192.168.1.35',\n        'port': 12345\n    }\n\nif the database requires authentication, the `username` and `password`\narguments should be provided `'mongodb_settings'` dictionary wih `app.config`.::\n\n    app.config['mongodb_settings'] = {\n        'db': 'project1',\n        'username':'webapp',\n        'password':'pwd123'\n    }\n\nuri style connections are also supported, just supply the uri as the `host`\nin the `'mongodb_settings'` dictionary with `app.config`. **note that database name from uri has priority over name.** if uri presents and doesn't contain database name db setting entirely ignore and db name set to 'test'. ::\n\n    app.config['mongodb_settings'] = {\n        'db': 'project1',\n        'host': 'mongodb://localhost/database_name'\n    }\n\nconnection settings may also be provided individually by prefixing the setting with `'mongodb_'` in the `app.config`.::\n\n    app.config['mongodb_db'] = 'project1'\n    app.config['mongodb_host'] = '192.168.1.35'\n    app.config['mongodb_port'] = 12345\n    app.config['mongodb_username'] = 'webapp'\n    app.config['mongodb_password'] = 'pwd123'\n\nby default flask-mongoengine open the connection when extension is instanciated but you can configure it\nto open connection only on first database access by setting the ``mongodb_settings['connect']`` parameter\nor its ``mongodb_connect`` flat equivalent to ``false``::\n\n    app.config['mongodb_settings'] = {\n        'host': 'mongodb://localhost/database_name',\n        'connect': false,\n    }\n    # or\n    app.config['mongodb_connect'] = false\n\ncustom queryset\n===============\n\nflask-mongoengine attaches the following methods to mongoengine's default queryset:\n\n* **get_or_404**: works like .get(), but calls abort(404) if the object doesnotexist.\n  optional arguments: *message* - custom message to display.\n* **first_or_404**: same as above, except for .first().\n  optional arguments: *message* - custom message to display.\n* **paginate**: paginates the queryset. takes two arguments, *page* and *per_page*.\n* **paginate_field**: paginates a field from one document in the queryset.\n  arguments: *field_name*, *doc_id*, *page*, *per_page*.\n\nexamples::\n\n    # 404 if object doesn't exist\n    def view_todo(todo_id):\n        todo = todo.objects.get_or_404(_id=todo_id)\n    ..\n\n    # paginate through todo\n    def view_todos(page=1):\n        paginated_todos = todo.objects.paginate(page=page, per_page=10)\n\n    # paginate through tags of todo\n    def view_todo_tags(todo_id, page=1):\n        todo = todo.objects.get_or_404(_id=todo_id)\n        paginated_tags = todo.paginate_field('tags', page, per_page=10)\n\nproperties of the pagination object include: iter_pages, next, prev, has_next,\nhas_prev, next_num, prev_num.\n\nin the template::\n\n    {# display a page of todos #}\n    <ul>\n        {% for todo in paginated_todos.items %}\n            <li>{{ todo.title }}</li>\n        {% endfor %}\n    </ul>\n\n    {# macro for creating navigation links #}\n    {% macro render_navigation(pagination, endpoint) %}\n      <div class=pagination>\n      {% for page in pagination.iter_pages() %}\n        {% if page %}\n          {% if page != pagination.page %}\n            <a href=\"{{ url_for(endpoint, page=page) }}\">{{ page }}</a>\n          {% else %}\n            <strong>{{ page }}</strong>\n          {% endif %}\n        {% else %}\n          <span class=ellipsis>\u2026</span>\n        {% endif %}\n      {% endfor %}\n      </div>\n    {% endmacro %}\n\n    {{ render_navigation(paginated_todos, 'view_todos') }}\n\n\nmongoengine and wtforms\n=======================\n\nflask-mongoengine automatically generates wtforms from mongoengine models::\n\n    from flask_mongoengine.wtf import model_form\n\n    class user(db.document):\n        email = db.stringfield(required=true)\n        first_name = db.stringfield(max_length=50)\n        last_name = db.stringfield(max_length=50)\n\n    class content(db.embeddeddocument):\n        text = db.stringfield()\n        lang = db.stringfield(max_length=3)\n\n    class post(db.document):\n        title = db.stringfield(max_length=120, required=true, validators=[validators.inputrequired(message='missing title.'),])\n        author = db.referencefield(user)\n        tags = db.listfield(db.stringfield(max_length=30))\n        content = db.embeddeddocumentfield(content)\n\n    postform = model_form(post)\n\n    def add_post(request):\n        form = postform(request.post)\n        if request.method == 'post' and form.validate():\n            # do something\n            redirect('done')\n        return render_template('add_post.html', form=form)\n\nfor each mongoengine field, the most appropriate wtform field is used.\nparameters allow the user to provide hints if the conversion is not implicit::\n\n    postform = model_form(post, field_args={'title': {'textarea': true}})\n\nsupported parameters:\n\nfor fields with `choices`:\n\n- `multiple` to use a selectmultiplefield\n- `radio` to use a radiofield\n\nfor `stringfield`:\n\n- `password` to use a passwordfield\n- `textarea` to use a textareafield\n\nfor `listfield`:\n\n- `min_entries` to set the minimal number of entries\n\n(by default, a stringfield is converted into a textareafield if and only if it has no max_length.)\n\n\nsupported fields\n----------------\n\n* stringfield\n* binaryfield\n* urlfield\n* emailfield\n* intfield\n* floatfield\n* decimalfield\n* booleanfield\n* datetimefield\n* **listfield** (using wtforms.fields.fieldlist )\n* sortedlistfield (duplicate listfield)\n* **embeddeddocumentfield** (using wtforms.fields.formfield and generating inline form)\n* **referencefield** (using wtforms.fields.selectfieldbase with options loaded from queryset or document)\n* dictfield\n\nnot currently supported field types:\n------------------------------------\n\n* objectidfield\n* geolocationfield\n* genericreferencefield\n\nsession interface\n=================\n\nto use mongoengine as your session store simple configure the session interface::\n\n    from flask_mongoengine import mongoengine, mongoenginesessioninterface\n\n    app = flask(__name__)\n    db = mongoengine(app)\n    app.session_interface = mongoenginesessioninterface(db)\n\n\ndebug toolbar panel\n===================\n\n.. image:: _static/debugtoolbar.png\n  :target: #debug-toolbar-panel\n\nif you use the flask-debugtoolbar you can add\n`'flask_mongoengine.panels.mongodebugpanel'` to the `debug_tb_panels` config\nlist and then it will automatically track your queries::\n\n    from flask import flask\n    from flask_debugtoolbar import debugtoolbarextension\n\n    app = flask(__name__)\n    app.config['debug_tb_panels'] = ['flask_mongoengine.panels.mongodebugpanel']\n    db = mongoengine(app)\n    toolbar = debugtoolbarextension(app)\n\n\n\nupgrading\n=========\n\n0.6 to 0.7\n----------\n\n`listfieldpagination` order of arguments have been changed to be more logical::\n\n    # old order\n    listfieldpagination(self, queryset, field_name, doc_id, page, per_page, total)\n\n    # new order\n    listfieldpagination(self, queryset, doc_id, field_name, page, per_page, total)\n\n\ncredits\n=======\n\ninspired by two repos:\n\n`danjac <https://bitbucket.org/danjac/flask-mongoengine>`_\n`maratfm <https://bitbucket.org/maratfm/wtforms>`_\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "flask-mongoengine",
+  "package_url": "https://pypi.org/project/flask-mongoengine/",
+  "project_url": "https://pypi.org/project/flask-mongoengine/",
+  "project_urls": {
+    "Homepage": "https://github.com/mongoengine/flask-mongoengine"
+  },
+  "release_url": "https://pypi.org/project/flask-mongoengine/1.0.0/",
+  "requires_dist": [
+    "Flask (>=1.1.2)",
+    "WTForms[email] (>=2.3.1)",
+    "Flask-WTF (>=0.14.3)",
+    "mongoengine (>=0.20)"
+  ],
+  "requires_python": "",
+  "summary": "flask-mongoengine is a flask extension that provides integration with mongoengine and wtf model forms.",
+  "version": "1.0.0",
+  "releases": [],
+  "developers": [
+    "ross.lawley@gmail.com",
+    "ross_lawley"
+  ],
+  "kwds": "flask_mongoengine mongoengine flask mongoenginesessioninterface mongodebugpanel",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_flask_mongoengine",
+  "homepage": "https://github.com/mongoengine/flask-mongoengine",
+  "release_count": 21,
+  "dependency_ids": [
+    "pypi_flask",
+    "pypi_flask_wtf",
+    "pypi_mongoengine",
+    "pypi_wtforms"
+  ]
+}

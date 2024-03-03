@@ -1,0 +1,64 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "intended audience :: end users/desktop",
+    "intended audience :: information technology",
+    "intended audience :: science/research",
+    "intended audience :: system administrators",
+    "license :: osi approved :: bsd license",
+    "operating system :: macos",
+    "operating system :: posix",
+    "operating system :: unix",
+    "programming language :: python",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "topic :: internet",
+    "topic :: scientific/engineering",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: system :: distributed computing",
+    "topic :: system :: monitoring",
+    "topic :: system :: systems administration"
+  ],
+  "description": "introduction\n============\n\n`rq-dashboard` is a general purpose, lightweight,\n[flask](https://flask.palletsprojects.com/)-based web front-end to monitor your\n[rq](http://python-rq.org/) queues, jobs, and workers in realtime.\n\n[![build pull request](https://github.com/parallels/rq-dashboard/actions/workflows/pr.yaml/badge.svg)](https://github.com/parallels/rq-dashboard/actions/workflows/pr.yaml)\n[![publish release](https://github.com/parallels/rq-dashboard/actions/workflows/publish.yaml/badge.svg)](https://github.com/parallels/rq-dashboard/actions/workflows/publish.yaml)\n[![python\nsupport](https://img.shields.io/pypi/pyversions/rq-dashboard.svg)](https://pypi.python.org/pypi/rq-dashboard)\n![pypi downloads](https://img.shields.io/pypi/dw/rq-dashboard)\n\nmaturity notes\n--------------\n\nthe rq dashboard is currently being developed and is in beta stage.\nhow migrate to version 1.0 you can find [here](https://github.com/parallels/rq-dashboard/wiki/how-to-migrate-to-1.0)\n\nyou can find help  in the discussion page in [github]([http](https://github.com/parallels/rq-dashboard)) or join our [discord server](https://discord.gg/reuhvmft)\n\ninstalling with docker\n----------------------\n\nyou can also run the dashboard inside of docker:\n\n* copy the ```docker-compose.yml``` file from the root of the repository to ```docker-compose.override.yml``` and change the environment variables to your liking.\n* run the following command:\n\n  ``` {.console}\n  $ docker-compose up\n  ```\n\nyou can also find the official image on cjlapao/rq-dashboard:latest\n\ninstalling from pypi\n--------------------\n\n``` {.console}\n$ pip install rq-dashboard\n```\n\nrunning the dashboard\n---------------------\n\nrun the dashboard standalone, like this:\n\n``` {.console}\n$ rq-dashboard\n* running on http://127.0.0.1:9181/\n...\n```\n\n``` {.console}\n$ rq-dashboard --help\nusage: rq-dashboard [options]\n\n  run the rq dashboard flask server.\n\n  all configuration can be set on the command line or through environment\n  variables of the form rq_dashboard_*. for example rq_dashboard_username.\n\n  a subset of the configuration (the configuration parameters used by the\n  underlying flask blueprint) can also be provided in a python module\n  referenced using --config, or with a .cfg file referenced by the\n  rq_dashboard_settings environment variable.\n\noptions:\n  -b, --bind text                 ip or hostname on which to bind http server\n  -p, --port integer              port on which to bind http server\n  --url-prefix text               url prefix e.g. for use behind a reverse\n                                  proxy\n  --username text                 http basic auth username (not used if not\n                                  set)\n  --password text                 http basic auth password\n  -c, --config text               configuration file (python module on search\n                                  path)\n  -u, --redis-url text            redis url. can be specified multiple times.\n                                  default: redis://127.0.0.1:6379\n  --poll-interval, --interval integer\n                                  refresh interval in ms\n  --extra-path text               append specified directories to sys.path\n  --debug / --normal              enter debug mode\n  -v, --verbose                   enable verbose logging\n  --help                          show this message and exit.\n```\n\nintegrating the dashboard in your flask app\n-------------------------------------------\n\nthe dashboard can be integrated in to your own [flask](http://flask.pocoo.org/) app by accessing the blueprint directly in the normal way, e.g.:\n\n``` {.python}\nfrom flask import flask\nimport rq_dashboard\n\napp = flask(__name__)\napp.config.from_object(rq_dashboard.default_settings)\nrq_dashboard.web.setup_rq_connection(app)\napp.register_blueprint(rq_dashboard.blueprint, url_prefix=\"/rq\")\n\n@app.route(\"/\")\ndef hello():\n    return \"hello world!\"\n\nif __name__ == \"__main__\":\n    app.run()\n```\n\nif you start the flask app on the default port, you can access the\ndashboard at <http://localhost:5000/rq>. the `cli.py:main` entry point\nprovides a simple working example.\n\nrunning on heroku\n-----------------\n\nconsider using third-party project\n[rq-dashboard-on-heroku](https://github.com/metabolize/rq-dashboard-on-heroku),\nwhich installs rq-dashboard from pypi and wraps in in\n[gunicorn](https://gunicorn.org) for deployment to heroku.\nrq-dashboard-on-heroku is maintained indepdently.\n\nrunning behind a reverse proxy\n-------------------------------\nyou can run the dashboard as a `systemd` service in linux or via a `suprevisor`\nscript and then use apache or nginx to direct traffic to the dashboard.\n\n_this is for *non-production* functionality!_\n\napache reverse proxy example:\n```\nproxypass /rq http://127.0.0.1:5001/rq\nproxypassreverse /rq http://127.0.0.1:5001/rq\n```\n\nsystemd service example:\n```\n[unit]\ndescription=redis queue dashboard\n[install]\n\nwantedby=multi-user.target\n[service]\nexecstart=/bin/rq-dashboard -b 127.0.0.1 -p 5001 --url-prefix /rq -c rq_settings_dashboard --debug -v\nstandardoutput=file:/var/log/redis/rq-dasbhoard.log\nstandarderror=file:/var/log/redis/rq-dashboard.log\nuser=redis-dash\ngroup=redis-dash\nremainafterexit=yes\ntype=simple\npermissionsstartonly=false\nprivatetmp=no\n```\n* `--debug`,`-v` are optional -- they will write `stdout` to your specified files.\n* `rq_settings_dashboard` is a python file, with settings defined. you can use options that are available as environmental variables. (ex. `rq_dashboard_redis_password = password`)\n\ndeveloping\n----------\n\ndevelop in a virtualenv and make sure you have all the necessary build\ntime (and run time) dependencies with\n\n    $ pip install -r requirements.txt\n\ndevelop in the normal way with\n\n    $ python setup.py develop\n\nstats\n-----\n\n-   [pypi stats](https://pypistats.org/packages/rq-dashboard)\n-   [github stats](https://github.com/parallels/rq-dashboard/graphs/traffic)\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "rq-dashboard",
+  "package_url": "https://pypi.org/project/rq-dashboard/",
+  "project_url": "https://pypi.org/project/rq-dashboard/",
+  "project_urls": {
+    "Homepage": "https://github.com/Parallels/rq-dashboard"
+  },
+  "release_url": "https://pypi.org/project/rq-dashboard/0.6.7/",
+  "requires_dist": [
+    "rq >=1.0",
+    "Flask",
+    "redis",
+    "arrow",
+    "redis-sentinel-url"
+  ],
+  "requires_python": "",
+  "summary": "rq-dashboard is a general purpose, lightweight, web interface to monitor your rq queues, jobs, and workers in realtime.",
+  "version": "0.6.7",
+  "releases": [],
+  "developers": [
+    "vincent@3rdcloud.com",
+    "vincent_driessen"
+  ],
+  "kwds": "rq_dashboard flask rq_dashboard_ rq_settings_dashboard rq_dashboard_settings",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_rq_dashboard",
+  "homepage": "https://github.com/parallels/rq-dashboard",
+  "release_count": 23,
+  "dependency_ids": [
+    "pypi_arrow",
+    "pypi_flask",
+    "pypi_redis",
+    "pypi_redis_sentinel_url",
+    "pypi_rq"
+  ]
+}

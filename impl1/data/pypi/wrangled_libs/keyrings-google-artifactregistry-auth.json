@@ -1,0 +1,60 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only"
+  ],
+  "description": "# artifact registry tools for python\nthis repository contains an alternate [keyring](https://pypi.python.org/pypi/keyring) backend implementation to help with interacting with python repositories hosted on artifact registry.\n\n## authentication\n`keyrings.google-artifactregistry-auth` is a python package which allows you to configure keyring to interact with python repositories stored in artifact registry.\n\nthe backend automatically searches for credentials from the environment and authenticates to artifact registry. it looks for credentials in the following order:\n\n1. [google application default credentials](https://developers.google.com/accounts/docs/application-default-credentials).\n2. from the `gcloud` sdk. (i.e., the access token printed via `gcloud config config-helper --format='value(credential.access_token)'`)\n    * hint: you can see which account is active with the command `gcloud config config-helper --format='value(configuration.properties.core.account)'`\n3. if neither of them exist, an error occurs.\n\nto use the keyring backend:\n\n1. log in\n\n    option 1: log in as a service account:\n\n    (1). using a json file that contains a service account key:\n\n    ```\n    $ export google_application_credentials=[path/to/key.json]\n    ```\n\n    (2). or using `gcloud`:\n\n    ```\n    $ gcloud auth application-default login\n    ```\n\n    option 2: log in as an end user via `gcloud`:\n\n    ```\n    $ gcloud auth login\n    ```\n\n2. configure twine (`.pypirc`) and pip (`pip.conf`) tools to connect to the repository. use the output from the following command:\n\n        $ gcloud artifacts print-settings python\n\n    in your `.pypirc` file add:\n\n    ```ini\n    [disutils]\n    index-servers =\n        repository_id\n\n    [repository_id]\n    repository = https://location-python.pkg.dev/project_id/repository_id/\n    ```\n\n    in your `pip.conf` file add:\n\n    ```ini\n    [global]\n    extra-index-url = https://location-python.pkg.dev/project_id/repository_id/simple/\n    ```\n3. install the `keyrings.google-artifactregistry-auth` package\n\n    ```\n    $ pip install keyrings.google-artifactregistry-auth\n    ```\n\n    list backends to confirm the installation.\n\n    ```\n    $ keyring --list-backends\n    ```\n\n    the list should include\n\n    * `keyrings.gauth.googlepythonauth (priority: 9)`\n    * `keyring.backends.chainer.chainerbackend (priority: -1)`\n    * `keyring.backends.fail.keyring (priority: 0)`\n\n## usage with other tools\n\n### usage with `tox`\n\nthe [`tox` tool](https://pypi.org/project/tox/) is a testing and automation tool.\n\nbecause the credential helper needs to be installed _before_ any private\ndependencies are installed, it needs to be bootstrapped into the `tox`\nenvironment via a plugin.\n\nto do this, specify the `keyrings.google-artifactregistry-auth` package via the\n[`requires`](https://tox.readthedocs.io/en/latest/config.html#conf-requires)\nrequirement in your `tox.ini` file:\n\n```ini\n[tox]\nenvlist = py\nrequires = keyrings.google-artifactregistry-auth\n\n[testenv]\ndeps = -r requirements.txt\n```\n\nyou can then configure your `requirement.txt` file to use the artifact registry repo as\nan extra index, and specify both public and private dependencies:\n\n```\n--extra-index-url https://[region]-python.pkg.dev/[project_id]/[repository]/simple\n\n# samplepackage will be installed directly from pypi\nsamplepackage\n# mypackage will be installed from the artifact registry repository\nmypackage\n```\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "keyrings.google-artifactregistry-auth",
+  "package_url": "https://pypi.org/project/keyrings.google-artifactregistry-auth/",
+  "project_url": "https://pypi.org/project/keyrings.google-artifactregistry-auth/",
+  "project_urls": {
+    "Homepage": "https://github.com/GoogleCloudPlatform/artifact-registry-python-tools"
+  },
+  "release_url": "https://pypi.org/project/keyrings.google-artifactregistry-auth/1.1.2/",
+  "requires_dist": [
+    "google-auth",
+    "keyring",
+    "pluggy",
+    "requests",
+    "pytest (!=3.7.3,>=3.5) ; extra == 'testing'",
+    "pytest-checkdocs (>=1.2.3) ; extra == 'testing'",
+    "pytest-cov ; extra == 'testing'",
+    "pytest-flake8 ; extra == 'testing'",
+    "pytest-black (>=0.3.7) ; (platform_python_implementation != \"PyPy\") and extra == 'testing'",
+    "pytest-mypy ; (platform_python_implementation != \"PyPy\") and extra == 'testing'",
+    "tox ; extra == 'tox'"
+  ],
+  "requires_python": ">=3.6",
+  "summary": "keyring backend for google auth tokens",
+  "version": "1.1.2",
+  "releases": [],
+  "developers": [
+    "megan_kuo",
+    "megankuo@google.com"
+  ],
+  "kwds": "google_application_credentials googlepythonauth credentials credential gcloud",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_keyrings.google_artifactregistry_auth",
+  "homepage": "https://github.com/googlecloudplatform/artifact-registry-python-tools",
+  "release_count": 7,
+  "dependency_ids": [
+    "pypi_google_auth",
+    "pypi_keyring",
+    "pypi_pluggy",
+    "pypi_pytest",
+    "pypi_pytest_black",
+    "pypi_pytest_checkdocs",
+    "pypi_pytest_cov",
+    "pypi_pytest_flake8",
+    "pypi_pytest_mypy",
+    "pypi_requests",
+    "pypi_tox"
+  ]
+}

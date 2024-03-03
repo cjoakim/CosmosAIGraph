@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: posix",
+    "programming language :: python",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3.3",
+    "programming language :: python :: 3.4",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "eight: python 2 to the power of 3\n=================================\neight is a python module that provides a minimalist compatibility layer between python 3 and 2. eight lets you write\ncode for python 3.3+ while providing limited compatibility with python 2.7 with no code changes.  eight is inspired by\n`six <https://pythonhosted.org/six/>`_, `nine <https://github.com/nandoflorestan/nine>`_, and `python-future\n<https://github.com/pythoncharmers/python-future>`_, but provides better internationalization (i18n) support, is more\nlightweight, easier to use, and unambiguously biased toward python 3 code: if you remove eight from your code, it will\ncontinue to function exactly as it did with eight on python 3.\n\nto write code for python 3 that is portable to python 2, you may also want to read armin ronacher's excellent `python 3\nporting guide <http://lucumr.pocoo.org/2013/5/21/porting-to-python-3-redux/>`_, as well as the official\n`porting guide <http://docs.python.org/3/howto/pyporting.html>`_.\n\nwriting ``from eight import *`` in your code is a no-op in python 3. in python 2, it binds a bunch of python 3 names to\ntheir python 2 equivalents. also, if you need to import a module or module member that was renamed in python 3, writing\n``from eight import <module>`` will do the right thing (equivalent to ``import <module>`` on python 3 and ``import\n<old_name> as <module>`` on python 2). finally, eight can optionally wrap your standard streams and environment variable\ni/o to use text, not bytes (see below).\n\ninstallation\n------------\n::\n\n    pip install eight\n\nsynopsis\n--------\n\n.. code-block:: python\n\n    from eight import *\n    from eight import queue\n    from eight.collections import userlist, deque\n\nif you use ``print``, division, non-ascii literals, or relative imports, you should also add this `future import\n<http://docs.python.org/3/library/__future__.html>`_ at the top of each source file:\n\n.. code-block:: python\n\n    from __future__ import (print_function, division, unicode_literals, absolute_import)\n\nwrapping stdio\n--------------\neight provides wrappers for ``sys.stdin``, ``sys.stdout``, and ``sys.stderr`` to make them (and methods that use them)\nbehave like they do on python 3. specifically, in python 3 these streams accept text data, and their ``.buffer`` attributes\nrefer to the underlying streams that accept bytes. eight uses the `io <http://docs.python.org/2/library/io.html>`_ module\nto do the same for you, but subclasses the textiowrapper class for ``sys.stdout`` and ``sys.stderr`` to coerce non-unicode\ninput to unicode on python 2 (otherwise, because of the python 2 semantics, things like exception printing cease to work).\n\nto enable stdio wrapping, use the following:\n\n.. code-block:: python\n\n    import eight\n    eight.wrap_stdio()\n\nto revert the effects of this on any of the streams, use the detach method, e.g. ``sys.stdin = sys.stdin.detach()`` (but\nremember to condition this on ``eight.using_python2``). see the `io module documentation\n<http://docs.python.org/2/library/io.html>`_ for more information.\n\ndecoding command-line arguments\n-------------------------------\neight provides a utility function to decode the contents of ``sys.argv`` on python 2 (as python 3 does). it uses\n``sys.stdin.encoding`` as the encoding to do so:\n\n.. code-block:: python\n\n    import eight\n    eight.decode_command_line_args()\n\nthe call to ``decode_command_line_args()`` replaces ``sys.argv`` with its decoded contents and returns the new contents.\non python 3, the call is a no-op (it returns ``sys.argv`` and leaves it intact).\n\nwrapping environment variable getters and setters\n-------------------------------------------------\neight provides utility wrappers to help bring python 2 environment variable access and assignment in line with python\n3: encode the input to ``os.putenv`` (which is used for statements like ``os.environ[x] = y``) and decode the output of\n``os.getenv`` (used for ``x = os.environ[y]``). use ``wrap_os_environ_io()`` to monkey-patch these wrappers into the\n``os`` module:\n\n.. code-block:: python\n\n    import eight\n    eight.wrap_os_environ_io()\n\non python 3, the call is a no-op.\n\nselecting from the buffet\n-------------------------\nyou can see what ``from eight import *`` will do by running `ipython <https://github.com/ipython/ipython>`_ and typing\n``import eight``, then ``eight.<tab>``. here is a full list of what's available:\n\n* ``ascii``\n* ``bytes``\n* ``chr``\n* ``filter``\n* ``hex``\n* ``input``\n* ``int``\n* ``map``\n* ``oct``\n* ``open``\n* ``range``\n* ``round``\n* ``str``\n* ``super``\n* ``zip``\n\nyou can import these symbols by listing them explicitly. if for any reason you see an issue with importing them all (which\nis recommended), you can of course import a subset.\n\nin addition to names imported by ``from eight import *``, the following modules are available and should be imported by\nname using ``from eight import <name>`` when needed:\n\n* ``queue`` (old name: ``queue``)\n* ``builtins`` (old name: ``__builtin__``)\n* ``copyreg`` (old name: ``copy_reg``)\n* ``configparser`` (old name: ``configparser``)\n* ``reprlib`` (old name: ``repr``)\n* ``winreg`` (old name: ``_winreg``)\n* ``_thread`` (old name: ``thread``)\n* ``_dummy_thread`` (old name: ``dummy_thread``)\n\nthe following modules have attributes which resided elsewhere in python 2: todo\n\nacknowledgments\n---------------\n`python-future <https://github.com/pythoncharmers/python-future>`_ for doing a bunch of heavy lifting on backports of\npython 3 features.\n\nlinks\n-----\n* `project home page (github) <https://github.com/kislyuk/eight>`_\n* `documentation (read the docs) <https://eight.readthedocs.io/en/latest/>`_\n* `package distribution (pypi) <https://pypi.python.org/pypi/eight>`_\n\nbugs\n~~~~\nplease report bugs, issues, feature requests, etc. on `github <https://github.com/kislyuk/eight/issues>`_.\n\nlicense\n-------\nlicensed under the terms of the `apache license, version 2.0 <http://www.apache.org/licenses/license-2.0>`_.\n\n.. image:: https://img.shields.io/travis/kislyuk/eight.svg\n        :target: https://travis-ci.org/kislyuk/eight\n.. image:: https://codecov.io/github/kislyuk/eight/coverage.svg?branch=master\n        :target: https://codecov.io/github/kislyuk/eight?branch=master\n.. image:: https://img.shields.io/pypi/v/eight.svg\n        :target: https://pypi.python.org/pypi/eight\n.. image:: https://img.shields.io/pypi/l/eight.svg\n        :target: https://pypi.python.org/pypi/eight\n.. image:: https://readthedocs.org/projects/eight/badge/?version=latest\n        :target: https://eight.readthedocs.io/\n\n\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache software license",
+  "name": "eight",
+  "package_url": "https://pypi.org/project/eight/",
+  "project_url": "https://pypi.org/project/eight/",
+  "project_urls": {
+    "Homepage": "https://github.com/kislyuk/eight"
+  },
+  "release_url": "https://pypi.org/project/eight/1.0.1/",
+  "requires_dist": [
+    "future (<0.19,>=0.16)"
+  ],
+  "requires_python": "",
+  "summary": "python 2 to the power of 3. a lightweight porting helper library.",
+  "version": "1.0.1",
+  "releases": [],
+  "developers": [
+    "andrey_kislyuk",
+    "kislyuk@gmail.com"
+  ],
+  "kwds": "using_python2 python pythoncharmers ipython pythonhosted",
+  "license_kwds": "apache software license",
+  "libtype": "pypi",
+  "id": "pypi_eight",
+  "homepage": "https://github.com/kislyuk/eight",
+  "release_count": 16,
+  "dependency_ids": [
+    "pypi_future"
+  ]
+}

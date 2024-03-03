@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: pytest",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development :: libraries",
+    "typing :: typed"
+  ],
+  "description": "# pytest-reraise\n\n[![pypi](https://img.shields.io/pypi/v/pytest-reraise)](https://pypi.python.org/pypi/pytest-reraise/)\n[![github workflow status](https://img.shields.io/github/workflow/status/bjoluc/pytest-reraise/build)](https://github.com/bjoluc/pytest-reraise/actions)\n[![codecov](https://codecov.io/gh/bjoluc/pytest-reraise/branch/main/graph/badge.svg)](https://codecov.io/gh/bjoluc/pytest-reraise)\n[![pypi pyversions](https://img.shields.io/pypi/pyversions/pytest-reraise)](https://pypi.python.org/pypi/pytest-reraise/)\n![pypi - downloads](https://img.shields.io/pypi/dm/pytest-reraise)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000)](https://github.com/psf/black)\n[![semantic-release](https://img.shields.io/badge/%20%20%f0%9f%93%a6%f0%9f%9a%80-semantic--release-e10079)](https://github.com/bjoluc/semantic-release-config-poetry)\n\nlet's assume you write a pytest test case that includes assertions in another thread, like so:\n\n```python\nfrom threading import thread\n\ndef test_assert():\n\n    def run():\n        assert false\n\n    thread(target=run).start()\n```\n\nthis test will pass, as the `assertionerror` is not raised in the main thread.\n`pytest-reraise` is here to help you capture the exception and raise it in the main thread:\n\n```sh\npip install pytest-reraise\n```\n\n```python\nfrom threading import thread\n\ndef test_assert(reraise):\n\n    def run():\n        with reraise:\n            assert false\n\n    thread(target=run).start()\n```\n\nthe above test will fail, as `pytest-reraise` captures the exception and raises it at the end of the test case.\n\n## advanced usage and special cases\n\n### wrapping functions\n\ninstead of using the `reraise` context manager in a function, you can also wrap the entire function with it via the `reraise.wrap()` method.\nhence, the example\n```python\ndef run():\n    with reraise:\n        assert false\n\nthread(target=run).start()\n```\ncan also be written as\n```python\ndef run():\n    assert false\n\nthread(target=reraise.wrap(run)).start()\n```\nor even\n```python\n@reraise.wrap\ndef run():\n    assert false\n\nthread(target=run).start()\n```\n\n### manual re-raising\n\nby default, the captured exception (if any) is raised at the end of the test case.\nif you want to raise it before then, call `reraise()` in your test case.\nif an exception has been raised within a `with reraise` block by then, `reraise()` will raise it right away:\n\n```python\ndef test_assert(reraise):\n\n    def run():\n        with reraise:\n            assert false\n\n    reraise() # this will not raise anything yet\n\n    t = thread(target=run)\n    t.start()\n    t.join()\n\n    reraise() # this will raise the assertion error\n```\n\nas seen in the example above, `reraise()` can be called multiple times during a test case. whenever an exception has been raised in a `with reraise` block since the last call, it will be raised on the next call.\n\n### multiple exceptions\n\nwhen the `reraise` context manager is used multiple times in a single test case, only the first-raised exception will be re-raised in the end.\nin the below example, both threads raise an exception but only one of these exceptions will be re-raised.\n\n```python\ndef test_assert(reraise):\n\n    def run():\n        with reraise:\n            assert false\n\n    for _ in range(2):\n        thread(target=run).start()\n```\n\n### catching exceptions\n\nby default, the `reraise` context manager does not catch exceptions, so they will not be hidden from the thread in which they are raised.\nif you want to change this, use `reraise(catch=true)` instead of `reraise`:\n\n```python\ndef test_assert(reraise):\n\n    def run():\n        with reraise(catch=true):\n            assert false\n        print(\"i'm alive!\")\n\n    thread(target=run).start()\n```\n\nnote that you cannot use `reraise()` (without the `catch` argument) as a context manager, as it is used to raise exceptions.\n\n### exception priority\n\nif `reraise` captures an exception and the main thread raises an exception as well, the exception captured by `reraise` will mask the main thread's exception unless that exception was already re-raised.\nthe objective behind this is that the outcome of the main thread often depends on the work performed in other threads.\nthus, failures in in other threads are likely to cause failures in the main thread, and other threads' exceptions (if any) are of greater importance for the developer than main thread exceptions.\n\nthe example below will report `assert false`, not `assert \"foo\" == \"bar\"`.\n\n```python\ndef test_assert(reraise):\n\n    def run():\n        with reraise:\n            assert false # this will be reported\n\n    t = thread(target=run)\n    t.start()\n    t.join()\n\n    assert \"foo\" == \"bar\" # this won't\n```\n\n### accessing and modifying exceptions\n\n`reraise` provides an `exception` property to retrieve the exception that was captured, if any.\n`reraise.exception` can also be used to assign an exception if no exception has been captured yet.\nin addition to that, `reraise.reset()` returns the value of `reraise.exception` and resets it to `none` so that the exception will not be raised anymore.\n\nhere's a quick demonstration test case that passes:\n\n```python\ndef test_assert(reraise):\n\n    def run():\n        with reraise:\n            assert false\n\n    t = thread(target=run)\n    t.start()\n    t.join()\n\n    # return the captured exception:\n    assert type(reraise.exception) is assertionerror\n\n    # this won't do anything, since an exception has already been captured:\n    reraise.exception = exception()\n\n    # return the exception and set `reraise.exception` to none:\n    assert type(reraise.reset()) is assertionerror\n\n    # `reraise` will not fail the test case because\n    assert reraise.exception is none\n```\n",
+  "docs_url": null,
+  "keywords": "pytest,plugin,threads,exception,assert,catch,raise,re-raise",
+  "license": "mit",
+  "name": "pytest-reraise",
+  "package_url": "https://pypi.org/project/pytest-reraise/",
+  "project_url": "https://pypi.org/project/pytest-reraise/",
+  "project_urls": {
+    "Documentation": "https://github.com/bjoluc/pytest-reraise#readme",
+    "Homepage": "https://github.com/bjoluc/pytest-reraise",
+    "Repository": "https://github.com/bjoluc/pytest-reraise"
+  },
+  "release_url": "https://pypi.org/project/pytest-reraise/2.1.2/",
+  "requires_dist": [
+    "pytest (>=4.6)"
+  ],
+  "requires_python": ">=3.6.1,<4.0.0",
+  "summary": "make multi-threaded pytest test cases fail when they should",
+  "version": "2.1.2",
+  "releases": [],
+  "developers": [
+    "bjoluc",
+    "mail@bjoluc.de"
+  ],
+  "kwds": "pytest reraise pyversions pypi assert",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_pytest_reraise",
+  "homepage": "https://github.com/bjoluc/pytest-reraise",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_pytest"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: django :: 3.2",
+    "framework :: django :: 4.0",
+    "framework :: django :: 4.1",
+    "framework :: django :: 4.2",
+    "framework :: django :: 5.0",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "natural language :: english",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "typing :: typed"
+  ],
+  "description": "===========\ndjango-rich\n===========\n\n.. image:: https://img.shields.io/github/actions/workflow/status/adamchainz/django-rich/main.yml?branch=main&style=for-the-badge\n   :target: https://github.com/adamchainz/django-rich/actions?workflow=ci\n\n.. image:: https://img.shields.io/badge/coverage-100%25-success?style=for-the-badge\n  :target: https://github.com/adamchainz/django-rich/actions?workflow=ci\n\n.. image:: https://img.shields.io/pypi/v/django-rich.svg?style=for-the-badge\n   :target: https://pypi.org/project/django-rich/\n\n.. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge\n   :target: https://github.com/psf/black\n\n.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logocolor=white&style=for-the-badge\n   :target: https://github.com/pre-commit/pre-commit\n   :alt: pre-commit\n\nextensions for using `rich <https://rich.readthedocs.io/>`__ with django.\n\nrequirements\n------------\n\npython 3.8 to 3.12 supported.\n\ndjango 3.2 to 5.0 supported.\n\n----\n\n**want to work smarter and faster?**\ncheck out my book `boost your django dx <https://adamchainz.gumroad.com/l/byddx>`__ which covers many ways to improve your development experience.\ni wrote django-rich whilst working on the book!\n\n----\n\ninstallation\n------------\n\n1. install with **pip**:\n\n   .. code-block:: sh\n\n       python -m pip install django-rich\n\nnone of django-rich\u2019s features are activated by default.\nfollow the documentation below to use them.\n\nreference\n---------\n\n``django_rich.management.richcommand``\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\na subclass of django\u2019s |basecommand|__ class that sets its ``self.console`` to a rich |console|__.\nthe ``console`` uses the command\u2019s ``stdout`` argument, which defaults to ``sys.stdout``.\ncolourization is enabled or disabled according to django\u2019s ``--no-color`` and ``--force-color`` flags.\n\n.. |basecommand| replace:: ``basecommand``\n__ https://docs.djangoproject.com/en/stable/howto/custom-management-commands/#django.core.management.basecommand\n\n.. |console| replace:: ``console``\n__ https://rich.readthedocs.io/en/stable/console.html\n\nyou can use ``self.console`` like so:\n\n.. code-block:: python\n\n    from django_rich.management import richcommand\n\n\n    class command(richcommand):\n        def handle(self, *args, **options):\n            self.console.print(\"[bold red]alert![/bold red]\")\n\nyou can customize the construction of the ``console`` by overriding the ``make_rich_console`` class attribute.\nthis should be a callable that returns a ``console``, such as a |functools.partial|__.\nfor example, to disable the default-on ``markup`` and ``highlighting`` flags:\n\n.. |functools.partial| replace:: ``functools.partial``\n__ https://docs.python.org/3/library/functools.html#functools.partial\n\n.. code-block:: python\n\n    from functools import partial\n\n    from django_rich.management import richcommand\n    from rich.console import console\n\n\n    class command(richcommand):\n        make_rich_console = partial(console, markup=false, highlight=false)\n\n        def handle(self, *args, **options):\n            ...\n\n``django_rich.test.richrunner``\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\na subclass of django's |discoverrunner|__ with colourized outputs and `nice traceback rendering <https://rich.readthedocs.io/en/stable/traceback.html>`__.\n\n.. image:: https://raw.githubusercontent.com/adamchainz/django-rich/main/img/richrunner.png\n\n.. |discoverrunner| replace:: ``discoverrunner``\n__ https://docs.djangoproject.com/en/stable/topics/testing/advanced/#defining-a-test-runner\n\nto use this class, point your |test_runner|__ setting to it:\n\n.. |test_runner| replace:: ``test_runner``\n__ https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-test_runner\n\n.. code-block:: python\n\n    test_runner = \"django_rich.test.richrunner\"\n\nyou can also use it as a base for further customization.\nsince only output is modified, it should combine well with other classes.\n\nthe test runner provides the following features:\n\n* output is colourized wherever possible.\n  this includes rich\u2019s default `highlighting <https://rich.readthedocs.io/en/stable/highlighting.html>`__ which will format numbers, quoted strings, url\u2019s, and more.\n\n* failures and errors use rich\u2019s `traceback rendering <https://rich.readthedocs.io/en/stable/traceback.html>`__.\n  this displays the source code and local values per frame.\n  each frame also shows the filename and line number, and on many terminals you can click the link to jump to the file at that position.\n\n* output is also colourized when using the ``--debug-sql`` and ``--pdb`` flags.\n\n* all other flags from django's discoverrunner continue to work in the normal way.\n\noutput width on ci\n~~~~~~~~~~~~~~~~~~\n\nwhen tests run on your ci system, you might find the output a bit narrow for showing tracebacks correctly.\nthis is because rich tries to autodetect the terminal dimensions, and if that fails, it will default to 80 characters wide.\nyou can override this default with the ``columns`` environment variable (as per python\u2019s |shutil.get_terminal_size() function|__):\n\n.. |shutil.get_terminal_size() function| replace:: ``shutil.get_terminal_size()`` function\n__ https://docs.python.org/3/library/shutil.html#shutil.get_terminal_size\n\n.. code-block:: console\n\n    $ columns=120 ./manage.py test\n",
+  "docs_url": null,
+  "keywords": "django",
+  "license": "mit",
+  "name": "django-rich",
+  "package_url": "https://pypi.org/project/django-rich/",
+  "project_url": "https://pypi.org/project/django-rich/",
+  "project_urls": {
+    "Changelog": "https://github.com/adamchainz/django-rich/blob/main/CHANGELOG.rst",
+    "Homepage": "https://github.com/adamchainz/django-rich",
+    "Mastodon": "https://fosstodon.org/@adamchainz",
+    "Twitter": "https://twitter.com/adamchainz"
+  },
+  "release_url": "https://pypi.org/project/django-rich/1.8.0/",
+  "requires_dist": [
+    "Django >=3.2",
+    "rich >=10.0.0"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "extensions for using rich with django.",
+  "version": "1.8.0",
+  "releases": [],
+  "developers": [
+    "adam_johnson",
+    "me@adamj.eu"
+  ],
+  "kwds": "django_rich badge django djangoproject highlight",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_django_rich",
+  "homepage": "https://github.com/adamchainz/django-rich",
+  "release_count": 9,
+  "dependency_ids": [
+    "pypi_django",
+    "pypi_rich"
+  ]
+}

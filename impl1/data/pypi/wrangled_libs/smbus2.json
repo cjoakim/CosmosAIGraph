@@ -1,0 +1,55 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "license :: osi approved :: mit license",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.4",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: utilities"
+  ],
+  "description": "# smbus2\na drop-in replacement for smbus-cffi/smbus-python in pure python\n\n[![build status](https://github.com/kplindegaard/smbus2/actions/workflows/python-build-test.yml/badge.svg?branch=master)](https://github.com/kplindegaard/smbus2/actions/workflows/python-build-test.yml)\n[![documentation status](https://readthedocs.org/projects/smbus2/badge/?version=latest)](http://smbus2.readthedocs.io/en/latest/?badge=latest)\n![codeql](https://github.com/kplindegaard/smbus2/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)\n[![quality gate status](https://sonarcloud.io/api/project_badges/measure?project=kplindegaard_smbus2&metric=alert_status)](https://sonarcloud.io/dashboard?id=kplindegaard_smbus2)\n\n![python verions](https://img.shields.io/pypi/pyversions/smbus2.svg)\n[![pypi version](https://img.shields.io/pypi/v/smbus2.svg)](https://pypi.org/project/smbus2/)\n[![pypi - downloads](https://img.shields.io/pypi/dm/smbus2)](https://pypi.org/project/smbus2/)\n\n# introduction\n\nsmbus2 is (yet another) pure python implementation of the [python-smbus](http://www.lm-sensors.org/browser/i2c-tools/trunk/py-smbus/) package.\n\nit was designed from the ground up with two goals in mind:\n\n1. it should be a drop-in replacement of smbus. the syntax shall be the same.\n2. use the inherent i2c structs and unions to a greater extent than other pure python implementations like [pysmbus](https://github.com/bjornt/pysmbus) does. by doing so, it will be more feature complete and easier to extend.\n\ncurrently supported features are:\n\n* get i2c capabilities (i2c_funcs)\n* smbus packet error checking (pec) support\n* read_byte\n* write_byte\n* read_byte_data\n* write_byte_data\n* read_word_data\n* write_word_data\n* read_i2c_block_data\n* write_i2c_block_data\n* write_quick\n* process_call\n* read_block_data\n* write_block_data\n* block_process_call\n* i2c_rdwr - *combined write/read transactions with repeated start*\n\nit is developed on python 2.7 but works without any modifications in python 3.x too.\n\nmore information about updates and general changes are recorded in the [change log](https://github.com/kplindegaard/smbus2/blob/master/changelog.md).\n\n# smbus code examples\n\nsmbus2 installs next to smbus as the package, so it's not really a 100% replacement. you must change the module name.\n\n## example 1a: read a byte\n\n```python\nfrom smbus2 import smbus\n\n# open i2c bus 1 and read one byte from address 80, offset 0\nbus = smbus(1)\nb = bus.read_byte_data(80, 0)\nprint(b)\nbus.close()\n```\n\n## example 1b: read a byte using 'with'\n\nthis is the very same example but safer to use since the smbus will be closed automatically when exiting the with block.\n\n```python\nfrom smbus2 import smbus\n\nwith smbus(1) as bus:\n    b = bus.read_byte_data(80, 0)\n    print(b)\n```\n\n## example 1c: read a byte with pec enabled\n\nsame example with packet error checking enabled.\n\n```python\nfrom smbus2 import smbus\n\nwith smbus(1) as bus:\n    bus.pec = 1  # enable pec\n    b = bus.read_byte_data(80, 0)\n    print(b)\n```\n\n## example 2: read a block of data\n\nyou can read up to 32 bytes at once.\n\n```python\nfrom smbus2 import smbus\n\nwith smbus(1) as bus:\n    # read a block of 16 bytes from address 80, offset 0\n    block = bus.read_i2c_block_data(80, 0, 16)\n    # returned value is a list of 16 bytes\n    print(block)\n```\n\n## example 3: write a byte\n\n```python\nfrom smbus2 import smbus\n\nwith smbus(1) as bus:\n    # write a byte to address 80, offset 0\n    data = 45\n    bus.write_byte_data(80, 0, data)\n```\n\n## example 4: write a block of data\n\nit is possible to write 32 bytes at the time, but i have found that error-prone. write less and add a delay in between if you run into trouble.\n\n```python\nfrom smbus2 import smbus\n\nwith smbus(1) as bus:\n    # write a block of 8 bytes to address 80 from offset 0\n    data = [1, 2, 3, 4, 5, 6, 7, 8]\n    bus.write_i2c_block_data(80, 0, data)\n```\n\n# i2c\n\nstarting with v0.2, the smbus2 library also has support for combined read and write transactions. *i2c_rdwr* is not really a smbus feature but comes in handy when the master needs to:\n\n1. read or write bulks of data larger than smbus' 32 bytes limit.\n1. write some data and then read from the slave with a repeated start and no stop bit between.\n\neach operation is represented by a *i2c_msg* message object.\n\n\n## example 5: single i2c_rdwr\n\n```python\nfrom smbus2 import smbus, i2c_msg\n\nwith smbus(1) as bus:\n    # read 64 bytes from address 80\n    msg = i2c_msg.read(80, 64)\n    bus.i2c_rdwr(msg)\n    \n    # write a single byte to address 80\n    msg = i2c_msg.write(80, [65])\n    bus.i2c_rdwr(msg)\n    \n    # write some bytes to address 80\n    msg = i2c_msg.write(80, [65, 66, 67, 68])\n    bus.i2c_rdwr(msg)\n```\n\n## example 6: dual i2c_rdwr\n\nto perform dual operations just add more i2c_msg instances to the bus call:\n\n```python\nfrom smbus2 import smbus, i2c_msg\n\n# single transaction writing two bytes then read two at address 80\nwrite = i2c_msg.write(80, [40, 50])\nread = i2c_msg.read(80, 2)\nwith smbus(1) as bus:\n    bus.i2c_rdwr(write, read)\n```\n\n## example 7: access i2c_msg data\n\nall data is contained in the i2c_msg instances. here are some data access alternatives.\n\n```python\n# 1: convert message content to list\nmsg = i2c_msg.write(60, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\ndata = list(msg)  # data = [1, 2, 3, ...]\nprint(len(data))  # => 10\n\n# 2: i2c_msg is iterable\nfor value in msg:\n    print(value)\n\n# 3: through i2c_msg properties\nfor k in range(msg.len):\n    print(msg.buf[k])\n```\n\n# installation instructions\n\nfrom [pypi](https://pypi.org/) with `pip`:\n\n```\npip install smbus2\n```\n\nfrom [conda-forge](https://anaconda.org/conda-forge) using `conda`:\n\n```\nconda install -c conda-forge smbus2\n```\n\ninstallation from source code is straight forward:\n\n```\npython setup.py install\n```\n",
+  "docs_url": null,
+  "keywords": "smbus,smbus2,python,i2c,raspberrypi,linux",
+  "license": "mit",
+  "name": "smbus2",
+  "package_url": "https://pypi.org/project/smbus2/",
+  "project_url": "https://pypi.org/project/smbus2/",
+  "project_urls": {
+    "Homepage": "https://github.com/kplindegaard/smbus2"
+  },
+  "release_url": "https://pypi.org/project/smbus2/0.4.3/",
+  "requires_dist": [
+    "sphinx >=1.5.3 ; extra == 'docs'",
+    "flake8 ; extra == 'qa'",
+    "nose ; extra == 'test'",
+    "mock ; (python_version < \"3.3\") and extra == 'test'"
+  ],
+  "requires_python": "",
+  "summary": "smbus2 is a drop-in replacement for smbus-cffi/smbus-python in pure python",
+  "version": "0.4.3",
+  "releases": [],
+  "developers": [
+    "karl",
+    "kp.lindegaard@gmail.com"
+  ],
+  "kwds": "smbus smbus2 badge project_badges pysmbus",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_smbus2",
+  "homepage": "https://github.com/kplindegaard/smbus2",
+  "release_count": 15,
+  "dependency_ids": [
+    "pypi_flake8",
+    "pypi_mock",
+    "pypi_nose",
+    "pypi_sphinx"
+  ]
+}

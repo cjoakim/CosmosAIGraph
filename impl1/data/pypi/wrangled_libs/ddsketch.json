@@ -1,0 +1,45 @@
+{
+  "classifiers": [
+    "license :: osi approved :: apache software license",
+    "programming language :: python :: 3"
+  ],
+  "description": "# ddsketch\n\nthis repo contains the python implementation of the distributed quantile sketch\nalgorithm ddsketch [1]. ddsketch has relative-error guarantees for any quantile\nq in [0, 1]. that is if the true value of the qth-quantile is `x` then ddsketch\nreturns a value `y` such that `|x-y| / x < e` where `e` is the relative error\nparameter. (the default here is set to 0.01.)  ddsketch is also fully mergeable,\nmeaning that multiple sketches from distributed systems can be combined in a\ncentral node.\n\nour default implementation, `ddsketch`, is guaranteed [1] to not grow too large\nin size for any data that can be described by a distribution whose tails are\nsub-exponential.\n\nwe also provide implementations (`logcollapsinglowestdenseddsketch` and\n`logcollapsinghighestdenseddsketch`) where the q-quantile will be accurate up to\nthe specified relative error for q that is not too small (or large). concretely,\nthe q-quantile will be accurate up to the specified relative error as long as it\nbelongs to one of the `m` bins kept by the sketch.  if the data is time in\nseconds, the default of `m = 2048` covers 80 microseconds to 1 year.\n\n## installation\n\nto install this package, run `pip install ddsketch`, or clone the repo and run\n`python setup.py install`. this package depends on `numpy` and `protobuf`. (the\nprotobuf dependency can be removed if it's not applicable.)\n\n## usage\n```\nfrom ddsketch import ddsketch\n\nsketch = ddsketch()\n```\nadd values to the sketch\n```\nimport numpy as np\n\nvalues = np.random.normal(size=500)\nfor v in values:\n  sketch.add(v)\n```\nfind the quantiles of `values` to within the relative error.\n```\nquantiles = [sketch.get_quantile_value(q) for q in [0.5, 0.75, 0.9, 1]]\n```\nmerge another `ddsketch` into `sketch`.\n```\nanother_sketch = ddsketch()\nother_values = np.random.normal(size=500)\nfor v in other_values:\n  another_sketch.add(v)\nsketch.merge(another_sketch)\n```\nthe quantiles of `values` concatenated with `other_values` are still accurate to within the relative error.\n\n## development\n\nto work on ddsketch a python interpreter must be installed. it is recommended to use the provided development\ncontainer (requires [docker](https://www.docker.com/)) which includes all the required python interpreters.\n\n    docker-compose run dev\n\nor, if developing outside of docker then it is recommended to use a virtual environment:\n\n    pip install virtualenv\n    virtualenv --python=3 .venv\n    source .venv/bin/activate\n\n\n### testing\n\nto run the tests install `riot`:\n\n    pip install riot\n\nreplace the python version with the interpreter(s) available.\n\n    # run tests with python 3.9\n    riot run -p3.9 test\n\n### release notes\n\nnew features, bug fixes, deprecations and other breaking changes must have\nrelease notes included.\n\nto generate a release note for the change:\n\n    riot run reno new <short-description-of-change-no-spaces>\n\nedit the generated file to include notes on the changes made in the commit/pr\nand add commit it.\n\n\n### formatting\n\nformat code with\n\n    riot run fmt\n\n\n### type-checking\n\ntype checking is done with [mypy](http://mypy-lang.org/):\n\n    riot run mypy\n\n\n### type-checking\n\nlint the code with [flake8](https://flake8.pycqa.org/en/latest/):\n\n    riot run flake8\n\n\n### protobuf\n\nthe protobuf is stored in the go repository: https://github.com/datadog/sketches-go/blob/master/ddsketch/pb/ddsketch.proto\n\ninstall the minimum required protoc and generate the python code:\n\n```sh\ndocker run -v $pwd:/code -it ubuntu:18.04 /bin/bash\napt update && apt install protobuf-compiler  # default is 3.0.0\nprotoc --proto_path=ddsketch/pb/ --python_out=ddsketch/pb/ ddsketch/pb/ddsketch.proto\n```\n\n\n### releasing\n\n1. generate the release notes and use [`pandoc`](https://pandoc.org/) to format\nthem for github:\n```bash\n    git checkout master && git pull\n    riot run -s reno report --no-show-source | pandoc -f rst -t gfm --wrap=none\n```\n   copy the output into a new release: https://github.com/datadog/sketches-py/releases/new.\n\n2. enter a tag for the release (following [`semver`](https://semver.org)) (eg. `v1.1.3`, `v1.0.3`, `v1.2.0`).\n3. use the tag without the `v` as the title.\n4. save the release as a draft and pass the link to someone else to give a quick review.\n5. if all looks good hit publish\n\n\n## references\n[1] charles masson and jee e rim and homin k. lee. ddsketch: a fast and fully-mergeable quantile sketch with relative-error guarantees. pvldb, 12(12): 2195-2205, 2019. (the code referenced in the paper, including our implementation of the the greenwald-khanna (gk) algorithm, can be found at: https://github.com/datadog/sketches-py/releases/tag/v0.1 )\n",
+  "docs_url": null,
+  "keywords": "ddsketch,quantile,sketch",
+  "license": "",
+  "name": "ddsketch",
+  "package_url": "https://pypi.org/project/ddsketch/",
+  "project_url": "https://pypi.org/project/ddsketch/",
+  "project_urls": {
+    "Download": "https://github.com/DataDog/sketches-py/archive/v1.0.tar.gz",
+    "Homepage": "http://github.com/datadog/sketches-py"
+  },
+  "release_url": "https://pypi.org/project/ddsketch/2.0.4/",
+  "requires_dist": [
+    "six",
+    "typing ; python_version < \"3.5\"",
+    "protobuf (<4.21.0,>=3.0.0) ; python_version < \"3.7\"",
+    "protobuf (>=3.0.0) ; python_version >= \"3.7\""
+  ],
+  "requires_python": ">=2.7",
+  "summary": "distributed quantile sketches",
+  "version": "2.0.4",
+  "releases": [],
+  "developers": [
+    "charles.masson@datadoghq.com",
+    "homin@datadoghq.com",
+    "jee.rim@datadoghq.com",
+    "jee_rim"
+  ],
+  "kwds": "quantile quantiles get_quantile_value logcollapsinghighestdenseddsketch implementations",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_ddsketch",
+  "homepage": "http://github.com/datadog/sketches-py",
+  "release_count": 8,
+  "dependency_ids": [
+    "pypi_protobuf",
+    "pypi_six",
+    "pypi_typing"
+  ]
+}

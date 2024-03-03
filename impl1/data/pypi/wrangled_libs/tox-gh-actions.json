@@ -1,0 +1,71 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "framework :: tox",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3 :: only",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "programming language :: python :: implementation :: cpython",
+    "programming language :: python :: implementation :: pypy",
+    "topic :: software development :: libraries",
+    "topic :: software development :: testing",
+    "topic :: utilities",
+    "typing :: typed"
+  ],
+  "description": "# tox-gh-actions <!-- omit in toc -->\n\n[![pypi version](https://badge.fury.io/py/tox-gh-actions.svg)](https://badge.fury.io/py/tox-gh-actions)\n[![pypi supported python versions](https://img.shields.io/pypi/pyversions/tox-gh-actions.svg)](https://pypi.python.org/pypi/tox-gh-actions/)\n[![github actions (tests)](https://github.com/ymyzk/tox-gh-actions/actions/workflows/tests.yml/badge.svg)](https://github.com/ymyzk/tox-gh-actions/actions/workflows/tests.yml)\n[![codecov](https://codecov.io/gh/ymyzk/tox-gh-actions/branch/master/graph/badge.svg?token=7rwjrk2lkx)](https://codecov.io/gh/ymyzk/tox-gh-actions)\n\n**tox-gh-actions** is a tox plugin which helps running tox on github actions\nwith multiple different python versions on multiple workers in parallel.\nthis project is inspired by [tox-travis](https://github.com/tox-dev/tox-travis).\n\n## versions and compatibility\ncurrently, tox-gh-actions supports both tox 3 and 4, but users need to install the appropriate version by following the table below.\n\n| tox | tox-gh-actions | supported by tox-gh-actions | branch                                                    |\n|-----|----------------|-----------------------------|-----------------------------------------------------------|\n| 4.x | 3.x            | yes (stable)                | [master](https://github.com/ymyzk/tox-gh-actions)         |\n| 3.x | 2.x            | yes (stable)                | [tox3](https://github.com/ymyzk/tox-gh-actions/tree/tox3) |\n\n- [features](#features)\n- [usage](#usage)\n- [examples](#examples)\n  - [basic example](#basic-example)\n    - [tox-gh-actions configuration](#tox-gh-actions-configuration)\n    - [workflow configuration](#workflow-configuration)\n  - [advanced examples](#advanced-examples)\n    - [factor-conditional settings: python version](#factor-conditional-settings-python-version)\n    - [factor-conditional settings: environment variable](#factor-conditional-settings-environment-variable)\n  - [overriding environments to run](#overriding-environments-to-run)\n- [versioning](#versioning)\n- [understanding behavior of tox-gh-actions](#understanding-behavior-of-tox-gh-actions)\n  - [how tox-gh-actions works](#how-tox-gh-actions-works)\n  - [logging](#logging)\n\n## features\nwhen running tox on github actions, tox-gh-actions\n* detects which environment to run based on configurations and\n* provides utilities such as [grouping log lines](https://github.com/actions/toolkit/blob/main/docs/commands.md#group-and-ungroup-log-lines).\n\n## usage\n1. add configurations under `[gh-actions]` section along with tox's configuration.\n   - it will be `pyproject.toml`, `tox.ini`, or `setup.cfg`. see [tox's documentation](https://tox.wiki/en/latest/config.html) for more details.\n\n2. install `tox-gh-actions` package in the github actions workflow before running `tox` command.\n\n## examples\n### basic example\nthe following configuration will create 4 jobs when running the workflow on github actions.\n- on python 3.7 job, tox runs `py37` environment\n- on python 3.8 job, tox runs `py38` environment\n- on python 3.9 job, tox runs `py39` environment\n- on python 3.10 job, tox runs `py310` and `mypy` environments\n\n#### tox-gh-actions configuration\nadd `[gh-actions]` section to the same file as tox's configuration.\n\nif you're using `tox.ini`:\n```ini\n[tox]\nenvlist = py37, py38, py39, py310, mypy\n\n[gh-actions]\npython =\n    3.7: py37\n    3.8: py38\n    3.9: py39\n    3.10: py310, mypy\n\n[testenv]\n...\n```\n\nif you're using `setup.cfg`:\n```ini\n[tox:tox]\nenvlist = py37, py38, py39, py310, mypy\n\n[gh-actions]\npython =\n    3.7: py37\n    3.8: py38\n    3.9: py39\n    3.10: py310, mypy\n\n[testenv]\n...\n```\n\nif you're using `pyproject.toml`:\n```toml\n[tool.tox]\nlegacy_tox_ini = \"\"\"\n[tox]\nenvlist = py37, py38, py39, py310, mypy\n\n[gh-actions]\npython =\n    3.7: py37\n    3.8: py38\n    3.9: py39\n    3.10: py310, mypy\n\n[testenv]\n\"\"\"\n```\n\n#### workflow configuration\n`.github/workflows/<workflow>.yml`:\n```yaml\nname: python package\n\non:\n  - push\n  - pull_request\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        python-version: ['3.7', '3.8', '3.9', '3.10']\n\n    steps:\n    - uses: actions/checkout@v3\n    - name: set up python ${{ matrix.python-version }}\n      uses: actions/setup-python@v4\n      with:\n        python-version: ${{ matrix.python-version }}\n    - name: install dependencies\n      run: |\n        python -m pip install --upgrade pip\n        python -m pip install tox tox-gh-actions\n    - name: test with tox\n      run: tox\n```\n\n### advanced examples\n#### factor-conditional settings: python version\nthe following configuration will create 2 jobs when running the workflow on github actions.\n- on python 3.7 job, tox runs `py37-django22` and `py37-django32` environments\n- on python 3.8 job, tox runs `py38-django32` environment\n\n`tox.ini`:\n```ini\n[tox]\nenvlist = py37-django{22,32}, py38-django32\n\n[gh-actions]\npython =\n    3.7: py37\n    3.8: py38\n\n[testenv]\n...\n```\n\nwhen using pre-release versions of python, please do not specify `-beta` or `-dev` in `tox.ini`.\n\n`.github/workflows/<workflow>.yml`:\n```yaml\n...\njobs:\n  build:\n    strategy:\n      matrix:\n        python-version: [3.9, 3.10.0-beta.3]\n...\n```\n\n`tox.ini`:\n```ini\n[tox]\nenvlist = py39, py310\n\n[gh-actions]\npython =\n    3.9: py39\n    3.10: py310\n    # the following won't work\n    # 3.10-beta.3: py310\n    # 3.10-dev: py310\n\n[testenv]\n...\n```\n\npypy is also supported in the `python` configuration key.\nsupport of pyston is experimental and not tested by our ci.\n\n `tox.ini`:\n```ini\n[tox]\nenvlist = py37, py38, pypy3, pyston38\n\n[gh-actions]\npython =\n    3.7: py37\n    3.8: py38, mypy\n    pypy-3.7: pypy3\n    pyston-3.8: pyston38\n\n[testenv]\n...\n\n[testenv:pyston38]\nbasepython = pyston38\n```\n\nyou can also specify without minor versions in the `python` configuration key.\n\n`tox.ini`:\n```ini\n[tox]\nenvlist = py3, pypy3\n\n[gh-actions]\npython =\n    3: py3, mypy\n    pypy-3: pypy3\n\n[testenv]\n...\n```\n\nif there are multiple matching python versions in the configuration, only the most precise one is used.\nfor example, if you are running cpython 3.8 and `gh-actions.python` has both `3` and `3.8`,\ntox-gh-actions gets factors only from the key `3.8`.\n\n_changed in 3.0_: `pypy3` is not supported in the configuration anymore. please use `pypy-3` instead.\n\n#### factor-conditional settings: environment variable\nyou can also use environment variable to decide which environment to run.\nthe following is an example to install different dependency based on platform.\nit will create 9 jobs when running the workflow on github actions.\n- on python 3.8/ubuntu-latest job, tox runs `py38-linux` environment\n- on python 3.9/ubuntu-latest job, tox runs `py39-linux` environment\n- and so on.\n\n`.github/workflows/<workflow>.yml`:\n```yaml\nname: python package\n\non:\n  - push\n  - pull_request\n\njobs:\n  build:\n    runs-on: ${{ matrix.platform }}\n    strategy:\n      matrix:\n        platform: [ubuntu-latest, macos-latest, windows-latest]\n        python-version: ['3.8', '3.9', '3.10']\n\n    steps:\n    - uses: actions/checkout@v3\n    - name: set up python ${{ matrix.python-version }}\n      uses: actions/setup-python@v4\n      with:\n        python-version: ${{ matrix.python-version }}\n    - name: install dependencies\n      run: |\n        python -m pip install --upgrade pip\n        python -m pip install tox tox-gh-actions\n    - name: test with tox\n      run: tox\n      env:\n        platform: ${{ matrix.platform }}\n```\n\n`tox.ini`:\n```ini\n[tox]\nenvlist = py{38,39,310}-{linux,macos,windows}\n\n[gh-actions]\npython =\n    3.8: py38\n    3.9: py39\n    3.10: py310\n\n[gh-actions:env]\nplatform =\n    ubuntu-latest: linux\n    macos-latest: macos\n    windows-latest: windows\n\n[testenv]\ndeps =\n  <common dependency>\n  linux: <linux specific deps>\n  macos: <macos specific deps>\n  windows: <windows specific deps>\n...\n```\n\n_changed in 3.0_: environment variables should not use lowercase letters.\nbecause of the limitation in tox's configuration loading api,\ntox-gh-actions always convert keys in `[gh-actions:env]` to uppercase.\n\n### overriding environments to run\n_changed in 2.0_: when a list of environments to run is specified explicitly via `-e` option or `toxenv` environment variable ([tox's help](https://tox.wiki/en/latest/cli_interface.html#tox-run--e)),\ntox-gh-actions respects the given environments and simply runs the given environments without enforcing its configuration.\n\nbefore 2.0, tox-gh-actions was always enforcing its configuration even when a list of environments is given explicitly.\n\n## versioning\nthis project follows [pep 440](https://www.python.org/dev/peps/pep-0440/) and uses a format of major.minor.patch (x.y.z).\nthe major version (x) will be incremented when we make backward incompatible changes to a public api.\nthe public api of this project is the configuration of tox-gh-actions.\nthe major version can be also incremented when we require a new version of tox.\n\nthis project tries not to introduce backward incompatibles changes as much as possible so that users don't need to\nupdate their project's configuration too frequently.\n\ntox-gh-actions 3.x may drop support of unsupported python 3.y versions in the future without bumping its major version.\n\n## understanding behavior of tox-gh-actions\n### how tox-gh-actions works\nsee [architecture.md](./architecture.md) for more details.\n\n### logging\ntox-gh-actions writes log messages using the standard `logging` module.\nthis is handy for understanding behavior of tox-gh-actions and for debugging tox-gh-actions.\nto see the log messages, please run `tox -vv`.\n",
+  "docs_url": null,
+  "keywords": "virtual,environments,isolated,testing",
+  "license": "mit",
+  "name": "tox-gh-actions",
+  "package_url": "https://pypi.org/project/tox-gh-actions/",
+  "project_url": "https://pypi.org/project/tox-gh-actions/",
+  "project_urls": {
+    "Homepage": "https://github.com/ymyzk/tox-gh-actions",
+    "Source": "https://github.com/ymyzk/tox-gh-actions",
+    "Tracker": "https://github.com/ymyzk/tox-gh-actions/issues"
+  },
+  "release_url": "https://pypi.org/project/tox-gh-actions/3.1.3/",
+  "requires_dist": [
+    "tox (<5,>=4)",
+    "devpi-process ; extra == 'testing'",
+    "pytest (<8,>=7) ; extra == 'testing'",
+    "pytest-cov (<4,>=3) ; extra == 'testing'",
+    "pytest-mock (<4,>=3) ; extra == 'testing'",
+    "pytest-randomly (>=3) ; extra == 'testing'",
+    "black ; (platform_python_implementation == \"CPython\") and extra == 'testing'",
+    "mypy ; (platform_python_implementation == \"CPython\") and extra == 'testing'",
+    "flake8 (<7,>=6) ; (python_version >= \"3.8\") and extra == 'testing'"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "seamless integration of tox into github actions",
+  "version": "3.1.3",
+  "releases": [],
+  "developers": [
+    "miyazaki.dev@gmail.com",
+    "yusuke_miyazaki"
+  ],
+  "kwds": "legacy_tox_ini tox3 pyversions tox toxenv",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_tox_gh_actions",
+  "homepage": "https://github.com/ymyzk/tox-gh-actions",
+  "release_count": 30,
+  "dependency_ids": [
+    "pypi_black",
+    "pypi_devpi_process",
+    "pypi_flake8",
+    "pypi_mypy",
+    "pypi_pytest",
+    "pypi_pytest_cov",
+    "pypi_pytest_mock",
+    "pypi_pytest_randomly",
+    "pypi_tox"
+  ]
+}

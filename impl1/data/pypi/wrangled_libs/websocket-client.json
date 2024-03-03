@@ -1,0 +1,62 @@
+{
+  "classifiers": [
+    "development status :: 4 - beta",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: macos :: macos x",
+    "operating system :: microsoft :: windows",
+    "operating system :: posix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: internet",
+    "topic :: software development :: libraries :: python modules"
+  ],
+  "description": "[![docs](https://readthedocs.org/projects/websocket-client/badge/?style=flat)](https://websocket-client.readthedocs.io/)\n[![build status](https://github.com/websocket-client/websocket-client/actions/workflows/build.yml/badge.svg)](https://github.com/websocket-client/websocket-client/actions/workflows/build.yml)\n[![codecov](https://codecov.io/gh/websocket-client/websocket-client/branch/master/graph/badge.svg?token=pcxhuqwil3)](https://codecov.io/gh/websocket-client/websocket-client)\n[![pypi downloads](https://pepy.tech/badge/websocket-client)](https://pepy.tech/project/websocket-client)\n[![pypi version](https://img.shields.io/pypi/v/websocket_client)](https://pypi.org/project/websocket_client/)\n[![license](https://img.shields.io/badge/license-apache_2.0-blue.svg)](https://opensource.org/licenses/apache-2.0)\n[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)\n\n# websocket-client\n\nwebsocket-client is a websocket client for python. it provides access\nto low level apis for websockets. websocket-client implements version\n[hybi-13](https://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-13)\nof the websocket protocol. this client does not currently support the\npermessage-deflate extension from\n[rfc 7692](https://tools.ietf.org/html/rfc7692).\n\n## documentation\n\nthis project's documentation can be found at\n[https://websocket-client.readthedocs.io/](https://websocket-client.readthedocs.io/)\n\n## contributing\n\nplease see the [contribution guidelines](https://github.com/websocket-client/websocket-client/blob/master/contributing.md)\n\n## installation\n\nyou can use either `python3 setup.py install` or `pip3 install websocket-client`\nto install. this module is tested on python 3.8+.\n\nthere are several optional dependencies that can be installed to enable\nspecific websocket-client features.\n- to install `python-socks` for proxy usage and `wsaccel` for a minor performance boost, use:\n `pip3 install websocket-client[optional]`\n- to install `websockets` to run unit tests using the local echo server, use:\n `pip3 install websocket-client[test]`\n- to install `sphinx` and `sphinx_rtd_theme` to build project documentation, use:\n `pip3 install websocket-client[docs]`\n\nwhile not a strict dependency, [rel](https://github.com/bubbleboy14/registeredeventlistener)\nis useful when using `run_forever` with automatic reconnect. install rel with `pip3 install rel`.\n\nfootnote: some shells, such as zsh, require you to escape the `[` and `]` characters with a `\\`.\n\n## usage tips\n\ncheck out the documentation's faq for additional guidelines:\n[https://websocket-client.readthedocs.io/en/latest/faq.html](https://websocket-client.readthedocs.io/en/latest/faq.html)\n\nknown issues with this library include lack of websocket compression\nsupport (rfc 7692) and [minimal threading documentation/support](https://websocket-client.readthedocs.io/en/latest/threading.html).\n\n## performance\n\nthe `send` and `validate_utf8` methods can sometimes be bottleneck.\nyou can disable utf8 validation in this library (and receive a\nperformance enhancement) with the `skip_utf8_validation` parameter.\nif you want to get better performance, install wsaccel. while\nwebsocket-client does not depend on wsaccel, it will be used if\navailable. wsaccel doubles the speed of utf8 validation and\noffers a very minor 10% performance boost when masking the\npayload data as part of the `send` process. numpy used to\nbe a suggested performance enhancement alternative, but\n[issue #687](https://github.com/websocket-client/websocket-client/issues/687)\nfound it didn't help.\n\n## examples\n\nmany more examples are found in the\n[examples documentation](https://websocket-client.readthedocs.io/en/latest/examples.html).\n\n### long-lived connection\n\nmost real-world websockets situations involve longer-lived connections.\nthe websocketapp `run_forever` loop will automatically try to reconnect\nto an open websocket connection when a network\nconnection is lost if it is provided with:\n\n- a `dispatcher` argument (async dispatcher like rel or pyevent)\n- a non-zero `reconnect` argument (delay between disconnection and attempted reconnection)\n\n`run_forever` provides a variety of event-based connection controls\nusing callbacks like `on_message` and `on_error`.\n`run_forever` **does not automatically reconnect** if the server\ncloses the websocket gracefully (returning\n[a standard websocket close code](https://www.rfc-editor.org/rfc/rfc6455.html#section-7.4.1)).\n[this is the logic](https://github.com/websocket-client/websocket-client/pull/838#issuecomment-1228454826) behind the decision.\ncustomizing behavior when the server closes\nthe websocket should be handled in the `on_close` callback.\nthis example uses [rel](https://github.com/bubbleboy14/registeredeventlistener)\nfor the dispatcher to provide automatic reconnection.\n\n```python\nimport websocket\nimport _thread\nimport time\nimport rel\n\ndef on_message(ws, message):\n    print(message)\n\ndef on_error(ws, error):\n    print(error)\n\ndef on_close(ws, close_status_code, close_msg):\n    print(\"### closed ###\")\n\ndef on_open(ws):\n    print(\"opened connection\")\n\nif __name__ == \"__main__\":\n    websocket.enabletrace(true)\n    ws = websocket.websocketapp(\"wss://api.gemini.com/v1/marketdata/btcusd\",\n                              on_open=on_open,\n                              on_message=on_message,\n                              on_error=on_error,\n                              on_close=on_close)\n\n    ws.run_forever(dispatcher=rel, reconnect=5)  # set dispatcher to automatic reconnection, 5 second reconnect delay if connection closed unexpectedly\n    rel.signal(2, rel.abort)  # keyboard interrupt\n    rel.dispatch()\n```\n\n### short-lived connection\n\nthis is if you want to communicate a short message and disconnect\nimmediately when done. for example, if you want to confirm that a websocket\nserver is running and responds properly to a specific request.\n\n```python\nfrom websocket import create_connection\n\nws = create_connection(\"ws://echo.websocket.events/\")\nprint(ws.recv())\nprint(\"sending 'hello, world'...\")\nws.send(\"hello, world\")\nprint(\"sent\")\nprint(\"receiving...\")\nresult =  ws.recv()\nprint(\"received '%s'\" % result)\nws.close()\n```\n",
+  "docs_url": null,
+  "keywords": "websockets client",
+  "license": "apache-2.0",
+  "name": "websocket-client",
+  "package_url": "https://pypi.org/project/websocket-client/",
+  "project_url": "https://pypi.org/project/websocket-client/",
+  "project_urls": {
+    "Documentation": "https://websocket-client.readthedocs.io/",
+    "Download": "https://github.com/websocket-client/websocket-client/releases",
+    "Homepage": "https://github.com/websocket-client/websocket-client.git",
+    "Source": "https://github.com/websocket-client/websocket-client/"
+  },
+  "release_url": "https://pypi.org/project/websocket-client/1.7.0/",
+  "requires_dist": [
+    "Sphinx >=6.0 ; extra == 'docs'",
+    "sphinx-rtd-theme >=1.1.0 ; extra == 'docs'",
+    "python-socks ; extra == 'optional'",
+    "wsaccel ; extra == 'optional'",
+    "websockets ; extra == 'test'"
+  ],
+  "requires_python": ">=3.8",
+  "summary": "websocket client for python with low level api options",
+  "version": "1.7.0",
+  "releases": [],
+  "developers": [
+    "engn33r",
+    "liris",
+    "liris.pp@gmail.com",
+    "websocket.client@proton.me"
+  ],
+  "kwds": "websocket_client websocket websocketapp websockets badge",
+  "license_kwds": "apache-2.0",
+  "libtype": "pypi",
+  "id": "pypi_websocket_client",
+  "homepage": "https://github.com/websocket-client/websocket-client.git",
+  "release_count": 86,
+  "dependency_ids": [
+    "pypi_python_socks",
+    "pypi_sphinx",
+    "pypi_sphinx_rtd_theme",
+    "pypi_websockets",
+    "pypi_wsaccel"
+  ]
+}

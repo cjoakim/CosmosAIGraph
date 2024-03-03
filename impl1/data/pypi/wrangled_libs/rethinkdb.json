@@ -1,0 +1,50 @@
+{
+  "classifiers": [
+    "intended audience :: developers",
+    "natural language :: english",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.5",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9"
+  ],
+  "description": "# rethinkdb python driver\n[![pypi version](https://badge.fury.io/py/rethinkdb.svg)](https://badge.fury.io/py/rethinkdb) [![build status](https://travis-ci.org/rethinkdb/rethinkdb-python.svg?branch=master)](https://travis-ci.org/rethinkdb/rethinkdb-python) [![codacy badge](https://api.codacy.com/project/badge/grade/2b5231a6f90a4a1ba2fc795f8466bbe4)](https://www.codacy.com/app/rethinkdb/rethinkdb-python?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=rethinkdb/rethinkdb-python&amp;utm_campaign=badge_grade) [![codacy badge](https://api.codacy.com/project/badge/coverage/2b5231a6f90a4a1ba2fc795f8466bbe4)](https://www.codacy.com/app/rethinkdb/rethinkdb-python?utm_source=github.com&utm_medium=referral&utm_content=rethinkdb/rethinkdb-python&utm_campaign=badge_coverage)\n\n## overview\n\n### what is rethinkdb?\nrethinkdb is the first open-source scalable database built for realtime applications. it exposes a new database access model -- instead of polling for changes, the developer can tell the database to continuously push updated query results to applications in realtime. rethinkdb allows developers to build scalable realtime apps in a fraction of the time with less effort.\n\n## installation\n```bash\n$ pip install rethinkdb\n```\n*note: this package is the extracted driver of rethinkdb's original python driver.*\n\n## quickstart\nthe main difference with the previous driver (except the name of the package) is we are **not** importing rethinkdb as `r`. if you would like to use `rethinkdb`'s python driver as a drop in replacement, you should do the following:\n\n```python\nfrom rethinkdb import r\n\nconnection = r.connect(db='test')\n```\n\n## blocking and non-blocking i/o\nthis driver supports blocking i/o (i.e. standard python sockets) as well as\nnon-blocking i/o through multiple async frameworks:\n\n* [asyncio](https://docs.python.org/3/library/asyncio.html)\n* [gevent](http://www.gevent.org/)\n* [tornado](https://www.tornadoweb.org/en/stable/)\n* [trio](https://trio.readthedocs.io/en/latest/)\n* [twisted](https://twistedmatrix.com/trac/)\n\nthe following examples demonstrate how to use the driver in each mode.\n\n### default mode (blocking i/o)\nthe driver's default mode of operation is to use blocking i/o, i.e. standard python\nsockets. this example shows how to create a table, populate with data, and get every\ndocument.\n\n```python\nfrom rethinkdb import r\n\nconnection = r.connect(db='test')\n\nr.table_create('marvel').run(connection)\n\nmarvel_heroes = r.table('marvel')\nmarvel_heroes.insert({\n    'id': 1,\n    'name': 'iron man',\n    'first_appearance': 'tales of suspense #39'\n}).run(connection)\n\nfor hero in marvel_heroes.run(connection):\n    print(hero['name'])\n```\n\n### asyncio mode\nasyncio mode is compatible with python \u2265 3.5.\n\n```python\nimport asyncio\nfrom rethinkdb import r\n\nasync def main():\n    async with await r.connect(db='test') as connection:\n        await r.table_create('marvel').run(connection)\n\n        marvel_heroes = r.table('marvel')\n        await marvel_heroes.insert({\n            'id': 1,\n            'name': 'iron man',\n            'first_appearance': 'tales of suspense #39'\n        }).run(connection)\n\n        # \"async for\" is supported in python \u2265 3.6. in earlier versions, you should\n        # call \"await cursor.next()\" in a loop.\n        cursor = await marvel_heroes.run(connection)\n        async for hero in cursor:\n            print(hero['name'])\n    # the `with` block performs `await connection.close(noreply_wait=false)`.\n\nr.set_loop_type('asyncio')\n\n# \"asyncio.run\" was added in python 3.7.  in earlier versions, you\n# might try asyncio.get_event_loop().run_until_complete(main()).\nasyncio.run(main())\n```\n\n### gevent mode\n\n```python\nimport gevent\nfrom rethinkdb import r\n\ndef main():\n    r.set_loop_type('gevent')\n    connection = r.connect(db='test')\n\n    r.table_create('marvel').run(connection)\n\n    marvel_heroes = r.table('marvel')\n    marvel_heroes.insert({\n        'id': 1,\n        'name': 'iron man',\n        'first_appearance': 'tales of suspense #39'\n    }).run(connection)\n\n    for hero in marvel_heroes.run(connection):\n        print(hero['name'])\n\ngevent.joinall([gevent.spawn(main)])\n```\n\n### tornado mode\ntornado mode is compatible with tornado < 5.0.0. tornado 5 is not supported.\n\n```python\nfrom rethinkdb import r\nfrom tornado import gen\nfrom tornado.ioloop import ioloop\n\n@gen.coroutine\ndef main():\n    r.set_loop_type('tornado')\n    connection = yield r.connect(db='test')\n\n    yield r.table_create('marvel').run(connection)\n\n    marvel_heroes = r.table('marvel')\n    yield marvel_heroes.insert({\n        'id': 1,\n        'name': 'iron man',\n        'first_appearance': 'tales of suspense #39'\n    }).run(connection)\n\n    cursor = yield marvel_heroes.run(connection)\n    while (yield cursor.fetch_next()):\n        hero = yield cursor.next()\n        print(hero['name'])\n\nioloop.current().run_sync(main)\n```\n\n### trio mode\n\n```python\nfrom rethinkdb import r\nimport trio\n\nasync def main():\n    r.set_loop_type('trio')\n    async with trio.open_nursery() as nursery:\n        async with r.open(db='test', nursery=nursery) as conn:\n            await r.table_create('marvel').run(conn)\n            marvel_heroes = r.table('marvel')\n            await marvel_heroes.insert({\n                'id': 1,\n                'name': 'iron man',\n                'first_appearance': 'tales of suspense #39'\n            }).run(conn)\n\n            # \"async for\" is supported in python \u2265 3.6. in earlier versions, you should\n            # call \"await cursor.next()\" in a loop.\n            cursor = await marvel_heroes.run(conn)\n            async with cursor:\n                async for hero in cursor:\n                    print(hero['name'])\n\ntrio.run(main)\n```\n\nthe trio mode also supports a database connection pool. you can modify the example above\nas follows:\n\n```python\ndb_pool = r.connectionpool(db='test', nursery=nursery)\nasync with db_pool.connection() as conn:\n    ...\nawait db_pool.close()\n```\n\n### twisted mode\n\n```python\nfrom rethinkdb import r\nfrom twisted.internet import reactor, defer\n\n@defer.inlinecallbacks\ndef main():\n    r.set_loop_type('twisted')\n    connection = yield r.connect(db='test')\n\n    yield r.table_create('marvel').run(connection)\n\n    marvel_heroes = r.table('marvel')\n    yield marvel_heroes.insert({\n        'id': 1,\n        'name': 'iron man',\n        'first_appearance': 'tales of suspense #39'\n    }).run(connection)\n\n    cursor = yield marvel_heroes.run(connection)\n    while (yield cursor.fetch_next()):\n        hero = yield cursor.next()\n        print(hero['name'])\n\nmain().addcallback(lambda d: print(\"stopping\") or reactor.stop())\nreactor.run()\n```\n\n## misc\nto help the migration from rethinkdb<2.4 we introduced a shortcut which can easily replace the old `import rethinkdb as r` import with `from rethinkdb import r`.\n\n## run tests\nin the `makefile` you can find three different test commands: `test-unit`, `test-integration` and `test-remote`. as rethinkdb has dropped the support of windows, we would like to ensure that those of us who are using windows for development can still contribute. because of this, we support running integration tests against digital ocean droplets as well.\n\nbefore you run any test, make sure that you install the requirements.\n```bash\n$ pip install -r requirements.txt\n$ make prepare\n```\n\n### running unit tests\n```bash\n$ make test-unit\n```\n\n### running integration tests\n*to run integration tests locally, make sure you intstalled rethinkdb*\n```bash\n$ make test-integration\n```\n\n### running remote integration tests\n*to run the remote tests, you need to have a digital ocean account and an api key.*\n\nremote test will create a new temporary ssh key and a droplet for you until the tests are finished.\n\n**available environment variables**\n\n| variable name | default value |\n|---------------|---------------|\n| do_token      | n/a           |\n| do_size       | 512mb         |\n| do_region     | sfo2          |\n\n```bash\n$ pip install paramiko python-digitalocean\n$ export do_token=<your_token>\n$ make test-remote\n```\n\n## contributing\nhurray! you reached this section which means, that you would like to contribute. please read our contributing guide lines and feel free to open a pull request.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "",
+  "name": "rethinkdb",
+  "package_url": "https://pypi.org/project/rethinkdb/",
+  "project_url": "https://pypi.org/project/rethinkdb/",
+  "project_urls": {
+    "Homepage": "https://github.com/RethinkDB/rethinkdb-python"
+  },
+  "release_url": "https://pypi.org/project/rethinkdb/2.4.10.post1/",
+  "requires_dist": [
+    "six",
+    "looseversion"
+  ],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, >=3.5",
+  "summary": "python driver library for the rethinkdb database server.",
+  "version": "2.4.10.post1",
+  "releases": [],
+  "developers": [
+    "bugs@rethinkdb.com",
+    "rethinkdb"
+  ],
+  "kwds": "rethinkdb badge_grade badge badge_coverage python",
+  "license_kwds": "",
+  "libtype": "pypi",
+  "id": "pypi_rethinkdb",
+  "homepage": "https://github.com/rethinkdb/rethinkdb-python",
+  "release_count": 76,
+  "dependency_ids": [
+    "pypi_looseversion",
+    "pypi_six"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "classifiers": [
+    "development status :: 5 - production/stable",
+    "environment :: console",
+    "intended audience :: developers",
+    "license :: osi approved :: mit license",
+    "operating system :: os independent",
+    "programming language :: python",
+    "programming language :: python :: 2",
+    "programming language :: python :: 2.7",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.6",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: software development",
+    "topic :: software development :: libraries :: python modules",
+    "topic :: software development :: quality assurance",
+    "topic :: utilities"
+  ],
+  "description": "radon\n=====\n\n.. image:: https://img.shields.io/codacy/grade/623b84f5f6e6708c486f371e10da3610.svg?style=for-the-badge\n   :alt: codacy badge\n   :target: https://www.codacy.com/app/rubik/radon/dashboard\n\n.. image:: https://img.shields.io/travis/rubik/radon/master.svg?style=for-the-badge\n    :alt: travis-ci badge\n    :target: https://travis-ci.org/rubik/radon\n\n.. image:: https://img.shields.io/coveralls/rubik/radon/master.svg?style=for-the-badge\n    :alt: coveralls badge\n    :target: https://coveralls.io/r/rubik/radon?branch=master\n\n.. image:: https://img.shields.io/pypi/v/radon.svg?style=for-the-badge\n    :alt: pypi latest version badge\n    :target: https://pypi.python.org/pypi/radon\n\n.. image:: https://img.shields.io/pypi/l/radon.svg?style=for-the-badge\n    :alt: radon license\n    :target: https://pypi.python.org/pypi/radon\n\n\n----\n\nradon is a python tool that computes various metrics from the source code.\nradon can compute:\n\n* **mccabe's complexity**, i.e. cyclomatic complexity\n* **raw** metrics (these include sloc, comment lines, blank lines, &c.)\n* **halstead** metrics (all of them)\n* **maintainability index** (the one used in visual studio)\n\nrequirements\n------------\n\nradon will run from **python 2.7** to **python 3.8** (except python versions\nfrom 3.0 to 3.3) with a single code base and without the need of tools like\n2to3 or six. it can also run on **pypy** without any problems (currently pypy\n3.5 v7.3.1 is used in tests).\n\nradon depends on as few packages as possible. currently only `mando` is\nstrictly required (for the cli interface). `colorama` is also listed as a\ndependency but if radon cannot import it, the output simply will not be\ncolored.\n\n**note**:\n**python 2.6** was supported until version 1.5.0. starting from version 2.0, it\nis not supported anymore.\n\ninstallation\n------------\n\nwith pip:\n\n.. code-block:: sh\n\n    $ pip install radon\n\nif you want to configure radon from `pyproject.toml` and you run python <3.11,\nyou'll need the extra `toml` dependency:\n\n.. code-block:: sh\n\n   $ pip install radon[toml]\n\nor download the source and run the setup file:\n\n.. code-block:: sh\n\n    $ python setup.py install\n\nusage\n-----\n\nradon can be used either from the command line or programmatically.\ndocumentation is at https://radon.readthedocs.org/.\n\ncyclomatic complexity example\n-----------------------------\n\nquick example:\n\n.. code-block:: sh\n\n    $ radon cc sympy/solvers/solvers.py -a -nc\n    sympy/solvers/solvers.py\n        f 346:0 solve - f\n        f 1093:0 _solve - f\n        f 1434:0 _solve_system - f\n        f 2647:0 unrad - f\n        f 110:0 checksol - f\n        f 2238:0 _tsolve - f\n        f 2482:0 _invert - f\n        f 1862:0 solve_linear_system - e\n        f 1781:0 minsolve_linear_system - d\n        f 1636:0 solve_linear - d\n        f 2382:0 nsolve - c\n\n    11 blocks (classes, functions, methods) analyzed.\n    average complexity: f (61.0)\n\nexplanation:\n\n* ``cc`` is the radon command to compute cyclomatic complexity\n* ``-a`` tells radon to calculate the average complexity at the end. note that\n  the average is computed among the *shown* blocks. if you want the total\n  average, among all the blocks, regardless of what is being shown, you should\n  use ``--total-average``.\n* ``-nc`` tells radon to print only results with a complexity rank of c or\n  worse. other examples: ``-na`` (from a to f), or ``-nd`` (from d to f).\n* the letter *in front of* the line numbers represents the type of the block\n  (**f** means function, **m** method and **c** class).\n\nactually it's even better: it's got colors!\n\n.. image:: https://cloud.githubusercontent.com/assets/238549/3707477/5793aeaa-1435-11e4-98fb-00e0bd8137f5.png\n    :alt: a screen of radon's cc command\n\n\n**note about file encoding**\n\non some systems, such as windows, the default encoding is not utf-8. if you are\nusing unicode characters in your python file and want to analyze it with radon,\nyou'll have to set the `radonfilesencoding` environment variable to `utf-8`.\n\n\non a continuous integration server\n----------------------------------\n\nif you are looking to use `radon` on a ci server you may be better off with\n`xenon <https://github.com/rubik/xenon>`_. although still experimental, it will\nfail (that means exiting with a non-zero exit code) when various thresholds are\nsurpassed. `radon` is more of a reporting tool, while `xenon` is a monitoring\none.\n\nif you are looking for more complete solutions, read the following sections.\n\ncodacy\n++++++++++++\n\n`codacy <https://www.codacy.com/>`_ uses radon `by default <https://support.codacy.com/hc/en-us/articles/213632009-engines#other-tools>`_ to calculate metrics from the source code.\n\ncode climate\n++++++++++++\n\nradon is available as a `code climate engine <https://docs.codeclimate.com/docs/list-of-engines>`_.\nto understand how to add radon's checks to your code climate platform, head\nover to their documentation:\nhttps://docs.codeclimate.com/v1.0/docs/radon\n\ncoala analyzer\n++++++++++++++\n\nradon is also supported in `coala <http://coala.io/>`_. to add radon's\nchecks to coala, simply add the ``radonbear`` to one of the sections in\nyour ``.coafile``.\n\ncodefactor\n++++++++++++\n\n`codefactor <https://www.codefactor.io/>`_ uses radon `out-of-the-box <https://support.codefactor.io/i24-analysis-tools-open-source>`_ to calculate cyclomatic complexity.\n\nusage with jupyter notebooks\n----------------------------\n\nradon can be used with ``.ipynb`` files to inspect code metrics for python cells. any ``%`` macros will be ignored in the metrics.\n\n.. note::\n\n   jupyter notebook support requires the optional ``nbformat`` package. to install, run ``pip install nbformat``.\n\nto enable scanning of jupyter notebooks, add the ``--include-ipynb`` flag.\n\nto enable reporting of individual cells, add the ``--ipynb-cells`` flag.\n\nquick example:\n\n.. code-block:: sh\n\n    $ radon raw --include-ipynb --ipynb-cells .\n    example.ipynb\n        loc: 63\n        lloc: 37\n        sloc: 37\n        comments: 3\n        single comments: 2\n        multi: 10\n        blank: 14\n        - comment stats\n            (c % l): 5%\n            (c % s): 8%\n            (c + m % l): 21%\n    example.ipynb:[0]\n        loc: 0\n        lloc: 0\n        sloc: 0\n        comments: 0\n        single comments: 0\n        multi: 0\n        blank: 0\n        - comment stats\n            (c % l): 0%\n            (c % s): 0%\n            (c + m % l): 0%\n    example.ipynb:[1]\n        loc: 2\n        lloc: 2\n        sloc: 2\n        comments: 0\n        single comments: 0\n        multi: 0\n        blank: 0\n        - comment stats\n            (c % l): 0%\n            (c % s): 0%\n            (c + m % l): 0%\n\n\n\nlinks\n-----\n\n* documentation: https://radon.readthedocs.org\n* pypi: http://pypi.python.org/pypi/radon\n* issue tracker: https://github.com/rubik/radon/issues\n",
+  "docs_url": null,
+  "keywords": "static analysis code complexity metrics",
+  "license": "mit",
+  "name": "radon",
+  "package_url": "https://pypi.org/project/radon/",
+  "project_url": "https://pypi.org/project/radon/",
+  "project_urls": {
+    "Download": "https://pypi.python.org/radon/",
+    "Homepage": "https://radon.readthedocs.org/",
+    "Source": "https://github.com/rubik/radon"
+  },
+  "release_url": "https://pypi.org/project/radon/6.0.1/",
+  "requires_dist": [
+    "mando (<0.8,>=0.6)",
+    "colorama (==0.4.1) ; python_version <= \"3.4\"",
+    "colorama (>=0.4.1) ; python_version > \"3.4\"",
+    "tomli (>=2.0.1) ; extra == 'toml'"
+  ],
+  "requires_python": "",
+  "summary": "code metrics in python",
+  "version": "6.0.1",
+  "releases": [],
+  "developers": [
+    "michele_lacchia",
+    "michelelacchia@gmail.com"
+  ],
+  "kwds": "badge complexity rubik stats radonfilesencoding",
+  "license_kwds": "mit",
+  "libtype": "pypi",
+  "id": "pypi_radon",
+  "homepage": "https://radon.readthedocs.org/",
+  "release_count": 55,
+  "dependency_ids": [
+    "pypi_colorama",
+    "pypi_mando",
+    "pypi_tomli"
+  ]
+}

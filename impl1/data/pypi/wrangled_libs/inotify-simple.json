@@ -1,0 +1,30 @@
+{
+  "classifiers": [],
+  "description": "# inotify_simple 1.3\n\n`inotify_simple` is a simple python wrapper around\n[inotify](http://man7.org/linux/man-pages/man7/inotify.7.html).\nno fancy bells and whistles, just a literal wrapper with ctypes. only  \\~100\nlines of code!\n\n`inotify_init1()` is wrapped as a file-like object, `inotify()`, holding the inotify\nfile descriptor. `inotify().read()` reads available data from the file descriptor and\nreturns events as `namedtuple` objects after unpacking them with the `struct` module.\n`inotify_add_watch()` and `inotify_rm_watch()` are wrapped with no changes at all,\ntaking and returning watch descriptor integers that calling code is expected to keep\ntrack of itself, just as one would use `inotify` from c. works with python 2.7 and\npython >= 3.2.\n\n[view on pypi](http://pypi.python.org/pypi/inotify_simple) |\n[fork me on github](https://github.com/chrisjbillington/inotify_simple) |\n[read the docs](http://inotify_simple.readthedocs.org)\n\n\n## installation\n\nto install `inotify_simple`, run:\n\n```\n$ pip3 install inotify_simple\n```\n\nor to install from source:\n\n```\n$ python3 setup.py install\n```\n\nnote:  if on python < 3.4, you'll need the backported [enum34\nmodule](https://pypi.python.org/pypi/enum34).\n\n## introduction\n\nthere are many inotify python wrappers out there. [i found them all\nunsatisfactory](https://xkcd.com/927/). most are far too high-level for my\ntastes, and the supposed convenience they provide actually limits one from\nusing inotify in ways other than those the author imagined. others are c\nextensions, requiring compilation for different platforms and python versions,\nrather than a pure python module using ctypes. this one is pretty low-level\nand really just does what inotify itself does and nothing more. so hopefully\nif i've written it right, it will remain functional well into the future with\nno changes, recompilation or attention on my part.\n\n## example usage\n\n```python\nimport os\nfrom inotify_simple import inotify, flags\n\nos.mkdir('/tmp/inotify_test')\n\ninotify = inotify()\nwatch_flags = flags.create | flags.delete | flags.modify | flags.delete_self\nwd = inotify.add_watch('/tmp/inotify_test', watch_flags)\n\n# now create, delete and modify some files in the directory being monitored:\nos.chdir('/tmp/inotify_test')\n# create event for a directory:\nos.system('mkdir foo')\n# create event for a file:\nos.system('echo hello > test.txt')\n# modify event for the file:\nos.system('echo world >> test.txt')\n# delete event for the file\nos.system('rm test.txt')\n# delete event for the directory\nos.system('rmdir foo')\nos.chdir('/tmp')\n# delete_self on the original directory. # also generates an ignored event\n# indicating the watch was removed.\nos.system('rmdir inotify_test')\n\n# and see the corresponding events:\nfor event in inotify.read():\n    print(event)\n    for flag in flags.from_mask(event.mask):\n        print('    ' + str(flag))\n```\n\nthis outputs the following:\n```\nevent(wd=1, mask=1073742080, cookie=0, name=u'foo')\n    flags.create\n    flags.isdir\nevent(wd=1, mask=256, cookie=0, name=u'test.txt')\n    flags.create\nevent(wd=1, mask=2, cookie=0, name=u'test.txt')\n    flags.modify\nevent(wd=1, mask=512, cookie=0, name=u'test.txt')\n    flags.delete\nevent(wd=1, mask=1073742336, cookie=0, name=u'foo')\n    flags.delete\n    flags.isdir\nevent(wd=1, mask=1024, cookie=0, name=u'')\n    flags.delete_self\nevent(wd=1, mask=32768, cookie=0, name=u'')\n    flags.ignored\n```\n\nnote that the flags, since they are defined with an `enum.intenum`, print as\nwhat they are called rather than their integer values. however they are still\njust integers and so can be bitwise-anded and ored etc with masks etc. the\n`flags.from_mask()` method bitwise-ands a mask with all possible flags and\nreturns a list of matches. this is for convenience and useful for debugging\nwhich events are coming through, but performance critical code should\ngenerally bitwise-and masks with flags of interest itself so as to not do\nunnecessary checks.\n\n[see here](http://inotify_simple.readthedocs.org) for more.",
+  "docs_url": null,
+  "keywords": "",
+  "license": "bsd",
+  "name": "inotify-simple",
+  "package_url": "https://pypi.org/project/inotify-simple/",
+  "project_url": "https://pypi.org/project/inotify-simple/",
+  "project_urls": {
+    "Homepage": "https://github.com/chrisjbillington/inotify_simple"
+  },
+  "release_url": "https://pypi.org/project/inotify-simple/1.3.5/",
+  "requires_dist": [],
+  "requires_python": ">=2.7, !=3.0.*, !=3.1.*",
+  "summary": "a simple wrapper around inotify. no fancy bells and whistles, just a literal wrapper with ctypes. under 100 lines of code!",
+  "version": "1.3.5",
+  "releases": [],
+  "developers": [
+    "chris_billington",
+    "chrisjbillington@gmail.com"
+  ],
+  "kwds": "inotify_simple inotify_add_watch inotify_rm_watch inotify_init1 inotify",
+  "license_kwds": "bsd",
+  "libtype": "pypi",
+  "id": "pypi_inotify_simple",
+  "homepage": "https://github.com/chrisjbillington/inotify_simple",
+  "release_count": 20,
+  "dependency_ids": []
+}

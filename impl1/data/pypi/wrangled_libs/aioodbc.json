@@ -1,0 +1,54 @@
+{
+  "classifiers": [
+    "development status :: 3 - alpha",
+    "environment :: web environment",
+    "framework :: asyncio",
+    "intended audience :: developers",
+    "license :: osi approved :: apache software license",
+    "operating system :: posix",
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.10",
+    "programming language :: python :: 3.11",
+    "programming language :: python :: 3.12",
+    "programming language :: python :: 3.7",
+    "programming language :: python :: 3.8",
+    "programming language :: python :: 3.9",
+    "topic :: database",
+    "topic :: database :: front-ends"
+  ],
+  "description": "aioodbc\n=======\n.. image:: https://github.com/aio-libs/aioodbc/workflows/ci/badge.svg\n   :target: https://github.com/aio-libs/aioodbc/actions?query=workflow%3aci\n   :alt: github actions status for master branch\n.. image:: https://codecov.io/gh/aio-libs/aioodbc/branch/master/graph/badge.svg\n    :target: https://codecov.io/gh/aio-libs/aioodbc\n.. image:: https://img.shields.io/pypi/v/aioodbc.svg\n    :target: https://pypi.python.org/pypi/aioodbc\n.. image:: https://img.shields.io/pypi/pyversions/aioodbc.svg\n    :target: https://pypi.org/project/aioodbc\n.. image:: https://badges.gitter.im/join%20chat.svg\n    :target: https://gitter.im/aio-libs/lobby\n    :alt: chat on gitter\n\n**aioodbc** is a python 3.7+ module that makes it possible to access odbc_ databases\nwith asyncio_. it relies on the awesome pyodbc_ library and preserves the same look and\nfeel. internally *aioodbc* employs threads to avoid blocking the event loop,\nthreads_ are not that as bad as you think!. other drivers like motor_ use the\nsame approach.\n\n**aioodbc** is fully compatible and tested with uvloop_. take a look at the test\nsuite, all tests are executed with both the default event loop and uvloop_.\n\n\nbasic example\n-------------\n\n**aioodbc** is based on pyodbc_ and provides the same api, you just need\nto use  ``yield from conn.f()`` or ``await conn.f()`` instead of ``conn.f()``\n\nproperties are unchanged, so ``conn.prop`` is correct as well as\n``conn.prop = val``.\n\n\n.. code:: python\n\n    import asyncio\n\n    import aioodbc\n\n\n    async def test_example():\n        dsn = \"driver=sqlite;database=sqlite.db\"\n        conn = await aioodbc.connect(dsn=dsn)\n\n        cur = await conn.cursor()\n        await cur.execute(\"select 42 as age;\")\n        rows = await cur.fetchall()\n        print(rows)\n        print(rows[0])\n        print(rows[0].age)\n        await cur.close()\n        await conn.close()\n\n\n    asyncio.run(test_example())\n\n\nconnection pool\n---------------\nconnection pooling is ported from aiopg_ and relies on pep492_ features:\n\n.. code:: python\n\n    import asyncio\n\n    import aioodbc\n\n\n    async def test_pool():\n        dsn = \"driver=sqlite3;database=sqlite.db\"\n        pool = await aioodbc.create_pool(dsn=dsn)\n\n        async with pool.acquire() as conn:\n            cur = await conn.cursor()\n            await cur.execute(\"select 42;\")\n            r = await cur.fetchall()\n            print(r)\n            await cur.close()\n            await conn.close()\n        pool.close()\n        await pool.wait_closed()\n\n\n    asyncio.run(test_pool())\n\n\ncontext managers\n----------------\n`pool`, `connection` and `cursor` objects support the context management\nprotocol:\n\n.. code:: python\n\n    import asyncio\n\n    import aioodbc\n\n\n    async def test_example():\n        dsn = \"driver=sqlite;database=sqlite.db\"\n\n        async with aioodbc.create_pool(dsn=dsn) as pool:\n            async with pool.acquire() as conn:\n                async with conn.cursor() as cur:\n                    await cur.execute(\"select 42 as age;\")\n                    val = await cur.fetchone()\n                    print(val)\n                    print(val.age)\n\n\n    asyncio.run(test_example())\n\n\ninstallation\n------------\n\nin a linux environment pyodbc_ (hence *aioodbc*) requires the unixodbc_ library.\nyou can install it using your package manager, for example::\n\n      $ sudo apt-get install unixodbc\n      $ sudo apt-get install unixodbc-dev\n\nthen::\n\n   pip install aioodbc\n\n\nrun tests\n---------\nto run tests locally without docker, install `unixodbc` and `sqlite` driver::\n\n      $ sudo apt-get install unixodbc\n      $ sudo apt-get install libsqliteodbc\n\ncreate virtualenv and install package with requirements::\n\n      $ pip install -r requirements-dev.txt\n\nrun tests, lints etc::\n\n      $ make fmt\n      $ make lint\n      $ make test\n\n\nother sql drivers\n-----------------\n\n* aiopg_ - asyncio client for postgresql\n* aiomysql_ - asyncio client form mysql\n\n\nrequirements\n------------\n\n* python_ 3.7+\n* pyodbc_\n* uvloop_ (optional)\n\n\n.. _python: https://www.python.org\n.. _asyncio: http://docs.python.org/3.4/library/asyncio.html\n.. _pyodbc: https://github.com/mkleehammer/pyodbc\n.. _uvloop: https://github.com/magicstack/uvloop\n.. _odbc: https://en.wikipedia.org/wiki/open_database_connectivity\n.. _aiopg: https://github.com/aio-libs/aiopg\n.. _aiomysql: https://github.com/aio-libs/aiomysql\n.. _pep492: https://www.python.org/dev/peps/pep-0492/\n.. _unixodbc: http://www.unixodbc.org/\n.. _threads: http://techspot.zzzeek.org/2015/02/15/asynchronous-python-and-databases/\n.. _docker: https://docs.docker.com/engine/installation/\n.. _motor: https://emptysqua.re/blog/motor-0-7-beta/\n\nchanges\n-------\n0.5.0 (2023-10-28)\n^^^^^^^^^^^^^^^^^^\n* added support for python 3.12\n* bumped minimal supported version of pyodbc to 5.0.1\n* dropped aiodocker related testing to unlock python 3.12\n\n0.4.1 (2023-10-28)\n^^^^^^^^^^^^^^^^^^\n* implemented cursor setinputsizes.\n* implemented cursor fetchval.\n* added more type annotations.\n* added autocommit setter for cusror.\n\n\n0.4.0 (2023-03-16)\n^^^^^^^^^^^^^^^^^^\n* fixed compatibility with python 3.9+.\n* removed usage of explicit loop parameter.\n* added default read size parameter for cursor.\n* updated tests and ci scripts.\n* code base formatted with black.\n\n\n0.3.3 (2019-07-05)\n^^^^^^^^^^^^^^^^^^\n* parameter echo passed properly in cursor #185\n* close bad connections before returning back to pool #195\n\n0.3.2 (2018-08-04)\n^^^^^^^^^^^^^^^^^^\n* added basic documentation for after_created and threadpoolexecutor #176 (thanks @alexhagerman)\n* cursor/connection context managers now rollback transaction on error,\n  otherwise commit if autocommit=false #178 (thanks @julianit)\n\n\n0.3.1 (2018-03-23)\n^^^^^^^^^^^^^^^^^^\n* add after_create hook for connection configuration (thanks @lanfon72)\n\n\n0.3.0 (2018-02-23)\n^^^^^^^^^^^^^^^^^^\n* added optional pool connections recycling #167 (thanks @drpoggi)\n\n\n0.2.0 (2017-06-24)\n^^^^^^^^^^^^^^^^^^\n* fixed cursor.execute returns a pyodbc.cursor instead of itself #114\n* fixed __aiter__ to not be awaitable for python>=3.5.2 #113\n* tests now using aiodocker #106\n\n\n0.1.0 (2017-04-30)\n^^^^^^^^^^^^^^^^^^\n* fixed project version\n\n\n0.0.4 (2017-04-30)\n^^^^^^^^^^^^^^^^^^\n* improved mysql testing\n\n\n0.0.3 (2016-07-05)\n^^^^^^^^^^^^^^^^^^\n* dockerize tests, now we can add more dbs to tests using docker #15, #17, #19\n* test suite executed with both default asyncio and uvloop #18\n\n\n0.0.2 (2016-01-01)\n^^^^^^^^^^^^^^^^^^\n* improved pep 492 support.\n* pool.get method removed, use acquire instead.\n* added tests against mysql.\n* added bunch of doc strings.\n\n\n0.0.1 (2015-10-12)\n^^^^^^^^^^^^^^^^^^\n* initial release.\n",
+  "docs_url": null,
+  "keywords": "",
+  "license": "apache 2",
+  "name": "aioodbc",
+  "package_url": "https://pypi.org/project/aioodbc/",
+  "project_url": "https://pypi.org/project/aioodbc/",
+  "project_urls": {
+    "Documentation": "https://uddsketch.readthedocs.io",
+    "Download": "https://pypi.python.org/pypi/aioodbc",
+    "Homepage": "https://github.com/aio-libs/aioodbc",
+    "Issues": "https://github.com/jettify/uddsketch/issues",
+    "Website": "https://github.com/jettify/uddsketch"
+  },
+  "release_url": "https://pypi.org/project/aioodbc/0.5.0/",
+  "requires_dist": [
+    "pyodbc >=5.0.1"
+  ],
+  "requires_python": ">=3.7",
+  "summary": "odbc driver for asyncio.",
+  "version": "0.5.0",
+  "releases": [],
+  "developers": [
+    "nickolainovik@gmail.com",
+    "nikolay_novik"
+  ],
+  "kwds": "badge badges aioodbc aiopg _aiopg",
+  "license_kwds": "apache 2",
+  "libtype": "pypi",
+  "id": "pypi_aioodbc",
+  "homepage": "https://github.com/aio-libs/aioodbc",
+  "release_count": 13,
+  "dependency_ids": [
+    "pypi_pyodbc"
+  ]
+}
