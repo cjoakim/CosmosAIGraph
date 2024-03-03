@@ -6,7 +6,7 @@
 ---
 
 **Note:** The initial March 2024 release of CosmosAIGraph is focused on **graph workloads**.
-Subsequence releases will further implement **AI-powered** functionality with the
+Subsequent releases will further implement **AI-powered** functionality with the
 langchain orchestration library.
 ---
 
