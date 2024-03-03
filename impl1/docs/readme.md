@@ -8,6 +8,7 @@
 **Note:** The initial March 2024 release of CosmosAIGraph is focused on **graph workloads**.
 Subsequent releases will further implement **AI-powered** functionality with the
 langchain orchestration library.
+
 ---
 
 The **CosmosAIGraph (caig)** application, implementation 1, is deployed as these three microservices:
