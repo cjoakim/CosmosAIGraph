@@ -19,6 +19,8 @@ from pysrc.models.webservice_models import PingModel
 from pysrc.models.webservice_models import LivenessModel
 from pysrc.models.webservice_models import SparqlGenerationRequestModel
 from pysrc.models.webservice_models import SparqlGenerationResponseModel
+from pysrc.models.webservice_models import VectorizeRequestModel
+from pysrc.models.webservice_models import VectorizeResponseModel
 
 # Services with Business Logic
 from pysrc.services.ai_service import AiService
@@ -93,4 +95,30 @@ async def post_gen_sparql_query(
     resp_obj["epoch"] = int(time.time())
     resp_obj["elapsed"] = time.perf_counter() - t1
     logging.debug("post_gen_sparql_query: {}".format(json.dumps(resp_obj)))
+    return resp_obj
+
+
+@app.post("/vectorize")
+async def post_vectorize(
+    req_model: VectorizeRequestModel,
+) -> VectorizeResponseModel:
+    global ai_svc
+    resp_obj = dict()
+    resp_obj["session_id"] = req_model.session_id
+    resp_obj["text"] = req_model.text
+    resp_obj["embeddings"] = list()
+    resp_obj["elapsed"] = -1.0
+    resp_obj["error"] = None
+
+    t1 = time.perf_counter()
+    try:
+        logging.debug("vectorize: {}".format(req_model.text))
+        ai_svc_resp = ai_svc.generate_embeddings(req_model.text)
+        resp_obj["embeddings"] = ai_svc_resp.data[0].embedding
+    except Exception as e:
+        resp_obj["error"] = str(e)
+        logging.critical((str(e)))
+        logging.exception(e, stack_info=True, exc_info=True)
+
+    resp_obj["elapsed"] = time.perf_counter() - t1
     return resp_obj

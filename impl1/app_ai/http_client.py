@@ -7,6 +7,7 @@ Usage:
   python http_client.py get http://localhost:8002/
   python http_client.py get http://localhost:8002/liveness
   python http_client.py post_gen_sparql_query_moderation http://localhost:8002/gen_sparql_query
+  python http_client.py post_vectorize http://localhost:8002/vectorize
 Options:
   -h --help     Show this screen.
   --version     Show version.
@@ -53,7 +54,21 @@ def post_gen_sparql_query_moderation(url):
     print("----- pretty-print JSON response object -----")
     obj = json.loads(r.text)
     print(json.dumps(obj, sort_keys=False, indent=2))
-    # Example response
+
+
+def post_vectorize(url):
+    postdata = dict()
+    postdata["session_id"] = str(uuid.uuid1())
+    postdata[
+        "text"
+    ] = "four score and seven years ago our fathers brought forth on this continent a new nation conceived in liberty and dedicated to the proposition"
+    print(postdata)
+    r = httpx.post(url, data=json.dumps(postdata))
+    print("----- response text -----")
+    print(r.text)
+    print("----- pretty-print JSON response object -----")
+    obj = json.loads(r.text)
+    print(json.dumps(obj, sort_keys=False, indent=2))
 
 
 if __name__ == "__main__":
@@ -66,6 +81,9 @@ if __name__ == "__main__":
             elif func == "post_gen_sparql_query_moderation":
                 url = sys.argv[2]
                 post_gen_sparql_query_moderation(url)
+            elif func == "post_vectorize":
+                url = sys.argv[2]
+                post_vectorize(url)
             else:
                 print_options("Error: invalid function: {}".format(func))
         except Exception as e:

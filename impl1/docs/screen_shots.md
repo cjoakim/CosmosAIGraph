@@ -53,6 +53,23 @@ given OWL Ontology and user-specified natural language.
 
 ---
 
+## Vector Search Console Page 
+
+Vector search using the already existing embeddings for a given library.
+
+<p align="center">
+  <img src="img/screen-shot-vector-search-1.png" width="90%">
+</p>
+
+Vector search using natural language that is vectorized, then passed
+to the vector search.
+
+<p align="center">
+  <img src="img/screen-shot-vector-search-2.png" width="90%">
+</p>
+
+---
+
 ## Azure Container App in Azure Portal 
 
 <p align="center">

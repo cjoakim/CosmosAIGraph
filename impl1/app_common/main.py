@@ -256,6 +256,20 @@ def gen_all():
     gen_environment_variables_md()
 
 
+def ad_hoc_development():
+    logging.info("ad_hoc_development")
+    opts = dict()
+    opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
+    logging.info("opts: {}".format(opts))
+    vcore = CosmosVCoreService(opts)
+    vcore.set_db(ConfigService.graph_source_db())
+    results_obj = vcore.search_documents_like_library("pypi", "flask")
+    FS.write_json(results_obj, "tmp/vector_search_results_1.json")
+
+    results_obj = vcore.search_documents_like_library("jcl", "iebptpch")
+    FS.write_json(results_obj, "tmp/vector_search_results_2.json")
+
+
 if __name__ == "__main__":
     load_dotenv(override=True)
 
@@ -275,6 +289,8 @@ if __name__ == "__main__":
                 gen_environment_variables_md()
             elif func == "gen_all":
                 gen_all()
+            elif func == "ad_hoc":
+                ad_hoc_development()
             else:
                 print_options("Error: invalid function: {}".format(func))
         except Exception as e:

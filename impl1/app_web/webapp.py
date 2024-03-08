@@ -22,10 +22,12 @@ from fastapi.templating import Jinja2Templates
 from pysrc.models.webservice_models import PingModel
 from pysrc.models.webservice_models import LivenessModel
 from pysrc.models.webservice_models import OwlInfoModel
+from pysrc.models.webservice_models import DocumentsVSResultsModel
 
 # Services with Business Logic
 from pysrc.services.cache_service import CacheService
 from pysrc.services.config_service import ConfigService
+from pysrc.services.cosmos_vcore_service import CosmosVCoreService
 from pysrc.services.logging_level_service import LoggingLevelService
 from pysrc.util.fs import FS
 from pysrc.util.sparql_formatter import SparqlFormatter
@@ -40,6 +42,12 @@ ConfigService.log_defined_env_vars()
 cache_svc = CacheService({})
 owl_info = None  # lazy-initialized
 owl_xml = None  # lazy-initialized
+
+vcore_opts = dict()
+vcore_opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
+logging.info("vcore_opts: {}".format(vcore_opts))
+vcore = CosmosVCoreService(vcore_opts)
+vcore.set_db(ConfigService.graph_source_db())
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -178,6 +186,72 @@ async def gen_sparql_console_execute_sparql(req: Request):
     )
 
 
+@app.get("/vector_search_console")
+async def get_vector_search_console(req: Request):
+    logging.info("get_vector_search_console")
+    view_data = dict()
+    view_data["libtype"] = "pypi"
+    view_data["libname"] = "flask"
+    view_data["results_message"] = ""
+    view_data["results"] = ""
+    return views.TemplateResponse(
+        request=req, name="vector_search_console.html", context=view_data
+    )
+
+
+@app.post("/vector_search_console")
+async def post_vector_search_console(req: Request):
+    global vcore
+    logging.info("post_vector_search_console")
+    form_data = await req.form()
+    libtype = form_data.get("libtype")
+    libname = form_data.get("libname").strip()
+    show_embeddings = form_data.get("show_embeddings")
+    logging.info(f"post_vector_search_console: {libtype} {libname} {show_embeddings}")
+
+    if libname.startswith("text:"):
+        text = libname[5:]
+        logging.info(f"text: {text}")
+        # Call the AI microservice to vectorize the text
+        url = ai_vectorize_url()
+        logging.info(f"url: {url}")
+        postdata = dict()
+        postdata["session_id"] = str(uuid.uuid1())
+        postdata["text"] = text
+        r = httpx.post(url, data=json.dumps(postdata), timeout=120.0)
+        vectorize_resp_obj = json.loads(r.text)
+        logging.info(f"vectorize_resp_obj: {vectorize_resp_obj}")
+        vector = vectorize_resp_obj["embeddings"]
+
+        vcore.set_db(ConfigService.graph_source_db())
+        vcore.set_coll(ConfigService.documents_container())
+        results_obj = vcore.vector_search(vector)
+
+        if show_embeddings is None:
+            if results_obj["vector"] is not None:
+                del results_obj["vector"]
+            if results_obj["results"] is not None:
+                for result in results_obj["results"]:
+                    del result["embeddings"]
+    else:
+        results_obj = vcore.search_documents_like_library(libtype, libname)
+        if show_embeddings is None:
+            if results_obj["doc"] is not None:
+                del results_obj["doc"]["embeddings"]
+            if results_obj["results"] is not None:
+                for result in results_obj["results"]:
+                    del result["embeddings"]
+
+    view_data = dict()
+    view_data["libtype"] = libtype
+    view_data["libname"] = libname
+    view_data["results_message"] = "Vector Search Results"
+    view_data["results"] = json.dumps(results_obj, sort_keys=False, indent=2)
+    return views.TemplateResponse(
+        request=req, name="vector_search_console.html", context=view_data
+    )
+
+
 @app.get("/conv_ai_console")
 async def conv_ai_console(req: Request):
     view_data = dict()
@@ -240,6 +314,12 @@ def graph_microsvc_bom_query_url():
 
 def ai_gen_sparql_url():
     return "{}:{}/gen_sparql_query".format(
+        ConfigService.ai_service_url(), ConfigService.ai_service_port()
+    )
+
+
+def ai_vectorize_url():
+    return "{}:{}/vectorize".format(
         ConfigService.ai_service_url(), ConfigService.ai_service_port()
     )
 

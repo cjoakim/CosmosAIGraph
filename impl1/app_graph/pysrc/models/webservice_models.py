@@ -81,3 +81,26 @@ class SparqlGenerationResponseModel(BaseModel):
     elapsed: float
     sparql: str
     error: str | None
+
+
+class DocumentsVSResultsModel(BaseModel):
+    libtype: str
+    libname: str
+    count: int
+    doc: dict | None
+    results: list
+    elapsed: float
+    error: str | None
+
+
+class VectorizeRequestModel(BaseModel):
+    session_id: str | None
+    text: str
+
+
+class VectorizeResponseModel(BaseModel):
+    session_id: str | None
+    text: str
+    embeddings: list
+    elapsed: float
+    error: str | None

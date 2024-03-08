@@ -125,3 +125,19 @@ class AiService:
             return True
         except Exception as e:
             return False
+
+    def generate_embeddings(self, text):
+        """
+        Generate an embeddings array from the given text.
+        Return an CreateEmbeddingResponse object or None.
+        Invoke 'resp.data[0].embedding' to get the array of 1536 floats.
+        """
+        try:
+            # <class 'openai.types.create_embedding_response.CreateEmbeddingResponse'>
+            return self.aoai_client.embeddings.create(
+                input=text, model=self.embeddings_deployment
+            )
+        except Exception as e:
+            logging.critical("Exception in generate_embeddings: {}".format(str(e)))
+            logging.exception(e, stack_info=True, exc_info=True)
+            return None

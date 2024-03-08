@@ -18,43 +18,46 @@ class ConfigService:
         Return a dict with the defined environment variable names and descriptions
         """
         d = dict()
-        d[
-            "CAIG_HOME"
-        ] = "Root directory of the CosmosAIGraph GitHub repository on your system"
+        d["CAIG_HOME"] = (
+            "Root directory of the CosmosAIGraph GitHub repository on your system"
+        )
         d["CAIG_AZURE_REGION"] = "The Azure region where the ACA app is deployed to"
-        d[
-            "CAIG_GRAPH_SOURCE_TYPE"
-        ] = "The RDF graph data source type, either 'rdf_file' or 'cosmos_vcore'"
+        d["CAIG_GRAPH_SOURCE_TYPE"] = (
+            "The RDF graph data source type, either 'rdf_file' or 'cosmos_vcore'"
+        )
         d["CAIG_GRAPH_SOURCE_OWL_FILENAME"] = "The input RDF OWL ontology file"
-        d[
-            "CAIG_GRAPH_SOURCE_RDF_FILENAME"
-        ] = "The RDF input file, if CAIG_GRAPH_SOURCE_TYPE is 'rdf_file'"
-        d[
-            "CAIG_GRAPH_SOURCE_DB"
-        ] = "The graph vCore database name, if CAIG_GRAPH_SOURCE_TYPE is 'cosmos_vcore'"
-        d[
-            "CAIG_GRAPH_SOURCE_CONTAINER"
-        ] = "The graph vCore container name, if CAIG_GRAPH_SOURCE_TYPE is 'cosmos_vcore'"
-        d[
-            "CAIG_AZURE_MONGO_VCORE_CONN_STR"
-        ] = "The full connection string for the Cosmos DB Mongo vCore account"
-        d[
-            "CAIG_USE_ALT_SPARQL_CONSOLE"
-        ] = "A non empty string displays the alt view; defaults to an empty string"
+        d["CAIG_GRAPH_SOURCE_RDF_FILENAME"] = (
+            "The RDF input file, if CAIG_GRAPH_SOURCE_TYPE is 'rdf_file'"
+        )
+        d["CAIG_GRAPH_SOURCE_DB"] = (
+            "The graph vCore database name, if CAIG_GRAPH_SOURCE_TYPE is 'cosmos_vcore'"
+        )
+        d["CAIG_GRAPH_SOURCE_CONTAINER"] = (
+            "The graph vCore container name, if CAIG_GRAPH_SOURCE_TYPE is 'cosmos_vcore'"
+        )
+        d["CAIG_DOCUMENTS_CONTAINER"] = (
+            "The vCore container where HTML documentation and its' vectorized equivalent are stored"
+        )
+        d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = (
+            "The full connection string for the Cosmos DB Mongo vCore account"
+        )
+        d["CAIG_USE_ALT_SPARQL_CONSOLE"] = (
+            "A non empty string displays the alt view; defaults to an empty string"
+        )
         d["CAIG_AZURE_OPENAI_URL"] = "The URL of your Azure OpenAI account"
         d["CAIG_AZURE_OPENAI_KEY"] = "The Key of your Azure OpenAI account"
-        d[
-            "CAIG_AZURE_OPENAI_COMPLETIONS_DEP"
-        ] = "The name of your Azure OpenAI completions deployment"
-        d[
-            "CAIG_AZURE_OPENAI_EMBEDDINGS_DEP"
-        ] = "The name of your Azure OpenAI embeddings deployment"
-        d[
-            "CAIG_ACA_ENVIRONMENT_NAME"
-        ] = "The Azure Container App (ACA) environment name"
-        d[
-            "CAIG_LA_WORKSPACE_NAME"
-        ] = "The Log Analytics workspace name used by the Azure Container App (ACA)"
+        d["CAIG_AZURE_OPENAI_COMPLETIONS_DEP"] = (
+            "The name of your Azure OpenAI completions deployment"
+        )
+        d["CAIG_AZURE_OPENAI_EMBEDDINGS_DEP"] = (
+            "The name of your Azure OpenAI embeddings deployment"
+        )
+        d["CAIG_ACA_ENVIRONMENT_NAME"] = (
+            "The Azure Container App (ACA) environment name"
+        )
+        d["CAIG_LA_WORKSPACE_NAME"] = (
+            "The Log Analytics workspace name used by the Azure Container App (ACA)"
+        )
         d["CAIG_DEFINED_AUTH_USERS"] = ""
         d["CAIG_WEB_APP_NAME"] = ""
         d["CAIG_WEB_APP_URL"] = ""
@@ -65,9 +68,9 @@ class ConfigService:
         d["CAIG_AI_SERVICE_NAME"] = ""
         d["CAIG_AI_SERVICE_URL"] = ""
         d["CAIG_AI_SERVICE_PORT"] = ""
-        d[
-            "CAIG_LOG_LEVEL"
-        ] = "a python logging standard-lib level name: notset, debug, info, warning, error, or critical"
+        d["CAIG_LOG_LEVEL"] = (
+            "a python logging standard-lib level name: notset, debug, info, warning, error, or critical"
+        )
         return d
 
     @classmethod
@@ -80,6 +83,7 @@ class ConfigService:
         d["CAIG_GRAPH_SOURCE_RDF_FILENAME"] = "rdf/libraries-graph.nt"
         d["CAIG_GRAPH_SOURCE_DB"] = "graph"
         d["CAIG_GRAPH_SOURCE_CONTAINER"] = "libraries"
+        d["CAIG_DOCUMENTS_CONTAINER"] = "documents"
         d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = "mongodb+srv://..."
         d["CAIG_USE_ALT_SPARQL_CONSOLE"] = ""
         d["CAIG_AZURE_OPENAI_URL"] = ""
@@ -148,6 +152,10 @@ class ConfigService:
     @classmethod
     def graph_source_container(cls) -> str:
         return cls.envvar("CAIG_GRAPH_SOURCE_CONTAINER", "libraries")
+
+    @classmethod
+    def documents_container(cls) -> str:
+        return cls.envvar("CAIG_DOCUMENTS_CONTAINER", "documents")
 
     @classmethod
     def mongo_vcore_conn_str(cls) -> str:

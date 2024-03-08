@@ -17,7 +17,6 @@ def test_constructor():
     assert ai_svc.version.startswith("2023-")
     assert ai_svc.aoai_client is not None
 
-
 def test_generate_sparql_from_user_prompt():
     ai_svc = AiService()
     owl = FS.read("ontologies/libraries.owl")
@@ -62,3 +61,11 @@ def test_generate_sparql_from_user_prompt():
     #   "elapsed": 2.840292542008683,
     #   "sparql": "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX : <http://cosmosdb.com/caig#> SELECT ?dependency WHERE { ?lib :ln 'flask' . ?lib :lt 'pypi' . ?lib :uses_lib ?dependency . }"
     # }
+
+def test_generate_embeddings():
+    ai_svc = AiService()
+    resp = ai_svc.generate_embeddings("python fastapi pydantic microservices")
+    print(resp)
+    assert resp is not None
+    assert "CreateEmbeddingResponse" in str(type(resp)) 
+    assert len(resp.data[0].embedding) == 1536

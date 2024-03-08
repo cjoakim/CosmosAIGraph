@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 import traceback
 
 import certifi
@@ -7,6 +8,8 @@ import certifi
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
+from pysrc.services.config_service import ConfigService
+from pysrc.models.webservice_models import DocumentsVSResultsModel
 
 # Instances of this class are used to access a Cosmos DB Mongo vCore
 # account/database.
@@ -36,6 +39,10 @@ class CosmosVCoreService:
             logging.critical(str(excp))
             print(traceback.format_exc())
             return None
+
+    def get_client(self):
+        """Return the pymongo client object."""
+        return self._client
 
     def create_database(self, dbname):
         """Create a database with the given name."""
@@ -191,6 +198,111 @@ class CosmosVCoreService:
         """
         return self._coll.count_documents(query_spec)
 
-    def get_client(self):
-        """Return the pymongo client object."""
-        return self._client
+    def search_documents_like_library(
+        self, libtype, libname, embeddings_attr="embeddings", k=10
+    ) -> DocumentsVSResultsModel:
+        """
+        Execute a vector search based on looking up the given library type and name.
+        First lookup the given libtype and libname, get its' embeddings, then
+        use that as the search vector for a vector search.
+        The arg k refers to the max number of documents to return.
+        """
+        t1 = time.perf_counter()
+        output_doc = {}
+        output_doc["libtype"] = libtype
+        output_doc["libname"] = libname
+        output_doc["count"] = 0
+        output_doc["doc"] = None
+        output_doc["results"] = list()
+        output_doc["error"] = None
+        output_doc["elapsed"] = "-1.0"
+        try:
+            self.set_coll(ConfigService.documents_container())
+            doc = self.find_one({"libtype": libtype, "libname": libname})
+            if doc is None:
+                output_doc["error"] = (
+                    f"document not found for libtype: {libtype}, libname: {libname}"
+                )
+            else:
+                self.stringify_doc_id(doc)
+                output_doc["doc"] = doc
+                vector = doc[embeddings_attr]
+                vs_result = self.vector_search(vector, embeddings_attr, k)
+                output_doc["results"] = vs_result["results"]
+                output_doc["error"] = vs_result["error"]
+                output_doc["elapsed"] = vs_result["elapsed"]
+        except Exception as e:
+            output_doc["error"] = str(e)
+            print(str(e))
+            print(traceback.format_exc())
+
+        output_doc["count"] = len(output_doc["results"])
+        output_doc["elapsed"] = time.perf_counter() - t1
+        return output_doc
+
+    def vector_search(self, vector, embeddings_attr="embeddings", k=10) -> dict:
+        """
+        Execute a vector search using the given vector and return a results dict
+        """
+        vs_result = dict()
+        vs_result["vector"] = vector
+        vs_result["embeddings_attr"] = embeddings_attr
+        vs_result["k"] = k
+        vs_result["results"] = list()
+        vs_result["error"] = None
+        t1 = time.perf_counter()
+        try:
+            # construct a Mongo aggregation pipeline JSON structure:
+            cosmosSearch = dict()
+            cosmosSearch["vector"] = vector
+            cosmosSearch["path"] = embeddings_attr
+            cosmosSearch["k"] = k
+            search = dict()
+            search["cosmosSearch"] = cosmosSearch
+            search["returnStoredSource"] = True
+            stage = dict()
+            stage["$search"] = search
+            pipeline = [stage]
+            # The aggregation pipeline should look like this:
+            # [
+            #   {
+            #     "$search": {
+            #       "cosmosSearch": {
+            #         "vector": [
+            #           0.0030290345,
+            #           -0.00155827,
+            #           ...
+            #           -0.03667151,
+            #           -0.020987844
+            #         ],
+            #         "path": "embeddings",
+            #         "k": 10
+            #       },
+            #       "returnStoredSource": true
+            #     }
+            #   }
+            # ]
+
+            # execute the aggregation pipeline
+            # results is a pymongo.command_cursor.CommandCursor object to iterate
+            cursor = self.aggregate(pipeline)
+            for result_doc in cursor:
+                self.stringify_doc_id(result_doc)
+                vs_result["results"].append(result_doc)
+        except Exception as e:
+            vs_result["error"] = str(e)
+            print(str(e))
+            print(traceback.format_exc())
+        vs_result["count"] = len(vs_result["results"])
+        vs_result["elapsed"] = time.perf_counter() - t1
+        return vs_result
+
+    def stringify_doc_id(self, doc):
+        """
+        Convert the _id attribute of the given vcore document to a string
+        because an ObjectId is not JSON serializable
+        """
+        try:
+            doc["_id"] = str(doc["_id"])
+        except:
+            pass
