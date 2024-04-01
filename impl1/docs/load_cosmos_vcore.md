@@ -23,6 +23,8 @@ This page assumes that you have set the following environment variables:
 CAIG_AZURE_MONGO_VCORE_CONN_STR
 CAIG_GRAPH_SOURCE_DB
 CAIG_GRAPH_SOURCE_CONTAINER
+CAIG_CONVERSATIONS_CONTAINER
+CAIG_DOCUMENTS_CONTAINER
 ```
 
 This page also assumes that the name of your database is **graph**

@@ -6,13 +6,6 @@
 # Chris Joakim, Microsoft
 
 echo '===================='
-echo 'app_ai ...'
-cd app_ai
-black *.py
-black pysrc 
-cd ..
-
-echo '===================='
 echo 'app_common ...'
 cd app_common
 black *.py

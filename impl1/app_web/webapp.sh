@@ -7,4 +7,4 @@
 
 mkdir -p tmp
 
-hypercorn webapp:app --bind 127.0.0.1:8000 --reload
+hypercorn webapp:app --bind 127.0.0.1:8000

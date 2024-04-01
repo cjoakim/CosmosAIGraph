@@ -1,20 +1,25 @@
 import json
 import logging
-import os
-import sys
 import time
-import traceback
-import xmlformatter
+
 
 from openai import AzureOpenAI
 
-from pysrc.services.config_service import ConfigService
+import semantic_kernel as sk
+
+from semantic_kernel.connectors.ai.open_ai import (
+    AzureChatCompletion,
+    AzureTextEmbedding,
+)
+from semantic_kernel.connectors.ai.open_ai import OpenAITextPromptExecutionSettings
+from semantic_kernel.prompt_template.input_variable import InputVariable
 
 from pysrc.models.internal_models import SparqlGenerationResult
-
-from pysrc.util.fs import FS
+from pysrc.services.ai_completion import AiCompletion
+from pysrc.services.ai_conversation import AiConversation
+from pysrc.services.config_service import ConfigService
+from pysrc.services.cosmos_vcore_service import CosmosVCoreService
 from pysrc.util.owl_formatter import OwlFormatter
-from pysrc.util.sparql_formatter import SparqlFormatter
 from pysrc.util.prompts import Prompts
 
 # Instances of this class are used to execute AzureOpenAI and LangChain functionality.
@@ -29,11 +34,15 @@ class AiService:
         """
         try:
             self.opts = opts
-            self.endpoint = ConfigService.azure_openai_url()
-            self.version = ConfigService.azure_openai_version()
-            api_key = ConfigService.azure_openai_key()
+            self.aoai_endpoint = ConfigService.azure_openai_url()
+            self.aoai_api_key = ConfigService.azure_openai_key()
+            self.aoai_version = ConfigService.azure_openai_version()
+            self.chat_function = None
+
             self.aoai_client = AzureOpenAI(
-                azure_endpoint=self.endpoint, api_key=api_key, api_version=self.version
+                azure_endpoint=self.aoai_endpoint,
+                api_key=self.aoai_api_key,
+                api_version=self.aoai_version,
             )
             self.completions_deployment = (
                 ConfigService.azure_openai_completions_deployment()
@@ -41,16 +50,38 @@ class AiService:
             self.embeddings_deployment = (
                 ConfigService.azure_openai_embeddings_deployment()
             )
-            logging.info("endpoint:     {}".format(self.endpoint))
-            logging.info("api_key:      {}".format(api_key))
-            logging.info("version:      {}".format(self.version))
-            logging.info("aoai_client:  {}".format(self.aoai_client))
+            self.sk_kernel = sk.Kernel()
+            self.sk_kernel.add_service(
+                AzureChatCompletion(
+                    service_id="chat_completion",
+                    deployment_name=self.completions_deployment,
+                    endpoint=self.aoai_endpoint,
+                    api_key=self.aoai_api_key,
+                )
+            )
+            self.sk_kernel.add_service(
+                AzureTextEmbedding(
+                    service_id="text_embedding",
+                    deployment_name=self.embeddings_deployment,
+                    endpoint=self.aoai_endpoint,
+                    api_key=self.aoai_api_key,
+                )
+            )
+            opts = dict()
+            opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
+            self.vcore = CosmosVCoreService(opts)
+            self.vcore.set_db(ConfigService.graph_source_db())
+
+            logging.info("aoai endpoint:     {}".format(self.aoai_endpoint))
+            logging.info("aoai version:      {}".format(self.aoai_version))
+            logging.info("aoai client:  {}".format(self.aoai_client))
             logging.info(
-                "completions_deployment: {}".format(self.completions_deployment)
+                "aoai completions_deployment: {}".format(self.completions_deployment)
             )
             logging.info(
-                "embeddings_deployment:  {}".format(self.embeddings_deployment)
+                "aoai embeddings_deployment:  {}".format(self.embeddings_deployment)
             )
+            logging.debug("sk_kernel: {}".format(self.sk_kernel))
         except Exception as e:
             logging.critical("Exception in AiService#__init__: {}".format(str(e)))
             logging.exception(e, stack_info=True, exc_info=True)
@@ -141,3 +172,99 @@ class AiService:
             logging.critical("Exception in generate_embeddings: {}".format(str(e)))
             logging.exception(e, stack_info=True, exc_info=True)
             return None
+
+    async def invoke_kernel(
+        self,
+        conversation: AiConversation,
+        prompt_text,
+        user_text,
+        context,
+        max_tokens=2000,
+        temperature=0.5,
+        top_p=0.5,
+    ) -> AiCompletion | None:
+
+        try:
+            logging.warning("invoke_kernel, user_text: {}".format(user_text))
+            logging.warning("invoke_kernel, context:    {}".format(context))
+            conversation.add_user_message(user_text)
+            conversation.add_system_message(
+                context
+            )  # conversation.chat_history.serialize())
+
+            execution_settings = OpenAITextPromptExecutionSettings(
+                service_id="chat_completion",
+                ai_model_id=self.completions_deployment,
+                max_tokens=abs(max_tokens),
+                temperature=abs(temperature),
+                top_p=abs(top_p),
+            )
+
+            chat_prompt_template_config = sk.PromptTemplateConfig(
+                template=prompt_text,
+                name="chat",
+                template_format="semantic-kernel",
+                input_variables=[
+                    InputVariable(
+                        name="history",
+                        description="The conversation ChatHistory",
+                        is_required=True,
+                    ),
+                    InputVariable(
+                        name="user_text", description="The user input", is_required=True
+                    ),
+                    InputVariable(
+                        name="context",
+                        description="RAG data to augment the LLM",
+                        is_required=True,
+                    ),
+                ],
+                execution_settings=execution_settings,
+            )
+
+            if self.chat_function is None:
+                # self.chat_function = self.sk_kernel.create_function_from_prompt(
+                #     prompt=prompt_text,
+                #     function_name="ChatGPTFunc2",
+                #     plugin_name="chatGPTPlugin2",
+                #     prompt_template_config=chat_prompt_template_config)
+                self.chat_function = self.sk_kernel.create_function_from_prompt(
+                    function_name="chat",
+                    plugin_name="chatPlugin",
+                    prompt_template_config=chat_prompt_template_config,
+                )
+
+            kernel_args = sk.KernelArguments(
+                user_text=user_text,
+                context=context,
+                history=conversation.get_chat_history().serialize(),
+            )
+
+            invoke_result = await self.sk_kernel.invoke(self.chat_function, kernel_args)
+
+            conversation.add_assistant_message(str(invoke_result))
+            completion = AiCompletion(conversation.get_conversation_id(), invoke_result)
+            conversation.add_completion(completion)
+            self.vcore.save_conversation(conversation)
+            return completion
+        except Exception as e:
+            conversation.add_assistant_message("exception: {}".format(str(e)))
+            logging.critical("Exception in invoke_kernel: {}".format(str(e)))
+            logging.exception(e, stack_info=True, exc_info=True)
+            return None
+
+    def generic_prompt(self) -> str:
+        # TODO - possibly refactor this perhaps into an AiPrompts class
+        prompt_text = """
+        ChatBot can have a conversation with you about any topic.
+        It can give explicit instructions or say 'I don't know' if it does not have an answer.
+
+        Context:
+        {{$context}}
+        
+        Chat history:
+        {{$history}}
+        
+        User: {{$user_text}}
+        ChatBot: """
+        return prompt_text

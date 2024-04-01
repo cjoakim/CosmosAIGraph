@@ -9,6 +9,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 
 from pysrc.services.config_service import ConfigService
+from pysrc.services.ai_conversation import AiConversation
 from pysrc.models.webservice_models import DocumentsVSResultsModel
 
 # Instances of this class are used to access a Cosmos DB Mongo vCore
@@ -104,12 +105,6 @@ class CosmosVCoreService:
         self.set_db("config")
         return self._db.shards.find()
 
-    # def extension_command_get_database(self):
-    #     """ Execute the 'getDatabase' command and return the results."""
-    #     command = {}
-    #     command['customAction'] = 'GetDatabase'
-    #     return self._db.command(command)
-
     def get_shard_info(self) -> dict:
         """Return a dict of shard info."""
         shard_dict = {}
@@ -197,6 +192,40 @@ class CosmosVCoreService:
         that match the query spec.
         """
         return self._coll.count_documents(query_spec)
+
+    def load_conversation(self, conversation_id) -> AiConversation | None:
+        try:
+            self.set_coll(ConfigService.conversations_container())
+            spec = dict()
+            spec["conversation_id"] = conversation_id
+            doc = self.find_one(spec)
+            return AiConversation(doc)
+        except Exception as e:
+            logging.critical(
+                "Exception in CosmosVCoreService#load_conversation id: {} -> {}".format(
+                    conversation_id, str(e)
+                )
+            )
+            logging.exception(e, stack_info=True, exc_info=True)
+            return None
+
+    def save_conversation(self, conv: AiConversation) -> bool:
+        try:
+            self.set_coll(ConfigService.conversations_container())
+            conv.set_updated_at()
+            doc = json.loads(conv.serialize())
+            spec = dict()
+            spec["conversation_id"] = doc["conversation_id"]
+            self.replace_one(spec, doc)
+            return True
+        except Exception as e:
+            logging.critical(
+                "Exception in CosmosVCoreService#save_conversation id: {} -> {}".format(
+                    conv, str(e)
+                )
+            )
+            logging.exception(e, stack_info=True, exc_info=True)
+            return False
 
     def search_documents_like_library(
         self, libtype, libname, embeddings_attr="embeddings", k=10

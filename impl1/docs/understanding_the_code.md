@@ -12,8 +12,8 @@ or none.
 ## The app_common directory
 
 This is where the common and reusable code for implementation is developed and tested.
-Much of it is copied to the three microservice directories 
-(i.e. - app_web, app_graph, and app_ai) as well as the other 
+Much of it is copied to the two microservice directories 
+(i.e. - app_web and app_graph) as well as the other 
 sub-applications (i.e - app_console) in an automated manner.
 
 See script **impl1\app_common\deploy_master_code.ps1** which uses
@@ -38,7 +38,7 @@ The classes here define the **business service** logic used by the application.
 **config_service.py** returns all configuration values, such as environment variables,
 for the application.
 
-**ai_service.py** implements all Azure OpenAI and LangChain logic.
+**ai_service.py** implements all Azure OpenAI and semantic-kernel logic.
 The **generate_sparql_from_user_prompt** method in this module is where
 the Azure OpenAI service is invoked to generate a SPARQL query from a
 given OWL ontology and user prompt.
@@ -88,7 +88,7 @@ AzureOpenAI system prompt.
 
 **prompts.py** is used to define system and user prompts for 
 Azure OpenAI.  This module is expected to evolve as the codebase
-adds more LangChain functionality.
+adds more semantic-kernel functionality.
 
 **sparql_formatter.py** is used to return 'pretty' version of
 a given (AI-generated) SPARQL query.
@@ -98,13 +98,12 @@ templates and a dictionary of values.
 
 ### The FastAPI entry-point modules
 
-The entry-point for the three microservices are:
+The entry-point for the two microservices are:
 
 - impl1/app_web/webapp.py
 - impl1/app_graph/websvc.py
-- impl1/app_ai/websvc.py
 
-These three are very similar in that they create the FastAPI object,
+These two are very similar in that they create the FastAPI object,
 load environment variables, configure logging, log the environment variables,
 and define the HTTP endpoints.
 The following is an example from the AI microservice.
@@ -127,25 +126,6 @@ Each microservice implements a **/liveness** HTTP GET endpoint that
 can be executed by the container orchestration system (i.e - ACA or AKS)
 to ensure the process is alive, and restart it if not.
 
-#### Other endpoints - async and use of Pydantic
-
-This example from the app_ai microservice shows the implementation
-of the path **/gen_sparql_query** that must be invoked with a HTTP POST.
-
-SparqlGenerationRequestModel and SparqlGenerationResponseModel are Pydantic models,
-defined in module webservice_models.py described above.  Using these
-Pydantic models enables the FastAPI framework to validate the request 
-and response data.
-
-Note the use of the **async** keyword, which indicates that the endpoint
-is asynchronous.  FastAPI can thus handle multiple concurrent requests.
-
-```
-@app.post("/gen_sparql_query")
-async def post_gen_sparql_query(
-    req_model: SparqlGenerationRequestModel,
-) -> SparqlGenerationResponseModel:
-```
 
 #### Authorization and Authentication 
 

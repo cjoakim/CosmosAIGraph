@@ -15,16 +15,15 @@ All of these begin with the prefix `CAIG_`.
 | Name | Description |
 | --------------------------------- | --------------------------------- |
 | CAIG_ACA_ENVIRONMENT_NAME | The Azure Container App (ACA) environment name |
-| CAIG_AI_SERVICE_NAME |  |
-| CAIG_AI_SERVICE_PORT |  |
-| CAIG_AI_SERVICE_URL |  |
 | CAIG_AZURE_MONGO_VCORE_CONN_STR | The full connection string for the Cosmos DB Mongo vCore account |
 | CAIG_AZURE_OPENAI_COMPLETIONS_DEP | The name of your Azure OpenAI completions deployment |
 | CAIG_AZURE_OPENAI_EMBEDDINGS_DEP | The name of your Azure OpenAI embeddings deployment |
 | CAIG_AZURE_OPENAI_KEY | The Key of your Azure OpenAI account |
 | CAIG_AZURE_OPENAI_URL | The URL of your Azure OpenAI account |
 | CAIG_AZURE_REGION | The Azure region where the ACA app is deployed to |
+| CAIG_CONVERSATIONS_CONTAINER | The vCore container where the chat conversations and history are persisted |
 | CAIG_DEFINED_AUTH_USERS |  |
+| CAIG_DOCUMENTS_CONTAINER | The vCore container where HTML documentation and its' vectorized equivalent are stored |
 | CAIG_GRAPH_SERVICE_NAME |  |
 | CAIG_GRAPH_SERVICE_PORT |  |
 | CAIG_GRAPH_SERVICE_URL |  |

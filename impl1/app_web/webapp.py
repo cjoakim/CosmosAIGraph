@@ -5,7 +5,6 @@
 
 import json
 import logging
-import os
 import time
 import traceback
 import uuid
@@ -24,7 +23,14 @@ from pysrc.models.webservice_models import LivenessModel
 from pysrc.models.webservice_models import OwlInfoModel
 from pysrc.models.webservice_models import DocumentsVSResultsModel
 
+from pysrc.models.webservice_models import SparqlGenerationRequestModel
+from pysrc.models.webservice_models import SparqlGenerationResponseModel
+from pysrc.models.webservice_models import VectorizeRequestModel
+from pysrc.models.webservice_models import VectorizeResponseModel
+
+
 # Services with Business Logic
+from pysrc.services.ai_service import AiService
 from pysrc.services.cache_service import CacheService
 from pysrc.services.config_service import ConfigService
 from pysrc.services.cosmos_vcore_service import CosmosVCoreService
@@ -39,6 +45,7 @@ logging.basicConfig(
 )
 ConfigService.log_defined_env_vars()
 
+ai_svc = AiService()
 cache_svc = CacheService({})
 owl_info = None  # lazy-initialized
 owl_xml = None  # lazy-initialized
@@ -137,9 +144,9 @@ async def post_sparql_console(req: Request):
 @app.get("/gen_sparql_console")
 async def get_ai_console(req: Request):
     view_data = gen_sparql_console_view_data()
-    view_data[
-        "natural_language"
-    ] = "What are the dependencies of the 'pypi' type of library named 'flask'?"
+    view_data["natural_language"] = (
+        "What are the dependencies of the 'pypi' type of library named 'flask'?"
+    )
     view_data["sparql"] = "SELECT * WHERE { ?s ?p ?o . } LIMIT 10"
     return views.TemplateResponse(
         request=req, name="gen_sparql_console.html", context=view_data
@@ -154,17 +161,32 @@ async def ai_post_gen_sparql(req: Request):
     natural_language = form_data.get("natural_language")
     view_data = gen_sparql_console_view_data()
     view_data["natural_language"] = natural_language
-    url = ai_gen_sparql_url()
-    postdata = dict()
-    postdata["session_id"] = str(uuid.uuid1())
-    postdata["natural_language"] = natural_language
-    postdata["owl"] = owl_xml
-    r = httpx.post(url, data=json.dumps(postdata), timeout=120.0)
-    resp_obj = json.loads(r.text)
+    sparql: str = ""
+
+    resp_obj = dict()
+    resp_obj["session_id"] = ""  # TODO
+    resp_obj["natural_language"] = natural_language
+    resp_obj["owl"] = owl_xml
+    resp_obj["completion_id"] = ""
+    resp_obj["completion_model"] = ""
+    resp_obj["prompt_tokens"] = -1
+    resp_obj["completion_tokens"] = -1
+    resp_obj["total_tokens"] = -1
+    resp_obj["sparql"] = ""
+    resp_obj["error"] = ""
+
+    try:
+        resp_obj = ai_svc.generate_sparql_from_user_prompt(resp_obj)
+        sparql = resp_obj["sparql"]
+        view_data["sparql"] = SparqlFormatter().pretty(sparql)
+    except Exception as e:
+        resp_obj["error"] = str(e)
+        logging.critical((str(e)))
+        logging.exception(e, stack_info=True, exc_info=True)
+
     view_data["results"] = json.dumps(resp_obj, sort_keys=False, indent=2)
     view_data["results_message"] = "Generative AI Response"
-    sparql = resp_obj["sparql"]
-    view_data["sparql"] = SparqlFormatter().pretty(sparql)
+
     return views.TemplateResponse(
         request=req, name="gen_sparql_console.html", context=view_data
     )
@@ -211,17 +233,15 @@ async def post_vector_search_console(req: Request):
 
     if libname.startswith("text:"):
         text = libname[5:]
-        logging.info(f"text: {text}")
-        # Call the AI microservice to vectorize the text
-        url = ai_vectorize_url()
-        logging.info(f"url: {url}")
-        postdata = dict()
-        postdata["session_id"] = str(uuid.uuid1())
-        postdata["text"] = text
-        r = httpx.post(url, data=json.dumps(postdata), timeout=120.0)
-        vectorize_resp_obj = json.loads(r.text)
-        logging.info(f"vectorize_resp_obj: {vectorize_resp_obj}")
-        vector = vectorize_resp_obj["embeddings"]
+        logging.info(f"post_vector_search_console; text: {text}")
+        try:
+            logging.warn("vectorize: {}".format(text))
+            ai_svc_resp = ai_svc.generate_embeddings(text)
+            vector = ai_svc_resp.data[0].embedding
+            logging.info(f"post_vector_search_console; vector: {vector}")
+        except Exception as e:
+            logging.critical((str(e)))
+            logging.exception(e, stack_info=True, exc_info=True)
 
         vcore.set_db(ConfigService.graph_source_db())
         vcore.set_coll(ConfigService.documents_container())
@@ -254,8 +274,30 @@ async def post_vector_search_console(req: Request):
 
 @app.get("/conv_ai_console")
 async def conv_ai_console(req: Request):
+    conv = FS.read_json("static/sample_ai_conversation.json")
     view_data = dict()
-    # TODO - design UI and implement
+    view_data["conv"] = conv
+    logging.warn(json.dumps(conv, sort_keys=False, indent=2))
+    return views.TemplateResponse(
+        request=req, name="conv_ai_console.html", context=view_data
+    )
+
+
+@app.post("/conv_ai_console")
+async def conv_ai_console(req: Request):
+    form_data = await req.form()
+    # print(form_data)
+    conversation_id = form_data.get("conversation_id").strip()
+    user_text = form_data.get("user_text").strip()
+    logging.warn(
+        "conversation_id: {}, user_text: {}".format(conversation_id, user_text)
+    )
+
+    # TODO - process the user_text, update the conversation, pass the conversation to the view for rendering
+    conv = FS.read_json("static/sample_ai_conversation.json")
+
+    view_data = dict()
+    view_data["conv"] = conv
     return views.TemplateResponse(
         request=req, name="conv_ai_console.html", context=view_data
     )
@@ -284,9 +326,9 @@ def gen_sparql_console_view_data():
         logging.debug("owl_xml: {}".format(owl_xml))
 
     view_data = dict()
-    view_data[
-        "natural_language"
-    ] = "What are the dependencies of the 'pypi' type of library named 'flask'?"
+    view_data["natural_language"] = (
+        "What are the dependencies of the 'pypi' type of library named 'flask'?"
+    )
     view_data["sparql"] = ""
     view_data["owl"] = owl_xml
     view_data["results_message"] = ""
@@ -309,18 +351,6 @@ def graph_microsvc_sparql_query_url():
 def graph_microsvc_bom_query_url():
     return "{}:{}/sparql_bom_query".format(
         ConfigService.graph_service_url(), ConfigService.graph_service_port()
-    )
-
-
-def ai_gen_sparql_url():
-    return "{}:{}/gen_sparql_query".format(
-        ConfigService.ai_service_url(), ConfigService.ai_service_port()
-    )
-
-
-def ai_vectorize_url():
-    return "{}:{}/vectorize".format(
-        ConfigService.ai_service_url(), ConfigService.ai_service_port()
     )
 
 
@@ -465,26 +495,6 @@ def post_sparql_query_to_graph_microsvc(sparql: str) -> None:
         return {}
 
 
-def post_sparql_gen_request_to_ai_microservice(natural_language: str) -> None:
-    """
-    Execute a HTTP POST to the ai microservice to generate a SPARQL
-    query from the given natural language.
-    Return the HTTP response JSON object.
-    """
-    global owl_minimized
-    try:
-        url = graph_microsvc_sparql_query_url_url()
-        postdata = dict()
-        postdata["sparql"] = sparql
-        r = httpx.post(url, data=json.dumps(postdata), timeout=120.0)
-        obj = json.loads(r.text)
-        return obj
-    except Exception as e:
-        logging.critical((str(e)))
-        logging.exception(e, stack_info=True, exc_info=True)
-        return {}
-
-
 def get_graph_service_owl_info():
     global owl_info
     try:
@@ -507,3 +517,38 @@ def remove_mongo_id_attr(mongo_doc) -> None:
     if mongo_doc is not None:
         if "_id" in mongo_doc.keys():
             del mongo_doc["_id"]
+
+
+# ============================================================================
+# The following two methods were copied/pasted from the app_ai microservice
+# for easy reference.  TODO - remove this comment after refactoring is complete.
+
+# @app.post("/gen_sparql_query")
+# async def post_gen_sparql_query(
+#     req_model: SparqlGenerationRequestModel,
+# ) -> SparqlGenerationResponseModel:
+#     global ai_svc
+#     resp_obj = dict()
+#     resp_obj["session_id"] = req_model.session_id
+#     resp_obj["natural_language"] = req_model.natural_language
+#     resp_obj["owl"] = req_model.owl
+#     resp_obj["completion_id"] = ""
+#     resp_obj["completion_model"] = ""
+#     resp_obj["prompt_tokens"] = -1
+#     resp_obj["completion_tokens"] = -1
+#     resp_obj["total_tokens"] = -1
+#     resp_obj["sparql"] = ""
+#     resp_obj["error"] = ""
+
+#     t1 = time.perf_counter()
+#     try:
+#         resp_obj = ai_svc.generate_sparql_from_user_prompt(resp_obj)
+#     except Exception as e:
+#         resp_obj["error"] = str(e)
+#         logging.critical((str(e)))
+#         logging.exception(e, stack_info=True, exc_info=True)
+
+#     resp_obj["epoch"] = int(time.time())
+#     resp_obj["elapsed"] = time.perf_counter() - t1
+#     logging.debug("post_gen_sparql_query: {}".format(json.dumps(resp_obj)))
+#     return resp_obj

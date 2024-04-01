@@ -7,23 +7,22 @@
 
 **Note:** The initial March 2024 release of CosmosAIGraph is focused on **graph workloads**.
 Subsequent releases will further implement **AI-powered** functionality with the
-langchain orchestration library.
+semantic-kernel orchestration library.
 
 ---
 
-The **CosmosAIGraph (caig)** application, implementation 1, is deployed as these three microservices:
+The **CosmosAIGraph (caig)** application, implementation 1, is deployed as these two microservices:
 
 | Name   | Functionality                                                          |
 | ------ | ---------------------------------------------------------------------- |
 | web    |  Web Application microservice, user-facing, HTML oriented              |
 | graph  |  Graph Microservice, JSON microservices over an in-memory rdflib graph |
-| ai     |  AI Microservice, JSON microservices or OpenAI and LangChain logic     |
 
-These are located in the **app_web**, **app_graph**, and **app_ai** directories
+These are located in the **app_web**, and **app_graph** directories
 of this repository.
 
 These are Docker-containerized with the **caig_** prefix.  Therefore, the container
-names will be **caig_web**, **caig_graph**, and **caig_ai**.
+names will be **caig_web**, and **caig_graph**.
 
 ## Implementation Summary
 
@@ -39,8 +38,8 @@ names will be **caig_web**, **caig_graph**, and **caig_ai**.
   - AI sessions, prompt history, and completion history is stored here
 - **Azure OpenAI** is used for AI and LLM functionality
   - See https://learn.microsoft.com/en-us/azure/ai-services/openai/
-- **LangChain** is use for AI and LLM orchestration
-  - See https://www.langchain.com
+- **semantic-kernel** is use for AI and LLM orchestration
+  - See https://learn.microsoft.com/en-us/semantic-kernel/overview/
 - **rdflib** is used as the high-performance in-memory graph
   - See https://rdflib.readthedocs.io/en/stable/
 - **SPARQL 1.1** is the graph query language
@@ -53,15 +52,14 @@ names will be **caig_web**, **caig_graph**, and **caig_ai**.
 Given the above microservices, this GitHub repository has this directory structure:
 
 ```
-├── app_ai              # The AI microservice
 ├── app_common          # Common Python code developed and tested here
 ├── app_console         # Ad-hoc console app for data wrangling, etc.
 ├── app_graph           # The Graph microservice
 ├── app_web             # The Web Application microservice
 └── deployment          # Azure Container App (ACA) Bicep-based deployment scripts
-├── docker-builds.ps1   # script to build all three Docker images on Windows 11 w/PowerShell
-├── docker-builds.sh    # script to build all three Docker images in macOS & Linux w/bash
-├── docker-compose.yml  # Docker Compose script to run the three microservices locally
+├── docker-builds.ps1   # script to build all two Docker images on Windows 11 w/PowerShell
+├── docker-builds.sh    # script to build all two Docker images in macOS & Linux w/bash
+├── docker-compose.yml  # Docker Compose script to run the two microservices locally
 └── deployment          # Azure Container App (ACA) Bicep-based deployment scripts
 └── mongosh*            # scripts to launch the mongo shell program, pointing at vCore
 └── venv-builds*        # scripts to build the several python virtual environments in this implementation
@@ -70,7 +68,7 @@ Given the above microservices, this GitHub repository has this directory structu
 The main development is done in the **app_common** directory.
 Code is developed and unit-tested there.
 Apache Ant script **deploy_master_code.xml** is used to copy this tested master code
-to the several applications (app_web, app_graph, app_ai, etc.) that use this common/master code.
+to the several applications (app_web, app_graph, etc.) that use this common/master code.
 
 ---
 

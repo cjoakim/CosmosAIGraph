@@ -7,14 +7,15 @@
 // Chris Joakim, Microsoft
 
 param acaEnvironmentName string
-param aiServiceName string
 param azureMongoVcoreConnStr string
 param azureOpenaiCompletionsDep string
 param azureOpenaiEmbeddingsDep string
 param azureOpenaiKey string
 param azureOpenaiUrl string
 param azureRegion string
+param conversationsContainer string
 param definedAuthUsers string
+param documentsContainer string
 param graphServiceName string
 param graphSourceContainer string
 param graphSourceDb string
@@ -100,6 +101,18 @@ resource graph 'Microsoft.App/containerApps@2023-05-01' = {
               name: 'CAIG_GRAPH_SOURCE_CONTAINER'
               value: graphSourceContainer
             }
+            {
+              name: 'CAIG_CONVERSATIONS_CONTAINER'
+              value: conversationsContainer
+            }
+            {
+              name: 'CAIG_DOCUMENTS_CONTAINER'
+              value: documentsContainer
+            }
+            {
+              name: 'CAIG_LOG_LEVEL'
+              value: '5'
+            }
           ]
           probes: [
             {
@@ -127,87 +140,6 @@ resource graph 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-resource ai 'Microsoft.App/containerApps@2023-05-01' = {
-  name: aiServiceName
-  location: azureRegion
-  properties: {
-    environmentId: acaEnvironment.id
-    configuration: {
-      ingress: {
-        allowInsecure: true
-        clientCertificateMode: 'ignore'
-        targetPort: 8002
-        external: true
-        stickySessions: {
-          affinity: 'none'
-        }
-        transport: 'auto'
-      }
-    }
-    template: {
-      containers: [
-        {
-          image: 'cjoakim/caig_ai:latest'
-          name: graphServiceName
-          env: [
-            {
-              name: 'CAIG_AZURE_OPENAI_URL'
-              value: azureOpenaiUrl
-            }
-            {
-              name: 'CAIG_AZURE_OPENAI_KEY'
-              value: azureOpenaiKey
-            }
-            {
-              name: 'CAIG_AZURE_OPENAI_VERSION'
-              value: '2023-12-01-preview'
-            }
-            {
-              name: 'CAIG_AZURE_OPENAI_REGION'
-              value: azureOpenaiRegion
-            }
-            {
-              name: 'CAIG_AZURE_OPENAI_COMPLETIONS_DEP'
-              value: azureOpenaiCompletionsDep
-            }
-            {
-              name: 'CAIG_AZURE_OPENAI_EMBEDDINGS_DEP'
-              value: azureOpenaiEmbeddingsDep
-            }
-            {
-              name: 'CAIG_GRAPH_SOURCE_OWL_FILENAME'
-              value: graphSourceOwlFilename
-            }
-            {
-              name: 'CAIG_LOG_LEVEL'
-              value: logLevel
-            }
-          ]
-          probes: [
-            {
-              type: 'liveness'
-              failureThreshold: 5
-              httpGet: {
-                path: '/liveness'
-                port:  8002
-                scheme: 'http'
-              }
-              initialDelaySeconds: 60
-              periodSeconds: 120
-              successThreshold: 1
-              timeoutSeconds: 10
-            }
-          ]
-        }
-      ]
-      scale: {
-        maxReplicas: 2
-        minReplicas: 1
-      }
-      terminationGracePeriodSeconds: 30
-    }
-  }
-}
 
 resource web 'Microsoft.App/containerApps@2023-05-01' = {
   name: webAppName
@@ -241,12 +173,40 @@ resource web 'Microsoft.App/containerApps@2023-05-01' = {
               value: '80'
             }
             {
-              name: 'CAIG_AI_SERVICE_URL'
-              value: 'http://${ai.properties.latestRevisionFqdn}'
+              name: 'CAIG_AZURE_MONGO_VCORE_CONN_STR'
+              value: azureMongoVcoreConnStr
             }
             {
-              name: 'CAIG_AI_SERVICE_PORT'
-              value: '80'
+              name: 'CAIG_GRAPH_SOURCE_DB'
+              value: graphSourceDb
+            }
+            {
+              name: 'CAIG_GRAPH_SOURCE_CONTAINER'
+              value: graphSourceContainer
+            }
+            {
+              name: 'CAIG_CONVERSATIONS_CONTAINER'
+              value: conversationsContainer
+            }
+            {
+              name: 'CAIG_DOCUMENTS_CONTAINER'
+              value: documentsContainer
+            }
+            {
+              name: 'CAIG_AZURE_OPENAI_URL'
+              value: azureOpenaiUrl
+            }
+            {
+              name: 'CAIG_AZURE_OPENAI_KEY'
+              value: azureOpenaiKey
+            }
+            {
+              name: 'CAIG_AZURE_OPENAI_EMBEDDINGS_DEP'
+              value: azureOpenaiEmbeddingsDep
+            }
+            {
+              name: 'CAIG_AZURE_OPENAI_COMPLETIONS_DEP'
+              value: azureOpenaiCompletionsDep
             }
             {
               name: 'CAIG_DEFINED_AUTH_USERS'
@@ -255,10 +215,6 @@ resource web 'Microsoft.App/containerApps@2023-05-01' = {
             {
               name: 'CAIG_LOG_LEVEL'
               value: '5'
-            }
-            {
-              name: 'CAIG_AZURE_MONGO_VCORE_CONN_STR'
-              value: azureMongoVcoreConnStr
             }
           ]
           probes: [

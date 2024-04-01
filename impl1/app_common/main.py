@@ -134,8 +134,6 @@ def excluded_bicep_envvars():
     elsewhere in the system, but not by the Bicep deployment process.
     """
     vars = list()
-    vars.append("CAIG_AI_SERVICE_PORT")
-    vars.append("CAIG_AI_SERVICE_URL")
     vars.append("CAIG_GRAPH_SERVICE_PORT")
     vars.append("CAIG_GRAPH_SERVICE_URL")
     vars.append("CAIG_HOME")

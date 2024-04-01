@@ -1,14 +1,12 @@
-import os
 import time
-import pytest
 
+from pysrc.services.ai_conversation import AiConversation
 from pysrc.services.cosmos_vcore_service import CosmosVCoreService
 from pysrc.services.config_service import ConfigService
 from pysrc.util.fs import FS
 
 # pytest tests/test_cosmos_vcore_service.py
 # an actual Cosmos DB Mongo vCore account is used in these tests
-
 
 def test_conn_str_config():
     ConfigService.set_standard_unit_test_env_vars()
@@ -134,6 +132,42 @@ def test_search_documents_like_library():
         assert doc["libname"] is not None
         assert doc["url"] is not None
         assert len(doc["embeddings"]) == 1536
+
+def test_ai_conversation():
+    ConfigService.set_standard_unit_test_env_vars()
+    opts = dict()
+    opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
+    vcore = CosmosVCoreService(opts)
+    vcore.set_db(ConfigService.graph_source_db())
+    vcore.set_coll("conversations")
+
+    conv1 = AiConversation()
+    conv1.add_user_message("this is a user message")
+    conv1.add_system_message("this is a system message")
+    conv1.add_assistant_message("this is an assistant message")
+    conv1.add_tool_message("this is an assistant message")
+    jstr = conv1.serialize()
+    print(jstr)
+
+    bool = vcore.save_conversation(conv1)
+    vcore.delete_many({})
+    count = vcore.count_docs({})
+    assert count == 0
+
+    assert bool is True
+    for n in range(0,5):
+        bool = vcore.save_conversation(conv1)
+        assert bool is True
+    count = vcore.count_docs({})
+    assert count == 1
+
+    conv2 = vcore.load_conversation(conv1.get_conversation_id())
+    assert conv1.get_conversation_id() == conv2.get_conversation_id()
+    assert conv1.get_message_count() == conv2.get_message_count()
+
+    conv2.add_user_message("this is another user message")
+    bool = vcore.save_conversation(conv2)
+    assert bool is True
 
 def test_vector_search():
     ConfigService.set_standard_unit_test_env_vars()

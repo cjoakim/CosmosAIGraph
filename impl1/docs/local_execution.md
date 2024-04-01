@@ -27,13 +27,12 @@ The three modes are:
 
 ## Microservice-per-Terminal
 
-In this mode, you manually create three Terminal windows, navigate to each,
+In this mode, you manually create two Terminal windows, navigate to each,
 create/activate the python virtual environment, and start the webapp.ps1
 or websvc.ps1 script.
 
-These three microservice directories in this repo are:
+These two microservice directories in this repo are:
 
-- impl1\app_ai
 - impl1\app_graph
 - impl1\app_web
 
@@ -48,12 +47,12 @@ Be sure to modifify your environment variables, such as with the .env file,
 before starting the microservices.
 
 Also be sure to create and activate the Python Virtual Environment
-in each of these three microservice directories.
+in each of these two microservice directories.
 
 ## Launcher Script
 
 In this mode, simply execute the **.\run.ps1** script in the **impl1**
-directory of this repository.  It will create all three Terminal windows
+directory of this repository.  It will create all two Terminal windows
 and launch one microsoervice in each window.
 
 Be sure to modifify your environment variables, such as with the .env file,
@@ -73,7 +72,7 @@ before starting the microservices.
 Create two PowerShell Terminal windows, and navigate to the **impl1** directory in each.
 
 In the first terminal window, execute the following command to start the application
-(all three microservices).
+(both microservices).
 
 ```
 docker compose -f docker-compose.yml up
@@ -103,11 +102,10 @@ You should should see verbose output that includes the following:
 
 ### The Docker Containers
 
-These three pre-built Docker containers exist on **DockerHub**.
+These two pre-built Docker containers exist on **DockerHub**.
 
 - cjoakim/caig_web:latest
 - cjoakim/caig_graph:latest
-- cjoakim/caig_ai:latest
 
 These are used by default by the above **docker-compose** script
 and also by the **Azure Container App** deployment process.

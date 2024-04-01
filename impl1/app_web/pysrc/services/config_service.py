@@ -38,6 +38,9 @@ class ConfigService:
         d["CAIG_DOCUMENTS_CONTAINER"] = (
             "The vCore container where HTML documentation and its' vectorized equivalent are stored"
         )
+        d["CAIG_CONVERSATIONS_CONTAINER"] = (
+            "The vCore container where the chat conversations and history are persisted"
+        )
         d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = (
             "The full connection string for the Cosmos DB Mongo vCore account"
         )
@@ -65,9 +68,6 @@ class ConfigService:
         d["CAIG_GRAPH_SERVICE_NAME"] = ""
         d["CAIG_GRAPH_SERVICE_URL"] = ""
         d["CAIG_GRAPH_SERVICE_PORT"] = ""
-        d["CAIG_AI_SERVICE_NAME"] = ""
-        d["CAIG_AI_SERVICE_URL"] = ""
-        d["CAIG_AI_SERVICE_PORT"] = ""
         d["CAIG_LOG_LEVEL"] = (
             "a python logging standard-lib level name: notset, debug, info, warning, error, or critical"
         )
@@ -84,6 +84,7 @@ class ConfigService:
         d["CAIG_GRAPH_SOURCE_DB"] = "graph"
         d["CAIG_GRAPH_SOURCE_CONTAINER"] = "libraries"
         d["CAIG_DOCUMENTS_CONTAINER"] = "documents"
+        d["CAIG_CONVERSATIONS_CONTAINER"] = "conversations"
         d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = "mongodb+srv://..."
         d["CAIG_USE_ALT_SPARQL_CONSOLE"] = ""
         d["CAIG_AZURE_OPENAI_URL"] = ""
@@ -99,9 +100,6 @@ class ConfigService:
         d["CAIG_GRAPH_SERVICE_NAME"] = "caig-graph"
         d["CAIG_GRAPH_SERVICE_URL"] = "http://graph_service"
         d["CAIG_GRAPH_SERVICE_PORT"] = "8001"
-        d["CAIG_AI_SERVICE_NAME"] = "caig-ai"
-        d["CAIG_AI_SERVICE_URL"] = "http://ai_service"
-        d["CAIG_AI_SERVICE_PORT"] = "8002"
         d["CAIG_LOG_LEVEL"] = "info"
         return d
 
@@ -116,14 +114,6 @@ class ConfigService:
         logging.info(
             "log_config: {}".format(json.dumps(selected, sort_keys=True, indent=2))
         )
-
-    @classmethod
-    def ai_service_port(cls) -> str:
-        return cls.envvar("CAIG_AI_SERVICE_PORT", "8002")
-
-    @classmethod
-    def ai_service_url(cls) -> str:
-        return cls.envvar("CAIG_AI_SERVICE_URL", "http://127.0.0.1")
 
     @classmethod
     def graph_service_port(cls) -> str:
@@ -156,6 +146,10 @@ class ConfigService:
     @classmethod
     def documents_container(cls) -> str:
         return cls.envvar("CAIG_DOCUMENTS_CONTAINER", "documents")
+
+    @classmethod
+    def conversations_container(cls) -> str:
+        return cls.envvar("CAIG_CONVERSATIONS_CONTAINER", "conversations")
 
     @classmethod
     def mongo_vcore_conn_str(cls) -> str:

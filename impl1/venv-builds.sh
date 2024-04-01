@@ -3,12 +3,6 @@
 # Build the several Python Virtual Environments (venv) for this app.
 # Chris Joakim, Microsoft
 
-cd ./app_ai/
-pwd
-echo 'building app_ai python virtual environment ...'
-./venv.sh
-cd ..
-
 cd ./app_common/
 pwd
 echo 'building app_common python virtual environment ...'
