@@ -104,10 +104,6 @@ resource graph 'Microsoft.App/containerApps@2023-05-01' = {
               value: conversationsContainer
             }
             {
-              name: 'CAIG_DOCUMENTS_CONTAINER'
-              value: documentsContainer
-            }
-            {
               name: 'CAIG_LOG_LEVEL'
               value: '5'
             }
@@ -185,10 +181,6 @@ resource web 'Microsoft.App/containerApps@2023-05-01' = {
             {
               name: 'CAIG_CONVERSATIONS_CONTAINER'
               value: conversationsContainer
-            }
-            {
-              name: 'CAIG_DOCUMENTS_CONTAINER'
-              value: documentsContainer
             }
             {
               name: 'CAIG_AZURE_OPENAI_URL'
