@@ -15,7 +15,6 @@ param azureOpenaiUrl string
 param azureRegion string
 param conversationsContainer string
 param definedAuthUsers string
-param documentsContainer string
 param graphServiceName string
 param graphSourceContainer string
 param graphSourceDb string
@@ -23,7 +22,6 @@ param graphSourceOwlFilename string
 param graphSourceRdfFilename string
 param graphSourceType string
 param laWorkspaceName string
-param logLevel string
 param webAppName string
 
 resource law 'Microsoft.OperationalInsights/workspaces@2020-03-01-preview' = {

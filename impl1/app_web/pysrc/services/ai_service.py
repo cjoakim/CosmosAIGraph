@@ -2,6 +2,7 @@ import json
 import logging
 import time
 
+import tiktoken
 
 from openai import AzureOpenAI
 
@@ -39,6 +40,10 @@ class AiService:
             self.aoai_version = ConfigService.azure_openai_version()
             self.chat_function = None
 
+            self.encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+            self.enc = tiktoken.get_encoding("cl100k_base")
+            self.model = "gpt-35-turbo"
+
             self.aoai_client = AzureOpenAI(
                 azure_endpoint=self.aoai_endpoint,
                 api_key=self.aoai_api_key,
@@ -67,6 +72,19 @@ class AiService:
                     api_key=self.aoai_api_key,
                 )
             )
+            # see https://github.com/microsoft/semantic-kernel/tree/main/python
+            req_settings = self.sk_kernel.get_prompt_execution_settings_from_service_id(
+                "chat_completion"
+            )
+            req_settings.max_tokens = 2000
+            req_settings.temperature = 0.7
+            req_settings.top_p = 0.8
+            self.html_summarize_function = self.sk_kernel.create_function_from_prompt(
+                function_name="html_summarize",
+                plugin_name="html_summarize",
+                prompt=self.html_summarization_prompt(),
+                prompt_template_settings=req_settings,
+            )
             opts = dict()
             opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
             self.vcore = CosmosVCoreService(opts)
@@ -87,6 +105,16 @@ class AiService:
             logging.exception(e, stack_info=True, exc_info=True)
             return None
 
+    def num_tokens_from_string(self, s: str) -> int:
+        try:
+            return len(self.encoding.encode(s))
+        except Exception as e:
+            logging.critical(
+                "Exception in AiService#num_tokens_from_string: {}".format(str(e))
+            )
+            logging.exception(e, stack_info=True, exc_info=True)
+            return 10000
+
     def generate_sparql_from_user_prompt(
         self, resp_obj: dict
     ) -> SparqlGenerationResult:
@@ -94,12 +122,12 @@ class AiService:
             user_prompt = resp_obj["natural_language"]
             raw_owl = resp_obj["owl"]
             owl = OwlFormatter().minimize(raw_owl)
-            logging.info(
+            logging.warning(
                 "AiService#generate_sparql_from_user_prompt - user_prompt: {}".format(
                     user_prompt
                 )
             )
-            logging.info(
+            logging.warning(
                 "AiService#generate_sparql_from_user_prompt - owl first 80 chars: {}".format(
                     str(owl)[0:80]
                 )
@@ -173,24 +201,67 @@ class AiService:
             logging.exception(e, stack_info=True, exc_info=True)
             return None
 
+    async def summarize_html(self, input_html: str) -> str:
+        """Use semantic kernel to summarize the given html into text"""
+        return await self.sk_kernel.invoke(
+            self.html_summarize_function, input_html=input_html
+        )
+
+    def text_to_chunks(self, text):
+        max_chunk_size = 2048
+        chunks = []
+        current_chunk = ""
+        for sentence in text.split("."):
+            if len(current_chunk) + len(sentence) < max_chunk_size:
+                current_chunk += sentence + "."
+            else:
+                chunks.append(current_chunk.strip())
+                current_chunk = sentence + ". "
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+        return chunks
+
     async def invoke_kernel(
         self,
         conversation: AiConversation,
         prompt_text,
-        user_text,
+        user_query,
         context,
-        max_tokens=2000,
-        temperature=0.5,
+        max_tokens=1000,
+        temperature=0.4,
         top_p=0.5,
     ) -> AiCompletion | None:
 
         try:
-            logging.warning("invoke_kernel, user_text: {}".format(user_text))
-            logging.warning("invoke_kernel, context:    {}".format(context))
-            conversation.add_user_message(user_text)
-            conversation.add_system_message(
-                context
-            )  # conversation.chat_history.serialize())
+            logging.warning(
+                "AiService#invoke_kernel, user_query: {} {}".format(
+                    user_query, len(user_query)
+                )
+            )
+
+            # Truncate the input as necessary
+            # gpt35turbo: This model's maximum context length is 8192 tokens.
+            # Need to summarize the input to fit within this limit.
+            context = ""  # TODO
+
+            ntokens = self.num_tokens_from_string(user_query + context)
+            logging.error("AiService#invoke_kernel - ntokens: {}".format(ntokens))
+
+            if False:
+                if ntokens > 5000:
+                    pct = (float(8192) / float(ntokens)) * 0.5
+                    orig_len = float(len(user_query))
+                    trunc_len = int(orig_len * pct)
+                    context = user_query[0:trunc_len]
+                    logging.error(
+                        "AiService#invoke_kernel - truncated context from {} to {}, pct: {}".format(
+                            orig_len, trunc_len, pct
+                        )
+                    )
+
+            # logging.warning("AiService#invoke_kernel, context:    {}".format(context))
+            conversation.add_user_message(user_query)
+            conversation.add_system_message(context)
 
             execution_settings = OpenAITextPromptExecutionSettings(
                 service_id="chat_completion",
@@ -211,7 +282,9 @@ class AiService:
                         is_required=True,
                     ),
                     InputVariable(
-                        name="user_text", description="The user input", is_required=True
+                        name="user_query",
+                        description="The user input",
+                        is_required=True,
                     ),
                     InputVariable(
                         name="context",
@@ -223,11 +296,6 @@ class AiService:
             )
 
             if self.chat_function is None:
-                # self.chat_function = self.sk_kernel.create_function_from_prompt(
-                #     prompt=prompt_text,
-                #     function_name="ChatGPTFunc2",
-                #     plugin_name="chatGPTPlugin2",
-                #     prompt_template_config=chat_prompt_template_config)
                 self.chat_function = self.sk_kernel.create_function_from_prompt(
                     function_name="chat",
                     plugin_name="chatPlugin",
@@ -235,12 +303,15 @@ class AiService:
                 )
 
             kernel_args = sk.KernelArguments(
-                user_text=user_text,
+                user_query=user_query,
                 context=context,
                 history=conversation.get_chat_history().serialize(),
             )
 
             invoke_result = await self.sk_kernel.invoke(self.chat_function, kernel_args)
+            # invoke_result is an instance of class:
+            # <class 'semantic_kernel.functions.function_result.FunctionResult'>
+            # logging.info("AiService#invoke_kernel - invoke_result: {}".format(invoke_result))
 
             conversation.add_assistant_message(str(invoke_result))
             completion = AiCompletion(conversation.get_conversation_id(), invoke_result)
@@ -254,7 +325,6 @@ class AiService:
             return None
 
     def generic_prompt(self) -> str:
-        # TODO - possibly refactor this perhaps into an AiPrompts class
         prompt_text = """
         ChatBot can have a conversation with you about any topic.
         It can give explicit instructions or say 'I don't know' if it does not have an answer.
@@ -265,6 +335,23 @@ class AiService:
         Chat history:
         {{$history}}
         
-        User: {{$user_text}}
+        User: {{$user_query}}
         ChatBot: """
+        return prompt_text
+
+    def html_summarization_prompt(self) -> str:
+        prompt_text = """
+Your task is to generate a short summary of the following HTML text.
+
+Summarize the HTML below, delimited by triple backticks, in at most 100 words. 
+ 
+HTML: ```{{$input_html}}```
+"""
+        return prompt_text
+
+    def text_summarization_tldr_prompt(self) -> str:
+        prompt_text = """
+{{$input_text}}
+
+One line TLDR with the fewest words."""
         return prompt_text

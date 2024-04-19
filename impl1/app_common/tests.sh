@@ -2,6 +2,8 @@
 
 mkdir -p tmp
 
+rm tmp/*.*
+
 source bin/activate
 
 echo 'executing unit tests with code coverage ...'

@@ -37,14 +37,9 @@ class SparqlQueryRequestModel(BaseModel):
 
 class SparqlQueryResponseModel(BaseModel):
     sparql: str
-    # results: list[dict] = []
-    # results: Optional[List[int]] = None
     results: Any = None
     elapsed: float
     error: str | None
-
-    # FastAPI may have a bug currently re: validating response data
-    # containing lists, or lists of dicts.  Therefore, using an Any above.
 
 
 class SparqlBomQueryRequestModel(BaseModel):

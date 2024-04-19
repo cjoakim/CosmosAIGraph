@@ -8,12 +8,34 @@ import psutil
 
 
 class SparqlFormatter:
+
     def __init__(self, opts={}):
         self.opts = opts
 
+    def default_prefix(self) -> str:
+        return "PREFIX caig: <http://cosmosdb.com/caig#>"
+
     def pretty(self, sparql: str) -> str:
         try:
-            words, buffer, prev_word = sparql.split(), list(), ""
+            if sparql.lower().strip().startswith("prefix "):
+                pass
+            else:
+                # inject the default PREFIX and namespace if missing
+                sparql = "{}\n{}".format(self.default_prefix(), sparql.strip())
+                logging.warning(
+                    "SparqlFormatter#pretty - prefix injected: {}".format(sparql)
+                )
+
+            if "limit " in sparql.lower().strip():
+                pass
+            else:
+                # inject a LIMIT clause
+                sparql = "{} LIMIT 100".format(sparql.strip())
+                logging.warning(
+                    "SparqlFormatter#pretty - limit injected: {}".format(sparql)
+                )
+
+            words, buffer, prev_word = sparql.strip().split(), list(), ""
             for word in words:
                 if word in ["PREFIX", "SELECT", "WHERE"]:
                     buffer.append("\n")

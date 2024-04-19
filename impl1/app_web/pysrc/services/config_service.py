@@ -35,9 +35,8 @@ class ConfigService:
         d["CAIG_GRAPH_SOURCE_CONTAINER"] = (
             "The graph vCore container name, if CAIG_GRAPH_SOURCE_TYPE is 'cosmos_vcore'"
         )
-        d["CAIG_DOCUMENTS_CONTAINER"] = (
-            "The vCore container where HTML documentation and its' vectorized equivalent are stored"
-        )
+        d["CAIG_CACHE_CONTAINER"] = "The vCore container for key/value cache"
+        d["CAIG_CONFIG_CONTAINER"] = "The vCore container for configuration JSON values"
         d["CAIG_CONVERSATIONS_CONTAINER"] = (
             "The vCore container where the chat conversations and history are persisted"
         )
@@ -81,9 +80,10 @@ class ConfigService:
         d["CAIG_GRAPH_SOURCE_TYPE"] = "cosmos_vcore"
         d["CAIG_GRAPH_SOURCE_OWL_FILENAME"] = "ontologies/libraries.owl"
         d["CAIG_GRAPH_SOURCE_RDF_FILENAME"] = "rdf/libraries-graph.nt"
-        d["CAIG_GRAPH_SOURCE_DB"] = "graph"
+        d["CAIG_GRAPH_SOURCE_DB"] = "caig"
         d["CAIG_GRAPH_SOURCE_CONTAINER"] = "libraries"
-        d["CAIG_DOCUMENTS_CONTAINER"] = "documents"
+        d["CAIG_CACHE_CONTAINER"] = "cache"
+        d["CAIG_CONFIG_CONTAINER"] = "config"
         d["CAIG_CONVERSATIONS_CONTAINER"] = "conversations"
         d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = "mongodb+srv://..."
         d["CAIG_USE_ALT_SPARQL_CONSOLE"] = ""
@@ -137,15 +137,19 @@ class ConfigService:
 
     @classmethod
     def graph_source_db(cls) -> str:
-        return cls.envvar("CAIG_GRAPH_SOURCE_DB", "graph")
+        return cls.envvar("CAIG_GRAPH_SOURCE_DB", "caig")
 
     @classmethod
     def graph_source_container(cls) -> str:
         return cls.envvar("CAIG_GRAPH_SOURCE_CONTAINER", "libraries")
 
     @classmethod
-    def documents_container(cls) -> str:
-        return cls.envvar("CAIG_DOCUMENTS_CONTAINER", "documents")
+    def cache_container(cls) -> str:
+        return cls.envvar("CAIG_CACHE_CONTAINER", "cache")
+
+    @classmethod
+    def config_container(cls) -> str:
+        return cls.envvar("CAIG_CONFIG_CONTAINER", "config")
 
     @classmethod
     def conversations_container(cls) -> str:

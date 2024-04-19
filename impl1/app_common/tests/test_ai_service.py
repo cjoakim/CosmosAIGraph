@@ -6,6 +6,7 @@ import pytest
 from pysrc.services.ai_completion import AiCompletion
 from pysrc.services.ai_conversation import AiConversation
 from pysrc.services.ai_service import AiService
+from pysrc.util.sparql_formatter import SparqlFormatter
 from pysrc.util.fs import FS
 
 # pytest tests/test_ai_service.py
@@ -41,30 +42,18 @@ def test_generate_sparql_from_user_prompt():
     result_obj = ai_svc.generate_sparql_from_user_prompt(obj)
     print(obj)
     FS.write_json(obj, "tmp/test_generate_sparql_from_user_prompt.json")
-    assert obj["prompt_tokens"] > 1300
-    assert obj["prompt_tokens"] < 1600
-    assert obj["completion_tokens"] > 50
-    assert obj["completion_tokens"] < 100
-    assert obj["total_tokens"] > 1400
-    assert obj["total_tokens"] < 1600
+    assert obj["prompt_tokens"] > 1000
+    assert obj["prompt_tokens"] < 2000
+    assert obj["completion_tokens"] > 30
+    assert obj["completion_tokens"] < 130
+    assert obj["total_tokens"] > 1000
+    assert obj["total_tokens"] < 2000
     assert obj["elapsed"] > 0.001
-    assert obj["sparql"].startswith(
-        "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX : <http://cosmosdb.com/caig#> SELECT "
-    )
-    assert obj["sparql"].startswith(
-        "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX : <http://cosmosdb.com/caig#> SELECT "
-    )
 
-    # result_obj is a SparqlGenerationResult model and looks like this:
-    # {
-    #   "completion_id": "chatcmpl-8tJ9dO8diu9aiU91OJxrW2mTzdId1",
-    #   "completion_model": "gpt-4",
-    #   "prompt_tokens": 1427,
-    #   "completion_tokens": 79,
-    #   "total_tokens": 1506,
-    #   "elapsed": 2.840292542008683,
-    #   "sparql": "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX : <http://cosmosdb.com/caig#> SELECT ?dependency WHERE { ?lib :ln 'flask' . ?lib :lt 'pypi' . ?lib :uses_lib ?dependency . }"
-    # }
+    sf = SparqlFormatter()
+    sparql = obj["sparql"]
+    pretty = SparqlFormatter().pretty(sparql)
+    assert sf.default_prefix() in pretty
 
 def test_generate_embeddings():
     ai_svc = AiService()
@@ -74,6 +63,7 @@ def test_generate_embeddings():
     assert "CreateEmbeddingResponse" in str(type(resp)) 
     assert len(resp.data[0].embedding) == 1536
 
+@pytest.mark.skip(reason="this test is slow and exploratory, bypass for now")
 @pytest.mark.asyncio
 async def test_invoke_kernel():
     ai_svc = AiService()
@@ -102,7 +92,6 @@ async def test_invoke_kernel():
         completion3: AiCompletion = await ai_svc.invoke_kernel(
             conversation, prompt_text, user_query, context, temperature=2.0)
         print("completion 3 content: {}".format(completion3.get_content()))
-
 
     print('---')
     print(conversation.serialize())

@@ -23,7 +23,7 @@ def test_graph_source_rdf_filename():
 
 def test_graph_source_db():
     ConfigService.set_standard_unit_test_env_vars()
-    assert ConfigService.graph_source_db() == "graph"
+    assert ConfigService.graph_source_db() == "caig"
 
 
 def test_graph_source_container():

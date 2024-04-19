@@ -1,38 +1,43 @@
 # CosmosAIGraph : Load Azure Cosmos DB vCore
 
-## The Data - PyPi and NPM Libraries
+## The Data - Python Libraries at PyPi
 
 The **impl1\data** directory in this repo contains a curated set of
-[PyPi (Python)](https://pypi.org/) and
-[NPM (JavaScript/TypeScript)](https://www.npmjs.com/) library JSON documents.
+[PyPi (Python)](https://pypi.org/) library JSON documents.
 
-The NPM JSON files were obtained with the **npm info {libname} --json**,
-command while the PyPi JSON files were obtained with HTTP requests to 
-URLs such as **https://pypi.org/pypi/{libname}/json**.  Both of these
-datasources are public.
+This domain of software libraries was chosen because it should be **relatable** 
+to most customers, and it also suitable for **Bill-of-Materials** graphs.
 
-This domain of software libraries was chosen because it should be
-**relatable** to most customers, and it also suitable for **Bill-of-Materials**
-graphs.
+The PyPi JSON files were obtained with HTTP requests to public URLs such as 
+**https://pypi.org/pypi/{libname}/json**, and their HTML contents were tranformed into JSON.
+
+Subsequent data wrangling fetched referenced HTML documentation, produced 
+**text summarization with Azure OpenAI and semantic-kernel** and produced
+a **vectorized embedding value** from several concatinated text attributes
+within each library JSON document.  A full description of this data wrangling
+process is beyond the scope of this documentation, but the process itself
+is in file 'impl1/app_console/wrangle.py' in the repo.
 
 ## Assumptions
 
 This page assumes that you have set the following environment variables:
 
 ```
-CAIG_AZURE_MONGO_VCORE_CONN_STR
-CAIG_GRAPH_SOURCE_DB
-CAIG_GRAPH_SOURCE_CONTAINER
-CAIG_CONVERSATIONS_CONTAINER
-CAIG_DOCUMENTS_CONTAINER
+CAIG_AZURE_MONGO_VCORE_CONN_STR     <-- this value is unique to your Azure deployment
+CAIG_GRAPH_SOURCE_DB                <-- assumed to be 'caig'
+CAIG_GRAPH_SOURCE_CONTAINER         <-- assumed to be 'libraries'
+CAIG_CACHE_CONTAINER                <-- assumed to be 'cache'
+CAIG_CONFIG_CONTAINER               <-- assumed to be 'config'
+CAIG_CONVERSATIONS_CONTAINER        <-- assumed to be 'conversations'
 ```
 
-This page also assumes that the name of your database is **graph**
-and the container within this database is named **libraries**.
+This page also assumes that you have a **mongosh** (i.e. - mongo shell) program
+installed on your computer and configured to point at your Cosmos DB Mongo vCore
+account.  If not, see the - See [Developer Workstation Setup](developer_workstation.md) page.
 
-## Loading your Cosmos DB vCore Database - library documents
+## Create the Cosmos DB Mongo vCore Collections and Indexes
 
-Navigate to the impl1\app_console directory of this repo and execute
+Navigate to the **impl1\app_console** directory of this repo and execute
 the following commands:
 
 ```
@@ -40,86 +45,26 @@ the following commands:
 
 > .\venv\Scripts\Activate.ps1     <-- activate the python virtual environment
 
-> python main.py create_vcore_indexes 
-
-> python main.py load_vcore_with_library_documents
+> python main.py create_vcore_collections_and_indexes
 ```
 
-## Verifying the Data Load
-
-cd to the impl1 directory and run the following script:
-
-```
-> .\mongosh.ps1 vcore
-```
-
-This will open a mongo shell program connected to your vCore account.
-
-Enter the command **use graph** to start using that database.
-
-Then enter the command **show collections** to list the containers/collections
-in that database.
-
-Then enter the command **db.libraries.countDocuments()** to count the number
-of documents in the libraries container.  **The count should be ~25k**.
-If not, then the data load was not successful.
-
-Lastly, display a random document by entering command **db.libraries.findOne()**
-
-This sequence of commands is shown below:
-
-```
-[mongos] test>
-
-[mongos] test> use graph
-switched to db graph
-
-[mongos] graph> show collections
-cache
-libraries
-
-[mongos] graph> db.libraries.countDocuments()
-28540
-
-[mongos] graph> db.libraries.findOne()
-... a random document will be displayed
-```
-
----
-
-## Loading your Cosmos DB vCore Database - documents for vector search
-
-**Note: You don't need to execute this section if you don't plan on using Vector Search.**
-
-**A significant amount of data-wrangling time and effort is required.**
-
-### Create Standard Indexes on the non-vector attributes
-
-In your mongo shell program excute the following three commands in your database.
-
-```
-db.documents.createIndex( { "libtype": 1 } )
-
-db.documents.createIndex( { "libname": 1 } )
-
-db.documents.createIndex( { "url": 1 } )
-```
-
-### Create the Vector Search Index
+### Manually create the Vector Search Index
 
 See https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/vector-search
-for the documentation onb this index type.
+for the documentation on this index type.
 
 In your mongo shell program excute the following command in your database.
 
 ```
+use caig
+
 db.runCommand({
-  createIndexes: 'documents',
+  createIndexes: 'libraries',
   indexes: [
     {
       name: 'vectorSearchIndex',
       key: {
-        "embeddings": "cosmosSearch"
+        "embedding": "cosmosSearch"
       },
       cosmosSearchOptions: {
         kind: 'vector-ivf',
@@ -132,78 +77,123 @@ db.runCommand({
 });
 ```
 
-### Verify the indexes in the documents container
+```
+db.libraries.dropIndex('vectorSearchIndex')
+```
 
-Run the following **getIndexes()** commands in your mongo shell program.
-You should see similar output to the following. 
+
+### Verify the Indexes several Containers
+
+First, get the list of containers.  These four container names should be present.
 
 ```
-db.documents.getIndexes()
+[mongos] caig> db.getCollectionNames()
+[ 'libraries', 'cache', 'config', 'conversations' ]
+```
 
-{
-    "v" : 2.0,
-    "key" : {
-        "_id" : 1.0
-    },
-    "name" : "_id_"
-}
-{
-    "v" : 2.0,
-    "key" : {
-        "embeddings" : "cosmosSearch"
-    },
-    "name" : "vectorSearchIndex",
-    "cosmosSearchOptions" : {
-        "kind" : "vector-ivf",
-        "numLists" : 20.0,
-        "similarity" : "COS",
-        "dimensions" : 1536.0
+Next, run the following **getIndexes()** command for each container to 
+confirm that the necessary indexes have been created.  They should look
+like the following.
+
+```
+db.cache.getIndexes()
+
+[
+  { v: 2, key: { _id: 1 }, name: '_id_' },
+  { v: 2, key: { cache_key: 1 }, name: 'cache_key_1' }
+]
+```
+
+```
+db.config.getIndexes()
+
+[
+  { v: 2, key: { _id: 1 }, name: '_id_' },
+  { v: 2, key: { id: 1 }, name: 'id_1' }
+]
+```
+
+```
+db.conversations.getIndexes()
+
+[
+  { v: 2, key: { _id: 1 }, name: '_id_' },
+  { v: 2, key: { conversation_id: 1 }, name: 'conversation_id_1' },
+  { v: 2, key: { created_date: 1 }, name: 'created_date_1' },
+  { v: 2, key: { created_at: 1 }, name: 'created_at_1' }
+]
+```
+
+```
+db.libraries.getIndexes()
+
+[
+  { v: 2, key: { _id: 1 }, name: '_id_' },
+  { v: 2, key: { id: 1 }, name: 'id_1' },
+  { v: 2, key: { name: 1 }, name: 'name_1' },
+  { v: 2, key: { libtype: 1 }, name: 'libtype_1' },
+  {
+    v: 2,
+    key: { embedding: 'cosmosSearch' },
+    name: 'vectorSearchIndex',
+    cosmosSearchOptions: {
+      kind: 'vector-ivf',
+      numLists: 20,
+      similarity: 'COS',
+      dimensions: 1536
     }
-}
-{
-    "v" : 2.0,
-    "key" : {
-        "libtype" : 1.0
-    },
-    "name" : "libtype_1"
-}
-{
-    "v" : 2.0,
-    "key" : {
-        "libname" : 1.0
-    },
-    "name" : "libname_1"
-}
-{
-    "v" : 2.0,
-    "key" : {
-        "url" : 1.0
-    },
-    "name" : "url_1"
-}
+  }
+]
 ```
 
-### Prepare the document data
+---
 
-Navigate to directory **impl1\app_console**, and create and activate the
-python by executing the **venv.ps1** script.
+## Load the Library data into Cosmos DB Mongo vCore
 
-Then execute the following command.
-**It will take several hours to run.**
+Navigate to the **impl1\app_console** directory of this repo and execute
+the following commands:
 
 ```
-python main.py vectorize_load_vcore_with_html_documents
+> .\venv\Scripts\Activate.ps1     <-- activate the python virtual environment
+
+> python main.py load_vcore_with_library_documents
+
+> python main.py persist_entities
 ```
 
-The logic in this process involves the following:
+The **load_vcore_with_library_documents** function loads the **libraries**
+container, while the **persist_entities** function loads one document
+into the **config** container.
 
-- Iterating the JSON files in these directories
-  - impl1/data/npm/html_pages/ and impl1/data/pypi/html_pages/ directories in this repo
-  - These files contain the **raw HTML**, in the "html" attribute, from the URLs linked to by the library documents
-  - These html_pages documents were previously created for you
-  - The **httpx** library was used to fetch the raw HTML from the URLs
-- For each of these JSON files the logic is:
-    - Use the BeautifulSoup library to extract the text from the raw html 
-    - Further minimize this extracted text - newline and redundant space characters, etc.
-    - Invoke Azure OpenAI to **vectorize** (i.e. - create embeddings) from this minimized text
-    - Load a document into Cosmos DB vCore with this data - libtype, libname, minimized text, and emveddings
+### Verifying the Data Load
+
+In your mongosh program, execute the following commands:
+
+#### Document Queries
+
+```
+db.libraries.findOne()
+... you'll see a random document from the libraries container here ...
+
+db.libraries.find({name: "flask"})
+... see the flask document ...
+```
+
+The JSON output of the above flask query should look identical
+to file impl1/data/pypi/wrangled_libs/flask.json in this repo.
+
+#### Document Counts
+
+```
+db.libraries.countDocuments()
+10855
+
+db.config.countDocuments()
+1
+```
+
+10855 is the expected number of documents in the libraries
+container, while one document is expected in the config container.
+
+The number 10855 corresponds to the number of JSON documents in directory 
+'impl1/data/pypi/wrangled_libs/' in this repo.

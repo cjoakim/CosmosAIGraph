@@ -15,8 +15,8 @@ def test_minimize():
     print("---")
     print(minimized)
     print("---")
-    assert len(owl) > 4100  # 4101
-    assert len(minimized) < 3750  # 3737
+    assert len(owl) > 4000
+    assert len(minimized) < 3750
     assert minimized.startswith(
         '<?xml version="1.0" encoding="UTF-8"?>\n<rdf:RDF xmlns="http://cosmosdb.com/caig#"'
     )
@@ -93,7 +93,7 @@ def sample_owl():
 
   <owl:DatatypeProperty rdf:ID="lt">
     <rdfs:label xml:lang="en">lt</rdfs:label>
-    <rdfs:comment xml:lang="en">The type of a Library (i.e. - npm or pypi)</rdfs:comment>
+    <rdfs:comment xml:lang="en">The type of a Library (i.e. - pypi)</rdfs:comment>
     <rdfs:domain rdf:resource="#Lib" />
     <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string" />
   </owl:DatatypeProperty>

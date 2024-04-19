@@ -1,14 +1,13 @@
-import json
 import logging
-import os
 import time
 import traceback
 
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, Request, Response, status
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+
+# from fastapi.staticfiles import StaticFiles
+# from fastapi.templating import Jinja2Templates
 
 # Pydantic models defining the "shapes" of requests and responses
 from pysrc.models.webservice_models import PingModel
@@ -89,6 +88,7 @@ async def post_sparql_query(
     resp_obj["error"] = None
     t1 = time.perf_counter()
     try:
+        logging.warn("/sparql_query: {}".format(req_model.sparql))
         resp_obj["sparql"] = req_model.sparql
         rqr = gs.query(req_model.sparql)  # returns a RdfQueryResult object
         rqr.prune_data()
@@ -96,10 +96,9 @@ async def post_sparql_query(
     except Exception as e:
         resp_obj["error"] = str(e)
         logging.critical((str(e)))
-        print(traceback.format_exc())
+        logging.exception(e, stack_info=True, exc_info=True)
 
     resp_obj["elapsed"] = time.perf_counter() - t1
-    # print("post_sparql_query: {}".format(json.dumps(resp_obj)))
     return resp_obj
 
 
@@ -121,6 +120,7 @@ async def post_sparql_bom_query(
         libtype = req_model.libtype
         libname = req_model.libname
         max_depth = int(req_model.max_depth)
+        logging.warn("/sparql_bom_query: {} {} {}".format(libtype, libname, max_depth))
         bqr = gs.bom_query(
             libtype, libname, max_depth
         )  # returns a BomQueryResult object
@@ -132,8 +132,7 @@ async def post_sparql_bom_query(
     except Exception as e:
         resp_obj["error"] = str(e)
         logging.critical((str(e)))
-        print(traceback.format_exc())
+        logging.exception(e, stack_info=True, exc_info=True)
 
     resp_obj["elapsed"] = time.perf_counter() - t1
-    # print("sparql_bom_query: {}".format(json.dumps(resp_obj)))
     return resp_obj

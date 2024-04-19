@@ -46,6 +46,7 @@ from pysrc.models.internal_models import OwlInfo
 from pysrc.models.bom_query_result import BomQueryResult
 from pysrc.models.rdf_query_result import RdfQueryResult
 from pysrc.util.fs import FS
+from pysrc.util.sparql_formatter import SparqlFormatter
 from pysrc.util.sparql_template import SparqlTemplate
 
 # Instances of this class contain the in-memory rdflib graph,
@@ -115,6 +116,8 @@ class GraphService:
             if sparql == None:
                 rqr.set_exception("given sparql is None")
                 return rqr
+            sparql = SparqlFormatter().pretty(sparql)  # ensure a PREFIX is present
+
             if self._valid_query(sparql):
                 logging.info("GraphService - query: {}".format(sparql))
                 for row in self.graph.query(sparql):

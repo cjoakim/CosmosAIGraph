@@ -193,8 +193,13 @@ class CosmosVCoreService:
         """
         return self._coll.count_documents(query_spec)
 
-    def load_conversation(self, conversation_id) -> AiConversation | None:
+    def load_conversation(self, conversation_id) -> AiConversation:
         try:
+            if conversation_id is None:
+                return AiConversation(None)
+            if len(conversation_id.strip()) == 0:
+                return AiConversation(None)
+
             self.set_coll(ConfigService.conversations_container())
             spec = dict()
             spec["conversation_id"] = conversation_id
@@ -207,7 +212,7 @@ class CosmosVCoreService:
                 )
             )
             logging.exception(e, stack_info=True, exc_info=True)
-            return None
+            return AiConversation(None)
 
     def save_conversation(self, conv: AiConversation) -> bool:
         try:
@@ -228,7 +233,7 @@ class CosmosVCoreService:
             return False
 
     def search_documents_like_library(
-        self, libtype, libname, embeddings_attr="embeddings", k=10
+        self, libtype, name, embeddings_attr="embedding", k=10
     ) -> DocumentsVSResultsModel:
         """
         Execute a vector search based on looking up the given library type and name.
@@ -239,18 +244,18 @@ class CosmosVCoreService:
         t1 = time.perf_counter()
         output_doc = {}
         output_doc["libtype"] = libtype
-        output_doc["libname"] = libname
+        output_doc["name"] = name
         output_doc["count"] = 0
         output_doc["doc"] = None
         output_doc["results"] = list()
         output_doc["error"] = None
         output_doc["elapsed"] = "-1.0"
         try:
-            self.set_coll(ConfigService.documents_container())
-            doc = self.find_one({"libtype": libtype, "libname": libname})
+            self.set_coll(ConfigService.graph_source_container())
+            doc = self.find_one({"libtype": libtype, "name": name})
             if doc is None:
                 output_doc["error"] = (
-                    f"document not found for libtype: {libtype}, libname: {libname}"
+                    f"document not found for libtype: {libtype}, name: {name}"
                 )
             else:
                 self.stringify_doc_id(doc)
@@ -269,7 +274,7 @@ class CosmosVCoreService:
         output_doc["elapsed"] = time.perf_counter() - t1
         return output_doc
 
-    def vector_search(self, vector, embeddings_attr="embeddings", k=10) -> dict:
+    def vector_search(self, vector, embeddings_attr="embedding", k=10) -> dict:
         """
         Execute a vector search using the given vector and return a results dict
         """
@@ -314,7 +319,10 @@ class CosmosVCoreService:
 
             # execute the aggregation pipeline
             # results is a pymongo.command_cursor.CommandCursor object to iterate
+            self.set_coll(ConfigService.graph_source_container())
+
             cursor = self.aggregate(pipeline)
+            logging.debug(pipeline)
             for result_doc in cursor:
                 self.stringify_doc_id(result_doc)
                 vs_result["results"].append(result_doc)

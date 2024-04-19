@@ -14,8 +14,12 @@ These are required to simply execute the solution on your workstation:
   - This solution uses Python command-line and web application programs, not Jupyter Notebooks
   - Conda is not recommended for this solution
 - **A Mongo Shell Program**, such as:
+  - [Azure Data Studio](https://azure.microsoft.com/en-us/products/data-studio)
+    - This is the recommended mongosh program for the CosmosAIGraph solution
+    - See the configuration instructions here:
+      - https://learn.microsoft.com/en-us/azure-data-studio/quickstart-azure-cosmos-db-mongodb?tabs=mongodb-vcore
   - [mongosh](https://www.mongodb.com/docs/mongodb-shell/install/)
-    - The MSI installer option is recommended
+    - The MSI installer option is recommended if you choose to use this program
   - [Studio3T](https://studio3t.com/)
 
 Also, a working knowledge of **pip and Python Virtual Environments** is necessary.

@@ -93,7 +93,7 @@ def sample_owl():
 
   <owl:DatatypeProperty rdf:ID="lt">
     <rdfs:label xml:lang="en">lt</rdfs:label>
-    <rdfs:comment xml:lang="en">The type of a Library (i.e. - npm or pypi)</rdfs:comment>
+    <rdfs:comment xml:lang="en">The type of a Library (i.e. - pypi)</rdfs:comment>
     <rdfs:domain rdf:resource="#Lib" />
     <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string" />
   </owl:DatatypeProperty>

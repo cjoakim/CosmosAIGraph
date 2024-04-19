@@ -1,6 +1,5 @@
 # Start the web service, running within the hypercorn server.
 # Entry point is websvc.py, 'app' is the FastAPI object.
-# hypercorn enables restarting the app as the Python code changes.
 # Chris Joakim, Microsoft
 
 New-Item -ItemType Directory -Force -Path .\tmp     | out-null
@@ -12,4 +11,4 @@ echo '.env file contents ...'
 cat .env 
 
 echo 'starting the web service...'
-hypercorn websvc:app --bind 127.0.0.1:8001 --reload
+hypercorn websvc:app --bind 127.0.0.1:8001

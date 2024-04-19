@@ -13,9 +13,7 @@ from pysrc.util.fs import FS
 
 def test_init_and_query():
     ConfigService.set_standard_unit_test_env_vars()
-    expected_triples_count = 4441
-    # os.environ['caig_GRAPH_SOURCE_TYPE'] = 'rdf_file'
-    # os.environ['caig_GRAPH_SOURCE_RDF_FILENAME'] = 'rdf/libraries-graph.nt'
+    expected_triples_count = 4372
     gs = GraphService()
     count = 0
     assert str(type(gs.graph)) == "<class 'rdflib.graph.Graph'>"

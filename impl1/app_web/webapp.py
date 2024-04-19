@@ -1,12 +1,11 @@
 # This is the entry-point for this web application, built with the
 # FastAPI web framework
 #
-# Chris Joakim, Microsoft
+# Chris Joakim
 
 import json
 import logging
 import time
-import traceback
 import uuid
 
 import httpx
@@ -30,13 +29,19 @@ from pysrc.models.webservice_models import VectorizeResponseModel
 
 
 # Services with Business Logic
+from pysrc.services.ai_completion import AiCompletion
+from pysrc.services.ai_conversation import AiConversation
 from pysrc.services.ai_service import AiService
 from pysrc.services.cache_service import CacheService
 from pysrc.services.config_service import ConfigService
 from pysrc.services.cosmos_vcore_service import CosmosVCoreService
+from pysrc.services.entities_service import EntitiesService
 from pysrc.services.logging_level_service import LoggingLevelService
+from pysrc.services.rag_data_service import RAGDataService
+from pysrc.services.rag_data_result import RAGDataResult
 from pysrc.util.fs import FS
 from pysrc.util.sparql_formatter import SparqlFormatter
+from pysrc.services.ontology_service import OntologyService
 
 # standard initialization
 load_dotenv(override=True)
@@ -47,14 +52,18 @@ ConfigService.log_defined_env_vars()
 
 ai_svc = AiService()
 cache_svc = CacheService({})
-owl_info = None  # lazy-initialized
-owl_xml = None  # lazy-initialized
+ontology_svc = OntologyService()
+owl_xml = ontology_svc.get_owl_content()
+logging.info("owl_xml:\n{}".format(owl_xml))
 
 vcore_opts = dict()
 vcore_opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
 logging.info("vcore_opts: {}".format(vcore_opts))
 vcore = CosmosVCoreService(vcore_opts)
 vcore.set_db(ConfigService.graph_source_db())
+rag_data_svc = RAGDataService(ai_svc, vcore)
+entities_svc = EntitiesService(vcore)
+entities_svc.initialize()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -95,7 +104,6 @@ async def get_liveness(req: Request, resp: Response) -> LivenessModel:
 
 @app.get("/")
 async def get_home(req: Request):
-    logging.info("get_home")
     view_data = dict()
     return views.TemplateResponse(request=req, name="home.html", context=view_data)
 
@@ -129,6 +137,7 @@ async def get_sparql_console(req: Request):
 @app.post("/sparql_console")
 async def post_sparql_console(req: Request):
     form_data = await req.form()  # <class 'starlette.datastructures.FormData'>
+    logging.warn("/sparql_console form_data: {}".format(form_data))
     if ConfigService.use_alt_sparql_console():
         view_data = post_alt_sparql_console(form_data)
         return views.TemplateResponse(
@@ -157,7 +166,7 @@ async def get_ai_console(req: Request):
 async def ai_post_gen_sparql(req: Request):
     global owl_xml
     form_data = await req.form()
-    logging.info(form_data)
+    logging.warn("/gen_sparql_console_generate_sparql form_data: {}".format(form_data))
     natural_language = form_data.get("natural_language")
     view_data = gen_sparql_console_view_data()
     view_data["natural_language"] = natural_language
@@ -186,7 +195,6 @@ async def ai_post_gen_sparql(req: Request):
 
     view_data["results"] = json.dumps(resp_obj, sort_keys=False, indent=2)
     view_data["results_message"] = "Generative AI Response"
-
     return views.TemplateResponse(
         request=req, name="gen_sparql_console.html", context=view_data
     )
@@ -195,7 +203,7 @@ async def ai_post_gen_sparql(req: Request):
 @app.post("/gen_sparql_console_execute_sparql")
 async def gen_sparql_console_execute_sparql(req: Request):
     form_data = await req.form()
-    logging.info(form_data)
+    logging.warn("/gen_sparql_console_execute_sparql form_data: {}".format(form_data))
     view_data = gen_sparql_console_view_data()
     sparql = form_data.get("sparql")
     view_data["sparql"] = sparql
@@ -210,7 +218,6 @@ async def gen_sparql_console_execute_sparql(req: Request):
 
 @app.get("/vector_search_console")
 async def get_vector_search_console(req: Request):
-    logging.info("get_vector_search_console")
     view_data = dict()
     view_data["libtype"] = "pypi"
     view_data["libname"] = "flask"
@@ -224,12 +231,11 @@ async def get_vector_search_console(req: Request):
 @app.post("/vector_search_console")
 async def post_vector_search_console(req: Request):
     global vcore
-    logging.info("post_vector_search_console")
     form_data = await req.form()
+    logging.warn("/vector_search_console form_data: {}".format(form_data))
     libtype = form_data.get("libtype")
     libname = form_data.get("libname").strip()
-    show_embeddings = form_data.get("show_embeddings")
-    logging.info(f"post_vector_search_console: {libtype} {libname} {show_embeddings}")
+    show_embeddings = form_data.get("show_embeddings").lower()
 
     if libname.startswith("text:"):
         text = libname[5:]
@@ -244,23 +250,19 @@ async def post_vector_search_console(req: Request):
             logging.exception(e, stack_info=True, exc_info=True)
 
         vcore.set_db(ConfigService.graph_source_db())
-        vcore.set_coll(ConfigService.documents_container())
+        vcore.set_coll(ConfigService.graph_source_container())
         results_obj = vcore.vector_search(vector)
 
-        if show_embeddings is None:
-            if results_obj["vector"] is not None:
-                del results_obj["vector"]
-            if results_obj["results"] is not None:
-                for result in results_obj["results"]:
-                    del result["embeddings"]
     else:
         results_obj = vcore.search_documents_like_library(libtype, libname)
-        if show_embeddings is None:
+        if "y" in show_embeddings:
+            pass
+        else:
             if results_obj["doc"] is not None:
-                del results_obj["doc"]["embeddings"]
+                del results_obj["doc"]["embedding"]
             if results_obj["results"] is not None:
                 for result in results_obj["results"]:
-                    del result["embeddings"]
+                    del result["embedding"]
 
     view_data = dict()
     view_data["libtype"] = libtype
@@ -275,9 +277,11 @@ async def post_vector_search_console(req: Request):
 @app.get("/conv_ai_console")
 async def conv_ai_console(req: Request):
     conv = FS.read_json("static/sample_ai_conversation.json")
+    conv = AiConversation()
     view_data = dict()
     view_data["conv"] = conv
-    logging.warn(json.dumps(conv, sort_keys=False, indent=2))
+    view_data["conversation_id"] = conv.conversation_id
+    view_data["conversation_data"] = ""
     return views.TemplateResponse(
         request=req, name="conv_ai_console.html", context=view_data
     )
@@ -285,19 +289,55 @@ async def conv_ai_console(req: Request):
 
 @app.post("/conv_ai_console")
 async def conv_ai_console(req: Request):
+    global ai_svc
+    global vcore
+    global ontology_svc
+    global owl_xml
+    global rag_data_svc
+
     form_data = await req.form()
-    # print(form_data)
+    logging.warn("/conv_ai_console form_data: {}".format(form_data))
     conversation_id = form_data.get("conversation_id").strip()
     user_text = form_data.get("user_text").strip()
     logging.warn(
         "conversation_id: {}, user_text: {}".format(conversation_id, user_text)
     )
+    conv = vcore.load_conversation(
+        conversation_id
+    )  # returns a new or existing conversation
 
-    # TODO - process the user_text, update the conversation, pass the conversation to the view for rendering
-    conv = FS.read_json("static/sample_ai_conversation.json")
+    if conv.conversation_id == "":
+        conv.conversation_id = str(uuid.uuid4())  # this is a new conversation
+        vcore.save_conversation(conv)
+        logging.warning("new conversation saved: {}".format(conversation_id))
+    else:
+        logging.warning(
+            "conversation loaded: {} {}".format(conversation_id, conv.serialize())
+        )
+
+    if len(user_text) > 0:
+        context = ""
+        conv.add_user_message(user_text)
+        prompt_text = ai_svc.generic_prompt()
+
+        rdr: RAGDataResult = await rag_data_svc.get_rag_data(user_text, 3)
+        sparql = rdr.get_sparql()
+        if len(sparql) > 0:
+            conv.add_diagnostic_message("sparql: {}".format(sparql))
+        completion_context = conv.last_completion_content()
+        rag_data = rdr.as_system_prompt_text()
+        context = "{}\n{}".format(completion_context, rag_data)
+
+        completion: AiCompletion = await ai_svc.invoke_kernel(
+            conv, prompt_text, user_text, context=context
+        )
+        completion.set_rag_strategy(rdr.get_strategy())
+        vcore.save_conversation(conv)
 
     view_data = dict()
     view_data["conv"] = conv
+    view_data["conversation_id"] = conv.conversation_id
+    view_data["conversation_data"] = conv.serialize()
     return views.TemplateResponse(
         request=req, name="conv_ai_console.html", context=view_data
     )
@@ -307,23 +347,7 @@ async def conv_ai_console(req: Request):
 
 
 def gen_sparql_console_view_data():
-    """
-    Lazy-initialize the various OWL content by first HTTP fetching it
-    from the graph microservice.
-    """
     global owl_xml
-    global owl_info
-    if owl_xml == None:
-        logging.info(
-            "lazy-initializing owl variables, calling the graph microservice..."
-        )
-        owl_info = get_graph_service_owl_info()
-        owl_xml = owl_info["owl"]
-        if owl_xml == None:
-            logging.critical("owl_xml is None")
-        else:
-            logging.info("owl_xml length: {}".format(len(owl_xml)))
-        logging.debug("owl_xml: {}".format(owl_xml))
 
     view_data = dict()
     view_data["natural_language"] = (
@@ -334,12 +358,6 @@ def gen_sparql_console_view_data():
     view_data["results_message"] = ""
     view_data["results"] = ""
     return view_data
-
-
-def graph_microsvc_owl_info_url():
-    return "{}:{}/owl_info".format(
-        ConfigService.graph_service_url(), ConfigService.graph_service_port()
-    )
 
 
 def graph_microsvc_sparql_query_url():
@@ -495,20 +513,6 @@ def post_sparql_query_to_graph_microsvc(sparql: str) -> None:
         return {}
 
 
-def get_graph_service_owl_info():
-    global owl_info
-    try:
-        if owl_info == None:
-            url = graph_microsvc_owl_info_url()
-            r = httpx.get(url, timeout=10.0)
-            obj = json.loads(r.text)
-            owl_info = obj
-    except Exception as e:
-        logging.critical((str(e)))
-        logging.exception(e, stack_info=True, exc_info=True)
-    return owl_info
-
-
 def remove_mongo_id_attr(mongo_doc) -> None:
     """
     Remove the '_id' attribute from the Mongo object because
@@ -517,38 +521,3 @@ def remove_mongo_id_attr(mongo_doc) -> None:
     if mongo_doc is not None:
         if "_id" in mongo_doc.keys():
             del mongo_doc["_id"]
-
-
-# ============================================================================
-# The following two methods were copied/pasted from the app_ai microservice
-# for easy reference.  TODO - remove this comment after refactoring is complete.
-
-# @app.post("/gen_sparql_query")
-# async def post_gen_sparql_query(
-#     req_model: SparqlGenerationRequestModel,
-# ) -> SparqlGenerationResponseModel:
-#     global ai_svc
-#     resp_obj = dict()
-#     resp_obj["session_id"] = req_model.session_id
-#     resp_obj["natural_language"] = req_model.natural_language
-#     resp_obj["owl"] = req_model.owl
-#     resp_obj["completion_id"] = ""
-#     resp_obj["completion_model"] = ""
-#     resp_obj["prompt_tokens"] = -1
-#     resp_obj["completion_tokens"] = -1
-#     resp_obj["total_tokens"] = -1
-#     resp_obj["sparql"] = ""
-#     resp_obj["error"] = ""
-
-#     t1 = time.perf_counter()
-#     try:
-#         resp_obj = ai_svc.generate_sparql_from_user_prompt(resp_obj)
-#     except Exception as e:
-#         resp_obj["error"] = str(e)
-#         logging.critical((str(e)))
-#         logging.exception(e, stack_info=True, exc_info=True)
-
-#     resp_obj["epoch"] = int(time.time())
-#     resp_obj["elapsed"] = time.perf_counter() - t1
-#     logging.debug("post_gen_sparql_query: {}".format(json.dumps(resp_obj)))
-#     return resp_obj

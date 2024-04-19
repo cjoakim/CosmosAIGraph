@@ -21,3 +21,11 @@ class SparqlGenerationResult(BaseModel):
     elapsed: float
     sparql: str
     error: str | None
+
+
+class RAGStrategy(BaseModel):
+    natural_language: str
+    strategy: str  # db_search, graph_search, or vector_search
+    libtype: str | None
+    libname: str | None
+    tokens: Any

@@ -23,7 +23,6 @@ All of these begin with the prefix `CAIG_`.
 | CAIG_AZURE_REGION | The Azure region where the ACA app is deployed to |
 | CAIG_CONVERSATIONS_CONTAINER | The vCore container where the chat conversations and history are persisted |
 | CAIG_DEFINED_AUTH_USERS |  |
-| CAIG_DOCUMENTS_CONTAINER | The vCore container where HTML documentation and its' vectorized equivalent are stored |
 | CAIG_GRAPH_SERVICE_NAME |  |
 | CAIG_GRAPH_SERVICE_PORT |  |
 | CAIG_GRAPH_SERVICE_URL |  |

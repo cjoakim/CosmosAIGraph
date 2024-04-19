@@ -47,18 +47,19 @@ class GraphBuilder:
 
         CNS = Namespace(self.libraries_namespace())  # CNS ~ Custom Namespace
         cwd = psutil.Process().cwd()
-        logging.info("cwd: {}".format(cwd))
+        logging.info("GraphBuilder#build - cwd: {}".format(cwd))
         ontology_file = ConfigService.graph_source_owl_filename()
-        logging.info("ontology_file: {}".format(ontology_file))
+        logging.info("GraphBuilder#build - ontology_file: {}".format(ontology_file))
         g = Graph()
         g.bind("c", CNS)
         g.parse(ontology_file, format="xml")
 
+        # The in-memory graph can be loaded from either a static rdf nt file,
+        # or a dynamic set of Cosmos DB Mongo vCore documents.  Loading from
+        # rdf nt files is only recommended for initial development and unit testing.
         config = ConfigService()
         if config.graph_source() == "rdf_file":
             self.populate_graph_from_rdf_file(g, config)
-        elif config.graph_source() == "doc_files":
-            self.populate_graph_from_doc_files(g, config, CNS)
         elif config.graph_source() == "cosmos_vcore":
             self.populate_graph_from_cosmosdb_vcore(g, config, CNS)
         else:
@@ -79,17 +80,17 @@ class GraphBuilder:
         return "http://cosmosdb.com/caig#"
 
     def display_ontology_classes_and_properties(self, g) -> None:
-        logging.info("========== Ontology GetIdentifiedClasses ==========")
+        logging.info("=== GraphBuilder Ontology GetIdentifiedClasses ===")
         classes = list(GetIdentifiedClasses(g))
         for idx, c in enumerate(classes):
             logging.info("{} {}".format(idx, c))
 
-        logging.info("========== Ontology AllClasses ==========")
+        logging.info("=== GraphBuilder Ontology AllClasses ===")
         classes = list(AllClasses(g))
         for idx, c in enumerate(classes):
             logging.info("{} {}".format(idx, c))
 
-        logging.info("========== Ontology AllProperties ==========")
+        logging.info("=== GraphBuilder Ontology AllProperties ===")
         properties = list(AllProperties(g))
         for idx, p in enumerate(properties):
             logging.info("{} {}".format(idx, p))
@@ -104,7 +105,7 @@ class GraphBuilder:
             fq_filename = "{}{}{}".format(cwd, os.sep, rdf_file)
             file_format = "nt"
             logging.info(
-                "populate_graph_from_rdf_file: {}, format: {}".format(
+                "GraphBuilder#populate_graph_from_rdf_file: {}, format: {}".format(
                     fq_filename, file_format
                 )
             )
@@ -112,57 +113,26 @@ class GraphBuilder:
             g.parse(fq_filename, format=file_format)
             t2 = time.perf_counter()
             seconds = f"{(t2 - t1):.9f}"
-            logging.critical("graph loaded in {}".format(seconds))
+            logging.critical(
+                "GraphBuilder#populate_graph_from_rdf_file - graph loaded in {}".format(
+                    seconds
+                )
+            )
         except Exception as e:
             logging.critical(str(e))
             logging.exception(e, stack_info=True, exc_info=True)
             return None
 
-    def populate_graph_from_doc_files(self, g, config, CNS):
-        """
-        Load the graph from the wrangled_lib JSON files.
-        This is a precursor to the following 'populate_graph_from_cosmosdb_vcore' method -
-        logic will be identical given a JSON doc from either JSON file or Cosmos,
-        """
-        try:
-            logging.info("populate_graph_from_doc_files")
-            wrangled_dirs = ["../data/npm/wrangled_libs", "../data/pypi/wrangled_libs"]
-            file_count = 0
-            t1 = time.perf_counter()
-
-            for wrangled_dir in wrangled_dirs:
-                for basename in FS.list_files_in_dir(wrangled_dir):
-                    filename = "{}/{}".format(wrangled_dir, basename)
-                    if filename.endswith(".json"):
-                        try:
-                            libdoc = FS.read_json(filename)
-                            file_count = file_count + 1
-                            logging.info("read file {} {}".format(file_count, filename))
-                            self.append_lib_to_graph(g, libdoc, CNS)
-                        except Exception as e:
-                            logging.critical(
-                                "exception processing file {}".format(filename)
-                            )
-                            logging.critical(str(e))
-                            logging.exception(e, stack_info=True, exc_info=True)
-            t2 = time.perf_counter()
-            seconds = f"{(t2 - t1):.9f}"
-            logging.critical("graph loaded in {}".format(seconds))
-        except Exception as e:
-            logging.critical(str(e))
-            logging.exception(e, stack_info=True, exc_info=True)
-
     def populate_graph_from_cosmosdb_vcore(
         self, g: rdflib.Graph, config: ConfigService, CNS
     ) -> None:
         try:
-            logging.info("populate_graph_from_cosmosdb_vcore")
-            t1 = time.perf_counter()
+            logging.info("GraphBuilder#populate_graph_from_cosmosdb_vcore")
             vcore, dbname, cname = self.connect_to_vcore_graph_source()
             coll = vcore.get_coll()
             docs_read = 0
             t1 = time.perf_counter()
-            for libtype in ["npm", "pypi"]:
+            for libtype in ["pypi"]:
                 query_spec = {"libtype": libtype}
                 projection = self.library_projection_attrs()
                 cursor = coll.find(
@@ -170,12 +140,20 @@ class GraphBuilder:
                 )
                 for idx, libdoc in enumerate(cursor):
                     docs_read = docs_read + 1
-                    if idx % 1000 == 0:
-                        logging.info("libdoc: {} {}".format(idx, libdoc))
+                    if docs_read % 1000 == 0:
+                        logging.info(
+                            "GraphBuilder#populate_graph_from_cosmosdb_vcore - libdocs read: {}".format(
+                                docs_read
+                            )
+                        )
                     self.append_lib_to_graph(g, libdoc, CNS)
             t2 = time.perf_counter()
             seconds = f"{(t2 - t1):.9f}"
-            logging.critical("graph loaded in {}".format(seconds))
+            logging.critical(
+                "GraphBuilder#populate_graph_from_cosmosdb_vcore - {} docs loaded into graph in {}".format(
+                    docs_read, seconds
+                )
+            )
         except Exception as e:
             logging.critical(str(e))
             logging.exception(e, stack_info=True, exc_info=True)
@@ -207,9 +185,13 @@ class GraphBuilder:
         opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
         vcore = CosmosVCoreService(opts)
         if "pymongo.mongo_client.MongoClient" in str(type(vcore.get_client())):
-            logging.critical("connected to vcore")
+            logging.critical(
+                "GraphBuilder#connect_to_vcore_graph_source - connected to vcore"
+            )
         else:
-            logging.critical("unable to connect to vcore; exiting")
+            logging.critical(
+                "GraphBuilder#connect_to_vcore_graph_source - unable to connect to vcore"
+            )
             return
         dbname = ConfigService.graph_source_db()
         cname = ConfigService.graph_source_container()
@@ -245,21 +227,27 @@ class GraphBuilder:
             g.add((depref, CNS.used_by_lib, libref))
 
     def persist_graph(self, g, outfile="tmp/graph.nt"):
-        logging.info("==========")
-        logging.info("persisting graph...")
+        logging.info("GraphBuilder#persist_graph start")
         t1 = time.perf_counter()
         g.serialize(format="nt", destination=outfile, encoding="utf-8")
         t2 = time.perf_counter()
         seconds = f"{(t2 - t1):.9f}"
-        logging.critical("graph written to file {} in {}".format(outfile, seconds))
+        logging.critical(
+            "GraphBuilder#persist_graph - graph written to file {} in {}".format(
+                outfile, seconds
+            )
+        )
 
     def iterate_graph(self, g, comment):
-        logging.info("==========")
-        logging.info("iterating the graph, {} ...".format(comment))
+        logging.info("GraphBuilder#iterate_graph start {} ...".format(comment))
         count = 0
         t1 = time.perf_counter()
         for s, p, o in g:  # Iterate the graph, counting the triples
             count = count + 1
         t2 = time.perf_counter()
         seconds = f"{(t2 - t1):.9f}"
-        logging.critical("graph iterated, count: {} in {}".format(count, seconds))
+        logging.critical(
+            "GraphBuilder#iterate_graph completed, count: {} seconds: {}".format(
+                count, seconds
+            )
+        )
