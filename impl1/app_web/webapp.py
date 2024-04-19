@@ -298,7 +298,7 @@ async def conv_ai_console(req: Request):
     form_data = await req.form()
     logging.warn("/conv_ai_console form_data: {}".format(form_data))
     conversation_id = form_data.get("conversation_id").strip()
-    user_text = form_data.get("user_text").strip()
+    user_text = form_data.get("user_text").strip().lower()
     logging.warn(
         "conversation_id: {}, user_text: {}".format(conversation_id, user_text)
     )
