@@ -2,7 +2,11 @@
 
 **AI-Powered Graph and Knowledge Graph Solutions with Azure Cosmos DB**
 
-Please see [Reference Implementation 1](impl1/docs/readme.md)
+CosmosAIGraph (aka - CAIG) currently has these two reference implementations
+for use by our customers:
+
+- [Implementation 1 - Graph-with-AI](impl1/docs/readme.md)
+- [Implementation 2 - Graph-without-AI](impl2/readme.md)
 
 <pre>
 
