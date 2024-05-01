@@ -6,6 +6,7 @@ Usage:
     python main.py load_vcore
     python main.py load_graph_from_vcore
     python main.py load_graph_from_vcore --queries
+    python main.py build_az_cli_env_vars
 Options:
   -h --help     Show this screen.
   --version     Show version.
@@ -30,8 +31,10 @@ from rdflib import Graph, Literal, RDF, URIRef, BNode
 from rdflib.namespace import Namespace, NamespaceManager
 from rdflib.extras.infixowl import AllClasses, AllProperties, GetIdentifiedClasses
 
+from pysrc.models.rdf_query_result import RdfQueryResult
 from pysrc.services.config_service import ConfigService
 from pysrc.services.cosmos_vcore import CosmosVCore
+from pysrc.services.imdb_graph_service import ImdbGraphService
 from pysrc.util.fs import FS
 
 # Inclusion/Exclusion Parameters and Filenames:
@@ -45,7 +48,7 @@ def print_options(msg):
 
 
 def display_caig_env_vars():
-    """ display all of the environment variables that begin with CAIG_ """
+    """ display the environment variables that begin with CAIG_ """
     names = os.environ.keys()
     selected_names = list()
     for name in names:
@@ -178,68 +181,22 @@ def create_vcore_collections_and_indexes():
     )
 
 def load_graph_from_vcore():
-    try:
-        vcore, dbname, cname = connect_to_vcore_graph_source()
-        coll = vcore.get_coll()
-        cursor_limit = 9999999
-        logging_interval = 10000
-        documents_read = 0
+    g = None
+    graph_svc_opts = {}
+    graph_svc_opts["display_ontology"] = False
+    graph_svc_opts["iterate_graph"] = True
+    graph_svc_opts["persist_graph"] = False
+    graph_svc = ImdbGraphService(graph_svc_opts)
 
-        cwd = os.getcwd()
-        owl_file = "{}{}{}".format(cwd, os.sep, "ontologies/imdb.owl")
-        print(owl_file)
-        custom_namespace = "http://cosmosdb.com/imdb#"
+    if "--queries" in sys.argv:
+        rqr: RdfQueryResult = execute_sparql_query(graph_svc, sparql_100_triples_query())
+        FS.write_json(rqr.get_data(), "tmp/sparql_100_triples_query.json")
+        rqr: RdfQueryResult = execute_sparql_query(graph_svc, sparql_kevin_bacon_movies_query())
+        FS.write_json(rqr.get_data(), "tmp/sparql_kevin_bacon_movies_query.json")
+        rqr: RdfQueryResult = execute_sparql_query(graph_svc, sparql_footloose_principals_query())
+        FS.write_json(rqr.get_data(), "tmp/sparql_footloose_principals_query.json")
 
-        CNS = Namespace(custom_namespace)  # CNS ~ Custom Namespace
-        print("parsing owl_file")
-        t1 = time.perf_counter()
-        g = Graph()
-        g.bind("c", CNS)
-        g.parse(owl_file, format="xml")
-        print(g)
-
-        t1 = time.perf_counter()
-
-        query_spec = {"doctype": "movie"}
-        cursor = coll.find(query_spec, skip=0, limit=cursor_limit)
-        for idx, doc in enumerate(cursor):
-            documents_read = documents_read + 1
-            if (idx % logging_interval) == 0:
-                print("adding movie doc: {} {}".format(idx, doc))
-            add_movie_to_graph(g, doc, CNS)
-
-        query_spec = {"doctype": "person"}
-        cursor = coll.find(query_spec, skip=0, limit=cursor_limit)
-        for idx, doc in enumerate(cursor):
-            documents_read = documents_read + 1
-            if (idx % logging_interval) == 0:
-                print("adding person doc: {} {}".format(idx, doc))
-            add_person_to_graph(g, doc, CNS)
-
-        t2 = time.perf_counter()
-        seconds = f"{(t2 - t1):.9f}"
-        print("load_graph_from_vcore - graph loaded in {} seconds, {} documents".format(
-            seconds, documents_read))
-        
-        triples = 0
-        t1 = time.perf_counter()
-        for s, p, o in g:  # Iterate the graph, counting the triples
-            triples = triples + 1
-        t2 = time.perf_counter()
-        seconds = f"{(t2 - t1):.9f}"
-        print("load_graph_from_vcore - graph iterated in {} seconds, {} triples".format(
-                seconds, triples))
-        
-        if "--queries" in sys.argv:
-            execute_sparql_query(g, sparql_100_triples_query())
-            execute_sparql_query(g, sparql_kevin_bacon_movies_query())
-            execute_sparql_query(g, sparql_footloose_principals_query())
-
-    except Exception as e:
-        logging.error("error in load_graph_from_vcore: {}".format(str(e)))
-        logging.error(traceback.format_exc())
-
-def execute_sparql_query(g, sparql):
+def execute_sparql_query(graph_svc: ImdbGraphService, sparql: str) -> RdfQueryResult:
     try:
         print("---")
         print("execute_sparql_query:")
@@ -247,15 +204,15 @@ def execute_sparql_query(g, sparql):
         print("")
         rows = list()
         t1 = time.perf_counter()
-        for row in g.query(sparql):
-            print(row)
-            rows.append(row)
+        rqr : RdfQueryResult = graph_svc.query(sparql)
         t2 = time.perf_counter()
         seconds = f"{(t2 - t1):.9f}"
         print("graph queried in {} seconds, {} triples".format(seconds, len(rows)))
+        return rqr
     except Exception as e:
         logging.error("error in execute_sparql_query: {}".format(str(e)))
         logging.error(traceback.format_exc())
+        return None
 
 def add_movie_to_graph(g, doc, CNS):
     try:
@@ -336,6 +293,40 @@ def load_names_filtered() -> dict:
     print("load_names_filtered, len: {}".format(len(data)))
     return data
 
+def build_az_cli_env_vars():
+    """ build the --env-vars line for the 'az containerapp create' command """
+    # See the docker-compose.yml file; the same list of env vars is used there
+    envvars, pairs = list(), list()
+    envvars.append("CAIG_AZURE_OPENAI_COMPLETIONS_DEP")
+    envvars.append("CAIG_AZURE_OPENAI_EMBEDDINGS_DEP")
+    envvars.append("CAIG_AZURE_OPENAI_KEY")
+    envvars.append("CAIG_AZURE_OPENAI_URL")
+    envvars.append("CAIG_GRAPH_SOURCE_TYPE")
+    envvars.append("CAIG_AZURE_MONGO_VCORE_CONN_STR")
+    envvars.append("CAIG_GRAPH_SOURCE_DB")
+    envvars.append("CAIG_GRAPH_SOURCE_CONTAINER")
+    envvars.append("CAIG_GRAPH_SOURCE_OWL_FILENAME")
+    envvars.append("CAIG_GRAPH_SOURCE_RDF_FILENAME")
+    envvars.append("CAIG_DEFINED_AUTH_USERS")
+    envvars.append("CAIG_LOG_LEVEL")
+    envvars.append("PORT")
+    envvars.append("WEB_CONCURRENCY")
+    for name in envvars:
+        try:
+            val = os.environ[name]
+            if name == "CAIG_AZURE_MONGO_VCORE_CONN_STR":
+                pairs.append("'{}=xxx'".format(name))
+            elif name == "CAIG_DEFINED_AUTH_USERS":
+                pairs.append("'{}=xxx'".format(name))
+            else:
+                pairs.append("'{}={}'".format(name, val))
+        except:
+            val = 'xxx'
+            pairs.append("'{}={}'".format(name, val))
+    joined = " ".join(pairs)
+    result = "--env-vars {}".format(joined)
+    print(result)
+
 
 if __name__ == "__main__":
     # standard initialization of env and logger
@@ -355,6 +346,8 @@ if __name__ == "__main__":
                 load_vcore()
             elif func == "load_graph_from_vcore":
                 load_graph_from_vcore()
+            elif func == "build_az_cli_env_vars":
+                build_az_cli_env_vars()
             else:
                 print_options("Error: invalid function: {}".format(func))
         except Exception as e:

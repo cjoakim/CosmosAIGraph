@@ -1,7 +1,7 @@
-# CosmosAIGraph - imdb graph 
+# CosmosAIGraph - Impl2 IMDb Graph
 
 This page documents how to create and use a large-sized graph for CosmosAIGraph
-by using the public IMDb dataset.
+by using the public IMDb dataset, and execute the web application.
 
 This process is described in these four sections of this page:
 - **1. Data Wrangling**
@@ -662,8 +662,87 @@ LIMIT 100
 graph queried in 0.001131083 seconds, 13 triples
 ```
 
+### A few IMDb dataset nconst (people) and tconst (movies) values:
+
+```
+fred astaire    = nm0000001
+lauren bacall   = nm0000002
+kevin bacon     = nm0000102
+lori singer     = nm0001742
+kevin costner   = nm0000126
+
+footloose       = tt0087277
+field of dreams = tt0097351
+```
+
 ---
 
 ## Run the Web Application
 
-TODO - implement and document.  Very similar to the impl1 web app.
+There are at least four ways to run the web application;
+each is described below:
+
+1. From your Development computer as a Python program
+2. From your Development computer as a Docker Container with Compose
+3. As a deployed Azure Container App (ACA)
+4. As a container in Azure Kubernetes Service (AKS)
+   - This process is not documented in this repo, but the web app is just a normal Docker container.
+
+### Environment variables
+
+This application is configured with environment variables.
+See the **docker-compose.yml** file where these are listed
+and set them appropriately on your system.
+
+### Execute as a Python 3 program
+
+Be sure to create and activate the Python Virtual Environment.
+
+```
+> .\venv.ps1
+ - or -
+> ./venv.sh
+```
+
+Then start the app on Windows:
+
+```
+> webapp.ps1
+```
+
+Or on Mac OS or Linux:
+
+```
+> webapp.sh
+```
+
+CTRL-C in the terminal window to stop the app.
+
+### Execute as a Docker Container with Compose
+
+This assumes that you have [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+installed on your computer.
+
+First, see and edit the **docker-compose.yml** file with your
+values for the listed environment variables.
+
+Be sure that **Docker Desktop is running**.
+
+Then, start the locally-running container as follows.
+
+```
+> cd impl2
+> docker compose -f docker-compose.yml up
+```
+
+To stop the app, run the following command in another terminal window
+also navigated to the impl2\ directory.
+
+```
+> cd impl2
+> docker compose -f docker-compose.yml down
+```
+
+### Execute as an Azure Container App
+
+See the [ACA Deployment Instructions](deployment\readme.md)
