@@ -745,4 +745,4 @@ also navigated to the impl2\ directory.
 
 ### Execute as an Azure Container App
 
-See the [ACA Deployment Instructions](deployment\readme.md)
+See the [ACA Deployment Instructions](deployment/readme.md)
