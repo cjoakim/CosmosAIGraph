@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+import os
 
 import tiktoken
 
@@ -114,6 +115,91 @@ class AiService:
             )
             logging.exception(e, stack_info=True, exc_info=True)
             return 10000
+
+    def generate_graph(
+        self, entitiesFiles, relationshipsFiles, ontologyFile: str
+    ) -> bool:
+        try:
+            try:
+                os.remove("results.nt")
+            except OSError:
+                pass
+
+            fileOntology = open(ontologyFile, "r")
+            owl = OwlFormatter().minimize(fileOntology.read())
+            logging.warning(
+                "AiService#generate_graph - owl first 80 chars: {}".format(
+                    str(owl)[0:80]
+                )
+            )
+
+            system_prompt = Prompts().generate_entities_system_prompt(owl)
+            for entitiesFile in entitiesFiles:
+                user_prompt = f"""generate code for the dataframe from file "{entitiesFile}" and the results of the code execution should be written to the file results.nt in append mode"""
+
+                logging.warning(
+                    "AiService#generate_graph - user_prompt: {}".format(user_prompt)
+                )
+
+                generated = False
+                while not generated:
+                    try:
+                        completion = self.aoai_client.chat.completions.create(
+                            model=self.completions_deployment,
+                            temperature=0,
+                            messages=[
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": user_prompt},
+                            ],
+                        )
+                        code = completion.choices[0].message.content.lstrip("`")
+                        code = code.lstrip("python")
+                        code = code.rstrip("`")
+                        logging.info(f"Executing code:\n{code}\n")
+                        exec(code)
+                        generated = True
+                    except Exception as e:
+                        logging.exception(e, stack_info=True, exc_info=True)
+                        pass
+
+                logging.info("AiService#generate_graph - entities graph generated")
+
+            system_prompt = Prompts().generate_relationships_system_prompt(owl)
+            for relationshipsFile in relationshipsFiles:
+                user_prompt = f"""generate code for the dataframe from file "{relationshipsFile}" and the results of the code execution should be written to the file results.nt in append mode"""
+
+                logging.warning(
+                    "AiService#generate_graph - user_prompt: {}".format(user_prompt)
+                )
+
+                generated = False
+                while not generated:
+                    try:
+                        completion = self.aoai_client.chat.completions.create(
+                            model=self.completions_deployment,
+                            temperature=0,
+                            messages=[
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": user_prompt},
+                            ],
+                        )
+                        code = completion.choices[0].message.content.lstrip("`")
+                        code = code.lstrip("python")
+                        code = code.rstrip("`")
+                        logging.info(f"Executing code:\n{code}\n")
+                        exec(code)
+                        generated = True
+                    except Exception as e:
+                        logging.exception(e, stack_info=True, exc_info=True)
+                        pass
+
+                logging.info("AiService#generate_graph - relationship graph generated")
+
+        except Exception as e:
+            logging.critical("Exception in generate_graph: {}".format(str(e)))
+            logging.exception(e, stack_info=True, exc_info=True)
+            return False
+        return True
 
     def generate_sparql_from_user_prompt(
         self, resp_obj: dict

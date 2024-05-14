@@ -5,6 +5,7 @@
 
 import json
 import logging
+import os
 import time
 import uuid
 
@@ -148,6 +149,70 @@ async def post_sparql_console(req: Request):
         return views.TemplateResponse(
             request=req, name="sparql_console.html", context=view_data
         )
+
+
+@app.get("/gen_graph")
+async def get_graph(req: Request):
+    view_data = gen_graph_view_data()
+
+    return views.TemplateResponse(request=req, name="gen_graph.html", context=view_data)
+
+
+@app.post("/gen_graph_generate")
+async def gen_graph_execute(req: Request):
+    form_data = await req.form()
+
+    ontologyFile = form_data["fileOntology"].filename
+    ontology = await form_data["fileOntology"].read()
+    f = open(ontologyFile, "wb")
+    f.write(ontology)
+    f.close()
+
+    view_data = gen_graph_view_data()
+    view_data["results_message"] = ""
+    view_data["owl"] = ontology.decode("utf-8")
+
+    # read the contents of the uploaded files from req parameter
+
+    entitiesFiles = []
+    if (form_data["fileEntities"] == None) or (
+        form_data["fileEntities"].filename == ""
+    ):
+        view_data["results_message"] += "No entity files uploaded\n"
+    else:
+        for entityUpload in form_data.getlist("fileEntities"):
+            entitiesFile = entityUpload.filename
+            entitiesFiles.append(entitiesFile)
+            f = open(entitiesFile, "wb")
+            entities = await entityUpload.read()
+            f.write(entities)
+            f.close()
+
+    relationshipsFiles = []
+    if (form_data["fileRelationships"] == None) or (
+        form_data["fileRelationships"].filename == ""
+    ):
+        view_data["results_message"] += "No relationship files uploaded\n"
+    else:
+        for relationshipUpload in form_data.getlist("fileRelationships"):
+            relationshipsFile = relationshipUpload.filename
+            relationshipsFiles.append(relationshipsFile)
+            f = open(relationshipsFile, "wb")
+            relationships = await relationshipUpload.read()
+            f.write(relationships)
+            f.close()
+
+    try:
+        if ai_svc.generate_graph(entitiesFiles, relationshipsFiles, ontologyFile):
+            f = open("results.nt", "r")
+            view_data["results"] = f.read()
+            view_data["results_message"] += "Generated graph successfully: \n"
+    except Exception as e:
+        logging.critical((str(e)))
+        logging.exception(e, stack_info=True, exc_info=True)
+        view_data["results_message"] += "\nCouldn't generate graph"
+
+    return views.TemplateResponse(request=req, name="gen_graph.html", context=view_data)
 
 
 @app.get("/gen_sparql_console")
@@ -344,6 +409,15 @@ async def conv_ai_console(req: Request):
 
 
 # non-endpoint methods:
+def gen_graph_view_data():
+    global owl_xml
+
+    view_data = dict()
+
+    view_data["owl"] = owl_xml
+    view_data["results_message"] = ""
+    view_data["results"] = ""
+    return view_data
 
 
 def gen_sparql_console_view_data():
@@ -493,6 +567,27 @@ def post_alt_sparql_console(form_data):
         response_obj = post_sparql_query_to_graph_microsvc(sparql)
         view_data["results"] = json.dumps(response_obj, sort_keys=False, indent=2)
     return view_data
+
+
+def post_graph_files_to_graph_microsvc(
+    entities: str, relationships: str, ontology: str
+) -> None:
+    """
+    Execute a HTTP POST to the graph microservice with the given graph files.
+    Return the HTTP response object.
+    """
+    try:
+        url = graph_microsvc_graph_gen_url()
+        postdata = dict()
+        postdata["entities"] = entities
+        postdata["relationships"] = relationships
+        postdata["ontology"] = ontology
+        r = httpx.post(url, data=json.dumps(postdata), timeout=120.0)
+        return r.text
+    except Exception as e:
+        logging.critical((str(e)))
+        logging.exception(e, stack_info=True, exc_info=True)
+        return {}
 
 
 def post_sparql_query_to_graph_microsvc(sparql: str) -> None:
