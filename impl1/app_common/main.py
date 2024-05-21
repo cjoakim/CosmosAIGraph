@@ -26,6 +26,10 @@ from pysrc.services.config_service import ConfigService
 from pysrc.services.cosmos_vcore_service import CosmosVCoreService
 from pysrc.services.logging_level_service import LoggingLevelService
 from pysrc.util.fs import FS
+from pysrc.util.graph_builder_generator import GraphBuilderGenerator
+from pysrc.util.owl_generator import OwlGenerator
+from pysrc.util.owl_sax_handler import OwlSaxHandler
+
 
 logging.basicConfig(
     format="%(asctime)s - %(message)s", level=LoggingLevelService.get_level()

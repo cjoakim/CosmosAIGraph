@@ -1,10 +1,6 @@
-# Build the three microservice Docker images for this app.
+# Build the two microservice Docker images for this app.
+# Note: be sure to have Docker Desktop running on your system.
 # Chris Joakim, Microsoft
-
-cd .\app_common\
-echo 'executing Ant script to deploy common code ...'
-ant -f deploy_master_code.xml
-cd ..
 
 cd .\app_graph\
 pwd

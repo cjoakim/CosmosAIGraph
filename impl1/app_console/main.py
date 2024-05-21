@@ -7,6 +7,9 @@ Usage:
     python main.py create_entities
     python main.py persist_entities
     python main.py identify_entities
+    python main.py generate_rdflib_triples_builder meta/vertex_signatures_imdb.json
+    python main.py parse_owl ontologies/libraries.owl
+    python main.py generate_owl meta/vertex_signatures_imdb.json meta/edge_signatures_imdb.json http://cosmosdb.com/imdb
 Options:
   -h --help     Show this screen.
   --version     Show version.
@@ -18,6 +21,9 @@ import time
 import logging
 import traceback
 
+from xml.sax import make_parser
+from xml.sax.handler import ContentHandler
+
 from docopt import docopt
 from dotenv import load_dotenv
 
@@ -25,6 +31,9 @@ from pysrc.services.config_service import ConfigService
 from pysrc.services.cosmos_vcore_service import CosmosVCoreService
 from pysrc.services.entities_service import EntitiesService
 from pysrc.util.fs import FS
+from pysrc.util.graph_builder_generator import GraphBuilderGenerator
+from pysrc.util.owl_generator import OwlGenerator
+from pysrc.util.owl_sax_handler import OwlSaxHandler
 
 
 def print_options(msg):
@@ -204,6 +213,31 @@ def entities_doc_filename():
     return "../data/entities/entities_doc.json"
 
 
+def generate_rdflib_triples_builder(vertex_signatures_filename: str):
+    generator = GraphBuilderGenerator()
+    code_lines = generator.generate(vertex_signatures_filename)
+    for line in code_lines:
+        print(line)
+
+
+def parse_owl(owl_file_path: str):
+    parser = make_parser()
+    handler = OwlSaxHandler()
+    parser.setContentHandler(handler)
+    parser.parse(owl_file_path)
+    FS.write_json(handler.get_data(), "tmp/owl_xml_handler.json")
+
+
+def generate_owl(
+    vertex_signatures_filename: str, edge_signatures_filename: str, namespace: str
+):
+    generator = OwlGenerator()
+    xml = generator.generate(
+        vertex_signatures_filename, edge_signatures_filename, namespace
+    )
+    print(xml)
+
+
 if __name__ == "__main__":
     # standard initialization of env and logger
     load_dotenv(override=True)
@@ -226,6 +260,19 @@ if __name__ == "__main__":
                 persist_entities()
             elif func == "identify_entities":
                 identify_entities()
+            elif func == "generate_rdflib_triples_builder":
+                vertex_signatures_filename = sys.argv[2]
+                generate_rdflib_triples_builder(vertex_signatures_filename)
+            elif func == "parse_owl":
+                owl_file_path = sys.argv[2]
+                parse_owl(owl_file_path)
+            elif func == "generate_owl":
+                vertex_signatures_filename = sys.argv[2]
+                edge_signatures_filename = sys.argv[3]
+                namespace = sys.argv[4]
+                generate_owl(
+                    vertex_signatures_filename, edge_signatures_filename, namespace
+                )
             else:
                 print_options("Error: invalid function: {}".format(func))
         except Exception as e:
