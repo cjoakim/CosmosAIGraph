@@ -1,7 +1,9 @@
+import datetime
 import json
 import logging
 import time
 import traceback
+import uuid
 
 import certifi
 
@@ -10,6 +12,7 @@ from bson.objectid import ObjectId
 
 from pysrc.services.config_service import ConfigService
 from pysrc.services.ai_conversation import AiConversation
+from pysrc.models.webservice_models import AiConvFeedbackModel
 from pysrc.models.webservice_models import DocumentsVSResultsModel
 
 # Instances of this class are used to access a Cosmos DB Mongo vCore
@@ -227,6 +230,28 @@ class CosmosVCoreService:
             logging.critical(
                 "Exception in CosmosVCoreService#save_conversation id: {} -> {}".format(
                     conv, str(e)
+                )
+            )
+            logging.exception(e, stack_info=True, exc_info=True)
+            return False
+
+    def save_feedback(self, feedback: AiConvFeedbackModel) -> bool:
+        try:
+            self.set_coll(ConfigService.feedback_container())
+            created_at = time.time()
+            doc = dict()
+            doc["_id"] = str(uuid.uuid4())
+            doc["created_at"] = created_at
+            doc["created_date"] = str(datetime.datetime.fromtimestamp(created_at))
+            doc["conversation_id"] = feedback.conversation_id
+            doc["feedback_last_question"] = feedback.feedback_last_question
+            doc["feedback_user_feedback"] = feedback.feedback_user_feedback
+            self.insert_doc(doc)
+            return True
+        except Exception as e:
+            logging.critical(
+                "Exception in CosmosVCoreService#save_feedback: {} -> {}".format(
+                    feedback, str(e)
                 )
             )
             logging.exception(e, stack_info=True, exc_info=True)

@@ -441,3 +441,15 @@ HTML: ```{{$input_html}}```
 
 One line TLDR with the fewest words."""
         return prompt_text
+
+    async def get_completion(self, user_prompt, system_prompt):
+        completion = self.aoai_client.chat.completions.create(
+            model=self.completions_deployment,
+            temperature=0.1,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        result = completion.choices[0].message.content
+        return result

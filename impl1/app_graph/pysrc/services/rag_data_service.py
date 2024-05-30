@@ -9,7 +9,9 @@ from pysrc.services.cosmos_vcore_service import CosmosVCoreService
 from pysrc.services.config_service import ConfigService
 from pysrc.services.ontology_service import OntologyService
 from pysrc.services.rag_data_result import RAGDataResult
-from pysrc.services.rag_strategy_builder import RAGStrategyBuilder
+
+# from pysrc.services.rag_strategy_builder import RAGStrategyBuilder  # replaced by StrategyBuilder on 5/29
+from pysrc.services.strategy_builder import StrategyBuilder
 
 # Instances of this class are used to identify and retrieve system prompt data
 # for the RAG pattern in a "HybridRAG" manner.  The RAG data will be read,
@@ -51,12 +53,12 @@ class RAGDataService:
         rdr = RAGDataResult()
         rdr.set_user_text(user_text)
         rdr.set_attr("max_doc_count", max_doc_count)
-        rsb = RAGStrategyBuilder()
-        strategy_obj = rsb.determine(user_text)
+        rsb = StrategyBuilder(self.ai_svc)  # RAGStrategyBuilder()
+        strategy_obj = await rsb.determine(user_text)
         strategy = strategy_obj["strategy"]
         rdr.add_strategy(strategy)
         jstr = "[]"
-        if strategy == "db_search":
+        if strategy == "db":
             libtype = strategy_obj["libtype"]
             name = strategy_obj["name"]
             rdr.set_attr("libtype", libtype)
@@ -69,14 +71,14 @@ class RAGDataService:
                 rdr.add_strategy("vector_search")
                 jstr = await self.get_vector_rag_data(user_text, max_doc_count)
 
-        elif strategy == "graph_search":
+        elif strategy == "graph":
             rag_docs_list = await self.get_graph_rag_data(user_text, rdr, max_doc_count)
             if len(rag_docs_list) == 0:
                 # use a vector search if the graph_search returns no results
                 rdr.add_strategy("vector_search")
                 jstr = await self.get_vector_rag_data(user_text, max_doc_count)
 
-        elif strategy == "vector_search":
+        elif strategy == "vector":
             rag_docs_list = await self.get_vector_rag_data(user_text, max_doc_count)
 
         # scrub the result docs of unnecessary attributes and make them

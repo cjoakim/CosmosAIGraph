@@ -3,6 +3,7 @@ This module is for ad-hoc tasks not related to the actual working app.
 Usage:
     python main.py list_defined_env_vars
     python main.py create_vcore_collections_and_indexes
+    python main.py create_vcore_collections_and_indexes_adhoc
     python main.py load_vcore_with_library_documents
     python main.py create_entities
     python main.py persist_entities
@@ -168,6 +169,41 @@ def create_vcore_collections_and_indexes():
         )
     )
 
+    # feedback container
+    cname = ConfigService.feedback_container()
+    vcore.set_db(dbname)
+    vcore.set_coll(cname)
+    logging.info("using vcore db: {}, collection: {}".format(dbname, cname))
+    vcore.create_simple_index("conversation_id")
+    vcore.create_simple_index("created_date")
+    vcore.create_simple_index("created_at")
+    indexes = vcore.get_coll_indexes(cname)
+    logging.info(
+        "{} indexes after:\n{}".format(
+            cname, json.dumps(indexes, sort_keys=False, indent=2)
+        )
+    )
+
+
+def create_vcore_collections_and_indexes_adhoc():
+    vcore, dbname, cname = connect_to_vcore_graph_source()
+    logging.info("using vcore db: {}, collection: {}".format(dbname, cname))
+
+    # feedback container
+    cname = ConfigService.feedback_container()
+    vcore.set_db(dbname)
+    vcore.set_coll(cname)
+    logging.info("using vcore db: {}, collection: {}".format(dbname, cname))
+    vcore.create_simple_index("conversation_id")
+    vcore.create_simple_index("created_date")
+    vcore.create_simple_index("created_at")
+    indexes = vcore.get_coll_indexes(cname)
+    logging.info(
+        "{} indexes after:\n{}".format(
+            cname, json.dumps(indexes, sort_keys=False, indent=2)
+        )
+    )
+
 
 def create_entities():
     entities_svc = EntitiesService()
@@ -254,6 +290,8 @@ if __name__ == "__main__":
                 load_vcore_with_library_documents()
             elif func == "create_vcore_collections_and_indexes":
                 create_vcore_collections_and_indexes()
+            elif func == "create_vcore_collections_and_indexes_adhoc":
+                create_vcore_collections_and_indexes_adhoc()
             elif func == "create_entities":
                 create_entities()
             elif func == "persist_entities":

@@ -40,6 +40,9 @@ class ConfigService:
         d["CAIG_CONVERSATIONS_CONTAINER"] = (
             "The vCore container where the chat conversations and history are persisted"
         )
+        d["CAIG_FEEDBACK_CONTAINER"] = (
+            "The vCore container where user feedback is persisted"
+        )
         d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = (
             "The full connection string for the Cosmos DB Mongo vCore account"
         )
@@ -154,6 +157,10 @@ class ConfigService:
     @classmethod
     def conversations_container(cls) -> str:
         return cls.envvar("CAIG_CONVERSATIONS_CONTAINER", "conversations")
+
+    @classmethod
+    def feedback_container(cls) -> str:
+        return cls.envvar("CAIG_FEEDBACK_CONTAINER", "feedback")
 
     @classmethod
     def mongo_vcore_conn_str(cls) -> str:

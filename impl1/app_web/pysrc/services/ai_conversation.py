@@ -30,7 +30,7 @@ class AiConversation:
                 self.created_date = json_obj["created_date"]
                 self.updated_at = json_obj["updated_at"]
                 self.conversation_id = json_obj["conversation_id"]
-                self.last_user_message = None
+                self.last_user_message = json_obj["conversation_id"]
 
                 if "chat_history" in json_obj.keys():
                     hist_json = json_obj["chat_history"]
@@ -59,6 +59,7 @@ class AiConversation:
                 self.chat_history = ChatHistory()
                 self.completions = list()
                 self.diagnostic_messages = list()
+                self.last_user_message = ""
         except Exception as e:
             logging.critical("Exception in AiConversation#__init__: {}".format(str(e)))
             logging.exception(e, stack_info=True, exc_info=True)
@@ -108,6 +109,9 @@ class AiConversation:
                 "Exception in AiConversation#add_user_message: {}".format(str(e))
             )
             logging.exception(e, stack_info=True, exc_info=True)
+
+    def get_last_user_message(self):
+        return self.last_user_message
 
     def add_system_message(self, msg) -> None:
         try:

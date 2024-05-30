@@ -23,6 +23,7 @@ from pysrc.models.webservice_models import LivenessModel
 from pysrc.models.webservice_models import OwlInfoModel
 from pysrc.models.webservice_models import DocumentsVSResultsModel
 
+from pysrc.models.webservice_models import AiConvFeedbackModel
 from pysrc.models.webservice_models import SparqlGenerationRequestModel
 from pysrc.models.webservice_models import SparqlGenerationResponseModel
 from pysrc.models.webservice_models import VectorizeRequestModel
@@ -347,6 +348,7 @@ async def conv_ai_console(req: Request):
     view_data["conv"] = conv
     view_data["conversation_id"] = conv.conversation_id
     view_data["conversation_data"] = ""
+    view_data["last_user_question"] = ""
     return views.TemplateResponse(
         request=req, name="conv_ai_console.html", context=view_data
     )
@@ -403,9 +405,29 @@ async def conv_ai_console(req: Request):
     view_data["conv"] = conv
     view_data["conversation_id"] = conv.conversation_id
     view_data["conversation_data"] = conv.serialize()
+    view_data["last_user_question"] = conv.get_last_user_message()
     return views.TemplateResponse(
         request=req, name="conv_ai_console.html", context=view_data
     )
+
+
+@app.post("/conv_ai_feedback")
+async def post_sparql_query(
+    req_model: AiConvFeedbackModel,
+) -> AiConvFeedbackModel:
+    global vcore
+    conversation_id = req_model.conversation_id
+    feedback_last_question = req_model.feedback_last_question
+    feedback_user_feedback = req_model.feedback_user_feedback
+    logging.warn("/conv_ai_feedback conversation_id: {}".format(conversation_id))
+    logging.warn(
+        "/conv_ai_feedback feedback_last_question: {}".format(feedback_last_question)
+    )
+    logging.warn(
+        "/conv_ai_feedback feedback_user_feedback: {}".format(feedback_user_feedback)
+    )
+    vcore.save_feedback(req_model)
+    return req_model
 
 
 # non-endpoint methods:

@@ -78,6 +78,12 @@ class SparqlGenerationResponseModel(BaseModel):
     error: str | None
 
 
+class AiConvFeedbackModel(BaseModel):
+    conversation_id: str
+    feedback_last_question: str
+    feedback_user_feedback: str
+
+
 class DocumentsVSResultsModel(BaseModel):
     libtype: str
     libname: str
