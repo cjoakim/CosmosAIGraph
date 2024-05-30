@@ -59,11 +59,11 @@ class GraphService:
     def __init__(self, opts={}):
         self.opts = opts
         gb = GraphBuilder()
-        self.graph = gb.build()
+        self.graph = gb.build(self.opts)
 
     def reload(self):
         gb = GraphBuilder()
-        self.graph = gb.build()
+        self.graph = gb.build(self.opts)
 
     def liveness_check(self) -> dict:
         """

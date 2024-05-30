@@ -23,7 +23,14 @@ Unit tests are in the **impl1\app_common\tests** directory.
 These use the [pytest](https://pypi.org/project/pytest/) library.
 Test code coverage reports are created using the [pytest-cov](https://pypi.org/project/pytest-cov/)
 library. 
+
 See the **tests.ps1** and **tests.sh** scripts in the impl1\app_common directory.
+
+The output of the tests looks like the following:
+
+<p align="center">
+  <img src="img/pytest_unit_tests.png" width="90%">
+</p>
 
 ### impl1\app_common\pysrc\models directory
 

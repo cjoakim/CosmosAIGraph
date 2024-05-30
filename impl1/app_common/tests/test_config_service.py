@@ -6,6 +6,14 @@ from pysrc.services.config_service import ConfigService
 # pytest tests/test_config_service.py
 
 
+def test_graph_namespace():
+    ConfigService.set_standard_unit_test_env_vars()
+    assert ConfigService.graph_namespace() == "http://cosmosdb.com/caig#"
+
+def test_graph_namespace_alias():
+    ConfigService.set_standard_unit_test_env_vars()
+    assert ConfigService.graph_namespace_alias() == "caig"
+
 def test_graph_source():
     ConfigService.set_standard_unit_test_env_vars()
     assert ConfigService.graph_source() == "rdf_file"

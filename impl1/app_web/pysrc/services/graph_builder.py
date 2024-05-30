@@ -13,6 +13,9 @@ from rdflib.extras.infixowl import AllClasses, AllProperties, GetIdentifiedClass
 
 from pysrc.services.config_service import ConfigService
 from pysrc.services.cosmos_vcore_service import CosmosVCoreService
+from pysrc.util.owl_explorer import OwlExplorer
+from pysrc.util.graph_builder_generator import GraphBuilderGenerator
+from pysrc.util.counter import Counter
 from pysrc.util.fs import FS
 
 # Instances of this class are used to build an instance of class GraphService,
@@ -20,20 +23,11 @@ from pysrc.util.fs import FS
 # the graph consists of an Web Ontology File (OWL) as well as either a RDF
 # input file (i.e - *.nt) or a Cosmos DB Mongo vCore database.
 #
-# The source is specified at runtime via with several environment variables, including:
-# - CAIG_GRAPH_SOURCE_TYPE
-# - CAIG_GRAPH_SOURCE_OWL_FILENAME
-# - CAIG_GRAPH_SOURCE_RDF_FILENAME
-# - CAIG_GRAPH_SOURCE_DB
-# - CAIG_GRAPH_SOURCE_CONTAINER
-# - CAIG_AZURE_MONGO_VCORE_CONN_STR
-#
-# See class ConfigService for a description of these environment variables.
-# See the docker-compose.yml file
 # Chris Joakim, Microsoft
 
 
 class GraphBuilder:
+
     def __init__(self):
         pass
 
@@ -45,55 +39,50 @@ class GraphBuilder:
         # 4. Display the defined classes and properties in the ontology
         # 5. Load the graph using the custom ontology
 
-        CNS = Namespace(self.libraries_namespace())  # CNS ~ Custom Namespace
-        cwd = psutil.Process().cwd()
-        logging.info("GraphBuilder#build - cwd: {}".format(cwd))
-        ontology_file = ConfigService.graph_source_owl_filename()
-        logging.info("GraphBuilder#build - ontology_file: {}".format(ontology_file))
-        g = Graph()
-        g.bind("c", CNS)
-        g.parse(ontology_file, format="xml")
+        self.initialize_graph()
 
-        # The in-memory graph can be loaded from either a static rdf nt file,
-        # or a dynamic set of Cosmos DB Mongo vCore documents.  Loading from
-        # rdf nt files is only recommended for initial development and unit testing.
         config = ConfigService()
+        logging.info(
+            "GraphBuilder#build graph_source: {}".format(config.graph_source())
+        )
+
         if config.graph_source() == "rdf_file":
-            self.populate_graph_from_rdf_file(g, config)
+            self.populate_graph_from_rdf_file(self.g, config)
         elif config.graph_source() == "cosmos_vcore":
-            self.populate_graph_from_cosmosdb_vcore(g, config, CNS)
+            self.populate_graph_from_cosmosdb_vcore(self.g, config, self.CNS)
         else:
             logging.critical(
                 "WARNING: GraphBuilder defaulting to cosmos_vcore loading strategy"
             )
-            self.populate_graph_from_cosmosdb_vcore(g, config, CNS)
+            self.populate_graph_from_cosmosdb_vcore(self.g, config, self.CNS)
 
         if "display_ontology" in opts.keys():
-            self.display_ontology_classes_and_properties(g)
+            self.display_ontology(self.g)
         if "iterate_graph" in opts.keys():
-            self.iterate_graph(g, "after load")
+            self.iterate_graph(self.g, "after load")
         if "persist_graph" in opts.keys():
-            self.persist_graph(g)
-        return g
+            self.persist_graph(self.g)
+        return self.g
 
-    def libraries_namespace(self) -> str:
-        return "http://cosmosdb.com/caig#"
+    def initialize_graph(self) -> rdflib.Graph:
+        self.cns = self.graph_namespace()
+        self.CNS = Namespace(self.cns)  # CNS ~ Custom Namespace
+        logging.info("GraphBuilder#initialize_graph - cns: {}".format(self.cns))
+        ontology_file = ConfigService.graph_source_owl_filename()
+        logging.info(
+            "GraphBuilder#initialize_graph - ontology_file: {}".format(ontology_file)
+        )
+        self.g = Graph()
+        self.g.bind(self.graph_namespace_alias(), self.CNS)
+        self.g.parse(ontology_file, format="xml")
 
-    def display_ontology_classes_and_properties(self, g) -> None:
-        logging.info("=== GraphBuilder Ontology GetIdentifiedClasses ===")
-        classes = list(GetIdentifiedClasses(g))
-        for idx, c in enumerate(classes):
-            logging.info("{} {}".format(idx, c))
+    def graph_namespace(self) -> str:
+        """ " return a URI value like 'http://cosmosdb.com/caig#'"""
+        return ConfigService.graph_namespace()
 
-        logging.info("=== GraphBuilder Ontology AllClasses ===")
-        classes = list(AllClasses(g))
-        for idx, c in enumerate(classes):
-            logging.info("{} {}".format(idx, c))
-
-        logging.info("=== GraphBuilder Ontology AllProperties ===")
-        properties = list(AllProperties(g))
-        for idx, p in enumerate(properties):
-            logging.info("{} {}".format(idx, p))
+    def graph_namespace_alias(self) -> str:
+        """ " return a value like 'caig' (from namespace 'http://cosmosdb.com/caig#')"""
+        return ConfigService.graph_namespace_alias()
 
     def populate_graph_from_rdf_file(
         self, g: rdflib.Graph, config: ConfigService
@@ -134,7 +123,7 @@ class GraphBuilder:
             t1 = time.perf_counter()
             for libtype in ["pypi"]:
                 query_spec = {"libtype": libtype}
-                projection = self.library_projection_attrs()
+                projection = self.document_projection_attributes()
                 cursor = coll.find(
                     query_spec, projection=projection, skip=0, limit=999999
                 )
@@ -159,9 +148,10 @@ class GraphBuilder:
             logging.exception(e, stack_info=True, exc_info=True)
             return None
 
-    def library_projection_attrs(self):
+    def document_projection_attributes(self):
         """
         The in-memory rdflib graph is built from these few Cosmos DB document attributes.
+        There is no need to include all attributes in the graph, only these necessary ones.
         See https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection.find
         """
         return {
@@ -174,30 +164,6 @@ class GraphBuilder:
             "developers": 1,
             "dependency_ids": 1,
         }
-
-    def connect_to_vcore_graph_source(self):
-        """
-        connect to the vcore account, and return a 3-tuple of
-        (vcore, dbname, cname), where vcore is an instance of
-        class CosmosVCoreService.
-        """
-        opts = dict()
-        opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-        vcore = CosmosVCoreService(opts)
-        if "pymongo.mongo_client.MongoClient" in str(type(vcore.get_client())):
-            logging.critical(
-                "GraphBuilder#connect_to_vcore_graph_source - connected to vcore"
-            )
-        else:
-            logging.critical(
-                "GraphBuilder#connect_to_vcore_graph_source - unable to connect to vcore"
-            )
-            return
-        dbname = ConfigService.graph_source_db()
-        cname = ConfigService.graph_source_container()
-        vcore.set_db(dbname)
-        vcore.set_coll(cname)
-        return (vcore, dbname, cname)
 
     def append_lib_to_graph(self, g, libdoc, CNS):
         """
@@ -225,6 +191,34 @@ class GraphBuilder:
             depref = URIRef("http://cosmosdb.com/caig/{}".format(dep_lib))
             g.add((libref, CNS.uses_lib, depref))
             g.add((depref, CNS.used_by_lib, libref))
+
+    def connect_to_vcore_graph_source(self):
+        """
+        connect to the vcore account, and return a 3-tuple of
+        (vcore, dbname, cname), where vcore is an instance of
+        class CosmosVCoreService.
+        """
+        opts = dict()
+        opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
+        vcore = CosmosVCoreService(opts)
+        if "pymongo.mongo_client.MongoClient" in str(type(vcore.get_client())):
+            logging.critical(
+                "GraphBuilder#connect_to_vcore_graph_source - connected to vcore"
+            )
+        else:
+            logging.critical(
+                "GraphBuilder#connect_to_vcore_graph_source - unable to connect to vcore"
+            )
+            return
+        dbname = ConfigService.graph_source_db()
+        cname = ConfigService.graph_source_container()
+        vcore.set_db(dbname)
+        vcore.set_coll(cname)
+        return (vcore, dbname, cname)
+
+    def display_ontology(self, g):
+        ox = OwlExplorer(g, self.cns, self.graph_namespace_alias)
+        ox.display()
 
     def persist_graph(self, g, outfile="tmp/graph.nt"):
         logging.info("GraphBuilder#persist_graph start")

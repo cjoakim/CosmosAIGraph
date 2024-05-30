@@ -40,20 +40,21 @@ def test_generate_sparql_from_user_prompt():
     obj["owl"] = owl
 
     result_obj = ai_svc.generate_sparql_from_user_prompt(obj)
-    print(obj)
-    FS.write_json(obj, "tmp/test_generate_sparql_from_user_prompt.json")
-    assert obj["prompt_tokens"] > 1000
-    assert obj["prompt_tokens"] < 2000
-    assert obj["completion_tokens"] > 30
-    assert obj["completion_tokens"] < 130
-    assert obj["total_tokens"] > 1000
-    assert obj["total_tokens"] < 2000
-    assert obj["elapsed"] > 0.001
+    print(result_obj)
+    FS.write_json(result_obj, "tmp/test_generate_sparql_from_user_prompt.json")
+    assert result_obj["prompt_tokens"] > 1000
+    assert result_obj["prompt_tokens"] < 2000
+    assert result_obj["completion_tokens"] > 30
+    assert result_obj["completion_tokens"] < 130
+    assert result_obj["total_tokens"] > 1000
+    assert result_obj["total_tokens"] < 2000
+    assert result_obj["elapsed"] > 0.001
 
     sf = SparqlFormatter()
-    sparql = obj["sparql"]
+    sparql = result_obj["sparql"]
     pretty = SparqlFormatter().pretty(sparql)
-    assert sf.default_prefix() in pretty
+    assert 'http://cosmosdb.com/caig#' in pretty
+    print(pretty)
 
 def test_generate_embeddings():
     ai_svc = AiService()
@@ -63,39 +64,39 @@ def test_generate_embeddings():
     assert "CreateEmbeddingResponse" in str(type(resp)) 
     assert len(resp.data[0].embedding) == 1536
 
-@pytest.mark.skip(reason="this test is slow and exploratory, bypass for now")
-@pytest.mark.asyncio
-async def test_invoke_kernel():
-    ai_svc = AiService()
-    conversation = AiConversation()
-    conversation.add_system_message("You are a helpful chatbot.")
+# @pytest.mark.skip(reason="this test is slow and exploratory, bypass for now")
+# @pytest.mark.asyncio
+# async def test_invoke_kernel():
+#     ai_svc = AiService()
+#     conversation = AiConversation()
+#     conversation.add_system_message("You are a helpful chatbot.")
 
-    prompt_text = ai_svc.generic_prompt()
-    user_query = "who invented the telephone"
-    context = ""
-    completion1: AiCompletion = await ai_svc.invoke_kernel(
-        conversation, prompt_text, user_query, context)
-    print("completion 1 content: {}".format(completion1.get_content()))
+#     prompt_text = ai_svc.generic_prompt()
+#     user_query = "who invented the telephone"
+#     context = ""
+#     completion1: AiCompletion = await ai_svc.invoke_kernel(
+#         conversation, prompt_text, user_query, context)
+#     print("completion 1 content: {}".format(completion1.get_content()))
 
-    if True:
-        prompt_text = ai_svc.generic_prompt()
-        user_query = "when was he born"
-        context = completion1.get_content()
-        completion2: AiCompletion = await ai_svc.invoke_kernel(
-            conversation, prompt_text, user_query, context, temperature=2.0)
-        print("completion 2 content: {}".format(completion2.get_content()))
+#     if True:
+#         prompt_text = ai_svc.generic_prompt()
+#         user_query = "when was he born"
+#         context = completion1.get_content()
+#         completion2: AiCompletion = await ai_svc.invoke_kernel(
+#             conversation, prompt_text, user_query, context, temperature=2.0)
+#         print("completion 2 content: {}".format(completion2.get_content()))
 
-    if True:
-        prompt_text = ai_svc.generic_prompt()
-        user_query = "what other historic events happened that year"
-        context = completion2.get_content()
-        completion3: AiCompletion = await ai_svc.invoke_kernel(
-            conversation, prompt_text, user_query, context, temperature=2.0)
-        print("completion 3 content: {}".format(completion3.get_content()))
+#     if True:
+#         prompt_text = ai_svc.generic_prompt()
+#         user_query = "what other historic events happened that year"
+#         context = completion2.get_content()
+#         completion3: AiCompletion = await ai_svc.invoke_kernel(
+#             conversation, prompt_text, user_query, context, temperature=2.0)
+#         print("completion 3 content: {}".format(completion3.get_content()))
 
-    print('---')
-    print(conversation.serialize())
-    FS.write("tmp/test_invoke_kernel.json", conversation.serialize())
+#     print('---')
+#     print(conversation.serialize())
+#     FS.write("tmp/test_invoke_kernel.json", conversation.serialize())
 
-    assert "alexander graham bell" in completion1.get_content().lower()
-    assert "1847" in completion2.get_content()
+#     assert "alexander graham bell" in completion1.get_content().lower()
+#     assert "1847" in completion2.get_content()

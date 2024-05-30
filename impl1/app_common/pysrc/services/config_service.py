@@ -25,6 +25,7 @@ class ConfigService:
         d["CAIG_GRAPH_SOURCE_TYPE"] = (
             "The RDF graph data source type, either 'rdf_file' or 'cosmos_vcore'"
         )
+        d["CAIG_GRAPH_NAMESPACE"] = "The custom namespace for the RED graph"
         d["CAIG_GRAPH_SOURCE_OWL_FILENAME"] = "The input RDF OWL ontology file"
         d["CAIG_GRAPH_SOURCE_RDF_FILENAME"] = (
             "The RDF input file, if CAIG_GRAPH_SOURCE_TYPE is 'rdf_file'"
@@ -80,6 +81,7 @@ class ConfigService:
         d = dict()
         d["CAIG_HOME"] = ""
         d["CAIG_AZURE_REGION"] = "eastus"
+        d["CAIG_GRAPH_NAMESPACE"] = "http://cosmosdb.com/caig#"
         d["CAIG_GRAPH_SOURCE_TYPE"] = "cosmos_vcore"
         d["CAIG_GRAPH_SOURCE_OWL_FILENAME"] = "ontologies/libraries.owl"
         d["CAIG_GRAPH_SOURCE_RDF_FILENAME"] = "rdf/libraries-graph.nt"
@@ -191,8 +193,14 @@ class ConfigService:
         return cls.envvar("CAIG_AZURE_OPENAI_EMBEDDINGS_DEP", "embeddings")
 
     @classmethod
-    def libraries_namespace(cls):
-        return "http://cosmosdb.com/caig#"
+    def graph_namespace(cls):
+        default = "http://cosmosdb.com/caig#"
+        return cls.envvar("CAIG_GRAPH_NAMESPACE", default)
+
+    @classmethod
+    def graph_namespace_alias(cls):
+        """return the value 'xxx' for the namespace 'http://cosmosdb.com/xxx#'"""
+        return cls.graph_namespace().split("/")[-1].replace("#", "").strip()
 
     @classmethod
     def defined_auth_users(cls) -> dict:
