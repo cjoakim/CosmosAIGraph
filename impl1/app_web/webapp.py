@@ -13,9 +13,14 @@ import httpx
 
 from dotenv import load_dotenv
 
-from fastapi import FastAPI, Request, Response, Form, status
+from fastapi import FastAPI, Request, Response, Form, status, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+# next three lines for authentication with MSAL
+from fastapi import Depends
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi_msal import MSALAuthorization, UserInfo, MSALClientConfig
 
 # Pydantic models defining the "shapes" of requests and responses
 from pysrc.models.webservice_models import PingModel
@@ -28,7 +33,6 @@ from pysrc.models.webservice_models import SparqlGenerationRequestModel
 from pysrc.models.webservice_models import SparqlGenerationResponseModel
 from pysrc.models.webservice_models import VectorizeRequestModel
 from pysrc.models.webservice_models import VectorizeResponseModel
-
 
 # Services with Business Logic
 from pysrc.services.ai_completion import AiCompletion
@@ -70,6 +74,37 @@ entities_svc.initialize()
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 views = Jinja2Templates(directory="views")
+
+msal_client_config, msal_auth = None, None
+if ConfigService.use_msal_auth():
+    # See https://github.com/dudil/fastapi_msal
+    # See https://learn.microsoft.com/en-us/python/api/overview/azure/active-directory?view=azure-python
+    msal_client_config: MSALClientConfig = MSALClientConfig()
+    msal_client_config.client_id = ConfigService.msal_client_id()
+    msal_client_config.client_credential = ConfigService.msal_client_credential()
+    msal_client_config.tenant = ConfigService.msal_tenant()
+    app.add_middleware(SessionMiddleware, secret_key=ConfigService.msal_ssh_key())
+    msal_auth = MSALAuthorization(client_config=msal_client_config)
+    app.include_router(msal_auth.router)
+    logging.info(
+        "msal auth enabled, client_id: {}".format(ConfigService.msal_client_id())
+    )
+else:
+    logging.info("msal auth disabled")
+
+
+if ConfigService.use_msal_auth():
+
+    @app.get(
+        "/users/me",
+        response_model=UserInfo,
+        response_model_exclude_none=True,
+        response_model_by_alias=False,
+    )
+    async def read_users_me(
+        current_user: UserInfo = Depends(msal_auth.scheme),
+    ) -> UserInfo:
+        return current_user
 
 
 @app.get("/ping")

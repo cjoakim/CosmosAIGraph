@@ -203,6 +203,36 @@ class ConfigService:
         return cls.graph_namespace().split("/")[-1].replace("#", "").strip()
 
     @classmethod
+    def use_msal_auth(cls):
+        return cls.envvar("CAIG_MSAL_AUTH", False)
+
+    @classmethod
+    def msal_client_id(cls):
+        return cls.envvar("CAIG_MSAL_CLIENT_ID", None)
+
+    @classmethod
+    def msal_client_credential(cls):
+        return cls.envvar("CAIG_MSAL_CLIENT_CRED", None)
+
+    @classmethod
+    def msal_tenant(cls):
+        return cls.envvar("CAIG_MSAL_TENANT", None)
+
+    @classmethod
+    def msal_ssh_key(cls):
+        """obtain the SSH key from an environment variable or a file"""
+        key = cls.envvar("CAIG_MSAL_SSH_KEY", None)
+        if key is None:
+            key_filename = cls.envvar("CAIG_MSAL_SSH_KEY_FILE", None)
+            if os.path.isfile(key_filename):
+                with open(file=key_filename, encoding="utf-8", mode="rt") as file:
+                    return file.read()
+            else:
+                return None
+        else:
+            return key
+
+    @classmethod
     def defined_auth_users(cls) -> dict:
         """
         This is a primitive authentication and authorization mechanism for demonstration purposes only.
