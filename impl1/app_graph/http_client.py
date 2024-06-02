@@ -14,12 +14,8 @@ Options:
   --version     Show version.
 """
 
-import base64
 import json
 import sys
-import time
-import os
-import textwrap
 import traceback
 
 import httpx
@@ -27,6 +23,7 @@ import jinja2
 
 from docopt import docopt
 
+from pysrc.services.config_service import ConfigService
 from pysrc.util.fs import FS
 
 
@@ -36,8 +33,17 @@ def print_options(msg):
     print(arguments)
 
 
+def request_headers():
+    header = ConfigService.websvc_auth_header()
+    value = ConfigService.websvc_auth_value()
+    headers = dict()
+    headers["Content-Type"] = "application/json"
+    headers[header] = value
+    return headers
+
+
 def get(url):
-    r = httpx.get(url)
+    r = httpx.get(url, headers=request_headers())
     print(r)
     print(r.json())
 
@@ -45,7 +51,7 @@ def get(url):
 def post_sparql_query(url, libtype_libname):
     postdata = post_sparql_query_postdata(libtype_libname)
     print(postdata)
-    r = httpx.post(url, data=json.dumps(postdata))
+    r = httpx.post(url, headers=request_headers(), data=json.dumps(postdata))
     print("----- response text -----")
     print(r.text)
     print("----- pretty-print JSON response object -----")
@@ -73,7 +79,9 @@ LIMIT 10
 def post_sparql_bom_query(url, libtype, libname, max_depth):
     postdata = post_sparql_bom_query_postdata(libtype, libname, max_depth)
     print("postdata: {}".format(postdata))
-    r = httpx.post(url, data=json.dumps(postdata))
+    r = httpx.post(url, headers=request_headers(), data=json.dumps(postdata))
+    print("----- response status_code -----")
+    print(r.status_code)
     print("----- response text -----")
     print(r.text)
     print("----- pretty-print JSON response object -----")

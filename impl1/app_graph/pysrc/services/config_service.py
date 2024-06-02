@@ -71,6 +71,10 @@ class ConfigService:
         d["CAIG_GRAPH_SERVICE_NAME"] = ""
         d["CAIG_GRAPH_SERVICE_URL"] = ""
         d["CAIG_GRAPH_SERVICE_PORT"] = ""
+
+        d["CAIG_WEBSVC_AUTH_HEADER"] = "x-caig-auth"
+        d["CAIG_WEBSVC_AUTH_VALUE"] = "K6ZQw!81"
+
         d["CAIG_LOG_LEVEL"] = (
             "a python logging standard-lib level name: notset, debug, info, warning, error, or critical"
         )
@@ -231,6 +235,14 @@ class ConfigService:
                 return None
         else:
             return key
+
+    @classmethod
+    def websvc_auth_header(cls):
+        return cls.envvar("CAIG_WEBSVC_AUTH_HEADER", "x-caig-auth")
+
+    @classmethod
+    def websvc_auth_value(cls):
+        return cls.envvar("CAIG_WEBSVC_AUTH_VALUE", "K6ZQw!81")
 
     @classmethod
     def defined_auth_users(cls) -> dict:

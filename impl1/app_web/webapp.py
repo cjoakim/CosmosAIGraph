@@ -75,6 +75,7 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 views = Jinja2Templates(directory="views")
 
+# web app authentication with MSAL
 msal_client_config, msal_auth = None, None
 if ConfigService.use_msal_auth():
     # See https://github.com/dudil/fastapi_msal
@@ -91,6 +92,16 @@ if ConfigService.use_msal_auth():
     )
 else:
     logging.info("msal auth disabled")
+
+# web service authentication with shared secrets
+websvc_auth_header = ConfigService.websvc_auth_header()
+websvc_auth_value = ConfigService.websvc_auth_value()
+websvc_headers = dict()
+websvc_headers["Content-Type"] = "application/json"
+websvc_headers[websvc_auth_header] = websvc_auth_value
+logging.debug(
+    "webapp.py websvc_headers: {}".format(json.dumps(websvc_headers, sort_keys=False))
+)
 
 
 if ConfigService.use_msal_auth():
@@ -545,7 +556,9 @@ SELECT * WHERE { ?s ?p ?o . } LIMIT 10
 
 
 def post_libraries_sparql_console(form_data):
+    global websvc_headers
     global cache_svc
+
     sparql = form_data.get("sparql")
     bom_query = form_data.get("bom_query").strip()
     use_cache = form_data.get("use_cache")  # Will be None if checkbox not checked
@@ -592,7 +605,12 @@ def post_libraries_sparql_console(form_data):
                 postdata["libname"] = tokens[1]
                 postdata["max_depth"] = tokens[2]
                 logging.info("postdata: {}".format(postdata))
-                r = httpx.post(url, data=json.dumps(postdata), timeout=120.0)
+                r = httpx.post(
+                    url,
+                    headers=websvc_headers,
+                    data=json.dumps(postdata),
+                    timeout=120.0,
+                )
                 bom_obj = json.loads(r.text)
                 logging.info("setting cache key: {} {}".format(cache_key, bom_obj))
                 cache_svc.set(cache_key, bom_obj)
@@ -626,6 +644,7 @@ def post_alt_sparql_console(form_data):
     return view_data
 
 
+# this method appears to be obsolete, cj 6/2
 def post_graph_files_to_graph_microsvc(
     entities: str, relationships: str, ontology: str
 ) -> None:
@@ -633,13 +652,17 @@ def post_graph_files_to_graph_microsvc(
     Execute a HTTP POST to the graph microservice with the given graph files.
     Return the HTTP response object.
     """
+    global websvc_headers
+
     try:
         url = graph_microsvc_graph_gen_url()
         postdata = dict()
         postdata["entities"] = entities
         postdata["relationships"] = relationships
         postdata["ontology"] = ontology
-        r = httpx.post(url, data=json.dumps(postdata), timeout=120.0)
+        r = httpx.post(
+            url, headers=websvc_headers, data=json.dumps(postdata), timeout=120.0
+        )
         return r.text
     except Exception as e:
         logging.critical((str(e)))
@@ -652,11 +675,14 @@ def post_sparql_query_to_graph_microsvc(sparql: str) -> None:
     Execute a HTTP POST to the graph microservice with the given SPARQL query.
     Return the HTTP response JSON object.
     """
+    global websvc_headers
     try:
         url = graph_microsvc_sparql_query_url()
         postdata = dict()
         postdata["sparql"] = sparql
-        r = httpx.post(url, data=json.dumps(postdata), timeout=120.0)
+        r = httpx.post(
+            url, headers=websvc_headers, data=json.dumps(postdata), timeout=120.0
+        )
         obj = json.loads(r.text)
         return obj
     except Exception as e:

@@ -34,6 +34,18 @@ class RAGDataService:
             self.doc_include_attributes.append("name")
             self.doc_include_attributes.append("summary")
             self.doc_include_attributes.append("documentation_summary")
+
+            # web service authentication with shared secrets
+            websvc_auth_header = ConfigService.websvc_auth_header()
+            websvc_auth_value = ConfigService.websvc_auth_value()
+            self.websvc_headers = dict()
+            self.websvc_headers["Content-Type"] = "application/json"
+            self.websvc_headers[websvc_auth_header] = websvc_auth_value
+            logging.debug(
+                "RAGDataService websvc_headers: {}".format(
+                    json.dumps(self.websvc_headers, sort_keys=False)
+                )
+            )
         except Exception as e:
             logging.critical("Exception in RagDataService#__init__: {}".format(str(e)))
 
@@ -52,18 +64,18 @@ class RAGDataService:
         rdr = RAGDataResult()
         rdr.set_user_text(user_text)
         rdr.set_attr("max_doc_count", max_doc_count)
-        rsb = StrategyBuilder(self.ai_svc)  # RAGStrategyBuilder()
+        rsb = StrategyBuilder(self.ai_svc)
         strategy_obj = await rsb.determine(user_text)
         strategy = strategy_obj["strategy"]
         rdr.add_strategy(strategy)
         jstr = "[]"
         if strategy == "db":
-            libtype = strategy_obj["libtype"]
+            entitytype = strategy_obj["entitytype"]
             name = strategy_obj["name"]
-            rdr.set_attr("libtype", libtype)
+            rdr.set_attr("entitytype", entitytype)
             rdr.set_attr("name", name)
             rag_docs_list = await self.get_database_rag_data(
-                user_text, libtype, name, max_doc_count
+                user_text, entitytype, name, max_doc_count
             )
             if len(rag_docs_list) == 0:
                 # use a vector search if the db_search returns no results
@@ -229,7 +241,12 @@ class RAGDataService:
             url = self._graph_microsvc_sparql_query_url()
             postdata = dict()
             postdata["sparql"] = sparql
-            r = httpx.post(url, data=json.dumps(postdata), timeout=30.0)
+            r = httpx.post(
+                url,
+                headers=self.websvc_headers,
+                data=json.dumps(postdata),
+                timeout=30.0,
+            )
             obj = json.loads(r.text)
             return obj
         except Exception as e:

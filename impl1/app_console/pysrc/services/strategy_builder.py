@@ -25,10 +25,12 @@ class StrategyBuilder:
         # cj 5/29: TODO - user_prompt is not used?
         user_prompt = f"""User asked: "{natural_language}". Determine the best data source to address it!"""
         strategy["strategy"] = (
-            "vector"  # default to database amongst several possible strategies
+            "vector"  # default to vector amongst several possible strategies
         )
-        strategy["libtype"] = "pypi"
         strategy["name"] = self.entities_svc.identify(natural_language).most_frequent()
+        strategy["entitytype"] = (
+            "pypi"  # customers should change 'pypi' to per the identified entity
+        )
         try:
             # Generate code to generate entity graph
             # TODO: add historic/user-recommended sample questions at the end of each of the 3 sections below

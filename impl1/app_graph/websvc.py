@@ -34,6 +34,42 @@ app = FastAPI()
 opts = {}
 gs = GraphService(opts)
 
+# begin middleware for authentication,
+# see https://fastapi.tiangolo.com/tutorial/middleware/
+defined_auth_header = ConfigService.websvc_auth_header()
+defined_auth_value = ConfigService.websvc_auth_value()
+defined_noauth_paths = ["/", "/liveness"]
+logging.debug("defined_auth_header:  {}".format(defined_auth_header))
+logging.debug("defined_auth_value:   {}".format(defined_auth_value))
+logging.debug("defined_noauth_paths: {}".format(defined_noauth_paths))
+
+
+@app.middleware("http")
+async def check_auth_header(request: Request, call_next):
+    logging.debug(f"middleware - path: {request.url.path} headers: {request.headers}")
+
+    if request.url.path in defined_noauth_paths:
+        return await call_next(request)
+    else:
+        if defined_auth_header is not None:
+            if defined_auth_header not in request.headers:
+                logging.error(
+                    f"middleware - missing auth header: {defined_auth_header}"
+                )
+                return Response(content="missing auth header", status_code=401)
+            elif request.headers[defined_auth_header] != defined_auth_value:
+                logging.error(
+                    f"middleware - invalid auth header: {defined_auth_header}"
+                )
+                return Response(content="invalid auth header", status_code=401)
+            else:
+                return await call_next(request)
+        else:
+            return await call_next(request)
+
+
+# end middleware for authentication
+
 
 @app.get("/")
 async def get_index() -> PingModel:

@@ -18,6 +18,7 @@ async def test_determine():
 
     success_count = 0
     min_success_count = examples_count - 1
+    # TODO - make 100% of test cases pass
 
     for example in examples_list:
         natural_language = example["natural_language"]
