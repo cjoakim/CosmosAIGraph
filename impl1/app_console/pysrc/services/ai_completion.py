@@ -25,9 +25,9 @@ class AiCompletion:
             self.data["created_date"] = str(datetime.datetime.fromtimestamp(t))
             self.data["model"] = None
             self.data["usage"] = dict()
-            self.data["usage"]["completion_tokens"] = -1
-            self.data["usage"]["prompt_tokens"] = -1
-            self.data["usage"]["total_tokens"] = -1
+            self.data["usage"]["completion_tokens"] = 0
+            self.data["usage"]["prompt_tokens"] = 0
+            self.data["usage"]["total_tokens"] = 0
             self.data["content"] = ""
             self.data["user_text"] = ""
             self.data["rag_strategy"] = ""
@@ -61,6 +61,10 @@ class AiCompletion:
 
     def get_content(self):
         return self.data["content"]
+
+    def set_content(self, data):
+        if data is not None:
+            self.data["content"] = data
 
     def get_user_text(self):
         return self.data["user_text"]

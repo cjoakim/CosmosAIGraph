@@ -35,6 +35,13 @@ def test_init_and_query():
     assert rdata["sparql"] == q
     assert rdata["row_count"] == 10
     assert len(rdata["results"]) == 10
+    assert len(rqr.get_results()) == 10
+
+    assert rqr.has_exception() == False
+    assert rqr.get_exception() == None
+    rqr.set_exception("test exception")
+    assert rqr.has_exception() == True
+    assert rqr.get_exception() == "test exception"
 
     q = "SELECT (COUNT(*) as ?TriplesCount) WHERE { ?s ?p ?o }"
     rqr = gs.query(q)  # query() method returns a RdfQueryResult
@@ -79,6 +86,13 @@ def test_init_and_query():
         assert rdata["actual_depth"] == 1
         assert rdata["exception"] == None
         assert bqr.get_lib_count() == 1
+
+        # test the execption methods
+        assert bqr.has_exception() == False
+        assert bqr.is_unvisited("spring_boot") == True
+        bqr.set_exception("test exception")
+        assert bqr.has_exception() == True
+        assert bqr.get_exception() == "test exception"
 
     # This tests a BOM traversal of a lib that does exist
     if True:

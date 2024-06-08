@@ -13,8 +13,6 @@ class OntologyService:
         self.owl_filename = None
         self.owl = None
         try:
-            # TODO - possibly HTTP fetch the owl content from the graph microservice
-            # per the given opts
             self.owl_filename = ConfigService.graph_source_owl_filename()
             self.owl = FS.read(self.owl_filename)
         except Exception as e:

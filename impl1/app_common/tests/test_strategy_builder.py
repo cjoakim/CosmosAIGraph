@@ -23,9 +23,11 @@ async def test_determine():
     for example in examples_list:
         natural_language = example["natural_language"]
         expected_strategy = example["strategy"]
+        expected_algorithm = example["algorithm"]  # text or llm
         strategy_obj = await sb.determine(natural_language)
         print("example: {}\nstrategy_obj: {}".format(example, strategy_obj))
         if strategy_obj["strategy"] == expected_strategy:
             success_count = success_count + 1
+        assert strategy_obj["algorithm"] == expected_algorithm
     assert success_count >= min_success_count
     

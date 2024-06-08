@@ -5,7 +5,7 @@
 
 import json
 import logging
-import os
+import textwrap
 import time
 import uuid
 
@@ -60,11 +60,10 @@ ai_svc = AiService()
 cache_svc = CacheService({})
 ontology_svc = OntologyService()
 owl_xml = ontology_svc.get_owl_content()
-logging.info("owl_xml:\n{}".format(owl_xml))
+logging.debug("owl_xml:\n{}".format(owl_xml))
 
 vcore_opts = dict()
 vcore_opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-logging.info("vcore_opts: {}".format(vcore_opts))
 vcore = CosmosVCoreService(vcore_opts)
 vcore.set_db(ConfigService.graph_source_db())
 rag_data_svc = RAGDataService(ai_svc, vcore)
@@ -102,7 +101,6 @@ websvc_headers[websvc_auth_header] = websvc_auth_value
 logging.debug(
     "webapp.py websvc_headers: {}".format(json.dumps(websvc_headers, sort_keys=False))
 )
-
 
 if ConfigService.use_msal_auth():
 
@@ -185,7 +183,7 @@ async def get_sparql_console(req: Request):
 @app.post("/sparql_console")
 async def post_sparql_console(req: Request):
     form_data = await req.form()  # <class 'starlette.datastructures.FormData'>
-    logging.warn("/sparql_console form_data: {}".format(form_data))
+    logging.info("/sparql_console form_data: {}".format(form_data))
     if ConfigService.use_alt_sparql_console():
         view_data = post_alt_sparql_console(form_data)
         return views.TemplateResponse(
@@ -278,7 +276,7 @@ async def get_ai_console(req: Request):
 async def ai_post_gen_sparql(req: Request):
     global owl_xml
     form_data = await req.form()
-    logging.warn("/gen_sparql_console_generate_sparql form_data: {}".format(form_data))
+    logging.info("/gen_sparql_console_generate_sparql form_data: {}".format(form_data))
     natural_language = form_data.get("natural_language")
     view_data = gen_sparql_console_view_data()
     view_data["natural_language"] = natural_language
@@ -315,7 +313,7 @@ async def ai_post_gen_sparql(req: Request):
 @app.post("/gen_sparql_console_execute_sparql")
 async def gen_sparql_console_execute_sparql(req: Request):
     form_data = await req.form()
-    logging.warn("/gen_sparql_console_execute_sparql form_data: {}".format(form_data))
+    logging.info("/gen_sparql_console_execute_sparql form_data: {}".format(form_data))
     view_data = gen_sparql_console_view_data()
     sparql = form_data.get("sparql")
     view_data["sparql"] = sparql
@@ -344,7 +342,7 @@ async def get_vector_search_console(req: Request):
 async def post_vector_search_console(req: Request):
     global vcore
     form_data = await req.form()
-    logging.warn("/vector_search_console form_data: {}".format(form_data))
+    logging.info("/vector_search_console form_data: {}".format(form_data))
     libtype = form_data.get("libtype")
     libname = form_data.get("libname").strip()
     show_embeddings = form_data.get("show_embeddings").lower()
@@ -353,7 +351,7 @@ async def post_vector_search_console(req: Request):
         text = libname[5:]
         logging.info(f"post_vector_search_console; text: {text}")
         try:
-            logging.warn("vectorize: {}".format(text))
+            logging.info("vectorize: {}".format(text))
             ai_svc_resp = ai_svc.generate_embeddings(text)
             vector = ai_svc_resp.data[0].embedding
             logging.info(f"post_vector_search_console; vector: {vector}")
@@ -394,6 +392,7 @@ async def conv_ai_console(req: Request):
     view_data["conv"] = conv
     view_data["conversation_id"] = conv.conversation_id
     view_data["conversation_data"] = ""
+    view_data["prompts_text"] = "no prompts yet"
     view_data["last_user_question"] = ""
     return views.TemplateResponse(
         request=req, name="conv_ai_console.html", context=view_data
@@ -409,48 +408,93 @@ async def conv_ai_console(req: Request):
     global rag_data_svc
 
     form_data = await req.form()
-    logging.warn("/conv_ai_console form_data: {}".format(form_data))
+    logging.info("/conv_ai_console form_data: {}".format(form_data))
     conversation_id = form_data.get("conversation_id").strip()
     user_text = form_data.get("user_text").strip().lower()
-    logging.warn(
+    logging.info(
         "conversation_id: {}, user_text: {}".format(conversation_id, user_text)
     )
-    conv = vcore.load_conversation(
-        conversation_id
-    )  # returns a new or existing conversation
+    conv = vcore.load_conversation(conversation_id)
 
     if conv.conversation_id == "":
         conv.conversation_id = str(uuid.uuid4())  # this is a new conversation
         vcore.save_conversation(conv)
-        logging.warning("new conversation saved: {}".format(conversation_id))
+        logging.info("new conversation saved: {}".format(conversation_id))
     else:
-        logging.warning(
+        logging.info(
             "conversation loaded: {} {}".format(conversation_id, conv.serialize())
         )
 
     if len(user_text) > 0:
         context = ""
         conv.add_user_message(user_text)
-        prompt_text = ai_svc.generic_prompt()
+        prompt_text = ai_svc.generic_prompt_template()
 
         rdr: RAGDataResult = await rag_data_svc.get_rag_data(user_text, 3)
-        sparql = rdr.get_sparql()
-        if len(sparql) > 0:
-            conv.add_diagnostic_message("sparql: {}".format(sparql))
-        completion_context = conv.last_completion_content()
-        rag_data = rdr.as_system_prompt_text()
-        context = "{}\n{}".format(completion_context, rag_data)
+        if rdr.has_db_rag_docs() == True:
+            # Note: LLM invocation is needed here, because we got our
+            # answer directly from the database via efficient "HybridRAG".
+            # Add a pseudo-completion to the conversation.
+            completion = AiCompletion(conv.conversation_id, None)
+            completion.set_user_text(user_text)
+            completion.set_rag_strategy(rdr.get_strategy())
+            content_lines = list()
+            for doc in rdr.get_rag_docs():
+                line_parts = list()
+                for attr in ["name", "summary", "documentation_summary"]:
+                    if attr in doc.keys():
+                        value = doc[attr].strip()
+                        if len(value) > 0:
+                            line_parts.append("{}: {}".format(attr, value))
+                content_lines.append(".  ".join(line_parts))
+            completion.set_content("\n".join(content_lines))
+            conv.add_completion(completion)
+            vcore.save_conversation(conv)
+        else:
+            if rdr.has_graph_rag_docs() == True:
+                # Add a pseudo-completion to the conversation with the
+                # names of the returned libraries/documents returned
+                # from the graph SPARQL query.
+                completion = AiCompletion(conv.conversation_id, None)
+                completion.set_user_text(user_text)
+                completion.set_rag_strategy(rdr.get_strategy())
+                content_lines = list()
+                for doc in rdr.get_rag_docs():
+                    if "name" in doc.keys():
+                        value = doc["name"].strip()
+                        if len(value) > 0:
+                            content_lines.append(value)
+                completion.set_content(", ".join(content_lines))
+                conv.add_completion(completion)
+                conv.add_diagnostic_message("sparql: {}".format(rdr.get_sparql()))
+                vcore.save_conversation(conv)
 
-        completion: AiCompletion = await ai_svc.invoke_kernel(
-            conv, prompt_text, user_text, context=context
-        )
-        completion.set_rag_strategy(rdr.get_strategy())
-        vcore.save_conversation(conv)
+            completion_context = conv.last_completion_content()
+            rag_data = rdr.as_system_prompt_text()
+            context = "{}\n{}".format(completion_context, rag_data)
+
+            max_tokens = ConfigService.invoke_kernel_max_tokens()
+            temperature = ConfigService.invoke_kernel_temperature()
+            top_p = ConfigService.invoke_kernel_top_p()
+            completion: AiCompletion = await ai_svc.invoke_kernel(
+                conv,
+                prompt_text,
+                user_text,
+                context=context,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                top_p=top_p,
+            )
+            completion.set_rag_strategy(rdr.get_strategy())
+            vcore.save_conversation(conv)
+
+    textformat_conversation(conv)
 
     view_data = dict()
     view_data["conv"] = conv
     view_data["conversation_id"] = conv.conversation_id
     view_data["conversation_data"] = conv.serialize()
+    view_data["prompts_text"] = conv.formatted_prompts_text()
     view_data["last_user_question"] = conv.get_last_user_message()
     return views.TemplateResponse(
         request=req, name="conv_ai_console.html", context=view_data
@@ -465,11 +509,11 @@ async def post_sparql_query(
     conversation_id = req_model.conversation_id
     feedback_last_question = req_model.feedback_last_question
     feedback_user_feedback = req_model.feedback_user_feedback
-    logging.warn("/conv_ai_feedback conversation_id: {}".format(conversation_id))
-    logging.warn(
+    logging.info("/conv_ai_feedback conversation_id: {}".format(conversation_id))
+    logging.info(
         "/conv_ai_feedback feedback_last_question: {}".format(feedback_last_question)
     )
-    logging.warn(
+    logging.info(
         "/conv_ai_feedback feedback_user_feedback: {}".format(feedback_user_feedback)
     )
     vcore.save_feedback(req_model)
@@ -689,6 +733,37 @@ def post_sparql_query_to_graph_microsvc(sparql: str) -> None:
         logging.critical((str(e)))
         logging.exception(e, stack_info=True, exc_info=True)
         return {}
+
+
+def textformat_conversation(conv: AiConversation) -> None:
+    """
+    do an in-place reformatting of the conversaton text, such as completion content
+    """
+    try:
+        for comp in conv.completions:
+            if "content" in comp.keys():
+                content = comp["content"]
+                if content is not None:
+                    stripped = content.strip()
+                    if stripped.startswith("{") and stripped.endswith("}"):
+                        obj = json.loads(stripped)
+                        comp["content"] = json.dumps(
+                            obj, sort_keys=False, indent=2
+                        ).replace("\n", "")
+                    elif stripped.startswith("[") and stripped.endswith("]"):
+                        obj = json.loads(stripped)
+                        comp["content"] = json.dumps(
+                            obj, sort_keys=False, indent=2
+                        ).replace("\n", "")
+                    else:
+                        content_lines = list()
+                        wrapped_lines = textwrap.wrap(stripped, width=120)
+                        for line in wrapped_lines:
+                            content_lines.append(line)
+                        comp["content"] = "\n".join(content_lines)
+    except Exception as e:
+        logging.critical((str(e)))
+        logging.exception(e, stack_info=True, exc_info=True)
 
 
 def remove_mongo_id_attr(mongo_doc) -> None:

@@ -38,7 +38,7 @@ class OwlGenerator:
         for cname in self.collect_vertex_classnames(vertex_signatures):
             data = dict()
             data["id"] = cname
-            data["desc"] = "TODO - provide a description"
+            data["desc"] = ""
             classes.append(data)
 
         template_values["classes"] = classes

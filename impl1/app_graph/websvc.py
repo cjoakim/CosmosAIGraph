@@ -68,9 +68,6 @@ async def check_auth_header(request: Request, call_next):
             return await call_next(request)
 
 
-# end middleware for authentication
-
-
 @app.get("/")
 async def get_index() -> PingModel:
     resp = dict()

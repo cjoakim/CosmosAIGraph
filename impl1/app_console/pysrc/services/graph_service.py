@@ -167,8 +167,11 @@ class GraphService:
 
     ########## PRIVATE METHODS BELOW ##########
 
-    def _valid_query(self, sparql):
-        return True  # TODO - implement
+    def _valid_query(self, sparql) -> bool:
+        if sparql == None:
+            return False
+        else:
+            return "SELECT " in sparql.upper()
 
     def _reduce_query_results(self, result_rows):
         """

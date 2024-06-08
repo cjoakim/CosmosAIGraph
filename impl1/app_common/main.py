@@ -16,8 +16,8 @@ import logging
 import os
 import psutil
 import sys
+import textwrap
 import time
-import traceback
 
 from docopt import docopt
 from dotenv import load_dotenv
@@ -261,16 +261,20 @@ def gen_all():
 
 def ad_hoc_development():
     logging.info("ad_hoc_development")
-    opts = dict()
-    opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-    logging.info("opts: {}".format(opts))
-    vcore = CosmosVCoreService(opts)
-    vcore.set_db(ConfigService.graph_source_db())
-    results_obj = vcore.search_documents_like_library("pypi", "flask")
-    FS.write_json(results_obj, "tmp/vector_search_results_1.json")
+    content = "Flask is a simple framework for building complex web applications. It is available on PyPI as version 3.0.2. This lightweight WSGI web application framework is designed for quick and easy startups, with the scalability needed for more complex applications. Released on February 3, 2024, Flask supports Python versions 3.8 and above. It is maintained by the Pallets project and is licensed under the BSD License. Flask is known for its flexibility, allowing developers to choose their tools and libraries without enforcing any dependencies or project layout. The framework encourages community contributions and provides extensive documentation, issue tracking, and a chat platform for support. Installation can be easily done using pip. Flask also emphasizes the importance of JavaScript for full functionality in web applications."
+    wrapped = textwrap.wrap(content, width=70)
+    print("content: {}".format(content))
+    print("wrapped: {}".format(wrapped))
 
-    results_obj = vcore.search_documents_like_library("jcl", "iebptpch")
-    FS.write_json(results_obj, "tmp/vector_search_results_2.json")
+    # opts = dict()
+    # opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
+    # logging.info("opts: {}".format(opts))
+    # vcore = CosmosVCoreService(opts)
+    # vcore.set_db(ConfigService.graph_source_db())
+    # results_obj = vcore.search_documents_like_library("pypi", "flask")
+    # FS.write_json(results_obj, "tmp/vector_search_results_1.json")
+    # results_obj = vcore.search_documents_like_library("jcl", "iebptpch")
+    # FS.write_json(results_obj, "tmp/vector_search_results_2.json")
 
 
 if __name__ == "__main__":

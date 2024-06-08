@@ -29,6 +29,7 @@ class RAGDataService:
             self.ai_svc = ai_svc
             self.vcore = vcore
             self.owl = OntologyService().get_owl_content()
+            # create a list of the attributes to include in the RAG data result
             self.doc_include_attributes = list()
             self.doc_include_attributes.append("libtype")
             self.doc_include_attributes.append("name")
@@ -64,33 +65,40 @@ class RAGDataService:
         rdr = RAGDataResult()
         rdr.set_user_text(user_text)
         rdr.set_attr("max_doc_count", max_doc_count)
+
         rsb = StrategyBuilder(self.ai_svc)
         strategy_obj = await rsb.determine(user_text)
         strategy = strategy_obj["strategy"]
         rdr.add_strategy(strategy)
-        jstr = "[]"
+
         if strategy == "db":
             entitytype = strategy_obj["entitytype"]
             name = strategy_obj["name"]
             rdr.set_attr("entitytype", entitytype)
             rdr.set_attr("name", name)
             rag_docs_list = await self.get_database_rag_data(
-                user_text, entitytype, name, max_doc_count
+                user_text, entitytype, name, max_doc_count, rdr
             )
             if len(rag_docs_list) == 0:
                 # use a vector search if the db_search returns no results
                 rdr.add_strategy("vector")
-                jstr = await self.get_vector_rag_data(user_text, max_doc_count)
+                rag_docs_list = await self.get_vector_rag_data(
+                    user_text, max_doc_count, rdr
+                )
 
         elif strategy == "graph":
             rag_docs_list = await self.get_graph_rag_data(user_text, rdr, max_doc_count)
             if len(rag_docs_list) == 0:
                 # use a vector search if the graph_search returns no results
                 rdr.add_strategy("vector")
-                jstr = await self.get_vector_rag_data(user_text, max_doc_count)
-
-        elif strategy == "vector":
-            rag_docs_list = await self.get_vector_rag_data(user_text, max_doc_count)
+                rag_docs_list = await self.get_vector_rag_data(
+                    user_text, max_doc_count, rdr
+                )
+        else:
+            # default to vector search
+            rag_docs_list = await self.get_vector_rag_data(
+                user_text, max_doc_count, rdr
+            )
 
         # scrub the result docs of unnecessary attributes and make them
         # JSON serializable by removing _id
@@ -105,7 +113,7 @@ class RAGDataService:
         return rdr
 
     async def get_database_rag_data(
-        self, user_text, libtype, name, max_doc_count
+        self, user_text, libtype, name, max_doc_count, rdr: RAGDataResult
     ) -> str:
         rag_docs_list = list()
         try:
@@ -118,6 +126,7 @@ class RAGDataService:
             self.vcore.set_coll(ConfigService.graph_source_container())
             attrs = "libtype,name,summary,documentation_summary".split(",")
             filter = {"libtype": libtype, "name": name}
+            rdr.set_query(filter)
             cursor = self.vcore.get_coll().find(
                 filter, projection=attrs, limit=max_doc_count
             )
@@ -130,7 +139,9 @@ class RAGDataService:
             logging.exception(e, stack_info=True, exc_info=True)
         return rag_docs_list
 
-    async def get_vector_rag_data(self, user_text, max_doc_count=3) -> str:
+    async def get_vector_rag_data(
+        self, user_text, max_doc_count=3, rdr: RAGDataResult = None
+    ) -> str:
         rag_docs_list = list()
         try:
             logging.warning(
@@ -167,7 +178,6 @@ class RAGDataService:
             rdr.set_sparql(sparql)
             logging.info("get_graph_rag_data, sparql: {}".format(sparql))
             sparql_query_results = self._post_sparql_query_to_graph_microsvc(sparql)
-            print(sparql_query_results)
 
             # iterate the SPARQL query results, collecting the libtype and names
             libtype_name_pairs = self._parse_sparql_rag_query_results(
@@ -216,7 +226,6 @@ class RAGDataService:
                 attr_key = sorted(result.keys())[0]
                 # "dependency": "http://cosmosdb.com/caig/pypi_asgiref"
                 value = result[attr_key]
-                print("value: {}".format(value))
                 tokens = value.split("/")
                 last_idx = len(tokens) - 1
                 libtype_name = tokens[last_idx]

@@ -23,8 +23,9 @@ from pysrc.services.config_service import ConfigService
 from pysrc.services.cosmos_vcore_service import CosmosVCoreService
 from pysrc.util.owl_formatter import OwlFormatter
 from pysrc.util.prompts import Prompts
+from pysrc.util.prompt_optimizer import PromptOptimizer
 
-# Instances of this class are used to execute AzureOpenAI and LangChain functionality.
+# Instances of this class are used to execute AzureOpenAI functionality.
 # Chris Joakim, Aleksey Savateyev, Microsoft
 
 
@@ -40,10 +41,12 @@ class AiService:
             self.aoai_api_key = ConfigService.azure_openai_key()
             self.aoai_version = ConfigService.azure_openai_version()
             self.chat_function = None
+            self.max_ntokens = ConfigService.truncate_llm_context_max_ntokens()
 
-            self.encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+            # tiktoken, for token estimation, doesn't work with gpt-4 at this time
+            self.tiktoken_encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
             self.enc = tiktoken.get_encoding("cl100k_base")
-            self.model = "gpt-35-turbo"
+            # self.model = "gpt-35-turbo"  unused
 
             self.aoai_client = AzureOpenAI(
                 azure_endpoint=self.aoai_endpoint,
@@ -51,9 +54,11 @@ class AiService:
                 api_version=self.aoai_version,
             )
             self.completions_deployment = (
+                # deployment name/model = gpt4/gpt-4
                 ConfigService.azure_openai_completions_deployment()
             )
             self.embeddings_deployment = (
+                # deployment name/model = embeddings/text-embedding-ada-002
                 ConfigService.azure_openai_embeddings_deployment()
             )
             self.sk_kernel = sk.Kernel()
@@ -77,9 +82,9 @@ class AiService:
             req_settings = self.sk_kernel.get_prompt_execution_settings_from_service_id(
                 "chat_completion"
             )
-            req_settings.max_tokens = 2000
-            req_settings.temperature = 0.7
-            req_settings.top_p = 0.8
+            req_settings.max_tokens = ConfigService.html_summarize_max_tokens()
+            req_settings.temperature = ConfigService.html_summarize_temperature()
+            req_settings.top_p = ConfigService.html_summarize_top_p()
             self.html_summarize_function = self.sk_kernel.create_function_from_prompt(
                 function_name="html_summarize",
                 plugin_name="html_summarize",
@@ -91,13 +96,13 @@ class AiService:
             self.vcore = CosmosVCoreService(opts)
             self.vcore.set_db(ConfigService.graph_source_db())
 
-            logging.info("aoai endpoint:     {}".format(self.aoai_endpoint))
-            logging.info("aoai version:      {}".format(self.aoai_version))
-            logging.info("aoai client:  {}".format(self.aoai_client))
-            logging.info(
+            logging.debug("aoai endpoint:     {}".format(self.aoai_endpoint))
+            logging.debug("aoai version:      {}".format(self.aoai_version))
+            logging.debug("aoai client:  {}".format(self.aoai_client))
+            logging.debug(
                 "aoai completions_deployment: {}".format(self.completions_deployment)
             )
-            logging.info(
+            logging.debug(
                 "aoai embeddings_deployment:  {}".format(self.embeddings_deployment)
             )
             logging.debug("sk_kernel: {}".format(self.sk_kernel))
@@ -108,7 +113,7 @@ class AiService:
 
     def num_tokens_from_string(self, s: str) -> int:
         try:
-            return len(self.encoding.encode(s))
+            return len(self.tiktoken_encoding.encode(s))
         except Exception as e:
             logging.critical(
                 "Exception in AiService#num_tokens_from_string: {}".format(str(e))
@@ -127,7 +132,7 @@ class AiService:
 
             fileOntology = open(ontologyFile, "r")
             owl = OwlFormatter().minimize(fileOntology.read())
-            logging.warning(
+            logging.debug(
                 "AiService#generate_graph - owl first 80 chars: {}".format(
                     str(owl)[0:80]
                 )
@@ -137,7 +142,7 @@ class AiService:
             for entitiesFile in entitiesFiles:
                 user_prompt = f"""generate code for the dataframe from file "{entitiesFile}" and the results of the code execution should be written to the file results.nt in append mode"""
 
-                logging.warning(
+                logging.debug(
                     "AiService#generate_graph - user_prompt: {}".format(user_prompt)
                 )
 
@@ -155,20 +160,20 @@ class AiService:
                         code = completion.choices[0].message.content.lstrip("`")
                         code = code.lstrip("python")
                         code = code.rstrip("`")
-                        logging.info(f"Executing code:\n{code}\n")
+                        logging.debug(f"Executing code:\n{code}\n")
                         exec(code)
                         generated = True
                     except Exception as e:
                         logging.exception(e, stack_info=True, exc_info=True)
                         pass
 
-                logging.info("AiService#generate_graph - entities graph generated")
+                logging.debug("AiService#generate_graph - entities graph generated")
 
             system_prompt = Prompts().generate_relationships_system_prompt(owl)
             for relationshipsFile in relationshipsFiles:
                 user_prompt = f"""generate code for the dataframe from file "{relationshipsFile}" and the results of the code execution should be written to the file results.nt in append mode"""
 
-                logging.warning(
+                logging.debug(
                     "AiService#generate_graph - user_prompt: {}".format(user_prompt)
                 )
 
@@ -186,17 +191,17 @@ class AiService:
                         code = completion.choices[0].message.content.lstrip("`")
                         code = code.lstrip("python")
                         code = code.rstrip("`")
-                        logging.info(f"Executing code:\n{code}\n")
+                        logging.debug(f"Executing code:\n{code}\n")
                         exec(code)
                         generated = True
                     except Exception as e:
                         logging.exception(e, stack_info=True, exc_info=True)
                         pass
 
-                logging.info("AiService#generate_graph - relationship graph generated")
+                logging.debug("AiService#generate_graph - relationship graph generated")
 
         except Exception as e:
-            logging.critical("Exception in generate_graph: {}".format(str(e)))
+            logging.critical("Exception in AiService#generate_graph: {}".format(str(e)))
             logging.exception(e, stack_info=True, exc_info=True)
             return False
         return True
@@ -208,12 +213,12 @@ class AiService:
             user_prompt = resp_obj["natural_language"]
             raw_owl = resp_obj["owl"]
             owl = OwlFormatter().minimize(raw_owl)
-            logging.warning(
+            logging.debug(
                 "AiService#generate_sparql_from_user_prompt - user_prompt: {}".format(
                     user_prompt
                 )
             )
-            logging.warning(
+            logging.debug(
                 "AiService#generate_sparql_from_user_prompt - owl first 80 chars: {}".format(
                     str(owl)[0:80]
                 )
@@ -243,7 +248,7 @@ class AiService:
                 resp_obj["sparql"] = sparql
                 if resp_obj["sparql"] == None:
                     resp_obj["sparql"] = ""
-                logging.info(
+                logging.debug(
                     "AiService#generate_sparql_from_user_prompt - sparql: {}".format(
                         sparql
                     )
@@ -252,7 +257,11 @@ class AiService:
                 resp_obj["error"] = "content moderation failed"
         except Exception as e:
             resp_obj["error"] = str(e)
-            logging.critical("Exception in create_sparql_query: {}".format(str(e)))
+            logging.critical(
+                "Exception in AiService#generate_sparql_from_user_prompt: {}".format(
+                    str(e)
+                )
+            )
             logging.exception(e, stack_info=True, exc_info=True)
         return resp_obj
 
@@ -267,6 +276,7 @@ class AiService:
                 return False
             if len(owl.strip()) < 10:
                 return False
+            # TODO: optionally implement content moderation for profanity, etc
             return True
         except Exception as e:
             return False
@@ -283,7 +293,9 @@ class AiService:
                 input=text, model=self.embeddings_deployment
             )
         except Exception as e:
-            logging.critical("Exception in generate_embeddings: {}".format(str(e)))
+            logging.critical(
+                "Exception in AiService#generate_embeddings: {}".format(str(e))
+            )
             logging.exception(e, stack_info=True, exc_info=True)
             return None
 
@@ -310,44 +322,47 @@ class AiService:
     async def invoke_kernel(
         self,
         conversation: AiConversation,
-        prompt_text,
-        user_query,
-        context,
-        max_tokens=1000,
-        temperature=0.4,
-        top_p=0.5,
+        prompt_template: str,
+        user_query: str,
+        context: str,
+        max_tokens: int = 4096,
+        temperature: float = 0.4,
+        top_p: float = 0.5,
     ) -> AiCompletion | None:
 
         try:
-            logging.warning(
+            logging.info(
                 "AiService#invoke_kernel, user_query: {} {}".format(
                     user_query, len(user_query)
                 )
             )
+            result_obj = self.optimize_context_and_history(
+                prompt_template,
+                context,
+                conversation.get_chat_history().serialize(),
+                user_query,
+                max_tokens,
+            )
 
-            # Truncate the input as necessary
-            # gpt35turbo: This model's maximum context length is 8192 tokens.
-            # Need to summarize the input to fit within this limit.
-            context = ""  # TODO
+            # The result_obj is created by a PromptOptimizer, and is a
+            # dictionary with several keys.  Some of these are for unit-testing
+            # and diagnostic purposes.  The following four are the most pertinent.
+            # See class PromptOptimizer for details.
+            pruned_context = result_obj["pruned_context"]
+            pruned_history = result_obj["pruned_history"]
+            actual_prompt = result_obj["actual_prompt"]
+            actual_tokens = result_obj["pruned_tokens"]
 
-            ntokens = self.num_tokens_from_string(user_query + context)
-            logging.error("AiService#invoke_kernel - ntokens: {}".format(ntokens))
+            # prev history -> conversation.get_chat_history().serialize()
 
-            if False:
-                if ntokens > 5000:
-                    pct = (float(8192) / float(ntokens)) * 0.5
-                    orig_len = float(len(user_query))
-                    trunc_len = int(orig_len * pct)
-                    context = user_query[0:trunc_len]
-                    logging.error(
-                        "AiService#invoke_kernel - truncated context from {} to {}, pct: {}".format(
-                            orig_len, trunc_len, pct
-                        )
-                    )
-
-            # logging.warning("AiService#invoke_kernel, context:    {}".format(context))
             conversation.add_user_message(user_query)
-            conversation.add_system_message(context)
+            conversation.add_system_message(pruned_context)
+            conversation.add_prompt(actual_prompt)
+            conversation.add_diagnostic_message(
+                "expected tokens: {} vs max_tokens: {}".format(
+                    actual_tokens, max_tokens
+                )
+            )
 
             execution_settings = OpenAITextPromptExecutionSettings(
                 service_id="chat_completion",
@@ -357,8 +372,9 @@ class AiService:
                 top_p=abs(top_p),
             )
 
+            # The InputVariables here must to be defined in the prompt_template
             chat_prompt_template_config = sk.PromptTemplateConfig(
-                template=prompt_text,
+                template=prompt_template,
                 name="chat",
                 template_format="semantic-kernel",
                 input_variables=[
@@ -390,14 +406,11 @@ class AiService:
 
             kernel_args = sk.KernelArguments(
                 user_query=user_query,
-                context=context,
-                history=conversation.get_chat_history().serialize(),
+                context=pruned_context,
+                history=pruned_history,
             )
 
             invoke_result = await self.sk_kernel.invoke(self.chat_function, kernel_args)
-            # invoke_result is an instance of class:
-            # <class 'semantic_kernel.functions.function_result.FunctionResult'>
-            # logging.info("AiService#invoke_kernel - invoke_result: {}".format(invoke_result))
 
             conversation.add_assistant_message(str(invoke_result))
             completion = AiCompletion(conversation.get_conversation_id(), invoke_result)
@@ -406,24 +419,23 @@ class AiService:
             return completion
         except Exception as e:
             conversation.add_assistant_message("exception: {}".format(str(e)))
-            logging.critical("Exception in invoke_kernel: {}".format(str(e)))
+            logging.critical("Exception in AiService#invoke_kernel: {}".format(str(e)))
             logging.exception(e, stack_info=True, exc_info=True)
             return None
 
-    def generic_prompt(self) -> str:
-        prompt_text = """
-        ChatBot can have a conversation with you about any topic.
-        It can give explicit instructions or say 'I don't know' if it does not have an answer.
+    def generic_prompt_template(self) -> str:
+        ptxt = """ChatBot can have a conversation with you about any topic.
+It can give explicit instructions or say 'I don't know' if it does not have an answer.
 
-        Context:
-        {{$context}}
-        
-        Chat history:
-        {{$history}}
-        
-        User: {{$user_query}}
-        ChatBot: """
-        return prompt_text
+Context:
+{{$context}}
+
+Chat history:
+{{$history}}
+
+User: {{$user_query}}
+ChatBot: """
+        return ptxt
 
     def html_summarization_prompt(self) -> str:
         prompt_text = """
@@ -453,3 +465,23 @@ One line TLDR with the fewest words."""
         )
         result = completion.choices[0].message.content
         return result
+
+    def optimize_context_and_history(
+        self,
+        prompt_template: str,
+        full_context: str,
+        full_history,
+        user_query: str,
+        max_tokens: int,
+    ):
+        try:
+            optimizer = PromptOptimizer()
+            return optimizer.generate_and_truncate(
+                prompt_template, full_context, full_history, user_query, max_tokens
+            )
+        except Exception as e:
+            logging.critical(
+                "Exception in AiService#optimize_context_and_history: {}".format(str(e))
+            )
+            logging.exception(e, stack_info=True, exc_info=True)
+            return None

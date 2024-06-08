@@ -15,6 +15,10 @@ def test_pretty():
     print("---")
     assert pretty == sample_expected_sparql()
 
+def test_pretty_noinput():
+    pretty = SparqlFormatter().pretty(None)
+    assert pretty == None
+
 def test_inject_prefix_and_limit():
     pretty = SparqlFormatter().pretty(no_prefix_query())
     assert pretty.startswith(SparqlFormatter().default_prefix())

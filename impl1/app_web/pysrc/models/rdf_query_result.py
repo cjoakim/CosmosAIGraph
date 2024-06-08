@@ -34,7 +34,7 @@ class RdfQueryResult:
     def set_exception(self, e):
         self.data["exception"] = str(e)
 
-    def get_exception(self, e):
+    def get_exception(self):
         return self.data["exception"]
 
     def has_exception(self):

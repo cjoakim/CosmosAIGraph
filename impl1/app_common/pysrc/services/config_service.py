@@ -12,6 +12,82 @@ import traceback
 
 
 class ConfigService:
+
+    @classmethod
+    def envvar(cls, name: str, default: str = "") -> str:
+        """
+        Return the value of the given environment variable name,
+        or the given default value."""
+        if name in os.environ:
+            return os.environ[name]
+        return default
+
+    @classmethod
+    def int_envvar(cls, name: str, default: int = -1) -> int:
+        """
+        Return the int value of the given environment variable name,
+        or the given default value.
+        """
+        if name in os.environ:
+            value = os.environ[name].strip()
+            try:
+                return int(value)
+            except Exception as e:
+                logging.error(
+                    "int_envvar error for name: {} -> {}; returning default.".format(
+                        name, value
+                    )
+                )
+                return default
+        return default
+
+    @classmethod
+    def float_envvar(cls, name: str, default: float = -1.0) -> float:
+        """
+        Return the float value of the given environment variable name,
+        or the given default value.
+        """
+        if name in os.environ:
+            value = os.environ[name].strip()
+            try:
+                return float(value)
+            except Exception as e:
+                logging.error(
+                    "float_envvar error for name: {} -> {}; returning default.".format(
+                        name, value
+                    )
+                )
+                return default
+        return default
+
+    @classmethod
+    def boolean_envvar(cls, name: str, default: bool) -> bool:
+        """
+        Return the boolean value of the given environment variable name,
+        or the given default value.
+        """
+        if name in os.environ:
+            value = str(os.environ[name]).strip().lower()
+            if value == "true":
+                return True
+            elif value == "t":
+                return True
+            elif value == "yes":
+                return True
+            elif value == "y":
+                return True
+            else:
+                return False
+        return default
+
+    @classmethod
+    def boolean_arg(cls, flag: str) -> bool:
+        """Return a boolean indicating if the given arg is in the command-line."""
+        for arg in sys.argv:
+            if arg == flag:
+                return True
+        return False
+
     @classmethod
     def defined_environment_variables(cls) -> dict:
         """
@@ -197,6 +273,30 @@ class ConfigService:
         return cls.envvar("CAIG_AZURE_OPENAI_EMBEDDINGS_DEP", "embeddings")
 
     @classmethod
+    def html_summarize_max_tokens(cls) -> str:
+        return cls.int_envvar("CAIG_HTML_SUMMARIZE_MAX_TOKENS", 2000)
+
+    @classmethod
+    def html_summarize_temperature(cls) -> str:
+        return cls.float_envvar("CAIG_HTML_SUMMARIZE_TEMPERATURE", 0.7)
+
+    @classmethod
+    def html_summarize_top_p(cls) -> str:
+        return cls.float_envvar("CAIG_HTML_SUMMARIZE_TOP_P", 0.8)
+
+    @classmethod
+    def invoke_kernel_max_tokens(cls) -> str:
+        return cls.int_envvar("CAIG_INVOKE_KERNEL_MAX_TOKENS", 1000)
+
+    @classmethod
+    def invoke_kernel_temperature(cls) -> str:
+        return cls.float_envvar("CAIG_INVOKE_KERNEL_TEMPERATURE", 0.4)
+
+    @classmethod
+    def invoke_kernel_top_p(cls) -> str:
+        return cls.float_envvar("CAIG_INVOKE_KERNEL_TOP_P", 0.5)
+
+    @classmethod
     def graph_namespace(cls):
         default = "http://cosmosdb.com/caig#"
         return cls.envvar("CAIG_GRAPH_NAMESPACE", default)
@@ -228,9 +328,12 @@ class ConfigService:
         key = cls.envvar("CAIG_MSAL_SSH_KEY", None)
         if key is None:
             key_filename = cls.envvar("CAIG_MSAL_SSH_KEY_FILE", None)
-            if os.path.isfile(key_filename):
-                with open(file=key_filename, encoding="utf-8", mode="rt") as file:
-                    return file.read()
+            if key_filename is not None:
+                if os.path.isfile(key_filename):
+                    with open(file=key_filename, mode="rt") as file:
+                        return file.read()
+                else:
+                    return None
             else:
                 return None
         else:
@@ -245,34 +348,12 @@ class ConfigService:
         return cls.envvar("CAIG_WEBSVC_AUTH_VALUE", "K6ZQw!81")
 
     @classmethod
-    def defined_auth_users(cls) -> dict:
+    def truncate_llm_context_max_ntokens(cls) -> int:
         """
-        This is a primitive authentication and authorization mechanism for demonstration purposes only.
-        Customers should implement authentication and authorization, such as with the 'pyad' library -
-        see https://pypi.org/project/pyad/
+        Zero indicates no truncation.
+        A positive integer is the max number of tokens.
         """
-        users = dict()
-        try:
-            s = cls.envvar(
-                "CAIG_DEFINED_AUTH_USERS", "guest:secret|chris:clt|aleksey:mia"
-            )
-            for pair in s.split("|"):
-                tokens = pair.split(":")
-                if len(tokens) == 2:
-                    usr, pwd = tokens[0], tokens[1]
-                    users[usr] = pwd
-        except Exception as e:
-            logging.critical(str(e))
-            logging.exception(e, stack_info=True, exc_info=True)
-            return None
-        return users
-
-    @classmethod
-    def envvar(cls, name: str, default: str = "") -> str:
-        """Return the value of the given environment variable name, or the given default value."""
-        if name in os.environ:
-            return os.environ[name]
-        return default
+        return cls.int_envvar("CAIG_TRUNCATE_LLM_CONTEXT_MAX_NTOKENS", 0)
 
     @classmethod
     def epoch(cls) -> float:
@@ -280,9 +361,10 @@ class ConfigService:
         return time.time()
 
     @classmethod
-    def verbose(cls) -> bool:
+    def verbose(cls, override_flags: list = None) -> bool:
         """Return a boolean indicating if --verbose or -v is in the command-line."""
-        flags = ["--verbose", "-v"]
+        flags = ["--verbose", "-v"] if override_flags is None else override_flags
+        # true_value if condition else false_value
         for arg in sys.argv:
             for flag in flags:
                 if arg == flag:
@@ -290,16 +372,13 @@ class ConfigService:
         return False
 
     @classmethod
-    def boolean_arg(cls, flag: str) -> bool:
-        """Return a boolean indicating if the given arg is in the command-line."""
-        for arg in sys.argv:
-            if arg == flag:
-                return True
-        return False
-
-    @classmethod
     def set_standard_unit_test_env_vars(cls):
-        """Set environment variables for most unit tests"""
+        """Set environment variables for use in unit tests"""
         os.environ["CAIG_GRAPH_SOURCE_TYPE"] = "rdf_file"
         os.environ["CAIG_GRAPH_SOURCE_OWL_FILENAME"] = "ontologies/libraries.owl"
         os.environ["CAIG_GRAPH_SOURCE_RDF_FILENAME"] = "rdf/libraries-graph-mini.nt"
+        # os.environ["CAIG_MSAL_SSH_KEY_FILE"] = "keys/example-msal-ssh-key.txt"
+        os.environ["SAMPLE_INT_VAR"] = "98"
+        os.environ["SAMPLE_FLOAT_VAR"] = "98.6"
+        os.environ["SAMPLE_BOOLEAN_TRUE_VAR"] = "TRue"
+        os.environ["SAMPLE_BOOLEAN_FALSE_VAR"] = "F"

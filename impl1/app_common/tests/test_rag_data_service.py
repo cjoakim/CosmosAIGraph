@@ -32,12 +32,13 @@ async def test_get_database_rag_data():
     rdr: RAGDataResult = await rds.get_rag_data(user_text, 7)
     FS.write_json(rdr.get_data(), "tmp/test_get_database_rag_data.json")
     text = rdr.as_system_prompt_text()
-    FS.write("tmp/test_get_database_rag_data.txt", text)
+    FS.write("tmp/test_get_database_rag_system_prompt.txt", text)
 
     assert rdr.get_strategy() == "db"
-    assert rdr.get_data()["libtype"] == "pypi"
+    assert rdr.get_data()["entitytype"] == "pypi"
     assert rdr.get_data()["name"] == "flask"
-
+    assert rdr.get_query() == "{'libtype': 'pypi', 'name': 'flask'}"
+    assert len(rdr.get_rag_docs()) > 0
 
 @pytest.mark.asyncio
 async def test_get_vector_rag_data():
@@ -57,7 +58,8 @@ async def test_get_vector_rag_data():
     rdr: RAGDataResult = await rds.get_rag_data(user_text, 5)
     FS.write_json(rdr.get_data(), "tmp/test_get_vector_rag_data.json")
     text = rdr.as_system_prompt_text()
-    FS.write("tmp/test_get_vector_rag_data.txt", text)
+    FS.write("tmp/test_get_vector_rag_system_prompt.txt", text)
+    assert len(rdr.get_rag_docs()) > 0
 
 @pytest.mark.asyncio
 async def test_get_graph_rag_data():
@@ -76,4 +78,5 @@ async def test_get_graph_rag_data():
     rdr: RAGDataResult = await rds.get_rag_data(user_text,5)
     FS.write_json(rdr.get_data(),"tmp/test_get_graph_rag_data.json")
     text = rdr.as_system_prompt_text()
-    FS.write("tmp/test_get_graph_rag_data.txt", text)
+    FS.write("tmp/test_get_graph_rag_system_prompt.txt", text)
+    assert len(rdr.get_rag_docs()) > 0

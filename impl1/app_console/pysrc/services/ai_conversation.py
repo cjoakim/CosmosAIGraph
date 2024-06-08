@@ -32,6 +32,16 @@ class AiConversation:
                 self.conversation_id = json_obj["conversation_id"]
                 self.last_user_message = json_obj["conversation_id"]
 
+                if "prompts" in json_obj.keys():
+                    self.prompts = json_obj["prompts"]
+                else:
+                    self.prompts = list()
+
+                if "completions" in json_obj.keys():
+                    self.completions = json_obj["completions"]
+                else:
+                    self.completions = list()
+
                 if "chat_history" in json_obj.keys():
                     hist_json = json_obj["chat_history"]
                     self.chat_history = ChatHistory.restore_chat_history(
@@ -39,11 +49,6 @@ class AiConversation:
                     )
                 else:
                     self.chat_history = ChatHistory()
-
-                if "completions" in json_obj.keys():
-                    self.completions = json_obj["completions"]
-                else:
-                    self.completions = list()
 
                 if "diagnostic_messages" in json_obj.keys():
                     self.diagnostic_messages = json_obj["diagnostic_messages"]
@@ -56,8 +61,9 @@ class AiConversation:
                 )
                 self.updated_at = self.created_at
                 self.conversation_id = ""  # UI will populate this for new conversations
-                self.chat_history = ChatHistory()
+                self.prompts = list()
                 self.completions = list()
+                self.chat_history = ChatHistory()
                 self.diagnostic_messages = list()
                 self.last_user_message = ""
         except Exception as e:
@@ -83,21 +89,9 @@ class AiConversation:
         if msg is not None:
             self.diagnostic_messages.append(msg)
 
-    def serialize(self) -> str:
-        try:
-            obj = dict()
-            obj["created_at"] = self.created_at
-            obj["created_date"] = self.created_date
-            obj["updated_at"] = self.updated_at
-            obj["conversation_id"] = self.conversation_id
-            obj["chat_history"] = json.loads(self.chat_history.serialize())
-            obj["completions"] = self.completions
-            obj["diagnostic_messages"] = self.diagnostic_messages
-            return json.dumps(obj, sort_keys=False, indent=2)
-        except Exception as e:
-            raise ContentSerializationError(
-                f"Unable to serialize ChatHistory to JSON: {e}"
-            )
+    def add_prompt(self, ptxt: str):
+        if ptxt is not None:
+            self.prompts.append(ptxt)
 
     def add_user_message(self, msg) -> None:
         try:
@@ -162,6 +156,36 @@ class AiConversation:
             completion.set_user_text(self.last_user_message)
             self.completions.append(completion.get_data())
 
+    def formatted_prompts_text(self) -> str:
+        """return a formatted string of the prompts for display in the UI"""
+        all_lines = list()
+        if self.prompts is not None:
+            for idx, ptxt in enumerate(self.prompts):
+                all_lines.append("")
+                all_lines.append("=== PROMPT {} ===".format(idx + 1))
+                all_lines.append("")
+                lines = ptxt.split("\n")
+                for line in lines:
+                    all_lines.append(line)
+        return "\n".join(all_lines)
+
+    def serialize(self) -> str:
+        try:
+            obj = dict()
+            obj["created_at"] = self.created_at
+            obj["created_date"] = self.created_date
+            obj["updated_at"] = self.updated_at
+            obj["conversation_id"] = self.conversation_id
+            obj["prompts"] = self.prompts
+            obj["completions"] = self.completions
+            obj["chat_history"] = json.loads(self.chat_history.serialize())
+            obj["diagnostic_messages"] = self.diagnostic_messages
+            return json.dumps(obj, sort_keys=False, indent=2)
+        except Exception as e:
+            raise ContentSerializationError(
+                f"Unable to serialize ChatHistory to JSON: {e}"
+            )
+
     def last_completion(self) -> dict:
         last_completion = None
         for c in self.completions:
@@ -175,7 +199,7 @@ class AiConversation:
         else:
             return c["content"]
 
-    def print_summary(self):
+    def print_summary(self, include_prompts=True):
         print("========== ")
         print("conversation_id:  {}".format(self.conversation_id))
         print("completion count: {}".format(len(self.completions)))
@@ -185,3 +209,11 @@ class AiConversation:
             print("completion; user_text: {}".format(c["user_text"]))
             print("completion; usage: {}".format(c["usage"]))
             print("completion; content: {}".format(c["content"]))
+
+        if include_prompts == True:
+            print("\nprompts: {}".format(len(self.prompts)))
+            for idx, ptxt in enumerate(self.prompts):
+                print("\n--- prompt {}:".format(idx))
+                lines = ptxt.split("\n")
+                for line in lines:
+                    print("prompt: {}".format(line))

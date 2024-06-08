@@ -22,15 +22,28 @@ class StrategyBuilder:
     async def determine(self, natural_language) -> dict:
         strategy = dict()
         strategy["natural_language"] = natural_language
-        # cj 5/29: TODO - user_prompt is not used?
-        user_prompt = f"""User asked: "{natural_language}". Determine the best data source to address it!"""
+        strategy["strategy"] = ""
+        strategy["entitytype"] = "pypi"
+        strategy["name"] = ""
+        strategy["algorithm"] = ""
+
+        self.check_for_simple_known_utterances(strategy)
+        if len(strategy["strategy"]) > 0:
+            # we were able to determine the strategy with fast/simple rules
+            # otherwise, fall through and determine the strategy with the LLM.
+            logging.warning(
+                "StrategyBuilder#determine - simple_known_utterance: {}".format(
+                    strategy
+                )
+            )
+            return strategy
+
+        user_prompt = f"""User asked: "{natural_language}". Determine the best data source to address it."""
         strategy["strategy"] = (
             "vector"  # default to vector amongst several possible strategies
         )
         strategy["name"] = self.entities_svc.identify(natural_language).most_frequent()
-        strategy["entitytype"] = (
-            "pypi"  # customers should change 'pypi' to per the identified entity
-        )
+
         try:
             # Generate code to generate entity graph
             # TODO: add historic/user-recommended sample questions at the end of each of the 3 sections below
@@ -44,7 +57,7 @@ class StrategyBuilder:
             "look up record X",
             "find library X".
             The user may also want to ask about similarity or proximity to something, or an open-ended question, in which case the answer should be retrieved from a vector index. Examples of questions that are best answered with the information from a vector index are:
-            "how to change your password", 
+            "how to change my password", 
             "how to track X",
             "expense reports procedure". 
             The user may also want to ask about well-established facts, such as office locations, or ask about relationship between various entities, which can be retrieved by traversing a knowledge graph or dependency graph or digital twin. Examples of questions that are best answered with the information from a graph are:
@@ -61,9 +74,10 @@ class StrategyBuilder:
             strategy["strategy"] = await self.ai_svc.get_completion(
                 natural_language, system_prompt
             )
+            strategy["algorithm"] = "llm"
             logging.info(
                 "StrategyBuilder:determine got strategy: {} from {}".format(
-                    strategy["strategy"], natural_language
+                    strategy["strategy"], user_prompt
                 )
             )
         except Exception as e:
@@ -73,3 +87,24 @@ class StrategyBuilder:
                 )
             )
         return strategy
+
+    def check_for_simple_known_utterances(self, strategy):
+        """
+        this demonstrates a fast and low-cost optimiaztion; no LLM invocation necessary.
+        """
+        try:
+            tokens = strategy["natural_language"].split(" ")
+            if len(tokens) == 3:
+                # examples: 'lookup python Flask' or 'find pypi Flask'
+                if tokens[0].lower() in ["lookup", "find", "fetch"]:
+                    if tokens[1].lower() in ["pypi", "python"]:
+                        if self.entities_svc.library_present(tokens[2]):
+                            strategy["strategy"] = "db"
+                            strategy["name"] = tokens[2]
+                            strategy["algorithm"] = "text"
+                        elif self.entities_svc.library_present(tokens[2].lower()):
+                            strategy["strategy"] = "db"
+                            strategy["name"] = tokens[2].lower()
+                            strategy["algorithm"] = "text"
+        except Exception as e:
+            pass

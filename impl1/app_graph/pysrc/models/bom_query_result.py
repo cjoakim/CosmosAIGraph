@@ -54,12 +54,12 @@ class BomQueryResult:
         if lib is not None:
             if lib in self.get_bom_libs_keys():
                 return self.data["bom_libs"][lib] == "unvisited"
-        return False
+        return True
 
     def set_exception(self, e):
         self.data["exception"] = str(e)
 
-    def get_exception(self, e):
+    def get_exception(self):
         return self.data["exception"]
 
     def has_exception(self):

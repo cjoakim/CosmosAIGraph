@@ -15,6 +15,7 @@ class RAGDataResult:
         self.data["user_text"] = ""
         self.data["strategy"] = list()
         self.data["sparql"] = ""
+        self.data["query"] = ""
         self.data["rag_docs"] = list()
         self.data["rag_doc_count"] = -1
 
@@ -38,6 +39,20 @@ class RAGDataResult:
     def get_strategy(self):
         return ",".join(self.data["strategy"])
 
+    def has_db_rag_docs(self):
+        """return true if the strategy is 'db' and length of rag_docs > 0"""
+        if self.get_strategy() == "db":
+            if len(self.get_rag_docs()) > 0:
+                return True
+        return False
+
+    def has_graph_rag_docs(self):
+        """return true if the strategy is 'graph' and length of rag_docs > 0"""
+        if self.get_strategy() == "graph":
+            if len(self.get_rag_docs()) > 0:
+                return True
+        return False
+
     def set_user_text(self, value):
         if value is not None:
             self.data["user_text"] = str(value)
@@ -48,6 +63,13 @@ class RAGDataResult:
 
     def get_sparql(self):
         return self.data["sparql"]
+
+    def set_query(self, value):
+        if value is not None:
+            self.data["query"] = str(value)
+
+    def get_query(self):
+        return self.data["query"]
 
     def set_rag_docs(self, value):
         if value is not None:
@@ -62,19 +84,25 @@ class RAGDataResult:
         docs = self.data["rag_docs"]
         if len(docs) > 0:
             prompt_lines.append(
-                "Use these {} Documents to answer the user query:".format(len(docs))
+                "Use the following {} Documents to answer the user query.".format(
+                    len(docs)
+                )
             )
             prompt_lines.append(
-                "Each document has a library name and type, summary, and documentation."
+                "Each Document has four attributes; one per line: name, type, summary, and documentation."
+            )
+            prompt_lines.append(
+                "Each Document starts and ends with '###' to make it easy to parse."
             )
 
         for doc in self.data["rag_docs"]:
-            prompt_lines.append("\nDocument:")
-            prompt_lines.append(
-                "library name: {} type: {}".format(doc["name"], doc["libtype"])
-            )
+            prompt_lines.append("\nDocument ###")
+            prompt_lines.append("name: {}".format(doc["name"]))
+            prompt_lines.append("type: {}".format(doc["libtype"]))
             prompt_lines.append("summary: {}".format(doc["summary"]))
             prompt_lines.append(
-                "documentation:\n{}".format(doc["documentation_summary"])
+                "documentation: {}".format(doc["documentation_summary"])
             )
+            prompt_lines.append("###")
+
         return "\n".join(prompt_lines)

@@ -46,3 +46,6 @@ def test_constructor_and_messages():
     assert conv1.get_conversation_id() == conv3.get_conversation_id()
 
     print(conv3.serialize())
+
+def test_truncate_context_and_history():
+    pass
