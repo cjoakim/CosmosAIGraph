@@ -4,6 +4,8 @@
 
 See the [Azure Cosmos DB TV, Episode 95 Video](https://www.youtube.com/watch?v=0alvRmEgIpQ)
 
+Also see the **presentations** directory for the PowerPoint and PDF presentations.
+
 CosmosAIGraph (aka - CAIG) currently has these two reference implementations
 for use by our customers:
 
