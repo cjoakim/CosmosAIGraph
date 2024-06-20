@@ -2,6 +2,8 @@
 
 **AI-Powered Graph and Knowledge Graph Solutions with Azure Cosmos DB**
 
+See the [Azure Cosmos DB TV, Episode 95 Video](https://www.youtube.com/watch?v=0alvRmEgIpQ)
+
 CosmosAIGraph (aka - CAIG) currently has these two reference implementations
 for use by our customers:
 
@@ -15,4 +17,3 @@ for use by our customers:
 <p align="center">
   <img src="impl1/docs/img/app-architecture.png" width="90%">
 </p>
-
