@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Any, List, Optional
+from typing import Any
 
 # This module contains the several Pydantic "models" that define both the
 # request and response payloads for the web endpoints in this application.

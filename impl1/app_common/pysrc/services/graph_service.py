@@ -2,43 +2,6 @@ import os
 import json
 import logging
 import time
-import traceback
-
-import rdflib
-
-from rdflib import Graph, Literal, RDF, URIRef, BNode
-
-# rdflib knows about quite a few popular namespaces, like W3C ontologies, schema.org etc.
-from rdflib.namespace import CSVW, DC, DCAT, DCTERMS, DOAP, FOAF, ODRL2, ORG, OWL
-from rdflib.namespace import PROF, PROV, RDF, RDFS, SDO, SH, SKOS, SOSA, SSN, TIME
-from rdflib.namespace import VOID, XSD
-from rdflib.namespace import Namespace, NamespaceManager
-
-from rdflib.extras.infixowl import (
-    AllClasses,
-    AllProperties,
-    BooleanClass,
-    Class,
-    ClassNamespaceFactory,
-    CommonNSBindings,
-    ComponentTerms,
-    DeepClassClear,
-    EnumeratedClass,
-    GetIdentifiedClasses,
-    Individual,
-    Infix,
-    MalformedClassError,
-    Property,
-    Restriction,
-    classOrTerm,
-    exactly,
-    generateQName,
-    max,
-    min,
-    only,
-    some,
-    value,
-)
 
 from pysrc.services.config_service import ConfigService
 from pysrc.services.graph_builder import GraphBuilder
@@ -58,12 +21,12 @@ from pysrc.util.sparql_template import SparqlTemplate
 class GraphService:
     def __init__(self, opts={}):
         self.opts = opts
-        gb = GraphBuilder()
-        self.graph = gb.build(self.opts)
+        gb = GraphBuilder(self.opts)
+        self.graph = gb.build()
 
     def reload(self):
-        gb = GraphBuilder()
-        self.graph = gb.build(self.opts)
+        gb = GraphBuilder(self.opts)
+        self.graph = gb.build()
 
     def liveness_check(self) -> dict:
         """

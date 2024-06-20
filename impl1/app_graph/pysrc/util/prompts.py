@@ -2,7 +2,7 @@
 # system or user prompt strings.
 # Chris Joakim, Aleksey Savateyev, Microsoft
 
-# TODO : use Jinja templates instead?  YES!  So we can toggle between graphs.
+# TODO : use Jinja templates instead?
 
 import logging
 

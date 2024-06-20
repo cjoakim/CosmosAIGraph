@@ -247,16 +247,31 @@ async def gen_graph_execute(req: Request):
             f.write(relationships)
             f.close()
 
+    # try:
+    #     if ai_svc.generate_graph(entitiesFiles, relationshipsFiles, ontologyFile):
+    #         f = open("results.nt", "r")
+    #         view_data["results"] = f.read()
+    #         view_data["results_message"] += "Generated graph successfully: \n"
+    # except Exception as e:
+    #     logging.critical((str(e)))
+    #     logging.exception(e, stack_info=True, exc_info=True)
+    #     view_data["results_message"] += "\nCouldn't generate graph"
+
     try:
-        if ai_svc.generate_graph(entitiesFiles, relationshipsFiles, ontologyFile):
-            f = open("results.nt", "r")
-            view_data["results"] = f.read()
-            view_data["results_message"] += "Generated graph successfully: \n"
+        opts = dict()
+        opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
+        logging.info("opts: {}".format(opts))
+        vcore = CosmosVCoreService(opts)
+        vcore.set_db(ConfigService.graph_source_db())
+        # TODO: WIP
+        # if vcore.insert_docs_from_files(entitiesFiles, relationshipsFiles, ontologyFile):
+        #     f = open("results.nt", "r")
+        #     view_data["results"] = f.read()
+        #     view_data["results_message"] += "Generated graph successfully: \n"
     except Exception as e:
         logging.critical((str(e)))
         logging.exception(e, stack_info=True, exc_info=True)
         view_data["results_message"] += "\nCouldn't generate graph"
-
     return views.TemplateResponse(request=req, name="gen_graph.html", context=view_data)
 
 

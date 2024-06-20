@@ -1,5 +1,3 @@
-""" module template.py, Chris Joakim, Microsoft, 2023 """
-
 import jinja2
 
 

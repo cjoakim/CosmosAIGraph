@@ -90,21 +90,29 @@ class StrategyBuilder:
 
     def check_for_simple_known_utterances(self, strategy):
         """
-        this demonstrates a fast and low-cost optimiaztion; no LLM invocation necessary.
+        this demonstrates a fast and low-cost optimization; no LLM invocation necessary.
         """
         try:
             tokens = strategy["natural_language"].split(" ")
             if len(tokens) == 3:
-                # examples: 'lookup python Flask' or 'find pypi Flask'
-                if tokens[0].lower() in ["lookup", "find", "fetch"]:
+                # examples: 'look up python Flask' or 'find pypi Flask'
+                if tokens[0].lower() in [
+                    "look up",
+                    "look up",
+                    "find",
+                    "fetch",
+                    "search",
+                    "get",
+                    "retrieve",
+                    "list",
+                    "show",
+                ]:
                     if tokens[1].lower() in ["pypi", "python"]:
+                        strategy["algorithm"] = "text"
+                        strategy["strategy"] = "db"
                         if self.entities_svc.library_present(tokens[2]):
-                            strategy["strategy"] = "db"
                             strategy["name"] = tokens[2]
-                            strategy["algorithm"] = "text"
                         elif self.entities_svc.library_present(tokens[2].lower()):
-                            strategy["strategy"] = "db"
                             strategy["name"] = tokens[2].lower()
-                            strategy["algorithm"] = "text"
         except Exception as e:
             pass

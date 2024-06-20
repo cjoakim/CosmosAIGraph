@@ -1,5 +1,4 @@
 import os
-import traceback
 
 from pysrc.util.fs import FS
 from pysrc.util.template import Template

@@ -1,6 +1,5 @@
 import jinja2
 import logging
-import psutil
 
 # Instances of this class are used to return 'pretty' version of
 # a given (AI-generated) SPARQL query.

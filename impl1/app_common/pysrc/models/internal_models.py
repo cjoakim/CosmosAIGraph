@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Any, List, Optional
+from typing import Any
 
 # This module contains the several Pydantic "models" for objects
 # passed internally within the app, and not externally via web services.

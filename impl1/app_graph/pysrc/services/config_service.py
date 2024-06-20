@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 import time
-import traceback
 
 # Instances of this class are used to define and obtain all configuration
 # values in this solution.  These are typically obtained at runtime via
@@ -298,6 +297,7 @@ class ConfigService:
 
     @classmethod
     def graph_namespace(cls):
+        """ " return a URI value like 'http://cosmosdb.com/caig#'"""
         default = "http://cosmosdb.com/caig#"
         return cls.envvar("CAIG_GRAPH_NAMESPACE", default)
 

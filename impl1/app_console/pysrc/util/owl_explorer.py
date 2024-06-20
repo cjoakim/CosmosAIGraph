@@ -1,10 +1,8 @@
 import logging
 import time
 
-import rdflib
-
-from rdflib import Graph, Literal, RDF, URIRef, BNode
-from rdflib.namespace import Namespace, NamespaceManager
+from rdflib import Graph
+from rdflib.namespace import Namespace
 from rdflib.extras.infixowl import AllClasses, AllProperties, GetIdentifiedClasses
 
 # This class uses the rdflib library to explore and display

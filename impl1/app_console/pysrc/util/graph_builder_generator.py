@@ -1,6 +1,3 @@
-import os
-import traceback
-
 from pysrc.util.fs import FS
 
 # This class is used to generate a RdflibTriplesBuilder python class that
@@ -50,8 +47,8 @@ class GraphBuilderGenerator:
         code.append("")
         code.append("class RdflibTriplesBuilder:")
         code.append("")
-        code.append("    def __init__(self):")
-        code.append("        pass")
+        code.append("    def __init__(self, attributes_root=None):")
+        code.append("        self.attributes_root = attributes_root")
         code.append("")
         code.append("    def append_doc_to_graph(self, g, doc, CNS, ns):")
         code.append('        """ this method is called by GraphBuilder """')
@@ -82,8 +79,13 @@ class GraphBuilderGenerator:
             )
             code.append("        try:")
             code.append("            attr_keys, edges = list(), list()")
-            code.append("            if 'attributes' in doc.keys():")
-            code.append('                attr_keys = doc["attributes"].keys()')
+            code.append("            attributes_dict = doc")
+            code.append("            if self.attributes_root is not None:")
+            code.append(
+                "                # allow for nested attributes (i.e. - doc['properties'])"
+            )
+            code.append("                attributes_dict = doc[self.attributes_root]")
+            code.append("            attr_keys = attributes_dict.keys()")
             code.append("            if 'edges' in doc.keys():")
             code.append('                edges = doc["edges"]')
             code.append('            doc_id = str(doc["id"])')
@@ -94,9 +96,7 @@ class GraphBuilderGenerator:
             for aname in attr_names:
                 code.append("                if '{}' in attr_keys:".format(aname))
                 code.append(
-                    "                    value = doc['attributes']['{}']".format(
-                        aname, aname
-                    )
+                    "                    value = attributes_dict['{}']".format(aname)
                 )
                 code.append(
                     "                    g.add((eref, CNS.{}, Literal(value)))".format(

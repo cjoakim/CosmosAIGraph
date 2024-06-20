@@ -5,7 +5,6 @@ import time
 
 from pysrc.services.config_service import ConfigService
 from pysrc.services.cosmos_vcore_service import CosmosVCoreService
-from pysrc.services.logging_level_service import LoggingLevelService
 from pysrc.util.counter import Counter
 
 # Instances of this class are used to:

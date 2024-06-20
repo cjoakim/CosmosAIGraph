@@ -1,6 +1,3 @@
-import json
-import time
-
 # Instances of this class are used as the data structure that is returned
 # from the RagDataService get_rag_docs() method.  This result object is
 # useful to the UI to explain the actions and processing of the application.

@@ -1,20 +1,15 @@
 import logging
 import os
-import psutil
 import time
-import traceback
 
 import rdflib
 
-from rdflib import Graph, Literal, RDF, URIRef, BNode
-from rdflib.namespace import Namespace, NamespaceManager
-
-from rdflib.extras.infixowl import AllClasses, AllProperties, GetIdentifiedClasses
+from rdflib import Graph
+from rdflib.namespace import Namespace
 
 from pysrc.services.config_service import ConfigService
 from pysrc.services.cosmos_vcore_service import CosmosVCoreService
-from pysrc.util.owl_explorer import OwlExplorer
-from pysrc.util.graph_builder_generator import GraphBuilderGenerator
+from pysrc.util.rdflib_triples_builder import RdflibTriplesBuilder
 from pysrc.util.counter import Counter
 from pysrc.util.fs import FS
 
@@ -28,41 +23,8 @@ from pysrc.util.fs import FS
 
 class GraphBuilder:
 
-    def __init__(self):
-        pass
-
-    def build(self, opts={}) -> rdflib.Graph:
-        # Processing steps:
-        # 1. Define the custom namespace, CNS
-        # 2. Load the custom ontology file
-        # 3. Bind that namespace to simply 'c' for brevity
-        # 4. Display the defined classes and properties in the ontology
-        # 5. Load the graph using the custom ontology
-
-        self.initialize_graph()
-
-        config = ConfigService()
-        logging.info(
-            "GraphBuilder#build graph_source: {}".format(config.graph_source())
-        )
-
-        if config.graph_source() == "rdf_file":
-            self.populate_graph_from_rdf_file(self.g, config)
-        elif config.graph_source() == "cosmos_vcore":
-            self.populate_graph_from_cosmosdb_vcore(self.g, config, self.CNS)
-        else:
-            logging.critical(
-                "WARNING: GraphBuilder defaulting to cosmos_vcore loading strategy"
-            )
-            self.populate_graph_from_cosmosdb_vcore(self.g, config, self.CNS)
-
-        if "display_ontology" in opts.keys():
-            self.display_ontology(self.g)
-        if "iterate_graph" in opts.keys():
-            self.iterate_graph(self.g, "after load")
-        if "persist_graph" in opts.keys():
-            self.persist_graph(self.g)
-        return self.g
+    def __init__(self, opts={}):
+        self.opts = opts
 
     def initialize_graph(self) -> rdflib.Graph:
         self.cns = self.graph_namespace()
@@ -75,6 +37,41 @@ class GraphBuilder:
         self.g = Graph()
         self.g.bind(self.graph_namespace_alias(), self.CNS)
         self.g.parse(ontology_file, format="xml")
+
+    def build(self, opts=None) -> rdflib.Graph:
+        # Processing steps:
+        # 1. Define the custom namespace, CNS
+        # 2. Load the custom ontology file
+        # 3. Bind that namespace to simply 'c' for brevity
+        # 4. Display the defined classes and properties in the ontology
+        # 5. Load the graph using the custom ontology
+
+        self.initialize_graph()
+        if opts is not None:
+            self.opts = opts
+
+        config = ConfigService()
+        logging.info(
+            "GraphBuilder#build graph_source: {}".format(config.graph_source())
+        )
+
+        if config.graph_source() == "rdf_file":
+            self.populate_graph_from_rdf_file(self.g, config)
+        elif config.graph_source() == "json_file":
+            self.populate_graph_from_json_file(self.g, config, self.CNS)
+        elif config.graph_source() == "cosmos_vcore":
+            self.populate_graph_from_cosmosdb_vcore(self.g, config, self.CNS)
+        else:
+            logging.critical(
+                "WARNING: GraphBuilder defaulting to cosmos_vcore loading strategy"
+            )
+            self.populate_graph_from_cosmosdb_vcore(self.g, config, self.CNS)
+
+        if "iterate_graph" in self.opts.keys():
+            self.iterate_graph(self.g, "after load")
+        if "persist_graph" in self.opts.keys():
+            self.persist_graph(self.g)
+        return self.g
 
     def graph_namespace(self) -> str:
         """ " return a URI value like 'http://cosmosdb.com/caig#'"""
@@ -118,16 +115,21 @@ class GraphBuilder:
         try:
             logging.info("GraphBuilder#populate_graph_from_cosmosdb_vcore")
             vcore, dbname, cname = self.connect_to_vcore_graph_source()
+            ns = self.graph_namespace().replace("#", "").strip()
             coll = vcore.get_coll()
             docs_read = 0
+            tb = RdflibTriplesBuilder()
             t1 = time.perf_counter()
+
+            # Read the appropriate JSON documents from Cosmos DB, and pass
+            # each to your RdflibTriplesBuilder to be added to the graph.
             for libtype in ["pypi"]:
                 query_spec = {"libtype": libtype}
-                projection = self.document_projection_attributes()
+                projection = self.library_projection_attrs()
                 cursor = coll.find(
                     query_spec, projection=projection, skip=0, limit=999999
                 )
-                for idx, libdoc in enumerate(cursor):
+                for idx, doc in enumerate(cursor):
                     docs_read = docs_read + 1
                     if docs_read % 1000 == 0:
                         logging.info(
@@ -135,7 +137,7 @@ class GraphBuilder:
                                 docs_read
                             )
                         )
-                    self.append_lib_to_graph(g, libdoc, CNS)
+                    tb.append_doc_to_graph(g, doc, CNS, ns)
             t2 = time.perf_counter()
             seconds = f"{(t2 - t1):.9f}"
             logging.critical(
@@ -148,10 +150,42 @@ class GraphBuilder:
             logging.exception(e, stack_info=True, exc_info=True)
             return None
 
-    def document_projection_attributes(self):
+    def populate_graph_from_json_file(
+        self, g: rdflib.Graph, config: ConfigService, CNS
+    ) -> None:
+        try:
+            logging.info("GraphBuilder#populate_graph_from_json_file")
+            ns = self.graph_namespace().replace("#", "").strip()
+            docs_read = 0
+            t1 = time.perf_counter()
+            label_counter = Counter()
+
+            tb = RdflibTriplesBuilder()
+            infile = self.opts["cosmos_documents_file"]
+            vertices_list = FS.read_json(infile)
+            for doc in vertices_list:
+                label = doc["label"]
+                label_counter.increment(label)
+                docs_read = docs_read + 1
+                tb.append_doc_to_graph(g, doc, CNS, ns)
+
+            t2 = time.perf_counter()
+            seconds = f"{(t2 - t1):.9f}"
+            logging.critical(
+                "GraphBuilder#populate_graph_from_json_file - {} docs loaded into graph in {}".format(
+                    docs_read, seconds
+                )
+            )
+            FS.write_json(label_counter.get_data(), "tmp/graph_builder_labels.json")
+
+        except Exception as e:
+            logging.critical(str(e))
+            logging.exception(e, stack_info=True, exc_info=True)
+            return None
+
+    def library_projection_attrs(self):
         """
         The in-memory rdflib graph is built from these few Cosmos DB document attributes.
-        There is no need to include all attributes in the graph, only these necessary ones.
         See https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection.find
         """
         return {
@@ -164,33 +198,6 @@ class GraphBuilder:
             "developers": 1,
             "dependency_ids": 1,
         }
-
-    def append_lib_to_graph(self, g, libdoc, CNS):
-        """
-        The graph is build from these attributes in each libdoc:
-        name, libtype, license_kwds, kwds, developers, dependency_ids
-        """
-        id = libdoc["id"]
-        eref = URIRef("http://cosmosdb.com/caig/{}".format(id))
-        g.add((eref, RDF.type, CNS.Lib))
-        g.add((eref, CNS.ln, Literal(libdoc["name"])))
-        g.add((eref, CNS.lt, Literal(libdoc["libtype"])))
-        g.add((eref, CNS.lic, Literal(libdoc["license_kwds"])))
-        g.add((eref, CNS.kwds, Literal(libdoc["kwds"])))
-
-        for dev in libdoc["developers"]:
-            devref = URIRef("http://cosmosdb.com/caig/{}".format(dev))
-            libref = URIRef("http://cosmosdb.com/caig/{}".format(id))
-            g.add((eref, RDF.type, CNS.Dev))
-            g.add((devref, CNS.developer_of, libref))
-            g.add((libref, CNS.developed_by, devref))
-
-        for dep_lib in libdoc["dependency_ids"]:
-            pass
-            libref = URIRef("http://cosmosdb.com/caig/{}".format(id))
-            depref = URIRef("http://cosmosdb.com/caig/{}".format(dep_lib))
-            g.add((libref, CNS.uses_lib, depref))
-            g.add((depref, CNS.used_by_lib, libref))
 
     def connect_to_vcore_graph_source(self):
         """
@@ -215,10 +222,6 @@ class GraphBuilder:
         vcore.set_db(dbname)
         vcore.set_coll(cname)
         return (vcore, dbname, cname)
-
-    def display_ontology(self, g):
-        ox = OwlExplorer(g, self.cns, self.graph_namespace_alias)
-        ox.display()
 
     def persist_graph(self, g, outfile="tmp/graph.nt"):
         logging.info("GraphBuilder#persist_graph start")

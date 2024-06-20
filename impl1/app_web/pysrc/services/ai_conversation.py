@@ -8,10 +8,7 @@ from typing import Any, Dict, Final, Iterator, List, Optional, Tuple, Type, Unio
 from semantic_kernel.contents.chat_history import ChatHistory
 from semantic_kernel.contents.chat_message_content import ChatMessageContent
 
-from semantic_kernel.exceptions import (
-    ContentSerializationError,
-    ContentInitializationError,
-)
+from semantic_kernel.exceptions import ContentSerializationError
 
 from pysrc.services.ai_completion import AiCompletion
 
