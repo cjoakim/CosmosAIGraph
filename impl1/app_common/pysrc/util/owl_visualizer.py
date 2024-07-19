@@ -19,23 +19,49 @@ class OwlVisualizer:
 
     def get_d3_data(self):
         sax_data = self.handler.get_data()
+        classes = sorted(sax_data["classes"])
+        node_name_id_map = dict()
+        node_num = 0
+        edge_num = 1000
+        
         d3_data = dict()
-        d3_data["classes"] = sorted(sax_data["classes"])
-        d3_data["relationships"] = list()
+        d3_data["nodes"] = list()
+        d3_data["edges"] = list()
         d3_data["attributes"] = list()
+        d3_data["node_name_id_map"] = node_name_id_map
 
+        for cidx, c in enumerate(classes):
+            node_num = node_num + 1
+            node = dict()
+            node["id"] = node_num
+            #node["idx"] = cidx
+            node["name"] = c
+            node["distance"] = 100
+            node["strength"] = 100
+            d3_data["nodes"].append(node)
+            node_name_id_map[c] = node_num
+
+        edge_num = 1000
         for name in sorted(sax_data["object_properties"].keys()):
             p = sax_data["object_properties"][name]
             domain_list, range_list = p["domain"], p["range"]
             for domain in domain_list:
-                for range in range_list:
+                for ridx, range in enumerate(range_list):
                     if domain != range:
-                        d3_data["relationships"].append(
+                        source_idx = node_name_id_map[domain]
+                        target_idx = node_name_id_map[range]
+                        edge_num = edge_num + 1
+                        d3_data["edges"].append(
                             {
+                                "id": edge_num,
                                 "name": name,
-                                "source": domain,
-                                "target": range,
-                                "weight": "1.0",
+                                "source": source_idx,
+                                "source_type": domain,
+                                "target": target_idx,
+                                "target_type": range,
+                                "distance": 100,
+                                "strength": 100,
+                                "weight": 1.0,
                             }
                         )
 
@@ -45,8 +71,12 @@ class OwlVisualizer:
             for domain in domain_list:
                 for range in range_list:
                     if domain != range:
+                        domain_idx = node_name_id_map[domain]
                         d3_data["attributes"].append(
-                            {"name": key, "source": domain, "target": range}
+                            {"name": key, 
+                             "source": domain_idx, 
+                             "source_type": domain, 
+                             "target": range}
                         )
-
+        FS.write_json(d3_data, "tmp/owl_vizualizer_d3_data.json")
         return d3_data
