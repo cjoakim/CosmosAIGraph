@@ -8,6 +8,7 @@ import uuid
 import certifi
 
 from pymongo import MongoClient
+from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
 from bson.objectid import ObjectId
 
 from src.services.config_service import ConfigService
@@ -188,6 +189,13 @@ class CosmosVCoreService:
     def update_many(self, filter, update, upsert):
         """Update documents in the current collection and return the result."""
         return self._coll.update_many(filter, update, upsert)
+
+    def bulk_write(self, operations_list: list):
+        """
+        Execute a list of bulk operations that may include these types:
+        InsertOne, DeleteMany, ReplaceOne, UpdateOne
+        """
+        return self._coll.bulk_write(operations_list)
 
     def count_docs(self, query_spec):
         """
