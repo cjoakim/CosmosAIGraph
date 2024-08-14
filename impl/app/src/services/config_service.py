@@ -147,6 +147,10 @@ class ConfigService:
         d["CAIG_GRAPH_SERVICE_URL"] = ""
         d["CAIG_GRAPH_SERVICE_PORT"] = ""
 
+        d["CAIG_PG_FLEX_SERVER"] = "Azure PostgreSQL Flex Server hostname"
+        d["CAIG_PG_FLEX_USER"] = "Azure PostgreSQL Flex Server user"
+        d["CAIG_PG_FLEX_PASS"] = "Azure PostgreSQL Flex Server user password"
+
         d["CAIG_WEBSVC_AUTH_HEADER"] = "x-caig-auth"
         d["CAIG_WEBSVC_AUTH_VALUE"] = "K6ZQw!81"
 
@@ -247,6 +251,18 @@ class ConfigService:
     def mongo_vcore_conn_str(cls) -> str:
         return cls.envvar("CAIG_AZURE_MONGO_VCORE_CONN_STR", None)
 
+    @classmethod
+    def pg_flex_server(cls) -> str:
+        return cls.envvar("CAIG_PG_FLEX_SERVER", None)
+
+    @classmethod
+    def pg_flex_user(cls) -> str:
+        return cls.envvar("CAIG_PG_FLEX_USER", None)
+    
+    @classmethod
+    def pg_flex_password(cls) -> str:
+        return cls.envvar("CAIG_PG_FLEX_PASS", None)
+    
     @classmethod
     def use_alt_sparql_console(cls) -> str:
         return len(cls.envvar("CAIG_USE_ALT_SPARQL_CONSOLE", "")) > 0
