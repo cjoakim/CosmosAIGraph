@@ -24,6 +24,33 @@ Capture the values of the endpoint URL and Key 1.  You will later
 set your **CAIG_AZURE_OPENAI_URL** and **CAIG_AZURE_OPENAI_KEY**
 environment variables with these values.
 
+Create model deployments for the **gpt-4** and **text-embedding-ada-002** models.
+It is expected that, over time, the names of these models will change,
+so use the current version of each.
+
+<p align="center">
+  <img src="img/azure-openai-deployments.png" width="70%">
+</p>
+
+You should set your **CAIG_AZURE_OPENAI_COMPLETIONS_DEP** and 
+**CAIG_AZURE_OPENAI_EMBEDDINGS_DEP** environment variables to the
+deployment names of these two models in your Azure OpenAI account.
+
+<pre>
+
+</pre>
+
+## Azure Container Registry (ACR)
+
+See https://learn.microsoft.com/en-us/azure/container-registry/.
+
+When you build the Docker images for your application they should
+be your ACR.
+
+The example Bicep deployment scripts in this repository use
+**DockerHub** for this public reference implementation.
+However, you should use your private and secure Azure Container Registry instead.
+
 <pre>
 
 </pre>
@@ -82,4 +109,3 @@ mongodb+srv://chris:secret@<your-account-name>.mongocluster.cosmos.azure.com/?tl
 
 Save this edited connection string value.  You will later
 set your **CAIG_AZURE_MONGO_VCORE_CONN_STR** environment variable with this value.
-
