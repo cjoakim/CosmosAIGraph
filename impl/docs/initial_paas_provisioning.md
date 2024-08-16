@@ -45,7 +45,7 @@ deployment names of these two models in your Azure OpenAI account.
 See https://learn.microsoft.com/en-us/azure/container-registry/.
 
 When you build the Docker images for your application they should
-be your ACR.
+be pushed to your ACR.
 
 The example Bicep deployment scripts in this repository use
 **DockerHub** for this public reference implementation.
