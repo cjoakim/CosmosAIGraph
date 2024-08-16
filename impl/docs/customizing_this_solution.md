@@ -15,12 +15,33 @@ Put these into a list to identify each one by a shortname (i.e. - q1, 2, etc.).
 Use of the [CQRS](https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs)
 pattern is very useful here.
 
-## Step 2: Survey your Data
+## Step 2: Survey and Scan your Data
 
 Ask the question: "Does the data that I have available enable the answering
 of these graph/knowledge-graph queries?".
 
 If so, proceed.  If not, revisit the requirements and/or data sources.
+
+### What do we mean by scanning?
+
+By **"scanning"** we mean writing a program to read your input data
+to indentify its structure, attributes and their datatypes, and the
+relationships between the entities.  Python is an excellent choice
+for this scanning process, but you can use the programming language(s)
+of your choice.
+
+There are several purposes of scanning:
+- To ensure that it is readable and parsable
+- To ensure that it contains the relationships, or connections, that you expect
+  - The entities are linkable by specific attribute values
+
+- To capture the **metadata** of your data
+  - Its' structure
+  - Attribute names and their datatypes
+  - Names of the classes and the relationships between them
+  - **Accurate metadata like this can greatly accelerate your development process.**
+    - See [Code Generation](code_generation.md)
+
 
 ## Step 3: Understand RDF graph technology, Ontologies, and SPARQL
 
