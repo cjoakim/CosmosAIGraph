@@ -3,15 +3,10 @@
   <img src="img/app-architecture.png" width="90%">
 </p>
 
----
-
-**Note:** The initial March 2024 release of CosmosAIGraph is focused on **graph workloads**.
-Subsequent releases will further implement **AI-powered** functionality with the
-semantic-kernel orchestration library.
 
 ---
 
-The **CosmosAIGraph (caig)** application, implementation 1, is deployed as these two microservices:
+The **CosmosAIGraph (caig)** application is deployed as these two microservices:
 
 | Name   | Functionality                                                          |
 | ------ | ---------------------------------------------------------------------- |
@@ -46,29 +41,6 @@ names will be **caig_web**, and **caig_graph**.
   - See https://www.w3.org/TR/sparql11-query/
 - **Web Ontology Language (OWL)** is the graph schema/ontology definition language
   - See https://www.w3.org/OWL/
-
-## Directory Structure
-
-Given the above microservices, this GitHub repository has this directory structure:
-
-```
-├── app_common          # Common Python code developed and tested here
-├── app_console         # Ad-hoc console app for data wrangling, etc.
-├── app_graph           # The Graph microservice
-├── app_web             # The Web Application microservice
-└── deployment          # Azure Container App (ACA) Bicep-based deployment scripts
-├── docker-builds.ps1   # script to build all two Docker images on Windows 11 w/PowerShell
-├── docker-builds.sh    # script to build all two Docker images in macOS & Linux w/bash
-├── docker-compose.yml  # Docker Compose script to run the two microservices locally
-└── deployment          # Azure Container App (ACA) Bicep-based deployment scripts
-└── mongosh*            # scripts to launch the mongo shell program, pointing at vCore
-└── venv-builds*        # scripts to build the several python virtual environments in this implementation
-```
-
-The main development is done in the **app_common** directory.
-Code is developed and unit-tested there.
-Apache Ant script **deploy_master_code.xml** is used to copy this tested master code
-to the several applications (app_web, app_graph, etc.) that use this common/master code.
 
 ---
 
