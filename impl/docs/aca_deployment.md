@@ -17,7 +17,7 @@ include the following:
 
 ### Deployment with Bicep
 
-See the **impl1/deployment/** directory for working deployment scripts which use the 
+See the **impl/deployment/** directory for working deployment scripts which use the 
 [Bicep](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/overview)
 deployment syntax.
 

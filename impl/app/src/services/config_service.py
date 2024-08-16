@@ -252,6 +252,18 @@ class ConfigService:
         return cls.envvar("CAIG_AZURE_MONGO_VCORE_CONN_STR", None)
 
     @classmethod
+    def cosmosdb_nosql_uri(cls) -> str:
+        return cls.envvar("CAIG_COSMOSDB_NOSQL_URI", None)
+
+    @classmethod
+    def cosmosdb_nosql_key1(cls) -> str:
+        return cls.envvar("CAIG_COSMOSDB_NOSQL_KEY1", None)
+
+    @classmethod
+    def cosmosdb_nosql_key2(cls) -> str:
+        return cls.envvar("CAIG_COSMOSDB_NOSQL_KEY2", None)
+    
+    @classmethod
     def pg_flex_server(cls) -> str:
         return cls.envvar("CAIG_PG_FLEX_SERVER", None)
 

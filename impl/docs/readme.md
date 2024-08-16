@@ -117,7 +117,7 @@ uses several environment variables, and they all begin with **CAIG_**.
 
 ### Load Cosmos DB with Library Documents
 
-- See [Load Azure Cosmos DB vCore](load_cosmos_vcore.md)
+- See [Data Modeling, and Load Azure Cosmos DB vCore](load_cosmos_vcore.md)
 
 ### Run the Application on your Workstation
 

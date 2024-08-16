@@ -11,7 +11,7 @@ or none.
 
 ## The impl\app directory
 
-**This directory contains the current codebase.  The impl1\ and impl2\ directories are now obsolete.**
+**This directory contains the current codebase.**
 
 It contains these directories:
 

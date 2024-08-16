@@ -41,7 +41,7 @@ All of these begin with the prefix `CAIG_`.
 
 ## Setting these Environment Variables
 
-The repo contains generated PowerShell script **impl1/set-caig-env-vars-sample.ps1**
+The repo contains generated PowerShell script **impl/set-caig-env-vars-sample.ps1**
 which sets all of these CAIG_ environment values.
 You may find it useful to edit and execute this script rather than set them manually on your system
 

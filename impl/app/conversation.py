@@ -50,7 +50,7 @@ async def conversation1():
 
 
 async def conversation2():
-    # See file impl1/data/testdata/strategy_builder_examples.json
+    # See file impl/data/testdata/strategy_builder_examples.json
     # where these user queries were copied from.
     user_queries = [
         "find the PyPi Flask Library",

@@ -217,7 +217,7 @@ def gen_environment_variables_md():
     lines.append("## Setting these Environment Variables")
     lines.append("")
     lines.append(
-        "The repo contains generated PowerShell script **impl1/set-caig-env-vars-sample.ps1**"
+        "The repo contains generated PowerShell script **impl/set-caig-env-vars-sample.ps1**"
     )
     lines.append("which sets all of these CAIG_ environment values.")
     lines.append(

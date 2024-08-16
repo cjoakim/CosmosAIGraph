@@ -1,8 +1,45 @@
 # CosmosAIGraph : Load Azure Cosmos DB vCore
 
+## How is this data modeled, or structured, for graph purposes?
+
+One nice feature of this solution is that **there is no required structure**
+for your JSON documents in Cosmos DB.  They can be structured as if
+it is a non-graph application, per general NoSQL/Mongo design best practices.
+
+This is because **the graph**, in the CosmosAIGraph solution, only
+exists in-memory within the Python rdflib process.
+
+However, one suggestion is to use an **edges attribute** in your
+documents, and populate it with the list of **outgoing** relationships
+from the given entity/vertex document.
+
+In the case of the CosmosAIGraph reference dataset of python libraries,
+however, an edges attribute is not used.  Instead, the **developers**
+and **dependency_ids** are used at runtime to construct the in-memory
+RDF graph.
+
+```
+  ...
+  "developers": [
+    "contact@palletsprojects.com"
+  ],
+  ...
+  "dependency_ids": [
+    "pypi_asgiref",
+    "pypi_blinker",
+    "pypi_click",
+    "pypi_importlib_metadata",
+    "pypi_itsdangerous",
+    "pypi_jinja2",
+    "pypi_python_dotenv",
+    "pypi_werkzeug"
+  ],
+  ...
+```
+
 ## The Data - Python Libraries at PyPi
 
-The **impl1\data** directory in this repo contains a curated set of
+The **impl\data** directory in this repo contains a curated set of
 [PyPi (Python)](https://pypi.org/) library JSON documents.
 
 This domain of software libraries was chosen because it should be **relatable** 
@@ -17,6 +54,10 @@ a **vectorized embedding value** from several concatinated text attributes
 within each library JSON document.  A full description of this data wrangling
 process is beyond the scope of this documentation, but the process itself
 is in file 'impl/app/wrangle.py' in the repo.
+
+
+
+
 
 ## Assumptions
 
@@ -180,7 +221,7 @@ db.libraries.find({name: "flask"})
 ```
 
 The JSON output of the above flask query should look identical
-to file impl1/data/pypi/wrangled_libs/flask.json in this repo.
+to file impl/data/pypi/wrangled_libs/flask.json in this repo.
 
 #### Document Counts
 
@@ -196,4 +237,4 @@ db.config.countDocuments()
 container, while one document is expected in the config container.
 
 The number 10855 corresponds to the number of JSON documents in directory 
-'impl1/data/pypi/wrangled_libs/' in this repo.
+'impl/data/pypi/wrangled_libs/' in this repo.
