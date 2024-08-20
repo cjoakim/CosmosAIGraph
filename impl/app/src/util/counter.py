@@ -44,3 +44,11 @@ class Counter:
                 top_value = self.data[key]
                 top_word = key
         return top_word
+    
+    def merge(self, another_counter) -> None:
+        """Merge the values in the given counter with this counter."""
+        if another_counter is not None:
+            for key in another_counter.get_data().keys():
+                another_count = another_counter.get_value(key)
+                merged_count = self.get_value(key) + another_count
+                self.data[key] = merged_count

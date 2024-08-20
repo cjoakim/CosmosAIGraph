@@ -20,8 +20,6 @@ from src.services.config_service import ConfigService
 # See https://github.com/Azure/azure-sdk-for-python/tree/azure-cosmos_4.7.0/sdk/cosmos/azure-cosmos/samples
 # See https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search
 # Chris Joakim, Microsoft
-# cj, 8/14 - this class is WIP - synch methods being transitioned to async
-
 
 # azure_logger can be used to set the verbosity of the Azure and Cosmos SDK logging
 azure_logger = logging.getLogger('azure')
@@ -33,19 +31,21 @@ class CosmosNoSQLAsyncService:
     def __init__(self, opts={}):
         # https://www.slingacademy.com/article/python-defining-a-class-with-an-async-constructor/
         # https://stackoverflow.com/questions/33128325/how-to-set-class-attribute-with-await-in-init
+        self._opts = opts
         self._dbname = None
         self._dbproxy = None
         self._ctrproxy = None
         self._cname = None
-        #self.reset_record_diagnostics()
-        self.uri = ConfigService.cosmosdb_nosql_uri()
-        self.key = ConfigService.cosmosdb_nosql_key1()
+        self._uri = ConfigService.cosmosdb_nosql_uri()
+        self._key = ConfigService.cosmosdb_nosql_key1()
         self._client = None
         logging.info("CosmosNoSQLAsyncService - __init__ completed")
 
     async def initialize(self):
         """ This method should be called after the above constructor. """
-        self._client = CosmosClient(self.uri, self.key)
+        self._client = CosmosClient(
+            self._uri, 
+            self._key)
         await self._client.__aenter__()  # this piece is important for the SDK to cache account information
         logging.info("CosmosNoSQLAsyncService - initialize() completed")
 
@@ -56,7 +56,6 @@ class CosmosNoSQLAsyncService:
 
     async def list_databases(self):
         """Return the list of database names in the account."""
-        #return list(await self._client.list_databases())
         dblist = list()
         async for db in self._client.list_databases():
             dblist.append(db["id"])
@@ -86,7 +85,10 @@ class CosmosNoSQLAsyncService:
 
     async def point_read(self, id, pk):
         return await self._ctrproxy.read_item(item=id, partition_key=pk)
-        
+
+    async def create_item(self, doc):
+        return await self._ctrproxy.create_item(body=doc)   
+
     async def upsert_item(self, doc):
         return await self._ctrproxy.upsert_item(body=doc)
         
@@ -95,125 +97,50 @@ class CosmosNoSQLAsyncService:
         
     # https://github.com/Azure/azure-sdk-for-python/blob/azure-cosmos_4.7.0/sdk/cosmos/azure-cosmos/samples/document_management_async.py
 
-    
+    async def execute_item_batch(self, item_operations: list, pk: str):
+        # example item_operations:
+        #   [("create", (get_sales_order("create_item"),)), next op, next op, ...]
+        # each operation is a 2-tuple, with the operation name as tup[0]
+        # tup[1] is a nested 2-tuple , with the document as tup[0]
+        return await self._ctrproxy.execute_item_batch(
+            batch_operations=item_operations, partition_key=pk)
+        
+    async def query_items(self, sql, cross_partition=False, pk=None, max_items=100):
+        parameters_list = list()
+        parameters_list.append(
+            {'name': '@enable_cross_partition_query', 'value': cross_partition})
+        parameters_list.append(
+            {'name': '@max_item_count', 'value': max_items})
+        if pk is not None:
+            parameters_list.append(
+                {'name': '@partition_key', 'value': pk})
+        
+        results_list = list()
+        query_results = self._ctrproxy.query_items(
+            query=sql,
+            parameters=parameters_list)
+        async for item in query_results:
+            results_list.append(item)
+        return results_list
 
-    # def upsert_doc(self, doc):
-    #     """Upsert the given document in the current container."""
-    #     try:
-    #         self.reset_record_diagnostics()
-    #         return self._ctrproxy.upsert_item(
-    #             doc,
-    #             populate_query_metrics=self._query_metrics,
-    #             response_hook=self._record_diagnostics,
-    #         )
-    #     except Exception as excp:
-    #         logging.critical(str(excp))
-    #         print(traceback.format_exc())
-    #         return None
-
-    # def delete_doc(self, doc, doc_pk):
-    #     """Delete the given document in the current container."""
-    #     try:
-    #         self.reset_record_diagnostics()
-    #         return self._ctrproxy.delete_item(
-    #             doc,
-    #             partition_key=doc_pk,
-    #             populate_query_metrics=self._query_metrics,
-    #             response_hook=self._record_diagnostics,
-    #         )
-    #     except Exception as excp:
-    #         logging.critical(str(excp))
-    #         print(traceback.format_exc())
-    #         return None
-
-    # def read_doc(self, cname, doc_id, doc_pk):
-    #     """Execute a point-read for container, document id, and partition key."""
-    #     try:
-    #         self.set_container(cname)
-    #         self.reset_record_diagnostics()
-    #         return self._ctrproxy.read_item(
-    #             doc_id,
-    #             partition_key=doc_pk,
-    #             populate_query_metrics=self._query_metrics,
-    #             response_hook=self._record_diagnostics,
-    #         )
-    #     except Exception as excp:
-    #         logging.critical(str(excp))
-    #         print(traceback.format_exc())
-    #         return None
-
-    # def query_container(self, cname, sql, xpartition, max_count):
-    #     """Execute a given SQL query of the given container name."""
-    #     try:
-    #         self.set_container(cname)
-    #         self.reset_record_diagnostics()
-    #         return self._ctrproxy.query_items(
-    #             query=sql,
-    #             enable_cross_partition_query=xpartition,
-    #             max_item_count=max_count,
-    #             populate_query_metrics=self._query_metrics,
-    #             response_hook=self._record_diagnostics,
-    #         )
-    #     except Exception as excp:
-    #         logging.critical(str(excp))
-    #         print(traceback.format_exc())
-    #         return excp
-
-    # def close(self) -> None:
-    #     """ close the client if it exists """
-    #     if (self._client != None):
-    #         self._client.close()
-    #         logging.info("CosmosNoSQLService - client closed")
-
-    # # Metrics and Diagnostics
-
-    # def enable_query_metrics(self):
-    #     """Return a boolean indicating whether query metrics are enabled."""
-    #     self._query_metrics = True
-
-    # def disable_query_metrics(self):
-    #     """Set query metrics to False."""
-    #     self._query_metrics = False
-
-    # def reset_record_diagnostics(self):
-    #     """Reset the record diagnostics in this object."""
-    #     self._record_diagnostics = diagnostics.RecordDiagnostics()
-
-    # def print_record_diagnostics(self):
-    #     """Print the record diagnostics."""
-    #     print(f"record_diagnostics: {self._record_diagnostics.headers}")
-    #     print(str(type(self._record_diagnostics.headers)))
-    #     keys = self._record_diagnostics.headers.keys()
-    #     print(str(type(keys)))
-    #     print(keys)
-    #     for header in self._record_diagnostics.headers.items():
-    #         print(header)
-    #         print(str(type(header)))
-
-    # def record_diagnostics_headers_dict(self):
-    #     """Read and return the record diagnostics headers as a dictionary."""
-    #     data = {}
-    #     for header in self._record_diagnostics.headers.items():
-    #         key, val = header  # unpack the header 2-tuple
-    #         data[key] = val
-    #     return data
-
-    # def print_last_request_charge(self):
-    #     """Print the last request charge and activity id."""
-    #     charge = self.last_request_charge()
-    #     activity = self.last_activity_id()
-    #     print(f"last_request_charge: {charge} activity: {activity}")
-
-    # def last_request_charge(self):
-    #     """Return the last request charge in RUs, default to -1."""
-    #     header = "x-ms-request-charge"
-    #     if header in self._record_diagnostics.headers:
-    #         return self._record_diagnostics.headers[header]
-    #     return -1
-
-    # def last_activity_id(self):
-    #     """Return the last diagnostics activity id, default to None."""
-    #     header = "x-ms-activity-id"
-    #     if header in self._record_diagnostics.headers:
-    #         return self._record_diagnostics.headers[header]
-    #     return None
+    def last_response_headers(self):
+        """
+        The headers are an instance of class CIMultiDict.
+        You can lookup the value of a header by name, like this:
+            nosql_svc.last_response_headers()['x-ms-item-count']
+        You can also iterate over the headers, like this:
+            for two_tup in nosql_svc.last_response_headers().items():
+                name, value = two_tup[0], two_tup[1]
+        """
+        try:
+            return self._ctrproxy.client_connection.last_response_headers
+        except:
+            return None
+        
+    def last_request_charge(self):
+        try:
+            header = 'x-ms-request-charge'
+            return float(self._ctrproxy.client_connection.last_response_headers[header])
+        except:
+            return -1.0
+        
