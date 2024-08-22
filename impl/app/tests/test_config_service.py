@@ -101,9 +101,6 @@ def test_graph_source_container():
     ConfigService.set_standard_unit_test_env_vars()
     assert ConfigService.graph_source_container() == "libraries"
 
-def test_cache_container():
-    ConfigService.set_standard_unit_test_env_vars()
-    assert ConfigService.cache_container() == "cache"
 
 def test_feedback_container():
     ConfigService.set_standard_unit_test_env_vars()

@@ -111,7 +111,6 @@ class ConfigService:
         d["CAIG_GRAPH_SOURCE_CONTAINER"] = (
             "The graph vCore container name, if CAIG_GRAPH_SOURCE_TYPE is 'cosmos_vcore'"
         )
-        d["CAIG_CACHE_CONTAINER"] = "The vCore container for key/value cache"
         d["CAIG_CONFIG_CONTAINER"] = "The vCore container for configuration JSON values"
         d["CAIG_CONVERSATIONS_CONTAINER"] = (
             "The vCore container where the chat conversations and history are persisted"
@@ -170,7 +169,6 @@ class ConfigService:
         d["CAIG_GRAPH_SOURCE_RDF_FILENAME"] = "rdf/libraries-graph.nt"
         d["CAIG_GRAPH_SOURCE_DB"] = "caig"
         d["CAIG_GRAPH_SOURCE_CONTAINER"] = "libraries"
-        d["CAIG_CACHE_CONTAINER"] = "cache"
         d["CAIG_CONFIG_CONTAINER"] = "config"
         d["CAIG_CONVERSATIONS_CONTAINER"] = "conversations"
         d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = "mongodb+srv://..."
@@ -212,6 +210,16 @@ class ConfigService:
         return cls.envvar("CAIG_GRAPH_SERVICE_URL", "http://127.0.0.1")
 
     @classmethod
+    def using_nosql(cls) -> str:
+        db_api = cls.envvar("CAIG_GRAPH_SOURCE_TYPE", "cosmos_vcore").lower()
+        return "cosmos_nosql" in db_api
+    
+    @classmethod
+    def using_vcore(cls) -> str:
+        db_api = cls.envvar("CAIG_GRAPH_SOURCE_TYPE", "cosmos_vcore").lower()
+        return "cosmos_vcore" in db_api
+    
+    @classmethod
     def graph_source(cls) -> str:
         return cls.envvar("CAIG_GRAPH_SOURCE_TYPE", "cosmos_vcore")
 
@@ -230,10 +238,6 @@ class ConfigService:
     @classmethod
     def graph_source_container(cls) -> str:
         return cls.envvar("CAIG_GRAPH_SOURCE_CONTAINER", "libraries")
-
-    @classmethod
-    def cache_container(cls) -> str:
-        return cls.envvar("CAIG_CACHE_CONTAINER", "cache")
 
     @classmethod
     def config_container(cls) -> str:

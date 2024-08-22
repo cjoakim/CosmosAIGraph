@@ -20,6 +20,7 @@ from src.models.webservice_models import DocumentsVSResultsModel
 # account/database.
 # Chris Joakim, Microsoft
 
+logging.getLogger('pymongo').setLevel(logging.WARNING)
 
 class CosmosVCoreService:
     def __init__(self, opts: dict):
@@ -214,7 +215,7 @@ class CosmosVCoreService:
         """
         return self._coll.count_documents(query_spec)
 
-    def load_conversation(self, conversation_id) -> AiConversation:
+    def load_conversation(self, conversation_id: str) -> AiConversation | None:
         try:
             if conversation_id is None:
                 return AiConversation(None)
@@ -363,9 +364,7 @@ class CosmosVCoreService:
             # execute the aggregation pipeline
             # results is a pymongo.command_cursor.CommandCursor object to iterate
             self.set_coll(ConfigService.graph_source_container())
-
             cursor = self.aggregate(pipeline)
-            logging.debug(pipeline)
             for result_doc in cursor:
                 self.stringify_doc_id(result_doc)
                 vs_result["results"].append(result_doc)

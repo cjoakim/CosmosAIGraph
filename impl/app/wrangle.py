@@ -29,8 +29,6 @@ from docopt import docopt
 from dotenv import load_dotenv
 
 from src.services.ai_service import AiService
-from src.services.config_service import ConfigService
-from src.services.cosmos_vcore_service import CosmosVCoreService
 from src.util.fs import FS
 
 

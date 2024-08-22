@@ -2,6 +2,7 @@ import datetime
 import logging
 import time
 
+from src.services.base_db_service import BaseDBService
 from src.services.config_service import ConfigService
 from src.services.cosmos_vcore_service import CosmosVCoreService
 from src.util.counter import Counter
@@ -11,38 +12,40 @@ from src.util.counter import Counter
 # - identify known entities in given text data per the 'entities' document
 # Chris Joakim, Microsoft
 
+logging.getLogger('pymongo').setLevel(logging.WARNING)
 
-class EntitiesService:
+class EntitiesService(BaseDBService):
+
+    # Class variable
+    static_entities_doc = None
+    static_libraries_dict = None
+    static_library_names = None
 
     def __init__(self, vcore=None):
-        """Constructor method, connect to Cosmos DB vcore"""
-        self.vcore = None
+        """ Constructor method; call initialize() immediately after this. """
+        super().__init__()
         self.entities_doc = None
         self.libraries_dict = dict()
         self.library_names = list()
-        try:
-            if vcore is not None:
-                self.vcore = vcore
-            else:
-                vcore_opts = dict()
-                vcore_opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-                logging.debug(
-                    "EntitiesService#init - vcore_opts: {}".format(vcore_opts)
-                )
-                self.vcore = CosmosVCoreService(vcore_opts)
-            self.vcore.set_db(ConfigService.graph_source_db())
-            self.vcore.set_coll(ConfigService.config_container())
-        except Exception as e:
-            logging.critical("EntitiesService#init - exception: {}".format(str(e)))
-            logging.exception(e, stack_info=True, exc_info=True)
 
-    def initialize(self):
-        """Load the 'entities' document from Cosmos DB into this instance"""
-        try:
-            self.vcore.set_db(ConfigService.graph_source_db())
-            self.vcore.set_coll(ConfigService.config_container())
+    async def initialize(self):
+        """ This method should be called immediately after the constructor. """
+        if EntitiesService.static_entities_doc is not None:
+            # Use the previously cached data in the static/class variables
+            self.entities_doc = EntitiesService.static_entities_doc
+            self.libraries_dict = EntitiesService,static_libraries_dict
+            self.library_names = EntitiesService.static_library_names
+            return
+        
+        if self.using_nosql():
+            await self.initialize_cosmos_nosql()
+            # TODO - implement for NoSQL
+        else :
+            await self.initialize_cosmos_vcore()
+            self.vcore_svc.set_db(ConfigService.graph_source_db())
+            self.vcore_svc.set_coll(ConfigService.config_container())
             query_spec = {"id": "entities"}
-            cursor = self.vcore.get_coll().find(query_spec, skip=0, limit=999999)
+            cursor = self.vcore_svc.get_coll().find(query_spec, skip=0, limit=999999)
             docs_found = 0
             for result_doc in cursor:
                 docs_found = docs_found + 1
@@ -56,10 +59,9 @@ class EntitiesService:
                     docs_found, len(self.libraries_dict.keys())
                 )
             )
-        except Exception as e:
-            self.libraries_dict = dict()
-            logging.critical("EntitiesService#load - exception: {}".format(str(e)))
-            logging.exception(e, stack_info=True, exc_info=True)
+        static_entities_doc = self.entities_doc
+        static_libraries_dict = self.libraries_dict
+        static_library_names = self.library_names
 
     def libraries_count(self):
         try:
@@ -75,7 +77,7 @@ class EntitiesService:
         return False
 
     def identify(self, text) -> Counter:
-        """Identify the known entities in the given text data, return a dict"""
+        """ Identify the known entities in the given text data, return a dict """
         c = Counter()
         if text is not None:
             words = text.lower().replace(",", " ").replace(".", " ").strip().split()
@@ -85,8 +87,8 @@ class EntitiesService:
                         c.increment(word)
         return c
 
-    def create(self):
-        """Create and return the 'entities' document from the Cosmos DB library documents"""
+    async def create(self):
+        """ Create and return the 'entities' document from the Cosmos DB library documents """
         new_entities = dict()
         new_entities["id"] = "entities"
         new_entities["created_at"] = time.time()
@@ -97,40 +99,49 @@ class EntitiesService:
         new_entities["elapsed_seconds"] = -1
         new_entities["exception"] = ""
         new_entities["libraries"] = dict()
-
         try:
-            self.vcore.set_coll(ConfigService.graph_source_container())
-            docs_read = 0
-            logging.info("EntitiesService#build start")
-            t1 = time.perf_counter()
-            coll = self.vcore.get_coll()
-            for libtype in ["pypi"]:
-                query_spec = {"libtype": libtype}
-                projection = self.library_projection_attrs()
-                cursor = coll.find(
-                    query_spec, projection=projection, skip=0, limit=999999
-                )
-                for libdoc in cursor:
-                    docs_read = docs_read + 1
-                    if docs_read % 1000 == 0:
-                        logging.info(
-                            "EntitiesService#build - libdocs read: {}".format(docs_read)
-                        )
-                    name = libdoc["name"]
-                    new_entities["libraries"][name] = libdoc["libtype"]
-            t2 = time.perf_counter()
-            seconds = f"{(t2 - t1):.9f}"
-            logging.critical(
-                "EntitiesService#build - {} docs read in {} seconds".format(
-                    docs_read, seconds
-                )
-            )
-            new_entities["docs_read"] = docs_read
-            new_entities["elapsed_seconds"] = seconds
+            if self.using_nosql():
+                await self.create_nosql_entities_doc(new_entities)
+            else:
+                await self.create_vcore_entities_doc(new_entities)
         except Exception as e:
             new_entities["exception"] = str(e)
-            logging.critical("EntitiesService#build - exception: {}".format(str(e)))
+            logging.critical("EntitiesService#create - exception: {}".format(str(e)))
             logging.exception(e, stack_info=True, exc_info=True)
+        return new_entities
+
+    async def create_nosql_entities_doc(self, new_entities: dict):
+        # TODO - implement for NoSQL
+        return new_entities
+
+    async def create_vcore_entities_doc(self, new_entities: dict):
+        self.vcore_svc.set_coll(ConfigService.graph_source_container())
+        docs_read = 0
+        logging.info("EntitiesService#build start")
+        t1 = time.perf_counter()
+        coll = self.vcore_svc.get_coll()
+        query_spec = {"libtype": 'pypi'}
+        projection = self.library_projection_attrs()
+        cursor = coll.find(
+            query_spec, projection=projection, skip=0, limit=999999
+        )
+        for libdoc in cursor:
+            docs_read = docs_read + 1
+            if docs_read % 1000 == 0:
+                logging.info(
+                    "EntitiesService#build - libdocs read: {}".format(docs_read)
+                )
+            name = libdoc["name"]
+            new_entities["libraries"][name] = 'pypi'
+        t2 = time.perf_counter()
+        seconds = f"{(t2 - t1):.9f}"
+        logging.critical(
+            "EntitiesService#create_vcore_entities_doc - {} docs read in {} seconds".format(
+                docs_read, seconds
+            )
+        )
+        new_entities["docs_read"] = docs_read
+        new_entities["elapsed_seconds"] = seconds
         return new_entities
 
     def library_projection_attrs(self):

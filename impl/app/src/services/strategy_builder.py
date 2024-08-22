@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from src.services.ai_service import AiService
@@ -14,10 +15,15 @@ from src.services.entities_service import EntitiesService
 
 
 class StrategyBuilder:
+
+    """ Constructor method; call initialize() immediately after this. """
     def __init__(self, ai_svc: AiService):
         self.ai_svc = ai_svc
         self.entities_svc = EntitiesService()
-        self.entities_svc.initialize()
+
+    async def initialize(self):
+        """ This method should be called immediately after the constructor. """
+        await self.entities_svc.initialize()
 
     async def determine(self, natural_language) -> dict:
         strategy = dict()

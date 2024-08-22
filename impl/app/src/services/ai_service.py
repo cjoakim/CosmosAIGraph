@@ -20,7 +20,7 @@ from src.models.internal_models import SparqlGenerationResult
 from src.services.ai_completion import AiCompletion
 from src.services.ai_conversation import AiConversation
 from src.services.config_service import ConfigService
-from src.services.cosmos_vcore_service import CosmosVCoreService
+from src.services.db_service import DBService
 from src.util.owl_formatter import OwlFormatter
 from src.util.prompts import Prompts
 from src.util.prompt_optimizer import PromptOptimizer
@@ -30,6 +30,8 @@ from src.util.prompt_optimizer import PromptOptimizer
 
 
 class AiService:
+
+    """ Constructor method; call initialize() immediately after this. """
     def __init__(self, opts={}):
         """
         Get the necessary environment variables and initialze an AzureOpenAI client.
@@ -46,7 +48,7 @@ class AiService:
             # tiktoken, for token estimation, doesn't work with gpt-4 at this time
             self.tiktoken_encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
             self.enc = tiktoken.get_encoding("cl100k_base")
-            # self.model = "gpt-35-turbo"  unused
+            self.db_svc = DBService()
 
             self.aoai_client = AzureOpenAI(
                 azure_endpoint=self.aoai_endpoint,
@@ -91,25 +93,25 @@ class AiService:
                 prompt=self.html_summarization_prompt(),
                 prompt_template_settings=req_settings,
             )
-            opts = dict()
-            opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-            self.vcore = CosmosVCoreService(opts)
-            self.vcore.set_db(ConfigService.graph_source_db())
-
-            logging.debug("aoai endpoint:     {}".format(self.aoai_endpoint))
-            logging.debug("aoai version:      {}".format(self.aoai_version))
-            logging.debug("aoai client:  {}".format(self.aoai_client))
-            logging.debug(
+            logging.info("aoai endpoint:     {}".format(self.aoai_endpoint))
+            logging.info("aoai version:      {}".format(self.aoai_version))
+            logging.info("aoai client:  {}".format(self.aoai_client))
+            logging.info(
                 "aoai completions_deployment: {}".format(self.completions_deployment)
             )
-            logging.debug(
+            logging.info(
                 "aoai embeddings_deployment:  {}".format(self.embeddings_deployment)
             )
-            logging.debug("sk_kernel: {}".format(self.sk_kernel))
+            logging.info("sk_kernel: {}".format(self.sk_kernel))
         except Exception as e:
             logging.critical("Exception in AiService#__init__: {}".format(str(e)))
             logging.exception(e, stack_info=True, exc_info=True)
             return None
+
+    async def initialize(self):
+        """ This method should be called immediately after the constructor. """
+        logging.info("AiService#initialize()")
+        await self.db_svc.initialize()
 
     def num_tokens_from_string(self, s: str) -> int:
         try:
@@ -132,7 +134,7 @@ class AiService:
 
             fileOntology = open(ontologyFile, "r")
             owl = OwlFormatter().minimize(fileOntology.read())
-            logging.debug(
+            logging.info(
                 "AiService#generate_graph - owl first 80 chars: {}".format(
                     str(owl)[0:80]
                 )
@@ -141,11 +143,9 @@ class AiService:
             system_prompt = Prompts().generate_entities_system_prompt(owl)
             for entitiesFile in entitiesFiles:
                 user_prompt = f"""generate code for the dataframe from file "{entitiesFile}" and the results of the code execution should be written to the file results.nt in append mode"""
-
-                logging.debug(
+                logging.info(
                     "AiService#generate_graph - user_prompt: {}".format(user_prompt)
                 )
-
                 generated = False
                 while not generated:
                     try:
@@ -160,20 +160,18 @@ class AiService:
                         code = completion.choices[0].message.content.lstrip("`")
                         code = code.lstrip("python")
                         code = code.rstrip("`")
-                        logging.debug(f"Executing code:\n{code}\n")
+                        logging.info(f"Executing code:\n{code}\n")
                         exec(code)
                         generated = True
                     except Exception as e:
                         logging.exception(e, stack_info=True, exc_info=True)
                         pass
-
-                logging.debug("AiService#generate_graph - entities graph generated")
+                logging.info("AiService#generate_graph - entities graph generated")
 
             system_prompt = Prompts().generate_relationships_system_prompt(owl)
             for relationshipsFile in relationshipsFiles:
                 user_prompt = f"""generate code for the dataframe from file "{relationshipsFile}" and the results of the code execution should be written to the file results.nt in append mode"""
-
-                logging.debug(
+                logging.info(
                     "AiService#generate_graph - user_prompt: {}".format(user_prompt)
                 )
 
@@ -191,14 +189,13 @@ class AiService:
                         code = completion.choices[0].message.content.lstrip("`")
                         code = code.lstrip("python")
                         code = code.rstrip("`")
-                        logging.debug(f"Executing code:\n{code}\n")
+                        logging.info(f"Executing code:\n{code}\n")
                         exec(code)
                         generated = True
                     except Exception as e:
                         logging.exception(e, stack_info=True, exc_info=True)
                         pass
-
-                logging.debug("AiService#generate_graph - relationship graph generated")
+                logging.info("AiService#generate_graph - relationship graph generated")
 
         except Exception as e:
             logging.critical("Exception in AiService#generate_graph: {}".format(str(e)))
@@ -213,12 +210,12 @@ class AiService:
             user_prompt = resp_obj["natural_language"]
             raw_owl = resp_obj["owl"]
             owl = OwlFormatter().minimize(raw_owl)
-            logging.debug(
+            logging.info(
                 "AiService#generate_sparql_from_user_prompt - user_prompt: {}".format(
                     user_prompt
                 )
             )
-            logging.debug(
+            logging.info(
                 "AiService#generate_sparql_from_user_prompt - owl first 80 chars: {}".format(
                     str(owl)[0:80]
                 )
@@ -248,7 +245,7 @@ class AiService:
                 resp_obj["sparql"] = sparql
                 if resp_obj["sparql"] == None:
                     resp_obj["sparql"] = ""
-                logging.debug(
+                logging.info(
                     "AiService#generate_sparql_from_user_prompt - sparql: {}".format(
                         sparql
                     )
@@ -415,7 +412,7 @@ class AiService:
             conversation.add_assistant_message(str(invoke_result))
             completion = AiCompletion(conversation.get_conversation_id(), invoke_result)
             conversation.add_completion(completion)
-            self.vcore.save_conversation(conversation)
+            await self.db_svc.save_conversation(conversation)
             return completion
         except Exception as e:
             conversation.add_assistant_message("exception: {}".format(str(e)))

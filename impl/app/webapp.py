@@ -3,6 +3,7 @@
 #
 # Chris Joakim
 
+import asyncio
 import json
 import logging
 import textwrap
@@ -25,23 +26,21 @@ from fastapi_msal import MSALAuthorization, UserInfo, MSALClientConfig
 # Pydantic models defining the "shapes" of requests and responses
 from src.models.webservice_models import PingModel
 from src.models.webservice_models import LivenessModel
-from src.models.webservice_models import OwlInfoModel
-from src.models.webservice_models import DocumentsVSResultsModel
+# from src.models.webservice_models import OwlInfoModel
+# from src.models.webservice_models import DocumentsVSResultsModel
 
 from src.models.webservice_models import AiConvFeedbackModel
-from src.models.webservice_models import SparqlGenerationRequestModel
-from src.models.webservice_models import SparqlGenerationResponseModel
-from src.models.webservice_models import VectorizeRequestModel
-from src.models.webservice_models import VectorizeResponseModel
+# from src.models.webservice_models import SparqlGenerationRequestModel
+# from src.models.webservice_models import SparqlGenerationResponseModel
+# from src.models.webservice_models import VectorizeRequestModel
+# from src.models.webservice_models import VectorizeResponseModel
 
 # Services with Business Logic
 from src.services.ai_completion import AiCompletion
 from src.services.ai_conversation import AiConversation
 from src.services.ai_service import AiService
-from src.services.cache_service import CacheService
 from src.services.config_service import ConfigService
 from src.services.cosmos_vcore_service import CosmosVCoreService
-from src.services.entities_service import EntitiesService
 from src.services.logging_level_service import LoggingLevelService
 from src.services.rag_data_service import RAGDataService
 from src.services.rag_data_result import RAGDataResult
@@ -57,18 +56,21 @@ logging.basicConfig(
 ConfigService.log_defined_env_vars()
 
 ai_svc = AiService()
-cache_svc = CacheService({})
+asyncio.run(ai_svc.initialize())
+
 ontology_svc = OntologyService()
 owl_xml = ontology_svc.get_owl_content()
-logging.debug("owl_xml:\n{}".format(owl_xml))
+if owl_xml is None:
+    logging.error("owl_xml is empty")
+else:
+    logging.info("owl_xml loaded; length: {}".format(len(owl_xml)))
+    #logging.debug("owl_xml:\n{}".format(owl_xml))
 
 vcore_opts = dict()
 vcore_opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
 vcore = CosmosVCoreService(vcore_opts)
 vcore.set_db(ConfigService.graph_source_db())
 rag_data_svc = RAGDataService(ai_svc, vcore)
-entities_svc = EntitiesService(vcore)
-entities_svc.initialize()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -157,7 +159,7 @@ async def get_home(req: Request):
 @app.get("/about")
 async def get_about(req: Request):
     view_data = dict()
-    view_data["code_version"] = "2024/08/21"
+    view_data["code_version"] = "2024/08/22"
     view_data["graph_source"] = ConfigService.graph_source()
     view_data["graph_source_db"] = ConfigService.graph_source_db()
     view_data["graph_source_container"] = ConfigService.graph_source_container()
@@ -199,11 +201,11 @@ async def post_sparql_console(req: Request):
             request=req, name="sparql_console.html", context=view_data
         )
 
+# cj - /gen_graph and /gen_graph_generate have been disabled in the UI; see layout.html
 
 @app.get("/gen_graph")
 async def get_graph(req: Request):
     view_data = gen_graph_view_data()
-
     return views.TemplateResponse(request=req, name="gen_graph.html", context=view_data)
 
 
@@ -620,14 +622,11 @@ SELECT * WHERE { ?s ?p ?o . } LIMIT 10
 
 def post_libraries_sparql_console(form_data):
     global websvc_headers
-    global cache_svc
 
     sparql = form_data.get("sparql")
     bom_query = form_data.get("bom_query").strip()
-    use_cache = form_data.get("use_cache")  # Will be None if checkbox not checked
     logging.info("sparql: {}".format(sparql))
     logging.info("bom_query: {}".format(bom_query))
-    logging.info("use_cache: {}".format(use_cache))
 
     view_data = dict()
     view_data["method"] = "post"
@@ -645,43 +644,21 @@ def post_libraries_sparql_console(form_data):
         tokens = bom_query.split()
         if len(tokens) == 3:
             view_data["libtype"] = tokens[0]
-            cache_key = "_".join(tokens)
-            logging.info("cache_key: {}".format(cache_key))
             bom_obj = None
-            if use_cache is not None:
-                t1 = time.perf_counter()
-                bom_obj = cache_svc.get(cache_key)
-                if bom_obj is not None:
-                    t2 = time.perf_counter()
-                    elapsed = t2 - t1
-                    seconds = f"{(t2 - t1):.9f}"
-                    bom_obj["elapsed"] = seconds
-                    bom_obj["from_cache"] = True
-                    remove_mongo_id_attr(bom_obj)
-                logging.info("cache get for key: {} {}".format(cache_key, bom_obj))
-
-            if bom_obj is None:
-                url = graph_microsvc_bom_query_url()
-                logging.info("url: {}".format(url))
-                postdata = dict()
-                postdata["libtype"] = tokens[0]
-                postdata["libname"] = tokens[1]
-                postdata["max_depth"] = tokens[2]
-                logging.info("postdata: {}".format(postdata))
-                r = httpx.post(
-                    url,
-                    headers=websvc_headers,
-                    data=json.dumps(postdata),
-                    timeout=120.0,
-                )
-                bom_obj = json.loads(r.text)
-                logging.info("setting cache key: {} {}".format(cache_key, bom_obj))
-                cache_svc.set(cache_key, bom_obj)
-                bom_obj["from_cache"] = False
-                logging.info("cache set for key: {}".format(cache_key))
-            else:
-                logging.info("cache hit for key: {}".format(cache_key))
-
+            url = graph_microsvc_bom_query_url()
+            logging.info("url: {}".format(url))
+            postdata = dict()
+            postdata["libtype"] = tokens[0]
+            postdata["libname"] = tokens[1]
+            postdata["max_depth"] = tokens[2]
+            logging.info("postdata: {}".format(postdata))
+            r = httpx.post(
+                url,
+                headers=websvc_headers,
+                data=json.dumps(postdata),
+                timeout=120.0,
+            )
+            bom_obj = json.loads(r.text)
             view_data["results"] = json.dumps(bom_obj, sort_keys=False, indent=2)
             view_data["inline_bom_json"] = view_data["results"]
         else:
@@ -705,32 +682,6 @@ def post_alt_sparql_console(form_data):
         response_obj = post_sparql_query_to_graph_microsvc(sparql)
         view_data["results"] = json.dumps(response_obj, sort_keys=False, indent=2)
     return view_data
-
-
-# this method appears to be obsolete, cj 6/2
-def post_graph_files_to_graph_microsvc(
-    entities: str, relationships: str, ontology: str
-) -> None:
-    """
-    Execute a HTTP POST to the graph microservice with the given graph files.
-    Return the HTTP response object.
-    """
-    global websvc_headers
-
-    try:
-        url = graph_microsvc_graph_gen_url()
-        postdata = dict()
-        postdata["entities"] = entities
-        postdata["relationships"] = relationships
-        postdata["ontology"] = ontology
-        r = httpx.post(
-            url, headers=websvc_headers, data=json.dumps(postdata), timeout=120.0
-        )
-        return r.text
-    except Exception as e:
-        logging.critical((str(e)))
-        logging.exception(e, stack_info=True, exc_info=True)
-        return {}
 
 
 def post_sparql_query_to_graph_microsvc(sparql: str) -> None:

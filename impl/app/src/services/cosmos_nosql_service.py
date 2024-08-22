@@ -36,7 +36,7 @@ class CosmosNoSQLService:
         self._uri = ConfigService.cosmosdb_nosql_uri()
         self._key = ConfigService.cosmosdb_nosql_key1()
         self._client = None
-        logging.info("CosmosNoSQLService - __init__ completed")
+        logging.info("CosmosNoSQLService - constructor")
 
     async def initialize(self):
         """This method should be called after the above constructor."""
@@ -66,8 +66,12 @@ class CosmosNoSQLService:
             print(traceback.format_exc())
         return self._dbproxy  # <class 'azure.cosmos.aio._database.DatabaseProxy'>
 
+    def get_current_cname(self):
+        return self._cname
+    
     def set_container(self, cname):
         """Set the current container in the current database to the given cname."""
+        self._cname = cname
         self._ctrproxy = self._dbproxy.get_container_client(cname)
         return self._ctrproxy  # <class 'azure.cosmos.aio._container.ContainerProxy'>
 

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 
@@ -13,7 +14,7 @@ from src.services.rag_data_result import RAGDataResult
 from src.services.strategy_builder import StrategyBuilder
 
 # Instances of this class are used to identify and retrieve system prompt data
-# for the RAG pattern in a "HybridRAG" manner.  The RAG data will be read,
+# for the RAG pattern in a "OmniRAG" manner.  The RAG data will be read,
 # per given user_text, from either:
 # 1) Directly from Cosmos DB documents (DB RAG)
 # 2) From Cosmos DB documents identified per an in-memory graph query (Graph RAG)
@@ -67,6 +68,7 @@ class RAGDataService:
         rdr.set_attr("max_doc_count", max_doc_count)
 
         rsb = StrategyBuilder(self.ai_svc)
+        await rsb.initialize()
         strategy_obj = await rsb.determine(user_text)
         strategy = strategy_obj["strategy"]
         rdr.add_strategy(strategy)

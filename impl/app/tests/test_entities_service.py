@@ -6,12 +6,11 @@ from src.util.counter import Counter
 
 # pytest tests/test_entities_service.py
 
+@pytest.mark.asyncio
 def test_build_with_libraries_mini_nt_and_owl_file():
     ConfigService.set_standard_unit_test_env_vars()
     entities_svc = EntitiesService()
-
-    entities_svc = EntitiesService()
-    entities_svc.initialize()
+    await entities_svc.initialize()
 
     assert entities_svc.libraries_count() > 10000  # 10761
     assert entities_svc.libraries_count() < 20000

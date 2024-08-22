@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import time
+import uuid
 
 from typing import Any, Dict, Final, Iterator, List, Optional, Tuple, Type, Union
 
@@ -28,6 +29,7 @@ class AiConversation:
                 self.updated_at = json_obj["updated_at"]
                 self.conversation_id = json_obj["conversation_id"]
                 self.last_user_message = json_obj["conversation_id"]
+                self.uuid = json_obj["uuid"]
 
                 if "prompts" in json_obj.keys():
                     self.prompts = json_obj["prompts"]
@@ -52,6 +54,7 @@ class AiConversation:
                 else:
                     self.diagnostic_messages = list()
             else:
+                self.uuid = str(uuid.uuid4())
                 self.created_at = time.time()
                 self.created_date = str(
                     datetime.datetime.fromtimestamp(self.created_at)
@@ -169,6 +172,7 @@ class AiConversation:
     def serialize(self) -> str:
         try:
             obj = dict()
+            obj["uuid"] = self.uuid
             obj["created_at"] = self.created_at
             obj["created_date"] = self.created_date
             obj["updated_at"] = self.updated_at

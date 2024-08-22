@@ -22,7 +22,6 @@ from docopt import docopt
 from dotenv import load_dotenv
 
 from src.services.config_service import ConfigService
-from src.services.cosmos_vcore_service import CosmosVCoreService
 from src.services.logging_level_service import LoggingLevelService
 from src.util.fs import FS
 from src.util.owl_visualizer import OwlVisualizer
@@ -37,20 +36,6 @@ def print_options(msg):
     print(msg)
     arguments = docopt(__doc__, version="1.0.0")
     print(arguments)
-
-
-def explore_logging():
-    logging.info("explore_logging")
-    opts = dict()
-    opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-    logging.info("opts: {}".format(opts))
-    vcore = CosmosVCoreService(opts)
-
-    try:
-        1 / 0
-    except Exception as e:
-        # python logging.exception(e, stack_info=True, exc_info=True)
-        logging.exception(e, stack_info=True, exc_info=True)
 
 
 def log_defined_env_vars():
