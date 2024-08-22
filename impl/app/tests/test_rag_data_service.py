@@ -71,7 +71,7 @@ async def test_get_graph_rag_data():
     rds = RAGDataService(ai_svc, vcore)
     ai_svc = AiService()
     sb = StrategyBuilder(ai_svc)
-    user_text = "What are the dependencies of the 'pypi' type of library named 'flask'?"
+    user_text = "What are the dependencies of the pypi type of library named flask ?"
     strategy_obj = await sb.determine(user_text)
     assert strategy_obj["strategy"] == "graph"
 

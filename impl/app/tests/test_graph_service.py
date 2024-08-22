@@ -1,8 +1,6 @@
 import json
-import os
 import pytest
 
-from src.models.internal_models import OwlInfo
 from src.services.graph_service import GraphService
 from src.util.sparql_template import SparqlTemplate
 from src.services.config_service import ConfigService
@@ -10,11 +8,12 @@ from src.util.fs import FS
 
 # pytest tests/test_graph_service.py
 
-
-def test_init_and_query():
+@pytest.mark.asyncio
+async def test_init_and_query():
     ConfigService.set_standard_unit_test_env_vars()
     expected_triples_count = 4372
     gs = GraphService()
+    await gs.initialize()
     count = 0
     assert str(type(gs.graph)) == "<class 'rdflib.graph.Graph'>"
     for s, p, o in gs.graph:
@@ -131,9 +130,11 @@ def test_init_and_query():
         )
 
 
-def test_owl():
+@pytest.mark.asyncio
+async def test_owl():
     ConfigService.set_standard_unit_test_env_vars()
     gs = GraphService()
+    await gs.initialize()
     owl_info = gs.owl_info()
     assert owl_info["ontology_file"].endswith(".owl")
     assert owl_info["owl"].startswith('<?xml version="1.0"?>')
@@ -141,9 +142,11 @@ def test_owl():
 
 
 # @pytest.mark.skip(reason="TODO - implement")
-def test_deep_bom_query():
+@pytest.mark.asyncio
+async def test_deep_bom_query():
     ConfigService.set_standard_unit_test_env_vars()
     gs = GraphService()
+    await gs.initialize()
     bqr = gs.bom_query(
         "pypi", "requests", 99
     )  # query method returns a BomQueryResult object

@@ -157,6 +157,10 @@ async def get_home(req: Request):
 @app.get("/about")
 async def get_about(req: Request):
     view_data = dict()
+    view_data["code_version"] = "2024/08/21"
+    view_data["graph_source"] = ConfigService.graph_source()
+    view_data["graph_source_db"] = ConfigService.graph_source_db()
+    view_data["graph_source_container"] = ConfigService.graph_source_container()
     return views.TemplateResponse(request=req, name="about.html", context=view_data)
 
 
@@ -279,7 +283,7 @@ async def gen_graph_execute(req: Request):
 async def get_ai_console(req: Request):
     view_data = gen_sparql_console_view_data()
     view_data["natural_language"] = (
-        "What are the dependencies of the 'pypi' type of library named 'flask'?"
+        "What are the dependencies of the pypi type of library named flask ?"
     )
     view_data["sparql"] = "SELECT * WHERE { ?s ?p ?o . } LIMIT 10"
     return views.TemplateResponse(
@@ -552,7 +556,7 @@ def gen_sparql_console_view_data():
 
     view_data = dict()
     view_data["natural_language"] = (
-        "What are the dependencies of the 'pypi' type of library named 'flask'?"
+        "What are the dependencies of the pypi type of library named flask ?"
     )
     view_data["sparql"] = ""
     view_data["owl"] = owl_xml

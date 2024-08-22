@@ -12,10 +12,8 @@ Options:
   --version     Show version.
 """
 
-import json
 import logging
 import os
-import psutil
 import sys
 import textwrap
 import time
@@ -27,9 +25,6 @@ from src.services.config_service import ConfigService
 from src.services.cosmos_vcore_service import CosmosVCoreService
 from src.services.logging_level_service import LoggingLevelService
 from src.util.fs import FS
-from src.util.graph_builder_generator import GraphBuilderGenerator
-from src.util.owl_generator import OwlGenerator
-from src.util.owl_sax_handler import OwlSaxHandler
 from src.util.owl_visualizer import OwlVisualizer
 from src.util.template import Template
 

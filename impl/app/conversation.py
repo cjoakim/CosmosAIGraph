@@ -28,10 +28,8 @@ from src.services.config_service import ConfigService
 from src.services.cosmos_vcore_service import CosmosVCoreService
 from src.services.logging_level_service import LoggingLevelService
 from src.util.fs import FS
-from src.util.sparql_formatter import SparqlFormatter
 from src.services.ontology_service import OntologyService
 from src.services.rag_data_service import RAGDataService
-from src.services.rag_data_result import RAGDataResult
 
 
 def print_options(msg):

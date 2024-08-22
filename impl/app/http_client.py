@@ -24,7 +24,6 @@ import jinja2
 from docopt import docopt
 
 from src.services.config_service import ConfigService
-from src.util.fs import FS
 
 
 def print_options(msg):

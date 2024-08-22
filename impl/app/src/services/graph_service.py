@@ -1,4 +1,3 @@
-import os
 import json
 import logging
 import time
@@ -19,14 +18,17 @@ from src.util.sparql_template import SparqlTemplate
 
 
 class GraphService:
+
     def __init__(self, opts={}):
         self.opts = opts
-        gb = GraphBuilder(self.opts)
-        self.graph = gb.build()
 
-    def reload(self):
+    async def initialize(self):
         gb = GraphBuilder(self.opts)
-        self.graph = gb.build()
+        self.graph = await gb.build()
+
+    async def reload(self):
+        gb = GraphBuilder(self.opts)
+        self.graph = await gb.build()
 
     def liveness_check(self) -> dict:
         """

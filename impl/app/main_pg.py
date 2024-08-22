@@ -25,7 +25,6 @@ import traceback
 from docopt import docopt
 from dotenv import load_dotenv
 
-from src.services.config_service import ConfigService
 from src.services.ai_service import AiService
 from src.services.pg_service import PGService
 from src.util.fs import FS
@@ -39,20 +38,24 @@ def print_options(msg):
 
 def delete_define_libraries_table(envname, dbname):
     logging.info(
-        "delete_define_libraries_table, envname: {} dbname: {}".format(
-            envname, dbname))
+        "delete_define_libraries_table, envname: {} dbname: {}".format(envname, dbname)
+    )
     try:
         pg_svc = PGService(envname, dbname)
         cursor = pg_svc.get_cursor()
         cursor.execute(libraries_table_def())
 
         if True:
-            cursor.execute("select * FROM information_schema.tables WHERE table_schema='public'")
+            cursor.execute(
+                "select * FROM information_schema.tables WHERE table_schema='public'"
+            )
             rows = cursor.fetchall()
             for row in rows:
                 logging.info("row: {}".format(row))
         if True:
-            cursor.execute("SELECT column_name, data_type, character_maximum_length FROM information_schema.columns WHERE table_name = 'libraries';")
+            cursor.execute(
+                "SELECT column_name, data_type, character_maximum_length FROM information_schema.columns WHERE table_name = 'libraries';"
+            )
             rows = cursor.fetchall()
             for row in rows:
                 logging.info("row: {}".format(row))
@@ -89,8 +92,8 @@ CREATE TABLE libraries (
 
 def load_pg_libraries_table(envname, dbname):
     logging.info(
-        "load_pg_libraries_table, envname: {} dbname: {}".format(
-            envname, dbname))
+        "load_pg_libraries_table, envname: {} dbname: {}".format(envname, dbname)
+    )
     try:
         pg_svc = PGService(envname, dbname)
         load_docs_from_directory(pg_svc, "../data/pypi/wrangled_libs")
@@ -98,7 +101,7 @@ def load_pg_libraries_table(envname, dbname):
         logging.info(str(e))
         logging.info(traceback.format_exc())
     pg_svc.close()
-    
+
 
 def load_docs_from_directory(pg_svc, wrangled_libs_dir):
     files_list = FS.list_files_in_dir(wrangled_libs_dir)
@@ -106,7 +109,7 @@ def load_docs_from_directory(pg_svc, wrangled_libs_dir):
     max_idx = len(filtered_files_list) - 1
 
     cursor = pg_svc.get_cursor()
-    
+
     for idx, filename in enumerate(filtered_files_list):
         fq_name = "{}/{}".format(wrangled_libs_dir, filename)
         if fq_name.endswith(".json"):
@@ -142,35 +145,35 @@ def build_insert_library_sql(doc):
         sql_parts.append(",".join(libraries_column_names(False)))
         sql_parts.append(") ")
         sql_parts.append("VALUES (")
-        sql_parts.append(quoted_attr_value(doc, 'name'))
+        sql_parts.append(quoted_attr_value(doc, "name"))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'libtype'))
+        sql_parts.append(quoted_attr_value(doc, "libtype"))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'description'))
+        sql_parts.append(quoted_attr_value(doc, "description"))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'keywords'))
+        sql_parts.append(quoted_attr_value(doc, "keywords"))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'license'))
+        sql_parts.append(quoted_attr_value(doc, "license"))
         sql_parts.append(",")
-        sql_parts.append(str(doc['release_count']))
+        sql_parts.append(str(doc["release_count"]))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'package_url'))
+        sql_parts.append(quoted_attr_value(doc, "package_url"))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'project_url'))
+        sql_parts.append(quoted_attr_value(doc, "project_url"))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'docs_url'))
+        sql_parts.append(quoted_attr_value(doc, "docs_url"))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'release_url'))
+        sql_parts.append(quoted_attr_value(doc, "release_url"))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'requires_python'))
+        sql_parts.append(quoted_attr_value(doc, "requires_python"))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'classifiers', True))
+        sql_parts.append(quoted_attr_value(doc, "classifiers", True))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'project_urls', True))
+        sql_parts.append(quoted_attr_value(doc, "project_urls", True))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'developers', True))
+        sql_parts.append(quoted_attr_value(doc, "developers", True))
         sql_parts.append(",")
-        sql_parts.append(quoted_attr_value(doc, 'embedding', True))
+        sql_parts.append(quoted_attr_value(doc, "embedding", True))
         sql_parts.append(");")
         return "".join(sql_parts)
     except Exception as e:
@@ -183,10 +186,10 @@ def quoted_attr_value(doc, attr, jsonb=False):
         if jsonb:
             return "'{}'".format(json.dumps(doc[attr]))
         else:
-            return "'{}'".format(str(doc[attr]).replace("'",""))
+            return "'{}'".format(str(doc[attr]).replace("'", ""))
     else:
-        if attr == 'embedding':
-            return '[]'
+        if attr == "embedding":
+            return "[]"
         else:
             return "'?'"
 
@@ -194,28 +197,28 @@ def quoted_attr_value(doc, attr, jsonb=False):
 def libraries_column_names(include_id=True):
     names = list()
     if include_id == True:
-        names.append('id')
-    names.append('name')
-    names.append('libtype')
-    names.append('description')
-    names.append('keywords')
-    names.append('license')
-    names.append('release_count')
-    names.append('package_url')
-    names.append('project_url')
-    names.append('docs_url')
-    names.append('release_url')
-    names.append('requires_python')
-    names.append('classifiers')
-    names.append('project_urls')
-    names.append('developers')
-    names.append('embedding')
+        names.append("id")
+    names.append("name")
+    names.append("libtype")
+    names.append("description")
+    names.append("keywords")
+    names.append("license")
+    names.append("release_count")
+    names.append("package_url")
+    names.append("project_url")
+    names.append("docs_url")
+    names.append("release_url")
+    names.append("requires_python")
+    names.append("classifiers")
+    names.append("project_urls")
+    names.append("developers")
+    names.append("embedding")
     return names
 
 
 def vector_search_similar_libraries(envname, dbname, libname):
-    logging.info(f'vector_search_similar_libraries: {envname} {dbname} {libname}')
-    outfile = 'tmp/vector_search_similar_libraries_{}.json'.format(libname)
+    logging.info(f"vector_search_similar_libraries: {envname} {dbname} {libname}")
+    outfile = "tmp/vector_search_similar_libraries_{}.json".format(libname)
     pg_svc = None
     search_result_docs = []
     try:
@@ -228,24 +231,27 @@ def vector_search_similar_libraries(envname, dbname, libname):
         rows = cursor.fetchall()
         for row_idx, row in enumerate(rows):
             if row_idx == 0:
-                id, embedding = row[0], row[1]  # row is a tuple of n-column values per sql
+                id, embedding = (
+                    row[0],
+                    row[1],
+                )  # row is a tuple of n-column values per sql
 
         if embedding == None:
-            logging.info('library not found or no embedding: {}'.format(libname))
+            logging.info("library not found or no embedding: {}".format(libname))
         else:
             sql = vector_query_sql(embedding)
             cursor.execute(sql)
             rows = cursor.fetchall()
             for row_idx, row in enumerate(rows):
                 result_doc = {}
-                result_doc['seq'] = row_idx + 1
-                result_doc['id'] = row[0]
-                result_doc['name'] = row[1]
-                result_doc['keywords'] = row[2]
-                #result_doc['description'] = row[3]
+                result_doc["seq"] = row_idx + 1
+                result_doc["id"] = row[0]
+                result_doc["name"] = row[1]
+                result_doc["keywords"] = row[2]
+                # result_doc['description'] = row[3]
                 search_result_docs.append(result_doc)
                 logging.info(result_doc)
-        FS.write_json(search_result_docs, outfile) 
+        FS.write_json(search_result_docs, outfile)
     except Exception as excp:
         print(str(excp))
         print(traceback.format_exc())
@@ -254,10 +260,9 @@ def vector_search_similar_libraries(envname, dbname, libname):
             pg_svc.close()
 
 
-
 def vector_search_words(envname, dbname, natural_language):
-    logging.info(f'vector_search_words: {envname} {dbname} nl: {words}')
-    outfile = 'tmp/vector_search_words.json'
+    logging.info(f"vector_search_words: {envname} {dbname} nl: {words}")
+    outfile = "tmp/vector_search_words.json"
     pg_svc = None
     search_result_docs = []
     try:
@@ -269,20 +274,20 @@ def vector_search_words(envname, dbname, natural_language):
         cursor = pg_svc.get_cursor()
 
         if embedding == None:
-            logging.info('no embedding generated')
+            logging.info("no embedding generated")
         else:
             sql = vector_query_sql(embedding)
             cursor.execute(sql)
             rows = cursor.fetchall()
             for row_idx, row in enumerate(rows):
                 result_doc = {}
-                result_doc['seq'] = row_idx + 1
-                result_doc['id'] = row[0]
-                result_doc['name'] = row[1]
-                result_doc['keywords'] = row[2]
+                result_doc["seq"] = row_idx + 1
+                result_doc["id"] = row[0]
+                result_doc["name"] = row[1]
+                result_doc["keywords"] = row[2]
                 search_result_docs.append(result_doc)
                 logging.info(result_doc)
-            FS.write_json(search_result_docs, outfile) 
+            FS.write_json(search_result_docs, outfile)
     except Exception as excp:
         print(str(excp))
         print(traceback.format_exc())
@@ -297,7 +302,9 @@ select id, name, keywords, description
 from libraries
 order by embedding <-> '{}'
 limit 10;
-    """.format(embedding).strip()
+    """.format(
+        embedding
+    ).strip()
 
 
 if __name__ == "__main__":
@@ -312,20 +319,20 @@ if __name__ == "__main__":
             func = sys.argv[1].lower()
             if func == "delete_define_libraries_table":
                 envname = sys.argv[2]
-                dbname  = sys.argv[3]
+                dbname = sys.argv[3]
                 delete_define_libraries_table(envname, dbname)
             elif func == "load_pg_libraries_table":
                 envname = sys.argv[2]
-                dbname  = sys.argv[3]
+                dbname = sys.argv[3]
                 load_pg_libraries_table(envname, dbname)
             elif func == "vector_search_similar_libraries":
                 envname = sys.argv[2]
-                dbname  = sys.argv[3]
+                dbname = sys.argv[3]
                 libname = sys.argv[4]
                 vector_search_similar_libraries(envname, dbname, libname)
             elif func == "vector_search_words":
                 envname = sys.argv[2]
-                dbname  = sys.argv[3]
+                dbname = sys.argv[3]
                 words = list()
                 for idx, arg in enumerate(sys.argv):
                     if idx > 3:

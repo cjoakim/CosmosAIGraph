@@ -36,7 +36,7 @@ def test_generate_sparql_from_user_prompt():
     obj["sparql"] = ""
     obj["error"] = ""
     obj["natural_language"] = (
-        "What are the dependencies of the 'pypi' type of library named 'flask'?"
+        "What are the dependencies of the pypi type of library named flask ?"
     )
     obj["owl"] = owl
 

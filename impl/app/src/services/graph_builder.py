@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import time
@@ -8,6 +9,7 @@ from rdflib import Graph
 from rdflib.namespace import Namespace
 
 from src.services.config_service import ConfigService
+from src.services.cosmos_nosql_service import CosmosNoSQLService
 from src.services.cosmos_vcore_service import CosmosVCoreService
 from src.util.rdflib_triples_builder import RdflibTriplesBuilder
 from src.util.counter import Counter
@@ -15,8 +17,13 @@ from src.util.fs import FS
 
 # Instances of this class are used to build an instance of class GraphService,
 # which contains an in-memory rdflib database.  The source data for building
-# the graph consists of an Web Ontology File (OWL) as well as either a RDF
-# input file (i.e - *.nt) or a Cosmos DB Mongo vCore database.
+# the graph consists of a Web Ontology File (OWL) and one of the following:
+# 1) A RDF triples input file (i.e - *.nt)
+# 2) A Cosmos DB Mongo vCore API account
+# 3) A Cosmos DB NoSQL API account
+#
+# Methods here that use class CosmosNoSQLService and access Cosmos DB NoSQL are
+# asynchronous and use the async/await keywords.
 #
 # Chris Joakim, Microsoft
 
@@ -25,8 +32,9 @@ class GraphBuilder:
 
     def __init__(self, opts={}):
         self.opts = opts
+        self.graph_source = str(ConfigService().graph_source())
 
-    def initialize_graph(self) -> rdflib.Graph:
+    async def initialize_graph(self) -> rdflib.Graph:
         self.cns = self.graph_namespace()
         self.CNS = Namespace(self.cns)  # CNS ~ Custom Namespace
         logging.info("GraphBuilder#initialize_graph - cns: {}".format(self.cns))
@@ -34,11 +42,12 @@ class GraphBuilder:
         logging.info(
             "GraphBuilder#initialize_graph - ontology_file: {}".format(ontology_file)
         )
+        await asyncio.sleep(0.01)
         self.g = Graph()
         self.g.bind(self.graph_namespace_alias(), self.CNS)
         self.g.parse(ontology_file, format="xml")
 
-    def build(self, opts=None) -> rdflib.Graph:
+    async def build(self, opts=None) -> rdflib.Graph:
         # Processing steps:
         # 1. Define the custom namespace, CNS
         # 2. Load the custom ontology file
@@ -46,21 +55,21 @@ class GraphBuilder:
         # 4. Display the defined classes and properties in the ontology
         # 5. Load the graph using the custom ontology
 
-        self.initialize_graph()
+        await self.initialize_graph()
         if opts is not None:
             self.opts = opts
 
         config = ConfigService()
-        logging.info(
-            "GraphBuilder#build graph_source: {}".format(config.graph_source())
-        )
+        logging.info("GraphBuilder#build graph_source: {}".format(self.graph_source))
 
-        if config.graph_source() == "rdf_file":
+        if self.graph_source == "rdf_file":
             self.populate_graph_from_rdf_file(self.g, config)
-        elif config.graph_source() == "json_file":
+        elif self.graph_source == "json_file":
             self.populate_graph_from_json_file(self.g, config, self.CNS)
-        elif config.graph_source() == "cosmos_vcore":
+        elif self.graph_source == "cosmos_vcore":
             self.populate_graph_from_cosmosdb_vcore(self.g, config, self.CNS)
+        elif self.graph_source == "cosmos_nosql":
+            await self.populate_graph_from_cosmosdb_nosql(self.g, config, self.CNS)
         else:
             logging.critical(
                 "WARNING: GraphBuilder defaulting to cosmos_vcore loading strategy"
@@ -68,9 +77,9 @@ class GraphBuilder:
             self.populate_graph_from_cosmosdb_vcore(self.g, config, self.CNS)
 
         if "iterate_graph" in self.opts.keys():
-            self.iterate_graph(self.g, "after load")
+            self.iterate_graph("after load")
         if "persist_graph" in self.opts.keys():
-            self.persist_graph(self.g)
+            self.persist_graph()
         return self.g
 
     def graph_namespace(self) -> str:
@@ -150,6 +159,61 @@ class GraphBuilder:
             logging.exception(e, stack_info=True, exc_info=True)
             return None
 
+    async def populate_graph_from_cosmosdb_nosql(
+        self, g: rdflib.Graph, config: ConfigService, CNS
+    ) -> None:
+        try:
+            logging.info("GraphBuilder#populate_graph_from_cosmosdb_nosql")
+            opts = dict()
+            opts["enable_diagnostics_logging"] = False
+            nosql_svc = CosmosNoSQLService(opts)
+            await nosql_svc.initialize()
+
+            dbname = ConfigService.graph_source_db()
+            cname = ConfigService.graph_source_container()
+            logging.info(
+                "GraphBuilder#populate_graph_from_cosmosdb_nosql - dbname: {}, cname: {}".format(
+                    dbname, cname
+                )
+            )
+            dbproxy = nosql_svc.set_db(dbname)
+            print("dbproxy: {}".format(dbproxy))
+            ctrproxy = nosql_svc.set_container(cname)
+            print("ctrproxy: {}".format(ctrproxy))
+
+            ns = self.graph_namespace().replace("#", "").strip()
+            tb = RdflibTriplesBuilder()
+            t1 = time.perf_counter()
+
+            # Read the appropriate JSON documents from Cosmos DB, and pass
+            # each to your RdflibTriplesBuilder to be added to the graph.
+            sql = "select c._id, c.name, c.libtype, c.license_kwds, c.kwds, c.developers, c.dependency_ids from c offset 0 limit 999999"
+            query_results = ctrproxy.query_items(query=sql)
+            docs_read = 0
+            async for doc in query_results:
+                docs_read = docs_read + 1
+                if docs_read % 1000 == 0:
+                    logging.info(
+                        "GraphBuilder#populate_graph_from_cosmosdb_nosql - docs read: {}".format(
+                            docs_read
+                        )
+                    )
+                doc["id"] = doc["_id"]
+                tb.append_doc_to_graph(g, doc, CNS, ns)
+
+            t2 = time.perf_counter()
+            seconds = f"{(t2 - t1):.9f}"
+            logging.critical(
+                "GraphBuilder#populate_graph_from_cosmosdb_nosql - {} docs loaded into graph in {}".format(
+                    docs_read, seconds
+                )
+            )
+        except Exception as e:
+            logging.critical(str(e))
+            logging.exception(e, stack_info=True, exc_info=True)
+        finally:
+            await nosql_svc.close()
+
     def populate_graph_from_json_file(
         self, g: rdflib.Graph, config: ConfigService, CNS
     ) -> None:
@@ -223,10 +287,11 @@ class GraphBuilder:
         vcore.set_coll(cname)
         return (vcore, dbname, cname)
 
-    def persist_graph(self, g, outfile="tmp/graph.nt"):
+    def persist_graph(self):
+        outfile = "tmp/graph_{}.nt".format(self.graph_source)
         logging.info("GraphBuilder#persist_graph start")
         t1 = time.perf_counter()
-        g.serialize(format="nt", destination=outfile, encoding="utf-8")
+        self.g.serialize(format="nt", destination=outfile, encoding="utf-8")
         t2 = time.perf_counter()
         seconds = f"{(t2 - t1):.9f}"
         logging.critical(
@@ -235,16 +300,16 @@ class GraphBuilder:
             )
         )
 
-    def iterate_graph(self, g, comment):
+    def iterate_graph(self, comment):
         logging.info("GraphBuilder#iterate_graph start {} ...".format(comment))
         count = 0
         t1 = time.perf_counter()
-        for s, p, o in g:  # Iterate the graph, counting the triples
+        for s, p, o in self.g:  # Iterate the graph, counting the triples
             count = count + 1
         t2 = time.perf_counter()
         seconds = f"{(t2 - t1):.9f}"
         logging.critical(
-            "GraphBuilder#iterate_graph completed, count: {} seconds: {}".format(
+            "GraphBuilder#iterate_graph completed, triples count: {} seconds: {}".format(
                 count, seconds
             )
         )

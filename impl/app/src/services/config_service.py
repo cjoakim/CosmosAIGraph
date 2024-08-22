@@ -262,7 +262,7 @@ class ConfigService:
     @classmethod
     def cosmosdb_nosql_key2(cls) -> str:
         return cls.envvar("CAIG_COSMOSDB_NOSQL_KEY2", None)
-    
+
     @classmethod
     def pg_flex_server(cls) -> str:
         return cls.envvar("CAIG_PG_FLEX_SERVER", None)
@@ -270,11 +270,11 @@ class ConfigService:
     @classmethod
     def pg_flex_user(cls) -> str:
         return cls.envvar("CAIG_PG_FLEX_USER", None)
-    
+
     @classmethod
     def pg_flex_password(cls) -> str:
         return cls.envvar("CAIG_PG_FLEX_PASS", None)
-    
+
     @classmethod
     def use_alt_sparql_console(cls) -> str:
         return len(cls.envvar("CAIG_USE_ALT_SPARQL_CONSOLE", "")) > 0

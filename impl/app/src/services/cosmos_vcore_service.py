@@ -32,8 +32,18 @@ class CosmosVCoreService:
             else:
                 self._env = "local"
             self._client = MongoClient(opts["conn_string"], tlsCAFile=certifi.where())
+            logging.info("CosmosVCoreService - client initialized")
         except Exception as e:
             logging.critical(str(e))
+            print(traceback.format_exc())
+
+    def close(self) -> None:
+        try:
+            if self._client is not None:
+                self._client.close()
+                logging.info("CosmosVCoreService - client closed")
+        except Exception as excp:
+            logging.critical(str(excp))
             print(traceback.format_exc())
 
     def list_databases(self) -> list[str]:

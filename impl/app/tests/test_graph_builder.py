@@ -6,11 +6,12 @@ from src.services.config_service import ConfigService
 
 # pytest tests/test_graph_builder.py
 
-def test_build_with_libraries_mini_nt_and_owl_file():
+@pytest.mark.asyncio
+async def test_build_with_libraries_mini_nt_and_owl_file():
     ConfigService.set_standard_unit_test_env_vars()
     expected_triples_count = 4372
     gb = GraphBuilder()
-    g = gb.build()
+    g = await gb.build()
     count = 0
     assert str(type(g)) == "<class 'rdflib.graph.Graph'>"
     for s, p, o in g:

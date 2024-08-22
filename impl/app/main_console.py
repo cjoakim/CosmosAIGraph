@@ -23,7 +23,6 @@ import logging
 import traceback
 
 from xml.sax import make_parser
-from xml.sax.handler import ContentHandler
 
 from docopt import docopt
 from dotenv import load_dotenv

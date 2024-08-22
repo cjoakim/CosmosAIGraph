@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 import traceback
@@ -31,8 +32,13 @@ logging.basicConfig(
 ConfigService.log_defined_env_vars()
 
 app = FastAPI()
-opts = {}
-gs = GraphService(opts)
+
+logging.debug("initializing GraphService in websvc.py")
+gs_opts = {}
+gs_opts["iterate_graph"] = True
+gs = GraphService(gs_opts)
+asyncio.run(gs.initialize())
+logging.debug("asyncio.run(gs.initialize()) completed in websvc.py")
 
 # begin middleware for authentication,
 # see https://fastapi.tiangolo.com/tutorial/middleware/
