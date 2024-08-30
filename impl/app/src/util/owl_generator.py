@@ -34,7 +34,7 @@ class OwlGenerator:
         template_values["ns"] = namespace
         template_values["spacer"] = ""
 
-        for cname in self.collect_vertex_classnames(vertex_signatures):
+        for cname in self.collect_classnames(vertex_signatures, edge_signatures):
             data = dict()
             data["id"] = cname
             data["desc"] = ""
@@ -53,9 +53,13 @@ class OwlGenerator:
         FS.write("tmp/generated.owl", owl_xml)
         return owl_xml
 
-    def collect_vertex_classnames(self, vertex_signatures):
+    def collect_classnames(self, vertex_signatures, edge_signatures):
         classnames = dict()
         for sig in vertex_signatures:
+            tokens = sig.split("|")
+            classname = tokens[0]
+            classnames[classname] = sig
+        for sig in edge_signatures:
             tokens = sig.split("|")
             classname = tokens[0]
             classnames[classname] = sig
@@ -98,18 +102,21 @@ class OwlGenerator:
             class1, rel_name, class2 = tokens[0], tokens[1], tokens[2]
 
             # the same attribute name can be used in several classes; aggregate these
-            if rel_name in relationships_dict.keys():
-                rel_dict = relationships_dict[rel_name]
-                rel_dict["domain"][class1] = sig
-                rel_dict["range"][class2] = sig
+            if rel_name == 'n/a':
+                pass
             else:
-                rel_dict = dict()
-                rel_dict["rel_name"] = rel_name
-                rel_dict["domain"] = dict()
-                rel_dict["range"] = dict()
-                rel_dict["domain"][class1] = sig
-                rel_dict["range"][class2] = sig
-                relationships_dict[rel_name] = rel_dict
+                if rel_name in relationships_dict.keys():
+                    rel_dict = relationships_dict[rel_name]
+                    rel_dict["domain"][class1] = sig
+                    rel_dict["range"][class2] = sig
+                else:
+                    rel_dict = dict()
+                    rel_dict["rel_name"] = rel_name
+                    rel_dict["domain"] = dict()
+                    rel_dict["range"] = dict()
+                    rel_dict["domain"][class1] = sig
+                    rel_dict["range"][class2] = sig
+                    relationships_dict[rel_name] = rel_dict
 
         for rel_name in sorted(relationships_dict.keys()):
             rel_dict = relationships_dict[rel_name]

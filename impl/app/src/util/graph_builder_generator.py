@@ -9,8 +9,8 @@ from src.util.fs import FS
 
 class GraphBuilderGenerator:
 
-    def __init__(self):
-        pass
+    def __init__(self, using_flat_csv_data=True):
+        self.using_flat_csv_data = using_flat_csv_data
 
     def generate(self, vertex_signatures_filename):
 
@@ -80,16 +80,26 @@ class GraphBuilderGenerator:
             code.append("        try:")
             code.append("            attr_keys, edges = list(), list()")
             code.append("            attributes_dict = doc")
-            code.append("            if self.attributes_root is not None:")
-            code.append(
-                "                # allow for nested attributes (i.e. - doc['properties'])"
-            )
-            code.append("                attributes_dict = doc[self.attributes_root]")
+
+            if self.using_flat_csv_data:
+                pass
+            else:
+                code.append("            if self.attributes_root is not None:")
+                code.append(
+                    "                # allow for nested attributes (i.e. - doc['properties'])"
+                )
+                code.append("                attributes_dict = doc[self.attributes_root]")
+                
             code.append("            attr_keys = attributes_dict.keys()")
-            code.append("            if 'edges' in doc.keys():")
-            code.append('                edges = doc["edges"]')
+
+            if self.using_flat_csv_data:
+                pass
+            else:
+                code.append("            if 'edges' in doc.keys():")
+                code.append('                edges = doc["edges"]')
+
             code.append('            doc_id = str(doc["id"])')
-            code.append("            if len(doc_id) > 3:")
+            code.append("            if len(doc_id) > 0:")
             code.append('                cref = URIRef("{}/{}".format(ns, label))')
             code.append('                eref = URIRef("{}/{}".format(ns, doc_id))')
             code.append("                g.add((eref, RDF.type, cref))")
@@ -104,7 +114,12 @@ class GraphBuilderGenerator:
                     )
                 )
             code.append("")
-            code.append("                self.add_edges(g, ns, doc_id, edges, CNS)")
+
+            if self.using_flat_csv_data:
+                pass
+            else:
+                code.append("                self.add_edges(g, ns, doc_id, edges, CNS)")
+            
             code.append("            else:")
             code.append('                print("invalid {} doc {}".format(label, doc))')
             code.append("        except Exception as e:")
