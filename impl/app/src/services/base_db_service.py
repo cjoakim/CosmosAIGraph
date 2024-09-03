@@ -15,30 +15,36 @@ from src.services.cosmos_vcore_service import CosmosVCoreService
 
 
 class BaseDBService:
-    
+
     def __init__(self, override_graph_source=None):
-        """ Constructor method. """
+        """Constructor method."""
         try:
             self.graph_source = str(ConfigService.graph_source())
             if override_graph_source is not None:
-                self.graph_source = override_graph_source  # used for testing & unit tests
-            self.vcore_svc  = None
+                self.graph_source = (
+                    override_graph_source  # used for testing & unit tests
+                )
+            self.vcore_svc = None
             self.nosql_svc = None
             self.nosql_dbproxy = None
             self.nosql_ctrproxy = None
             self.dbname = ConfigService.graph_source_db()
             self.graph_container = ConfigService.graph_source_container()
             self.conversations_container = ConfigService.conversations_container()
-            logging.info("BaseDBService constructor complete; source: {}".format(self.graph_source))
+            logging.info(
+                "BaseDBService constructor complete; source: {}".format(
+                    self.graph_source
+                )
+            )
         except Exception as e:
             logging.critical((str(e)))
             logging.exception(e, stack_info=True, exc_info=True)
 
     async def initialize(self):
-        """ This method should be called immediately after the constructor. """
+        """This method should be called immediately after the constructor."""
         if self.graph_source == "cosmos_nosql":
             await self.initialize_cosmos_nosql()
-        else :
+        else:
             await self.initialize_cosmos_vcore()
 
     async def initialize_cosmos_nosql(self):
@@ -59,13 +65,13 @@ class BaseDBService:
 
     def using_nosql(self) -> str:
         return "cosmos_nosql" in self.graph_source
-    
+
     def using_vcore(self) -> str:
         return "cosmos_vcore" in self.graph_source
-    
+
     @abstractmethod
     async def close(self):
-        """ Subclasses must implement this method. """
+        """Subclasses must implement this method."""
         pass
 
     def set_db(self, dbname):
@@ -73,7 +79,7 @@ class BaseDBService:
         self.dbname = dbname
         if self.graph_source == "cosmos_nosql":
             self.nosql_svc.set_db(dbname)
-        else :
+        else:
             self.vcore_svc.set_db(dbname)
 
     def set_container(self, cname):
@@ -81,6 +87,5 @@ class BaseDBService:
         self.cname = cname
         if self.graph_source == "cosmos_nosql":
             self.nosql_svc.set_container(cname)
-        else :
+        else:
             self.vcore_svc.set_coll(cname)
-

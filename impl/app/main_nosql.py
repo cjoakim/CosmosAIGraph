@@ -1,4 +1,7 @@
 """
+This program is for CLI functionality related to Cosmos DB NoSQL API.
+When you run this program it is assumed that you have your
+CAIG_GRAPH_SOURCE_TYPE environment variable set to "cosmos_nosql".
 Usage:
     python main_nosql.py test_cosmos_service <dbname>
     python main_nosql.py test_cosmos_service dev
@@ -394,6 +397,13 @@ if __name__ == "__main__":
         print_options("Error: invalid command-line")
         exit(1)
     else:
+        if ConfigService.using_nosql():
+            pass
+        else:
+            print(
+                "Invalid value of environment variable CAIG_GRAPH_SOURCE_TYPE for this script; terminating"
+            )
+            exit(2)
         try:
             func = sys.argv[1].lower()
             if func == "test_cosmos_service":

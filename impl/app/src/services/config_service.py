@@ -98,7 +98,7 @@ class ConfigService:
         )
         d["CAIG_AZURE_REGION"] = "The Azure region where the ACA app is deployed to"
         d["CAIG_GRAPH_SOURCE_TYPE"] = (
-            "The RDF graph data source type, either 'rdf_file' or 'cosmos_vcore'"
+            "The RDF graph data source type, either 'rdf_file' or 'cosmos_vcore' or 'cosmos_nosql'"
         )
         d["CAIG_GRAPH_NAMESPACE"] = "The custom namespace for the RED graph"
         d["CAIG_GRAPH_SOURCE_OWL_FILENAME"] = "The input RDF OWL ontology file"
@@ -120,6 +120,11 @@ class ConfigService:
         )
         d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = (
             "The full connection string for the Cosmos DB Mongo vCore account"
+        )
+        d["CAIG_COSMOSDB_NOSQL_URI"] = "The URI of your Cosmos DB NoSQL account"
+        d["CAIG_COSMOSDB_NOSQL_KEY1"] = "The key of your Cosmos DB NoSQL account"
+        d["CAIG_COSMOSDB_NOSQL_KEY2"] = (
+            "The alternative key of your Cosmos DB NoSQL account"
         )
         d["CAIG_USE_ALT_SPARQL_CONSOLE"] = (
             "A non empty string displays the alt view; defaults to an empty string"
@@ -146,6 +151,7 @@ class ConfigService:
         d["CAIG_GRAPH_SERVICE_URL"] = ""
         d["CAIG_GRAPH_SERVICE_PORT"] = ""
 
+        # These three are experimental; possible future use
         d["CAIG_PG_FLEX_SERVER"] = "Azure PostgreSQL Flex Server hostname"
         d["CAIG_PG_FLEX_USER"] = "Azure PostgreSQL Flex Server user"
         d["CAIG_PG_FLEX_PASS"] = "Azure PostgreSQL Flex Server user password"
@@ -172,6 +178,9 @@ class ConfigService:
         d["CAIG_CONFIG_CONTAINER"] = "config"
         d["CAIG_CONVERSATIONS_CONTAINER"] = "conversations"
         d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = "mongodb+srv://..."
+        d["CAIG_COSMOSDB_NOSQL_URI"] = "https://<your-account>.documents.azure.com:443/"
+        d["CAIG_COSMOSDB_NOSQL_KEY1"] = ""
+        d["CAIG_COSMOSDB_NOSQL_KEY2"] = ""
         d["CAIG_USE_ALT_SPARQL_CONSOLE"] = ""
         d["CAIG_AZURE_OPENAI_URL"] = ""
         d["CAIG_AZURE_OPENAI_KEY"] = ""
@@ -213,12 +222,12 @@ class ConfigService:
     def using_nosql(cls) -> str:
         db_api = cls.envvar("CAIG_GRAPH_SOURCE_TYPE", "cosmos_vcore").lower()
         return "cosmos_nosql" in db_api
-    
+
     @classmethod
     def using_vcore(cls) -> str:
         db_api = cls.envvar("CAIG_GRAPH_SOURCE_TYPE", "cosmos_vcore").lower()
         return "cosmos_vcore" in db_api
-    
+
     @classmethod
     def graph_source(cls) -> str:
         return cls.envvar("CAIG_GRAPH_SOURCE_TYPE", "cosmos_vcore")

@@ -4,7 +4,7 @@ from semantic_kernel.contents.chat_history import ChatHistory
 
 from src.services.ai_conversation import AiConversation
 
-# pytest tests/test_ai_conversation.py
+# pytest -v tests/test_ai_conversation.py
 
 def test_chat_history():
     """ This test just explores and verifies the SK ChatHistory functionality. """

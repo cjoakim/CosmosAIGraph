@@ -3,17 +3,27 @@ import os
 import time
 import pytest
 
+from difflib import *
+
 from src.util.sparql_formatter import SparqlFormatter
 
-# pytest tests/test_sparql_formatter.py
+# pytest -v tests/test_sparql_formatter.py
 
 
 def test_pretty():
-    pretty = SparqlFormatter().pretty(sample_generated_sparql())
-    print("---")
+    pretty = SparqlFormatter().pretty(sample_generated_sparql()).strip()
+    expected = sample_expected_sparql().strip()
+    print("--- pretty")
     print(pretty)
-    print("---")
-    assert pretty == sample_expected_sparql()
+    print("--- expected")
+    print(expected)
+
+    diff = ndiff(
+        pretty.splitlines(keepends=True),
+        expected.splitlines(keepends=True))
+    print(''.join(diff), end="")
+
+    assert line_by_line_diff(pretty, expected) == "None"
 
 def test_pretty_noinput():
     pretty = SparqlFormatter().pretty(None)
@@ -49,5 +59,20 @@ WHERE {
     ?lib :lt 'pypi' .
     ?lib :uses_lib ?dependency .
     OPTIONAL { ?dependency :uses_lib ?subDependency .
-}} LIMIT 100
-""".strip()
+}} LIMIT 100""".strip()
+
+def line_by_line_diff(s1, s2):
+    """ return the string value 'None' if no differences, else return a diff description. """
+    lines1 = s1.strip().split("\n")
+    lines2 = s2.strip().split("\n")
+    lines1_count = len(lines1)
+    lines2_count = len(lines2)
+    if lines1_count != lines2_count:
+        return "unequal line counts; {} vs {}".format(lines1_count, lines2_count)
+    for idx, line1 in enumerate(lines1):
+        line2 = lines2[idx]
+        s1 = line1.rstrip()
+        s2 = line2.rstrip()
+        if s1 != s2:
+            return "line {} not equal: {}".format(idx+1, s1)
+    return 'None'

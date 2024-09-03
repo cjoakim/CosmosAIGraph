@@ -6,7 +6,7 @@ from src.util.sparql_template import SparqlTemplate
 from src.services.config_service import ConfigService
 from src.util.fs import FS
 
-# pytest tests/test_graph_service.py
+# pytest -v tests/test_graph_service.py
 
 @pytest.mark.asyncio
 async def test_init_and_query():

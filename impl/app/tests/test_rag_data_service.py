@@ -11,7 +11,7 @@ from src.services.strategy_builder import StrategyBuilder
 from src.services.rag_data_result import RAGDataResult
 from src.util.fs import FS
 
-# pytest tests/test_rag_data_service.py
+# pytest -v tests/test_rag_data_service.py
 # del tmp/*.* ; pytest tests/test_rag_data_service.py
 
 @pytest.mark.asyncio

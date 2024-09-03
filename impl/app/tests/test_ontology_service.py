@@ -1,7 +1,7 @@
 from src.services.config_service import ConfigService
 from src.services.ontology_service import OntologyService
 
-# pytest tests/test_ontology_service.py
+# pytest -v tests/test_ontology_service.py
 
 def test_get_owl_content():
     ConfigService.set_standard_unit_test_env_vars()

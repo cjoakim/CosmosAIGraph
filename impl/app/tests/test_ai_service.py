@@ -10,7 +10,7 @@ from src.services.ai_service import AiService
 from src.util.sparql_formatter import SparqlFormatter
 from src.util.fs import FS
 
-# pytest tests/test_ai_service.py
+# pytest -v tests/test_ai_service.py
 
 
 def test_constructor():

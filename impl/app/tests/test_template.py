@@ -4,7 +4,7 @@ import pytest
 from src.util.template import Template
 from src.services.config_service import ConfigService
 
-# pytest tests/test_template.py
+# pytest -v tests/test_template.py
 
 def test_get_template_and_render():
     ConfigService.set_standard_unit_test_env_vars()

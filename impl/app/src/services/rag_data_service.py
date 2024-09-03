@@ -5,13 +5,14 @@ import logging
 import httpx
 
 from src.services.ai_service import AiService
-from src.services.cosmos_vcore_service import CosmosVCoreService
+from src.services.db_service import DBService
 
 from src.services.config_service import ConfigService
 from src.services.ontology_service import OntologyService
 from src.services.rag_data_result import RAGDataResult
 
 from src.services.strategy_builder import StrategyBuilder
+
 
 # Instances of this class are used to identify and retrieve system prompt data
 # for the RAG pattern in a "OmniRAG" manner.  The RAG data will be read,
@@ -25,10 +26,10 @@ from src.services.strategy_builder import StrategyBuilder
 
 class RAGDataService:
 
-    def __init__(self, ai_svc: AiService, vcore: CosmosVCoreService):
+    def __init__(self, ai_svc: AiService, db_svc: DBService):
         try:
             self.ai_svc = ai_svc
-            self.vcore = vcore
+            self.db_svc = db_svc
             self.owl = OntologyService().get_owl_content()
             # create a list of the attributes to include in the RAG data result
             self.doc_include_attributes = list()
@@ -36,6 +37,7 @@ class RAGDataService:
             self.doc_include_attributes.append("name")
             self.doc_include_attributes.append("summary")
             self.doc_include_attributes.append("documentation_summary")
+            self.graph_source = str(ConfigService.graph_source())
 
             # web service authentication with shared secrets
             websvc_auth_header = ConfigService.websvc_auth_header()
@@ -56,8 +58,8 @@ class RAGDataService:
         Return a RAGDataResult object which contains an array of the RAG
         documents to be used as a system prompt for a generative AI call
         to Azure OpenAI.  Each RAG document is a document from the Cosmos DB
-        vCore libraries collection.
-        In this "HybridRAG" implementation, the RAG data will be read,
+        libraries collection.
+        In this "OmniRAG" implementation, the RAG data will be read,
         per the given user_text, from one of either:
         1) Directly from Cosmos DB documents (DB RAG)
         2) From Cosmos DB documents identified per an in-memory graph query (Graph RAG)
@@ -116,7 +118,7 @@ class RAGDataService:
 
     async def get_database_rag_data(
         self, user_text, libtype, name, max_doc_count, rdr: RAGDataResult
-    ) -> str:
+    ) -> list:
         rag_docs_list = list()
         try:
             logging.warning(
@@ -124,16 +126,14 @@ class RAGDataService:
                     name, name, user_text
                 )
             )
-            self.vcore.set_db(ConfigService.graph_source_db())
-            self.vcore.set_coll(ConfigService.graph_source_container())
-            attrs = "libtype,name,summary,documentation_summary".split(",")
-            filter = {"libtype": libtype, "name": name}
-            rdr.set_query(filter)
-            cursor = self.vcore.get_coll().find(
-                filter, projection=attrs, limit=max_doc_count
-            )
-            for result_doc in cursor:
-                rag_docs_list.append(result_doc)
+            self.db_svc.set_db(ConfigService.graph_source_db())
+            self.db_svc.set_coll(ConfigService.graph_source_container())
+            docs = await self.db_svc.get_documents_by_libtype_and_names(libtype, [name])
+            for doc in docs:
+                if "_id" in doc.keys():
+                    del doc["_id"]  # Mongo _id is not JSON serializable
+            return docs
+
         except Exception as e:
             logging.critical(
                 "Exception in RagDataService#get_database_rag_data: {}".format(str(e))
@@ -152,9 +152,9 @@ class RAGDataService:
             rag_docs_list = list()
             create_embedding_response = self.ai_svc.generate_embeddings(user_text)
             embedding = create_embedding_response.data[0].embedding
-            self.vcore.set_db(ConfigService.graph_source_db())
-            self.vcore.set_coll(ConfigService.graph_source_container())
-            vs_result = self.vcore.vector_search(embedding, k=max_doc_count)
+            self.db_svc.set_db(ConfigService.graph_source_db())
+            self.db_svc.set_coll(ConfigService.graph_source_container())
+            vs_result = await self.db_svc.vector_search(embedding, k=max_doc_count)
             for vs_doc in vs_result["results"]:
                 rag_docs_list.append(vs_doc)
         except Exception as e:
@@ -182,23 +182,23 @@ class RAGDataService:
             sparql_query_results = self._post_sparql_query_to_graph_microsvc(sparql)
 
             # iterate the SPARQL query results, collecting the libtype and names
-            libtype_name_pairs = self._parse_sparql_rag_query_results(
+            sparql_libtype_name_pairs = self._parse_sparql_rag_query_results(
                 sparql_query_results
             )
-
-            # query Cosmos DB Mongo vCore using the graph-identified document coordinates
-            self.vcore.set_db(ConfigService.graph_source_db())
-            self.vcore.set_coll(ConfigService.graph_source_container())
-            for pair in libtype_name_pairs:
+            # query Cosmos DB using the graph-identified document libtype/libname coordinates
+            self.db_svc.set_db(ConfigService.graph_source_db())
+            self.db_svc.set_coll(ConfigService.graph_source_container())
+            libtype, libnames = "pypi", list()
+            for pair in sparql_libtype_name_pairs:
                 libtype, name = pair[0], pair[1]
-                attrs = "libtype,name,summary,documentation_summary".split(",")
-                filter = {"libtype": libtype, "name": name}
-                cursor = self.vcore.get_coll().find(
-                    filter, projection=attrs, limit=max_doc_count
-                )
-                for result_doc in cursor:
-                    del result_doc["_id"]
-                    rag_docs_list.append(result_doc)
+                libnames.append(name)
+            docs = await self.db_svc.get_documents_by_libtype_and_names(
+                libtype, libnames
+            )
+            for doc in docs:
+                if "_id" in doc.keys():
+                    del doc["_id"]  # Mongo _id is not JSON serializable
+            return docs
         except Exception as e:
             logging.critical(
                 "Exception in RagDataService#get_graph_rag_data: {}".format(str(e))
@@ -269,3 +269,6 @@ class RAGDataService:
         return "{}:{}/sparql_query".format(
             ConfigService.graph_service_url(), ConfigService.graph_service_port()
         )
+
+    def using_nosql(self) -> str:
+        return "cosmos_nosql" in self.graph_source

@@ -4,7 +4,7 @@ import pytest
 
 from src.services.config_service import ConfigService
 
-# pytest tests/test_config_service.py
+# pytest -v tests/test_config_service.py
 
 def test_envvar():
     ConfigService.set_standard_unit_test_env_vars()
@@ -231,4 +231,4 @@ def test_verbose():
 def test_epoch():
     e = ConfigService.epoch()
     assert e > 1717765187  # 2024-06-07
-    assert e < 1719765187
+    assert e < 1800000000

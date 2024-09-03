@@ -4,7 +4,7 @@ import pytest
 
 from src.services.logging_level_service import LoggingLevelService
 
-# pytest tests/test_logging_level_service.py
+# pytest -v tests/test_logging_level_service.py
 
 
 def test_level():

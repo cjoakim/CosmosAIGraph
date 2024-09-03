@@ -1,21 +1,19 @@
 """
-This module is for ad-hoc tasks not related to the actual working app.
+This program is for CLI functionality related to Cosmos DB Mongo vCore API.
+When you run this program it is assumed that you have your
+CAIG_GRAPH_SOURCE_TYPE environment variable set to "cosmos_vcore".
 Usage:
-    python main_console.py list_defined_env_vars
-    python main_console.py create_vcore_collections_and_indexes
-    python main_console.py create_vcore_collections_and_indexes_adhoc
-    python main_console.py load_vcore_with_library_documents
-    python main_console.py create_entities
-    python main_console.py persist_entities
-    python main_console.py identify_entities
-    python main_console.py generate_rdflib_triples_builder meta/vertex_signatures_imdb.json
-    python main_console.py parse_owl ontologies/libraries.owl
-    python main_console.py generate_owl meta/vertex_signatures_imdb.json meta/edge_signatures_imdb.json http://cosmosdb.com/imdb
+    python main_vcore.py create_vcore_collections_and_indexes
+    python main_vcore.py load_vcore_with_library_documents
+    python main_vcore.py create_entities
+    python main_vcore.py persist_entities
+    python main_vcore.py identify_entities
 Options:
   -h --help     Show this screen.
   --version     Show version.
 """
 
+import asyncio
 import json
 import sys
 import time
@@ -31,22 +29,12 @@ from src.services.config_service import ConfigService
 from src.services.cosmos_vcore_service import CosmosVCoreService
 from src.services.entities_service import EntitiesService
 from src.util.fs import FS
-from src.util.graph_builder_generator import GraphBuilderGenerator
-from src.util.owl_generator import OwlGenerator
-from src.util.owl_sax_handler import OwlSaxHandler
 
 
 def print_options(msg):
     print(msg)
     arguments = docopt(__doc__, version="1.0.0")
     print(arguments)
-
-
-def list_defined_env_vars():
-    env_var_names = sorted(ConfigService.defined_environment_variables().keys())
-    for name in env_var_names:
-        value = ConfigService.envvar(name)
-        logging.info("{}: {}".format(name, value))
 
 
 def connect_to_vcore_graph_source():
@@ -113,6 +101,7 @@ def create_vcore_collections_and_indexes():
     vcore, dbname, cname = connect_to_vcore_graph_source()
     logging.info("using vcore db: {}, collection: {}".format(dbname, cname))
 
+    # create the primary graph or libraries container, per the CAIG_GRAPH_SOURCE_CONTAINER env var.
     indexes = vcore.get_coll_indexes(cname)
     logging.info(
         "indexes before:\n{}".format(json.dumps(indexes, sort_keys=False, indent=2))
@@ -127,7 +116,7 @@ def create_vcore_collections_and_indexes():
         )
     )
 
-    # config container
+    # config container, per env var CAIG_CONFIG_CONTAINER
     cname = ConfigService.config_container()
     vcore.set_db(dbname)
     vcore.set_coll(cname)
@@ -140,7 +129,7 @@ def create_vcore_collections_and_indexes():
         )
     )
 
-    # conversations container
+    # conversations container, per env var CAIG_CONVERSATIONS_CONTAINER
     cname = ConfigService.conversations_container()
     vcore.set_db(dbname)
     vcore.set_coll(cname)
@@ -155,14 +144,12 @@ def create_vcore_collections_and_indexes():
         )
     )
 
-    # feedback container
+    # feedback container, per env var CAIG_FEEDBACK_CONTAINER
     cname = ConfigService.feedback_container()
     vcore.set_db(dbname)
     vcore.set_coll(cname)
     logging.info("using vcore db: {}, collection: {}".format(dbname, cname))
     vcore.create_simple_index("conversation_id")
-    vcore.create_simple_index("created_date")
-    vcore.create_simple_index("created_at")
     indexes = vcore.get_coll_indexes(cname)
     logging.info(
         "{} indexes after:\n{}".format(
@@ -171,34 +158,17 @@ def create_vcore_collections_and_indexes():
     )
 
 
-def create_vcore_collections_and_indexes_adhoc():
-    vcore, dbname, cname = connect_to_vcore_graph_source()
-    logging.info("using vcore db: {}, collection: {}".format(dbname, cname))
-
-    # feedback container
-    cname = ConfigService.feedback_container()
-    vcore.set_db(dbname)
-    vcore.set_coll(cname)
-    logging.info("using vcore db: {}, collection: {}".format(dbname, cname))
-    vcore.create_simple_index("conversation_id")
-    vcore.create_simple_index("created_date")
-    vcore.create_simple_index("created_at")
-    indexes = vcore.get_coll_indexes(cname)
-    logging.info(
-        "{} indexes after:\n{}".format(
-            cname, json.dumps(indexes, sort_keys=False, indent=2)
-        )
-    )
-
-
-def create_entities():
+async def create_entities():
     entities_svc = EntitiesService()
-    entities_doc = entities_svc.create()
+    await entities_svc.initialize()
+    entities_doc = await entities_svc.create()
     FS.write_json(entities_doc, entities_doc_filename())
+    await entities_svc.close()
 
 
-def persist_entities():
+async def persist_entities():
     entities_svc = EntitiesService()
+    await entities_svc.initialize()
     vcore = entities_svc.vcore
     vcore.set_db(ConfigService.graph_source_db())
     vcore.set_coll(ConfigService.config_container())
@@ -212,11 +182,13 @@ def persist_entities():
         print(result_doc)
         docs_found = docs_found + 1
     print("docs_found: {}".format(docs_found))
+    await entities_svc.close()
 
 
-def identify_entities():
+async def identify_entities():
+    """This method is used for an ad-hoc test of the entitites service."""
     entities_svc = EntitiesService()
-    entities_svc.initialize()
+    await entities_svc.initialize()
     sentences = [
         None,
         "",
@@ -229,35 +201,11 @@ def identify_entities():
         print("sentence: {}".format(text))
         print("entities: {}".format(counter.get_data()))
         print("most_frequent: {}".format(counter.most_frequent()))
+    await entities_svc.close()
 
 
 def entities_doc_filename():
     return "../data/entities/entities_doc.json"
-
-
-def generate_rdflib_triples_builder(vertex_signatures_filename: str):
-    generator = GraphBuilderGenerator()
-    code_lines = generator.generate(vertex_signatures_filename)
-    for line in code_lines:
-        print(line)
-
-
-def parse_owl(owl_file_path: str):
-    parser = make_parser()
-    handler = OwlSaxHandler()
-    parser.setContentHandler(handler)
-    parser.parse(owl_file_path)
-    FS.write_json(handler.get_data(), "tmp/owl_xml_handler.json")
-
-
-def generate_owl(
-    vertex_signatures_filename: str, edge_signatures_filename: str, namespace: str
-):
-    generator = OwlGenerator()
-    xml = generator.generate(
-        vertex_signatures_filename, edge_signatures_filename, namespace
-    )
-    print(xml)
 
 
 if __name__ == "__main__":
@@ -268,35 +216,25 @@ if __name__ == "__main__":
         print_options("Error: invalid command-line")
         exit(1)
     else:
+        if ConfigService.using_vcore():
+            pass
+        else:
+            print(
+                "Invalid value of environment variable CAIG_GRAPH_SOURCE_TYPE for this script; terminating"
+            )
+            exit(2)
         try:
             func = sys.argv[1].lower()
-            if func == "list_defined_env_vars":
-                list_defined_env_vars()
-            elif func == "load_vcore_with_library_documents":
+            if func == "load_vcore_with_library_documents":
                 load_vcore_with_library_documents()
             elif func == "create_vcore_collections_and_indexes":
                 create_vcore_collections_and_indexes()
-            elif func == "create_vcore_collections_and_indexes_adhoc":
-                create_vcore_collections_and_indexes_adhoc()
             elif func == "create_entities":
-                create_entities()
+                asyncio.run(create_entities())
             elif func == "persist_entities":
                 persist_entities()
             elif func == "identify_entities":
-                identify_entities()
-            elif func == "generate_rdflib_triples_builder":
-                vertex_signatures_filename = sys.argv[2]
-                generate_rdflib_triples_builder(vertex_signatures_filename)
-            elif func == "parse_owl":
-                owl_file_path = sys.argv[2]
-                parse_owl(owl_file_path)
-            elif func == "generate_owl":
-                vertex_signatures_filename = sys.argv[2]
-                edge_signatures_filename = sys.argv[3]
-                namespace = sys.argv[4]
-                generate_owl(
-                    vertex_signatures_filename, edge_signatures_filename, namespace
-                )
+                asyncio.run(identify_entities())
             else:
                 print_options("Error: invalid function: {}".format(func))
         except Exception as e:

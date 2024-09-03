@@ -28,8 +28,9 @@ class AiConversation:
                 self.created_date = json_obj["created_date"]
                 self.updated_at = json_obj["updated_at"]
                 self.conversation_id = json_obj["conversation_id"]
+                self.pk = self.conversation_id
+                self.id = self.conversation_id
                 self.last_user_message = json_obj["conversation_id"]
-                self.uuid = json_obj["uuid"]
 
                 if "prompts" in json_obj.keys():
                     self.prompts = json_obj["prompts"]
@@ -54,13 +55,14 @@ class AiConversation:
                 else:
                     self.diagnostic_messages = list()
             else:
-                self.uuid = str(uuid.uuid4())
                 self.created_at = time.time()
                 self.created_date = str(
                     datetime.datetime.fromtimestamp(self.created_at)
                 )
                 self.updated_at = self.created_at
-                self.conversation_id = ""  # UI will populate this for new conversations
+                self.conversation_id = str(uuid.uuid4())
+                self.pk = self.conversation_id
+                self.id = self.conversation_id
                 self.prompts = list()
                 self.completions = list()
                 self.chat_history = ChatHistory()
@@ -72,6 +74,10 @@ class AiConversation:
 
     def get_conversation_id(self):
         return self.conversation_id
+
+    def set_conversation_id(self, conv_id):
+        self.conversation_id = conv_id
+        self.pk = conv_id
 
     def get_chat_history(self):
         return self.chat_history
@@ -172,11 +178,12 @@ class AiConversation:
     def serialize(self) -> str:
         try:
             obj = dict()
-            obj["uuid"] = self.uuid
             obj["created_at"] = self.created_at
             obj["created_date"] = self.created_date
             obj["updated_at"] = self.updated_at
             obj["conversation_id"] = self.conversation_id
+            obj["pk"] = self.pk
+            obj["id"] = self.id
             obj["prompts"] = self.prompts
             obj["completions"] = self.completions
             obj["chat_history"] = json.loads(self.chat_history.serialize())

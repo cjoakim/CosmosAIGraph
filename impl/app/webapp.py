@@ -26,25 +26,17 @@ from fastapi_msal import MSALAuthorization, UserInfo, MSALClientConfig
 # Pydantic models defining the "shapes" of requests and responses
 from src.models.webservice_models import PingModel
 from src.models.webservice_models import LivenessModel
-# from src.models.webservice_models import OwlInfoModel
-# from src.models.webservice_models import DocumentsVSResultsModel
-
 from src.models.webservice_models import AiConvFeedbackModel
-# from src.models.webservice_models import SparqlGenerationRequestModel
-# from src.models.webservice_models import SparqlGenerationResponseModel
-# from src.models.webservice_models import VectorizeRequestModel
-# from src.models.webservice_models import VectorizeResponseModel
 
 # Services with Business Logic
 from src.services.ai_completion import AiCompletion
 from src.services.ai_conversation import AiConversation
 from src.services.ai_service import AiService
+from src.services.db_service import DBService
 from src.services.config_service import ConfigService
-from src.services.cosmos_vcore_service import CosmosVCoreService
 from src.services.logging_level_service import LoggingLevelService
 from src.services.rag_data_service import RAGDataService
 from src.services.rag_data_result import RAGDataResult
-from src.util.fs import FS
 from src.util.sparql_formatter import SparqlFormatter
 from src.services.ontology_service import OntologyService
 
@@ -57,6 +49,11 @@ ConfigService.log_defined_env_vars()
 
 ai_svc = AiService()
 asyncio.run(ai_svc.initialize())
+logging.error("AiService initialized")
+
+db_svc = DBService()
+asyncio.run(db_svc.initialize())
+logging.error("DBService initialized")
 
 ontology_svc = OntologyService()
 owl_xml = ontology_svc.get_owl_content()
@@ -64,13 +61,9 @@ if owl_xml is None:
     logging.error("owl_xml is empty")
 else:
     logging.info("owl_xml loaded; length: {}".format(len(owl_xml)))
-    #logging.debug("owl_xml:\n{}".format(owl_xml))
 
-vcore_opts = dict()
-vcore_opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-vcore = CosmosVCoreService(vcore_opts)
-vcore.set_db(ConfigService.graph_source_db())
-rag_data_svc = RAGDataService(ai_svc, vcore)
+rag_data_svc = RAGDataService(ai_svc, db_svc)
+logging.error("RAGDataService created")
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -118,6 +111,9 @@ if ConfigService.use_msal_auth():
         return current_user
 
 
+logging.error("webapp.py started")
+
+
 @app.get("/ping")
 async def get_ping() -> PingModel:
     resp = dict()
@@ -159,7 +155,7 @@ async def get_home(req: Request):
 @app.get("/about")
 async def get_about(req: Request):
     view_data = dict()
-    view_data["code_version"] = "2024/08/22"
+    view_data["code_version"] = "2024/08/30"
     view_data["graph_source"] = ConfigService.graph_source()
     view_data["graph_source_db"] = ConfigService.graph_source_db()
     view_data["graph_source_container"] = ConfigService.graph_source_container()
@@ -201,7 +197,9 @@ async def post_sparql_console(req: Request):
             request=req, name="sparql_console.html", context=view_data
         )
 
+
 # cj - /gen_graph and /gen_graph_generate have been disabled in the UI; see layout.html
+
 
 @app.get("/gen_graph")
 async def get_graph(req: Request):
@@ -211,6 +209,7 @@ async def get_graph(req: Request):
 
 @app.post("/gen_graph_generate")
 async def gen_graph_execute(req: Request):
+    """This endpoint is not used at this time; this functionality may be revisited."""
     form_data = await req.form()
 
     ontologyFile = form_data["fileOntology"].filename
@@ -224,7 +223,6 @@ async def gen_graph_execute(req: Request):
     view_data["owl"] = ontology.decode("utf-8")
 
     # read the contents of the uploaded files from req parameter
-
     entitiesFiles = []
     if (form_data["fileEntities"] == None) or (
         form_data["fileEntities"].filename == ""
@@ -253,22 +251,14 @@ async def gen_graph_execute(req: Request):
             f.write(relationships)
             f.close()
 
-    # try:
-    #     if ai_svc.generate_graph(entitiesFiles, relationshipsFiles, ontologyFile):
-    #         f = open("results.nt", "r")
-    #         view_data["results"] = f.read()
-    #         view_data["results_message"] += "Generated graph successfully: \n"
-    # except Exception as e:
-    #     logging.critical((str(e)))
-    #     logging.exception(e, stack_info=True, exc_info=True)
-    #     view_data["results_message"] += "\nCouldn't generate graph"
-
     try:
-        opts = dict()
-        opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-        logging.info("opts: {}".format(opts))
-        vcore = CosmosVCoreService(opts)
-        vcore.set_db(ConfigService.graph_source_db())
+        pass
+        # cj - revisit this and use DBService, instead of CosmosVCoreService, when we re-implement
+        # opts = dict()
+        # opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
+        # logging.info("opts: {}".format(opts))
+        # vcore = CosmosVCoreService(opts)
+        # vcore.set_db(ConfigService.graph_source_db())
         # TODO: WIP
         # if vcore.insert_docs_from_files(entitiesFiles, relationshipsFiles, ontologyFile):
         #     f = open("results.nt", "r")
@@ -361,12 +351,14 @@ async def get_vector_search_console(req: Request):
 
 @app.post("/vector_search_console")
 async def post_vector_search_console(req: Request):
-    global vcore
+    global db_svc
     form_data = await req.form()
     logging.info("/vector_search_console form_data: {}".format(form_data))
     libtype = form_data.get("libtype")
     libname = form_data.get("libname").strip()
-    show_embeddings = form_data.get("show_embeddings").lower()
+    logging.debug(
+        "vector_search_console - libtype: {}, libname: {}".format(libtype, libname)
+    )
 
     if libname.startswith("text:"):
         text = libname[5:]
@@ -375,25 +367,27 @@ async def post_vector_search_console(req: Request):
             logging.info("vectorize: {}".format(text))
             ai_svc_resp = ai_svc.generate_embeddings(text)
             vector = ai_svc_resp.data[0].embedding
-            logging.info(f"post_vector_search_console; vector: {vector}")
+            logging.warning(f"post_vector_search_console; vector: {vector}")
         except Exception as e:
             logging.critical((str(e)))
             logging.exception(e, stack_info=True, exc_info=True)
 
-        vcore.set_db(ConfigService.graph_source_db())
-        vcore.set_coll(ConfigService.graph_source_container())
-        results_obj = vcore.vector_search(vector)
-
+        db_svc.set_db(ConfigService.graph_source_db())
+        db_svc.set_container(ConfigService.graph_source_container())
+        results_obj = await db_svc.rag_vector_search(vector)
     else:
-        results_obj = vcore.search_documents_like_library(libtype, libname)
-        if "y" in show_embeddings:
-            pass
+        db_svc.set_db(ConfigService.graph_source_db())
+        db_svc.set_container(ConfigService.graph_source_container())
+        docs = await db_svc.get_documents_by_libtype_and_names("pypi", [libname])
+        logging.debug("vector_search_console - docs count: {}".format(len(docs)))
+
+        if len(docs) > 0:
+            doc = docs[0]
+            db_svc.set_db(ConfigService.graph_source_db())
+            db_svc.set_container(ConfigService.graph_source_container())
+            results_obj = await db_svc.rag_vector_search(doc["embedding"])
         else:
-            if results_obj["doc"] is not None:
-                del results_obj["doc"]["embedding"]
-            if results_obj["results"] is not None:
-                for result in results_obj["results"]:
-                    del result["embedding"]
+            results_obj = list()
 
     view_data = dict()
     view_data["libtype"] = libtype
@@ -407,7 +401,7 @@ async def post_vector_search_console(req: Request):
 
 @app.get("/conv_ai_console")
 async def conv_ai_console(req: Request):
-    conv = FS.read_json("static/sample_ai_conversation.json")
+    # conv = FS.read_json("static/sample_ai_conversation.json")
     conv = AiConversation()
     view_data = dict()
     view_data["conv"] = conv
@@ -423,7 +417,7 @@ async def conv_ai_console(req: Request):
 @app.post("/conv_ai_console")
 async def conv_ai_console(req: Request):
     global ai_svc
-    global vcore
+    global db_svc
     global ontology_svc
     global owl_xml
     global rag_data_svc
@@ -435,11 +429,11 @@ async def conv_ai_console(req: Request):
     logging.info(
         "conversation_id: {}, user_text: {}".format(conversation_id, user_text)
     )
-    conv = vcore.load_conversation(conversation_id)
+    conv = await db_svc.load_conversation(conversation_id)
 
     if conv.conversation_id == "":
-        conv.conversation_id = str(uuid.uuid4())  # this is a new conversation
-        vcore.save_conversation(conv)
+        conv.set_conversation_id(str(uuid.uuid4()))  # this is a new conversation
+        await db_svc.save_conversation(conv)
         logging.info("new conversation saved: {}".format(conversation_id))
     else:
         logging.info(
@@ -447,15 +441,11 @@ async def conv_ai_console(req: Request):
         )
 
     if len(user_text) > 0:
-        context = ""
         conv.add_user_message(user_text)
         prompt_text = ai_svc.generic_prompt_template()
 
         rdr: RAGDataResult = await rag_data_svc.get_rag_data(user_text, 3)
         if rdr.has_db_rag_docs() == True:
-            # Note: LLM invocation is needed here, because we got our
-            # answer directly from the database via efficient "HybridRAG".
-            # Add a pseudo-completion to the conversation.
             completion = AiCompletion(conv.conversation_id, None)
             completion.set_user_text(user_text)
             completion.set_rag_strategy(rdr.get_strategy())
@@ -470,7 +460,7 @@ async def conv_ai_console(req: Request):
                 content_lines.append(".  ".join(line_parts))
             completion.set_content("\n".join(content_lines))
             conv.add_completion(completion)
-            vcore.save_conversation(conv)
+            await db_svc.save_conversation(conv)
         else:
             if rdr.has_graph_rag_docs() == True:
                 # Add a pseudo-completion to the conversation with the
@@ -488,7 +478,7 @@ async def conv_ai_console(req: Request):
                 completion.set_content(", ".join(content_lines))
                 conv.add_completion(completion)
                 conv.add_diagnostic_message("sparql: {}".format(rdr.get_sparql()))
-                vcore.save_conversation(conv)
+                await db_svc.save_conversation(conv)
 
             completion_context = conv.last_completion_content()
             rag_data = rdr.as_system_prompt_text()
@@ -507,7 +497,7 @@ async def conv_ai_console(req: Request):
                 top_p=top_p,
             )
             completion.set_rag_strategy(rdr.get_strategy())
-            vcore.save_conversation(conv)
+            await db_svc.save_conversation(conv)
 
     textformat_conversation(conv)
 
@@ -526,7 +516,7 @@ async def conv_ai_console(req: Request):
 async def post_sparql_query(
     req_model: AiConvFeedbackModel,
 ) -> AiConvFeedbackModel:
-    global vcore
+    global db_svc
     conversation_id = req_model.conversation_id
     feedback_last_question = req_model.feedback_last_question
     feedback_user_feedback = req_model.feedback_user_feedback
@@ -537,7 +527,7 @@ async def post_sparql_query(
     logging.info(
         "/conv_ai_feedback feedback_user_feedback: {}".format(feedback_user_feedback)
     )
-    vcore.save_feedback(req_model)
+    await db_svc.save_feedback(req_model)
     return req_model
 
 
@@ -642,15 +632,15 @@ def post_libraries_sparql_console(form_data):
 
     if len(bom_query) > 0:
         tokens = bom_query.split()
-        if len(tokens) == 3:
+        if len(tokens) > 1:
             view_data["libtype"] = tokens[0]
             bom_obj = None
             url = graph_microsvc_bom_query_url()
             logging.info("url: {}".format(url))
             postdata = dict()
-            postdata["libtype"] = tokens[0]
-            postdata["libname"] = tokens[1]
-            postdata["max_depth"] = tokens[2]
+            postdata["libtype"] = "pypi"
+            postdata["libname"] = tokens[0]
+            postdata["max_depth"] = tokens[1]
             logging.info("postdata: {}".format(postdata))
             r = httpx.post(
                 url,

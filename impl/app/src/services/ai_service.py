@@ -30,8 +30,8 @@ from src.util.prompt_optimizer import PromptOptimizer
 
 
 class AiService:
+    """Constructor method; call initialize() immediately after this."""
 
-    """ Constructor method; call initialize() immediately after this. """
     def __init__(self, opts={}):
         """
         Get the necessary environment variables and initialze an AzureOpenAI client.
@@ -109,7 +109,7 @@ class AiService:
             return None
 
     async def initialize(self):
-        """ This method should be called immediately after the constructor. """
+        """This method should be called immediately after the constructor."""
         logging.info("AiService#initialize()")
         await self.db_svc.initialize()
 

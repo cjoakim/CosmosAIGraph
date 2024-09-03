@@ -1,4 +1,6 @@
 """
+This program is EXPERIMENTAL at this time.  CosmosAIGraph may add
+Azure PostgreSQL support sometime in the future.
 Usage:
     python main_pg.py delete_define_libraries_table <envname> <dbname>
     python main_pg.py delete_define_libraries_table azure dev

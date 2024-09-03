@@ -5,7 +5,7 @@ import pytest
 
 from src.util.owl_formatter import OwlFormatter
 
-# pytest tests/test_owl_formatter.py
+# pytest -v tests/test_owl_formatter.py
 
 
 def test_minimize():

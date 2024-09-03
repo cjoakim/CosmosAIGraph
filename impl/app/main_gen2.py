@@ -27,7 +27,8 @@ from src.util.graph_builder_generator import GraphBuilderGenerator
 
 
 class RelationshipsMetadata:
-    """ Simple class that reads the CSV file and exposes its' data. """
+    """Simple class that reads the CSV file and exposes its' data."""
+
     def __init__(self, relationships_csv_file, attributes_csv_file):
         self.relationships_csv_file = relationships_csv_file
         self.attributes_csv_file = attributes_csv_file
@@ -46,11 +47,11 @@ class RelationshipsMetadata:
                     tokens = line.strip().split(",")
                     if len(tokens) == 3:
                         row = dict()
-                        row['source_label'] = tokens[0].replace(" ", "_")
-                        row['relationship'] = tokens[1].replace(" ", "_")
-                        row['destination_label'] = tokens[2].replace(" ", "_")
-                        self.classes_dict[row['source_label']] = 1
-                        self.classes_dict[row['destination_label']] = 1
+                        row["source_label"] = tokens[0].replace(" ", "_")
+                        row["relationship"] = tokens[1].replace(" ", "_")
+                        row["destination_label"] = tokens[2].replace(" ", "_")
+                        self.classes_dict[row["source_label"]] = 1
+                        self.classes_dict[row["destination_label"]] = 1
                         self.relationship_csv_rows.append(row)
                     else:
                         logging.error("Invalid CSV line: {}".format(line))
@@ -64,9 +65,9 @@ class RelationshipsMetadata:
                     tokens = line.strip().split(",")
                     if len(tokens) == 3:
                         row = dict()
-                        row['source_label'] = tokens[0].replace(" ", "_").strip()
-                        row['attribute_name'] = tokens[1].replace(" ", "_").strip()
-                        row['datatype'] = tokens[2].strip()
+                        row["source_label"] = tokens[0].replace(" ", "_").strip()
+                        row["attribute_name"] = tokens[1].replace(" ", "_").strip()
+                        row["datatype"] = tokens[2].strip()
                         self.attributes_csv_rows.append(row)
                     else:
                         logging.error("Invalid CSV line: {}".format(line))
@@ -93,16 +94,12 @@ class RelationshipsMetadata:
         # }
         for row in self.relationship_csv_rows:
             sig = "{}|{}|{}".format(
-                row['source_label'],
-                row['relationship'],
-                row['destination_label']
+                row["source_label"], row["relationship"], row["destination_label"]
             )
             edge_signatures[sig] = 1  # value isn't used
 
             sig = "{}|{}|{}".format(
-                row['destination_label'],
-                'n/a',
-                row['source_label']
+                row["destination_label"], "n/a", row["source_label"]
             )
             edge_signatures[sig] = 1  # value isn't used
 
@@ -124,25 +121,15 @@ class RelationshipsMetadata:
         # }
         for row in self.attributes_csv_rows:
             sig = "{}|{}|<class '{}'>".format(
-                row['source_label'],
-                row['attribute_name'],
-                row['datatype'].lower()
+                row["source_label"], row["attribute_name"], row["datatype"].lower()
             )
             vertex_signatures[sig] = 1
 
         for row in self.relationship_csv_rows:
-            sig = "{}|{}|{}".format(
-                row['source_label'],
-                'id',
-                'str'
-            )
+            sig = "{}|{}|{}".format(row["source_label"], "id", "str")
             vertex_signatures[sig] = 1
 
-            sig = "{}|{}|{}".format(
-                row['destination_label'],
-                'id',
-                'str'
-            )
+            sig = "{}|{}|{}".format(row["destination_label"], "id", "str")
             vertex_signatures[sig] = 1
 
         FS.write_json(edge_signatures, "tmp/gen2_edge_signatures.json")
@@ -151,19 +138,21 @@ class RelationshipsMetadata:
         print("vertex_signatures count: {} ".format(len(vertex_signatures)))
 
     def get_data(self) -> dict:
-        """ Bundle and return the CSV filenames and parsed data debugging purposes. """
+        """Bundle and return the CSV filenames and parsed data debugging purposes."""
         data = dict()
-        data['relationships_csv_file'] = self.relationships_csv_file
-        data['attributes_csv_file'] = self.attributes_csv_file
-        data['classes_dict'] = self.classes_dict
-        data['relationship_csv_rows'] = self.relationship_csv_rows
-        data['attributes_csv_rows'] = self.attributes_csv_rows
+        data["relationships_csv_file"] = self.relationships_csv_file
+        data["attributes_csv_file"] = self.attributes_csv_file
+        data["classes_dict"] = self.classes_dict
+        data["relationship_csv_rows"] = self.relationship_csv_rows
+        data["attributes_csv_rows"] = self.attributes_csv_rows
         return data
+
 
 def print_options(msg):
     print(msg)
     arguments = docopt(__doc__, version="1.0.0")
     print(arguments)
+
 
 def generate(relationships_csv_file, attributes_csv_file, namespace):
     metadata = RelationshipsMetadata(relationships_csv_file, attributes_csv_file)
@@ -172,15 +161,12 @@ def generate(relationships_csv_file, attributes_csv_file, namespace):
 
     generator = OwlGenerator()
     generator.generate(
-        "tmp/gen2_vertex_signatures.json",
-        "tmp/gen2_edge_signatures.json",
-        namespace
+        "tmp/gen2_vertex_signatures.json", "tmp/gen2_edge_signatures.json", namespace
     )
 
     generator = GraphBuilderGenerator()
-    generator.generate(
-        "tmp/gen2_vertex_signatures.json"
-    )
+    generator.generate("tmp/gen2_vertex_signatures.json")
+
 
 def read_process_csv_file(csv_file):
     rows = list()  # a list of dictionaries
@@ -191,9 +177,9 @@ def read_process_csv_file(csv_file):
                 tokens = line.strip().split(",")
                 if len(tokens) == 3:
                     row = dict()
-                    row['source_label'] = tokens[0]
-                    row['relationship'] = tokens[0]
-                    row['destination_label'] = tokens[0]
+                    row["source_label"] = tokens[0]
+                    row["relationship"] = tokens[0]
+                    row["destination_label"] = tokens[0]
                     # source_label,relationship,destination_label
                 else:
                     logging.error("Invalid CSV line: {}".format(line))
@@ -209,8 +195,10 @@ if __name__ == "__main__":
     else:
         try:
             func = sys.argv[1].lower()
-            relationships_csv_file  = '../data/graph_input_metadata/GraphRelationships.csv'
-            attributes_csv_file = '../data/graph_input_metadata/GraphAttributes.csv'
+            relationships_csv_file = (
+                "../data/graph_input_metadata/GraphRelationships.csv"
+            )
+            attributes_csv_file = "../data/graph_input_metadata/GraphAttributes.csv"
             if func == "generate":
                 namespace = sys.argv[2]
                 generate(relationships_csv_file, attributes_csv_file, namespace)

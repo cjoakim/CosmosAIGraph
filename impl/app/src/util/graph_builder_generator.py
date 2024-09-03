@@ -88,8 +88,10 @@ class GraphBuilderGenerator:
                 code.append(
                     "                # allow for nested attributes (i.e. - doc['properties'])"
                 )
-                code.append("                attributes_dict = doc[self.attributes_root]")
-                
+                code.append(
+                    "                attributes_dict = doc[self.attributes_root]"
+                )
+
             code.append("            attr_keys = attributes_dict.keys()")
 
             if self.using_flat_csv_data:
@@ -119,7 +121,7 @@ class GraphBuilderGenerator:
                 pass
             else:
                 code.append("                self.add_edges(g, ns, doc_id, edges, CNS)")
-            
+
             code.append("            else:")
             code.append('                print("invalid {} doc {}".format(label, doc))')
             code.append("        except Exception as e:")

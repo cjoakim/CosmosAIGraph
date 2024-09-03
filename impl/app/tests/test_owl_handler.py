@@ -7,7 +7,7 @@ from src.services.config_service import ConfigService
 from src.util.fs import FS
 from src.util.owl_sax_handler import OwlSaxHandler
 
-# pytest tests/test_owl_handler.py
+# pytest -v tests/test_owl_handler.py
 
 def test_owl_sax_handler():
     owl_filename = "ontologies/libraries.owl"

@@ -13,4 +13,4 @@ rm tmp/*.*
 source bin/activate
 
 echo 'executing unit tests with code coverage ...'
-pytest -v --cov=pysrc/ --cov-report html tests/
+pytest -v --cov=src/ --cov-report html tests/

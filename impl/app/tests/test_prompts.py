@@ -5,7 +5,7 @@ import pytest
 
 from src.util.prompts import Prompts
 
-# pytest tests/test_prompts.py
+# pytest -v tests/test_prompts.py
 
 
 def test_minimize():

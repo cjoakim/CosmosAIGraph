@@ -1,5 +1,6 @@
 """
-This module is for ad-hoc tasks not related to the actual working app.
+This program is for common ad-hoc tasks not related to the actual runtime app
+or to a specific database (vCore, NoSQL, etc).
 Usage:
     python main_common.py log_defined_env_vars
     python main_common.py gen_ps1_env_var_script
@@ -7,11 +8,21 @@ Usage:
     python main_common.py gen_environment_variables_md
     python main_common.py gen_all
     python main_common.py owl_visualizer ontologies/libraries.owl
-Options:
+    python main_common.py generate_rdflib_triples_builder ../data/graph_input_metadata/vertex_signatures_imdb.json
+    python main_common.py parse_owl ontologies/libraries.owl
+    python main_common.py generate_owl ../data/graph_input_metadata/vertex_signatures_imdb.json ../data/graph_input_metadata/edge_signatures_imdb.json http://cosmosdb.com/imdb
+    python main_common.py http_get <url>
+    python main_common.py http_get http://localhost:8001/
+    python main_common.py http_get http://localhost:8001/liveness
+    python main_common.py http_get http://localhost:8001/owl_info
+    python main_common.py http_post_sparql_query http://localhost:8001/sparql_query pypi_m26
+    python main_common.py http_post_sparql_bom_query http://localhost:8001/sparql_bom_query pypi flask 2
+    Options:
   -h --help     Show this screen.
   --version     Show version.
 """
 
+import json
 import logging
 import os
 import sys
@@ -21,11 +32,19 @@ import time
 from docopt import docopt
 from dotenv import load_dotenv
 
+import httpx
+import jinja2
+
+from xml.sax import make_parser
+
 from src.services.config_service import ConfigService
 from src.services.logging_level_service import LoggingLevelService
 from src.util.fs import FS
 from src.util.owl_visualizer import OwlVisualizer
 from src.util.template import Template
+from src.util.graph_builder_generator import GraphBuilderGenerator
+from src.util.owl_generator import OwlGenerator
+from src.util.owl_sax_handler import OwlSaxHandler
 
 logging.basicConfig(
     format="%(asctime)s - %(message)s", level=LoggingLevelService.get_level()
@@ -242,6 +261,7 @@ def gen_all():
 
 
 def owl_visualizer(infile):
+    """This functionality is EXPERIMENTAL at this time."""
     owl_viz = OwlVisualizer(infile)
     t = Template.get_template(os.getcwd(), "owl_viz_html_page.txt")
     html = Template.render(t, owl_viz.get_visjs_data())
@@ -258,6 +278,95 @@ def ad_hoc_development():
     wrapped = textwrap.wrap(content, width=70)
     print("content: {}".format(content))
     print("wrapped: {}".format(wrapped))
+
+
+def generate_rdflib_triples_builder(vertex_signatures_filename: str):
+    generator = GraphBuilderGenerator()
+    code_lines = generator.generate(vertex_signatures_filename)
+    for line in code_lines:
+        print(line)
+
+
+def parse_owl(owl_file_path: str):
+    parser = make_parser()
+    handler = OwlSaxHandler()
+    parser.setContentHandler(handler)
+    parser.parse(owl_file_path)
+    FS.write_json(handler.get_data(), "tmp/owl_xml_handler.json")
+
+
+def generate_owl(
+    vertex_signatures_filename: str, edge_signatures_filename: str, namespace: str
+):
+    generator = OwlGenerator()
+    xml = generator.generate(
+        vertex_signatures_filename, edge_signatures_filename, namespace
+    )
+    print(xml)
+
+
+def http_request_headers():
+    header = ConfigService.websvc_auth_header()
+    value = ConfigService.websvc_auth_value()
+    headers = dict()
+    headers["Content-Type"] = "application/json"
+    headers[header] = value
+    return headers
+
+
+def http_get(url):
+    r = httpx.get(url, headers=http_request_headers())
+    print(r)
+    print(r.json())
+
+
+def http_post_sparql_query(url, libtype_libname):
+    postdata = http_post_sparql_query_postdata(libtype_libname)
+    print(postdata)
+    r = httpx.post(url, headers=http_request_headers(), data=json.dumps(postdata))
+    print("----- response text -----")
+    print(r.text)
+    print("----- pretty-print JSON response object -----")
+    obj = json.loads(r.text)
+    print(json.dumps(obj, sort_keys=False, indent=2))
+
+
+def http_post_sparql_query_postdata(libtype_libname):
+    sparql_template = """
+PREFIX c: <http://cosmosdb.com/caig#>
+SELECT ?o
+WHERE {
+    <http://cosmosdb.com/caig/{{ libtype_libname }}> c:developed_by ?o .
+}
+LIMIT 10
+"""
+    jenvironment = jinja2.Environment()
+    jtemplate = jenvironment.from_string(sparql_template)
+    sparql = jtemplate.render(libtype_libname=libtype_libname).strip()
+    postdata = dict()
+    postdata["sparql"] = sparql
+    return postdata
+
+
+def http_post_sparql_bom_query(url, libtype, libname, max_depth):
+    postdata = http_post_sparql_bom_query_postdata(libtype, libname, max_depth)
+    print("postdata: {}".format(postdata))
+    r = httpx.post(url, headers=http_request_headers(), data=json.dumps(postdata))
+    print("----- response status_code -----")
+    print(r.status_code)
+    print("----- response text -----")
+    print(r.text)
+    print("----- pretty-print JSON response object -----")
+    obj = json.loads(r.text)
+    print(json.dumps(obj, sort_keys=False, indent=2))
+
+
+def http_post_sparql_bom_query_postdata(libtype, libname, max_depth):
+    postdata = dict()
+    postdata["libtype"] = libtype
+    postdata["libname"] = libname
+    postdata["max_depth"] = max_depth
+    return postdata
 
 
 if __name__ == "__main__":
@@ -282,6 +391,32 @@ if __name__ == "__main__":
             elif func == "owl_visualizer":
                 infile = sys.argv[2]
                 owl_visualizer(infile)
+            elif func == "generate_rdflib_triples_builder":
+                vertex_signatures_filename = sys.argv[2]
+                generate_rdflib_triples_builder(vertex_signatures_filename)
+            elif func == "parse_owl":
+                owl_file_path = sys.argv[2]
+                parse_owl(owl_file_path)
+            elif func == "generate_owl":
+                vertex_signatures_filename = sys.argv[2]
+                edge_signatures_filename = sys.argv[3]
+                namespace = sys.argv[4]
+                generate_owl(
+                    vertex_signatures_filename, edge_signatures_filename, namespace
+                )
+            elif func == "http_get":
+                url = sys.argv[2]
+                http_get(url)
+            elif func == "http_post_sparql_query":
+                url = sys.argv[2]
+                libtype_libname = sys.argv[3]
+                http_post_sparql_query(url, libtype_libname)
+            elif func == "http_post_sparql_bom_query":
+                url = sys.argv[2]
+                libtype = sys.argv[3]
+                libname = sys.argv[4]
+                max_depth = sys.argv[5]
+                http_post_sparql_bom_query(url, libtype, libname, max_depth)
             elif func == "ad_hoc":
                 ad_hoc_development()
             else:

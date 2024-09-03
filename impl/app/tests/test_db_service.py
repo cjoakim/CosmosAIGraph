@@ -1,201 +1,223 @@
+import json
+import os
 import time
 import uuid
+import pytest
 
 from src.services.ai_conversation import AiConversation
-from src.services.cosmos_vcore_service import CosmosVCoreService
+from src.services.db_service import DBService
 from src.services.config_service import ConfigService
 from src.util.fs import FS
 
-# pytest -v tests/test_cosmos_vcore_service.py
+# pytest -v tests/test_db_service.py
 
-# an actual Cosmos DB Mongo vCore account is used in these tests
+# actual Cosmos DB NoSQL and Mongo vCore accounts are used in these tests
 
-def test_conn_str_config():
+def initialize_conversation(user_msg):
+    conv = AiConversation()
+    conv.add_user_message(user_msg)
+    conv.add_system_message("CAIG_GRAPH_SOURCE_TYPE is: {} at {}".format(
+        ConfigService.graph_source(), ConfigService.epoch()))
+    return conv
+
+#@pytest.mark.skip(reason="not yet implemented")
+@pytest.mark.asyncio
+async def test_vcore_save_load_conversation():
     ConfigService.set_standard_unit_test_env_vars()
-    conn_str = ConfigService.mongo_vcore_conn_str()
-    assert conn_str.startswith("mongodb+srv://")
-    assert ".mongocluster.cosmos.azure.com" in conn_str
-
-
-def test_meta_and_crud_operations():
-    ConfigService.set_standard_unit_test_env_vars()
-    opts = dict()
-    opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-    vcore = CosmosVCoreService(opts)
-    assert "pymongo.mongo_client.MongoClient" in str(type(vcore.get_client()))
-
-    epoch = int(time.time())
-    new_dbname = "tempdb_{}".format(epoch)
-    new_collname = "tempcoll_{}".format(epoch)
-
+    os.environ["CAIG_GRAPH_SOURCE_TYPE"] = "cosmos_vcore"
+    os.environ["CAIG_GRAPH_SOURCE_DB"] = "caig"
+    
+    db_svc = None
     try:
-        # test initial state:
-        # the 'unittests' collection in 'dev' database is assumed to exist.
-        dbs = vcore.list_databases()
-        assert "dev" in dbs
-        vcore.set_db("dev")
-        vcore.set_coll("unittests")
-        colls = vcore.list_collections()
-        assert "unittests" in colls
+        assert ConfigService.graph_source() == "cosmos_vcore"
+        assert ConfigService.graph_source_db() == "caig"
+        db_svc = DBService()
+        await db_svc.initialize()
+        msg = "pytest cosmos_vcore {}".format(time.time())
+        conv1 : AiConversation = initialize_conversation(msg)
+        print(conv1.serialize())
+        await db_svc.save_conversation(conv1)
+        conv_id = conv1.get_conversation_id()
+        print("conv_id: {}".format(conv_id))
 
-        # create a temporary database with a temporary collection
-        vcore.set_db(new_dbname)
-        vcore.set_coll(new_collname)
+        conv2 : AiConversation = await db_svc.load_conversation(conv_id)
+        assert conv1.get_conversation_id() == conv2.get_conversation_id()
+        assert conv1.serialize() == conv2.serialize()
+        assert msg in conv2.serialize()
+    finally:
+        if db_svc != None:
+            await db_svc.close()
 
-        # create a document in the temporary collection, read it back and verify
-        doc = dict()
-        doc["name"] = "testvalue"
-        vcore.insert_doc(doc)
-        assert vcore.count_docs({}) == 1
-        cursor, docs = vcore.find({}), list()
-        for doc in cursor:
-            docs.append(doc)
-        assert len(docs) == 1
-        assert docs[0]["name"] == "testvalue"
+@pytest.mark.asyncio
+async def test_nosql_save_load_conversation():
+    ConfigService.set_standard_unit_test_env_vars()
+    os.environ["CAIG_GRAPH_SOURCE_TYPE"] = "cosmos_nosql"
+    os.environ["CAIG_GRAPH_SOURCE_DB"] = "caig"
 
-        # index retrieval and creation
-        indexes = vcore.get_coll_indexes(new_collname)
-        assert indexes == {"_id_": {"key": [("_id", 1)], "v": 2}}
-        vcore.create_simple_index("name")
-        indexes = vcore.get_coll_indexes(new_collname)
-        assert indexes == {
-            "_id_": {"v": 2, "key": [("_id", 1)]},
-            "name_1": {"v": 2, "key": [("name", 1)]},
-        }
-
-        # veriify that the new database and collection exist
-        assert new_dbname in vcore.list_databases()
-        assert new_collname in vcore.list_collections()
-
-        # verify that document deletion works
-        vcore.delete_many({})
-        assert vcore.count_docs({}) == 0
-
-        db_stats = vcore.command_db_stats()
-        FS.write_json(db_stats, "tmp/test_cosmos_vcore_service_db_stats.json")
-        assert type(db_stats) == dict
-
-        coll_stats = vcore.command_coll_stats(new_collname)
-        FS.write_json(coll_stats, "tmp/test_cosmos_vcore_service_coll_stats.json")
-        assert type(coll_stats) == dict
-
-        commands = vcore.command_list_commands()
-        FS.write_json(commands, "tmp/test_cosmos_vcore_service_commands.json")
-        assert type(commands) == dict
-
-        shard_info = vcore.get_shard_info()
-        FS.write_json(shard_info, "tmp/test_cosmos_vcore_shard_info.json")
-        assert type(shard_info) == dict
-
-        indexes = vcore.get_coll_indexes(new_collname)
-        if indexes is not None:
-            FS.write_json(indexes, "tmp/test_cosmos_vcore_indexes.json")
-            assert type(indexes) == dict
-
-        # cleanup - delete the temporary container and db
-        # we want the test to fail if these operations do not succeed
-        vcore.delete_container(new_collname)
-        assert new_collname not in vcore.list_collections()
-        vcore.delete_database(new_dbname)
-        assert new_dbname not in vcore.list_databases()
-    except Exception as excp:
-        print(str(excp))
-        vcore.delete_database(new_dbname)
-        assert False
-
+    db_svc = None
     try:
-        # cleanup any previous remnant tempdb_ databases with no test assertions
-        remnant_dblist = vcore.list_databases()
-        FS.write_json(remnant_dblist, "tmp/test_cosmos_vcore_remnant_dblist.json")
-        for dbname in remnant_dblist:
-            if dbname.startswith("tempdb_"):
-                vcore.delete_database(dbname)
-    except Exception as excp:
-        pass
+        assert ConfigService.graph_source() == "cosmos_nosql"
+        assert ConfigService.graph_source_db() == "caig"
+        db_svc = DBService()
+        await db_svc.initialize()
+        msg = "pytest cosmos_nosql {}".format(time.time())
+        conv1 : AiConversation = initialize_conversation(msg)
+        print(conv1.serialize())
+        await db_svc.save_conversation(conv1)
+        conv_id = conv1.get_conversation_id()
+        print("conv_id: {}".format(conv_id))
 
+        conv2 : AiConversation = await db_svc.load_conversation(conv_id)
+        assert conv1.get_conversation_id() == conv2.get_conversation_id()
+        assert conv1.serialize() == conv2.serialize()
+        assert msg in conv2.serialize()
+    finally:
+        if db_svc != None:
+            await db_svc.close()
 
-def test_search_documents_like_library():
+# ---
+
+@pytest.mark.asyncio
+async def test_vcore_rag_find_library():
     ConfigService.set_standard_unit_test_env_vars()
-    opts = dict()
-    opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-    vcore = CosmosVCoreService(opts)
-    vcore.set_db(ConfigService.graph_source_db())
-    #vcore.set_coll(ConfigService.documents_container())
+    os.environ["CAIG_GRAPH_SOURCE_TYPE"] = "cosmos_vcore"
+    os.environ["CAIG_GRAPH_SOURCE_DB"] = "caig"
+    db_svc = None
+    try:
+        assert ConfigService.graph_source() == "cosmos_vcore"
+        assert ConfigService.graph_source_db() == "caig"
+        db_svc = DBService()
+        await db_svc.initialize()
+        docs = await db_svc.rag_find_library('flask')
+        assert len(docs) > 0
+        doc = docs[0]
+        assert doc["name"] == 'flask'
+        assert doc["libtype"] == 'pypi'
+    finally:
+        if db_svc != None:
+            await db_svc.close()
 
-    search_result = vcore.search_documents_like_library("pypi", "flask")
-    FS.write_json(search_result, "tmp/test_search_documents_like_library.json")
-
-    assert search_result["error"] is None
-    assert search_result["doc"] is not None
-    assert search_result["count"] > 0
-    for doc in search_result["results"]:
-        assert doc["_id"] is not None
-        assert doc["libtype"] is not None
-        assert doc["name"] is not None
-        assert doc["documentation_summary"] is not None
-        assert len(doc["embedding"]) == 1536
-
-def test_ai_conversation():
+@pytest.mark.asyncio
+async def test_nosql_rag_find_library():
     ConfigService.set_standard_unit_test_env_vars()
-    opts = dict()
-    opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-    vcore = CosmosVCoreService(opts)
-    vcore.set_db(ConfigService.graph_source_db())
-    vcore.set_coll(ConfigService.conversations_container())
-    initial_count = vcore.count_docs({})
-    print("initial_count: {}".format(initial_count))
+    os.environ["CAIG_GRAPH_SOURCE_TYPE"] = "cosmos_nosql"
+    os.environ["CAIG_GRAPH_SOURCE_DB"] = "caig"
+    db_svc = None
+    try:
+        assert ConfigService.graph_source() == "cosmos_nosql"
+        assert ConfigService.graph_source_db() == "caig"
+        db_svc = DBService()
+        await db_svc.initialize()
+        docs = await db_svc.rag_find_library('flask')
+        assert len(docs) > 0
+        doc = docs[0]
+        assert doc["name"] == 'flask'
+        assert doc["libtype"] == 'pypi'
+    finally:
+        if db_svc != None:
+            await db_svc.close()
 
-    conv1 = AiConversation()
-    conv1.conversation_id = "unittest{}-".format(str(uuid.uuid4()))
-    conv1.add_user_message("this is a user message")
-    conv1.add_system_message("this is a system message")
-    conv1.add_assistant_message("this is an assistant message")
-    conv1.add_tool_message("this is an assistant message")
-    jstr = conv1.serialize()
-    print(jstr)
+# ---
 
-    bool = vcore.save_conversation(conv1)
-    assert bool is True
-
-    for n in range(0,5):
-        bool = vcore.save_conversation(conv1)
-        assert bool is True
-    count = vcore.count_docs({})
-    print("count: {}".format(count))
-    expected_count = initial_count + 1
-    assert count == expected_count
-
-    conv2 = vcore.load_conversation(conv1.get_conversation_id())
-    assert conv1.get_conversation_id() == conv2.get_conversation_id()
-    assert conv1.get_message_count() == conv2.get_message_count()
-
-    conv2.add_user_message("this is another user message")
-    bool = vcore.save_conversation(conv2)
-    assert bool is True
-
-def test_vector_search():
+@pytest.mark.asyncio
+async def test_vcore_rag_vector_search():
     ConfigService.set_standard_unit_test_env_vars()
-    opts = dict()
-    opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-    vcore = CosmosVCoreService(opts)
-    vcore.set_db(ConfigService.graph_source_db())
-    vcore.set_coll(ConfigService.graph_source_container())
+    os.environ["CAIG_GRAPH_SOURCE_TYPE"] = "cosmos_vcore"
+    os.environ["CAIG_GRAPH_SOURCE_DB"] = "caig"
+    db_svc = None
+    try:
+        assert ConfigService.graph_source() == "cosmos_vcore"
+        assert ConfigService.graph_source_db() == "caig"
+        db_svc = DBService()
+        await db_svc.initialize()
+        embedding = sample_embedding_for_flask()
+        docs = await db_svc.rag_vector_search(embedding, 4)
+        assert len(docs) > 0
+        doc = docs[0]
+        assert doc["name"] == 'flask'
+        assert doc["libtype"] == 'pypi'
+        assert len(docs) == 4
+    finally:
+        if db_svc != None:
+            await db_svc.close()
 
-    #text = "four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition"
-    vs_result = vcore.vector_search(sample_embeddings())
-    FS.write_json(vs_result, "tmp/test_vector_search.json")
+@pytest.mark.asyncio
+async def test_nosql_rag_vector_search():
+    ConfigService.set_standard_unit_test_env_vars()
+    os.environ["CAIG_GRAPH_SOURCE_TYPE"] = "cosmos_nosql"
+    os.environ["CAIG_GRAPH_SOURCE_DB"] = "caig"
+    db_svc = None
+    try:
+        assert ConfigService.graph_source() == "cosmos_nosql"
+        assert ConfigService.graph_source_db() == "caig"
+        db_svc = DBService()
+        await db_svc.initialize()
+        embedding = sample_embedding_for_flask()
+        docs = await db_svc.rag_vector_search(embedding, 4)
+        assert len(docs) > 0
+        doc = docs[0]
+        assert doc["name"] == 'flask'
+        assert doc["libtype"] == 'pypi'
+        assert len(docs) == 4
+    finally:
+        if db_svc != None:
+            await db_svc.close()
 
-    assert vs_result["k"] == 10
-    assert vs_result["embeddings_attr"] == "embedding"
-    assert vs_result["count"] > 0
-    for doc in vs_result["results"]:
-        assert doc["_id"] is not None
-        assert doc["libtype"] is not None
-        assert doc["name"] is not None
-        assert doc["documentation_summary"] is not None
-        assert len(doc["embedding"]) == 1536
+# ---
 
-def sample_embeddings():
+
+@pytest.mark.asyncio
+async def test_vcore_get_documents_by_libtype_and_names():
+    ConfigService.set_standard_unit_test_env_vars()
+    os.environ["CAIG_GRAPH_SOURCE_TYPE"] = "cosmos_vcore"
+    os.environ["CAIG_GRAPH_SOURCE_DB"] = "caig"
+    db_svc = None
+    try:
+        assert ConfigService.graph_source() == "cosmos_vcore"
+        assert ConfigService.graph_source_db() == "caig"
+        db_svc = DBService()
+        await db_svc.initialize()
+        names = 'flask,pydantic,m26,DoesNotExist'.split(',')
+        docs = await db_svc.get_documents_by_libtype_and_names('pypi', names)
+        assert len(docs) == 3
+        result_names = dict()
+        for doc in docs:
+            name = doc['name']
+            result_names[name] = doc
+        assert 'flask' in result_names.keys()
+        assert 'pydantic' in result_names.keys()
+        assert 'm26' in result_names.keys()
+    finally:
+        if db_svc != None:
+            await db_svc.close()
+
+@pytest.mark.asyncio
+async def test_nosql_get_documents_by_libtype_and_names():
+    ConfigService.set_standard_unit_test_env_vars()
+    os.environ["CAIG_GRAPH_SOURCE_TYPE"] = "cosmos_nosql"
+    os.environ["CAIG_GRAPH_SOURCE_DB"] = "caig"
+    db_svc = None
+    try:
+        assert ConfigService.graph_source() == "cosmos_nosql"
+        assert ConfigService.graph_source_db() == "caig"
+        db_svc = DBService()
+        await db_svc.initialize()
+        names = 'flask,pydantic,m26,DoesNotExist'.split(',')
+        docs = await db_svc.get_documents_by_libtype_and_names('pypi', names)
+        assert len(docs) == 3
+        result_names = dict()
+        for doc in docs:
+            name = doc['name']
+            result_names[name] = doc
+        assert 'flask' in result_names.keys()
+        assert 'pydantic' in result_names.keys()
+        assert 'm26' in result_names.keys()
+    finally:
+        if db_svc != None:
+            await db_svc.close()
+
+def sample_embedding_for_flask():
+    """ this was copied from vectorized file impl/data/pypi/wrangled_libs/flask.json """
     return [
     -0.00011316168092889711,
     0.007242347579449415,

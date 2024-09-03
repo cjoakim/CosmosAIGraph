@@ -20,7 +20,8 @@ from src.models.webservice_models import DocumentsVSResultsModel
 # account/database.
 # Chris Joakim, Microsoft
 
-logging.getLogger('pymongo').setLevel(logging.WARNING)
+logging.getLogger("pymongo").setLevel(logging.WARNING)
+
 
 class CosmosVCoreService:
     def __init__(self, opts: dict):
@@ -96,8 +97,16 @@ class CosmosVCoreService:
             print(traceback.format_exc())
             return None
 
+    def set_container(self, collname):
+        """alias for the set_coll method"""
+        return self.set_coll(collname)
+
     def get_coll(self):
         return self._coll
+
+    def get_container(self):
+        """alias for the get_coll method"""
+        return self.get_coll()
 
     def command_db_stats(self):
         """Execute the 'dbstats' command and return the results."""

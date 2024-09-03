@@ -6,7 +6,7 @@ from src.util.fs import FS
 from src.util.prompt_optimizer import PromptOptimizer
 
 
-# pytest tests/test_prompt_optimizer.py
+# pytest -v tests/test_prompt_optimizer.py
 
 # test results on 6/7:
 # test case: 0, initial_tokens: 333, pruned_tokens: 333, iteration_count: 1, ratio: -1.0

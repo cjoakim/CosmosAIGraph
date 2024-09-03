@@ -4,7 +4,7 @@ import pytest
 from src.services.graph_builder import GraphBuilder
 from src.services.config_service import ConfigService
 
-# pytest tests/test_graph_builder.py
+# pytest -v tests/test_graph_builder.py
 
 @pytest.mark.asyncio
 async def test_build_with_libraries_mini_nt_and_owl_file():

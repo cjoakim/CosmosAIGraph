@@ -3,6 +3,7 @@ import traceback
 
 from azure.cosmos.aio import CosmosClient
 
+from src.models.webservice_models import AiConvFeedbackModel
 from src.services.config_service import ConfigService
 
 # Instances of this class are used to access a Cosmos DB NoSQL
@@ -41,7 +42,7 @@ class CosmosNoSQLService:
     async def initialize(self):
         """This method should be called after the above constructor."""
         self._client = CosmosClient(self._uri, self._key)
-        await self._client.__aenter__()  # this piece is important for the SDK to cache account information
+        # await self._client.__aenter__()
         logging.info("CosmosNoSQLService - initialize() completed")
 
     async def close(self):
@@ -68,7 +69,7 @@ class CosmosNoSQLService:
 
     def get_current_cname(self):
         return self._cname
-    
+
     def set_container(self, cname):
         """Set the current container in the current database to the given cname."""
         self._cname = cname
@@ -110,7 +111,7 @@ class CosmosNoSQLService:
         parameters_list.append(
             {"name": "@enable_cross_partition_query", "value": cross_partition}
         )
-        parameters_list.append({"name": "@max_item_count", "value": max_items})
+        # parameters_list.append({"name": "@max_item_count", "value": max_items})
         if pk is not None:
             parameters_list.append({"name": "@partition_key", "value": pk})
         query_results = self._ctrproxy.query_items(
@@ -144,6 +145,24 @@ class CosmosNoSQLService:
         async for item in query_results:
             results_list.append(item)
         return results_list
+
+    async def save_feedback(self, feedback: AiConvFeedbackModel) -> bool:
+        curr_container = self._cname
+        result = False
+        try:
+            self.set_container(ConfigService.feedback_container())
+            await self.upsert_item(feedback)
+            result = True
+        except Exception as e:
+            logging.critical(
+                "Exception in CosmosNoSQLService#save_feedback: {} -> {}".format(
+                    feedback, str(e)
+                )
+            )
+            logging.exception(e, stack_info=True, exc_info=True)
+        finally:
+            self.set_container(curr_container)
+        return result
 
     def last_response_headers(self):
         """
