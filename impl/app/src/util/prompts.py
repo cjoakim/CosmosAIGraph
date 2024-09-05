@@ -2,8 +2,6 @@
 # system or user prompt strings.
 # Chris Joakim, Aleksey Savateyev, Microsoft
 
-# TODO : use Jinja templates instead?
-
 import logging
 
 

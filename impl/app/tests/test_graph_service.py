@@ -141,7 +141,6 @@ async def test_owl():
     assert owl_info["error"] == None
 
 
-# @pytest.mark.skip(reason="TODO - implement")
 @pytest.mark.asyncio
 async def test_deep_bom_query():
     ConfigService.set_standard_unit_test_env_vars()

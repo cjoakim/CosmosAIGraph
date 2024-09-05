@@ -155,7 +155,7 @@ async def get_home(req: Request):
 @app.get("/about")
 async def get_about(req: Request):
     view_data = dict()
-    view_data["code_version"] = "2024/08/30"
+    view_data["code_version"] = ConfigService.code_version()
     view_data["graph_source"] = ConfigService.graph_source()
     view_data["graph_source_db"] = ConfigService.graph_source_db()
     view_data["graph_source_container"] = ConfigService.graph_source_container()
@@ -259,7 +259,6 @@ async def gen_graph_execute(req: Request):
         # logging.info("opts: {}".format(opts))
         # vcore = CosmosVCoreService(opts)
         # vcore.set_db(ConfigService.graph_source_db())
-        # TODO: WIP
         # if vcore.insert_docs_from_files(entitiesFiles, relationshipsFiles, ontologyFile):
         #     f = open("results.nt", "r")
         #     view_data["results"] = f.read()
@@ -294,7 +293,7 @@ async def ai_post_gen_sparql(req: Request):
     sparql: str = ""
 
     resp_obj = dict()
-    resp_obj["session_id"] = ""  # TODO
+    resp_obj["session_id"] = "" # Note: not currently used, populate with the HTTP session ID
     resp_obj["natural_language"] = natural_language
     resp_obj["owl"] = owl_xml
     resp_obj["completion_id"] = ""

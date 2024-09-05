@@ -5,12 +5,10 @@ CAIG_GRAPH_SOURCE_TYPE environment variable set to "cosmos_nosql".
 Usage:
     python main_nosql.py test_cosmos_service <dbname>
     python main_nosql.py test_cosmos_service dev
+    python main_nosql.py load_entities <dbname> <cname>
+    python main_nosql.py load_entities caig config
     python main_nosql.py load_libraries <dbname> <cname> <max_docs>
-    python main_nosql.py load_libraries dev test 999999
-    python main_nosql.py load_libraries dev libraries_v1 999999
     python main_nosql.py load_libraries caig libraries 999999
-    python main_nosql.py vector_search_similar_libraries <libname>
-    python main_nosql.py vector_search_similar_libraries flask
     python main_nosql.py vector_search_words <word1> <word2> <word3> ...
     python main_nosql.py vector_search_words asynchronous web framework with pydantic
     python main_nosql.py ad_hoc dev
@@ -37,6 +35,7 @@ from dotenv import load_dotenv
 
 from faker import Faker
 
+from src.services.ai_service import AiService
 from src.services.config_service import ConfigService
 from src.services.cosmos_nosql_service import CosmosNoSQLService
 from src.services.db_service import DBService
@@ -252,6 +251,30 @@ ORDER BY VectorDistance(c.embedding, @embedding)""".strip().format(
     logging.info("end of test_cosmos_service")
 
 
+async def load_entities(dbname, cname):
+    logging.info(
+        "load_entities, dbname: {}, cname: {}".format(dbname, cname)
+    )
+    try:
+        opts = dict()
+        nosql_svc = CosmosNoSQLService(opts)
+        await nosql_svc.initialize()
+        nosql_svc.set_db(dbname)
+        nosql_svc.set_container(cname)
+        doc = FS.read_json("../data/entities/entities_doc.json")
+        print(doc)
+        resp = await nosql_svc.upsert_item(doc)
+        print(resp)
+
+                # impl/app/src/services/entities_service.py
+                # impl/app/tests/test_entities_service.py
+                # impl/data/entities/entities_doc.json
+
+    except Exception as e:
+        logging.info(str(e))
+        logging.info(traceback.format_exc())
+    await nosql_svc.close()
+
 async def load_libraries(dbname, cname, max_docs):
     logging.info(
         "load_libraries, dbname: {}, cname: {}, max_docs: {}".format(
@@ -349,16 +372,23 @@ def filter_files_list(files_list, suffix):
             filtered.append(f)
     return filtered
 
+async def vector_search_words(natural_language):
+    try:
+        ai_svc = AiService()
+        resp = ai_svc.generate_embeddings(natural_language)
+        embedding = resp.data[0].embedding
 
-def vector_search_similar_libraries(libname):
-    logging.info("vector_search_similar_libraries, libname: {}".format(libname))
-    logging.info("TODO - implement")
+        db_svc = DBService()
+        await db_svc.initialize()
 
+        docs = await db_svc.rag_vector_search(embedding, 4)
+        for idx, doc in enumerate(docs):
+            print("doc {}: {}".format(idx, doc))
 
-def vector_search_words(natural_language):
-    logging.info("vector_search_words, nl: {}".format(natural_language))
-    logging.info("TODO - implement")
-
+    except Exception as e:
+        logging.info(str(e))
+        logging.info(traceback.format_exc())
+    await db_svc.close()
 
 async def test_db_service(source, dbname):
     try:
@@ -409,6 +439,10 @@ if __name__ == "__main__":
             if func == "test_cosmos_service":
                 dbname = sys.argv[2]
                 asyncio.run(test_cosmos_service(dbname))
+            elif func == "load_entities":
+                dbname = sys.argv[2]
+                cname = sys.argv[3]
+                asyncio.run(load_entities(dbname, cname))
             elif func == "load_libraries":
                 dbname = sys.argv[2]
                 cname = sys.argv[3]
@@ -418,9 +452,6 @@ if __name__ == "__main__":
                 source = sys.argv[2]
                 dbname = sys.argv[3]
                 asyncio.run(test_db_service(source, dbname))
-            elif func == "vector_search_similar_libraries":
-                libname = sys.argv[2]
-                asyncio.run(vector_search_similar_libraries(libname))
             elif func == "vector_search_words":
                 words = list()
                 for idx, arg in enumerate(sys.argv):

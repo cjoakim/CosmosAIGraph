@@ -151,7 +151,7 @@ class AiService:
                     try:
                         completion = self.aoai_client.chat.completions.create(
                             model=self.completions_deployment,
-                            temperature=0,
+                            temperature=ConfigService.generate_graph_temperature(),
                             messages=[
                                 {"role": "system", "content": system_prompt},
                                 {"role": "user", "content": user_prompt},
@@ -180,7 +180,7 @@ class AiService:
                     try:
                         completion = self.aoai_client.chat.completions.create(
                             model=self.completions_deployment,
-                            temperature=0,
+                            temperature=ConfigService.generate_graph_temperature(),
                             messages=[
                                 {"role": "system", "content": system_prompt},
                                 {"role": "user", "content": user_prompt},
@@ -225,7 +225,7 @@ class AiService:
                 system_prompt = Prompts().generate_sparql_system_prompt(owl)
                 completion = self.aoai_client.chat.completions.create(
                     model=self.completions_deployment,
-                    temperature=0,
+                    temperature=ConfigService.moderate_sparql_temperature(),
                     response_format={"type": "json_object"},
                     messages=[
                         {"role": "system", "content": system_prompt},
@@ -273,7 +273,7 @@ class AiService:
                 return False
             if len(owl.strip()) < 10:
                 return False
-            # TODO: optionally implement content moderation for profanity, etc
+            # Note: optionally implement content moderation for profanity, etc
             return True
         except Exception as e:
             return False
@@ -322,9 +322,9 @@ class AiService:
         prompt_template: str,
         user_query: str,
         context: str,
-        max_tokens: int = 4096,
-        temperature: float = 0.4,
-        top_p: float = 0.5,
+        max_tokens: int = ConfigService.invoke_kernel_max_tokens(),
+        temperature: float = ConfigService.invoke_kernel_temperature(),
+        top_p: float = ConfigService.invoke_kernel_top_p()
     ) -> AiCompletion | None:
 
         try:
@@ -454,7 +454,7 @@ One line TLDR with the fewest words."""
     async def get_completion(self, user_prompt, system_prompt):
         completion = self.aoai_client.chat.completions.create(
             model=self.completions_deployment,
-            temperature=0.1,
+            temperature=ConfigService.get_completion_temperature(),
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -469,7 +469,7 @@ One line TLDR with the fewest words."""
         full_context: str,
         full_history,
         user_query: str,
-        max_tokens: int,
+        max_tokens: int = ConfigService.optimize_context_and_history_max_tokens()
     ):
         try:
             optimizer = PromptOptimizer()

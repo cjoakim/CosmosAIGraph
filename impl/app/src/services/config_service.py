@@ -88,6 +88,10 @@ class ConfigService:
         return False
 
     @classmethod
+    def code_version(cls) -> str:
+        return "2024/09/05"
+    
+    @classmethod
     def defined_environment_variables(cls) -> dict:
         """
         Return a dict with the defined environment variable names and descriptions
@@ -325,12 +329,29 @@ class ConfigService:
         return cls.float_envvar("CAIG_HTML_SUMMARIZE_TOP_P", 0.8)
 
     @classmethod
+    def optimize_context_and_history_max_tokens(cls) -> str:
+        return cls.int_envvar("CAIG_OPTIMIZE_CONTEXT_AND_HISTORY_MAX_TOKENS", 10000)
+
+    @classmethod
     def invoke_kernel_max_tokens(cls) -> str:
-        return cls.int_envvar("CAIG_INVOKE_KERNEL_MAX_TOKENS", 1000)
+        return cls.int_envvar("CAIG_INVOKE_KERNEL_MAX_TOKENS", 4096)
 
     @classmethod
     def invoke_kernel_temperature(cls) -> str:
         return cls.float_envvar("CAIG_INVOKE_KERNEL_TEMPERATURE", 0.4)
+
+    @classmethod
+    def generate_graph_temperature(cls) -> str:
+        return cls.float_envvar("CAIG_GENERATE_GRAPH_TEMPERATURE", 0.0)
+
+    @classmethod
+    def moderate_sparql_temperature(cls) -> str:
+        return cls.float_envvar("CAIG_MODERATE_SPARQL_TEMPERATURE", 0.0)
+
+    @classmethod
+    def get_completion_temperature(cls) -> str:
+        return cls.float_envvar("CAIG_GET_COMPLETION_TEMPERATURE", 0.1)
+
 
     @classmethod
     def invoke_kernel_top_p(cls) -> str:

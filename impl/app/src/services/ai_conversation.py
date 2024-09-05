@@ -12,6 +12,7 @@ from semantic_kernel.contents.chat_message_content import ChatMessageContent
 from semantic_kernel.exceptions import ContentSerializationError
 
 from src.services.ai_completion import AiCompletion
+from src.services.config_service import ConfigService
 
 # Instances of this class represent an growing AI conversation with ChatHistory
 # and related completions and token usage.  Instances are JSON-serializable and
@@ -54,6 +55,11 @@ class AiConversation:
                     self.diagnostic_messages = json_obj["diagnostic_messages"]
                 else:
                     self.diagnostic_messages = list()
+
+                if "ai_config" in json_obj.keys():
+                    self.ai_config = json_obj["ai_config"]
+                else:
+                    self.ai_config = self.current_ai_configuration()
             else:
                 self.created_at = time.time()
                 self.created_date = str(
@@ -68,6 +74,7 @@ class AiConversation:
                 self.chat_history = ChatHistory()
                 self.diagnostic_messages = list()
                 self.last_user_message = ""
+                self.ai_config = self.current_ai_configuration()
         except Exception as e:
             logging.critical("Exception in AiConversation#__init__: {}".format(str(e)))
             logging.exception(e, stack_info=True, exc_info=True)
@@ -175,6 +182,23 @@ class AiConversation:
                     all_lines.append(line)
         return "\n".join(all_lines)
 
+    def current_ai_configuration(self) -> dict:
+        config = dict()
+        config['completions_deployment'] = ConfigService.azure_openai_completions_deployment()
+        config['embeddings_deployment'] = ConfigService.azure_openai_embeddings_deployment()
+        config['invoke_kernel_max_tokens'] = ConfigService.invoke_kernel_max_tokens()
+        config['invoke_kernel_temperature'] = ConfigService.invoke_kernel_temperature()
+        config['invoke_kernel_top_p'] = ConfigService.invoke_kernel_top_p()
+        config['html_summarize_max_tokens'] = ConfigService.html_summarize_max_tokens()
+        config['html_summarize_temperature'] = ConfigService.html_summarize_temperature()
+        config['html_summarize_top_p'] = ConfigService.html_summarize_top_p()
+        config['get_completion_temperature'] = ConfigService.get_completion_temperature()  
+        config['moderate_sparql_temperature'] = ConfigService.moderate_sparql_temperature()
+        config['optimize_context_and_history_max_tokens'] = ConfigService.optimize_context_and_history_max_tokens()
+        config['truncate_llm_context_max_ntokens'] = ConfigService.truncate_llm_context_max_ntokens()
+        config['generate_graph_temperature'] = ConfigService.generate_graph_temperature()
+        return config 
+
     def serialize(self) -> str:
         try:
             obj = dict()
@@ -188,6 +212,7 @@ class AiConversation:
             obj["completions"] = self.completions
             obj["chat_history"] = json.loads(self.chat_history.serialize())
             obj["diagnostic_messages"] = self.diagnostic_messages
+            obj["ai_config"] = self.ai_config
             return json.dumps(obj, sort_keys=False, indent=2)
         except Exception as e:
             raise ContentSerializationError(

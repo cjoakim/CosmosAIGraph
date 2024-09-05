@@ -17,7 +17,7 @@ def test_constructor():
     ai_svc = AiService()
     assert ai_svc.aoai_endpoint.startswith("https://")
     assert ai_svc.aoai_endpoint.endswith(".openai.azure.com/")
-    assert ai_svc.aoai_version.startswith("2023-")
+    assert ai_svc.aoai_version.startswith("202")
     assert ai_svc.aoai_client is not None
 
 def test_generate_sparql_from_user_prompt():

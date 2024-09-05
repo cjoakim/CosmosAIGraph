@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="img/app-architecture.png" width="90%">
+  <img src="img/app-architecture-v2.png" width="90%">
 </p>
 
 
@@ -28,9 +28,11 @@ names will be **caig_web**, and **caig_graph**.
 - **Azure Cosmos DB** is used as the persistent OLTP datastore
   - One or more Cosmos DB APIs may be part of your solution
   - See https://learn.microsoft.com/en-us/azure/cosmos-db/
-  - Implementation 1 uses the **Cosmos DB Mongo vCore API**
+  - You can use either the **Cosmos DB Mongo vCore or NoSQL APIs**
     - https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/
-  - AI sessions, prompt history, and completion history is stored here
+  - Your domain data, with embeddings, are stored here
+  - AI sessions, prompt history, feedback, and completion history is persisted here
+  - This Cosmos DB data can optionally be mirrored to OneLake in Microsoft Fabric
 - **Azure OpenAI** is used for AI and LLM functionality
   - See https://learn.microsoft.com/en-us/azure/ai-services/openai/
 - **semantic-kernel** is use for AI and LLM orchestration
@@ -87,9 +89,11 @@ uses several environment variables, and they all begin with **CAIG_**.
 
 - See [Environment Variables](environment_variables.md)
 
-### Load Cosmos DB with Library Documents
+### Load Cosmos DB with Library and Config Documents
 
-- See [Data Modeling, and Load Azure Cosmos DB vCore](load_cosmos_vcore.md)
+- See [Cosmos DB Document Design and Modeling](cosmos_design_modeling.md)
+- See [Load Azure Cosmos DB vCore](load_cosmos_vcore.md)
+- See [Load Azure Cosmos DB NoSQL](load_cosmos_nosql.md)
 
 ### Run the Application on your Workstation
 
@@ -110,6 +114,13 @@ uses several environment variables, and they all begin with **CAIG_**.
 ---
 
 ## Next Steps: Customizing this Solution for Your Application
+
+It is recommended that CosmosAIGraph Proof-of-Concept (POC) team
+has the following skillsets:
+
+- A data analysist who is familiar with your input graph data
+- A data engineer who can wrangle/transform the raw data into JSON documents for Cosmos DB
+- A Python developer with UI skills
 
 - See [Customizing this Solution](customizing_this_solution.md)
 
