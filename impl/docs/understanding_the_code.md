@@ -73,7 +73,8 @@ The classes here define the **business service** logic used by the application.
 the application for all configuration values.  "Hard-coding" of these
 values is generally not done in this codebase.  It is a goal of this
 reference implementation to expose as much functionality via configuration
-and environment variables as possible.
+and **environment variables** as possible.  See this class for the complete
+list of environment variables used by this solution, they all begin with **CAIG_**.
 
 **ConfigService** uses **environment variables** and this is well-suited for
 **Docker** containerized applications that are deployed to environments such as 
@@ -118,8 +119,17 @@ Modifying and using conversation.py may accelerated your development process.
 **cache_service.py** implements all (optional) caching of results such as SPARQL queries.
 Cosmos DB is used as the implementation of the cache.
 
-**cosmos_vcore_service.py** provides CRUD access to the Cosmos DB Mongo vCore database,
-including **vector search**.
+**db_service.py** implements class **DBService**, which is a wrapper over classes
+**CosmosNoSQLService** and **CosmosVCoreService**.  These classes implement
+CRUD operations over these databases.
+Class DBService inherits from class BaseDBService.
+Which one is used at runtime is determined by the **CAIG_GRAPH_SOURCE_TYPE** environment variable.
+If the value is "cosmos_nosql" then the Cosmos DB NoSQL API is used.
+If the value is "cosmos_vcore" then the Cosmos DB Mongo vCore API is used.
+
+Class **EntitiesService** also inherits from BaseDBService, and is used to read
+a configuration document which lists the entity names in your system.  These
+names are used in class StrategyBuilder to determine the intent of user natural-language.
 
 **graph_builder.py** implements class **GraphBuilder** which utilizes the builder
 pattern to create an instance of class **GraphService**, which contains an in-memory
