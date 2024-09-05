@@ -8,10 +8,15 @@ Also see the **presentations** directory for the PowerPoint and PDF presentation
 
 - [Please see the reference application documentation.](impl/docs/readme.md)
 
+**Change Log**
+
+- September 2024 - Added support for the **Cosmos DB NoSql API**
+
+
 <pre>
 
 </pre>
 
 <p align="center">
-  <img src="impl/docs/img/app-architecture.png" width="90%">
+  <img src="impl/docs/img/app-architecture-v2.png" width="90%">
 </p>
