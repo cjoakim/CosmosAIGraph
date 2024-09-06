@@ -90,7 +90,7 @@ class ConfigService:
     @classmethod
     def code_version(cls) -> str:
         return "2024/09/05"
-    
+
     @classmethod
     def defined_environment_variables(cls) -> dict:
         """
@@ -127,12 +127,7 @@ class ConfigService:
         )
         d["CAIG_COSMOSDB_NOSQL_URI"] = "The URI of your Cosmos DB NoSQL account"
         d["CAIG_COSMOSDB_NOSQL_KEY1"] = "The key of your Cosmos DB NoSQL account"
-        d["CAIG_COSMOSDB_NOSQL_KEY2"] = (
-            "The alternative key of your Cosmos DB NoSQL account"
-        )
-        d["CAIG_USE_ALT_SPARQL_CONSOLE"] = (
-            "A non empty string displays the alt view; defaults to an empty string"
-        )
+
         d["CAIG_AZURE_OPENAI_URL"] = "The URL of your Azure OpenAI account"
         d["CAIG_AZURE_OPENAI_KEY"] = "The Key of your Azure OpenAI account"
         d["CAIG_AZURE_OPENAI_COMPLETIONS_DEP"] = (
@@ -211,7 +206,23 @@ class ConfigService:
             value = cls.envvar(key)
             selected[key] = value
         logging.info(
-            "log_config: {}".format(json.dumps(selected, sort_keys=True, indent=2))
+            "log_defined_env_vars: {}".format(
+                json.dumps(selected, sort_keys=True, indent=2)
+            )
+        )
+
+    @classmethod
+    def print_defined_env_vars(cls):
+        """print() the defined CAIG_ environment variables as JSON"""
+        keys = sorted(cls.defined_environment_variables().keys())
+        selected = dict()
+        for key in keys:
+            value = cls.envvar(key)
+            selected[key] = value
+        print(
+            "print_defined_env_vars: {}".format(
+                json.dumps(selected, sort_keys=True, indent=2)
+            )
         )
 
     @classmethod
@@ -351,7 +362,6 @@ class ConfigService:
     @classmethod
     def get_completion_temperature(cls) -> str:
         return cls.float_envvar("CAIG_GET_COMPLETION_TEMPERATURE", 0.1)
-
 
     @classmethod
     def invoke_kernel_top_p(cls) -> str:

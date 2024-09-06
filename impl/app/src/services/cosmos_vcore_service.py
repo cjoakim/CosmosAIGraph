@@ -29,10 +29,6 @@ class CosmosVCoreService:
         self._db = None
         self._coll = None
         try:
-            if "mongocluster.cosmos.azure.com" in opts["conn_string"]:
-                self._env = "vcore"
-            else:
-                self._env = "local"
             self._client = MongoClient(opts["conn_string"], tlsCAFile=certifi.where())
             logging.info("CosmosVCoreService - client initialized")
         except Exception as e:

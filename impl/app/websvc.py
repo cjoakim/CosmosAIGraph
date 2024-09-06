@@ -21,6 +21,7 @@ from src.models.webservice_models import SparqlBomQueryResponseModel
 
 # Services with Business Logic
 from src.services.config_service import ConfigService
+from src.services.graph_builder import GraphBuilder
 from src.services.graph_service import GraphService
 from src.services.logging_level_service import LoggingLevelService
 
@@ -29,16 +30,45 @@ load_dotenv(override=True)
 logging.basicConfig(
     format="%(asctime)s - %(message)s", level=LoggingLevelService.get_level()
 )
-ConfigService.log_defined_env_vars()
+ConfigService.print_defined_env_vars()
 
 app = FastAPI()
 
-logging.debug("initializing GraphService in websvc.py")
-gs_opts = {}
-gs_opts["iterate_graph"] = True
-gs = GraphService(gs_opts)
-asyncio.run(gs.initialize())
-logging.debug("asyncio.run(gs.initialize()) completed in websvc.py")
+opts = {}
+opts["iterate_graph"] = True
+gb = GraphBuilder(opts)
+gs = GraphService(opts)
+
+
+async def initialize_async_services():
+    global gb
+    global gs
+    await gb.initialize()
+    logging.error("initialize_async_services - GraphBuilder initialized in websvc.py")
+    await gs.initialize(gb)
+    logging.error("initialize_async_services - GraphService initialized in websvc.py")
+
+
+event_loop = None
+try:
+    event_loop = asyncio.get_running_loop()
+except:
+    pass
+logging.error("event_loop: {}".format(event_loop))
+
+if event_loop is not None:
+    # this path is for running in a Docker container with uvicorn
+    logging.error("asyncio event_loop is not None")
+    task = asyncio.create_task(initialize_async_services())
+else:
+    # this path is for running as a Python script
+    asyncio.run(gb.initialize())
+    asyncio.run(gs.initialize(gb))
+    logging.error("GraphService initialized in websvc.py")
+
+logging.error(
+    "ConfigService.graph_source is {} in websvc.py".format(ConfigService.graph_source())
+)
 
 # begin middleware for authentication,
 # see https://fastapi.tiangolo.com/tutorial/middleware/

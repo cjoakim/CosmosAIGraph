@@ -14,7 +14,10 @@ param azureOpenaiKey string
 param azureOpenaiUrl string
 param azureRegion string
 param conversationsContainer string
+param cosmosdbNosqlKey1 string
+param cosmosdbNosqlUri string
 param definedAuthUsers string
+param graphNamespace string
 param graphServiceName string
 param graphSourceContainer string
 param graphSourceDb string
@@ -23,6 +26,7 @@ param graphSourceRdfFilename string
 param graphSourceType string
 param laWorkspaceName string
 param webAppName string
+
 
 resource law 'Microsoft.OperationalInsights/workspaces@2020-03-01-preview' = {
   name: laWorkspaceName
@@ -72,7 +76,7 @@ resource graph 'Microsoft.App/containerApps@2023-05-01' = {
     template: {
       containers: [
         {
-          image: 'cjoakim/caig_graph:latest'
+          image: 'cjoakim/caig_graph_v2:latest'
           name: graphServiceName
           env: [
             {
@@ -84,12 +88,24 @@ resource graph 'Microsoft.App/containerApps@2023-05-01' = {
               value: graphSourceOwlFilename
             }
             {
+              name: 'CAIG_GRAPH_NAMESPACE'
+              value: graphNamespace
+            }
+            {
               name: 'CAIG_GRAPH_SOURCE_RDF_FILENAME'
               value: graphSourceRdfFilename
             }
             {
               name: 'CAIG_AZURE_MONGO_VCORE_CONN_STR'
               value: azureMongoVcoreConnStr
+            }
+            {
+              name: 'CAIG_COSMOSDB_NOSQL_URI'
+              value: cosmosdbNosqlUri
+            }
+            {
+              name: 'CAIG_COSMOSDB_NOSQL_KEY1'
+              value: cosmosdbNosqlKey1
             }
             {
               name: 'CAIG_GRAPH_SOURCE_DB'
@@ -155,7 +171,7 @@ resource web 'Microsoft.App/containerApps@2023-05-01' = {
     template: {
       containers: [
         {
-          image: 'cjoakim/caig_web:latest'
+          image: 'cjoakim/caig_web_v2:latest'
           name: webAppName
           env: [
             {
@@ -169,6 +185,30 @@ resource web 'Microsoft.App/containerApps@2023-05-01' = {
             {
               name: 'CAIG_AZURE_MONGO_VCORE_CONN_STR'
               value: azureMongoVcoreConnStr
+            }
+            {
+              name: 'CAIG_GRAPH_SOURCE_TYPE'
+              value: graphSourceType
+            }
+            {
+              name: 'CAIG_GRAPH_SOURCE_OWL_FILENAME'
+              value: graphSourceOwlFilename
+            }
+            {
+              name: 'CAIG_GRAPH_NAMESPACE'
+              value: graphNamespace
+            }
+            {
+              name: 'CAIG_GRAPH_SOURCE_RDF_FILENAME'
+              value: graphSourceRdfFilename
+            }
+            {
+              name: 'CAIG_COSMOSDB_NOSQL_URI'
+              value: cosmosdbNosqlUri
+            }
+            {
+              name: 'CAIG_COSMOSDB_NOSQL_KEY1'
+              value: cosmosdbNosqlKey1
             }
             {
               name: 'CAIG_GRAPH_SOURCE_DB'

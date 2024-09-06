@@ -21,14 +21,14 @@ class GraphService:
 
     def __init__(self, opts={}):
         self.opts = opts
+        self.gb = None
 
-    async def initialize(self):
-        gb = GraphBuilder(self.opts)
-        self.graph = await gb.build()
+    async def initialize(self, gb: GraphBuilder):
+        self.gb = gb
+        self.graph = await self.gb.build()
 
     async def reload(self):
-        gb = GraphBuilder(self.opts)
-        self.graph = await gb.build()
+        self.graph = await self.gb.build()
 
     def liveness_check(self) -> dict:
         """

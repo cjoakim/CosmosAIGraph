@@ -1,6 +1,6 @@
 
 
-$RESOURCE_GROUP="caigaca8"
+$RESOURCE_GROUP="caigaca11"
 $REGION="eastus"
 
 echo "az group create ..."

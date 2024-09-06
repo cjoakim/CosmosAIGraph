@@ -24,7 +24,6 @@ All of these begin with the prefix `CAIG_`.
 | CAIG_CONFIG_CONTAINER | The vCore container for configuration JSON values |
 | CAIG_CONVERSATIONS_CONTAINER | The vCore container where the chat conversations and history are persisted |
 | CAIG_COSMOSDB_NOSQL_KEY1 | The key of your Cosmos DB NoSQL account |
-| CAIG_COSMOSDB_NOSQL_KEY2 | The alternative key of your Cosmos DB NoSQL account |
 | CAIG_COSMOSDB_NOSQL_URI | The URI of your Cosmos DB NoSQL account |
 | CAIG_DEFINED_AUTH_USERS |  |
 | CAIG_FEEDBACK_CONTAINER | The vCore container where user feedback is persisted |
@@ -43,7 +42,6 @@ All of these begin with the prefix `CAIG_`.
 | CAIG_PG_FLEX_PASS | Azure PostgreSQL Flex Server user password |
 | CAIG_PG_FLEX_SERVER | Azure PostgreSQL Flex Server hostname |
 | CAIG_PG_FLEX_USER | Azure PostgreSQL Flex Server user |
-| CAIG_USE_ALT_SPARQL_CONSOLE | A non empty string displays the alt view; defaults to an empty string |
 | CAIG_WEBSVC_AUTH_HEADER | x-caig-auth |
 | CAIG_WEBSVC_AUTH_VALUE | K6ZQw!81 |
 | CAIG_WEB_APP_NAME |  |

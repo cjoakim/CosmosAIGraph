@@ -176,5 +176,4 @@ class EntitiesService(BaseDBService):
         if self.using_nosql():
             await self.nosql_svc.close()
         else:
-            await asyncio.sleep(0.01)
             self.vcore_svc.close()

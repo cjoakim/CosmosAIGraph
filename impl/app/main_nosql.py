@@ -252,9 +252,7 @@ ORDER BY VectorDistance(c.embedding, @embedding)""".strip().format(
 
 
 async def load_entities(dbname, cname):
-    logging.info(
-        "load_entities, dbname: {}, cname: {}".format(dbname, cname)
-    )
+    logging.info("load_entities, dbname: {}, cname: {}".format(dbname, cname))
     try:
         opts = dict()
         nosql_svc = CosmosNoSQLService(opts)
@@ -266,14 +264,15 @@ async def load_entities(dbname, cname):
         resp = await nosql_svc.upsert_item(doc)
         print(resp)
 
-                # impl/app/src/services/entities_service.py
-                # impl/app/tests/test_entities_service.py
-                # impl/data/entities/entities_doc.json
+        # impl/app/src/services/entities_service.py
+        # impl/app/tests/test_entities_service.py
+        # impl/data/entities/entities_doc.json
 
     except Exception as e:
         logging.info(str(e))
         logging.info(traceback.format_exc())
     await nosql_svc.close()
+
 
 async def load_libraries(dbname, cname, max_docs):
     logging.info(
@@ -372,6 +371,7 @@ def filter_files_list(files_list, suffix):
             filtered.append(f)
     return filtered
 
+
 async def vector_search_words(natural_language):
     try:
         ai_svc = AiService()
@@ -389,6 +389,7 @@ async def vector_search_words(natural_language):
         logging.info(str(e))
         logging.info(traceback.format_exc())
     await db_svc.close()
+
 
 async def test_db_service(source, dbname):
     try:

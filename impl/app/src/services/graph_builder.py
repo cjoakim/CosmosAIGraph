@@ -33,6 +33,37 @@ class GraphBuilder:
     def __init__(self, opts={}):
         self.opts = opts
         self.graph_source = str(ConfigService().graph_source())
+        self.vcore_svc = None
+        self.nosql_svc = None
+
+    async def initialize(self):
+        try:
+            self.dbname = ConfigService.graph_source_db()
+            self.cname = ConfigService.graph_source_container()
+            logging.warning(
+                "GraphBuilder#initialize - dbname: {} cname: {}".format(
+                    self.dbname, self.cname
+                )
+            )
+
+            if self.graph_source == "cosmos_vcore":
+                opts = dict()
+                opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
+                self.vcore_svc = CosmosVCoreService(opts)
+                self.vcore_svc.set_db(self.dbname)
+                self.vcore_svc.set_coll(self.cname)
+                logging.info("GraphBuilder#initialize - vcore_svc created")
+
+            elif self.graph_source == "cosmos_nosql":
+                opts = dict()
+                opts["enable_diagnostics_logging"] = False
+                self.nosql_svc = CosmosNoSQLService(opts)
+                await self.nosql_svc.initialize()
+                logging.info("GraphBuilder#initialize - nosql_svc created")
+
+        except Exception as e:
+            logging.critical("GraphBuilder#initialize Exception:\n{}".format(str(e)))
+            logging.exception(e, stack_info=True, exc_info=True)
 
     async def initialize_graph(self) -> rdflib.Graph:
         self.cns = self.graph_namespace()
@@ -42,7 +73,6 @@ class GraphBuilder:
         logging.info(
             "GraphBuilder#initialize_graph - ontology_file: {}".format(ontology_file)
         )
-        await asyncio.sleep(0.01)
         self.g = Graph()
         self.g.bind(self.graph_namespace_alias(), self.CNS)
         self.g.parse(ontology_file, format="xml")
@@ -123,9 +153,8 @@ class GraphBuilder:
     ) -> None:
         try:
             logging.info("GraphBuilder#populate_graph_from_cosmosdb_vcore")
-            vcore, dbname, cname = self.connect_to_vcore_graph_source()
             ns = self.graph_namespace().replace("#", "").strip()
-            coll = vcore.get_coll()
+            coll = self.vcore_svc.get_coll()
             docs_read = 0
             tb = RdflibTriplesBuilder()
             t1 = time.perf_counter()
@@ -158,28 +187,18 @@ class GraphBuilder:
             logging.critical(str(e))
             logging.exception(e, stack_info=True, exc_info=True)
             return None
+        finally:
+            self.vcore_svc.close()
 
     async def populate_graph_from_cosmosdb_nosql(
         self, g: rdflib.Graph, config: ConfigService, CNS
     ) -> None:
         try:
             logging.info("GraphBuilder#populate_graph_from_cosmosdb_nosql")
-            opts = dict()
-            opts["enable_diagnostics_logging"] = False
-            nosql_svc = CosmosNoSQLService(opts)
-            await nosql_svc.initialize()
-
-            dbname = ConfigService.graph_source_db()
-            cname = ConfigService.graph_source_container()
-            logging.info(
-                "GraphBuilder#populate_graph_from_cosmosdb_nosql - dbname: {}, cname: {}".format(
-                    dbname, cname
-                )
-            )
-            dbproxy = nosql_svc.set_db(dbname)
-            print("dbproxy: {}".format(dbproxy))
-            ctrproxy = nosql_svc.set_container(cname)
-            print("ctrproxy: {}".format(ctrproxy))
+            dbproxy = self.nosql_svc.set_db(self.dbname)
+            logging.info("dbproxy: {}".format(dbproxy))
+            ctrproxy = self.nosql_svc.set_container(self.cname)
+            logging.info("ctrproxy: {}".format(ctrproxy))
 
             ns = self.graph_namespace().replace("#", "").strip()
             tb = RdflibTriplesBuilder()
@@ -212,7 +231,7 @@ class GraphBuilder:
             logging.critical(str(e))
             logging.exception(e, stack_info=True, exc_info=True)
         finally:
-            await nosql_svc.close()
+            await self.nosql_svc.close()
 
     def populate_graph_from_json_file(
         self, g: rdflib.Graph, config: ConfigService, CNS
@@ -262,30 +281,6 @@ class GraphBuilder:
             "developers": 1,
             "dependency_ids": 1,
         }
-
-    def connect_to_vcore_graph_source(self):
-        """
-        connect to the vcore account, and return a 3-tuple of
-        (vcore, dbname, cname), where vcore is an instance of
-        class CosmosVCoreService.
-        """
-        opts = dict()
-        opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
-        vcore = CosmosVCoreService(opts)
-        if "pymongo.mongo_client.MongoClient" in str(type(vcore.get_client())):
-            logging.critical(
-                "GraphBuilder#connect_to_vcore_graph_source - connected to vcore"
-            )
-        else:
-            logging.critical(
-                "GraphBuilder#connect_to_vcore_graph_source - unable to connect to vcore"
-            )
-            return
-        dbname = ConfigService.graph_source_db()
-        cname = ConfigService.graph_source_container()
-        vcore.set_db(dbname)
-        vcore.set_coll(cname)
-        return (vcore, dbname, cname)
 
     def persist_graph(self):
         outfile = "tmp/graph_{}.nt".format(self.graph_source)

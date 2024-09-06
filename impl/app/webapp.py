@@ -40,20 +40,50 @@ from src.services.rag_data_result import RAGDataResult
 from src.util.sparql_formatter import SparqlFormatter
 from src.services.ontology_service import OntologyService
 
+
 # standard initialization
 load_dotenv(override=True)
 logging.basicConfig(
     format="%(asctime)s - %(message)s", level=LoggingLevelService.get_level()
 )
-ConfigService.log_defined_env_vars()
+ConfigService.print_defined_env_vars()
 
 ai_svc = AiService()
-asyncio.run(ai_svc.initialize())
-logging.error("AiService initialized")
-
 db_svc = DBService()
-asyncio.run(db_svc.initialize())
-logging.error("DBService initialized")
+
+
+async def initialize_async_services():
+    global ai_svc
+    global db_svc
+    await ai_svc.initialize()
+    logging.error("initialize_async_services - AiService initialized in webapp.py")
+    await db_svc.initialize()
+    logging.error("initialize_async_services - DBService initialized in webapp.py")
+
+
+# See https://www.slingacademy.com/article/python-error-asynciorun-cannot-be-called-from-a-running-event-loop/
+event_loop = None
+try:
+    event_loop = asyncio.get_running_loop()
+except:
+    pass
+logging.error("event_loop: {}".format(event_loop))
+
+if event_loop is not None:
+    # this path is for running in a Docker container with uvicorn
+    logging.error("asyncio event_loop is not None")
+    task = asyncio.create_task(initialize_async_services())
+else:
+    # this path is for running as a Python script
+    logging.error("asyncio event_loop is None")
+    asyncio.run(ai_svc.initialize())
+    logging.error("AiService initialized in webapp.py")
+    asyncio.run(db_svc.initialize())
+    logging.error("DBService initialized in webapp.py")
+
+logging.error(
+    "ConfigService.graph_source is {} in webapp.py".format(ConfigService.graph_source())
+)
 
 ontology_svc = OntologyService()
 owl_xml = ontology_svc.get_owl_content()
@@ -293,7 +323,9 @@ async def ai_post_gen_sparql(req: Request):
     sparql: str = ""
 
     resp_obj = dict()
-    resp_obj["session_id"] = "" # Note: not currently used, populate with the HTTP session ID
+    resp_obj["session_id"] = (
+        ""  # Note: not currently used, populate with the HTTP session ID
+    )
     resp_obj["natural_language"] = natural_language
     resp_obj["owl"] = owl_xml
     resp_obj["completion_id"] = ""

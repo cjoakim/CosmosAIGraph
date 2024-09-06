@@ -56,7 +56,6 @@ class BaseDBService:
         self.nosql_ctrproxy = self.nosql_svc.set_container(self.graph_container)
 
     async def initialize_cosmos_vcore(self):
-        await asyncio.sleep(0.01)
         opts = dict()
         opts["conn_string"] = ConfigService.mongo_vcore_conn_str()
         self.vcore_svc = CosmosVCoreService(opts)

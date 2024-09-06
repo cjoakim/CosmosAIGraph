@@ -324,7 +324,7 @@ class AiService:
         context: str,
         max_tokens: int = ConfigService.invoke_kernel_max_tokens(),
         temperature: float = ConfigService.invoke_kernel_temperature(),
-        top_p: float = ConfigService.invoke_kernel_top_p()
+        top_p: float = ConfigService.invoke_kernel_top_p(),
     ) -> AiCompletion | None:
 
         try:
@@ -469,7 +469,7 @@ One line TLDR with the fewest words."""
         full_context: str,
         full_history,
         user_query: str,
-        max_tokens: int = ConfigService.optimize_context_and_history_max_tokens()
+        max_tokens: int = ConfigService.optimize_context_and_history_max_tokens(),
     ):
         try:
             optimizer = PromptOptimizer()

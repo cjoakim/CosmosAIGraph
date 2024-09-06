@@ -206,5 +206,4 @@ ORDER BY VectorDistance(c.embedding, {})""".strip().format(
         if self.using_nosql():
             await self.nosql_svc.close()
         else:
-            await asyncio.sleep(0.01)
             self.vcore_svc.close()

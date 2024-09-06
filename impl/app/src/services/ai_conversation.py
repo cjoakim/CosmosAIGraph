@@ -184,20 +184,36 @@ class AiConversation:
 
     def current_ai_configuration(self) -> dict:
         config = dict()
-        config['completions_deployment'] = ConfigService.azure_openai_completions_deployment()
-        config['embeddings_deployment'] = ConfigService.azure_openai_embeddings_deployment()
-        config['invoke_kernel_max_tokens'] = ConfigService.invoke_kernel_max_tokens()
-        config['invoke_kernel_temperature'] = ConfigService.invoke_kernel_temperature()
-        config['invoke_kernel_top_p'] = ConfigService.invoke_kernel_top_p()
-        config['html_summarize_max_tokens'] = ConfigService.html_summarize_max_tokens()
-        config['html_summarize_temperature'] = ConfigService.html_summarize_temperature()
-        config['html_summarize_top_p'] = ConfigService.html_summarize_top_p()
-        config['get_completion_temperature'] = ConfigService.get_completion_temperature()  
-        config['moderate_sparql_temperature'] = ConfigService.moderate_sparql_temperature()
-        config['optimize_context_and_history_max_tokens'] = ConfigService.optimize_context_and_history_max_tokens()
-        config['truncate_llm_context_max_ntokens'] = ConfigService.truncate_llm_context_max_ntokens()
-        config['generate_graph_temperature'] = ConfigService.generate_graph_temperature()
-        return config 
+        config["completions_deployment"] = (
+            ConfigService.azure_openai_completions_deployment()
+        )
+        config["embeddings_deployment"] = (
+            ConfigService.azure_openai_embeddings_deployment()
+        )
+        config["invoke_kernel_max_tokens"] = ConfigService.invoke_kernel_max_tokens()
+        config["invoke_kernel_temperature"] = ConfigService.invoke_kernel_temperature()
+        config["invoke_kernel_top_p"] = ConfigService.invoke_kernel_top_p()
+        config["html_summarize_max_tokens"] = ConfigService.html_summarize_max_tokens()
+        config["html_summarize_temperature"] = (
+            ConfigService.html_summarize_temperature()
+        )
+        config["html_summarize_top_p"] = ConfigService.html_summarize_top_p()
+        config["get_completion_temperature"] = (
+            ConfigService.get_completion_temperature()
+        )
+        config["moderate_sparql_temperature"] = (
+            ConfigService.moderate_sparql_temperature()
+        )
+        config["optimize_context_and_history_max_tokens"] = (
+            ConfigService.optimize_context_and_history_max_tokens()
+        )
+        config["truncate_llm_context_max_ntokens"] = (
+            ConfigService.truncate_llm_context_max_ntokens()
+        )
+        config["generate_graph_temperature"] = (
+            ConfigService.generate_graph_temperature()
+        )
+        return config
 
     def serialize(self) -> str:
         try:
