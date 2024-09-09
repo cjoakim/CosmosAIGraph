@@ -88,3 +88,7 @@ class BaseDBService:
             self.nosql_svc.set_container(cname)
         else:
             self.vcore_svc.set_coll(cname)
+
+    def set_coll(self, cname):
+        """Alias for the above method"""
+        self.set_container(cname)
