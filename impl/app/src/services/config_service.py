@@ -89,7 +89,7 @@ class ConfigService:
 
     @classmethod
     def code_version(cls) -> str:
-        return "2024/09/05"
+        return "2024/09/09"
 
     @classmethod
     def defined_environment_variables(cls) -> dict:
