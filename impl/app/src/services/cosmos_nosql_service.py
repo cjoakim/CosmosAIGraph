@@ -2,6 +2,9 @@ import logging
 import traceback
 
 from azure.cosmos.aio import CosmosClient
+#from azure.cosmos import CosmosClient
+from azure.identity import ClientSecretCredential, DefaultAzureCredential
+
 
 from src.models.webservice_models import AiConvFeedbackModel
 from src.services.config_service import ConfigService
@@ -34,15 +37,15 @@ class CosmosNoSQLService:
         self._dbproxy = None
         self._ctrproxy = None
         self._cname = None
-        self._uri = ConfigService.cosmosdb_nosql_uri()
-        self._key = ConfigService.cosmosdb_nosql_key1()
         self._client = None
         logging.info("CosmosNoSQLService - constructor")
 
     async def initialize(self):
         """This method should be called after the above constructor."""
-        self._client = CosmosClient(self._uri, self._key)
-        # await self._client.__aenter__()
+        logging.info("CosmosNoSQLService#initialize with key")
+        uri = ConfigService.cosmosdb_nosql_uri()
+        key = ConfigService.cosmosdb_nosql_key1()
+        self._client = CosmosClient(uri, key)
         logging.info("CosmosNoSQLService - initialize() completed")
 
     async def close(self):

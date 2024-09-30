@@ -263,13 +263,9 @@ def gen_all():
 def owl_visualizer(infile):
     """This functionality is EXPERIMENTAL at this time."""
     owl_viz = OwlVisualizer(infile)
-    t = Template.get_template(os.getcwd(), "owl_viz_html_page.txt")
-    html = Template.render(t, owl_viz.get_visjs_data())
-    FS.write("tmp/graph.html", html)
+    content = owl_viz.generate_visjs_content()
+    print(content)
 
-    t = Template.get_template(os.getcwd(), "owl_viz_cytoscape_html_page.txt")
-    html = Template.render(t, owl_viz.get_cytoscape_data())
-    FS.write("tmp/cytoscape_graph.html", html)
 
 
 def ad_hoc_development():

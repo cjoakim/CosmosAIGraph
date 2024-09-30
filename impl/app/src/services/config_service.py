@@ -89,7 +89,7 @@ class ConfigService:
 
     @classmethod
     def code_version(cls) -> str:
-        return "2024/09/09"
+        return "2024/09/30"
 
     @classmethod
     def defined_environment_variables(cls) -> dict:
@@ -125,8 +125,13 @@ class ConfigService:
         d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = (
             "The full connection string for the Cosmos DB Mongo vCore account"
         )
+        d["CAIG_COSMOSDB_NOSQL_ACCT"] = "The Name of your Cosmos DB NoSQL account"
+        d["CAIG_COSMOSDB_NOSQL_RG"] = "The Resource Group of your Cosmos DB NoSQL account"
         d["CAIG_COSMOSDB_NOSQL_URI"] = "The URI of your Cosmos DB NoSQL account"
+        d["CAIG_COSMOSDB_NOSQL_AUTH_MECHANISM"] = "The Cosmos DB NoSQL authentication mechanism; key or aad"
         d["CAIG_COSMOSDB_NOSQL_KEY1"] = "The key of your Cosmos DB NoSQL account"
+        d["CAIG_COSMOSDB_NOSQL_PRIN_OBJ_ID"] = "Principal Oject ID for Cosmos DB NoSQL AAD Authentication"
+        d["CAIG_COSMOSDB_NOSQL_RBAC_ROLE_ID"] = "RBAC Role ID for Cosmos DB NoSQL AAD Authentication"
 
         d["CAIG_AZURE_OPENAI_URL"] = "The URL of your Azure OpenAI account"
         d["CAIG_AZURE_OPENAI_KEY"] = "The Key of your Azure OpenAI account"
@@ -177,9 +182,15 @@ class ConfigService:
         d["CAIG_CONFIG_CONTAINER"] = "config"
         d["CAIG_CONVERSATIONS_CONTAINER"] = "conversations"
         d["CAIG_AZURE_MONGO_VCORE_CONN_STR"] = "mongodb+srv://..."
-        d["CAIG_COSMOSDB_NOSQL_URI"] = "https://<your-account>.documents.azure.com:443/"
+
+        d["CAIG_COSMOSDB_NOSQL_ACCT"] = "mycosmosdbnosqlacct"
+        d["CAIG_COSMOSDB_NOSQL_RG"]   = "myresourcegroup"
+        d["CAIG_COSMOSDB_NOSQL_URI"]  = "https://<your-account>.documents.azure.com:443/"
+        d["CAIG_COSMOSDB_NOSQL_AUTH_MECHANISM"] = "key"  # key or aad
         d["CAIG_COSMOSDB_NOSQL_KEY1"] = ""
-        d["CAIG_COSMOSDB_NOSQL_KEY2"] = ""
+        d["CAIG_COSMOSDB_NOSQL_PRIN_OBJ_ID"] = ""
+        d["CAIG_COSMOSDB_NOSQL_RBAC_ROLE_ID"] = ""
+
         d["CAIG_USE_ALT_SPARQL_CONSOLE"] = ""
         d["CAIG_AZURE_OPENAI_URL"] = ""
         d["CAIG_AZURE_OPENAI_KEY"] = ""
@@ -280,17 +291,33 @@ class ConfigService:
         return cls.envvar("CAIG_AZURE_MONGO_VCORE_CONN_STR", None)
 
     @classmethod
+    def cosmosdb_nosql_acct(cls) -> str:
+        return cls.envvar("CAIG_COSMOSDB_NOSQL_ACCT", None)
+    
+    @classmethod
+    def cosmosdb_nosql_resource_group(cls) -> str:
+        return cls.envvar("CAIG_COSMOSDB_NOSQL_RG", None)
+    
+    @classmethod
     def cosmosdb_nosql_uri(cls) -> str:
         return cls.envvar("CAIG_COSMOSDB_NOSQL_URI", None)
 
+    @classmethod
+    def cosmosdb_nosql_auth_mechanism(cls) -> str:
+        return cls.envvar("CAIG_COSMOSDB_NOSQL_AUTH_MECHANISM", None)
+    
     @classmethod
     def cosmosdb_nosql_key1(cls) -> str:
         return cls.envvar("CAIG_COSMOSDB_NOSQL_KEY1", None)
 
     @classmethod
-    def cosmosdb_nosql_key2(cls) -> str:
-        return cls.envvar("CAIG_COSMOSDB_NOSQL_KEY2", None)
-
+    def cosmosdb_nosql_principal_object_id(cls) -> str:
+        return cls.envvar("CAIG_COSMOSDB_NOSQL_PRIN_OBJ_ID", None)
+    
+    @classmethod
+    def cosmosdb_nosql_rbac_role_id(cls) -> str:
+        return cls.envvar("CAIG_COSMOSDB_NOSQL_RBAC_ROLE_ID", None)
+    
     @classmethod
     def pg_flex_server(cls) -> str:
         return cls.envvar("CAIG_PG_FLEX_SERVER", None)

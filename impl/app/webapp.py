@@ -81,6 +81,9 @@ else:
     asyncio.run(db_svc.initialize())
     logging.error("DBService initialized in webapp.py")
 
+logging.error("code_version: {}".format(ConfigService.code_version()))
+logging.error("graph_source: {}".format(ConfigService.graph_source()))
+
 logging.error(
     "ConfigService.graph_source is {} in webapp.py".format(ConfigService.graph_source())
 )

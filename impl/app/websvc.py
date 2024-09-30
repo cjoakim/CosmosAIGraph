@@ -66,6 +66,9 @@ else:
     asyncio.run(gs.initialize(gb))
     logging.error("GraphService initialized in websvc.py")
 
+logging.error("code_version: {}".format(ConfigService.code_version()))
+logging.error("graph_source: {}".format(ConfigService.graph_source()))
+
 logging.error(
     "ConfigService.graph_source is {} in websvc.py".format(ConfigService.graph_source())
 )

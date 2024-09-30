@@ -4,7 +4,14 @@ from src.util.fs import FS
 from src.util.owl_sax_handler import OwlSaxHandler
 
 # This class uses the raw parsed data from the OwlSaxHandler class
-# and reformats it as a JSON data structure more suitable for visjs.
+# and reformats it as a JavaScript code suitable for vis.js, that
+# can be copied & pasted into a HTML page, such as gen_sparql_console.html.
+# This class is intended for command-line use, not for use in the web app.
+#
+# See https://visjs.org/
+# See https://visjs.github.io/vis-network/examples/
+# See https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js
+# 
 # Chris Joakim, Microsoft
 
 
@@ -12,106 +19,104 @@ class OwlVisualizer:
 
     def __init__(self, owl_filename):
         self.parser = make_parser()
-        self.handler = OwlSaxHandler()
-        self.parser.setContentHandler(self.handler)
+        self.sax_handler = OwlSaxHandler()
+        self.parser.setContentHandler(self.sax_handler)
         self.parser.parse(owl_filename)
-        FS.write_json(self.handler.get_data(), "tmp/owl_vizualizer.json")
+        self.sax_data = self.sax_handler.get_data()
+        FS.write_json(self.sax_data, "tmp/owl_sax_handler.json")
 
-    def get_cytoscape_data(self):
-        # see https://js.cytoscape.org/
-        return dict()
+    def generate_visjs_content(self) -> str:
+        lines = list()
+        namespace = self.sax_data["xmlns"]
+        classes = self.sax_data["classes"]
+        last_classes_idx = len(classes) - 1
+        object_properties = self.sax_data["object_properties"]
 
-    def get_visjs_data(self):
-        sax_data = self.handler.get_data()
-        js_nodes, js_edges = list(), list()
+        lines.append('<script type="text/javascript">')
+        lines.append('')
+        lines.append('  // create an array with the nodes (i.e. - "entities")')
+        lines.append('  var nodes = new vis.DataSet([')
+        for idx, c in enumerate(classes):
+            if idx < last_classes_idx:
+                lines.append('    {{ id: "{}", label: "{}" }},'.format(c, c))
+            else:
+                lines.append('    {{ id: "{}", label: "{}" }}'.format(c, c))
+        lines.append('  ]);')
+        lines.append('')
+        lines.append('  // create an array with the edges (i.e. - "relationships")')
+        lines.append('  var edges = new vis.DataSet([')
+        rel_names = sorted(object_properties.keys())
+        print(rel_names)
+        edge_types = self.collect_edge_types()
+        last_edge_types_idx = len(edge_types) - 1
+        for idx, edge_key in enumerate(sorted(edge_types.keys())):
+            from_node = edge_key.split('|')[0]
+            to_node = edge_key.split('|')[1]
+            relationships = edge_types[edge_key]
 
-        for classname in sorted(sax_data["classes"]):
-            node = dict()
-            node["id"] = classname
-            node["label"] = classname
-            node["value"] = 1
-            js_nodes.append(node)
+            if idx < last_edge_types_idx:
+                lines.append('    {{ from: "{}", to: "{}", title: "{}" }},'.format(
+                    from_node, to_node, relationships))
+            else:
+                lines.append('    {{ from: "{}", to: "{}", title: "{}" }}'.format(
+                    from_node, to_node, relationships))
+                
+        lines.append('  ]);')
+        lines.append('')
+        lines.append('  var html_container = document.getElementById("ontology_viz");')
+        lines.append('  var graph_data = { nodes: nodes, edges: edges };')
+        lines.append(self.graph_options())
+        lines.append('  var network = new vis.Network(html_container, graph_data, graph_options);')
+        lines.append('</script>')
+        return "\n".join(lines)
 
-        op_names = sorted(sax_data["object_properties"].keys())
-        for op_name in op_names:
-            op_obj = sax_data["object_properties"][op_name]
-            try:
-                if op_obj["is_edge"] == True:
-                    for d in op_obj["domain"]:
-                        for r in op_obj["range"]:
-                            edge = dict()
-                            edge["from"] = d
-                            edge["to"] = r
-                            edge["value"] = 1
-                            edge["label"] = op_obj["name"]
-                            js_edges.append(edge)
-            except:
-                pass
-        template_values = dict()
-        template_values["nodes_json"] = js_nodes
-        template_values["edges_json"] = js_edges
-        return template_values
-
-    # def get_d3_data(self):
-    #     sax_data = self.handler.get_data()
-    #     classes = sorted(sax_data["classes"])
-    #     node_name_id_map = dict()
-    #     node_num = 0
-    #     edge_num = 1000
-
-    #     d3_data = dict()
-    #     d3_data["nodes"] = list()
-    #     d3_data["edges"] = list()
-    #     d3_data["attributes"] = list()
-    #     d3_data["node_name_id_map"] = node_name_id_map
-
-    #     for cidx, c in enumerate(classes):
-    #         node_num = node_num + 1
-    #         node = dict()
-    #         node["id"] = node_num
-    #         #node["idx"] = cidx
-    #         node["name"] = c
-    #         node["distance"] = 100
-    #         node["strength"] = 100
-    #         d3_data["nodes"].append(node)
-    #         node_name_id_map[c] = node_num
-
-    #     edge_num = 1000
-    #     for name in sorted(sax_data["object_properties"].keys()):
-    #         p = sax_data["object_properties"][name]
-    #         domain_list, range_list = p["domain"], p["range"]
-    #         for domain in domain_list:
-    #             for ridx, range in enumerate(range_list):
-    #                 if domain != range:
-    #                     source_idx = node_name_id_map[domain]
-    #                     target_idx = node_name_id_map[range]
-    #                     edge_num = edge_num + 1
-    #                     d3_data["edges"].append(
-    #                         {
-    #                             "id": edge_num,
-    #                             "name": name,
-    #                             "source": source_idx,
-    #                             "source_type": domain,
-    #                             "target": target_idx,
-    #                             "target_type": range,
-    #                             "distance": 100,
-    #                             "strength": 100,
-    #                             "weight": 1.0,
-    #                         }
-    #                     )
-
-    #     for key in sorted(sax_data["datatype_properties"].keys()):
-    #         p = sax_data["datatype_properties"][key]
-    #         domain_list, range_list = p["domain"], p["range"]
-    #         for domain in domain_list:
-    #             for range in range_list:
-    #                 if domain != range:
-    #                     domain_idx = node_name_id_map[domain]
-    #                     d3_data["attributes"].append(
-    #                         {"name": key,
-    #                          "source": domain_idx,
-    #                          "source_type": domain,
-    #                          "target": range}
-    #                     )
-    #     FS.write_json(d3_data, "tmp/owl_vizualizer_d3_data.json")
-    #     return d3_data
+    def collect_edge_types(self) -> dict:
+        edges = dict()
+        object_properties = self.sax_data["object_properties"]
+        rel_names = sorted(object_properties.keys())
+        for rel_name in rel_names:
+            rel_obj = object_properties[rel_name]
+            domains = rel_obj['domain']
+            ranges = rel_obj['range']
+            for d in domains:
+                for r in ranges:
+                    edge_key = "{}|{}".format(d, r)
+                    if edge_key in edges.keys():
+                        curr_value = edges[edge_key]
+                        edges[edge_key] = "{}, {}".format(curr_value, rel_name)
+                    else:
+                        edges[edge_key] = rel_name
+        FS.write_json(edges, "tmp/owl_visualizer_collect_edge_types.json")     
+        return edges
+    
+    def graph_options(self) -> str:
+        return """
+  var graph_options = {
+    edges: {
+      arrows: {
+        to: {
+          enabled: true,
+          scaleFactor: 0.2,
+          type: "arrow"
+        }
+      },
+      color: '#A9A9A9',
+      font: '12px arial #A9A9A9',
+      scaling: {
+        label: true,
+      },
+      shadow: false,
+      smooth: true,
+    },
+    physics:{
+      enabled: true,
+      repulsion: {
+        centralGravity: 0.2,
+        springLength: 200,
+        springConstant: 0.05,
+        nodeDistance: 200,
+        damping: 0.09
+      }
+    }
+  };""".strip()
+    

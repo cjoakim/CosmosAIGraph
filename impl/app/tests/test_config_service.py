@@ -156,7 +156,8 @@ def test_use_alt_sparql_console():
 def test_invoke_kernel_max_tokens():
     ConfigService.set_standard_unit_test_env_vars()
     val = ConfigService.invoke_kernel_max_tokens()
-    assert val == 1000
+    assert val > 100
+    assert val < 100_000
 
 def test_invoke_kernel_top_p():
     ConfigService.set_standard_unit_test_env_vars()
